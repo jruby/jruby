@@ -34,6 +34,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
@@ -1599,6 +1600,49 @@ public class Pack {
                     } catch (java.io.UnsupportedEncodingException e) {
                         assert false : "can't convert to UTF8";
                     }
+                    break;
+                case 'w' :
+                    IRubyObject from = (IRubyObject) list.get(idx++);
+                    String stringVal = from == runtime.getNil() ? "0" : from.asString().toString();
+                    BigInteger bigInt = new BigInteger(stringVal);
+                    
+                    // we don't deal with negatives.
+                    if(bigInt.compareTo(new BigInteger("0")) >= 0) {
+                        int bitLength = bigInt.toString(2).length();
+                        byte[] bytes = bigInt.toByteArray();
+                        
+                        byte[] buf = new byte[(bitLength / 7) + ((bitLength % 7) > 0 ? 1 : 0)];
+
+                        int b = 0;
+                        int destBit = 0;
+                        int destByte = 0;
+                        
+                        for(int srcByte = bytes.length - 1; srcByte >= 0; srcByte--) {
+                            for(int srcBit = 0; srcBit < 8; srcBit++, destBit++) {
+                                if(destBit == 7) {
+                                    buf[buf.length - 1 - destByte++] = (byte) (b & 0xff);
+                                    b = 0x80;
+                                    destBit = 0;
+                                }
+                                int val = bytes[srcByte] & (1 << srcBit);
+                                
+                                if(destBit > srcBit) {
+                                    val = 0xff & (val << destBit - srcBit); 
+                                } else if(destBit < srcBit) {
+                                    val = 0xff & (val >> srcBit - destBit);
+                                } 
+                                
+                                b |= 0xff & val;
+                            }
+                        }
+                        
+                        if(b != 0x80) {
+                            buf[destByte] = (byte) (b & 0xff);
+                        }
+                        
+                        result.append(RubyString.bytesToString(buf));
+                    }
+                    
                     break;
             }
         }

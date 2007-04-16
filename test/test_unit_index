@@ -69,6 +69,7 @@ test_hash
 test_higher_javasupport
 test_java_accessible_object
 #test_openssl
+test_pack
 test_primitive_to_java
 test_parsing
 test_string_printf
