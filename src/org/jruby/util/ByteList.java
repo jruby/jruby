@@ -591,6 +591,13 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     public static byte[] plain(CharSequence s) {
+        if(s instanceof String) {
+            try {
+                return ((String)s).getBytes("ISO8859-1");
+            } catch(Exception e) {
+                //FALLTHROUGH
+            }
+        }
         byte[] bytes = new byte[s.length()];
         for (int i = 0; i < bytes.length; i++) {
             bytes[i] = (byte) s.charAt(i);
