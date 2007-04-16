@@ -72,8 +72,10 @@ public class OSEnvironment {
             return getAsMapOfRubyStrings(runtime, runtime.getInstanceConfig().getEnvironment().entrySet());
         }
 
-        // try/catch to fall back on empty env when security disallows environment var access (like in an applet)
-        try {
+        // fall back on empty env when security disallows environment var access (like in an applet)
+        if (Ruby.isSecurityRestricted())
+            envs = new HashMap();
+        else {
             String jrubyEnvMethod = System.getProperty("jruby.env.method");
 
             IOSEnvironmentReader reader;
@@ -100,9 +102,6 @@ public class OSEnvironment {
                 variables = reader.getVariables(runtime);
                 envs = getAsMapOfRubyStrings(runtime,  variables.entrySet());
             }
-        } catch (AccessControlException accessEx) {
-            // default to empty env
-            envs = new HashMap();
         }
 
         return envs;
@@ -115,12 +114,10 @@ public class OSEnvironment {
      * @return the java system properties as a Map<RubyString,RubyString>.
      */
     public Map getSystemPropertiesMap(Ruby runtime) {
-        try {
-            return getAsMapOfRubyStrings(runtime, System.getProperties().entrySet());
-        } catch (AccessControlException accessEx) {
-            // default to empty env
-            return new HashMap();
-        }
+        if (Ruby.isSecurityRestricted())
+           return new HashMap();
+       else
+           return getAsMapOfRubyStrings(runtime, System.getProperties().entrySet());
     }
 
 

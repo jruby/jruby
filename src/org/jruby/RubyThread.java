@@ -84,8 +84,13 @@ public class RubyThread extends RubyObject {
     public Object killLock = new Object();
     private RubyThread joinedByCriticalThread;
     
-    private static final boolean USE_POOLING = Boolean.getBoolean("jruby.thread.pooling");
+    private static final boolean USE_POOLING;
     
+   static {
+       if (Ruby.isSecurityRestricted()) USE_POOLING = false;
+       else USE_POOLING = Boolean.getBoolean("jruby.thread.pooling");
+   }
+   
     public static RubyClass createThreadClass(Ruby runtime) {
         // FIXME: In order for Thread to play well with the standard 'new' behavior,
         // it must provide an allocator that can create empty object instances which

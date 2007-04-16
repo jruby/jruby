@@ -29,7 +29,6 @@ package org.jruby;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.security.AccessControlException;
 import java.util.Map;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.CommandlineParser;
@@ -44,14 +43,13 @@ public class RubyInstanceConfig {
     private Map environment;
 
     {
-        try {
+        if (Ruby.isSecurityRestricted())
+            currentDirectory = "/";
+        else {
             currentDirectory = JRubyFile.getFileProperty("user.dir");
             if (System.getProperty("jruby.objectspace.enabled") != null) {
                 objectSpaceEnabled = Boolean.getBoolean("jruby.objectspace.enabled");
             }
-        } catch (AccessControlException accessEx) {
-            // default to "/" as current dir for applets (which can't read from FS anyway)
-            currentDirectory   = "/";
         }
     }
 

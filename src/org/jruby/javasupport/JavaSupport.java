@@ -63,7 +63,8 @@ public class JavaSupport {
         try {
             Class result = primitiveClass(className);
             if(result == null) {
-                return Class.forName(className, true, javaClassLoader);
+                return (Ruby.isSecurityRestricted()) ? Class.forName(className) :
+                   Class.forName(className, true, javaClassLoader);
             }
             return result;
         } catch (ClassNotFoundException cnfExcptn) {

@@ -178,7 +178,7 @@ public final class Ruby {
     // Java support
     private JavaSupport javaSupport;
     // FIXME: THIS IS WRONG. We need to correct the classloading problems.
-    private static JRubyClassLoader jrubyClassLoader = new JRubyClassLoader(Ruby.class.getClassLoader());
+    private static JRubyClassLoader jrubyClassLoader; // = new JRubyClassLoader(Ruby.class.getClassLoader());
 
     private Parser parser = new Parser(this);
 
@@ -1029,6 +1029,8 @@ public final class Ruby {
     }
 
     public JRubyClassLoader getJRubyClassLoader() {
+        if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null)
+            jrubyClassLoader = new JRubyClassLoader(Ruby.class.getClassLoader());
         return jrubyClassLoader;
     }
 
@@ -1201,9 +1203,11 @@ public final class Ruby {
     }
 
     public void loadScript(String scriptName, Reader source) {
-        File f = new File(scriptName);
-        if(f.exists() && !f.isAbsolute() && !scriptName.startsWith("./")) {
-            scriptName = "./" + scriptName;
+        if (!Ruby.isSecurityRestricted()) {
+            File f = new File(scriptName);
+            if(f.exists() && !f.isAbsolute() && !scriptName.startsWith("./")) {
+                scriptName = "./" + scriptName;
+            };
         }
 
         IRubyObject self = getTopSelf();
@@ -1783,5 +1787,9 @@ public final class Ruby {
         synchronized(this) {
             globalState = (globalState+1) & 0x8fffffff;
         }
+    }
+
+    public static boolean isSecurityRestricted() {
+        return (System.getSecurityManager() != null);
     }
 }

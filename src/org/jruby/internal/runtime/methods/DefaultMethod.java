@@ -69,11 +69,24 @@ public final class DefaultMethod extends DynamicMethod {
     private int callCount = 0;
     private Script jitCompiledScript;
 
-    private static final boolean JIT_ENABLED = Boolean.getBoolean("jruby.jit.enabled");
-    private static final boolean JIT_LOGGING = Boolean.getBoolean("jruby.jit.logging");
-    private static final boolean JIT_LOGGING_VERBOSE = Boolean.getBoolean("jruby.jit.logging.verbose");
-    private static final int JIT_THRESHOLD = Integer.parseInt(System.getProperty("jruby.jit.threshold", "50"));
-    
+    private static final boolean JIT_ENABLED;
+    private static final boolean JIT_LOGGING;
+    private static final boolean JIT_LOGGING_VERBOSE;
+    private static final int JIT_THRESHOLD;
+      
+    static {
+        if (Ruby.isSecurityRestricted()) {
+            JIT_ENABLED = false;
+            JIT_LOGGING = false;
+            JIT_LOGGING_VERBOSE = false;
+            JIT_THRESHOLD = 50;
+        } else {
+            JIT_ENABLED = Boolean.getBoolean("jruby.jit.enabled");
+            JIT_LOGGING = Boolean.getBoolean("jruby.jit.logging");
+            JIT_LOGGING_VERBOSE = Boolean.getBoolean("jruby.jit.logging.verbose");
+            JIT_THRESHOLD = Integer.parseInt(System.getProperty("jruby.jit.threshold", "50"));
+        }
+    }
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
             ArgsNode argsNode, Visibility visibility, SinglyLinkedList cref) {
         super(implementationClass, visibility);

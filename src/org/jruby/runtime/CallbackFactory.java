@@ -141,13 +141,17 @@ public abstract class CallbackFactory {
     private static String dumpingPath = null;
 
     static {
-        if(System.getProperty("jruby.reflection") != null && Boolean.getBoolean("jruby.reflection")) {
-            reflection = true;
-        }
-        if(System.getProperty("jruby.dump_invocations") != null) {
-            dumping = true;
-            dumpingPath = System.getProperty("jruby.dump_invocations").toString();
-        }
+       if (Ruby.isSecurityRestricted())
+           reflection = true;
+       else {
+           if(System.getProperty("jruby.reflection") != null && Boolean.getBoolean("jruby.reflection")) {
+               reflection = true;
+           }
+           if(System.getProperty("jruby.dump_invocations") != null) {
+               dumping = true;
+               dumpingPath = System.getProperty("jruby.dump_invocations").toString();
+           }
+       }
     }
 
     public static CallbackFactory createFactory(Ruby runtime, Class type) {

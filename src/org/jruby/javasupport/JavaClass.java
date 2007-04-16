@@ -525,6 +525,8 @@ public class JavaClass extends JavaObject {
     }
     
     public RubyArray declared_classes() {
+       if (Ruby.isSecurityRestricted()) // Can't even get inner classes?
+           return getRuntime().newArray(0);
         Class[] classes = javaClass().getDeclaredClasses();
         List accessibleClasses = new ArrayList();
         for (int i = 0; i < classes.length; i++) {

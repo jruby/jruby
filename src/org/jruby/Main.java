@@ -172,18 +172,19 @@ public class Main {
         // Add a shutdown hook that dumps the contents of the runtimeInformation map.
         // This map can be used at development-time to log profiling information
         // that must be updated as the execution runs.
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                if (!runtime.getRuntimeInformation().isEmpty()) {
-                    System.err.println("Runtime information dump:");
-
-                    for (Iterator iter = runtime.getRuntimeInformation().keySet().iterator(); iter.hasNext();) {
-                        Object key = iter.next();
-                        System.err.println("[" + key + "]: " + runtime.getRuntimeInformation().get(key));
+        if (!Ruby.isSecurityRestricted())
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                public void run() {
+                    if (!runtime.getRuntimeInformation().isEmpty()) {
+                        System.err.println("Runtime information dump:");
+                        
+                        for (Iterator iter = runtime.getRuntimeInformation().keySet().iterator(); iter.hasNext();) {
+                            Object key = iter.next();
+                            System.err.println("[" + key + "]: " + runtime.getRuntimeInformation().get(key));
+                        }
                     }
                 }
-            }
-        });
+            });
 
         try {
             runInterpreter(runtime, reader, filename);

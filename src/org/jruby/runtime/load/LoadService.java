@@ -150,7 +150,7 @@ public class LoadService {
         }
 
         // wrap in try/catch for security exceptions in an applet
-        try {
+        if (!Ruby.isSecurityRestricted()) {
           String jrubyHome = runtime.getJRubyHome();
           if (jrubyHome != null) {
               char sep = '/';
@@ -165,8 +165,6 @@ public class LoadService {
               // TODO: Either make jrubyHome become the jar file or allow "classpath-only" paths
               addPath("lib" + sep + "ruby" + sep + Constants.RUBY_MAJOR_VERSION);
           }
-        } catch (AccessControlException accessEx) {
-          // ignore, we're in an applet and can't access filesystem anyway
         }
         
         // "." dir is used for relative path loads from a given file, as in require '../foo/bar'
@@ -388,18 +386,17 @@ public class LoadService {
         }
 
         // check current directory; if file exists, retrieve URL and return resource
-        try {
-            JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(),name);
-            if(file.isFile() && file.isAbsolute()) {
-                try {
-                    return new LoadServiceResource(file.toURL(),name);
-                } catch (MalformedURLException e) {
-                    throw runtime.newIOErrorFromException(e);
+        if (!Ruby.isSecurityRestricted()) {
+            try {
+                JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(),name);
+                if(file.isFile() && file.isAbsolute()) {
+                    try {
+                        return new LoadServiceResource(file.toURL(),name);
+                    } catch (MalformedURLException e) {
+                        throw runtime.newIOErrorFromException(e);
+                    }
                 }
-            }
-        } catch (AccessControlException accessEx) {
-            // ignore, applet security
-        } catch (IllegalArgumentException illArgEx) {
+            } catch (IllegalArgumentException illArgEx) { }
         }
 
         for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
@@ -424,7 +421,7 @@ public class LoadService {
                 }
             } 
 
-            try {
+            if (!Ruby.isSecurityRestricted()) {
                 JRubyFile current = JRubyFile.create(JRubyFile.create(runtime.getCurrentDirectory(),entry).getAbsolutePath(), name);
                 if (current.isFile()) {
                     try {
@@ -433,10 +430,6 @@ public class LoadService {
                         throw runtime.newIOErrorFromException(e);
                     }
                 }
-            } catch (AccessControlException accessEx) {
-                // ignore, we're in an applet
-            } catch (IllegalArgumentException illArgEx) {
-                // ignore; Applet under windows has issues with current dir = "/"
             }
         }
 
