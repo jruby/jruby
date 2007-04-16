@@ -844,67 +844,121 @@ public class RubyKernel {
         }
     }
     public static IRubyObject test(IRubyObject recv, IRubyObject[] args) {
-        int cmd = (int) args[0].convertToInteger().getLongValue();
         Ruby runtime = recv.getRuntime();
-        File pwd = new File(recv.getRuntime().getCurrentDirectory());
-        File file1 = new File(pwd, args[1].toString());
-        Calendar calendar;
-        switch (cmd) {
-        //        ?A  | Time    | Last access time for file1
-        //        ?b  | boolean | True if file1 is a block device
-        //        ?c  | boolean | True if file1 is a character device
-        //        ?C  | Time    | Last change time for file1
-        //        ?d  | boolean | True if file1 exists and is a directory
-        //        ?e  | boolean | True if file1 exists
-        //        ?f  | boolean | True if file1 exists and is a regular file
+        if (args.length == 0) {
+            // MRI message if no args given
+            throw runtime.newArgumentError("wrong number of arguments");
+        }
+        IRubyObject cmdArg = args[0];
+        int cmd;
+        if (cmdArg instanceof RubyFixnum) {
+            cmd = (int)((RubyFixnum)cmdArg).getLongValue();
+        } else if (cmdArg instanceof RubyString &&
+                ((RubyString)cmdArg).getByteList().length() > 0) {
+            // MRI behavior: use first byte of string value if len > 0
+            cmd = ((RubyString)cmdArg).getByteList().charAt(0);
+        } else {
+            cmd = (int)cmdArg.convertToInteger().getLongValue();
+        }
+        
+        // MRI behavior: raise ArgumentError for 'unknown command' before
+        // checking number of args.
+        switch(cmd) {
+        
+        // implemented commands
         case 'f':
-            return RubyBoolean.newBoolean(runtime, file1.isFile());
-        //        ?g  | boolean | True if file1 has the \CF{setgid} bit
-        //            |         | set (false under NT)
-        //        ?G  | boolean | True if file1 exists and has a group
-        //            |         | ownership equal to the caller's group
-        //        ?k  | boolean | True if file1 exists and has the sticky bit set
-        //        ?l  | boolean | True if file1 exists and is a symbolic link
-        //        ?M  | Time    | Last modification time for file1
         case 'M':
+            break;
+
+        // unimplemented commands
+
+        // FIXME: obviously, these are mostly unimplemented.  Raising an
+        // ArgumentError 'unimplemented command' for them.
+        
+        case 'A': // ?A  | Time    | Last access time for file1
+        case 'b': // ?b  | boolean | True if file1 is a block device
+        case 'c': // ?c  | boolean | True if file1 is a character device
+        case 'C': // ?C  | Time    | Last change time for file1
+        case 'd': // ?d  | boolean | True if file1 exists and is a directory
+        case 'e': // ?e  | boolean | True if file1 exists
+        case 'g': // ?g  | boolean | True if file1 has the \CF{setgid} bit
+        case 'G': // ?G  | boolean | True if file1 exists and has a group
+                  //     |         | ownership equal to the caller's group
+        case 'k': // ?k  | boolean | True if file1 exists and has the sticky bit set
+        case 'l': // ?l  | boolean | True if file1 exists and is a symbolic link
+        case 'o': // ?o  | boolean | True if file1 exists and is owned by
+                  //     |         | the caller's effective uid  
+        case 'O': // ?O  | boolean | True if file1 exists and is owned by 
+                  //     |         | the caller's real uid
+        case 'p': // ?p  | boolean | True if file1 exists and is a fifo
+        case 'r': // ?r  | boolean | True if file1 is readable by the effective
+                  //     |         | uid/gid of the caller
+        case 'R': // ?R  | boolean | True if file is readable by the real
+                  //     |         | uid/gid of the caller
+        case 's': // ?s  | int/nil | If file1 has nonzero size, return the size,
+                  //     |         | otherwise return nil
+        case 'S': // ?S  | boolean | True if file1 exists and is a socket
+        case 'u': // ?u  | boolean | True if file1 has the setuid bit set
+        case 'w': // ?w  | boolean | True if file1 exists and is writable by
+        case 'W': // ?W  | boolean | True if file1 exists and is writable by
+                  //     |         | the real uid/gid
+        case 'x': // ?x  | boolean | True if file1 exists and is executable by
+                  //     |         | the effective uid/gid
+        case 'X': // ?X  | boolean | True if file1 exists and is executable by
+                  //     |         | the real uid/gid
+        case 'z': // ?z  | boolean | True if file1 exists and has a zero length
+                  //
+                  //        Tests that take two files:
+                  //
+        case '-': // ?-  | boolean | True if file1 and file2 are identical
+        case '=': // ?=  | boolean | True if the modification times of file1
+                  //     |         | and file2 are equal
+        case '<': // ?<  | boolean | True if the modification time of file1
+                  //     |         | is prior to that of file2
+        case '>': // ?>  | boolean | True if the modification time of file1
+                  //     |         | is after that of file2
+            
+            throw runtime.newArgumentError("unimplemented command ?"+(char)cmd);
+            
+        default:
+            // matches MRI message
+            throw runtime.newArgumentError("unknown command ?"+(char)cmd);
+            
+        }
+
+        // MRI behavior: now check arg count
+
+        switch(cmd) {
+        case '-':
+        case '=':
+        case '<':
+        case '>':
+            if (args.length != 3) {
+                throw runtime.newArgumentError(args.length,3);
+            }
+            break;
+        default:
+            if (args.length != 2) {
+                throw runtime.newArgumentError(args.length,2);
+            }
+            break;
+        }
+        
+        File pwd = new File(runtime.getCurrentDirectory());
+        File file1 = new File(pwd,args[1].convertToString().toString());
+        Calendar calendar = null;
+                
+        switch (cmd) {
+        case 'f': // ?f  | boolean | True if file1 exists and is a regular file
+            return RubyBoolean.newBoolean(runtime, file1.isFile());
+        
+        case 'M': // ?M  | Time    | Last modification time for file1
             calendar = Calendar.getInstance();
             calendar.setTimeInMillis(file1.lastModified());
             return RubyTime.newTime(runtime, calendar);
-        //        ?o  | boolean | True if file1 exists and is owned by
-        //            |         | the caller's effective uid
-        //        ?O  | boolean | True if file1 exists and is owned by
-        //            |         | the caller's real uid
-        //        ?p  | boolean | True if file1 exists and is a fifo
-        //        ?r  | boolean | True if file1 is readable by the effective
-        //            |         | uid/gid of the caller
-        //        ?R  | boolean | True if file is readable by the real
-        //            |         | uid/gid of the caller
-        //        ?s  | int/nil | If file1 has nonzero size, return the size,
-        //            |         | otherwise return nil
-        //        ?S  | boolean | True if file1 exists and is a socket
-        //        ?u  | boolean | True if file1 has the setuid bit set
-        //        ?w  | boolean | True if file1 exists and is writable by
-        //            |         | the effective uid/gid
-        //        ?W  | boolean | True if file1 exists and is writable by
-        //            |         | the real uid/gid
-        //        ?x  | boolean | True if file1 exists and is executable by
-        //            |         | the effective uid/gid
-        //        ?X  | boolean | True if file1 exists and is executable by
-        //            |         | the real uid/gid
-        //        ?z  | boolean | True if file1 exists and has a zero length
-        //
-        //        Tests that take two files:
-        //
-        //        ?-  | boolean | True if file1 and file2 are identical
-        //        ?=  | boolean | True if the modification times of file1
-        //            |         | and file2 are equal
-        //        ?<  | boolean | True if the modification time of file1
-        //            |         | is prior to that of file2
-        //        ?>  | boolean | True if the modification time of file1
-        //            |         | is after that of file2
+        default:
+            throw new InternalError("unreachable code reached!");
         }
-        throw RaiseException.createNativeRaiseException(runtime, 
-            new UnsupportedOperationException("test flag " + ((char) cmd) + " is not implemented"));
     }
 
     public static IRubyObject backquote(IRubyObject recv, IRubyObject aString) {
