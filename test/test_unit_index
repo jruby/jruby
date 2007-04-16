@@ -64,6 +64,7 @@ test_comparable
 test_core_arities
 #test_digest2
 test_dup_clone_taint_freeze
+test_env
 test_globals
 test_hash
 test_higher_javasupport
