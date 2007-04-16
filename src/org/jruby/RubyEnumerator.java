@@ -27,12 +27,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.internal.runtime.methods.MultiStubMethod;
-import org.jruby.internal.runtime.methods.NoopMultiStub;
-
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -62,25 +60,95 @@ public class RubyEnumerator extends RubyObject {
         RubyModule enumerableModule = runtime.getModule("Enumerable");
         RubyClass object = runtime.getObject();
         RubyClass enumeratorClass = enumerableModule.defineClassUnder("Enumerator", object, ENUMERATOR_ALLOCATOR);
-        RubyEnumeratorStub0 enumeratorStub = RubyEnumeratorStub0.createStub(enumeratorClass, object, enumerableModule);
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyEnumerator.class);
 
         enumeratorClass.includeModule(enumerableModule);
-        enumeratorClass.getMetaClass().addMethod("new", enumeratorStub.enumerator__new);
-        enumeratorClass.addMethod("initialize", enumeratorStub.enumerator__initialize);
-        enumeratorClass.addMethod("each", enumeratorStub.enumerator__each);
+        enumeratorClass.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("new_instance"));
+        enumeratorClass.defineMethod("initialize", callbackFactory.getOptSingletonMethod("initialize"));
+        enumeratorClass.defineMethod("each", callbackFactory.getOptSingletonMethod("each"));
 
-        object.addMethod("to_enum", enumeratorStub.object__to_enum);
-        object.addMethod("enum_for", enumeratorStub.object__to_enum);
+        object.defineMethod("to_enum", callbackFactory.getOptSingletonMethod("o_to_enum"));
+        object.defineMethod("enum_for", callbackFactory.getOptSingletonMethod("o_to_enum"));
 
-        enumerableModule.addMethod("enum_with_index", enumeratorStub.enumerable__enum_with_index);
-        enumerableModule.addMethod("each_slice", enumeratorStub.enumerable__each_slice);
-        enumerableModule.addMethod("enum_slice", enumeratorStub.enumerable__enum_slice);
-        enumerableModule.addMethod("each_cons", enumeratorStub.enumerable__each_cons);
-        enumerableModule.addMethod("enum_cons", enumeratorStub.enumerable__enum_cons);
+        enumerableModule.defineMethod("enum_with_index", callbackFactory.getSingletonMethod("each_with_index"));
+        enumerableModule.defineMethod("each_slice", callbackFactory.getSingletonMethod("each_slice",IRubyObject.class));
+        enumerableModule.defineMethod("enum_slice", callbackFactory.getSingletonMethod("enum_slice",IRubyObject.class));
+        enumerableModule.defineMethod("each_cons", callbackFactory.getSingletonMethod("each_cons",IRubyObject.class));
+        enumerableModule.defineMethod("enum_cons", callbackFactory.getSingletonMethod("enum_cons",IRubyObject.class));
     }
 
     private RubyEnumerator(Ruby runtime, RubyClass type) {
         super(runtime, type);
+    }
+
+    public static IRubyObject new_instance(IRubyObject self, IRubyObject[] args, Block block) {
+        RubyClass klass = (RubyClass)self;
+        RubyEnumerator result = (RubyEnumerator) klass.allocate();
+        result.callInit(args, block);
+        return result;
+    }
+
+    public static IRubyObject initialize(IRubyObject self, IRubyObject[] args, Block block) {
+        return ((RubyEnumerator) self).initialize(self.getRuntime().getCurrentContext(), args, block);
+    }
+
+    public static IRubyObject each(IRubyObject self, IRubyObject[] args, Block block) {
+        return ((RubyEnumerator) self).each(self.getRuntime().getCurrentContext(), args, block);
+    }
+
+    public static IRubyObject o_to_enum(IRubyObject self, IRubyObject[] args, Block block) {
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+
+        newArgs[0] = self;
+        System.arraycopy(args, 0, newArgs, 1, args.length);
+
+        return self.getRuntime().getModule("Enumerable").getConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", newArgs);
+    }
+
+    public static IRubyObject each_with_index(IRubyObject self, Block block) {
+        return self.getRuntime().getModule("Enumerable").getConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
+                               new IRubyObject[] { self, self.getRuntime().newSymbol("each_with_index") });
+    }
+
+    public static IRubyObject each_slice(IRubyObject self, IRubyObject arg, Block block) {
+        long sliceSize = arg.convertToInteger().getLongValue();
+
+        if (sliceSize <= 0L) {
+            throw self.getRuntime().newArgumentError("invalid slice size");
+        } 
+
+        SlicedBlockCallback sliceBlock = new SlicedBlockCallback(self.getRuntime(), block, sliceSize);
+
+        RubyEnumerable.callEach(self.getRuntime().getCurrentContext(), self, self.getMetaClass(), sliceBlock);
+            
+        if (sliceBlock.hasLeftovers()) {
+            sliceBlock.yieldLeftovers(self.getRuntime().getCurrentContext());
+        }
+
+        return self.getRuntime().getNil();
+    }
+
+    public static IRubyObject each_cons(IRubyObject self, IRubyObject arg, Block block) {
+        long consecutiveSize = arg.convertToInteger().getLongValue();
+
+        if (consecutiveSize <= 0L) {
+            throw self.getRuntime().newArgumentError("invalid size");
+        }
+
+        RubyEnumerable.callEach(self.getRuntime().getCurrentContext(), self, self.getMetaClass(), 
+                                new ConsecutiveBlockCallback(self.getRuntime(), block, consecutiveSize));
+
+        return self.getRuntime().getNil();
+    }
+
+    public static IRubyObject enum_slice(IRubyObject self, IRubyObject arg, Block block) {
+        return self.getRuntime().getModule("Enumerable").getConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
+                                     new IRubyObject[] { self, self.getRuntime().newSymbol("each_slice"), arg });
+    }
+
+    public static IRubyObject enum_cons(IRubyObject self, IRubyObject arg, Block block) {
+        return self.getRuntime().getModule("Enumerable").getConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
+                               new IRubyObject[] { self, self.getRuntime().newSymbol("each_cons"), arg });
     }
 
     /** Primes the instance. Little validation is done at this stage */
@@ -191,142 +259,6 @@ public class RubyEnumerator extends RubyObject {
             }
 
             return runtime.getNil();
-        }
-    }
-
-    /** Multi-stub for all enumerator methods */
-    public static class RubyEnumeratorStub0 extends NoopMultiStub {
-        private final RubyModule enumerator;
-        private final Ruby runtime;
-        
-        public static RubyEnumeratorStub0 createStub(RubyClass enumeratorClass,
-                RubyClass objectClass, RubyModule enumerableModule) {
-            return new RubyEnumeratorStub0(enumeratorClass, objectClass, enumerableModule);
-        }
-
-        public final MultiStubMethod enumerator__new;
-        public final MultiStubMethod enumerator__initialize;
-        public final MultiStubMethod enumerator__each;
-        public final MultiStubMethod object__to_enum;
-        public final MultiStubMethod enumerable__each_slice;
-        public final MultiStubMethod enumerable__each_cons;
-        public final MultiStubMethod enumerable__enum_with_index;
-        public final MultiStubMethod enumerable__enum_slice;
-        public final MultiStubMethod enumerable__enum_cons;
-
-        private RubyEnumeratorStub0(RubyClass enumeratorClass,
-                RubyClass objectClass, RubyModule enumerableModule) {
-            enumerator = enumeratorClass;
-            runtime = enumeratorClass.getRuntime();
-            enumerator__new = new MultiStubMethod(RubyEnumeratorStub0.this, 0, 
-                    enumeratorClass, Arity.required(1), Visibility.PUBLIC);
-            enumerator__initialize = new MultiStubMethod(RubyEnumeratorStub0.this, 1, 
-                    enumeratorClass, Arity.required(1), Visibility.PRIVATE);          
-            enumerator__each = new MultiStubMethod(RubyEnumeratorStub0.this, 2, 
-                    enumeratorClass, Arity.optional(), Visibility.PUBLIC);
-            object__to_enum = new MultiStubMethod(RubyEnumeratorStub0.this, 3, 
-                    objectClass, Arity.optional(), Visibility.PUBLIC);
-            enumerable__each_slice = new MultiStubMethod(RubyEnumeratorStub0.this, 4, 
-                    enumerableModule, Arity.singleArgument(), Visibility.PUBLIC);
-            enumerable__each_cons = new MultiStubMethod(RubyEnumeratorStub0.this, 5, 
-                    enumerableModule, Arity.singleArgument(), Visibility.PUBLIC);
-            enumerable__enum_with_index = new MultiStubMethod(RubyEnumeratorStub0.this, 6, 
-                    enumerableModule, Arity.noArguments(), Visibility.PUBLIC);
-            enumerable__enum_slice = new MultiStubMethod(RubyEnumeratorStub0.this, 7, 
-                    enumerableModule, Arity.singleArgument(), Visibility.PUBLIC);
-            enumerable__enum_cons = new MultiStubMethod(RubyEnumeratorStub0.this, 8, 
-                    enumerableModule, Arity.singleArgument(), Visibility.PUBLIC);
-        }
-
-        /** Enumerable::Enumerator#new */
-        public IRubyObject method0(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            RubyClass klass = (RubyClass)self;
-            
-            RubyEnumerator result = (RubyEnumerator) klass.allocate();
-            
-            result.callInit(args, block);
-            
-            return result;
-        }
-
-        /** Enumerable::Enumerator#initialize */
-        public IRubyObject method1(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            return ((RubyEnumerator) self).initialize(tc, args, block);
-        }
-
-        /** Enumerable::Enumerator#each */
-        public IRubyObject method2(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            return ((RubyEnumerator) self).each(tc, args, block);
-        }
-
-        /** Object#to_enum and Object#enum_for. Just like Enumerable::Enumerator.new(self, arg_0) */
-        public IRubyObject method3(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-            newArgs[0] = self;
-            System.arraycopy(args, 0, newArgs, 1, args.length);
-
-            return enumerator.callMethod(tc, "new", newArgs);
-        }
-
-        /** Enumerable:#each_slice */
-        public IRubyObject method4(final ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(tc.getRuntime(), args, 1, 1);
-
-            long sliceSize = args[0].convertToInteger().getLongValue();
-
-            if (sliceSize <= 0L) {
-                throw runtime.newArgumentError("invalid slice size");
-            } 
-
-            SlicedBlockCallback sliceBlock = new SlicedBlockCallback(runtime, block, sliceSize);
-
-            RubyEnumerable.callEach(tc, self, self.getMetaClass(), sliceBlock);
-            
-            if (sliceBlock.hasLeftovers()) {
-                sliceBlock.yieldLeftovers(tc);
-            }
-
-            return runtime.getNil();
-        }
-
-        /** Enumerable:#each_cons */
-        public IRubyObject method5(final ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(tc.getRuntime(), args, 1, 1);
-
-            long consecutiveSize = args[0].convertToInteger().getLongValue();
-
-            if (consecutiveSize <= 0L) {
-                throw runtime.newArgumentError("invalid size");
-            }
-
-            RubyEnumerable.callEach(tc, self, self.getMetaClass(), 
-                    new ConsecutiveBlockCallback(runtime, block, consecutiveSize));
-
-            return runtime.getNil();
-        }
-
-        /** Enumerable#enum_with_index */
-        public IRubyObject method6(final ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(tc.getRuntime(), args, 0, 0);
-
-            return enumerator.callMethod(tc, "new", 
-                    new IRubyObject[] { self, runtime.newSymbol("each_with_index") });
-        }
-
-        /** Enumerable#enum_slice */
-        public IRubyObject method7(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(tc.getRuntime(), args, 1, 1);
-
-            return enumerator.callMethod(tc, "new", 
-                    new IRubyObject[] { self, runtime.newSymbol("each_slice"), args[0] });
-        }
-
-        /** Enumerable#enum_cons */
-        public IRubyObject method8(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(tc.getRuntime(), args, 1, 1);
-
-            return enumerator.callMethod(tc, "new", 
-                    new IRubyObject[] { self, runtime.newSymbol("each_cons"), args[0] });
         }
     }
 }
