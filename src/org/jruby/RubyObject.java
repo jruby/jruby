@@ -44,6 +44,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -138,6 +140,26 @@ public class RubyObject implements Cloneable, IRubyObject {
         // (mri: OBJSETUP)
         taint |= runtime.getSafeLevel() >= 3;
     }
+    
+    public static RubyClass createObjectClass(Ruby runtime, RubyClass objectClass) {
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyObject.class);   
+        objectClass.index = ClassIndex.OBJECT;
+        
+        objectClass.definePrivateMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        objectClass.definePrivateMethod("inherited", callbackFactory.getMethod("inherited", IRubyObject.class));
+        objectClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", IRubyObject.class));
+        
+        return objectClass;
+    }
+    
+    public static ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            IRubyObject instance = new RubyObject(runtime, klass);
+            instance.setMetaClass(klass);
+
+            return instance;
+        }
+    };
 
     public void attachToObjectSpace() {
         getRuntime().getObjectSpace().add(this);

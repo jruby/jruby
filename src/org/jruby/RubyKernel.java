@@ -59,8 +59,6 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.meta.FileMetaClass;
-import org.jruby.runtime.builtin.meta.IOMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.ShellLauncher;
@@ -304,7 +302,7 @@ public class RubyKernel {
             }
         } 
 
-        return ((FileMetaClass) runtime.getClass("File")).open(args, block);
+        return RubyFile.open(runtime.getClass("File"), args, block);
     }
 
     public static IRubyObject gets(IRubyObject recv, IRubyObject[] args) {
@@ -531,7 +529,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject select(IRubyObject recv, IRubyObject[] args) {
-        return IOMetaClass.select_static(recv.getRuntime(), args);
+        return RubyIO.select_static(recv.getRuntime(), args);
     }
 
     public static IRubyObject sleep(IRubyObject recv, IRubyObject seconds) {

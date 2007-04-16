@@ -121,6 +121,20 @@ public class RubyClass extends RubyModule {
         }
     }
     
+    /**
+     * Create an initial Object meta class before Module and Kernel dependencies have
+     * squirreled themselves together.
+     * 
+     * @param runtime we need it
+     * @return a half-baked meta class for object
+     */
+    public static RubyClass createBootstrapMetaClass(Ruby runtime, String className, 
+            RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList cref) {
+        RubyClass objectClass = new RubyClass(runtime, null, superClass, allocator, cref, className);
+        
+        return objectClass;
+    }
+    
     public int getNativeTypeIndex() {
         return ClassIndex.CLASS;
     }

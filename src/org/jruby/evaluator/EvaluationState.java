@@ -30,9 +30,6 @@
 
 package org.jruby.evaluator;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.jruby.Ruby;
 import org.jruby.MetaClass;
 import org.jruby.RubyArray;

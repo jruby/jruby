@@ -65,7 +65,6 @@ public final class DefaultMethod extends DynamicMethod {
     private Node body;
     private ArgsNode argsNode;
     private SinglyLinkedList cref;
-    private boolean hasBeenTargeted = false;
     private int callCount = 0;
     private Script jitCompiledScript;
 

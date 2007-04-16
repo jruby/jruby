@@ -37,9 +37,12 @@ package org.jruby;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -58,6 +61,31 @@ public class RubySymbol extends RubyObject {
 
         runtime.symbolLastId++;
         this.id = runtime.symbolLastId;
+    }
+    
+    public static RubyClass createSymbolClass(Ruby runtime) {
+        RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubySymbol.class);   
+        RubyClass symbolMetaClass = symbolClass.getMetaClass();
+        symbolClass.index = ClassIndex.SYMBOL;
+
+        
+        symbolClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        symbolClass.defineFastMethod("freeze", callbackFactory.getFastMethod("freeze"));
+        symbolClass.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
+        symbolClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
+        symbolClass.defineFastMethod("taint", callbackFactory.getFastMethod("taint"));
+        symbolClass.defineFastMethod("to_i", callbackFactory.getFastMethod("to_i"));
+        symbolClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
+        symbolClass.defineFastMethod("to_sym", callbackFactory.getFastMethod("to_sym"));
+        symbolClass.defineAlias("id2name", "to_s");
+        symbolClass.defineAlias("to_int", "to_i");
+
+        symbolMetaClass.defineFastMethod("all_symbols", callbackFactory.getFastSingletonMethod("all_symbols"));
+
+        symbolMetaClass.undefineMethod("new");
+        
+        return symbolClass;
     }
     
     public int getNativeTypeIndex() {
@@ -302,7 +330,9 @@ public class RubySymbol extends RubyObject {
         return false;
     }
     
- 
+    public static IRubyObject all_symbols(IRubyObject recv) {
+        return recv.getRuntime().newArrayNoCopy(recv.getRuntime().getSymbolTable().all_symbols());
+    }
 
     public static RubySymbol unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubySymbol result = RubySymbol.newSymbol(input.getRuntime(), RubyString.byteListToString(input.unmarshalString()));

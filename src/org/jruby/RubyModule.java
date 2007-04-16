@@ -52,6 +52,7 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -115,6 +116,79 @@ public class RubyModule extends RubyObject {
         runtime.moduleLastId++;
         this.id = runtime.moduleLastId;
     }
+
+    public static RubyClass createModuleClass(Ruby runtime, RubyClass moduleClass) {
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyModule.class);   
+        RubyClass moduleMetaClass = moduleClass.getMetaClass();
+        moduleClass.index = ClassIndex.MODULE;
+
+        moduleClass.defineFastMethod("===", callbackFactory.getFastMethod("op_eqq", IRubyObject.class));
+        moduleClass.defineFastMethod("<=>", callbackFactory.getFastMethod("op_cmp", IRubyObject.class));
+        moduleClass.defineFastMethod("<", callbackFactory.getFastMethod("op_lt", IRubyObject.class));
+        moduleClass.defineFastMethod("<=", callbackFactory.getFastMethod("op_le", IRubyObject.class));
+        moduleClass.defineFastMethod(">", callbackFactory.getFastMethod("op_gt", IRubyObject.class));
+        moduleClass.defineFastMethod(">=", callbackFactory.getFastMethod("op_ge", IRubyObject.class));
+        moduleClass.defineFastMethod("ancestors", callbackFactory.getFastMethod("ancestors"));
+        moduleClass.defineFastMethod("class_variables", callbackFactory.getFastMethod("class_variables"));
+        moduleClass.defineFastMethod("const_defined?", callbackFactory.getFastMethod("const_defined", IRubyObject.class));
+        moduleClass.defineFastMethod("const_get", callbackFactory.getFastMethod("const_get", IRubyObject.class));
+        moduleClass.defineMethod("const_missing", callbackFactory.getMethod("const_missing", IRubyObject.class));
+        moduleClass.defineFastMethod("const_set", callbackFactory.getFastMethod("const_set", IRubyObject.class, IRubyObject.class));
+        moduleClass.defineFastMethod("constants", callbackFactory.getFastMethod("constants"));
+        moduleClass.defineMethod("extended", callbackFactory.getMethod("extended", IRubyObject.class));
+        moduleClass.defineFastMethod("included", callbackFactory.getFastMethod("included", IRubyObject.class));
+        moduleClass.defineFastMethod("included_modules", callbackFactory.getFastMethod("included_modules"));
+        moduleClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        moduleClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", IRubyObject.class));
+        moduleClass.defineFastMethod("instance_method", callbackFactory.getFastMethod("instance_method", IRubyObject.class));
+        moduleClass.defineFastMethod("instance_methods",callbackFactory.getFastOptMethod("instance_methods"));
+        moduleClass.defineFastMethod("method_defined?", callbackFactory.getFastMethod("method_defined", IRubyObject.class));
+        moduleClass.defineMethod("module_eval", callbackFactory.getOptMethod("module_eval"));
+        moduleClass.defineFastMethod("name", callbackFactory.getFastMethod("name"));
+        moduleClass.defineFastMethod("private_class_method", callbackFactory.getFastOptMethod("private_class_method"));
+        moduleClass.defineFastMethod("private_instance_methods", callbackFactory.getFastOptMethod("private_instance_methods"));
+        moduleClass.defineFastMethod("protected_instance_methods", callbackFactory.getFastOptMethod("protected_instance_methods"));
+        moduleClass.defineFastMethod("public_class_method", callbackFactory.getFastOptMethod("public_class_method"));
+        moduleClass.defineFastMethod("public_instance_methods", callbackFactory.getFastOptMethod("public_instance_methods"));
+        moduleClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
+        
+        moduleClass.defineAlias("class_eval", "module_eval");
+        
+        moduleClass.defineFastPrivateMethod("alias_method", callbackFactory.getFastMethod("alias_method", IRubyObject.class, IRubyObject.class));
+        moduleClass.defineFastPrivateMethod("append_features", callbackFactory.getFastMethod("append_features", IRubyObject.class));
+        moduleClass.defineFastPrivateMethod("attr", callbackFactory.getFastOptMethod("attr"));
+        moduleClass.defineFastPrivateMethod("attr_reader", callbackFactory.getFastOptMethod("attr_reader"));
+        moduleClass.defineFastPrivateMethod("attr_writer", callbackFactory.getFastOptMethod("attr_writer"));
+        moduleClass.defineFastPrivateMethod("attr_accessor", callbackFactory.getFastOptMethod("attr_accessor"));
+        moduleClass.definePrivateMethod("define_method", callbackFactory.getOptMethod("define_method"));
+        moduleClass.defineFastPrivateMethod("extend_object", callbackFactory.getFastMethod("extend_object", IRubyObject.class));
+        moduleClass.defineFastPrivateMethod("include", callbackFactory.getFastOptMethod("include"));
+        moduleClass.definePrivateMethod("method_added", callbackFactory.getMethod("method_added", IRubyObject.class));
+        moduleClass.definePrivateMethod("method_removed", callbackFactory.getMethod("method_removed", IRubyObject.class));
+        moduleClass.definePrivateMethod("method_undefined", callbackFactory.getMethod("method_undefined", IRubyObject.class));
+        moduleClass.defineFastPrivateMethod("module_function", callbackFactory.getFastOptMethod("module_function"));
+        moduleClass.defineFastPrivateMethod("public", callbackFactory.getFastOptMethod("rbPublic"));
+        moduleClass.defineFastPrivateMethod("protected", callbackFactory.getFastOptMethod("rbProtected"));
+        moduleClass.defineFastPrivateMethod("private", callbackFactory.getFastOptMethod("rbPrivate"));
+        moduleClass.defineFastPrivateMethod("remove_class_variable", callbackFactory.getFastMethod("remove_class_variable", IRubyObject.class));
+        moduleClass.defineFastPrivateMethod("remove_const", callbackFactory.getFastMethod("remove_const", IRubyObject.class));
+        moduleClass.defineFastPrivateMethod("remove_method", callbackFactory.getFastOptMethod("remove_method"));
+        moduleClass.defineFastPrivateMethod("undef_method", callbackFactory.getFastMethod("undef_method", IRubyObject.class));
+        
+        moduleMetaClass.defineMethod("nesting", callbackFactory.getSingletonMethod("nesting"));
+
+        callbackFactory = runtime.callbackFactory(RubyKernel.class);
+        moduleClass.defineFastMethod("autoload", callbackFactory.getFastSingletonMethod("autoload", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        moduleClass.defineFastMethod("autoload?", callbackFactory.getFastSingletonMethod("autoload_p", RubyKernel.IRUBY_OBJECT));
+
+        return moduleClass;
+    }    
+    
+    static ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return RubyModule.newModule(runtime, klass, null);
+        }
+    };
     
     public int getNativeTypeIndex() {
         return ClassIndex.MODULE;
@@ -1703,5 +1777,23 @@ public class RubyModule extends RubyObject {
 
     public SinglyLinkedList getCRef() {
         return cref;
+    }
+    
+    /* Module class methods */
+    
+    /** 
+     * Return an array of nested modules or classes.
+     */
+    public static RubyArray nesting(IRubyObject recv, Block block) {
+        Ruby runtime = recv.getRuntime();
+        RubyModule object = runtime.getObject();
+        SinglyLinkedList base = runtime.getCurrentContext().peekCRef();
+        RubyArray result = runtime.newArray();
+        
+        for (SinglyLinkedList current = base; current.getValue() != object; current = current.getNext()) {
+            result.append((RubyModule)current.getValue());
+        }
+        
+        return result;
     }
 }

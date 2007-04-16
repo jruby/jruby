@@ -34,8 +34,11 @@
 package org.jruby;
 
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author  jpetersen
@@ -47,6 +50,25 @@ public class RubyBinding extends RubyObject {
         super(runtime, rubyClass);
         
         this.block = block;
+    }
+    
+    private static ObjectAllocator BINDING_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            RubyBinding instance = runtime.newBinding();
+            
+            instance.setMetaClass(klass);
+            
+            return instance;
+        }
+    };
+    
+    public static RubyClass createBindingClass(Ruby runtime) {
+        RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), BINDING_ALLOCATOR);
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyBinding.class);   
+        
+        bindingClass.getMetaClass().defineMethod("of_caller", callbackFactory.getSingletonMethod("of_caller"));
+        
+        return bindingClass;
     }
 
     public Block getBlock() {
@@ -91,5 +113,9 @@ public class RubyBinding extends RubyObject {
         Block bindingBlock = Block.createBinding(frame, context.getPreviousScope());
         
         return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock);
+    }
+    
+    public static IRubyObject of_caller(IRubyObject recv, Block aBlock) {
+        return RubyBinding.newBindingOfCaller(recv.getRuntime());
     }
 }

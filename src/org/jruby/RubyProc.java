@@ -37,6 +37,8 @@ package org.jruby;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -51,6 +53,32 @@ public class RubyProc extends RubyObject {
         super(runtime, rubyClass);
         
         this.isLambda = isLambda;
+    }
+    
+    private static ObjectAllocator PROC_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            RubyProc instance = RubyProc.newProc(runtime, false);
+
+            instance.setMetaClass(klass);
+
+            return instance;
+        }
+    };
+
+    public static RubyClass createProcClass(Ruby runtime) {
+        RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), PROC_ALLOCATOR);
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyProc.class);
+        
+        procClass.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
+        procClass.defineFastMethod("binding", callbackFactory.getFastMethod("binding"));
+        procClass.defineMethod("call", callbackFactory.getOptMethod("call"));
+        procClass.defineAlias("[]", "call");
+        procClass.defineFastMethod("to_proc", callbackFactory.getFastMethod("to_proc"));
+        procClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+
+        procClass.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        
+        return procClass;
     }
 
     public Block getBlock() {
@@ -88,6 +116,24 @@ public class RubyProc extends RubyObject {
     	return newProc;
     }
     
+    /**
+     * Create a new instance of a Proc object.  We override this method (from RubyClass)
+     * since we need to deal with special case of Proc.new with no arguments or block arg.  In 
+     * this case, we need to check previous frame for a block to consume.
+     */
+    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = recv.getRuntime();
+        IRubyObject obj = ((RubyClass) recv).allocate();
+        
+        // No passed in block, lets check next outer frame for one ('Proc.new')
+        if (!block.isGiven()) {
+            block = runtime.getCurrentContext().getPreviousFrame().getBlock();
+        }
+        
+        obj.callMethod(runtime.getCurrentContext(), "initialize", args, block);
+        return obj;
+    }
+
     public IRubyObject binding() {
         return getRuntime().newBinding(block);
     }
