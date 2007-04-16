@@ -111,7 +111,7 @@ externals/mri/ruby/test_exception
 #externals/mri/ruby/test_file
 externals/mri/ruby/test_float
 externals/mri/ruby/test_gc
-#externals/mri/ruby/test_hash
+externals/mri/ruby/test_hash
 externals/mri/ruby/test_ifunless
 externals/mri/ruby/test_io
 #externals/mri/ruby/test_iterator
