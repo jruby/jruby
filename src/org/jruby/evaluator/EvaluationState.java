@@ -624,7 +624,7 @@ public class EvaluationState {
                         for (int j = 0,k = expressions.getLength(); j < k; j++) {
                             IRubyObject condition = expressions.eltInternal(j);
 
-                            if ((expression != null && condition.callMethod(context, "===", expression)
+                            if ((expression != null && condition.callMethod(context, MethodIndex.OP_EQQ, "===", expression)
                                     .isTrue())
                                     || (expression == null && condition.isTrue())) {
                                 node = ((WhenNode) firstWhenNode).getBodyNode();
@@ -636,7 +636,7 @@ public class EvaluationState {
 
                     result = evalInternal(runtime,context, tag, self, aBlock);
 
-                    if ((expression != null && result.callMethod(context, "===", expression).isTrue())
+                    if ((expression != null && result.callMethod(context, MethodIndex.OP_EQQ, "===", expression).isTrue())
                             || (expression == null && result.isTrue())) {
                         node = whenNode.getBodyNode();
                         return evalInternal(runtime, context, node, self, aBlock);
@@ -645,7 +645,7 @@ public class EvaluationState {
             } else {
                 result = evalInternal(runtime,context, whenNode.getExpressionNodes(), self, aBlock);
 
-                if ((expression != null && result.callMethod(context, "===", expression).isTrue())
+                if ((expression != null && result.callMethod(context, MethodIndex.OP_EQQ, "===", expression).isTrue())
                         || (expression == null && result.isTrue())) {
                     node = ((WhenNode) firstWhenNode).getBodyNode();
                     return evalInternal(runtime, context, node, self, aBlock);

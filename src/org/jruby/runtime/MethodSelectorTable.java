@@ -11,7 +11,11 @@ package org.jruby.runtime;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
+import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
+import org.jruby.RubyModule;
+import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 
 /**
@@ -63,6 +67,7 @@ public class MethodSelectorTable {
         table[ClassIndex.ARRAY][MethodIndex.TO_A] = RubyArray.TO_A_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.HASH] = RubyArray.HASH_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.LENGTH] = RubyArray.LENGTH_SWITCHVALUE;
+        table[ClassIndex.ARRAY][MethodIndex.LAST] = RubyArray.LAST_SWITCHVALUE;
         
         // String
         table[ClassIndex.STRING] = new byte[MethodIndex.MAX_METHODS];
@@ -84,5 +89,36 @@ public class MethodSelectorTable {
         table[ClassIndex.STRING][MethodIndex.OP_TIMES] = RubyString.OP_TIMES_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.OP_LE] = RubyString.OP_LE_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.LENGTH] = RubyString.LENGTH_SWITCHVALUE;
+        table[ClassIndex.STRING][MethodIndex.OP_MATCH] = RubyString.MATCH_SWITCHVALUE;
+        table[ClassIndex.STRING][MethodIndex.OP_EQQ] = RubyString.EQQ_SWITCHVALUE;
+
+        // Regexp
+        table[ClassIndex.REGEXP] = new byte[MethodIndex.MAX_METHODS];
+        table[ClassIndex.REGEXP][MethodIndex.EQUALEQUAL] = RubyRegexp.EQUALEQUAL_SWITCHVALUE;
+        table[ClassIndex.REGEXP][MethodIndex.NIL_P] = RubyRegexp.NIL_P_SWITCHVALUE;
+        table[ClassIndex.REGEXP][MethodIndex.TO_S] = RubyRegexp.TO_S_SWITCHVALUE;
+        table[ClassIndex.REGEXP][MethodIndex.HASH] = RubyRegexp.HASH_SWITCHVALUE;
+        table[ClassIndex.REGEXP][MethodIndex.OP_MATCH] = RubyRegexp.MATCH_SWITCHVALUE;
+        table[ClassIndex.REGEXP][MethodIndex.OP_EQQ] = RubyRegexp.EQQ_SWITCHVALUE;
+
+        // Hash
+        table[ClassIndex.HASH] = new byte[MethodIndex.MAX_METHODS];
+        table[ClassIndex.HASH][MethodIndex.AREF] = RubyHash.AREF_SWITCHVALUE;
+        table[ClassIndex.HASH][MethodIndex.ASET] = RubyHash.ASET_SWITCHVALUE;
+        table[ClassIndex.HASH][MethodIndex.NIL_P] = RubyHash.NIL_P_SWITCHVALUE;
+        table[ClassIndex.HASH][MethodIndex.EQUALEQUAL] = RubyHash.EQUALEQUAL_SWITCHVALUE;
+        table[ClassIndex.HASH][MethodIndex.EMPTY_P] = RubyHash.EMPTY_P_SWITCHVALUE;
+        table[ClassIndex.HASH][MethodIndex.TO_S] = RubyHash.TO_S_SWITCHVALUE;
+        table[ClassIndex.HASH][MethodIndex.TO_A] = RubyHash.TO_A_SWITCHVALUE;
+        table[ClassIndex.HASH][MethodIndex.HASH] = RubyHash.HASH_SWITCHVALUE;
+        table[ClassIndex.HASH][MethodIndex.LENGTH] = RubyHash.LENGTH_SWITCHVALUE;
+
+        // Module
+        table[ClassIndex.MODULE] = new byte[MethodIndex.MAX_METHODS];
+        table[ClassIndex.MODULE][MethodIndex.OP_EQQ] = RubyModule.EQQ_SWITCHVALUE;
+
+        // Class
+        table[ClassIndex.CLASS] = new byte[MethodIndex.MAX_METHODS];
+        table[ClassIndex.CLASS][MethodIndex.OP_EQQ] = RubyClass.EQQ_SWITCHVALUE;
     }
 }

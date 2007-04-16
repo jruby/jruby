@@ -44,8 +44,10 @@ import jregex.REFlags;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -135,6 +137,41 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     
     public int getNativeTypeIndex() {
         return ClassIndex.REGEXP;
+    }
+
+
+    public static final byte NIL_P_SWITCHVALUE = 1;
+    public static final byte EQUALEQUAL_SWITCHVALUE = 2;
+    public static final byte TO_S_SWITCHVALUE = 3;
+    public static final byte HASH_SWITCHVALUE = 4;
+    public static final byte MATCH_SWITCHVALUE = 5;
+    public static final byte EQQ_SWITCHVALUE = 6;
+    
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
+            IRubyObject[] args, CallType callType, Block block) {
+        switch (getRuntime().getSelectorTable().table[rubyclass.index][methodIndex]) {
+        case NIL_P_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return nil_p();
+        case EQUALEQUAL_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return equal(args[0]);
+        case TO_S_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return to_s();
+        case HASH_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return hash();
+        case MATCH_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return match(args[0]);
+        case EQQ_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return eqq(args[0]);
+        case 0:
+        default:
+            return super.callMethod(context, rubyclass, name, args, callType, block);
+        }
     }
 
     public void initialize(String regex, int options) {

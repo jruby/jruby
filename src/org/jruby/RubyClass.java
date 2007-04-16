@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.Map;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
@@ -122,6 +123,20 @@ public class RubyClass extends RubyModule {
     
     public int getNativeTypeIndex() {
         return ClassIndex.CLASS;
+    }
+
+    public static final byte EQQ_SWITCHVALUE = 1;
+
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
+            IRubyObject[] args, CallType callType, Block block) {
+        switch (getRuntime().getSelectorTable().table[rubyclass.index][methodIndex]) {
+        case EQQ_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return op_eqq(args[0]);
+        case 0:
+        default:
+            return super.callMethod(context, rubyclass, name, args, callType, block);
+        }
     }
     
     public final IRubyObject allocate() {
