@@ -37,14 +37,12 @@ import org.jruby.RubyProc;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallBlock;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import org.jruby.internal.runtime.methods.MultiStub;
-import org.jruby.internal.runtime.methods.MultiStubMethod;
 import org.jruby.runtime.MethodIndex;
 
 /**
@@ -61,29 +59,19 @@ public class Generator {
         RubyClass cGen = runtime.defineClass("Generator",runtime.getObject(), runtime.getObject().getAllocator());
         cGen.includeModule(runtime.getModule("Enumerable"));
 
-        GenStub0 gstub = new GenStub0();
-        gstub.gen_new = new MultiStubMethod(gstub,0,cGen,Arity.optional(),Visibility.PUBLIC);
-        gstub.gen_initialize = new MultiStubMethod(gstub,1,cGen,Arity.optional(),Visibility.PUBLIC);
-        gstub.gen_yield = new MultiStubMethod(gstub,2,cGen,Arity.singleArgument(),Visibility.PUBLIC);
-        gstub.gen_end_p = new MultiStubMethod(gstub,3,cGen,Arity.noArguments(),Visibility.PUBLIC);
-        gstub.gen_next_p = new MultiStubMethod(gstub,4,cGen,Arity.noArguments(),Visibility.PUBLIC);
-        gstub.gen_index = new MultiStubMethod(gstub,5,cGen,Arity.noArguments(),Visibility.PUBLIC);
-        gstub.gen_next = new MultiStubMethod(gstub,6,cGen,Arity.noArguments(),Visibility.PUBLIC);
-        gstub.gen_current = new MultiStubMethod(gstub,7,cGen,Arity.noArguments(),Visibility.PUBLIC);
-        gstub.gen_rewind = new MultiStubMethod(gstub,8,cGen,Arity.noArguments(),Visibility.PUBLIC);
-        gstub.gen_each = new MultiStubMethod(gstub,9,cGen,Arity.noArguments(),Visibility.PUBLIC);
-       
-        cGen.getMetaClass().addMethod("new",gstub.gen_new);
-        cGen.addMethod("initialize",gstub.gen_initialize);
-        cGen.addMethod("yield",gstub.gen_yield);
-        cGen.addMethod("end?",gstub.gen_end_p);
-        cGen.addMethod("next?",gstub.gen_next_p);
-        cGen.addMethod("index",gstub.gen_index);
+        CallbackFactory callbackFactory = runtime.callbackFactory(Generator.class);
+
+        cGen.getMetaClass().defineMethod("new",callbackFactory.getOptSingletonMethod("new_instance"));
+        cGen.defineMethod("initialize",callbackFactory.getOptSingletonMethod("initialize"));
+        cGen.defineMethod("yield",callbackFactory.getSingletonMethod("yield",IRubyObject.class));
+        cGen.defineFastMethod("end?",callbackFactory.getFastSingletonMethod("end_p"));
+        cGen.defineFastMethod("next?",callbackFactory.getFastSingletonMethod("next_p"));
+        cGen.defineFastMethod("index",callbackFactory.getFastSingletonMethod("index"));
         cGen.defineAlias("pos","index");
-        cGen.addMethod("next",gstub.gen_next);
-        cGen.addMethod("current",gstub.gen_current);
-        cGen.addMethod("rewind",gstub.gen_rewind);
-        cGen.addMethod("each",gstub.gen_each);
+        cGen.defineMethod("next",callbackFactory.getSingletonMethod("next"));
+        cGen.defineMethod("current",callbackFactory.getSingletonMethod("current"));
+        cGen.defineMethod("rewind",callbackFactory.getSingletonMethod("rewind"));
+        cGen.defineMethod("each",callbackFactory.getSingletonMethod("each"));
     }
 
     static class GeneratorData implements Runnable {
@@ -226,106 +214,94 @@ public class Generator {
         }
     }
 
-    public static class GenStub0 implements MultiStub {
-        public MultiStubMethod gen_new;
-        public MultiStubMethod gen_initialize;
-        public MultiStubMethod gen_yield;
-        public MultiStubMethod gen_end_p;
-        public MultiStubMethod gen_next_p;
-        public MultiStubMethod gen_index;
-        public MultiStubMethod gen_next;
-        public MultiStubMethod gen_current;
-        public MultiStubMethod gen_rewind;
-        public MultiStubMethod gen_each;
+    public static IRubyObject new_instance(IRubyObject self, IRubyObject[] args, Block block) {
+        // Generator#new
+        IRubyObject result = new RubyObject(self.getRuntime(),(RubyClass)self);
+        result.dataWrapStruct(new GeneratorData(result));
+        result.callMethod(self.getRuntime().getCurrentContext(), "initialize", args, block);
+        return result;
+    }
 
-        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            // Generator#new
-            IRubyObject result = new RubyObject(self.getRuntime(),(RubyClass)self);
-            result.dataWrapStruct(new GeneratorData(result));
-            result.callMethod(self.getRuntime().getCurrentContext(), "initialize", args, block);
-            return result;
+    public static IRubyObject initialize(IRubyObject self, IRubyObject[] args, Block block) {
+        // Generator#initialize
+        GeneratorData d = (GeneratorData)self.dataGetStruct();
+        
+        self.setInstanceVariable("@queue",self.getRuntime().newArray());
+        self.setInstanceVariable("@index",self.getRuntime().newFixnum(0));
+        
+        if(Arity.checkArgumentCount(self.getRuntime(), args,0,1) == 1) {
+            d.setEnum(args[0]);
+        } else {
+            d.setProc(self.getRuntime().newProc(false, Block.NULL_BLOCK));
         }
+        return self;
+    }
 
-        public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            // Generator#initialize
+    public static IRubyObject yield(IRubyObject self, IRubyObject value, Block block) {
+        // Generator#yield
+        self.getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"<<",value);
+        GeneratorData d = (GeneratorData)self.dataGetStruct();
+        d.doWait();
+        return self;
+    }
+
+    public static IRubyObject end_p(IRubyObject self) {
+        // Generator#end_p
+        GeneratorData d = (GeneratorData)self.dataGetStruct();
+        return d.isEnd() ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
+    }
+
+    public static IRubyObject next_p(IRubyObject self) {
+        // Generator#next_p
+        GeneratorData d = (GeneratorData)self.dataGetStruct();
+        return !d.isEnd() ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
+    }
+
+    public static IRubyObject index(IRubyObject self) {
+        // Generator#index
+        return self.getInstanceVariable("@index");
+    }
+
+    public static IRubyObject next(IRubyObject self, Block block) {
+        // Generator#next
+        GeneratorData d = (GeneratorData)self.dataGetStruct();
+        if(d.isEnd()) {
+            throw self.getRuntime().newEOFError();
+        }
+        d.generate();
+        self.setInstanceVariable("@index",self.getInstanceVariable("@index").callMethod(self.getRuntime().getCurrentContext(),MethodIndex.OP_PLUS, "+",self.getRuntime().newFixnum(1)));
+        return self.getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"shift");
+    }
+
+    public static IRubyObject current(IRubyObject self, Block block) {
+            // Generator#current
+        if(self.getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),MethodIndex.EMPTY_P, "empty?").isTrue()) {
+            throw self.getRuntime().newEOFError();
+        }
+        return self.getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"first");
+    }
+
+    public static IRubyObject rewind(IRubyObject self, Block block) {
+        // Generator#rewind
+        if(self.getInstanceVariable("@index").callMethod(self.getRuntime().getCurrentContext(),"nonzero?").isTrue()) {
             GeneratorData d = (GeneratorData)self.dataGetStruct();
 
             self.setInstanceVariable("@queue",self.getRuntime().newArray());
             self.setInstanceVariable("@index",self.getRuntime().newFixnum(0));
-
-            if(Arity.checkArgumentCount(context.getRuntime(), args,0,1) == 1) {
-                d.setEnum(args[0]);
-            } else {
-                d.setProc(self.getRuntime().newProc(false, Block.NULL_BLOCK));
-            }
-            return self;
-        }
-
-        public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            // Generator#yield
-            self.getInstanceVariable("@queue").callMethod(context,"<<",args[0]);
-            GeneratorData d = (GeneratorData)self.dataGetStruct();
-            d.doWait();
-            return self;
-        }
-
-        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            // Generator#end_p
-            GeneratorData d = (GeneratorData)self.dataGetStruct();
-            return d.isEnd() ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
-        }
-
-        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            // Generator#next_p
-            GeneratorData d = (GeneratorData)self.dataGetStruct();
-            return !d.isEnd() ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
-        }
-
-        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            // Generator#index
-            return self.getInstanceVariable("@index");
-        }
-
-        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            // Generator#next
-            GeneratorData d = (GeneratorData)self.dataGetStruct();
-            if(d.isEnd()) {
-                throw self.getRuntime().newEOFError();
-            }
-            d.generate();
-            self.setInstanceVariable("@index",self.getInstanceVariable("@index").callMethod(context,MethodIndex.OP_PLUS, "+",self.getRuntime().newFixnum(1)));
-            return self.getInstanceVariable("@queue").callMethod(context,"shift");
-        }
-
-        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            // Generator#current
-            if(self.getInstanceVariable("@queue").callMethod(context,MethodIndex.EMPTY_P, "empty?").isTrue()) {
-                throw self.getRuntime().newEOFError();
-            }
-            return self.getInstanceVariable("@queue").callMethod(context,"first");
-        }
-
-        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            // Generator#rewind
-            if(self.getInstanceVariable("@index").callMethod(context,"nonzero?").isTrue()) {
-                GeneratorData d = (GeneratorData)self.dataGetStruct();
-
-                self.setInstanceVariable("@queue",self.getRuntime().newArray());
-                self.setInstanceVariable("@index",self.getRuntime().newFixnum(0));
             
-                d.start();
-            }
-
-            return self;
+            d.start();
         }
 
-        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            // Generator#each
-            self.callMethod(context,"rewind");
-            while(self.callMethod(context,"next?").isTrue()) {
-                block.yield(context, self.callMethod(context,"next"));
-            }
-            return self;
+        return self;
+    }
+
+    public static IRubyObject each(IRubyObject self, Block block) {
+        // Generator#each
+        rewind(self,Block.NULL_BLOCK);
+        ThreadContext ctx = self.getRuntime().getCurrentContext();
+        while(next_p(self).isTrue()) {
+            block.yield(ctx, next(self, Block.NULL_BLOCK));
         }
+        return self;
     }
 }// Generator
