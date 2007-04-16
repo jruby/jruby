@@ -329,7 +329,7 @@ public abstract class RubyMatchData extends RubyObject {
 
         public RString(Ruby runtime, RubyString original, Matcher matcher) {
             super(runtime, matcher);
-            this.original = (RubyString)(runtime.newStringShared(original.getByteList()).freeze());
+            this.original = (RubyString)(original.strDup()).freeze();
             invalidateRegs();
         }
 
@@ -345,7 +345,6 @@ public abstract class RubyMatchData extends RubyObject {
                     end[i] = matcher.end(i);
                 } else {
                     start[i] = -1;
-                    end[i] = -1;
                 }
             }
         }
@@ -362,7 +361,7 @@ public abstract class RubyMatchData extends RubyObject {
                 if(start[i] == -1) {
                     ary.append(getRuntime().getNil());
                 } else {
-                    IRubyObject str = target.substr(start[i], end[i]-start[i]);
+                    IRubyObject str = target.makeShared(start[i], end[i]-start[i]);
                     if(taint) {
                         str.setTaint(true);
                     }
@@ -376,36 +375,7 @@ public abstract class RubyMatchData extends RubyObject {
             return match_array(1);
         }
 
-        public IRubyObject group(long n) {
-            return nth_match((int)n);
-        }
-
-        public RubyString pre_match() {
-            RubyString str = (RubyString)original.substr(0,start[0]);
-            if(isTaint()) {
-                str.setTaint(true);
-            }
-            return str;
-        }
-        public RubyString post_match() {
-            RubyString str = original;
-            int pos = end[0];
-            str = (RubyString)str.substr(pos,str.getByteList().length()-pos);
-            if(isTaint()) {
-                str.setTaint(true);
-            }
-            return str;
-        }
-
-        public RubyString string() {
-            return original;
-        }
-
-        public RubyArray to_a() {
-            return match_array(0);
-        }
-
-        private IRubyObject nth_match(int nth) {
+        public IRubyObject nth_match(int nth) {
             if(nth >= len) {
                 return getRuntime().getNil();
             }
@@ -419,10 +389,45 @@ public abstract class RubyMatchData extends RubyObject {
                 return getRuntime().getNil();
             }
             int st = start[nth];
-            int len = end[nth] - st;
-            IRubyObject str = original.substr(st,len);
+            int llen = end[nth] - st;
+            IRubyObject str = original.makeShared(st,llen);
             str.infectBy(this);
             return str;
+        }
+
+        public IRubyObject group(long _n) {
+            int n = (int)_n;
+            if(n < 0 || n >= len || start[n] == -1) {
+                return getRuntime().getNil();
+            }
+            int st = start[n];
+            int llen = end[n] - st;
+            return original.makeShared(st,llen);
+        }
+
+        public RubyString pre_match() {
+            RubyString str = (RubyString)original.makeShared(0,start[0]);
+            if(isTaint()) {
+                str.setTaint(true);
+            }
+            return str;
+        }
+        public RubyString post_match() {
+            RubyString str = original;
+            int pos = end[0];
+            str = (RubyString)str.makeShared(pos,str.getByteList().length()-pos);
+            if(isTaint()) {
+                str.setTaint(true);
+            }
+            return str;
+        }
+
+        public RubyString string() {
+            return original;
+        }
+
+        public RubyArray to_a() {
+            return match_array(0);
         }
 
         private IRubyObject last_match() {
@@ -445,6 +450,14 @@ public abstract class RubyMatchData extends RubyObject {
 
         public IRubyObject doClone() {
             return new RString(getRuntime(), original, matcher);
+        }
+
+        public int matchStartPosition() {
+            return start[0];
+        }
+
+        public int matchEndPosition() {
+            return end[0];
         }
     }
 }

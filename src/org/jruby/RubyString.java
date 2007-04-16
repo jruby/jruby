@@ -370,7 +370,7 @@ public class RubyString extends RubyObject {
         return dup;        
     }    
     
-    private final RubyString makeShared(int index, int len) {
+    public final RubyString makeShared(int index, int len) {
         RubyString shared = new RubyString(getRuntime(), getMetaClass(), value.makeShared(index, len));
         shared.shareLevel = SHARE_LEVEL_BUFFER;
         if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
