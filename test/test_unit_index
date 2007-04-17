@@ -69,6 +69,7 @@ test_globals
 test_hash
 test_higher_javasupport
 test_java_accessible_object
+test_java_extension
 #test_openssl
 test_pack
 test_primitive_to_java
