@@ -51,7 +51,7 @@ public abstract class FullInvocationMethod extends DynamicMethod implements Clon
     }
 
     public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preReflectedMethodInternalCall(implementationClass, klazz, self, name, args, arity.required(), noSuper, block);
+        context.preReflectedMethodInternalCall(implementationClass, klazz, self, name, args, arity.required(), noSuper, block, this);
     }
     
     public void postMethod(ThreadContext context) {

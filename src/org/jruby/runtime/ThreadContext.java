@@ -239,8 +239,8 @@ public class ThreadContext {
     }
     
     private void pushCallFrame(RubyModule clazz, String name, 
-                               IRubyObject self, IRubyObject[] args, int req, Block block) {
-        pushFrame(new Frame(clazz, self, name, args, req, block, getPosition(), null));        
+                               IRubyObject self, IRubyObject[] args, int req, Block block, Object jumpTarget) {
+        pushFrame(new Frame(clazz, self, name, args, req, block, getPosition(), jumpTarget));        
     }
     
     private void pushFrame() {
@@ -621,9 +621,9 @@ public class ThreadContext {
     }
 
     public void preMethodCall(RubyModule implementationClass, RubyModule clazz, 
-                              IRubyObject self, String name, IRubyObject[] args, int req, Block block, boolean noSuper) {
+                              IRubyObject self, String name, IRubyObject[] args, int req, Block block, boolean noSuper, Object jumpTarget) {
         pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
-        pushCallFrame(noSuper ? null : clazz, name, self, args, req, block);
+        pushCallFrame(noSuper ? null : clazz, name, self, args, req, block, jumpTarget);
     }
     
     public void postMethodCall() {
@@ -633,10 +633,10 @@ public class ThreadContext {
     
     public void preDefMethodInternalCall(RubyModule clazz, String name, 
                                          IRubyObject self, IRubyObject[] args, int req, Block block, boolean noSuper, 
-            SinglyLinkedList cref, StaticScope staticScope) {
+            SinglyLinkedList cref, StaticScope staticScope, Object jumpTarget) {
         RubyModule implementationClass = (RubyModule)cref.getValue();
         setCRef(cref);
-        pushCallFrame(noSuper ? null : clazz, name, self, args, req, block);
+        pushCallFrame(noSuper ? null : clazz, name, self, args, req, block, jumpTarget);
         pushScope(new DynamicScope(staticScope, getCurrentScope()));
         pushRubyClass(implementationClass);
     }
@@ -660,9 +660,12 @@ public class ThreadContext {
     
     // NEW! Push a scope into the frame, since this is now required to use it
     // XXX: This is screwy...apparently Ruby runs internally-implemented methods in their own frames but in the *caller's* scope
-    public void preReflectedMethodInternalCall(RubyModule implementationClass, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, int req, boolean noSuper, Block block) {
+    public void preReflectedMethodInternalCall(
+            RubyModule implementationClass, RubyModule klazz, IRubyObject self, 
+            String name, IRubyObject[] args, int req, boolean noSuper, 
+            Block block, Object jumpTarget) {
         pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
-        pushCallFrame(noSuper ? null : klazz, name, self, args, req, block);
+        pushCallFrame(noSuper ? null : klazz, name, self, args, req, block, jumpTarget);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     
@@ -686,7 +689,7 @@ public class ThreadContext {
     
     public void preNodeEval(RubyModule rubyClass, IRubyObject self) {
         pushRubyClass(rubyClass);
-        pushCallFrame(null, null, self, IRubyObject.NULL_ARRAY, 0, Block.NULL_BLOCK);
+        pushCallFrame(null, null, self, IRubyObject.NULL_ARRAY, 0, Block.NULL_BLOCK, null);
         setCRef(rubyClass.getCRef());
     }
     
@@ -702,7 +705,7 @@ public class ThreadContext {
         
         pushRubyClass(executeUnderClass);
         pushCRef(executeUnderClass);
-        pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), frame.getArgs(), frame.getRequiredArgCount(), block);
+        pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), frame.getArgs(), frame.getRequiredArgCount(), block, frame.getJumpTarget());
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     

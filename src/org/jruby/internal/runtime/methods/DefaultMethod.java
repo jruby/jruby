@@ -99,7 +99,7 @@ public final class DefaultMethod extends DynamicMethod {
     
     public void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, 
             IRubyObject[] args, boolean noSuper, Block block) {
-        context.preDefMethodInternalCall(clazz, name, self, args, getArity().required(), block, noSuper, cref, staticScope);
+        context.preDefMethodInternalCall(clazz, name, self, args, getArity().required(), block, noSuper, cref, staticScope, this);
     }
     
     public void postMethod(ThreadContext context) {
@@ -138,9 +138,6 @@ public final class DefaultMethod extends DynamicMethod {
         if (JIT_ENABLED && jitCompiledScript != null) {
             return jitCompiledScript.run(context, self, args, block);
         }
-        
-        // set jump target for returns that show up later, like from evals
-        context.setFrameJumpTarget(this);
 
         if (argsNode.getBlockArgNode() != null && block.isGiven()) {
             RubyProc blockArg;

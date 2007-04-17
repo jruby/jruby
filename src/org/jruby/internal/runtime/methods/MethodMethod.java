@@ -54,7 +54,7 @@ public class MethodMethod extends DynamicMethod {
     }
     
     public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preMethodCall(implementationClass, klazz, self, name, args, 0, block, noSuper);
+        context.preMethodCall(implementationClass, klazz, self, name, args, 0, block, noSuper, this);
     }
     
     public void postMethod(ThreadContext context) {

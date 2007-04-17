@@ -33,6 +33,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -52,30 +53,41 @@ public class FullFunctionCallbackMethod extends DynamicMethod {
     }
 
     public void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preReflectedMethodInternalCall(implementationClass, clazz, self, name, args, getArity().required(), noSuper, block);
+        context.preReflectedMethodInternalCall(implementationClass, clazz, self, name, args, getArity().required(), noSuper, block, this);
     }
     
     public void postMethod(ThreadContext context) {
         context.postReflectedMethodInternalCall();
     }
-
+    
     public IRubyObject internalCall(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-    	assert args != null;
+        assert args != null;
         Ruby runtime = context.getRuntime();
+        ISourcePosition position = null;
+        boolean isTrace = runtime.getTraceFunction() != null;
         
-        if (runtime.getTraceFunction() != null) {
-            ISourcePosition position = context.getPosition();
-
+        if (isTrace) {
+            position = context.getPosition();
+            
             runtime.callTraceFunction(context, "c-call", position, self, name, getImplementationClass());
-            try {
-                return callback.execute(self, args, block);
-            } finally {
+        }
+        
+        try {
+            return callback.execute(self, args, block);
+        } catch (JumpException je) {
+            switch (je.getJumpType().getTypeId()) {
+            case JumpException.JumpType.RETURN:
+                if (je.getTarget() == this) return (IRubyObject)je.getValue();
+            default:
+                throw je;
+            }
+        } finally {
+            if (isTrace) {
                 runtime.callTraceFunction(context, "c-return", position, self, name, getImplementationClass());
             }
         }
-		return callback.execute(self, args, block);
     }
-
+    
     public Callback getCallback() {
         return callback;
     }

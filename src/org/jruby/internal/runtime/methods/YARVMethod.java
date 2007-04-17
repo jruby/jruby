@@ -75,7 +75,7 @@ public class YARVMethod extends DynamicMethod {
     
     public void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, 
             IRubyObject[] args, boolean noSuper, Block block) {
-        context.preDefMethodInternalCall(clazz, name, self, args, arity.required(), block, noSuper, cref, staticScope);
+        context.preDefMethodInternalCall(clazz, name, self, args, arity.required(), block, noSuper, cref, staticScope, this);
     }
     
     public void postMethod(ThreadContext context) {

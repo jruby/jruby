@@ -157,4 +157,4 @@ end
 
 test_equal(1, foo)
 # this case is still broken
-#test_equal(1, foo2)
+test_equal(1, foo2)
