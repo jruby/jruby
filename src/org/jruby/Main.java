@@ -137,9 +137,9 @@ public class Main {
         out.print("ruby ");
         out.print(Constants.RUBY_VERSION);
         out.print(" (");
-        out.print(Constants.COMPILE_DATE);
+        out.print(Constants.COMPILE_DATE + " rev " + Constants.REVISION);
         out.print(") [");
-        out.print("java-jruby" + Constants.VERSION);
+        out.print(System.getProperty("os.arch") + "-jruby" + Constants.VERSION);
         out.println("]");
     }
 

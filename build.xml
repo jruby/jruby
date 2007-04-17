@@ -108,6 +108,10 @@
         </fileset>
     </copy>
     
+    <tstamp>
+        <format property="build.date" pattern="yyyy-mm-dd"/>
+    </tstamp>
+    
     <copy todir="${jruby.classes.dir}">
         <fileset dir="${src.dir}">
             <include name="**/*.properties"/>
@@ -116,6 +120,7 @@
             <filter token="os.arch" value="${os.arch}"/>
             <filter token="java.specification.version" value="${java.specification.version}"/>
             <filter token="javac.version" value="${javac.version}"/>
+            <filter token="build.date" value="${build.date}"/>
         </filterset>
     </copy>
   </target>
