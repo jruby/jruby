@@ -100,13 +100,23 @@
     <taskdef name="jruby-serialize" classname="org.jruby.util.ant.JRubySerialize">
       <classpath path="${jruby.classes.dir}"/>
     </taskdef>
-
+    
     <copy todir="${jruby.classes.dir}">
-      <fileset dir="${src.dir}">
-        <include name="**/*.properties"/>
-        <include name="**/*.rb"/>
-        <exclude name="builtin/**/*.rb"/>
-      </fileset>
+        <fileset dir="${src.dir}">
+            <include name="**/*.rb"/>
+            <exclude name="builtin/**/*.rb"/>
+        </fileset>
+    </copy>
+    
+    <copy todir="${jruby.classes.dir}">
+        <fileset dir="${src.dir}">
+            <include name="**/*.properties"/>
+        </fileset>
+        <filterset>
+            <filter token="os.arch" value="${os.arch}"/>
+            <filter token="java.specification.version" value="${java.specification.version}"/>
+            <filter token="javac.version" value="${javac.version}"/>
+        </filterset>
     </copy>
   </target>
 

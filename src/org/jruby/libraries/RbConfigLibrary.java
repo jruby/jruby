@@ -31,6 +31,9 @@
 package org.jruby.libraries;
 
 import java.io.IOException;
+import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
@@ -55,7 +58,7 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "MINOR", versionParts[1]);
         setConfig(configHash, "TEENY", versionParts[2]);
         setConfig(configHash, "ruby_version", versionParts[0] + '.' + versionParts[1]);
-        setConfig(configHash, "arch", "java");
+        setConfig(configHash, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
 
         setConfig(configHash, "bindir", new NormalizedFile(runtime.getJRubyHome(), "bin").getAbsolutePath());
         setConfig(configHash, "RUBY_INSTALL_NAME", jruby_script());
@@ -65,18 +68,27 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "exec_prefix", new NormalizedFile(runtime.getJRubyHome()).getAbsolutePath());
 
         setConfig(configHash, "host_os", System.getProperty("os.name"));
-        setConfig(configHash, "LIBRUBY", "jruby");
-        setConfig(configHash, "LIBRUBY_SO", "jruby");
-        setConfig(configHash, "target", "java");
-        setConfig(configHash, "build", "java");
         setConfig(configHash, "host_vendor", System.getProperty("java.vendor"));
         setConfig(configHash, "host_cpu", System.getProperty("os.arch"));
+        
+        setConfig(configHash, "target_os", System.getProperty("os.name"));
         setConfig(configHash, "target_cpu", System.getProperty("os.arch"));
-        String targetOs = System.getProperty("os.name").toLowerCase();
-        if(targetOs.indexOf("win") != -1) {
-            targetOs = "mswin32";
+        
+        String jrubyJarFile = "jruby.jar";
+        URL jrubyPropertiesUrl = Ruby.class.getClassLoader().getResource("jruby.properties");
+        if (jrubyPropertiesUrl != null) {
+            Pattern jarFile = Pattern.compile("jar:file:.*?([a-zA-Z0-9.\\-]+\\.jar)!/jruby.properties");
+            Matcher jarMatcher = jarFile.matcher(jrubyPropertiesUrl.toString());
+            jarMatcher.find();
+            if (jarMatcher.matches()) {
+                jrubyJarFile = jarMatcher.group(1);
+            }
         }
-        setConfig(configHash, "target_os", targetOs);
+        setConfig(configHash, "LIBRUBY", jrubyJarFile);
+        setConfig(configHash, "LIBRUBY_SO", jrubyJarFile);
+        
+        setConfig(configHash, "build", Constants.BUILD);
+        setConfig(configHash, "target", Constants.TARGET);
         
         String libdir = System.getProperty("jruby.lib");
         if (libdir == null) {

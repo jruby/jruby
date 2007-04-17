@@ -32,6 +32,8 @@ package org.jruby.runtime;
 
 import java.io.IOException;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class Constants {
 	private static final Properties properties = new Properties();
@@ -44,6 +46,9 @@ public final class Constants {
     public static final String RUBY_VERSION;
     public static final String COMPILE_DATE;
     public static final String VERSION;
+    public static final String BUILD;
+    public static final String TARGET;
+    public static final String REVISION;
 
     static {
     	try {
@@ -56,6 +61,11 @@ public final class Constants {
     	RUBY_VERSION = properties.getProperty("version.ruby");
     	COMPILE_DATE = properties.getProperty("release.date");
     	VERSION = properties.getProperty("version.jruby");
+        BUILD = properties.getProperty("build.jruby");
+        TARGET = properties.getProperty("target.jruby");
+        Matcher matcher = Pattern.compile("\\$Revision: (.*?) \\$").matcher(properties.getProperty("revision.jruby"));
+        matcher.find();
+        REVISION = matcher.group(1);
     }
     
     private Constants() {}
