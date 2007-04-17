@@ -1601,6 +1601,9 @@ public class StandardASMCompiler implements Compiler, Opcodes {
 
         loadRuntime();
 
+        // load string, for Regexp#source and Regexp#inspect
+        mv.ldc(value.toString());
+
         // in current method, load the field to see if we've created a Pattern yet
 
         mv.visitFieldInsn(GETSTATIC, classname, name, cg.ci(Pattern.class));
@@ -1612,7 +1615,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.ldc(new Integer(options));
         invokeUtilityMethod("regexpLiteralFlags",cg.sig(Integer.TYPE,cg.params(Integer.TYPE)));
         mv.visitFieldInsn(PUTSTATIC, classname, name_flags, cg.ci(Integer.TYPE));
-
+        
         loadRuntime();
         mv.ldc(value.toString());
         mv.ldc(new Integer(options));
@@ -1630,6 +1633,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
             mv.ldc(lang);
         }
 
-        mv.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, Pattern.class, Integer.TYPE, String.class)));
+        mv.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, String.class, Pattern.class, Integer.TYPE, String.class)));
     }
 }

@@ -72,6 +72,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	 * Warning: THIS IS NOT REALLY SUPPORTED BY JRUBY. 
 	 */
 
+    private String source;
     private Pattern pattern;
     private KCode code;
     private int flags;
@@ -182,6 +183,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                 } catch(Exception e) {
                 }
             }
+            source = regex;
             pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
             flags = REGEXP_TRANSLATOR.flagsFor(options, code.flags());
         } catch(jregex.PatternSyntaxException e) {
@@ -221,9 +223,10 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return newRegexp(str.getRuntime(), str.toString(), options, lang);
     }
     
-    public static RubyRegexp newRegexp(Ruby runtime, Pattern pattern, int flags, String lang) {
+    public static RubyRegexp newRegexp(Ruby runtime, String source, Pattern pattern, int flags, String lang) {
         RubyRegexp re = new RubyRegexp(runtime);
         re.code = KCode.create(runtime, lang);
+        re.source = source;
         re.pattern = pattern;
         re.flags = flags;
         return re;
@@ -413,7 +416,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public RubyString source() {
         checkInitialized();
-        return getRuntime().newString(pattern.toString());
+        return getRuntime().newString(source);
     }
 
     public IRubyObject kcode() {
@@ -636,6 +639,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
 
         RubyRegexp origRegexp = (RubyRegexp)original;
+        source = origRegexp.source;
         pattern = origRegexp.pattern;
         code = origRegexp.code;
 
@@ -646,7 +650,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public IRubyObject inspect() {
-        final String regex = pattern.toString();
+        final String regex = source;
 		final int length = regex.length();
         StringBuffer sb = new StringBuffer(length + 2);
 

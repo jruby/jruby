@@ -1479,7 +1479,7 @@ public class EvaluationState {
             lang = "u";
         }
         try {
-            return RubyRegexp.newRegexp(runtime, iVisited.getPattern(), iVisited.getFlags(), lang);
+            return RubyRegexp.newRegexp(runtime, iVisited.getValue().toString(), iVisited.getPattern(), iVisited.getFlags(), lang);
         } catch(jregex.PatternSyntaxException e) {
             //                    System.err.println(iVisited.getValue().toString());
             //                    e.printStackTrace();

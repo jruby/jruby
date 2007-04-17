@@ -131,3 +131,8 @@ test_equal $&, "1111"
 test_equal $&, "111111111111"
 /1{2}+/ =~ "111"
 test_equal $&, "11"
+
+# JRUBY-139: don't show result of internal JRuby translations
+test_equal("/[:alpha:]/", %r{[:alpha:]}.inspect)
+test_equal("[:alpha:]", %r{[:alpha:]}.source)
+
