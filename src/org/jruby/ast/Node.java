@@ -162,8 +162,8 @@ public abstract class Node implements ISourcePositionHolder, InstructionContext,
         
         Iterator commentItr = comments.iterator();
         while(commentItr.hasNext()) {
-            ISourcePosition currentPos = ((CommentNode)commentItr.next()).getPosition();
-            commentIncludingPos = commentIncludingPos.union(currentPos);
+            ISourcePosition commentPos = ((CommentNode)commentItr.next()).getPosition();
+            commentIncludingPos = SourcePosition.combinePosition(commentIncludingPos, commentPos);
         }       
 
         return commentIncludingPos;

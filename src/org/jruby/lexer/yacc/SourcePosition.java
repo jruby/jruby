@@ -186,4 +186,32 @@ public class SourcePosition implements ISourcePosition, Serializable {
         // need to safe-guard that other is a smaller source position
         return new SourcePosition(file, startLine, other.getEndLine(), startOffset, other.getEndOffset());
     }
+    
+    /**
+     * Not used in interpreter 
+     * Creates a new position the encloses both parameter positions.
+     * 
+     * @param the positions providing the boundaries for the new position.
+     */
+    public static SourcePosition combinePosition(ISourcePosition firstPos, ISourcePosition secondPos){
+        String fileName = firstPos.getFile();
+        int startOffset = firstPos.getStartOffset();
+        int endOffset = firstPos.getEndOffset();
+        int startLine = firstPos.getStartLine();
+        int endLine = firstPos.getEndLine();
+        
+        if(startOffset > secondPos.getStartOffset()){
+            startOffset = secondPos.getStartOffset();
+            startLine = secondPos.getStartLine();
+        }
+        
+        if(endOffset < secondPos.getEndOffset()){
+            endOffset = secondPos.getEndOffset();
+            endLine = secondPos.getEndLine();
+        }
+        
+        SourcePosition combinedPosition = new SourcePosition(fileName, startLine, endLine, startOffset, endOffset);
+        
+        return combinedPosition;             
+    }
 }
