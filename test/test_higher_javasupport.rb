@@ -488,6 +488,14 @@ class TestHigherJavasupport < Test::Unit::TestCase
     end
   end
 
+  # test for JRUBY-698
+  def test_java_method_returns_null
+    include_class 'org.jruby.test.ReturnsNull'
+    rn = ReturnsNull.new
+
+    assert_equal("", rn.returnNull.to_s)
+  end
+
   # test case for JRUBY-679
   # class Weather < java.util.Observable
   #   def initialize(temp)
