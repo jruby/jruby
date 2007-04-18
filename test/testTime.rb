@@ -58,3 +58,33 @@ test_equal(local, local2)
 test_equal(gmt, utc)
 
 test_exception { Time::utc(nil,nil,nil,nil,nil,nil,0) }
+
+# Sat Jan  1 14:58:42 2000
+t = Time.local(2000,1,1,14,58,42)
+
+#From bfts
+stest = {
+  '%a' => 'Sat',
+  '%A' => 'Saturday',
+  '%b' => 'Jan',
+  '%B' => 'January',
+  '%e' => ' 1',
+  '%d' => '01',
+  '%H' => '14',
+  '%I' => '02',
+  '%j' => '001',
+  '%m' => '01',
+  '%M' => '58',
+  '%p' => 'PM',
+  '%S' => '42',
+  '%U' => '00',
+  '%W' => '00',
+  '%w' => '6',
+  '%y' =>  '00',
+  '%Y' =>  '2000',
+  '%%' =>  '%',
+}
+
+stest.each {|flag,val|
+  test_equal("Got "+val,t.strftime("Got " + flag))
+}

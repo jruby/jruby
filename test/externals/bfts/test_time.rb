@@ -547,6 +547,7 @@ class TestTime < RubiconTestCase
        '%b' => 'Jan',
        '%B' => 'January',
        #'%c',  The preferred local date and time representation,
+       '%e' => ' 1',
        '%d' => '01',
        '%H' => '14',
        '%I' => '02',
