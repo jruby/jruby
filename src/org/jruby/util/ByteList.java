@@ -159,7 +159,7 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
 
     public void set(int index, int b) {
         if (index >= realSize) throw new IndexOutOfBoundsException();
-        bytes[index] = (byte)b;
+        bytes[begin + index] = (byte)b;
     }
 
     public void replace(byte[] newBytes) {
