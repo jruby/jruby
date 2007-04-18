@@ -1164,12 +1164,18 @@ public final class Ruby {
      */
     public void loadFile(File file) {
         assert file != null : "No such file to load";
+        BufferedReader source = null;
         try {
-            BufferedReader source = new BufferedReader(new FileReader(file));
+            source = new BufferedReader(new FileReader(file));
             loadScript(file.getPath().replace(File.separatorChar, '/'), source);
-            source.close();
         } catch (IOException ioExcptn) {
             throw newIOErrorFromException(ioExcptn);
+        } finally {
+            try {
+                if (source == null) {
+                    source.close();
+                }
+            } catch (IOException ioe) {}
         }
     }
 
