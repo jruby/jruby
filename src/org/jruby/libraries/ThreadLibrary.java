@@ -92,9 +92,9 @@ public class ThreadLibrary implements Library {
         }
 
         public RubyBoolean try_lock() throws InterruptedException {
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
+            //if (Thread.interrupted()) {
+            //    throw new InterruptedException();
+            //}
             synchronized (this) {
                 if ( owner != null ) {
                     return getRuntime().getFalse();
@@ -105,9 +105,9 @@ public class ThreadLibrary implements Library {
         }
 
         public IRubyObject lock() throws InterruptedException {
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
+            //if (Thread.interrupted()) {
+            //    throw new InterruptedException();
+            //}
             synchronized (this) {
                 try {
                     while ( owner != null ) {

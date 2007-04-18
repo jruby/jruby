@@ -165,7 +165,7 @@ public class EvaluationState {
 
     private static IRubyObject evalInternal(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         do {
-            if (node == null) return nilNode(runtime);
+            if (node == null) return nilNode(runtime, context);
 
             switch (node.nodeId) {
             case NodeTypes.ALIASNODE:
@@ -309,7 +309,7 @@ public class EvaluationState {
             case NodeTypes.NEXTNODE:
                 return nextNode(runtime, context, node, self, aBlock);
             case NodeTypes.NILNODE:
-                return nilNode(runtime);
+                return nilNode(runtime, context);
             case NodeTypes.NOTNODE:
                 return notNode(runtime, context, node, self, aBlock);
             case NodeTypes.NTHREFNODE:
@@ -319,7 +319,7 @@ public class EvaluationState {
         
                 // add in reverse order
                 IRubyObject result = evalInternal(runtime,context, iVisited.getFirstNode(), self, aBlock);
-                if (!result.isTrue()) return result;
+                if (!result.isTrue()) return pollAndReturn(context, result);
                 node = iVisited.getSecondNode();
                 continue;
             }
@@ -351,7 +351,7 @@ public class EvaluationState {
             case NodeTypes.SCLASSNODE:
                 return sClassNode(runtime, context, node, self, aBlock);
             case NodeTypes.SELFNODE:
-                return self;
+                return pollAndReturn(context, self);
             case NodeTypes.SPLATNODE:
                 return splatNode(runtime, context, node, self, aBlock);
             case NodeTypes.STRNODE:
@@ -988,8 +988,7 @@ public class EvaluationState {
     }
     
     private static IRubyObject falseNode(Ruby runtime, ThreadContext context) {
-        context.pollThreadEvents();
-        return runtime.getFalse();
+        return pollAndReturn(context, runtime.getFalse());
     }
 
     private static IRubyObject fCallNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1329,8 +1328,8 @@ public class EvaluationState {
         throw je;
     }
 
-    private static IRubyObject nilNode(Ruby runtime) {
-        return runtime.getNil();
+    private static IRubyObject nilNode(Ruby runtime, ThreadContext context) {
+        return pollAndReturn(context, runtime.getNil());
     }
 
     private static IRubyObject notNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1343,6 +1342,11 @@ public class EvaluationState {
     private static IRubyObject nthRefNode(ThreadContext context, Node node) {
         return RubyRegexp.nth_match(((NthRefNode)node).getMatchNumber(), context.getBackref());
     }
+    
+    private static IRubyObject pollAndReturn(ThreadContext context, IRubyObject result) {
+        context.pollThreadEvents();
+        return result;
+    }
 
     private static IRubyObject opAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         OpAsgnNode iVisited = (OpAsgnNode) node;
@@ -1351,12 +1355,12 @@ public class EvaluationState {
    
         if (iVisited.getOperatorName() == "||") {
             if (value.isTrue()) {
-                return value;
+                return pollAndReturn(context, value);
             }
             value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
         } else if (iVisited.getOperatorName() == "&&") {
             if (!value.isTrue()) {
-                return value;
+                return pollAndReturn(context, value);
             }
             value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
         } else {
@@ -1366,9 +1370,7 @@ public class EvaluationState {
    
         receiver.callMethod(context, iVisited.getVariableNameAsgn(), value);
    
-        context.pollThreadEvents();
-   
-        return value;
+        return pollAndReturn(context, value);
     }
 
     private static IRubyObject opAsgnOrNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1383,7 +1385,7 @@ public class EvaluationState {
             result = evalInternal(runtime,context, iVisited.getSecondNode(), self, aBlock);
         }
    
-        return result;
+        return pollAndReturn(context, result);
     }
 
     private static IRubyObject opElementAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1419,7 +1421,7 @@ public class EvaluationState {
         OptNNode iVisited = (OptNNode) node;
    
         IRubyObject result = runtime.getNil();
-        while (RubyKernel.gets(runtime.getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
+        outerLoop: while (RubyKernel.gets(runtime.getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
             loop: while (true) { // Used for the 'redo' command
                 try {
                     result = evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
@@ -1434,14 +1436,16 @@ public class EvaluationState {
                         break loop;
                     case JumpType.BREAK:
                         // end loop
-                        return (IRubyObject) je.getValue();
+                        result = (IRubyObject) je.getValue();
+                        break outerLoop;
                     default:
                         throw je;
                     }
                 }
             }
         }
-        return result;
+        
+        return pollAndReturn(context, result);
     }
 
     private static IRubyObject orNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1663,8 +1667,7 @@ public class EvaluationState {
     }
 
     private static IRubyObject trueNode(Ruby runtime, ThreadContext context) {
-        context.pollThreadEvents();
-        return runtime.getTrue();
+        return pollAndReturn(context, runtime.getTrue());
     }
     
     private static IRubyObject undefNode(Ruby runtime, ThreadContext context, Node node) {
@@ -1685,7 +1688,7 @@ public class EvaluationState {
    
         IRubyObject result = runtime.getNil();
         
-        while (!(result = evalInternal(runtime,context, iVisited.getConditionNode(), self, aBlock)).isTrue()) {
+        outerLoop: while (!(result = evalInternal(runtime,context, iVisited.getConditionNode(), self, aBlock)).isTrue()) {
             loop: while (true) { // Used for the 'redo' command
                 try {
                     result = evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
@@ -1704,7 +1707,9 @@ public class EvaluationState {
                              throw je;
                         }
                         
-                        return (IRubyObject) je.getValue();
+                        result = (IRubyObject) je.getValue();
+                        
+                        break outerLoop;
                     default:
                         throw je;
                     }
@@ -1712,7 +1717,7 @@ public class EvaluationState {
             }
         }
         
-        return result;
+        return pollAndReturn(context, result);
     }
 
     private static IRubyObject valiasNode(Ruby runtime, Node node) {
@@ -1746,7 +1751,7 @@ public class EvaluationState {
         IRubyObject result = runtime.getNil();
         boolean firstTest = iVisited.evaluateAtStart();
         
-        while (!firstTest || (result = evalInternal(runtime,context, iVisited.getConditionNode(), self, aBlock)).isTrue()) {
+        outerLoop: while (!firstTest || (result = evalInternal(runtime,context, iVisited.getConditionNode(), self, aBlock)).isTrue()) {
             firstTest = true;
             loop: while (true) { // Used for the 'redo' command
                 try {
@@ -1766,7 +1771,7 @@ public class EvaluationState {
                             throw je;
                         }
                         
-                        return result;
+                        break outerLoop;
                     default:
                         throw je;
                     }
@@ -1774,7 +1779,7 @@ public class EvaluationState {
             }
         }
         
-        return result;
+        return pollAndReturn(context, result);
     }
 
     private static IRubyObject xStrNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self) {

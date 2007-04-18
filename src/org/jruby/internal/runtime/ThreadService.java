@@ -30,6 +30,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
+import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
+import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
+import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantReadWriteLock;
+import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.lang.ref.WeakReference;
 
 import java.util.ArrayList;
@@ -50,7 +55,8 @@ public class ThreadService {
     private ThreadGroup rubyThreadGroup;
     private Set rubyThreadList;
     private Thread mainThread;
-    private RubyThread criticalThread;
+    
+    private ReentrantLock criticalLock = new ReentrantLock();
 
     public ThreadService(Ruby runtime) {
         this.runtime = runtime;
@@ -136,53 +142,43 @@ public class ThreadService {
         localContext.set(null);
     }
     
-    public synchronized void setCritical(boolean critical) {
-        RubyThread currentThread = getCurrentContext().getThread();
-        
-    	// TODO: this implementation is obviously dependent on native threads
-    	if (criticalThread != null) {
-            // currently in a critical section
-    		if (critical) {
-                // enabling critical, do nothing
-				return;
-			}
-            if (criticalThread != currentThread) {
-                // we're not the critical thread, do nothing (TODO: or perhaps wait on the critical thread here?)
-                return;
-            }
-            
-            // clear the critical thread and notify all waiting on it
-            synchronized (criticalThread) {
-                RubyThread critThread = criticalThread;
-                criticalThread = null;
-                critThread.notifyAll();
-            }
-    	} else {
-            // not in a critical section
-    		if (!critical) {
-                // not asking for critical, do nothing
-				return;
-			}
-            
-            // set the critical thread!
-            criticalThread = currentThread;
-    	}
+    private RubyThread getRubyThreadFromThread(Thread activeThread) {
+        RubyThread rubyThread;
+        if (activeThread instanceof RubyNativeThread) {
+            RubyNativeThread rubyNativeThread = (RubyNativeThread)activeThread;
+            rubyThread = rubyNativeThread.getRubyThread();
+        } else {
+            // main thread
+            rubyThread = mainContext.getThread();
+        }
+        return rubyThread;
     }
     
-	private RubyThread getRubyThreadFromThread(Thread activeThread) {
-		RubyThread rubyThread;
-		if (activeThread instanceof RubyNativeThread) {
-			RubyNativeThread rubyNativeThread = (RubyNativeThread)activeThread;
-			rubyThread = rubyNativeThread.getRubyThread();
-		} else {
-			// main thread
-			rubyThread = mainContext.getThread();
-		}
-		return rubyThread;
-	}
-
-	public RubyThread getCriticalThread() {
-    	return criticalThread;
+    public synchronized void setCritical(boolean critical) {
+        if (criticalLock.isHeldByCurrentThread()) {
+            if (critical) {
+                // do nothing
+            } else {
+                criticalLock.unlock();
+            }
+        } else {
+            if (critical) {
+                criticalLock.lock();
+            } else {
+                // do nothing
+            }
+        }
+    }
+    
+    public synchronized boolean getCritical() {
+        return criticalLock.isHeldByCurrentThread();
+    }
+    
+    public void waitForCritical() {
+        if (criticalLock.isLocked()) {
+            criticalLock.lock();
+            criticalLock.unlock();
+        }
     }
 
 }

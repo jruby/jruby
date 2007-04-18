@@ -217,6 +217,7 @@ public class Block {
                     return method.call(context, self, args, NULL_BLOCK);
                 } catch (JumpException je) {
                     if (je.getJumpType() == JumpException.JumpType.RedoJump) {
+                        context.pollThreadEvents();
                         // do nothing, allow loop to redo
                     } else {
                         if (je.getJumpType() == JumpException.JumpType.BreakJump && je.getTarget() == null) {

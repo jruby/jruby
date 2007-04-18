@@ -822,8 +822,8 @@ public class RubyKernel {
         while (true) {
             try {
                 block.yield(context, recv.getRuntime().getNil());
-
-                Thread.yield();
+                
+                context.pollThreadEvents();
             } catch (JumpException je) {
                 // JRUBY-530, specifically the Kernel#loop case:
                 // Kernel#loop always takes a block.  But what we're looking
