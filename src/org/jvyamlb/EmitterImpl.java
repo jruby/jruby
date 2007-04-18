@@ -679,7 +679,10 @@ public class EmitterImpl implements Emitter {
             }
             if(preparedAnchor != null && !"".equals(preparedAnchor)) {
                 indicator.append(preparedAnchor.getBytes());
-                emitter.writeIndicator(indicator,true,false,false);
+                if(ev instanceof CollectionStartEvent) {
+                    indentation = true;
+                }
+                emitter.writeIndicator(indicator,true,false,true);
             }
             preparedAnchor = null;
         }
