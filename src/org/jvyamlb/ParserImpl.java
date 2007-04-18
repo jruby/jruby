@@ -279,7 +279,7 @@ public class ParserImpl implements Parser {
                     if(scanner.peekToken() instanceof AnchorToken) {
                         anchor = ((AnchorToken)scanner.getToken()).getValue();
                         if(scanner.peekToken() instanceof TagToken) {
-                            scanner.getToken();
+                            tag = ((TagToken)scanner.getToken()).getValue();
                         }
                     } else if(scanner.peekToken() instanceof TagToken) {
                         tag = ((TagToken)scanner.getToken()).getValue();
