@@ -36,7 +36,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessControlException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -254,7 +253,7 @@ public class LoadService {
         }
 
         library = tryLoadExtension(library,file);
-
+        
         // no library or extension found, bail out
         if (library == null) {
             throw runtime.newLoadError("no such file to load -- " + file);
@@ -479,7 +478,7 @@ public class LoadService {
         // This is where the basic extension mechanism gets fixed
         Library oldLibrary = library;
         
-        if(library == null || library instanceof JarredScript) {
+        if((library == null || library instanceof JarredScript) && !file.equalsIgnoreCase("")) {
             // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
             String[] all = file.split("/");
             StringBuffer finName = new StringBuffer();

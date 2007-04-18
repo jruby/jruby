@@ -31,6 +31,7 @@ package org.jruby.test;
 import java.util.ArrayList;
 
 import org.jruby.Ruby;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.load.LoadService;
 
 
@@ -52,5 +53,14 @@ public class TestLoadService extends TestRubyBase {
         BasicLibraryTestService.counter = 0;
         runtime.evalScript("require 'org/jruby/test/basic_library_test'");
         assertEquals("The library should've have been loaded", BasicLibraryTestService.counter, 1);
+    }
+    
+    public void testRequireEmpty(){
+        try{
+            runtime.evalScript("require ''");
+        } catch (RaiseException e){
+            assertEquals("Empty library is not valid, exception should have been raised", RaiseException.class, e.getClass());
+            assertNull("Empty library is not valid, exception should only be RaiseException with no root cause", e.getCause());
+        }
     }
 }
