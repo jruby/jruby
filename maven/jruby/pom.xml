@@ -27,38 +27,6 @@
   <build>
     <sourceDirectory>${basedir}/../../src</sourceDirectory>
     <testSourceDirectory>${basedir}/../../test</testSourceDirectory>
-    <resources>
-      <resource>
-        <directory>${basedir}/../../src</directory>
-        <includes>
-          <include>**/*.properties</include>
-          <include>**/*.rb</include>
-        </includes>
-        <excludes>
-          <exclude>builtin/**/*.rb</exclude>
-        </excludes>
-      </resource>
-    </resources>
-    <testResources>
-      <testResource>
-        <directory>${basedir}/../..</directory>
-        <includes>
-          <include>build.xml</include>
-          <include>test/**/*.rb</include>
-          <include>test/**/*.txt</include>
-          <include>test/test_index</include>
-          <include>test/test_unit_index</include>
-          <include>test/RubyInitTest.jar</include>
-          <include>test/requireTarget.jar</include>
-        </includes>
-      </testResource>
-      <testResource>
-        <directory>${basedir}/../../test</directory>
-        <includes>
-          <include>org/jruby/**/*.rb</include>
-        </includes>
-      </testResource>
-    </testResources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -72,14 +40,6 @@
           <excludes>
             <exclude>**/*.java</exclude>
           </excludes>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.4</source>
-          <target>1.4</target>
         </configuration>
       </plugin>
       <plugin>
@@ -134,20 +94,7 @@
             </goals>
           </execution>
         </executions>
-        <dependencies>
-          <dependency>
-            <groupId>ant</groupId>
-            <artifactId>ant-junit</artifactId>
-            <version>1.6.5</version>
-          </dependency>
-          <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>3.8.1</version>
-          </dependency>
-        </dependencies>
       </plugin>
     </plugins>
   </build>
 </project>
-

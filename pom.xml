@@ -151,15 +151,121 @@
   </build>
   <profiles>
     <profile>
-      <id>jruby-properties</id>
+      <id>jruby</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
+      <build>
+        <resources>
+          <resource>
+            <directory>${project.basedir}/../../src</directory>
+            <includes>
+              <include>**/*.rb</include>
+            </includes>
+            <excludes>
+              <exclude>builtin/**/*.rb</exclude>
+            </excludes>
+          </resource>
+        </resources>
+        <testResources>
+          <testResource>
+            <directory>${project.basedir}/../..</directory>
+            <includes>
+              <include>build.xml</include>
+              <include>test/**/*.rb</include>
+              <include>test/**/*.txt</include>
+              <include>test/test_index</include>
+              <include>test/test_unit_index</include>
+              <include>test/RubyInitTest.jar</include>
+              <include>test/requireTarget.jar</include>
+            </includes>
+          </testResource>
+          <testResource>
+            <directory>${project.basedir}/../../test</directory>
+            <includes>
+              <include>org/jruby/**/*.rb</include>
+            </includes>
+          </testResource>
+        </testResources>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <source>${javac.version}</source>
+              <target>${javac.version}</target>
+            </configuration>
+          </plugin>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>filter-jruby-properties</id>
+                <phase>process-resources</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <tasks>
+                    <tstamp><format property="build.date" pattern="yyyy-MM-dd"/></tstamp>
+                    <copy todir="${project.build.outputDirectory}" overwrite="true" failonerror="false">
+                      <fileset dir="${project.build.sourceDirectory}">
+                        <include name="**/*.properties"/>
+                      </fileset>
+                      <filterset>
+                        <filter token="os.arch" value="${os.arch}"/>
+                        <filter token="java.specification.version" value="${java.specification.version}"/>
+                        <filter token="javac.version" value="${javac.version}"/>
+                        <filter token="build.date" value="${build.date}"/>
+                      </filterset>
+                    </copy>
+                  </tasks>
+                </configuration>
+              </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>ant</groupId>
+                <artifactId>ant-junit</artifactId>
+                <version>1.6.5</version>
+              </dependency>
+              <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>3.8.1</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
       <properties>
         <jruby.package>org.jruby</jruby.package>
         <jruby.main.class>org.jruby.Main</jruby.main.class>
+        <javac.version>${java.specification.version}</javac.version>
+        <os.arch>${os.arch}</os.arch>
+        <java.specification.version>${java.specification.version}</java.specification.version>
       </properties>
+    </profile>
+    <profile>
+      <id>jruby-release</id>
+      <activation>
+        <property>
+          <name>release</name>
+        </property>
+      </activation>
+      <properties>
+        <javac.version>1.4</javac.version>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <source>1.4</source>
+              <target>1.4</target>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>
-

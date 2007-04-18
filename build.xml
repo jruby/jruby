@@ -109,10 +109,10 @@
     </copy>
     
     <tstamp>
-        <format property="build.date" pattern="yyyy-mm-dd"/>
+        <format property="build.date" pattern="yyyy-MM-dd"/>
     </tstamp>
     
-    <copy todir="${jruby.classes.dir}">
+    <copy todir="${jruby.classes.dir}" overwrite="true">
         <fileset dir="${src.dir}">
             <include name="**/*.properties"/>
         </fileset>
