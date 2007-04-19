@@ -254,14 +254,22 @@ public class LexerSource {
      */
     private char wrappedRead() throws IOException {
         int c = reader.read();
-        
+
+        // If \r\n then just pass along \n (windows)
         // If \r[^\n] then pass along \n (MAC)
         if (c == '\r') {
-            if(!peek('\n')) {
+            if ((c = reader.read()) != '\n') {
+                unread((char)c);
                 c = '\n';
-            } 
+            } else {
+                // Position within source must reflect the actual offset and column.  Since
+                // we ate an extra character here (this accounting is normally done in read
+                // ), we should update position info.
+                offset++;
+                column++;
+            }
         }
-        
+                   
         return c != -1 ? (char) c : '\0';
     }
     
