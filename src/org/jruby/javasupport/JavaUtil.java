@@ -85,9 +85,6 @@ public class JavaUtil {
                If that doesn't help, we use String to force a call to the
                object's "to_s" method. */
             javaClass = rubyObject.getJavaClass();
-            if (javaClass == IRubyObject.class) {
-                javaClass = String.class;
-            }
         }
 
         if (javaClass.isInstance(rubyObject)) {
