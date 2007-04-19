@@ -28,6 +28,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBinding;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
@@ -81,12 +82,13 @@ public abstract class FullInvocationMethod extends DynamicMethod implements Clon
 
         if(runtime.getTraceFunction() != null) {
             ISourcePosition position = context.getPosition();
+            RubyBinding binding = RubyBinding.newBinding(runtime);
 
-            runtime.callTraceFunction(context, "c-call", position, self, name, getImplementationClass());
+            runtime.callTraceFunction(context, "c-call", position, binding, name, getImplementationClass());
             try {
                 return wrap(runtime,self,args,block);
             } finally {
-                runtime.callTraceFunction(context, "c-return", position, self, name, getImplementationClass());
+                runtime.callTraceFunction(context, "c-return", position, binding, name, getImplementationClass());
             }
         }
         return wrap(runtime,self,args,block);

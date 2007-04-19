@@ -34,6 +34,7 @@ import org.jruby.Ruby;
 import org.jruby.MetaClass;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
+import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyFloat;
@@ -1832,7 +1833,7 @@ public class EvaluationState {
     private static void callTraceFunction(Ruby runtime, ThreadContext context, String event, IRubyObject zelf) {
         String name = context.getFrameName();
         RubyModule type = context.getFrameKlazz();
-        runtime.callTraceFunction(context, event, context.getPosition(), zelf, name, type);
+        runtime.callTraceFunction(context, event, context.getPosition(), RubyBinding.newBinding(runtime), name, type);
     }
 
     /** Evaluates the body in a class or module definition statement.

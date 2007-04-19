@@ -42,4 +42,29 @@ class TestTraceFunc < Test::Unit::TestCase
     "c-call #{__FILE__}:34 set_trace_func Kernel"]
     assert_equal(expected, output)
   end
+
+  def bogus_method
+  end
+
+  def test_trace_binding
+    a = true
+    expected = [["a", "expected", "results"],
+                ["a", "expected", "results"],
+                ["a", "expected", "results"],
+                ["a", "expected", "results"],
+                [],
+                [],
+                ["a", "expected", "results"],
+                ["a", "expected", "results"]]
+    results = []
+    set_trace_func proc { |event, file, line, id, binding, classname| results << eval('local_variables', binding) }
+
+    1.to_i # c-call, two traces
+    # newline, one trace
+    bogus_method # call, two traces
+    # newline, one trace
+    set_trace_func nil # c-call, two traces
+ 
+    assert_equal(expected, results)
+  end
 end

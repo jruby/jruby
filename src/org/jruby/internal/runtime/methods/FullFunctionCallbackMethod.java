@@ -32,6 +32,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBinding;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -64,12 +65,14 @@ public class FullFunctionCallbackMethod extends DynamicMethod {
         assert args != null;
         Ruby runtime = context.getRuntime();
         ISourcePosition position = null;
+        RubyBinding binding = null;
         boolean isTrace = runtime.getTraceFunction() != null;
         
         if (isTrace) {
             position = context.getPosition();
+            binding = RubyBinding.newBinding(runtime);
             
-            runtime.callTraceFunction(context, "c-call", position, self, name, getImplementationClass());
+            runtime.callTraceFunction(context, "c-call", position, binding, name, getImplementationClass());
         }
         
         try {
@@ -83,7 +86,7 @@ public class FullFunctionCallbackMethod extends DynamicMethod {
             }
         } finally {
             if (isTrace) {
-                runtime.callTraceFunction(context, "c-return", position, self, name, getImplementationClass());
+                runtime.callTraceFunction(context, "c-return", position, binding, name, getImplementationClass());
             }
         }
     }

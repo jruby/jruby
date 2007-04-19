@@ -1184,7 +1184,7 @@ public final class Ruby {
      *
      */
     public void callTraceFunction(ThreadContext context, String event, ISourcePosition position,
-            IRubyObject self, String name, IRubyObject type) {
+            RubyBinding binding, String name, IRubyObject type) {
         if (traceFunction == null) return;
 
         if (!context.isWithinTrace()) {
@@ -1203,7 +1203,7 @@ public final class Ruby {
                     newString(file), // filename
                     newFixnum(position.getStartLine() + 1), // line numbers should be 1-based
                     name != null ? RubySymbol.newSymbol(this, name) : getNil(),
-                    self != null ? self : getNil(),
+                    binding != null ? binding : getNil(),
                     type
                 });
             } finally {

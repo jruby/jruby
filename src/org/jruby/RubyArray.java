@@ -189,6 +189,9 @@ public class RubyArray extends RubyObject implements List {
 
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex,
             String name, IRubyObject[] args, CallType callType, Block block) {
+        // If tracing is on, don't do STI dispatch
+        if (context.getRuntime().getTraceFunction() != null) return super.callMethod(context, rubyclass, name, args, callType, block);
+        
         switch (getRuntime().getSelectorTable().table[rubyclass.index][methodIndex]) {
         case OP_PLUS_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");

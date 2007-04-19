@@ -35,6 +35,7 @@ package org.jruby.internal.runtime.methods;
 import java.util.ArrayList;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBinding;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.ast.ArgsNode;
@@ -152,12 +153,16 @@ public final class DefaultMethod extends DynamicMethod {
             context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), blockArg, 0);
         }
 
+        RubyBinding binding = null;
         try {
             prepareArguments(context, runtime, args);
             
             getArity().checkArity(runtime, args);
 
-            traceCall(context, runtime, self, name);
+            if (runtime.getTraceFunction() != null) {
+                binding = RubyBinding.newBinding(runtime);
+                traceCall(context, runtime, binding, name);
+            }
                     
             return EvaluationState.eval(runtime, context, body, self, block);
         } catch (JumpException je) {
@@ -167,7 +172,9 @@ public final class DefaultMethod extends DynamicMethod {
             
        		throw je;
         } finally {
-            traceReturn(context, runtime, self, name);
+            if (binding != null) {
+                traceReturn(context, runtime, binding, name);
+            }
         }
     }
 
@@ -296,21 +303,21 @@ public final class DefaultMethod extends DynamicMethod {
         return args;
     }
 
-    private void traceReturn(ThreadContext context, Ruby runtime, IRubyObject self, String name) {
+    private void traceReturn(ThreadContext context, Ruby runtime, RubyBinding binding, String name) {
         if (runtime.getTraceFunction() == null) {
             return;
         }
 
         ISourcePosition position = context.getPreviousFramePosition();
-        runtime.callTraceFunction(context, "return", position, self, name, getImplementationClass());
+        runtime.callTraceFunction(context, "return", position, binding, name, getImplementationClass());
     }
-
-    private void traceCall(ThreadContext context, Ruby runtime, IRubyObject self, String name) {
+    
+    private void traceCall(ThreadContext context, Ruby runtime, RubyBinding binding, String name) {
         if (runtime.getTraceFunction() == null) return;
-
-		ISourcePosition position = body != null ? body.getPosition() : context.getPosition(); 
-
-		runtime.callTraceFunction(context, "call", position, self, name, getImplementationClass());
+        
+        ISourcePosition position = body != null ? body.getPosition() : context.getPosition();
+        
+        runtime.callTraceFunction(context, "call", position, binding, name, getImplementationClass());
     }
 
     public Arity getArity() {
