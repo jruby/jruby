@@ -588,11 +588,6 @@ public class RubyString extends RubyObject {
         return false;
     }
 
-    // Common enough check to make it a convenience method.
-    private boolean sameAs(RubyString other) {
-        return value.equals(other.value);
-    }
-
     /** rb_obj_as_string
      *
      */

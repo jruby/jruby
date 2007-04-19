@@ -38,8 +38,6 @@ import java.util.regex.Pattern;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -96,7 +94,6 @@ public class RubyYAML {
         RubyClass regexp = runtime.getClass("Regexp");
         RubyClass time = runtime.getClass("Time");
         RubyClass date = runtime.getClass("Date"); 
-        RubyClass numeric = runtime.getClass("Numeric"); 
         RubyClass fixnum = runtime.getClass("Fixnum"); 
         RubyClass bignum = runtime.getClass("Bignum"); 
         RubyClass flt = runtime.getClass("Float"); 

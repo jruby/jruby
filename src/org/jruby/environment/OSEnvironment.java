@@ -30,7 +30,6 @@ package org.jruby.environment;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.security.AccessControlException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;

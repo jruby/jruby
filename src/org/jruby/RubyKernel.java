@@ -43,6 +43,7 @@ package org.jruby;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Calendar;
 import java.util.Iterator;
 
@@ -995,9 +996,16 @@ public class RubyKernel {
         if (args.length == 0) {
             ceil = 0;
         } else if (args.length == 1) {
+            if (args[0] instanceof RubyBignum) {
+                byte[] bytes = new byte[((RubyBignum) args[0]).getValue().toByteArray().length - 1];
+                
+                runtime.getRandom().nextBytes(bytes);
+                
+                return new RubyBignum(runtime, new BigInteger(bytes).abs()); 
+            }
+             
             RubyInteger integerCeil = (RubyInteger) args[0].convertToType(runtime.getClass("Integer"), MethodIndex.TO_I, "to_i", true);
-            ceil = integerCeil.getLongValue();
-            ceil = Math.abs(ceil);
+            ceil = Math.abs(integerCeil.getLongValue());
         } else {
             throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for 1)");
         }
@@ -1006,10 +1014,10 @@ public class RubyKernel {
             return RubyFloat.newFloat(runtime, runtime.getRandom().nextDouble()); 
         }
         if (ceil > Integer.MAX_VALUE) {
-            return runtime.newFixnum(runtime.getRandom().nextLong()%ceil);
+            return runtime.newFixnum(runtime.getRandom().nextLong() % ceil);
         }
             
-        return runtime.newFixnum(runtime.getRandom().nextInt((int)ceil));
+        return runtime.newFixnum(runtime.getRandom().nextInt((int) ceil));
     }
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
