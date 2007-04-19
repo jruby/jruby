@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2002 Don Schwartz <schwardo@users.sourceforge.net>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002-2007 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -30,9 +30,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport.test;
 
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.InputStream;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -40,8 +41,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
+import org.apache.bsf.BSFException;
 
 public class TestBSF extends RubyTestCase {
     private static final String RUBY_SCRIPT = "SimpleInterfaceImpl.rb";
@@ -52,19 +53,18 @@ public class TestBSF extends RubyTestCase {
 		super(name);
 	}
 	
-	public void setUp() throws IOException {
-    	try {
-    	    BSFManager.registerScriptingEngine("ruby", "org.jruby.javasupport.bsf.JRubyEngine", new String[] { "rb" });
+	public void setUp() throws Exception {
+        super.setUp();
+        BSFManager.registerScriptingEngine("ruby", "org.jruby.javasupport.bsf.JRubyEngine", new String[] { "rb" });
     	    
-    	    manager = new BSFManager();
-    	    manager.exec("ruby", "(java)", 1, 1, loadScript(RUBY_SCRIPT));
-    	} catch (BSFException e) {
-            e.getTargetException().printStackTrace();
-            fail("Unable to initialize BSF: " + e);
-    	}
+        manager = new BSFManager();
+        String expression = loadScript(RUBY_SCRIPT);
+        assertNotNull("Script loaded from " + RUBY_SCRIPT + " should exist", expression);
+        manager.exec("ruby", "(java)", 1, 1, expression);
 	}
 	
-    public void tearDown() {
+    public void tearDown() throws Exception {
+        super.tearDown();
         manager = null;
     }
  
@@ -399,22 +399,23 @@ public class TestBSF extends RubyTestCase {
 		}
     }
 
+    private String loadScript(String fileName) throws Exception {
+        InputStream stream = getClass().getResourceAsStream(fileName);
+        if (stream == null) {
+            // If we're running from within an IDE we may not have
+            // the .rb files in our classpath. Try to find them
+            // in the filesystem instead.
+            stream = new FileInputStream("test/org/jruby/javasupport/test/" + fileName);
+        }
+        Reader in = new InputStreamReader(stream);
+        StringBuffer result = new StringBuffer();
+        int length;
+        char[] buf = new char[8096];
+        while ((length = in.read(buf, 0, buf.length)) >= 0) {
+            result.append(buf, 0, length);
+        }
+        in.close();
 
-    private String loadScript(String fileName) {
-        try {
-            Reader in = new InputStreamReader(getClass().getResourceAsStream(fileName));
-            StringBuffer result = new StringBuffer();
-            int length;
-            char[] buf = new char[8096];
-            while ((length = in.read(buf, 0, buf.length)) >= 0) {
-            	result.append(buf, 0, length);
-            }
-            in.close();
-
-            return result.toString();
-        } catch (Exception ex) {}
-        
-        return null;
+        return result.toString();
     }
-
 }
