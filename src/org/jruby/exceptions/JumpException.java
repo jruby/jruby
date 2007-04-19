@@ -16,7 +16,7 @@
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2007 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -32,14 +32,14 @@
 package org.jruby.exceptions;
 
 /**
- * This class should be used for performance reasons if the 
+ * This class should be used for performance reasons if the
  * Exception don't need a stack trace.
- * 
+ *
  * @author jpetersen
  */
 public class JumpException extends RuntimeException {
     private static final long serialVersionUID = -228162532535826617L;
-
+    
     public static final class JumpType {
         public static final int BREAK = 0;
         public static final int NEXT = 1;
@@ -49,39 +49,45 @@ public class JumpException extends RuntimeException {
         public static final int THROW = 5;
         public static final int RAISE = 6;
         
-		public static final JumpType BreakJump = new JumpType(BREAK);
-		public static final JumpType NextJump = new JumpType(NEXT);
-		public static final JumpType RedoJump = new JumpType(REDO);
-		public static final JumpType RetryJump = new JumpType(RETRY);
-		public static final JumpType ReturnJump = new JumpType(RETURN);
-		public static final JumpType ThrowJump = new JumpType(THROW);
-		public static final JumpType RaiseJump = new JumpType(RAISE);
-		
-		private final int typeId;
-		private JumpType(int typeId) {
-			this.typeId = typeId;
-		}
-		public int getTypeId() {
-			return typeId;
-		}
-	}
-	
-	private JumpType jumpType;
-	private Object target;
-	private Object value;
-
+        public static final JumpType BreakJump = new JumpType(BREAK);
+        public static final JumpType NextJump = new JumpType(NEXT);
+        public static final JumpType RedoJump = new JumpType(REDO);
+        public static final JumpType RetryJump = new JumpType(RETRY);
+        public static final JumpType ReturnJump = new JumpType(RETURN);
+        public static final JumpType ThrowJump = new JumpType(THROW);
+        public static final JumpType RaiseJump = new JumpType(RAISE);
+        
+        private final int typeId;
+        private JumpType(int typeId) {
+            this.typeId = typeId;
+        }
+        public int getTypeId() {
+            return typeId;
+        }
+    }
+    
+    private JumpType jumpType;
+    private Object target;
+    private Object value;
+    
     // FIXME: Remove inKernelLoop from this and come up with something more general
     // Hack to detect a break in Kernel#loop
     private boolean inKernelLoop = false;
-
+    
+    /**
+     * Constructor for flow-control-only JumpExceptions.
+     */
+    public JumpException() {
+    }
+    
     /**
      * Constructor for JumpException.
      */
-    public JumpException(JumpType jumpType) {
+    protected JumpException(JumpType jumpType) {
         super();
         this.jumpType = jumpType;
     }
-
+    
     /**
      * Constructor for JumpException.
      * @param msg
@@ -90,65 +96,73 @@ public class JumpException extends RuntimeException {
         super(msg);
         this.jumpType = jumpType;
     }
-
+    
     public JumpException(String msg, Throwable cause, JumpType jumpType) {
         super(msg, cause);
         this.jumpType = jumpType;
     }
     
     /** This method don't do anything for performance reasons.
-     * 
+     *
      * @see Throwable#fillInStackTrace()
      */
     public Throwable fillInStackTrace() {
         return this;
-    }    
-
+    }
+    
     protected Throwable originalFillInStackTrace() {
         return super.fillInStackTrace();
     }
     
     public JumpType getJumpType() {
-    	return jumpType;
+        return jumpType;
     }
     
-	/**
-	 * @return Returns the target.
-	 */
-	public Object getTarget() {
-		return target;
-	}
-	
-	/**
-	 * @param target The target (destination) of the jump.
-	 */
-	public void setTarget(Object target) {
-		this.target = target;
-	}
-	
-	/**
+    public void setJumpType(JumpType jumpType) {
+        // this is like clearing out the exception, so we flush other fields here as well
+        this.jumpType = jumpType;
+        this.target = null;
+        this.value = null;
+        this.inKernelLoop = false;
+    }
+    
+    /**
+     * @return Returns the target.
+     */
+    public Object getTarget() {
+        return target;
+    }
+    
+    /**
+     * @param target The target (destination) of the jump.
+     */
+    public void setTarget(Object target) {
+        this.target = target;
+    }
+    
+    /**
      * Get the value that will returned when the jump reaches its destination
-     * 
-	 * @return Returns the return value.
-	 */
-	public Object getValue() {
-		return value;
-	}
-	
-	/**
+     *
+     * @return Returns the return value.
+     */
+    public Object getValue() {
+        return value;
+    }
+    
+    /**
      * Set the value that will be returned when the jump reaches its destination
-     * 
-	 * @param value the value to be returned.
-	 */
-	public void setValue(Object value) {
-		this.value = value;
-	}
-
+     *
+     * @param value the value to be returned.
+     */
+    public void setValue(Object value) {
+        this.value = value;
+    }
+    
     
     public void setBreakInKernelLoop(boolean inKernelLoop) {
         this.inKernelLoop = inKernelLoop;
     }
-
+    
     public boolean isBreakInKernelLoop() {
         return inKernelLoop;
     }

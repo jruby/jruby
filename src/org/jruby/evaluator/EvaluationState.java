@@ -526,7 +526,8 @@ public class EvaluationState {
    
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
-        JumpException je = new JumpException(JumpException.JumpType.BreakJump);
+        JumpException je = context.controlException;
+        je.setJumpType(JumpException.JumpType.BreakJump);
    
         je.setValue(result);
    
@@ -1321,7 +1322,8 @@ public class EvaluationState {
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
         // now used as an interpreter event
-        JumpException je = new JumpException(JumpException.JumpType.NextJump);
+        JumpException je = context.controlException;
+        je.setJumpType(JumpException.JumpType.NextJump);
    
         je.setTarget(iVisited);
         je.setValue(result);
@@ -1465,7 +1467,8 @@ public class EvaluationState {
         context.pollThreadEvents();
    
         // now used as an interpreter event
-        JumpException je = new JumpException(JumpException.JumpType.RedoJump);
+        JumpException je = context.controlException;
+        je.setJumpType(JumpException.JumpType.RedoJump);
    
         je.setValue(node);
    
@@ -1562,7 +1565,8 @@ public class EvaluationState {
     private static IRubyObject retryNode(ThreadContext context) {
         context.pollThreadEvents();
    
-        JumpException je = new JumpException(JumpException.JumpType.RetryJump);
+        JumpException je = context.controlException;
+        je.setJumpType(JumpException.JumpType.RetryJump);
    
         throw je;
     }
@@ -1572,7 +1576,8 @@ public class EvaluationState {
    
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
-        JumpException je = new JumpException(JumpException.JumpType.ReturnJump);
+        JumpException je = context.controlException;
+        je.setJumpType(JumpException.JumpType.ReturnJump);
 
         je.setTarget(context.getFrameJumpTarget());
         je.setValue(result);

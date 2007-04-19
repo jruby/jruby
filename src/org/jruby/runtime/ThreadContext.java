@@ -39,6 +39,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyThread;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SourcePositionFactory;
 import org.jruby.parser.LocalStaticScope;
@@ -88,6 +89,8 @@ public class ThreadContext {
     private int catchIndex = -1;
     
     private ISourcePosition sourcePosition = new SourcePositionFactory(null).getDummyPosition();
+    
+    public final JumpException controlException = new JumpException();
     
     /**
      * Constructor for Context.

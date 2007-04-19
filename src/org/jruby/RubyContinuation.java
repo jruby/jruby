@@ -47,7 +47,8 @@ public class RubyContinuation {
 
     public static IRubyObject call(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         recv.getRuntime().getWarnings().warn("Continuation.call: Continuations are not implemented in JRuby and will not work");
-        JumpException je = new JumpException(JumpException.JumpType.BreakJump);
+        JumpException je = recv.getRuntime().getCurrentContext().controlException;
+        je.setJumpType(JumpException.JumpType.BreakJump);
         if(args.length == 1) {
             je.setValue(args[0]);
         } else {

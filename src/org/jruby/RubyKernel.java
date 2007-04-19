@@ -764,7 +764,8 @@ public class RubyKernel {
         for (int i = catches.length - 1 ; i >= 0 ; i--) {
             if (tag.equals(catches[i])) {
                 //Catch active, throw for catch to handle
-                JumpException je = new JumpException(JumpException.JumpType.ThrowJump);
+                JumpException je = recv.getRuntime().getCurrentContext().controlException;
+                je.setJumpType(JumpException.JumpType.ThrowJump);
 
                 je.setTarget(tag);
                 je.setValue(args.length > 1 ? args[1] : runtime.getNil());
