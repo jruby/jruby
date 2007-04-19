@@ -169,8 +169,7 @@ public final class Ruby {
 
     // Java support
     private JavaSupport javaSupport;
-    // FIXME: THIS IS WRONG. We need to correct the classloading problems.
-    private static JRubyClassLoader jrubyClassLoader; // = new JRubyClassLoader(Ruby.class.getClassLoader());
+    private static JRubyClassLoader jrubyClassLoader;
 
     private Parser parser = new Parser(this);
 
@@ -934,7 +933,7 @@ public final class Ruby {
 
     public JRubyClassLoader getJRubyClassLoader() {
         if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null)
-            jrubyClassLoader = new JRubyClassLoader(Ruby.class.getClassLoader());
+            jrubyClassLoader = new JRubyClassLoader(Thread.currentThread().getContextClassLoader());
         return jrubyClassLoader;
     }
 
