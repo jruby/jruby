@@ -1309,6 +1309,7 @@ public class RubyYaccLexer {
                     src.unread(c);
                     c = '_';
                     /* fall through */
+                case '~':       /* $~: match-data */
                 case '*':		/* $*: argv */
                 case '$':		/* $$: pid */
                 case '?':		/* $?: last status */
@@ -1342,7 +1343,6 @@ public class RubyYaccLexer {
                     /* xxx shouldn't check if valid option variable */
                     return Tokens.tGVAR;
 
-                case '~':		/* $~: match-data */
                 case '&':		/* $&: last match */
                 case '`':		/* $`: string before last match */
                 case '\'':		/* $': string after last match */

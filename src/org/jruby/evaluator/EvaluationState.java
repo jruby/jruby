@@ -1140,7 +1140,7 @@ public class EvaluationState {
                 context.getCurrentScope().setLastLine(result);
                 return result;
             case '~':
-                context.getCurrentScope().setBackRef(result);
+                context.setBackref(result);
                 return result;
             }
         }

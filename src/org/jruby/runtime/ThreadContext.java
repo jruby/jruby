@@ -36,6 +36,7 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyThread;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -333,6 +334,9 @@ public class ThreadContext {
     }
     
     public void setBackref(IRubyObject backref) {
+        if (!(backref instanceof RubyMatchData) && !backref.isNil()) {
+            throw runtime.newTypeError(backref, runtime.getClass("MatchData"));
+        }
         getCurrentScope().setBackRef(backref);
     }
     
