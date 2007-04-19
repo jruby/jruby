@@ -115,7 +115,7 @@ public class Dir {
                 test = Character.toLowerCase(test);
                 pat--;
                 while(s < slen) {
-                    if((c == '?' || c == '[' || Character.toLowerCase(string[s]) == test) &&
+                    if((c == '?' || c == '[' || Character.toLowerCase((char) string[s]) == test) &&
                        fnmatch(_pat, pat, plen, string, s, slen, flags | FNM_DOTMATCH) == 0) {
                         return 0;
                     } else if((pathname && isdirsep(string[s]))) {
@@ -151,7 +151,7 @@ public class Dir {
                 }
                 if(DOSISH && (pathname && isdirsep(c) && isdirsep(string[s]))) {
                 } else {
-                    if(Character.toLowerCase((char)c) != Character.toLowerCase(string[s])) {
+                    if(Character.toLowerCase((char)c) != Character.toLowerCase((char)string[s])) {
                         return FNM_NOMATCH;
                     }
                 }
@@ -195,7 +195,8 @@ public class Dir {
 
                 cend = (char)(_pat[pat++] & 0xFF);
             }
-            if(Character.toLowerCase(cstart) <= test && test <= Character.toLowerCase(cend)) {
+            if (Character.toLowerCase((char) cstart) <= test && 
+                    test <= Character.toLowerCase((char) cend)) {
                 ok = true;
             }
         }
