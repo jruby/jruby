@@ -4,7 +4,7 @@ begin
 
 1_000_000.times {
   begin
-    Timeout.timeout(0.01) {sleep 0.01}
+    Timeout.timeout(0.001) {sleep 0.001}
   rescue Timeout::Error
     puts 'timeout'
   else

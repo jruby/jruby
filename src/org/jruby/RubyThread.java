@@ -83,13 +83,15 @@ public class RubyThread extends RubyObject {
     private volatile boolean killed = false;
     public Object killLock = new Object();
     private RubyThread joinedByCriticalThread;
-      
-     public final ReentrantLock lock = new ReentrantLock();
-     private volatile boolean critical = false;
-     
-      private static boolean USE_POOLING;
-      
-     private static final boolean DEBUG = false;
+    
+    private boolean checkLocks = false;
+    
+    public final ReentrantLock lock = new ReentrantLock();
+    private volatile boolean critical = false;
+    
+    private static boolean USE_POOLING;
+    
+    private static final boolean DEBUG = false;
     
    static {
        if (Ruby.isSecurityRestricted()) USE_POOLING = false;
@@ -237,29 +239,22 @@ public class RubyThread extends RubyObject {
     }
 
     public void pollThreadEvents() {
-        try {
-            // check for criticalization *before* locking ourselves
-            threadService.waitForCritical();
-            
-            while (!this.lock.tryLock());
-            
-            ensureCurrent();
-            
-            if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before");
-            if (killed) throw new ThreadKill();
-            
-            if (DEBUG) System.out.println("thread " + Thread.currentThread() + " after");
-            if (receivedException != null) {
-                // clear this so we don't keep re-throwing
-                IRubyObject raiseException = receivedException;
-                receivedException = null;
-                RubyModule kernelModule = getRuntime().getModule("Kernel");
-                if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before propagating exception: " + killed);
-                kernelModule.callMethod(getRuntime().getCurrentContext(), "raise", raiseException);
-            }
-            
-        } finally {
-            if (this.lock.isHeldByCurrentThread()) this.lock.unlock();
+        // check for criticalization *before* locking ourselves
+        threadService.waitForCritical();
+
+        ensureCurrent();
+
+        if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before");
+        if (killed) throw new ThreadKill();
+
+        if (DEBUG) System.out.println("thread " + Thread.currentThread() + " after");
+        if (receivedException != null) {
+            // clear this so we don't keep re-throwing
+            IRubyObject raiseException = receivedException;
+            receivedException = null;
+            RubyModule kernelModule = getRuntime().getModule("Kernel");
+            if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before propagating exception: " + killed);
+            kernelModule.callMethod(getRuntime().getCurrentContext(), "raise", raiseException);
         }
     }
 
@@ -531,6 +526,8 @@ public class RubyThread extends RubyObject {
         if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before raising");
         RubyThread currentThread = getRuntime().getCurrentContext().getThread();
         try {
+            this.checkLocks = true;
+            
             while (!(currentThread.lock.tryLock() && this.lock.tryLock())) {
                 if (currentThread.lock.isHeldByCurrentThread()) currentThread.lock.unlock();
             }
@@ -544,6 +541,7 @@ public class RubyThread extends RubyObject {
         } finally {
             if (currentThread.lock.isHeldByCurrentThread()) currentThread.lock.unlock();
             if (this.lock.isHeldByCurrentThread()) this.lock.unlock();
+            this.checkLocks = false;
         }
 
         return this;
@@ -637,6 +635,7 @@ public class RubyThread extends RubyObject {
         RubyThread currentThread = getRuntime().getCurrentContext().getThread();
         
         try {
+            this.checkLocks = true;
             if (DEBUG) System.out.println("thread " + Thread.currentThread() + " trying to kill");
             while (!(currentThread.lock.tryLock() && this.lock.tryLock())) {
                 if (currentThread.lock.isHeldByCurrentThread()) currentThread.lock.unlock();
@@ -651,6 +650,7 @@ public class RubyThread extends RubyObject {
         } finally {
             if (currentThread.lock.isHeldByCurrentThread()) currentThread.lock.unlock();
             if (this.lock.isHeldByCurrentThread()) this.lock.unlock();
+            this.checkLocks = false;
         }
         
         try {
