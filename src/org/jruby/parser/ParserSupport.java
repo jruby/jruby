@@ -304,10 +304,10 @@ public class ParserSupport {
 		}
 	}
     
-    public Node addRootNode(Node topOfAST) {
+    public Node addRootNode(Node topOfAST, ISourcePosition position) {
         // I am not sure we need to get AST to set AST and the appendToBlock could maybe get removed.
         // For sure once we do two pass parsing we should since this is mostly just optimzation.
-        RootNode root = new RootNode(topOfAST != null ? topOfAST.getPosition() : null, result.getScope(),
+        RootNode root = new RootNode(topOfAST != null ? topOfAST.getPosition() : position, result.getScope(),
                 appendToBlock(result.getAST(), topOfAST));
 
         // FIXME: Should add begin and end nodes
