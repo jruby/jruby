@@ -477,8 +477,10 @@ public class RubyTime extends RubyObject {
         if (args.length > 1) {
             throw getRuntime().newArgumentError(0, 1);
         }
-
-        return (RubyString) mdump(new IRubyObject[] { this });
+        
+        RubyString str = (RubyString) mdump(new IRubyObject[] { this });
+        str.setInstanceVariables(this.getInstanceVariables());
+        return str;
     }    
 
     public RubyObject mdump(final IRubyObject[] args) {

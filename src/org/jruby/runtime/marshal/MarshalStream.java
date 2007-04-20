@@ -130,8 +130,7 @@ public class MarshalStream extends FilterOutputStream {
 
     private Map getInstanceVariables(IRubyObject value) throws IOException {
         Map instanceVariables = null;
-        
-        if (value.getNativeTypeIndex() != ClassIndex.OBJECT) {
+        if(value.getNativeTypeIndex() != ClassIndex.OBJECT) {
             if (!value.isImmediate() && value.safeHasInstanceVariables() && value.getNativeTypeIndex() != ClassIndex.CLASS) {
                 // object has instance vars and isn't a class, get a snapshot to be marshalled
                 // and output the ivar header here
@@ -146,16 +145,13 @@ public class MarshalStream extends FilterOutputStream {
                 // object is a custom class that extended one of the native types other than Object
                 writeUserClass(value);
             }
-        } // Object's instance var logic is handled in the metaclass's marshal
-
+        }
         return instanceVariables;
     }
 
     private void writeDirectly(IRubyObject value) throws IOException {
         Map instanceVariables = getInstanceVariables(value);
-       
         writeObjectData(value);
-        
         if (instanceVariables != null) {
             dumpInstanceVars(instanceVariables);
         }
@@ -270,15 +266,25 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void userMarshal(IRubyObject value) throws IOException {
+        RubyString marshaled = (RubyString) value.callMethod(runtime.getCurrentContext(), "_dump", runtime.newFixnum(depthLimit)); 
+
+        Map instanceVariables = marshaled.safeGetInstanceVariables();
+        if(instanceVariables != null) {
+            write(TYPE_IVAR);
+        }
+
         write(TYPE_USERDEF);
         RubyClass metaclass = value.getMetaClass();
         while (metaclass.isSingleton()) {
             metaclass = metaclass.getSuperClass();
         }
+
         dumpObject(RubySymbol.newSymbol(runtime, metaclass.getName()));
 
-        RubyString marshaled = (RubyString) value.callMethod(runtime.getCurrentContext(), "_dump", runtime.newFixnum(depthLimit)); 
         writeString(marshaled.getByteList());
+        if(instanceVariables != null) {
+            dumpInstanceVars(instanceVariables);
+        }
     }
     
     public void writeUserClass(IRubyObject obj) throws IOException {
@@ -286,7 +292,7 @@ public class MarshalStream extends FilterOutputStream {
     	
     	// w_unique
     	if (obj.getMetaClass().getName().charAt(0) == '#') {
-    		throw obj.getRuntime().newTypeError("Can't dump anonymous class");
+            throw obj.getRuntime().newTypeError("Can't dump anonymous class");
     	}
     	
     	// w_symbol
