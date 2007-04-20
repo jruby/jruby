@@ -141,6 +141,15 @@ public class MarshalStream extends FilterOutputStream {
                 write(TYPE_IVAR);
             }
 
+            switch(value.getNativeTypeIndex()) {
+            case ClassIndex.STRING:
+            case ClassIndex.REGEXP:
+            case ClassIndex.ARRAY:
+            case ClassIndex.HASH:
+                dumpExtended(value.getMetaClass());
+                break;
+            }
+
             if (value.getNativeTypeIndex() != value.getMetaClass().index) {
                 // object is a custom class that extended one of the native types other than Object
                 writeUserClass(value);
