@@ -640,7 +640,7 @@ public class RubyBignum extends RubyInteger {
         }
     }
 
-    public static RubyBignum unmarshalFrom(UnmarshalStream input) throws IOException {
+    public static RubyNumeric unmarshalFrom(UnmarshalStream input) throws IOException {
         boolean positive = input.readUnsignedByte() == '+';
         int shortLength = input.unmarshalInt();
 
@@ -656,7 +656,7 @@ public class RubyBignum extends RubyInteger {
             value = value.negate();
         }
 
-        RubyBignum result = newBignum(input.getRuntime(), value);
+        RubyNumeric result = bignorm(input.getRuntime(), value);
         input.registerLinkTarget(result);
         return result;
     }

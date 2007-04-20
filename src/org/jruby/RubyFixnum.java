@@ -109,7 +109,8 @@ public class RubyFixnum extends RubyInteger {
     private static final long SIGN_BIT = (1L << (BIT_SIZE - 1));
     public static final long MAX = (1L<<(BIT_SIZE - 1)) - 1;
     public static final long MIN = -1 * MAX - 1;
-    public static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1;
+    public static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1; // 0x3fff_ffff
+    public static final long MIN_MARSHAL_FIXNUM = - (1L << 30);   // -0x4000_0000
 
     public static final byte OP_PLUS_SWITCHVALUE = 1;
     public static final byte OP_MINUS_SWITCHVALUE = 2;

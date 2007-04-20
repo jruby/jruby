@@ -31,8 +31,8 @@ test_marshal("c\rFoo::Bar", Foo::Bar)
 test_marshal("m\017Enumerable", Enumerable)
 test_marshal("/\013regexp\000", /regexp/)
 test_marshal("l+\n\000\000\000\000\000\000\000\000@\000", 2 ** 70)
-#test_marshal("l+\f\313\220\263z\e\330p\260\200-\326\311\264\000",
-#             14323534664547457526224437612747)
+test_marshal("l+\f\313\220\263z\e\330p\260\200-\326\311\264\000",
+             14323534664547457526224437612747)
 test_marshal("l+\n\001\000\001@\000\000\000\000@\000",
              1 + (2 ** 16) + (2 ** 30) + (2 ** 70))
 test_marshal("l+\n6\361\3100_/\205\177Iq",
@@ -41,8 +41,8 @@ test_marshal("l-\n6\361\3100_/\205\177Iq",
              -534983213684351312654646)
 test_marshal("l+\n\331\347\365%\200\342a\220\336\220",
              684126354563246654351321)
-#test_marshal("l+\vIZ\210*,u\006\025\304\016\207\001",
-#            472759725676945786624563785)
+test_marshal("l+\vIZ\210*,u\006\025\304\016\207\001",
+            472759725676945786624563785)
 
 test_marshal("c\023Struct::Froboz",
              Struct.new("Froboz", :x, :y))
@@ -187,7 +187,7 @@ test_equal(MyHash, Marshal.load(Marshal.dump(x)).class)
 test_equal(x, Marshal.load(Marshal.dump(x)))
 
 x['a'] = 'b'
-#test_equal(x, Marshal.load(Marshal.dump(x)))
+test_equal(x, Marshal.load(Marshal.dump(x)))
 
 class F < Hash
   def initialize #:nodoc:

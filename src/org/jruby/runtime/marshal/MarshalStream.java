@@ -172,7 +172,7 @@ public class MarshalStream extends FilterOutputStream {
         case ClassIndex.FIXNUM: {
             RubyFixnum fixnum = (RubyFixnum)value;
             
-            if (fixnum.getLongValue() <= RubyFixnum.MAX_MARSHAL_FIXNUM) {
+            if (fixnum.getLongValue() <= RubyFixnum.MAX_MARSHAL_FIXNUM && fixnum.getLongValue() >= RubyFixnum.MIN_MARSHAL_FIXNUM) {
                 write('i');
                 writeInt((int) fixnum.getLongValue());
                 break;
