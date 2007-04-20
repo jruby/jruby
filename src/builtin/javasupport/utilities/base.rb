@@ -19,6 +19,7 @@ module JavaUtilities
     }
 		
     subclass.send(:define_method, "setup_instance_methods") {
+      puts "subclass #{self} calling JPC.dimfp" # never called?
       self.java_proxy_class.define_instance_methods_for_proxy(subclass)
     }
     

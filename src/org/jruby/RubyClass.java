@@ -293,7 +293,7 @@ public class RubyClass extends RubyModule {
     /** rb_class_s_new
      *
      */
-    public static RubyClass newClass(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static RubyClass newClass(IRubyObject recv, IRubyObject[] args, Block block, boolean invokeInherited) {
         final Ruby runtime = recv.getRuntime();
 
         RubyClass superClass;
@@ -310,19 +310,23 @@ public class RubyClass extends RubyModule {
 
         ThreadContext tc = runtime.getCurrentContext();
         // use allocator of superclass, since this will be a pure Ruby class
-        RubyClass newClass = superClass.newSubClass(null, superClass.getAllocator(),tc.peekCRef());
+        RubyClass newClass = superClass.newSubClass(null, superClass.getAllocator(),tc.peekCRef(),invokeInherited);
 
         // call "initialize" method
         newClass.callInit(args, block);
 
+        // FIXME: inheritedBy called in superClass.newSubClass, so I
+        // assume this second call is a bug...?
         // call "inherited" method of the superclass
-        newClass.inheritedBy(superClass);
+        //newClass.inheritedBy(superClass);
 
 		if (block.isGiven()) block.yield(tc, null, newClass, newClass, false);
 
 		return newClass;
     }
-
+    public static RubyClass newClass(IRubyObject recv, IRubyObject[] args, Block block) {
+        return newClass(recv,args,block,true);
+    }
     /** Return the real super class of this class.
      * 
      * rb_class_superclass
@@ -352,7 +356,8 @@ public class RubyClass extends RubyModule {
         return (RubyClass) RubyModule.unmarshalFrom(output);
     }
 
-    public RubyClass newSubClass(String name, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+    public RubyClass newSubClass(String name, ObjectAllocator allocator,
+            SinglyLinkedList parentCRef, boolean invokeInherited) {
         RubyClass classClass = runtime.getClass("Class");
         
         // Cannot subclass 'Class' or metaclasses
@@ -365,7 +370,10 @@ public class RubyClass extends RubyModule {
         RubyClass newClass = new RubyClass(runtime, classClass, this, allocator, parentCRef, name);
 
         newClass.makeMetaClass(getMetaClass(), newClass.getCRef());
-        newClass.inheritedBy(this);
+        
+        if (invokeInherited) {
+            newClass.inheritedBy(this);
+        }
 
         if(null != name) {
             ((RubyModule)parentCRef.getValue()).setConstant(name, newClass);
@@ -373,6 +381,10 @@ public class RubyClass extends RubyModule {
 
         return newClass;
     }
+    public RubyClass newSubClass(String name, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        return newSubClass(name,allocator,parentCRef,true);
+    }
+    
     
     protected IRubyObject doClone() {
     	return RubyClass.cloneClass(getRuntime(), getMetaClass(), getSuperClass(), getAllocator(), null/*FIXME*/, null);

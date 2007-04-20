@@ -17,6 +17,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -60,6 +61,7 @@ public class JavaField extends JavaAccessibleObject {
         result.defineFastMethod("static?", callbackFactory.getFastMethod("static_p"));
         result.defineFastMethod("value", callbackFactory.getFastMethod("value", IRubyObject.class));
         result.defineFastMethod("set_value", callbackFactory.getFastMethod("set_value", IRubyObject.class, IRubyObject.class));
+        result.defineFastMethod("set_static_value", callbackFactory.getFastMethod("set_static_value", IRubyObject.class));
         result.defineFastMethod("final?", callbackFactory.getFastMethod("final_p"));
         result.defineFastMethod("static_value", callbackFactory.getFastMethod("static_value"));
         result.defineFastMethod("name", callbackFactory.getFastMethod("name"));
@@ -107,7 +109,7 @@ public class JavaField extends JavaAccessibleObject {
     }
 
     public JavaObject set_value(IRubyObject object, IRubyObject value) {
-         if (! (object instanceof JavaObject)) {
+        if (! (object instanceof JavaObject)) {
             throw getRuntime().newTypeError("not a java object: " + object);
         }
         if (! (value instanceof JavaObject)) {
@@ -152,6 +154,32 @@ public class JavaField extends JavaAccessibleObject {
         }
     }
 
+    public JavaObject set_static_value(IRubyObject value) {
+        if (! (value instanceof JavaObject)) {
+            throw getRuntime().newTypeError("not a java object:" + value);
+        }
+        try {
+            Object convertedValue = JavaUtil.convertArgument(((JavaObject) value).getValue(),
+                                                             field.getType());
+            // TODO: Only setAccessible to account for pattern found by
+            // accessing constants included from a non-public interface.
+            // (aka java.util.zip.ZipConstants being implemented by many
+            // classes)
+            // TODO: not sure we need this at all, since we only expose
+            // public fields.
+            //field.setAccessible(true);
+            field.set(null, convertedValue);
+        } catch (IllegalAccessException iae) {
+            throw getRuntime().newTypeError(
+                                "illegal access on setting static variable: " + iae.getMessage());
+        } catch (IllegalArgumentException iae) {
+            throw getRuntime().newTypeError(
+                                "wrong type for " + field.getType().getName() + ": " +
+                                ((JavaObject) value).getValue().getClass().getName());
+        }
+        return (JavaObject) value;
+    }
+    
     public RubyString name() {
         return getRuntime().newString(field.getName());
     }

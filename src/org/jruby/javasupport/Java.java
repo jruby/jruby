@@ -17,6 +17,7 @@
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Map;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -49,6 +49,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
@@ -155,27 +156,35 @@ public class Java {
                 Class c = ((JavaClass)java_class).javaClass();
                 RubyClass base_type;
                 boolean concrete = false;
+                boolean invokeInherited = true;
                 if(c.isInterface()) {
                     base_type = runtime.getClass("InterfaceJavaProxy");
                 } else if(c.isArray()) {
                     base_type = runtime.getClass("ArrayJavaProxy");
                 } else {
                     concrete = true;
-                    base_type = runtime.getClass("ConcreteJavaProxy");
+                    if (Object.class.equals(c) || c.isPrimitive()) {
+                        base_type = runtime.getClass("ConcreteJavaProxy");
+                    } else {
+                        base_type = (RubyClass)get_proxy_class(recv,runtime.newString(c.getSuperclass().getName()));
+                        invokeInherited = false;
+                    }
                 }
-
-                RubyClass proxy_class = RubyClass.newClass(recv, new IRubyObject[]{base_type}, Block.NULL_BLOCK);
+                RubyClass proxy_class = RubyClass.newClass(recv, new IRubyObject[]{base_type}, Block.NULL_BLOCK,invokeInherited);
                 proxy_class.callMethod(runtime.getCurrentContext(), "java_class=", java_class);
-                if(concrete) {
+                if(concrete && invokeInherited) {
                     proxy_class.getMetaClass().defineFastMethod("inherited", pdata.callback);
                 }
                 proxy_classes.put(class_id, proxy_class);
                 // We do not setup the proxy before we register it so that same-typed constants do
                 // not try and create a fresh proxy class and go into an infinite loop
-                proxy_class.callMethod(runtime.getCurrentContext(), "setup");
-                
+                ((JavaClass)java_class).setupProxy(proxy_class);
                 for(Iterator iter = pdata.extenders.iterator(); iter.hasNext(); ) {
                     ((IRubyObject)iter.next()).callMethod(runtime.getCurrentContext(), "extend_proxy", proxy_class);
+                }
+                if (concrete && Modifier.isPublic(c.getModifiers()) &&
+                        !c.isPrimitive() && useJavaPackageModules(runtime)) {
+                    addToJavaPackageModule(proxy_class,(JavaClass)java_class);
                 }
             }
         }
@@ -183,9 +192,53 @@ public class Java {
     }
 
     public static IRubyObject concrete_proxy_inherited(IRubyObject recv, IRubyObject subclass) {
-        ThreadContext tc = recv.getRuntime().getCurrentContext();
-        recv.callMethod(tc,recv.getMetaClass().getSuperClass(), "inherited", new IRubyObject[]{subclass}, org.jruby.runtime.CallType.SUPER, Block.NULL_BLOCK);
-        return recv.getRuntime().getModule("JavaUtilities").callMethod(tc, "setup_java_subclass", new IRubyObject[]{subclass, recv.callMethod(tc,"java_class")});
+        Ruby runtime = recv.getRuntime();
+        ThreadContext tc = runtime.getCurrentContext();
+        RubyClass javaProxyClass = runtime.getClass("JavaProxy").getMetaClass();
+        recv.callMethod(tc,javaProxyClass, "inherited", new IRubyObject[]{subclass}, org.jruby.runtime.CallType.SUPER, Block.NULL_BLOCK);
+        // TODO: move to Java
+        return runtime.getModule("JavaUtilities").callMethod(tc, "setup_java_subclass", new IRubyObject[]{subclass, recv.callMethod(tc,"java_class")});
+    }
+    
+    public static boolean useJavaPackageModules (Ruby runtime) {
+        final RubyString javaModuleVar = runtime.newString("JRUBY_JAVA_MODULES");
+        RubyHash h = ((RubyHash)runtime.getObject().getConstant("ENV"));
+        IRubyObject useMods = h.aref(javaModuleVar);
+        // right now, defaulting to 'true' unless explicity set to 'false'.
+        // might want to do this the other way
+        return (useMods == null ||
+                !(useMods instanceof RubyString) ||
+                ! "false".equals(useMods.toString()));
+    }
+    
+    private static void addToJavaPackageModule(RubyClass proxyClass, JavaClass javaClass) {
+        Class clazz = javaClass.javaClass();
+        String fullName = clazz.getName();
+        int endPackage;
+        // we'll only map conventional class names to modules 
+        if (fullName == null ||
+                (endPackage = fullName.lastIndexOf('.')) == -1  ||
+                fullName.indexOf('$') != -1 ||
+                !Character.isUpperCase(fullName.charAt(endPackage + 1))) {
+            return;
+        }
+        Ruby runtime = proxyClass.getRuntime();
+        RubyModule parent = runtime.getModule("Java");
+        for (int start = 0, offset = 0; start < endPackage; start = offset + 1) {
+            offset = fullName.indexOf('.',start);
+            String moduleName = fullName.substring(start,offset).toUpperCase();
+            IRubyObject child = parent.getConstantAt(moduleName);
+            if (child == null) {
+                child = parent.defineModuleUnder(moduleName);
+            } else if (!(child instanceof RubyModule)) {
+                return;
+            }
+            parent = (RubyModule)child;
+        }
+        String className = fullName.substring(endPackage + 1);
+        if (parent.getConstantAt(className) == null) {
+            parent.const_set(runtime.newSymbol(className),proxyClass);
+        }
     }
 
     public static IRubyObject matching_method(IRubyObject recv, IRubyObject methods, IRubyObject args) {
