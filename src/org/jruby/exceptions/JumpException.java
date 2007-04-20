@@ -48,6 +48,7 @@ public class JumpException extends RuntimeException {
         public static final int RETURN = 4;
         public static final int THROW = 5;
         public static final int RAISE = 6;
+        public static final int SPECIAL = 7;
         
         public static final JumpType BreakJump = new JumpType(BREAK);
         public static final JumpType NextJump = new JumpType(NEXT);
@@ -56,6 +57,7 @@ public class JumpException extends RuntimeException {
         public static final JumpType ReturnJump = new JumpType(RETURN);
         public static final JumpType ThrowJump = new JumpType(THROW);
         public static final JumpType RaiseJump = new JumpType(RAISE);
+        public static final JumpType SpecialJump = new JumpType(SPECIAL);
         
         private final int typeId;
         private JumpType(int typeId) {
@@ -83,7 +85,7 @@ public class JumpException extends RuntimeException {
     /**
      * Constructor for JumpException.
      */
-    protected JumpException(JumpType jumpType) {
+    public JumpException(JumpType jumpType) {
         super();
         this.jumpType = jumpType;
     }

@@ -148,7 +148,8 @@ public class RubyMarshal {
                 rawInput = inputStream(in);
             } else if (in != null && in.respondsTo("to_str")) {
                 RubyString inString = (RubyString) in.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY);
-                rawInput = new ByteArrayInputStream(inString.getBytes());
+                ByteList bytes = inString.getByteList();
+                rawInput = new ByteArrayInputStream(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             } else {
                 throw recv.getRuntime().newTypeError("instance of IO needed");
             }

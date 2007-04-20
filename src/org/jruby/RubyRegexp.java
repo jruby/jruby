@@ -297,7 +297,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         try {
             // decode with the specified encoding, escape as appropriate, and reencode
             // FIXME: This could probably be more efficent.
-            CharBuffer decoded = kcode.decoder().decode(ByteBuffer.wrap(str.getBytes()));
+            ByteList bytes = str.getByteList();
+            CharBuffer decoded = kcode.decoder().decode(ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), bytes.length()));
             String escaped = escapeSpecialChars(decoded.toString());
             ByteBuffer encoded = kcode.encoder().encode(CharBuffer.wrap(escaped));
             

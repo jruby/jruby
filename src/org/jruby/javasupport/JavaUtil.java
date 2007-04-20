@@ -136,10 +136,11 @@ public class JavaUtil {
 			return new Character('\0');
         } else if (javaClass == String.class) {
             RubyString rubyString = (RubyString) rubyObject.callMethod(context, MethodIndex.TO_S, "to_s");
+            ByteList bytes = rubyString.getByteList();
             try {
-                return new String(rubyString.getBytes(), "UTF8");
+                return new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
             } catch (UnsupportedEncodingException uee) {
-                return new String(rubyString.getBytes());
+                return new String(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             }
         } else if (javaClass == ByteList.class) {
             return rubyObject.convertToString().getByteList();

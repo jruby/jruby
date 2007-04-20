@@ -398,11 +398,11 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         
         if (buf.length() > buffer.capacity()) { // Doesn't fit in buffer. Write immediately.
             flushWrite(); // ensure nothing left to write
-            channel.write(ByteBuffer.wrap(buf.unsafeBytes(), 0, buf.length()));
+            channel.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
         }
         else {
             if (buf.length() > buffer.remaining()) flushWrite();
-            buffer.put(buf.unsafeBytes(), 0, buf.length());
+            buffer.put(buf.unsafeBytes(), buf.begin(), buf.length());
         }
         
         if (isSync()) sync();

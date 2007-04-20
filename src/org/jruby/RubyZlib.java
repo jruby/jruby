@@ -246,33 +246,29 @@ public class RubyZlib {
     public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) throws Exception {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
         int crc = 0;
-        byte[] bytes = null;
-        if(!args[0].isNil()) {
-            bytes = args[0].convertToString().getBytes();
-        }
-        if(!args[1].isNil()) {
-            crc = RubyNumeric.fix2int(args[1]);
-        }
+        ByteList bytes = null;
+        
+        if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
+        if (!args[1].isNil()) crc = RubyNumeric.fix2int(args[1]);
+
         CRC32Ext ext = new CRC32Ext(crc);
-        if(bytes != null) {
-            ext.update(bytes);
+        if (bytes != null) {
+            ext.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
         }
+        
         return recv.getRuntime().newFixnum(ext.getValue());
     }
 
     public static IRubyObject adler32(IRubyObject recv, IRubyObject[] args) throws Exception {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
         int adler = 1;
-        byte[] bytes = null;
-        if(!args[0].isNil()) {
-            bytes = args[0].convertToString().getBytes();
-        }
-        if(!args[1].isNil()) {
-            adler = RubyNumeric.fix2int(args[1]);
-        }
+        ByteList bytes = null;
+        if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
+        if (!args[1].isNil()) adler = RubyNumeric.fix2int(args[1]);
+
         Adler32Ext ext = new Adler32Ext(adler);
-        if(bytes != null) {
-            ext.update(bytes);
+        if (bytes != null) {
+            ext.update(bytes.unsafeBytes(), bytes.begin(), bytes.length()); // it's safe since adler.update doesn't modify the array
         }
         return recv.getRuntime().newFixnum(ext.getValue());
     }
@@ -1066,9 +1062,9 @@ public class RubyZlib {
         }
 
         public IRubyObject write(IRubyObject p1) throws IOException {
-            byte[] bs = p1.convertToString().getBytes();
-            io.write(bs);
-            return getRuntime().newFixnum(bs.length);
+            ByteList bytes = p1.convertToString().getByteList();
+            io.write(bytes.unsafeBytes(), bytes.begin(), bytes.length());
+            return getRuntime().newFixnum(bytes.length());
         }
     }
 }

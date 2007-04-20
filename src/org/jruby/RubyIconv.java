@@ -144,8 +144,8 @@ public class RubyIconv extends RubyObject {
     private static IRubyObject convert2(String fromEncoding, String toEncoding, RubyString original) {
         try {
             // Get all bytes from string and pretend they are not encoded in any way.
-            byte[] bytes = original.getBytes();
-            ByteBuffer buf = ByteBuffer.wrap(bytes);
+            ByteList bytes = original.getByteList();
+            ByteBuffer buf = ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), bytes.length());
 
             CharsetDecoder decoder = Charset.forName(fromEncoding).newDecoder();
             

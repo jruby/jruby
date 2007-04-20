@@ -725,7 +725,11 @@ public class RubyArray extends RubyObject implements List {
     public final IRubyObject eltInternal(int offset) {
         return values[begin + offset];
     }
-
+    
+    public final IRubyObject eltInternalSet(int offset, IRubyObject item) {
+        return values[begin + offset] = item;
+    }
+    
     /** rb_ary_fetch
      *
      */
@@ -2233,7 +2237,7 @@ public class RubyArray extends RubyObject implements List {
      */
     public RubyString pack(IRubyObject obj) {
         RubyString iFmt = RubyString.objAsString(obj);
-        return Pack.pack(getRuntime(), Arrays.asList(toJavaArrayMaybeUnsafe()), iFmt.getBytes());
+        return Pack.pack(getRuntime(), this, iFmt.getByteList());
     }
 
     public Class getJavaClass() {

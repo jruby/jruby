@@ -118,7 +118,7 @@ public class RubyEnumerator extends RubyObject {
 
         SlicedBlockCallback sliceBlock = new SlicedBlockCallback(self.getRuntime(), block, sliceSize);
 
-        RubyEnumerable.callEach(self.getRuntime().getCurrentContext(), self, self.getMetaClass(), sliceBlock);
+        RubyEnumerable.callEachOld(self.getRuntime().getCurrentContext(), self, self.getMetaClass(), sliceBlock);
             
         if (sliceBlock.hasLeftovers()) {
             sliceBlock.yieldLeftovers(self.getRuntime().getCurrentContext());
@@ -134,7 +134,7 @@ public class RubyEnumerator extends RubyObject {
             throw self.getRuntime().newArgumentError("invalid size");
         }
 
-        RubyEnumerable.callEach(self.getRuntime().getCurrentContext(), self, self.getMetaClass(), 
+        RubyEnumerable.callEachOld(self.getRuntime().getCurrentContext(), self, self.getMetaClass(), 
                                 new ConsecutiveBlockCallback(self.getRuntime(), block, consecutiveSize));
 
         return self.getRuntime().getNil();

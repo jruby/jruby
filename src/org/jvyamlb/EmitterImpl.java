@@ -830,7 +830,6 @@ public class EmitterImpl implements Emitter {
 
     void writeDoubleQuoted(final ByteList text, final boolean split) throws IOException {
         writeIndicator(ByteList.create("\""),true,false,false);
-        int beg = text.begin;
         int start = 0;
         int ending = 0;
         ByteList data = null;
@@ -841,7 +840,7 @@ public class EmitterImpl implements Emitter {
             }
             if(ch==0 || "\"\\\u0085".indexOf(ch) != -1 || !('\u0020' <= ch && ch <= '\u007E')) {
                 if(start < ending) {
-                    data = (ByteList)text.subSequence(beg+start,beg+ending);
+                    data = (ByteList)text.subSequence(start,ending);
                     env.column+=data.length();
                     stream.write(data.bytes,0,data.realSize);
                     start = ending;
@@ -863,7 +862,7 @@ public class EmitterImpl implements Emitter {
             }
             if((0 < ending && ending < (text.length()-1)) && (ch == ' ' || start >= ending) && (env.column+(ending-start)) > env.bestWidth && split) {
                 if(start < ending) {
-                    data = (ByteList)text.subSequence(beg+start,beg+ending);
+                    data = (ByteList)text.subSequence(start,ending);
                     data.append('\\');
                 } else {
                     data = ByteList.create("\\");
@@ -893,7 +892,6 @@ public class EmitterImpl implements Emitter {
         writeIndicator(ByteList.create("'"),true,false,false);
         boolean spaces = false;
         boolean breaks = false;
-        int beg = text.begin;
         int start=0,ending=0;
         char ceh = 0;
         ByteList data = null;
@@ -907,7 +905,7 @@ public class EmitterImpl implements Emitter {
                     if(start+1 == ending && env.column > env.bestWidth && split && start != 0 && ending != text.length()) {
                         writeIndent();
                     } else {
-                        data = (ByteList)text.subSequence(beg+start,beg+ending);
+                        data = (ByteList)text.subSequence(start,ending);
                         env.column += data.length();
                         stream.write(data.bytes,0,data.realSize);
                     }
@@ -915,7 +913,7 @@ public class EmitterImpl implements Emitter {
                 }
             } else if(breaks) {
                 if(ceh == 0 || !('\n' == ceh || '\u0085' == ceh)) {
-                    data = (ByteList)text.subSequence(beg+start,beg+ending);
+                    data = (ByteList)text.subSequence(start,ending);
                     for(int i=0,j=data.length();i<j;i++) {
                         char cha = data.charAt(i);
                         if('\n' == cha) {
@@ -930,7 +928,7 @@ public class EmitterImpl implements Emitter {
             } else {
                 if(ceh == 0 || !('\n' == ceh || '\u0085' == ceh)) {
                     if(start < ending) {
-                        data = (ByteList)text.subSequence(beg+start,beg+ending);
+                        data = (ByteList)text.subSequence(start,ending);
                         env.column += data.length();
                         stream.write(data.bytes,0,data.realSize);
                         start = ending;
@@ -959,7 +957,6 @@ public class EmitterImpl implements Emitter {
         boolean leadingSpace = false;
         boolean spaces = false;
         boolean breaks = false;
-        int beg = text.begin;
         int start=0,ending=0;
         ByteList data = null;
         while(ending <= text.length()) {
@@ -973,7 +970,7 @@ public class EmitterImpl implements Emitter {
                         writeLineBreak(null);
                     }
                     leadingSpace = ceh == ' ';
-                    data = (ByteList)text.subSequence(beg+start,beg+ending);
+                    data = (ByteList)text.subSequence(start,ending);
                     for(int i=0,j=data.length();i<j;i++) {
                         char cha = data.charAt(i);
                         if('\n' == cha) {
@@ -992,7 +989,7 @@ public class EmitterImpl implements Emitter {
                     if(start+1 == ending && env.column > env.bestWidth) {
                         writeIndent();
                     } else {
-                        data = (ByteList)text.subSequence(beg+start,beg+ending);
+                        data = (ByteList)text.subSequence(start,ending);
                         env.column += data.length();
                         stream.write(data.bytes,0,data.realSize);
                     }
@@ -1000,7 +997,7 @@ public class EmitterImpl implements Emitter {
                 }
             } else {
                 if(ceh == 0 || ' ' == ceh || '\n' == ceh || '\u0085' == ceh) {
-                    data = (ByteList)text.subSequence(beg+start,beg+ending);
+                    data = (ByteList)text.subSequence(start,ending);
                     stream.write(data.bytes,0,data.realSize);
                     if(ceh == 0) {
                         writeLineBreak(null);
@@ -1021,7 +1018,6 @@ public class EmitterImpl implements Emitter {
         writeIndicator(ByteList.create("|" + chomp), true, false, false);
         writeIndent();
         boolean breaks = false;
-        int beg = text.begin;
         int start=0,ending=0;
         ByteList data = null;
         while(ending <= text.length()) {
@@ -1031,7 +1027,7 @@ public class EmitterImpl implements Emitter {
             }
             if(breaks) {
                 if(ceh == 0 || !('\n' == ceh || '\u0085' == ceh)) {
-                    data = (ByteList)text.subSequence(beg+start,beg+ending);
+                    data = (ByteList)text.subSequence(start,ending);
                     for(int i=0,j=data.length();i<j;i++) {
                         char cha = data.charAt(i);
                         if('\n' == cha) {
@@ -1047,7 +1043,7 @@ public class EmitterImpl implements Emitter {
                 }
             } else {
                 if(ceh == 0 || '\n' == ceh || '\u0085' == ceh) {
-                    data = (ByteList)text.subSequence(beg+start,beg+ending);
+                    data = (ByteList)text.subSequence(start,ending);
                     stream.write(data.bytes,0,data.realSize);
                     if(ceh == 0) {
                         writeLineBreak(null);
@@ -1074,12 +1070,11 @@ public class EmitterImpl implements Emitter {
         env.whitespace = false;
         env.indentation = false;
         boolean spaces=false, breaks = false;
-        int beg = text.begin;
         int start=0,ending=0;
         while(ending <= text.length()) {
             char ceh = 0;
             if(ending < text.length()) {
-                ceh = (char)(text.bytes[beg+ending] & 0xFF);
+                ceh = (char)(text.bytes[text.begin + ending] & 0xFF);
             }
             if(spaces) {
                 if(ceh != ' ') {
@@ -1088,7 +1083,7 @@ public class EmitterImpl implements Emitter {
                         env.whitespace = false;
                         env.indentation = false;
                     } else {
-                        data = new ByteList(text, beg+start, ending-start);
+                        data = new ByteList(text, start, ending-start);
                         env.column += data.length();
                         stream.write(data.bytes,0,data.realSize);
                     }
@@ -1099,9 +1094,9 @@ public class EmitterImpl implements Emitter {
                     if((text.bytes[start] & 0xFF) == '\n') {
                         writeLineBreak(null);
                     }
-                    data = new ByteList(text, beg+start, ending-start);
+                    data = new ByteList(text, start, ending-start);
                     for(int i=0,j=data.length();i<j;i++) {
-                        char cha = (char)(data.bytes[beg+i]&0xFF);
+                        char cha = (char)(data.bytes[data.begin+i]&0xFF);
                         if('\n' == cha) {
                             writeLineBreak(null);
                         } else {
@@ -1115,7 +1110,7 @@ public class EmitterImpl implements Emitter {
                 }
             } else {
                 if(ceh == 0 || ' ' == ceh || '\n' == ceh || '\u0085' == ceh) {
-                    data = new ByteList(text, beg+start, ending-start);
+                    data = new ByteList(text, start, ending-start);
                     env.column += data.length();
                     stream.write(data.bytes,0,data.realSize);
                     start = ending;

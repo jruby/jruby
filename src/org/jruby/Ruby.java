@@ -149,6 +149,7 @@ public final class Ruby {
     private RubyBoolean falseObject;
     private RubyClass objectClass;
     private RubyClass stringClass;
+    private RubyModule enumerableModule;
     private RubyClass systemCallError = null;
     private RubyModule errnoModule = null;
     private IRubyObject topSelf;
@@ -354,6 +355,11 @@ public final class Ruby {
     public RubyModule getKernel() {
         return kernelModule;
     }
+    
+    public RubyModule getEnumerable() {
+        return enumerableModule;
+    }
+    
 
     public RubyClass getString() {
         return stringClass;
@@ -692,7 +698,7 @@ public final class Ruby {
         falseObject = new RubyBoolean(this, false);
         
         RubyComparable.createComparable(this);
-        RubyEnumerable.createEnumerableModule(this);
+        enumerableModule = RubyEnumerable.createEnumerableModule(this);
         stringClass = RubyString.createStringClass(this);
         RubySymbol.createSymbolClass(this);
         

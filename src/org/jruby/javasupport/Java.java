@@ -64,6 +64,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.util.ByteList;
 import org.jruby.util.collections.IntHashMap;
 
 public class Java {
@@ -430,7 +431,8 @@ public class Java {
             break;
         case ClassIndex.STRING:
             try {
-                javaObject = new String(((RubyString) object).getBytes(), "UTF8");
+                ByteList bytes = ((RubyString) object).getByteList();
+                javaObject = new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
             } catch (UnsupportedEncodingException uee) {
                 javaObject = object.toString();
             }

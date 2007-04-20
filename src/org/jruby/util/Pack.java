@@ -42,7 +42,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
-import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -50,7 +49,6 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Pack {
@@ -321,14 +319,6 @@ public class Pack {
         return io2Append;
     }
 
-    private static String convert2String(IRubyObject l2Conv) {
-        Ruby runtime = l2Conv.getRuntime();
-        if (l2Conv.getMetaClass() != runtime.getString()) {
-            l2Conv = l2Conv.convertToType(runtime.getString(), MethodIndex.TO_S, "to_s", true); //we may need a false here, not sure
-        }
-        return ((RubyString) l2Conv).toString();
-    }
-
     /**
      *    Decodes <i>str</i> (which may contain binary data) according to the format
      *       string, returning an array of each value extracted.
@@ -568,8 +558,8 @@ public class Pack {
             ByteList formatString) {
         RubyArray result = runtime.newArray();
         // FIXME: potentially could just use ByteList here?
-        ByteBuffer format = ByteBuffer.wrap(formatString.bytes());
-        ByteBuffer encode = ByteBuffer.wrap(encodedString.bytes());
+        ByteBuffer format = ByteBuffer.wrap(formatString.unsafeBytes(), formatString.begin(), formatString.length());
+        ByteBuffer encode = ByteBuffer.wrap(encodedString.unsafeBytes(), encodedString.begin(), encodedString.length());
         int type = 0;
         int next = safeGet(format);
 
@@ -940,7 +930,7 @@ public class Pack {
     }
 
     public static int encode(Ruby runtime, int occurrences, StringBuffer result,
-            List list, int index, Converter converter) {
+            RubyArray list, int index, Converter converter) {
         int listSize = list.size();
 
         while (occurrences-- > 0) {
@@ -948,7 +938,7 @@ public class Pack {
                 throw runtime.newArgumentError(sTooFew);
             }
 
-            IRubyObject from = (IRubyObject) list.get(index++);
+            IRubyObject from = list.eltInternal(index++);
 
             converter.encode(runtime, from, result);
         }
@@ -1289,8 +1279,8 @@ public class Pack {
      * use a platform-independent size. Spaces are ignored in the template string.
      * @see RubyString#unpack
      **/
-    public static RubyString pack(Ruby runtime, List list, byte[] formatString) {
-        ByteBuffer format = ByteBuffer.wrap((byte[])formatString);
+    public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
+        ByteBuffer format = ByteBuffer.wrap(formatString.unsafeBytes(), formatString.begin(), formatString.length());
         StringBuffer result = new StringBuffer();
         int listSize = list.size();
         int type = 0;
@@ -1360,7 +1350,7 @@ public class Pack {
                             throw runtime.newArgumentError(sTooFew);
                         }
 
-                        IRubyObject from = (IRubyObject) list.get(idx++);
+                        IRubyObject from = (IRubyObject) list.eltInternal(idx++);
                         lCurElemString = from == runtime.getNil() ? "" : from.convertToString().toString();
 
                         if (isStar) {
@@ -1549,7 +1539,7 @@ public class Pack {
                         if (listSize-- <= 0) {
                             throw runtime.newArgumentError(sTooFew);
                         }
-                        IRubyObject from = (IRubyObject) list.get(idx++);
+                        IRubyObject from = (IRubyObject) list.eltInternal(idx++);
                         lCurElemString = from == runtime.getNil() ? "" : from.convertToString().toString();
                         occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
 
@@ -1570,7 +1560,7 @@ public class Pack {
                            throw runtime.newArgumentError(sTooFew);
                        }
 
-                       IRubyObject from = (IRubyObject) list.get(idx++);
+                       IRubyObject from = (IRubyObject) list.eltInternal(idx++);
                        lCurElemString = from == runtime.getNil() ? "" : from.convertToString().toString();
 
                        if (occurrences <= 1) {
@@ -1588,7 +1578,7 @@ public class Pack {
                            throw runtime.newArgumentError(sTooFew);
                         }
 
-                        IRubyObject from = (IRubyObject) list.get(idx++);
+                        IRubyObject from = (IRubyObject) list.eltInternal(idx++);
                         long l = from == runtime.getNil() ? 0 : RubyNumeric.num2long(from);
 
                         c[cIndex] = (char) l;
@@ -1602,7 +1592,7 @@ public class Pack {
                     }
                     break;
                 case 'w' :
-                    IRubyObject from = (IRubyObject) list.get(idx++);
+                    IRubyObject from = (IRubyObject) list.eltInternal(idx++);
                     String stringVal = from == runtime.getNil() ? "0" : from.asString().toString();
                     BigInteger bigInt = new BigInteger(stringVal);
                     

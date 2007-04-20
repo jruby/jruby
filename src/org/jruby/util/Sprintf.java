@@ -308,15 +308,28 @@ public class Sprintf {
     private static CharSequence rubySprintf(CharSequence charFormat, Args args) {
         byte[] format;
         Buffer buf = new Buffer();
+        
+        int offset;
+        int length;
+        int start;
+        int mark;        
+        
         if (charFormat instanceof ByteList) {
-            format = ((ByteList)charFormat).unsafeBytes();
+            ByteList list = (ByteList)charFormat;
+            format = list.unsafeBytes();
+            int begin = list.begin(); 
+            offset = begin;
+            length = begin + list.length();
+            start = begin;
+            mark = begin;
         } else {
-            format = stringToBytes(charFormat,false);
+            format = stringToBytes(charFormat, false);
+            offset = 0;
+            length = charFormat.length();
+            start = 0;
+            mark = 0;             
         }
-        int offset = 0;
-        int length = charFormat.length();
-        int start = 0;
-        int mark = 0;
+
         while (offset < length) {
             start = offset;
             for ( ; offset < length && format[offset] != '%'; offset++) ;

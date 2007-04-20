@@ -539,14 +539,14 @@ public class Convert {
      * @throws NumberFormatException
      */
     public static final long byteListToLong(ByteList bytes, int base, boolean raise) {
-        return byteArrayToLong(bytes.unsafeBytes(),bytes.length(),base,raise);
+        return byteArrayToLong(bytes.unsafeBytes(), bytes.begin(), bytes.length(), base, raise);
     }
     public static final long byteListToLong(ByteList bytes, int base) {
-        return byteArrayToLong(bytes.unsafeBytes(),bytes.length(),base,false);
+        return byteArrayToLong(bytes.unsafeBytes(), bytes.begin(), bytes.length(), base, false);
     }
     // for base 10 ByteList
     public static final long byteListToLong(ByteList bytes) {
-        return byteArrayToLong(bytes.unsafeBytes(),bytes.length(),10,false);
+        return byteArrayToLong(bytes.unsafeBytes(), bytes.begin(), bytes.length(), 10, false);
     }
     /**
      * Converts a ByteList to a BigInteger value, using the specified  base.
@@ -564,14 +564,14 @@ public class Convert {
      * @throws NumberFormatException, IllegalArgumentException
      */
     public static final BigInteger byteListToBigInteger(ByteList bytes, int base, boolean raise) {
-        return byteArrayToBigInteger(bytes.unsafeBytes(),bytes.length(),base,raise);
+        return byteArrayToBigInteger(bytes.unsafeBytes(), bytes.begin(),bytes.length(), base, raise);
     }
     public static final BigInteger byteListToBigInteger(ByteList bytes, int base) {
-        return byteArrayToBigInteger(bytes.unsafeBytes(),bytes.length(),base,false);
+        return byteArrayToBigInteger(bytes.unsafeBytes(), bytes.begin(), bytes.length(), base, false);
     }
     // for base 10 ByteList
     public static final BigInteger byteListToBigInteger(ByteList bytes) {
-        return byteArrayToBigInteger(bytes.unsafeBytes(),bytes.length(),10,false);
+        return byteArrayToBigInteger(bytes.unsafeBytes(), bytes.begin(), bytes.length(), 10, false);
     }
    /**
      * Converts a byte array to a primitive long value, using the specified
@@ -588,7 +588,7 @@ public class Convert {
      * @return
      * @throws NumberFormatException, IllegalArgumentException
      */
-    public static final long byteArrayToLong(byte[] bytes, int buflen, int base, boolean strict) {
+    public static final long byteArrayToLong(byte[] bytes, int begin, int buflen, int base, boolean strict) {
         final int SCOMPLETE         = 0;
         final int SBEGIN            = 1;
         final int SSIGN             = 2;
@@ -620,7 +620,8 @@ public class Convert {
         if (buflen == 0) {
             throw new InvalidIntegerException();
         }
-        int i = 0;
+        int i = begin;
+        buflen += begin;
         byte ival;
         int flags = 0;
         long limit = -Long.MAX_VALUE;
@@ -825,7 +826,7 @@ public class Convert {
      * @return
      * @throws NumberFormatException, IllegalArgumentException
      */
-    public static final BigInteger byteArrayToBigInteger(byte[] bytes, int buflen, int base, boolean strict) {
+    public static final BigInteger byteArrayToBigInteger(byte[] bytes, int begin, int buflen, int base, boolean strict) {
         final int SCOMPLETE         = 0;
         final int SBEGIN            = 1;
         final int SSIGN             = 2;
@@ -856,7 +857,8 @@ public class Convert {
         if (buflen == 0) {
             throw new InvalidIntegerException();
         }
-        int i = 0;
+        int i = begin;
+        buflen += begin; 
         byte ival;
         int flags = 0;
         int digit;
@@ -1051,10 +1053,10 @@ public class Convert {
      * @return the converted double value
      */
     public static final double byteListToDouble(ByteList bytes, boolean strict) {
-        return byteArrayToDouble(bytes.unsafeBytes(),bytes.length(),strict);
+        return byteArrayToDouble(bytes.unsafeBytes(), bytes.begin(), bytes.length(), strict);
     }
     public static final double byteListToDouble(ByteList bytes) {
-        return byteArrayToDouble(bytes.unsafeBytes(),bytes.length(),false);
+        return byteArrayToDouble(bytes.unsafeBytes(), bytes.begin(), bytes.length(), false);
     }
     /**
      * Converts a byte array containing a RubyString representation of a double
@@ -1068,7 +1070,7 @@ public class Convert {
      *               otherwise, the laxer rules of str.to_f are employed.
      * @return the converted double value
      */
-    public static final double byteArrayToDouble(byte[] bytes, int buflen, boolean strict) {
+    public static final double byteArrayToDouble(byte[] bytes, int begin, int buflen, boolean strict) {
         // Simple cases  ( abs(exponent) <= 22 [up to 37 depending on significand length])
         // are converted directly, which is considerably faster than creating a Java
         // String and passing it to Double.parseDouble() (which in turn passes it to
@@ -1117,7 +1119,8 @@ public class Convert {
         if (buflen == 0) {
             throw new NumberFormatException();
         }
-        int i = 0;
+        int i = begin;
+        buflen += begin;
         byte ival = -1;
         boolean negative = false;
 

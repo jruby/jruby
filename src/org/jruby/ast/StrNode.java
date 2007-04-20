@@ -56,8 +56,7 @@ public class StrNode extends Node implements ILiteralNode {
     public StrNode(ISourcePosition position, StrNode head, StrNode tail) {
         super(position, NodeTypes.STRNODE);
         
-        // ENEBO: In this case do we really need to clone?
-        this.value = (ByteList) head.getValue().clone();
+        this.value = (ByteList) head.getValue();
         
         value.append(tail.getValue());
     }
