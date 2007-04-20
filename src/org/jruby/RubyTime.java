@@ -88,9 +88,9 @@ public class RubyTime extends RubyObject {
     private static ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyTime instance = new RubyTime(runtime, klass);
-
-            instance.setMetaClass(klass);
-
+            GregorianCalendar cal = new GregorianCalendar();
+            cal.setTime(new Date());
+            instance.setJavaCalendar(cal);
             return instance;
         }
     };
@@ -102,8 +102,7 @@ public class RubyTime extends RubyObject {
         
         timeClass.includeModule(runtime.getModule("Comparable"));
         
-        timeMetaClass.defineMethod("new", callbackFactory.getSingletonMethod("s_new"));
-        timeMetaClass.defineMethod("now", callbackFactory.getSingletonMethod("s_new"));
+        timeMetaClass.defineAlias("now","new");
         timeMetaClass.defineFastMethod("at", callbackFactory.getFastOptSingletonMethod("new_at"));
         timeMetaClass.defineFastMethod("local", callbackFactory.getFastOptSingletonMethod("new_local"));
         timeMetaClass.defineFastMethod("mktime", callbackFactory.getFastOptSingletonMethod("new_local"));
@@ -153,6 +152,7 @@ public class RubyTime extends RubyObject {
         timeClass.defineAlias("gmtime?", "gmt?");
         timeClass.defineFastMethod("localtime", callbackFactory.getFastMethod("localtime"));
         timeClass.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
+        timeClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         timeClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", IRubyObject.class));
         timeClass.defineMethod("_dump", callbackFactory.getOptMethod("dump"));
         timeClass.defineFastMethod("gmt_offset", callbackFactory.getFastMethod("gmt_offset"));
@@ -506,15 +506,20 @@ public class RubyTime extends RubyObject {
         }
         return RubyString.newString(obj.getRuntime(), new ByteList(dumpValue,false));
     }
+
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
+        return this;
+    }
     
     /* Time class methods */
     
-    public static IRubyObject s_new(IRubyObject recv, Block block) {
+    public static IRubyObject s_new(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyTime time = new RubyTime(runtime, (RubyClass) recv);
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTime(new Date());
         time.setJavaCalendar(cal);
+        time.callInit(args,block);
         return time;
     }
 
@@ -566,7 +571,7 @@ public class RubyTime extends RubyObject {
     }
 
     public static RubyTime s_load(IRubyObject recv, IRubyObject from, Block block) {
-        return s_mload(recv, (RubyTime) s_new(recv, block), from);
+        return s_mload(recv, (RubyTime)(((RubyClass)recv).allocate()), from);
     }
 
     protected static RubyTime s_mload(IRubyObject recv, RubyTime time, IRubyObject from) {
