@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.security.Provider;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -42,15 +43,14 @@ import org.jruby.util.ByteList;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class RubyDigest {
-    private static String provider = null;
+    private static Provider provider = null;
 
     public static void createDigest(Ruby runtime) {
         try {
             Class c = Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
-            java.security.Security.insertProviderAt((java.security.Provider)c.newInstance(),2);
-            provider = "BC";
+            provider = (Provider)c.newInstance();
         } catch(Exception e) {
-            provider = null;
+            // provider is not available
         }
 
         RubyModule mDigest = runtime.defineModule("Digest");
@@ -71,6 +71,18 @@ public class RubyDigest {
         cDigestBase.defineFastMethod("==",basecb.getFastMethod("eq",RubyKernel.IRUBY_OBJECT));
     }
 
+    private static MessageDigest createMessageDigest(Ruby runtime, String providerName) throws NoSuchAlgorithmException {
+        if(provider != null) {
+            try {
+                return MessageDigest.getInstance(providerName, provider);
+            } catch(NoSuchAlgorithmException e) {
+                // bouncy castle doesn't support algorithm
+            }
+        }
+        // fall back to system JCA providers
+        return MessageDigest.getInstance(providerName);
+    }
+
     public static void createDigestMD5(Ruby runtime) {
         runtime.getLoadService().require("digest.so");
         RubyModule mDigest = runtime.getModule("Digest");
@@ -81,7 +93,6 @@ public class RubyDigest {
 
     public static void createDigestRMD160(Ruby runtime) {
         runtime.getLoadService().require("digest.so");
-
         if(provider == null) {
             throw runtime.newLoadError("RMD160 not supported without BouncyCastle");
         }
@@ -102,16 +113,9 @@ public class RubyDigest {
 
     public static void createDigestSHA2(Ruby runtime) {
         runtime.getLoadService().require("digest.so");
-
         try {
-            if(provider == null) {
-                MessageDigest.getInstance("SHA-256");
-            } else {
-                MessageDigest.getInstance("SHA-256",provider);
-            }
+            createMessageDigest(runtime, "SHA-256");
         } catch(NoSuchAlgorithmException e) {
-            throw runtime.newLoadError("SHA2 not supported");
-        } catch(NoSuchProviderException e) {
             throw runtime.newLoadError("SHA2 not supported");
         }
 
@@ -132,24 +136,22 @@ public class RubyDigest {
             }
         };
         public static IRubyObject s_digest(IRubyObject recv, IRubyObject str) {
+            Ruby runtime = recv.getRuntime();
             String name = ((RubyClass)recv).getClassVar("metadata").toString();
             try {
-                MessageDigest md = provider == null ? MessageDigest.getInstance(name) : MessageDigest.getInstance(name, provider);
-                return RubyString.newString(recv.getRuntime(), md.digest(str.convertToString().getBytes()));
+                MessageDigest md = createMessageDigest(runtime, name);
+                return RubyString.newString(runtime, md.digest(str.convertToString().getBytes()));
             } catch(NoSuchAlgorithmException e) {
-                throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
-            } catch(NoSuchProviderException e) {
                 throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
             }
         }
         public static IRubyObject s_hexdigest(IRubyObject recv, IRubyObject str) {
+            Ruby runtime = recv.getRuntime();
             String name = ((RubyClass)recv).getClassVar("metadata").toString();
             try {
-                MessageDigest md = provider == null ? MessageDigest.getInstance(name) : MessageDigest.getInstance(name, provider);
-                return RubyString.newString(recv.getRuntime(), ByteList.plain(toHex(md.digest(str.convertToString().getBytes()))));
+                MessageDigest md = createMessageDigest(runtime, name);
+                return RubyString.newString(runtime, ByteList.plain(toHex(md.digest(str.convertToString().getBytes()))));
             } catch(NoSuchAlgorithmException e) {
-                throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
-            } catch(NoSuchProviderException e) {
                 throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
             }
         }
@@ -171,8 +173,6 @@ public class RubyDigest {
                 setAlgorithm(type.getClassVar("metadata"));
             } catch(NoSuchAlgorithmException e) {
                 throw runtime.newNotImplementedError("the " + type + "() function is unimplemented on this machine");
-            } catch(NoSuchProviderException e) {
-                throw runtime.newNotImplementedError("the " + type + "() function is unimplemented on this machine");
             }
 
         }
@@ -193,13 +193,11 @@ public class RubyDigest {
             data = new StringBuffer(((Base)obj).data.toString());
             String name = ((Base)obj).algo.getAlgorithm();
             try {
-                algo = provider == null ? MessageDigest.getInstance(name) : MessageDigest.getInstance(name, provider);
+                algo = createMessageDigest(getRuntime(), name);
             } catch(NoSuchAlgorithmException e) {
                 throw getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
-            } catch(NoSuchProviderException e) {
-                throw getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
             }
-             return this;
+            return this;
         }
 
         public IRubyObject update(IRubyObject obj) {
@@ -228,8 +226,8 @@ public class RubyDigest {
             return ret ? getRuntime().getTrue() : getRuntime().getFalse();
         }
 
-       private void setAlgorithm(IRubyObject algo) throws NoSuchAlgorithmException, NoSuchProviderException {
-           this.algo = provider == null ? MessageDigest.getInstance(algo.toString()) : MessageDigest.getInstance(algo.toString(),provider);
+       private void setAlgorithm(IRubyObject algo) throws NoSuchAlgorithmException {
+           this.algo = createMessageDigest(getRuntime(), algo.toString());
         }
 
         private static String toHex(byte[] val) {
