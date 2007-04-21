@@ -140,19 +140,19 @@ public class MarshalStream extends FilterOutputStream {
                 // write `I' instance var signet if class is NOT a direct subclass of Object
                 write(TYPE_IVAR);
             }
-
+            RubyClass type = value.getMetaClass();
             switch(value.getNativeTypeIndex()) {
             case ClassIndex.STRING:
             case ClassIndex.REGEXP:
             case ClassIndex.ARRAY:
             case ClassIndex.HASH:
-                dumpExtended(value.getMetaClass());
+                type = dumpExtended(type);
                 break;
             }
 
             if (value.getNativeTypeIndex() != value.getMetaClass().index) {
                 // object is a custom class that extended one of the native types other than Object
-                writeUserClass(value);
+                writeUserClass(value, type);
             }
         }
         return instanceVariables;
@@ -296,16 +296,16 @@ public class MarshalStream extends FilterOutputStream {
         }
     }
     
-    public void writeUserClass(IRubyObject obj) throws IOException {
+    public void writeUserClass(IRubyObject obj, RubyClass type) throws IOException {
         write(TYPE_UCLASS);
     	
     	// w_unique
-    	if (obj.getMetaClass().getName().charAt(0) == '#') {
+    	if (type.getName().charAt(0) == '#') {
             throw obj.getRuntime().newTypeError("Can't dump anonymous class");
     	}
     	
     	// w_symbol
-    	dumpObject(runtime.newSymbol(obj.getMetaClass().getName()));
+    	dumpObject(runtime.newSymbol(type.getName()));
     }
     
     public void dumpInstanceVars(Map instanceVars) throws IOException {
@@ -333,7 +333,7 @@ public class MarshalStream extends FilterOutputStream {
     /** w_extended
      * 
      */
-    private void dumpExtended(RubyClass type) throws IOException {
+    private RubyClass dumpExtended(RubyClass type) throws IOException {
         if(type.isSingleton()) {
             if(hasSingletonMethods(type) || type.getInstanceVariables().size() > 1) {
                 throw type.getRuntime().newTypeError("singleton can't be dumped");
@@ -345,6 +345,7 @@ public class MarshalStream extends FilterOutputStream {
             dumpObject(RubySymbol.newSymbol(runtime, ((IncludedModuleWrapper)type).getNonIncludedClass().getName()));
             type = type.getSuperClass();
         }
+        return type;
     }
 
     public void dumpDefaultObjectHeader(RubyClass type) throws IOException {
