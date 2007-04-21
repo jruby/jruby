@@ -179,9 +179,22 @@ public final class DefaultMethod extends DynamicMethod {
     }
 
     private void runJIT(Ruby runtime, String name) {
-        if (callCount >= 0 && getArity().isFixed() && argsNode.getBlockArgNode() == null && argsNode.getOptArgs() == null && argsNode.getRestArg() == -1) {
+        if (callCount >= 0) {
+            // we can only compile normal args, not block, opt, or rest
+            if (!(getArity().isFixed() && // perhaps redundant to check the others
+                    argsNode.getBlockArgNode() == null &&
+                    argsNode.getOptArgs() == null &&
+                    argsNode.getRestArg() == -1) ||
+                    // for some reason anonymous classes don't mix well with the compiler yet (JRUBY-831 and JRUBY-857)
+                    implementationClass.getName() == null) {
+                callCount = -1;
+                return;
+            }
+            
             callCount++;
+            
             if (callCount >= JIT_THRESHOLD) {
+                
                 String className = null;
                 if (JIT_LOGGING) {
                     className = getImplementationClass().getBaseName();
