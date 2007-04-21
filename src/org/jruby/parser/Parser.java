@@ -104,7 +104,7 @@ public class Parser {
         }
 
         // FIXME: We should move this into ParserSupport.addRootNode since actual parser should do this.
-        result.addAppendBeginAndEndNodes();
+        result.addAppendBeginNodes();
         return result.getAST();
     }
 }

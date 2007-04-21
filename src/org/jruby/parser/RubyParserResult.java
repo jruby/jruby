@@ -36,14 +36,12 @@ import java.util.List;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.CommentNode;
 import org.jruby.ast.Node;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.DynamicScope;
 
 /**
  */
 public class RubyParserResult {
     private final List beginNodes = new ArrayList();
-    private final List endNodes = new ArrayList();
     private Node ast;
     private boolean endSeen;
     private List commentNodes = new ArrayList();
@@ -82,35 +80,20 @@ public class RubyParserResult {
     	beginNodes.add(node);
     }
     
-    public void addEndNode(Node node) {
-    	endNodes.add(node);
-    }
-    
-    public void addAppendBeginAndEndNodes() {
-    	if (beginNodes.isEmpty() && endNodes.isEmpty()) {
-    		return;
-    	}
-    	BlockNode n;
+    public void addAppendBeginNodes() {
+    	if (beginNodes.isEmpty()) return;
+
+        BlockNode n;
     	if (getAST() != null) {
     		n = new BlockNode(getAST().getPosition());
     	} else {
-    		ISourcePosition p;
-    		if (!beginNodes.isEmpty()) {
-    			p = ((Node) beginNodes.get(0)).getPosition();
-    		} else {
-    			p = ((Node) endNodes.get(endNodes.size() - 1)).getPosition();
-    		}
-    		n = new BlockNode(p);
+    		n = new BlockNode(((Node) beginNodes.get(0)).getPosition());
     	}
     	for (int i = 0; i < beginNodes.size(); i++) {
     		n.add((Node) beginNodes.get(i));
     	}
-    	if (getAST() != null) {
-    		n.add(getAST());
-    	}
-    	for (int i = endNodes.size() - 1; i >= 0; i--) {
-    		n.add((Node) endNodes.get(i));
-    	}
+    	if (getAST() != null) n.add(getAST());
+
     	setAST(n);
     }
     

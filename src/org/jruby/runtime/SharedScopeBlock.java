@@ -33,14 +33,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
- * Represents the live state of a for in construct in Ruby.  This is different from an
+ * Represents the live state of a for or END construct in Ruby.  This is different from an
  * ordinary block in that it does not have its own scoped variables.  It leeches those from
  * the next outer scope.  Because of this we do not set up, clone, nor tear down scope-related
  * stuff.  Also because of this we do not need to clone the block since it state does not change.
  * 
  */
-public class ForBlock extends Block {
-    private ForBlock(Node varNode, ICallable method, IRubyObject self, Frame frame,
+public class SharedScopeBlock extends Block {
+    private SharedScopeBlock(Node varNode, ICallable method, IRubyObject self, Frame frame,
             SinglyLinkedList cref, Visibility visibility, RubyModule klass,
             DynamicScope dynamicScope) {
         super(varNode, method, self, frame, cref, visibility, klass, dynamicScope);
@@ -48,7 +48,7 @@ public class ForBlock extends Block {
     
     public static Block createBlock(ThreadContext context, Node varNode, DynamicScope dynamicScope,
             ICallable method, IRubyObject self) {
-        return new ForBlock(varNode, method, self,
+        return new SharedScopeBlock(varNode, method, self,
                 context.getCurrentFrame(),
                 context.peekCRef(),
                 context.getCurrentFrame().getVisibility(),

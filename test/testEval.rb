@@ -158,3 +158,7 @@ end
 test_equal(1, foo)
 # this case is still broken
 test_equal(1, foo2)
+
+$a = 1
+eval 'BEGIN { $a = 2 }'
+test_equal(1, $a)

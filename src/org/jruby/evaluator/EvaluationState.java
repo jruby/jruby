@@ -112,6 +112,7 @@ import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
+import org.jruby.ast.PostExeNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.RescueNode;
@@ -140,13 +141,14 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.JumpException.JumpType;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.EvaluateCallable;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ForBlock;
+import org.jruby.runtime.SharedScopeBlock;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -334,6 +336,8 @@ public class EvaluationState {
                 return optNNode(runtime, context, node, self, aBlock);
             case NodeTypes.ORNODE:
                 return orNode(runtime, context, node, self, aBlock);
+            case NodeTypes.POSTEXENODE:
+                return postExeNode(runtime, context, node, self, aBlock);
             case NodeTypes.REDONODE: 
                 return redoNode(context, node);
             case NodeTypes.REGEXPNODE:
@@ -1095,7 +1099,7 @@ public class EvaluationState {
     private static IRubyObject forNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         ForNode iVisited = (ForNode) node;
         
-        Block block = ForBlock.createBlock(context, iVisited.getVarNode(), 
+        Block block = SharedScopeBlock.createBlock(context, iVisited.getVarNode(), 
                 context.getCurrentScope(), iVisited.getCallable(), self);
    
         try {
@@ -1461,6 +1465,19 @@ public class EvaluationState {
         }
    
         return result;
+    }
+
+    private static IRubyObject postExeNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
+        PostExeNode iVisited = (PostExeNode) node;
+        
+        // FIXME: I use a for block to implement END node because we need a proc which captures
+        // its enclosing scope.   ForBlock now represents these node and should be renamed.
+        Block block = SharedScopeBlock.createBlock(context, null,
+                context.getCurrentScope(), new EvaluateCallable(iVisited.getBodyNode(), null), self);
+        
+        runtime.pushExitBlock(runtime.newProc(true, block));
+        
+        return runtime.getNil();
     }
 
     private static IRubyObject redoNode(ThreadContext context, Node node) {

@@ -268,7 +268,7 @@ program       : {
                           support.checkUselessStatement($2);
                       }
                   }
-                  support.getResult().setAST(support.addRootNode($2));
+                  support.getResult().setAST(support.addRootNode($2, getPosition($2)));
               }
 
 bodystmt      : compstmt opt_rescue opt_else opt_ensure {
@@ -359,9 +359,8 @@ stmt          : kALIAS fitem {
                   if (support.isInDef() || support.isInSingle()) {
                       yyerror("END in method; use at_exit");
                   }
-		  // FIXME: Totally broken if scoping is important...though if not this is an improvement over iterNode
-                  support.getResult().addEndNode(new PostExeNode(getPosition($1), $3));
-                  $$ = null;
+
+                  $$ = new PostExeNode(getPosition($1), $3);
               }
               | lhs '=' command_call {
                   support.checkExpression($3);
@@ -1480,8 +1479,6 @@ dsym	       : tSYMBEG xstring_contents tSTRING_END {
 		   // DStrNode: :"some text #{some expression}"
                    // StrNode: :"some text"
 		   // EvStrNode :"#{some expression}"
-		   DStrNode node;
-
                    if ($2 == null) {
                        yyerror("empty symbol literal");
                    }
