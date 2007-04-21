@@ -329,6 +329,7 @@ public class RubyStruct extends RubyObject {
         } else if (!(other instanceof RubyStruct)) {
             return getRuntime().getFalse();
         } else if (getMetaClass() != other.getMetaClass()) {
+            System.err.println("differing metaclass");
             return getRuntime().getFalse();
         } else {
             for (int i = 0; i < values.length; i++) {
@@ -435,11 +436,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public static void marshalTo(RubyStruct struct, MarshalStream output) throws java.io.IOException {
-        String className = struct.getMetaClass().getName();
-        if (className == null) {
-            throw struct.getRuntime().newArgumentError("can't dump anonymous class");
-        }
-        output.dumpObject(RubySymbol.newSymbol(struct.getRuntime(), className));
+        output.dumpDefaultObjectHeader('S', struct.getMetaClass());
 
         List members = ((RubyArray) getInstanceVariable(struct.classOf(), "__member__")).getList();
         output.writeInt(members.size());
@@ -460,16 +457,22 @@ public class RubyStruct extends RubyObject {
             throw runtime.newNameError("uninitialized constant " + className, className.asSymbol());
         }
 
-        int size = input.unmarshalInt();
+        RubyArray mem = members(rbClass, Block.NULL_BLOCK);
 
-        IRubyObject[] values = new IRubyObject[size];
-        for (int i = 0; i < size; i++) {
-            input.unmarshalObject(); // Read and discard a Symbol, which is the name
-            values[i] = input.unmarshalObject();
+        int len = input.unmarshalInt();
+        IRubyObject[] values = new IRubyObject[len];
+        for(int i = 0; i < len; i++) {
+            values[i] = runtime.getNil();
         }
-
         RubyStruct result = newStruct(rbClass, values, Block.NULL_BLOCK);
         input.registerLinkTarget(result);
+        for(int i = 0; i < len; i++) {
+            IRubyObject slot = input.unmarshalObject();
+            if(!mem.eltInternal(i).toString().equals(slot.toString())) {
+                throw runtime.newTypeError("struct " + rbClass.getName() + " not compatible (:" + slot + " for :" + mem.eltInternal(i) + ")");
+            }
+            result.aset(runtime.newFixnum(i), input.unmarshalObject());
+        }
         return result;
     }
 

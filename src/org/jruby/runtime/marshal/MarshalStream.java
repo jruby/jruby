@@ -150,7 +150,7 @@ public class MarshalStream extends FilterOutputStream {
                 break;
             }
 
-            if (value.getNativeTypeIndex() != value.getMetaClass().index) {
+            if (value.getNativeTypeIndex() != value.getMetaClass().index && value.getNativeTypeIndex() != ClassIndex.STRUCT) {
                 // object is a custom class that extended one of the native types other than Object
                 writeUserClass(value, type);
             }
@@ -237,7 +237,7 @@ public class MarshalStream extends FilterOutputStream {
             writeString(value.convertToString().getByteList());
             break;
         case ClassIndex.STRUCT:
-            write('S');
+            //            write('S');
             RubyStruct.marshalTo((RubyStruct)value, this);
             break;
         case ClassIndex.SYMBOL:
@@ -349,8 +349,12 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     public void dumpDefaultObjectHeader(RubyClass type) throws IOException {
+        dumpDefaultObjectHeader('o',type);
+    }
+
+    public void dumpDefaultObjectHeader(char tp, RubyClass type) throws IOException {
         dumpExtended(type);
-        write('o');
+        write(tp);
         RubySymbol classname = RubySymbol.newSymbol(runtime, type.getRealClass().getName());
         dumpObject(classname);
     }
