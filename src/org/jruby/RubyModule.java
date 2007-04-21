@@ -295,7 +295,16 @@ public class RubyModule extends RubyObject {
         RubyClass objectClass = getRuntime().getObject();
 
         for (RubyModule p = this.getParent(); p != null && p != objectClass; p = p.getParent()) {
-            result.insert(0, "::").insert(0, p.getBaseName());
+            String pName = p.getBaseName();
+            // This is needed when the enclosing class or module is a singleton.
+            // In that case, we generated a name such as null::Foo, which broke 
+            // Marshalling, among others. The correct thing to do in this situation 
+            // is to insert the generate the name of form #<Class:01xasdfasd> if 
+            // it's a singleton module/class, which this code accomplishes.
+            if(pName == null) {
+                pName = p.getName();
+            }
+            result.insert(0, "::").insert(0, pName);
         }
 
         return result.toString();

@@ -64,7 +64,7 @@ public class RubyGlobal {
         public StringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
             super(runtime, valueMap, defaultValue);
         }
-        
+
         public IRubyObject aref(IRubyObject key) {
             if (!key.respondsTo("to_str")) {
                 throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
@@ -176,8 +176,12 @@ public class RubyGlobal {
             // if the environment variables can't be obtained, define an empty ENV
     		environmentVariableMap = new HashMap();
     	}
-        runtime.defineGlobalConstant("ENV", new StringOnlyRubyHash(runtime,
-                environmentVariableMap, runtime.getNil()));
+
+        StringOnlyRubyHash h1 = new StringOnlyRubyHash(runtime,
+                                                       environmentVariableMap, runtime.getNil());
+        org.jruby.runtime.CallbackFactory cf = org.jruby.runtime.CallbackFactory.createFactory(runtime, StringOnlyRubyHash.class);
+        h1.getSingletonClass().defineFastMethod("to_s", cf.getFastMethod("to_s"));
+        runtime.defineGlobalConstant("ENV", h1);
 
         // Define System.getProperties() in ENV_JAVA
         Map systemProps = environment.getSystemPropertiesMap(runtime);

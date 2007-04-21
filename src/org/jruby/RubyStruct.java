@@ -329,7 +329,6 @@ public class RubyStruct extends RubyObject {
         } else if (!(other instanceof RubyStruct)) {
             return getRuntime().getFalse();
         } else if (getMetaClass() != other.getMetaClass()) {
-            System.err.println("differing metaclass");
             return getRuntime().getFalse();
         } else {
             for (int i = 0; i < values.length; i++) {

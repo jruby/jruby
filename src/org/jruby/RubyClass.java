@@ -349,7 +349,11 @@ public class RubyClass extends RubyModule {
     }
 
     public static void marshalTo(RubyClass clazz, MarshalStream output) throws java.io.IOException {
-        output.writeString(clazz.getName());
+        String name = clazz.getName();
+        if(name.length() > 0 && name.charAt(0) == '#') {
+            throw clazz.getRuntime().newTypeError("can't dump anonymous " + (clazz instanceof RubyClass ? "class" : "module") + " " + name);
+        }
+        output.writeString(name);
     }
 
     public static RubyModule unmarshalFrom(UnmarshalStream output) throws java.io.IOException {
