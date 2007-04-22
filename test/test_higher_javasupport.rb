@@ -8,6 +8,7 @@ end
 class TestHigherJavasupport < Test::Unit::TestCase
   TestHelper = org.jruby.test.TestHelper
   JArray = ArrayList = java.util.ArrayList
+  FinalMethodBaseTest = org.jruby.test.FinalMethodBaseTest
 
   def test_java_passing_class
     assert_equal("java.util.ArrayList", TestHelper.getClassName(ArrayList))
@@ -494,6 +495,15 @@ class TestHigherJavasupport < Test::Unit::TestCase
     rn = ReturnsNull.new
 
     assert_equal("", rn.returnNull.to_s)
+  end
+  
+  # test for JRUBY-664
+  class FinalMethodChildClass < FinalMethodBaseTest
+  end
+
+  def test_calling_base_class_final_method
+    assert_equal("In foo", FinalMethodBaseTest.new.foo)
+    assert_equal("In foo", FinalMethodChildClass.new.foo)
   end
 
   # test case for JRUBY-679

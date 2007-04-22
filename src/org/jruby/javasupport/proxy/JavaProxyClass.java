@@ -37,7 +37,9 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -73,6 +75,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     static ThreadLocal runtimeTLS = new ThreadLocal();
     private final Class proxyClass;
     private ArrayList methods = new ArrayList();
+    private HashMap methodMap = new HashMap();
 
     /* package scope */
     JavaProxyClass(Class proxyClass) {
@@ -158,11 +161,12 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     public JavaProxyMethod getMethod(String name, Class[] parameterTypes)
             throws NoSuchMethodException {
-        JavaProxyMethod[] all = getMethods();
-        for (int i = 0; i < all.length; i++) {
-            ProxyMethodImpl jpm = (ProxyMethodImpl) all[i];
-            
-            if (jpm.matches(name, parameterTypes)) return jpm;
+        List methods = (List)methodMap.get(name);
+        if (methods != null) {
+            for (int i = methods.size(); --i >= 0; ) {
+                ProxyMethodImpl jpm = (ProxyMethodImpl) methods.get(i);
+                if (jpm.matches(name, parameterTypes)) return jpm;
+            }
         }
         throw new NoSuchMethodException();
     }
@@ -377,6 +381,12 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
             JavaProxyMethod jpm = new ProxyMethodImpl(getRuntime(), this, m, sm);
             methods.add(jpm);
+            List methodsWithName = (List)methodMap.get(name);
+            if (methodsWithName == null) {
+                methodsWithName = new ArrayList(2);
+                methodMap.put(name,methodsWithName);
+            }
+            methodsWithName.add(jpm);
             
             return jpm;
         } catch (ClassNotFoundException e) {

@@ -13,11 +13,12 @@ class InterfaceJavaProxy < JavaProxy
     alias_method :new_proxy, :new
 
     def new(*args, &block)
-      proxy = new_proxy(*args, &block)
+      proxy = allocate
       proxy.java_object = Java.new_proxy_instance(proxy.class.java_class) { |proxy2, method, *args|
         args.collect! { |arg| Java.java_to_ruby(arg) }
         Java.ruby_to_java(proxy.send(method.name, *args))
       }
+      proxy.send(:initialize,*args,&block)
       proxy
     end
     

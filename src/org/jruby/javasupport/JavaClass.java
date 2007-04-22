@@ -442,6 +442,8 @@ public class JavaClass extends JavaObject {
     private Map staticCallbacks;
     private Map instanceCallbacks;
     private List constantFields;
+    // caching constructors, as they're accessed for each new instance
+    private RubyArray constructors;
     
     protected Map getStaticAssignedNames() {
         return staticAssignedNames;
@@ -1199,7 +1201,10 @@ public class JavaClass extends JavaObject {
     }
 
     public RubyArray constructors() {
-        return buildConstructors(javaClass().getConstructors());
+        if (constructors == null) {
+            constructors = buildConstructors(javaClass().getConstructors());
+        }
+        return constructors;
     }
     
     public RubyArray declared_classes() {
