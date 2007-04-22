@@ -321,6 +321,13 @@
   </target>
 
   <target name="test" depends="copy-test-files,instrument,run-junit,coverage-report"/>
+
+  <target name="test-compiler" depends="copy-test-files,instrument,enable-compiler,run-junit,coverage-report"/>
+  
+  <target name="enable-compiler">
+      <property name="jruby.jit.enabled" value="true"/>
+  </target>
+  
   <target name="run-junit" description="runs junit tests">
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
     <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="384M">
@@ -337,6 +344,8 @@
       <sysproperty key="jruby.base" value="${basedir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
+      <sysproperty key="jruby.jit.enabled" value="${jruby.jit.enabled}"/>
+      <sysproperty key="jruby.jit.threshold" value="0"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
 
