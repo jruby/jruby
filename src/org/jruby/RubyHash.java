@@ -148,6 +148,8 @@ public class RubyHash extends RubyObject implements Map {
     public static final byte TO_A_SWITCHVALUE = 7;
     public static final byte HASH_SWITCHVALUE = 8;
     public static final byte LENGTH_SWITCHVALUE = 9;
+    public static final byte TO_HASH_SWITCHVALUE = 10;
+    public static final byte EQL_P_SWITCHVALUE = 11;
 
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
@@ -182,6 +184,12 @@ public class RubyHash extends RubyObject implements Map {
         case LENGTH_SWITCHVALUE:
             if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return rb_size();
+        case TO_HASH_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return to_hash();
+        case EQL_P_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return obj_equal(args[0]);
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);

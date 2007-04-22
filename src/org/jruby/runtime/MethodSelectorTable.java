@@ -123,6 +123,8 @@ public class MethodSelectorTable {
         table[ClassIndex.HASH][MethodIndex.TO_A] = RubyHash.TO_A_SWITCHVALUE;
         table[ClassIndex.HASH][MethodIndex.HASH] = RubyHash.HASH_SWITCHVALUE;
         table[ClassIndex.HASH][MethodIndex.LENGTH] = RubyHash.LENGTH_SWITCHVALUE;
+        table[ClassIndex.HASH][MethodIndex.TO_HASH] = RubyHash.TO_HASH_SWITCHVALUE;
+        table[ClassIndex.HASH][MethodIndex.EQL_P] = RubyHash.EQL_P_SWITCHVALUE;
 
         // Module
         table[ClassIndex.MODULE] = new byte[MethodIndex.MAX_METHODS];
