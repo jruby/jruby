@@ -185,6 +185,13 @@ public class RubyFixnum extends RubyInteger {
         return ClassIndex.FIXNUM;
     }
     
+    /** short circuit for Fixnum key comparison
+     * 
+     */
+    public final boolean eql(IRubyObject other) {
+        return other instanceof RubyFixnum && value == ((RubyFixnum)other).value;
+    }
+    
     public boolean isImmediate() {
     	return true;
     }

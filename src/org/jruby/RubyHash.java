@@ -314,7 +314,7 @@ public class RubyHash extends RubyObject implements Map {
         public Object getValue() {
             return value;            
         }
-        public Object getPlainValue() {
+        public Object getJavaifiedValue() {
             return JavaUtil.convertRubyToJava(value);
         }
         public Object setValue(Object value) {            
@@ -329,7 +329,7 @@ public class RubyHash extends RubyObject implements Map {
         public boolean equals(Object other){
             if(!(other instanceof RubyHashEntry)) return false;
             RubyHashEntry otherEntry = (RubyHashEntry)other;
-            if(key == otherEntry.key && key != NEVER && key.equals(otherEntry.key)){
+            if(key == otherEntry.key && key != NEVER && key.eql(otherEntry.key)){
                 if(value == otherEntry.value || value.equals(otherEntry.value)) return true;
             }            
             return false;
@@ -427,8 +427,8 @@ public class RubyHash extends RubyObject implements Map {
         // if (table[i] != null) collisions++;
 
         for (RubyHashEntry entry = table[i]; entry != null; entry = entry.next) {
-            Object k;
-            if (entry.hash == hash && ((k = entry.key) == key || key.equals(k))) {
+            IRubyObject k;
+            if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) {
                 entry.value = value;
                 return;
 	}
@@ -449,8 +449,8 @@ public class RubyHash extends RubyObject implements Map {
     private final IRubyObject internalGet(IRubyObject key) { // specialized for value
         final int hash = hashValue(key.hashCode());
         for (RubyHashEntry entry = table[bucketIndex(hash, table.length)]; entry != null; entry = entry.next) {
-            Object k;
-            if (entry.hash == hash && ((k = entry.key) == key || key.equals(k))) return entry.value;
+            IRubyObject k;
+            if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) return entry.value;
 	}
         return null;
     }
@@ -458,8 +458,8 @@ public class RubyHash extends RubyObject implements Map {
     private final RubyHashEntry internalGetEntry(IRubyObject key) {
         final int hash = hashValue(key.hashCode());
         for (RubyHashEntry entry = table[bucketIndex(hash, table.length)]; entry != null; entry = entry.next) {
-            Object k;
-            if (entry.hash == hash && ((k = entry.key) == key || key.equals(k))) return entry;
+            IRubyObject k;
+            if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) return entry;
         }
         return null;
     }
@@ -472,14 +472,14 @@ public class RubyHash extends RubyObject implements Map {
         if (entry == null) return null;
 
         IRubyObject k;
-        if (entry.hash == hash && ((k = entry.key) == key || key.equals(k))) {
+        if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) {
             table[i] = entry.next;
             size--;
             return entry;
     }
         for (; entry.next != null; entry = entry.next) {
             RubyHashEntry tmp = entry.next;
-            if (tmp.hash == hash && ((k = tmp.key) == key || key.equals(k))) {
+            if (tmp.hash == hash && ((k = tmp.key) == key || key.eql(k))) {
                 entry.next = entry.next.next;
                 size--;
                 return tmp;
@@ -496,7 +496,7 @@ public class RubyHash extends RubyObject implements Map {
         IRubyObject k;
 
         for (; entry != null; entry = entry.next) {           
-            if (entry.key != NEVER && entry.hash == hash && ((k = entry.key) == key || key.equals(k))) {
+            if (entry.key != NEVER && entry.hash == hash && ((k = entry.key) == key || key.eql(k))) {
                 entry.key = NEVER; // make it a skip node 
                 size--;             
                 return entry;
@@ -1588,7 +1588,7 @@ public class RubyHash extends RubyObject implements Map {
         public boolean equals(Object other){
             if(!(other instanceof RubyHashEntry)) return false;
             RubyHashEntry otherEntry = (RubyHashEntry)other;
-            if(entry.key != NEVER && entry.key == otherEntry.key && entry.key.equals(otherEntry.key)){
+            if(entry.key != NEVER && entry.key == otherEntry.key && entry.key.eql(otherEntry.key)){
                 if(entry.value == otherEntry.value || entry.value.equals(otherEntry.value)) return true;
             }            
             return false;

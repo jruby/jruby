@@ -74,6 +74,7 @@ public class RubyStruct extends RubyObject {
         structClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
 
         structClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
+        structClass.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
 
         structClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
         structClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
@@ -324,20 +325,35 @@ public class RubyStruct extends RubyObject {
     }
 
     public IRubyObject equal(IRubyObject other) {
-        if (this == other) {
-            return getRuntime().getTrue();
-        } else if (!(other instanceof RubyStruct)) {
-            return getRuntime().getFalse();
-        } else if (getMetaClass() != other.getMetaClass()) {
-            return getRuntime().getFalse();
-        } else {
+        if (this == other) return getRuntime().getTrue();
+        if (!(other instanceof RubyStruct)) return getRuntime().getFalse();
+        if (getMetaClass() != other.getMetaClass()) return getRuntime().getFalse();
+        
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        RubyStruct otherStruct = (RubyStruct)other;
             for (int i = 0; i < values.length; i++) {
-                if (!values[i].equals(((RubyStruct) other).values[i])) {
-                    return getRuntime().getFalse();
+            if (!values[i].equalInternal(context, otherStruct.values[i]).isTrue()) {
+                return runtime.getFalse();
                 }
             }
-            return getRuntime().getTrue();
+        return runtime.getTrue();
         }
+    
+    public IRubyObject eql_p(IRubyObject other) {
+        if (this == other) return getRuntime().getTrue();
+        if (!(other instanceof RubyStruct)) return getRuntime().getFalse();
+        if (getMetaClass() != other.getMetaClass()) return getRuntime().getFalse();
+        
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        RubyStruct otherStruct = (RubyStruct)other;
+        for (int i = 0; i < values.length; i++) {
+            if (!values[i].eqlInternal(context, otherStruct.values[i])) {
+                return runtime.getFalse();
+    }
+        }
+        return runtime.getTrue();        
     }
 
     public IRubyObject to_s() {

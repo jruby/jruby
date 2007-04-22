@@ -108,18 +108,19 @@ public class RubyTime extends RubyObject {
         timeMetaClass.defineFastMethod("mktime", callbackFactory.getFastOptSingletonMethod("new_local"));
         timeMetaClass.defineFastMethod("utc", callbackFactory.getFastOptSingletonMethod("new_utc"));
         timeMetaClass.defineFastMethod("gm", callbackFactory.getFastOptSingletonMethod("new_utc"));
-        timeMetaClass.defineMethod("_load", callbackFactory.getSingletonMethod("s_load", IRubyObject.class));
+        timeMetaClass.defineMethod("_load", callbackFactory.getSingletonMethod("s_load", RubyKernel.IRUBY_OBJECT));
         
         // To override Comparable with faster String ones
-        timeClass.defineFastMethod(">=", callbackFactory.getFastMethod("op_ge", IRubyObject.class));
-        timeClass.defineFastMethod(">", callbackFactory.getFastMethod("op_gt", IRubyObject.class));
-        timeClass.defineFastMethod("<=", callbackFactory.getFastMethod("op_le", IRubyObject.class));
-        timeClass.defineFastMethod("<", callbackFactory.getFastMethod("op_lt", IRubyObject.class));
+        timeClass.defineFastMethod(">=", callbackFactory.getFastMethod("op_ge", RubyKernel.IRUBY_OBJECT));
+        timeClass.defineFastMethod(">", callbackFactory.getFastMethod("op_gt", RubyKernel.IRUBY_OBJECT));
+        timeClass.defineFastMethod("<=", callbackFactory.getFastMethod("op_le", RubyKernel.IRUBY_OBJECT));
+        timeClass.defineFastMethod("<", callbackFactory.getFastMethod("op_lt", RubyKernel.IRUBY_OBJECT));
         
-        timeClass.defineFastMethod("===", callbackFactory.getFastMethod("same2", IRubyObject.class));
-        timeClass.defineFastMethod("+", callbackFactory.getFastMethod("op_plus", IRubyObject.class));
-        timeClass.defineFastMethod("-", callbackFactory.getFastMethod("op_minus", IRubyObject.class));
-        timeClass.defineFastMethod("<=>", callbackFactory.getFastMethod("op_cmp", IRubyObject.class));
+        timeClass.defineFastMethod("===", callbackFactory.getFastMethod("same2", RubyKernel.IRUBY_OBJECT));
+        timeClass.defineFastMethod("+", callbackFactory.getFastMethod("op_plus", RubyKernel.IRUBY_OBJECT));
+        timeClass.defineFastMethod("-", callbackFactory.getFastMethod("op_minus", RubyKernel.IRUBY_OBJECT));
+        timeClass.defineFastMethod("<=>", callbackFactory.getFastMethod("op_cmp", RubyKernel.IRUBY_OBJECT));
+        timeClass.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
         timeClass.defineFastMethod("asctime", callbackFactory.getFastMethod("asctime"));
         timeClass.defineFastMethod("mday", callbackFactory.getFastMethod("mday"));
         timeClass.defineAlias("day", "mday"); 
@@ -369,6 +370,14 @@ public class RubyTime extends RubyObject {
             return RubyFixnum.zero(getRuntime());
         }
         return getRuntime().getNil();
+    }
+    
+    public IRubyObject eql_p(IRubyObject other) {
+        if (other instanceof RubyTime) {
+            RubyTime otherTime = (RubyTime)other; 
+            return (usec == otherTime.usec && getTimeInMillis() == otherTime.getTimeInMillis()) ? getRuntime().getTrue() : getRuntime().getFalse();
+        }
+        return getRuntime().getFalse();
     }
 
     public RubyString asctime() {

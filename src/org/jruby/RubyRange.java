@@ -131,6 +131,7 @@ public class RubyRange extends RubyObject {
         result.includeModule(runtime.getModule("Enumerable"));
 
         result.defineMethod("==", callbackFactory.getMethod("equal", RubyKernel.IRUBY_OBJECT));
+        result.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
         result.defineFastMethod("begin", callbackFactory.getFastMethod("first"));
         result.defineMethod("each", callbackFactory.getMethod("each"));
         result.defineFastMethod("end", callbackFactory.getFastMethod("last"));
@@ -360,6 +361,14 @@ public class RubyRange extends RubyObject {
             end.equals(otherRange.end) &&
             isExclusive == otherRange.isExclusive;
         return getRuntime().newBoolean(result);
+    }
+    
+    public IRubyObject eql_p(IRubyObject other) {
+        if (this == other) return getRuntime().getTrue();
+        if (!(other instanceof RubyRange)) return getRuntime().getFalse();
+        RubyRange otherRange = (RubyRange)other;
+        if (begin != otherRange.begin || end != otherRange.end || isExclusive != otherRange.isExclusive) return getRuntime().getFalse();
+        return getRuntime().getTrue();
     }
 
     public IRubyObject each(Block block) {

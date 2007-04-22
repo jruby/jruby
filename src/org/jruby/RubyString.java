@@ -98,7 +98,7 @@ public class RubyString extends RubyObject {
         stringClass.includeModule(runtime.getModule("Enumerable"));
         
         stringClass.defineFastMethod("<=>", callbackFactory.getFastMethod("op_cmp", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("==", callbackFactory.getFastMethod("eql", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
         stringClass.defineFastMethod("+", callbackFactory.getFastMethod("op_plus", RubyKernel.IRUBY_OBJECT));
         stringClass.defineFastMethod("*", callbackFactory.getFastMethod("op_mul", RubyKernel.IRUBY_OBJECT));
         stringClass.defineFastMethod("%", callbackFactory.getFastMethod("format", RubyKernel.IRUBY_OBJECT));
@@ -110,7 +110,7 @@ public class RubyString extends RubyObject {
         stringClass.defineFastMethod("<=", callbackFactory.getFastMethod("op_le", RubyKernel.IRUBY_OBJECT));
         stringClass.defineFastMethod("<", callbackFactory.getFastMethod("op_lt", RubyKernel.IRUBY_OBJECT));
         
-        stringClass.defineFastMethod("eql?", callbackFactory.getFastMethod("op_eql", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
         
         stringClass.defineFastMethod("[]", callbackFactory.getFastOptMethod("aref"));
         stringClass.defineFastMethod("[]=", callbackFactory.getFastOptMethod("aset"));
@@ -236,7 +236,7 @@ public class RubyString extends RubyObject {
             return nil_p();
         case EQUALEQUAL_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return eql(args[0]);
+            return equal(args[0]);
         case OP_GE_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return op_ge(args[0]);
@@ -287,6 +287,13 @@ public class RubyString extends RubyObject {
         }
     }
 
+    /** short circuit for String key comparison
+     * 
+     */
+    public final boolean eql(IRubyObject other) {
+        return other instanceof RubyString && value.equal(((RubyString)other).value);
+    }    
+    
     // @see IRuby.newString(...)
     private RubyString(Ruby runtime, CharSequence value) {
             this(runtime, runtime.getString(), value);
@@ -486,20 +493,19 @@ public class RubyString extends RubyObject {
 
         return getRuntime().getNil();
     }
-
-    public IRubyObject eql(IRubyObject other) {
-        Ruby runtime = getRuntime();
-        if (other == this) return runtime.getTrue();
         
+    /**
+     * 
+     */
+    public IRubyObject equal(IRubyObject other) {
+        if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyString)) {
-            if (other.respondsTo("to_str")) {
-                return other.callMethod(runtime.getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this);
+            if (!other.respondsTo("to_str")) return getRuntime().getFalse();
+            Ruby runtime = getRuntime();
+            return other.callMethod(runtime.getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this).isTrue() ? runtime.getTrue() : runtime.getFalse();
             }
-            return runtime.getFalse();
+        return value.equal(((RubyString)other).value) ? getRuntime().getTrue() : getRuntime().getFalse();
         }
-        /* use Java implementation if both different String instances */
-        return runtime.newBoolean(value.equals(((RubyString) other).value));
-    }
 
     public IRubyObject op_plus(IRubyObject other) {
         RubyString str = RubyString.stringValue(other);
@@ -550,7 +556,7 @@ public class RubyString extends RubyObject {
         if (other instanceof RubyString) {
             RubyString string = (RubyString) other;
 
-            if (string.value.equals(value)) return true;
+            if (string.value.equal(value)) return true;
         }
 
         return false;
@@ -851,8 +857,10 @@ public class RubyString extends RubyObject {
         return RubyComparable.op_lt(this, other);
     }
 
-    public IRubyObject op_eql(IRubyObject other) {
-        return equals(other) ? other.getRuntime().getTrue() : other.getRuntime().getFalse();
+    public IRubyObject eql_p(IRubyObject other) {
+        if (!(other instanceof RubyString)) return getRuntime().getFalse();
+        RubyString otherString = (RubyString)other;
+        return value.equal(otherString.value) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     /** rb_str_upcase
@@ -2787,7 +2795,7 @@ public class RubyString extends RubyObject {
      */
     public IRubyObject delete_bang(IRubyObject[] args) {
         ByteList newStr = getDelete(args);
-        if (value.equals(newStr)) {
+        if (value.equal(newStr)) {
             return getRuntime().getNil();
         }
         view(newStr);
@@ -2838,7 +2846,7 @@ public class RubyString extends RubyObject {
      */
     public IRubyObject squeeze_bang(IRubyObject[] args) {
         ByteList newStr = getSqueeze(args);
-        if (value.equals(newStr)) {
+        if (value.equal(newStr)) {
             return getRuntime().getNil();
         }
         view(newStr);
@@ -2899,7 +2907,7 @@ public class RubyString extends RubyObject {
      */
     public IRubyObject tr_bang(IRubyObject search, IRubyObject replace) {
         ByteList newStr = tr(search, replace, false);
-        if (value.equals(newStr)) {
+        if (value.equal(newStr)) {
             return getRuntime().getNil();
         }
         view(newStr);
@@ -2918,7 +2926,7 @@ public class RubyString extends RubyObject {
      */
     public IRubyObject tr_s_bang(IRubyObject search, IRubyObject replace) {
         ByteList newStr = tr(search, replace, true);
-        if (value.equals(newStr)) {
+        if (value.equal(newStr)) {
             return getRuntime().getNil();
         }
         view(newStr);

@@ -674,7 +674,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public RubyHash convertToHash() {
-        return (RubyHash)convertToType(getRuntime().getHash(), 0, "to_hash", true, true, false);
+        return (RubyHash)convertToType(getRuntime().getHash(), MethodIndex.TO_HASH, "to_hash", true, true, false);
     }
     
     public RubyFloat convertToFloat() {
@@ -936,17 +936,39 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public IRubyObject obj_equal(IRubyObject obj) {
         return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
-//        if (isNil()) {
-//            return getRuntime().newBoolean(obj.isNil());
-//        }
-//        return getRuntime().newBoolean(this == obj);
     }
 
-	public IRubyObject same(IRubyObject other) {
-		return this == other ? getRuntime().getTrue() : getRuntime().getFalse();
+    /** rb_equal
+     * 
+     */
+    public IRubyObject equal(IRubyObject other) {
+        if(this == other || callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==",other).isTrue()){
+            return getRuntime().getTrue();
 	}
-
+ 
+        return getRuntime().getFalse();
+    }
     
+    public final IRubyObject equalInternal(final ThreadContext context, final IRubyObject other){
+        if (this == other) return getRuntime().getTrue();
+        return callMethod(context, MethodIndex.EQUALEQUAL, "==", other);
+    }
+
+    /** rb_eql
+     *  this method is not defind for Ruby objects directly.
+     *  notably overriden by RubyFixnum, RubyString, RubySymbol - these do a short-circuit calls.
+     *  see: rb_any_cmp() in hash.c
+     *  do not confuse this method with eql_p methods (which it calls by default), eql is mainly used for hash key comparison 
+     */
+    public boolean eql(IRubyObject other) {
+        return callMethod(getRuntime().getCurrentContext(), MethodIndex.EQL_P, "eql?", other).isTrue();
+    }
+
+    public final boolean eqlInternal(final ThreadContext context, final IRubyObject other){
+        if (this == other) return true;
+        return callMethod(context, MethodIndex.EQL_P, "eql?", other).isTrue();
+    }
+
     /** rb_obj_init_copy
      * 
      */
@@ -1422,23 +1444,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public synchronized Object dataGetStruct() {
         return dataStruct;
     }
-
-    /** rb_equal
-     * 
-     */
-    public IRubyObject equal(IRubyObject other) {
-        if(this == other || callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==",other).isTrue()){
-            return getRuntime().getTrue();
-        }
  
-        return getRuntime().getFalse();
-    }
-    
-    public final IRubyObject equalInternal(final ThreadContext context, final IRubyObject other){
-        if (this == other) return getRuntime().getTrue();
-        return callMethod(context, MethodIndex.EQUALEQUAL, "==", other);
-    }
-        
     public void addFinalizer(RubyProc finalizer) {
         if (this.finalizer == null) {
             this.finalizer = new Finalizer(getRuntime().getObjectSpace().idOf(this));

@@ -70,7 +70,7 @@ public class RubySymbol extends RubyObject {
         symbolClass.index = ClassIndex.SYMBOL;
 
         
-        symbolClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        symbolClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
         symbolClass.defineFastMethod("freeze", callbackFactory.getFastMethod("freeze"));
         symbolClass.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
         symbolClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
@@ -136,6 +136,13 @@ public class RubySymbol extends RubyObject {
      */
     public String asSymbol() {
         return symbol;
+    }
+    
+    /** short circuit for Symbol key comparison
+     * 
+     */
+    public final boolean eql(IRubyObject other) {
+        return other == this;
     }
 
     public boolean isImmediate() {

@@ -583,7 +583,7 @@ public class RubyBignum extends RubyInteger {
      */
     public IRubyObject eql_p(IRubyObject other) {
         if (other instanceof RubyBignum) {
-            return RubyBoolean.newBoolean(getRuntime(), value.compareTo(((RubyBignum)other).value) == 0);
+            return value.compareTo(((RubyBignum)other).value) == 0 ? getRuntime().getTrue() : getRuntime().getFalse();
         }
         return getRuntime().getFalse();
     }

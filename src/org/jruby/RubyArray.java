@@ -82,7 +82,7 @@ public class RubyArray extends RubyObject implements List {
         arrayc.defineFastMethod("frozen?", callbackFactory.getFastMethod("frozen"));
 
         arrayc.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("eql?", callbackFactory.getFastMethod("eql", RubyKernel.IRUBY_OBJECT));
+        arrayc.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
         arrayc.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
 
         arrayc.defineFastMethod("[]", callbackFactory.getFastOptMethod("aref"));
@@ -1428,7 +1428,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_eql
      *
      */
-    public RubyBoolean eql(IRubyObject obj) {
+    public RubyBoolean eql_p(IRubyObject obj) {
         if (this == obj) return getRuntime().getTrue();
         if (!(obj instanceof RubyArray)) return getRuntime().getFalse();
 
@@ -1438,8 +1438,8 @@ public class RubyArray extends RubyObject implements List {
 
         Ruby runtime = getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
-        for (long i = 0; i < realLength; i++) {
-            if (!elt(i).callMethod(context, "eql?", ary.elt(i)).isTrue()) return runtime.getFalse();
+        for (int i = 0; i < realLength; i++) {
+            if (!elt(i).eqlInternal(context, ary.elt(i))) return runtime.getFalse();
         }
         return runtime.getTrue();
     }

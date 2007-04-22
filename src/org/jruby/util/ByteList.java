@@ -353,13 +353,17 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     public boolean equals(Object other) {
-        if (other == this) return true;
-        if (other instanceof ByteList) {
-            ByteList b = (ByteList) other;
+        if (other instanceof ByteList) return equal((ByteList)other);
+        return false;
+    }
+    
+    public boolean equal(ByteList other) {
+        if (other == this) return true; 
+        if (validHash && other.validHash && hash != other.hash) return false;
             int first;
             int last;
             byte[] buf;
-            if ((last = realSize) == b.realSize) {
+        if ((last = realSize) == other.realSize) {
                 // scanning from front and back simultaneously, meeting in
                 // the middle. the object is to get a mismatch as quickly as
                 // possible. alternatives might be: scan from the middle outward
@@ -368,11 +372,10 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
                 // backward (I like this one, but it's more expensive for
                 // strings that are equal; see sample_equals below).
                 for (buf = bytes, first = -1; 
-                    --last > first && buf[begin + last] == b.bytes[b.begin + last] &&
-                    ++first < last && buf[begin + first] == b.bytes[b.begin + first] ; ) ;
+                --last > first && buf[begin + last] == other.bytes[other.begin + last] &&
+                ++first < last && buf[begin + first] == other.bytes[other.begin + first] ; ) ;
                 return first >= last;
             }
-        }
         return false;
     }
 
