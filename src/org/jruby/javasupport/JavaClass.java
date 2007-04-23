@@ -72,6 +72,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.util.IdUtil;
 import org.jruby.util.collections.IntHashMap;
 
 public class JavaClass extends JavaObject {
@@ -626,9 +627,11 @@ public class JavaClass extends JavaObject {
             if (javaClass == classes[i].getDeclaringClass()) {
                 Class clazz = classes[i];
                 String simpleName = getSimpleName(clazz);
-                if (simpleName.length() == 0)
-                    continue;
-                if (proxy.getConstantAt(simpleName) == null) {
+                
+                if (simpleName.length() == 0) continue;
+                
+                // Ignore bad constant named inner classes pending JRUBY-697
+                if (!IdUtil.isConstant(simpleName) && proxy.getConstantAt(simpleName) == null) {
                     proxy.const_set(getRuntime().newString(simpleName),
                         Java.get_proxy_class(JAVA_UTILITIES,get(getRuntime(),clazz)));
                 }
