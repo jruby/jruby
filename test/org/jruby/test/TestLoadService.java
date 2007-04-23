@@ -66,9 +66,19 @@ public class TestLoadService extends TestRubyBase {
     
     public void testNonExistentRequire() {
         try{
-            // JRUBY-646
             // presumably this require should fail
             runtime.evalScript("require 'somethingthatdoesnotexist'");
+        } catch (RaiseException e){
+            assertEquals("Require of non-existent library should fail", RaiseException.class, e.getClass());
+            assertNull("Require of non-existent library should , exception should only be RaiseException with no root cause", e.getCause());
+        }
+    }
+    
+    public void testNonExistentRequireAfterRubyGems() {
+        try{
+            // JRUBY-646
+            // presumably this require should fail
+            runtime.evalScript("require 'rubygems'; require 'somethingthatdoesnotexist'");
         } catch (RaiseException e){
             assertEquals("Require of non-existent library should fail", RaiseException.class, e.getClass());
             assertNull("Require of non-existent library should , exception should only be RaiseException with no root cause", e.getCause());
