@@ -589,9 +589,9 @@ test_equal("sr", "shellor".delete(Foo.new))
 test_equal("sr", "shellor".delete!(Foo.new))
 test_equal("shelor", "shellor".squeeze(Foo.new))
 test_equal("shelor", "shellor".squeeze!(Foo.new))
-# Broken in JRuby, but not due to coercion
-#test_equal("sgoddbr", "shellor".tr(Foo.new, "goodbye"))
-#test_equal("shlllooor", "sgoodbyer".tr("goodbye", Foo.new))
+# JRUBY-734
+test_equal("sgoddbr", "shellor".tr(Foo.new, "goodbye"))
+test_equal("shlllooor", "sgoodbyer".tr("goodbye", Foo.new))
 a = []
 "shellor".each_line(Foo.new) { |x| a << x }
 test_equal(["shello", "r"], a)

@@ -2877,7 +2877,7 @@ public class RubyString extends RubyObject {
         int last = -1;
         for (int i = 0; i < strLen; i++) {
             int cs = value.get(i) & 0xFF;
-            int pos = srch.indexOf(cs);
+            int pos = srch.lastIndexOf(cs);
             if (pos == -1) {
                 sbuf.append((char)cs);
                 last = -1;
