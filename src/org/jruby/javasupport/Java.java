@@ -182,10 +182,10 @@ public class Java {
                 for(Iterator iter = pdata.extenders.iterator(); iter.hasNext(); ) {
                     ((IRubyObject)iter.next()).callMethod(runtime.getCurrentContext(), "extend_proxy", proxy_class);
                 }
-                if (concrete && Modifier.isPublic(c.getModifiers()) &&
-                        !c.isPrimitive() && useJavaPackageModules(runtime)) {
-                    addToJavaPackageModule(proxy_class,(JavaClass)java_class);
-                }
+//                if (concrete && Modifier.isPublic(c.getModifiers()) &&
+//                        !c.isPrimitive() && useJavaPackageModules(runtime)) {
+//                    addToJavaPackageModule(proxy_class,(JavaClass)java_class);
+//                }
             }
         }
         return (IRubyObject)proxy_classes.get(class_id);
