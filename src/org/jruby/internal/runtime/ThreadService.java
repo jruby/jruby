@@ -30,11 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
-import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
-import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantReadWriteLock;
-import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
-import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.lang.ref.WeakReference;
 
 import java.util.ArrayList;

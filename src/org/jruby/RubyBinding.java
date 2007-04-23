@@ -98,9 +98,24 @@ public class RubyBinding extends RubyObject {
     public static RubyBinding newBindingForEval(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         
-        // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
-        Frame frame = context.getPreviousFrame();
-        Block bindingBlock = Block.createBinding(frame, context.getCurrentScope());
+        // This requires some explaining.  We use Frame values when executing blocks to fill in 
+        // various values in ThreadContext and EvalState.eval like rubyClass, cref, and self.
+        // Largely, for an eval that is using the logical binding at a place where the eval is 
+        // called we mostly want to use the current frames value for this.  Most importantly, 
+        // we need that self (JRUBY-858) at this point.  We also need to make sure that returns
+        // jump to the right place (which happens to be the previous frame).  Lastly, we do not
+        // want the current frames klazz since that will be the klazz represented of self.  We
+        // want the class right before the eval (well we could use cref class for this too I think).
+        // Once we end up having Frames created earlier I think the logic of stuff like this will
+        // be better since we won't be worried about setting Frame to setup other variables/stacks
+        // but just making sure Frame itself is correct...
+        
+        Frame previousFrame = context.getPreviousFrame();
+        Frame currentFrame = context.getCurrentFrame();
+        currentFrame.setKlazz(previousFrame.getKlazz());
+        currentFrame.setJumpTarget(previousFrame);
+        
+        Block bindingBlock = Block.createBinding(currentFrame, context.getCurrentScope());
         
         return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock);
     }

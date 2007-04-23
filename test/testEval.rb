@@ -162,3 +162,17 @@ test_equal(1, foo2)
 $a = 1
 eval 'BEGIN { $a = 2 }'
 test_equal(1, $a)
+
+$b = nil
+class Foo
+  $b = binding
+end
+
+a = Object.new
+main = self
+b = binding
+a.instance_eval { 
+  eval("test_equal(a, self)") 
+  eval("test_equal(main,self)", b)
+  eval("test_equal(Foo, self)", $b)
+}

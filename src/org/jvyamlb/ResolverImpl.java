@@ -33,8 +33,6 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.jvyamlb.nodes.MappingNode;
 import org.jvyamlb.nodes.Node;

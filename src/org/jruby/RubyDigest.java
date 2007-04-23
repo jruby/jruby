@@ -31,7 +31,6 @@ package org.jruby;
 import java.security.Provider;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;

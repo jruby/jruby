@@ -76,18 +76,13 @@ public class RubyThread extends RubyObject {
     private RubyThreadGroup threadGroup;
 
     private ThreadService threadService;
-    private boolean hasStarted = false;
     private volatile boolean isStopped = false;
     public Object stopLock = new Object();
     
     private volatile boolean killed = false;
     public Object killLock = new Object();
-    private RubyThread joinedByCriticalThread;
-    
-    private boolean checkLocks = false;
     
     public final ReentrantLock lock = new ReentrantLock();
-    private volatile boolean critical = false;
     
     private static boolean USE_POOLING;
     
@@ -144,8 +139,6 @@ public class RubyThread extends RubyObject {
         threadClass.getMetaClass().defineFastMethod("abort_on_exception=", callbackFactory.getFastSingletonMethod("abort_on_exception_set", RubyKernel.IRUBY_OBJECT));
 
         RubyThread rubyThread = new RubyThread(runtime, threadClass);
-        // set hasStarted to true, otherwise Thread.main.status freezes
-        rubyThread.hasStarted = true;
         // TODO: need to isolate the "current" thread from class creation
         rubyThread.threadImpl = new NativeThread(rubyThread, Thread.currentThread());
         runtime.getThreadService().setMainThread(rubyThread);
@@ -198,7 +191,6 @@ public class RubyThread extends RubyObject {
         runtime.getCurrentContext().preAdoptThread();
         
         rubyThread.callInit(IRubyObject.NULL_ARRAY, block);
-        rubyThread.hasStarted = true;
         
         return rubyThread;
     }
@@ -216,7 +208,6 @@ public class RubyThread extends RubyObject {
             rubyThread.threadImpl = new NativeThread(rubyThread, new RubyNativeThread(rubyThread, args, block));
         }
         rubyThread.threadImpl.start();
-        rubyThread.hasStarted = true;
         
         return rubyThread;
     }
@@ -295,7 +286,6 @@ public class RubyThread extends RubyObject {
         Ruby runtime = recv.getRuntime();
         ThreadService ts = runtime.getThreadService();
         boolean critical = ts.getCritical();
-        RubyThread currentThread = ts.getCurrentContext().getThread();
         
         ts.setCritical(false);
         
@@ -372,8 +362,6 @@ public class RubyThread extends RubyObject {
         }
         try {
             if (threadService.getCritical()) {
-                // set the target thread's joinedBy, so it knows it can execute during a critical section
-                joinedByCriticalThread = this;
                 threadImpl.interrupt(); // break target thread out of critical
             }
             threadImpl.join(timeoutMillis);
@@ -526,8 +514,6 @@ public class RubyThread extends RubyObject {
         if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before raising");
         RubyThread currentThread = getRuntime().getCurrentContext().getThread();
         try {
-            this.checkLocks = true;
-            
             while (!(currentThread.lock.tryLock() && this.lock.tryLock())) {
                 if (currentThread.lock.isHeldByCurrentThread()) currentThread.lock.unlock();
             }
@@ -541,7 +527,6 @@ public class RubyThread extends RubyObject {
         } finally {
             if (currentThread.lock.isHeldByCurrentThread()) currentThread.lock.unlock();
             if (this.lock.isHeldByCurrentThread()) this.lock.unlock();
-            this.checkLocks = false;
         }
 
         return this;
@@ -635,7 +620,6 @@ public class RubyThread extends RubyObject {
         RubyThread currentThread = getRuntime().getCurrentContext().getThread();
         
         try {
-            this.checkLocks = true;
             if (DEBUG) System.out.println("thread " + Thread.currentThread() + " trying to kill");
             while (!(currentThread.lock.tryLock() && this.lock.tryLock())) {
                 if (currentThread.lock.isHeldByCurrentThread()) currentThread.lock.unlock();
@@ -650,7 +634,6 @@ public class RubyThread extends RubyObject {
         } finally {
             if (currentThread.lock.isHeldByCurrentThread()) currentThread.lock.unlock();
             if (this.lock.isHeldByCurrentThread()) this.lock.unlock();
-            this.checkLocks = false;
         }
         
         try {

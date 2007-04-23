@@ -327,7 +327,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject equal(IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyStruct)) return getRuntime().getFalse();
-        if (getMetaClass() != other.getMetaClass()) return getRuntime().getFalse();
+        if (getMetaClass().getRealClass() != other.getMetaClass().getRealClass()) return getRuntime().getFalse();
         
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
@@ -367,7 +367,7 @@ public class RubyStruct extends RubyObject {
 
         StringBuffer sb = new StringBuffer(100);
 
-        sb.append("#<struct ").append(getMetaClass().getName()).append(' ');
+        sb.append("#<struct ").append(getMetaClass().getRealClass().getName()).append(' ');
 
         for (int i = 0,k=member.getLength(); i < k; i++) {
             if (i > 0) {

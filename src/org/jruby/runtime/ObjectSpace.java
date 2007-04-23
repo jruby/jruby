@@ -43,11 +43,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import edu.emory.mathcs.backport.java.util.concurrent.ConcurrentHashMap;
-import edu.emory.mathcs.backport.java.util.concurrent.LinkedBlockingQueue;
-import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
-import org.jruby.RubyNumeric;
-
 /**
  * FIXME: This version is faster than the previous, but both suffer from a
  * crucial flaw: It is impossible to create an ObjectSpace with an iterator

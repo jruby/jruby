@@ -155,7 +155,7 @@ public class Frame {
      * 
      * @return the current class
      */
-    RubyModule getKlazz() {
+    public RubyModule getKlazz() {
         return klazz;
     }
 

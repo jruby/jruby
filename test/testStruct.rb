@@ -64,3 +64,24 @@ P2 = Struct.new("Post", :foo)
 test_exception {
   P2.new.bar
 }
+
+MyStruct = Struct.new("MyStruct", :a, :b)
+class MySubStruct < MyStruct
+  def initialize(v, *args) super(*args); @v = v; end 
+end
+
+b = MySubStruct.new(1, 2)
+inspect1 = b.inspect
+b.instance_eval {"EH"}
+# Instance_eval creates a metaclass and our inspect should not print that new metaclass out
+test_equal(inspect1, b.inspect)
+c = MySubStruct.new(1, 2)
+
+class << b
+  def foo
+  end
+end
+
+# Even though they have different metaclasses they are still equal in the eyes of Ruby
+test_equal(b, c)
+
