@@ -23,6 +23,7 @@ testClass.rb
 testClasses.rb
 testCompiler.rb
 testConstant.rb
+testDateTime.rb
 testDigest.rb
 testDir.rb
 testEnumerable.rb
