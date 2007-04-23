@@ -631,7 +631,7 @@ public class JavaClass extends JavaObject {
                 if (simpleName.length() == 0) continue;
                 
                 // Ignore bad constant named inner classes pending JRUBY-697
-                if (!IdUtil.isConstant(simpleName) && proxy.getConstantAt(simpleName) == null) {
+                if (IdUtil.isConstant(simpleName) && proxy.getConstantAt(simpleName) == null) {
                     proxy.const_set(getRuntime().newString(simpleName),
                         Java.get_proxy_class(JAVA_UTILITIES,get(getRuntime(),clazz)));
                 }
