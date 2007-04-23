@@ -16,6 +16,7 @@ test_ok(s.instance_of?(String), "S should be instance of String")
 
 ##### now ######
 early = DateTime.now
+sleep(1)
 late = DateTime.now
 
 ##### <, <=, >, >=, <=> ######
