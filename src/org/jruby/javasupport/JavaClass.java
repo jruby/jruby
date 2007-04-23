@@ -725,8 +725,24 @@ public class JavaClass extends JavaObject {
     
     
     public void setupInterfaceProxy(RubyClass proxy) {
+        Class javaClass = javaClass();
         for (Iterator iter = constantFields.iterator(); iter.hasNext(); ){
             ((ConstantField)iter.next()).install(proxy);
+        }
+        // setup constants for public inner classes
+        Class[] classes = javaClass.getClasses();
+        for (int i = classes.length; --i >= 0; ) {
+            if (javaClass == classes[i].getDeclaringClass()) {
+                Class clazz = classes[i];
+                String simpleName = getSimpleName(clazz);
+                if (simpleName.length() == 0) continue;
+                
+                // Ignore bad constant named inner classes pending JRUBY-697
+                if (IdUtil.isConstant(simpleName) && proxy.getConstantAt(simpleName) == null) {
+                    proxy.const_set(getRuntime().newString(simpleName),
+                        Java.get_proxy_class(JAVA_UTILITIES,get(getRuntime(),clazz)));
+                }
+            }
         }
     }
 
