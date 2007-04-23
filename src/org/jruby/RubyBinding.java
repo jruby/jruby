@@ -113,9 +113,11 @@ public class RubyBinding extends RubyObject {
         Frame previousFrame = context.getPreviousFrame();
         Frame currentFrame = context.getCurrentFrame();
         currentFrame.setKlazz(previousFrame.getKlazz());
-        currentFrame.setJumpTarget(previousFrame);
         
-        Block bindingBlock = Block.createBinding(currentFrame, context.getCurrentScope());
+        // Set jump target to whatever the previousTarget thinks is good.
+        currentFrame.setJumpTarget(previousFrame.getJumpTarget() != null ? previousFrame.getJumpTarget() : previousFrame);
+        
+        Block bindingBlock = Block.createBinding(previousFrame, context.getCurrentScope());
         
         return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock);
     }
