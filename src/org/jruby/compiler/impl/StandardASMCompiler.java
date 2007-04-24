@@ -1263,18 +1263,21 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         if (containingClass == runtime.getObject() && name == "initialize") {
             runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
         }
-        if (name == "initialize" || visibility.isModuleFunction() || context.isTopLevel()) {
-            visibility = Visibility.PRIVATE;
-        }
         
         SinglyLinkedList cref = context.peekCRef();
         
         MethodFactory factory = MethodFactory.createFactory();
-        DynamicMethod method = factory.getCompiledMethod(containingClass, compiledClass, javaName, Arity.createArity(arity), visibility, cref);
+        DynamicMethod method = null;
+        
+        if (name == "initialize" || visibility.isModuleFunction() || context.isTopLevel()) {
+            method = factory.getCompiledMethod(containingClass, compiledClass, javaName, Arity.createArity(arity), Visibility.PRIVATE, cref);
+        } else {
+            method = factory.getCompiledMethod(containingClass, compiledClass, javaName, Arity.createArity(arity), visibility, cref);
+        }
         
         containingClass.addMethod(name, method);
         
-        if (context.getCurrentVisibility().isModuleFunction()) {
+        if (visibility.isModuleFunction()) {
             containingClass.getSingletonClass().addMethod(
                     name,
                     new WrapperMethod(containingClass.getSingletonClass(), method,
@@ -1689,7 +1692,69 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         
         mv.invokevirtual(cg.p(RubyModule.class), "defineOrGetClassUnder", cg.sig(RubyClass.class, cg.params(String.class, RubyClass.class)));
         
+        // set self to the class
+        mv.dup();
+        mv.astore(SELF_INDEX);
+        
         // CLASS BODY
+        loadThreadContext();
+        mv.swap();
+        
+        // FIXME: this should be in a try/finally
+        invokeThreadContext("preCompiledClass", cg.sig(Void.TYPE, cg.params(RubyModule.class)));
+        
+        bodyCallback.compile(this);
+        
+        loadThreadContext();
+        invokeThreadContext("postCompiledClass", cg.sig(Void.TYPE, cg.params()));
+        
+        endMethod(mv);
+        
+        // return to previous method
+        mv = getMethodAdapter();
+        
+        // prepare to call class definition method
+        loadThreadContext();
+        loadSelf();
+        mv.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+        mv.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
+        
+        mv.invokestatic(classname, methodName, METHOD_SIGNATURE);
+    }
+    
+    public void defineModule(String name, StaticScope staticScope, ClosureCallback pathCallback, ClosureCallback bodyCallback) {
+        // TODO: build arg list based on number of args, optionals, etc
+        ++methodIndex;
+        String methodName = "rubymodule__" + cg.cleanJavaIdentifier(name) + "__" + methodIndex;
+        
+        beginMethod(methodName, 0, staticScope.getNumberOfVariables());
+        
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        // put a null at register 4, for closure creation to know we're at top-level or local scope
+        mv.aconst_null();
+        mv.astore(SCOPE_INDEX);
+        
+        // module def bodies default to public visibility
+        mv.getstatic(cg.p(Visibility.class), "PUBLIC", cg.ci(Visibility.class));
+        mv.astore(VISIBILITY_INDEX);
+        
+        // Here starts the logic for the module definition
+        loadThreadContext();
+        
+        pathCallback.compile(this);
+        
+        invokeUtilityMethod("prepareClassNamespace", cg.sig(RubyModule.class, cg.params(ThreadContext.class, IRubyObject.class)));
+        
+        mv.ldc(name);
+        
+        mv.invokevirtual(cg.p(RubyModule.class), "defineModuleUnder", cg.sig(RubyModule.class, cg.params(String.class)));
+        
+        // set self to the module
+        mv.dup();
+        mv.astore(SELF_INDEX);
+        
+        // MODULE BODY
         loadThreadContext();
         mv.swap();
         
@@ -1728,6 +1793,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     public static RubyModule prepareClassNamespace(ThreadContext context, IRubyObject rubyModule) {
         if (rubyModule == null || rubyModule.isNil()) {
             rubyModule = (RubyModule) context.peekCRef().getValue();
+            
+            if (rubyModule == null) {
+                throw context.getRuntime().newTypeError("no outer class/module");
+            }
         }
         
         return (RubyModule)rubyModule;

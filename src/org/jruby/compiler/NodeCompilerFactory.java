@@ -160,6 +160,9 @@ public class NodeCompilerFactory {
         case NodeTypes.MATCH3NODE:
             // safe
             return new Match3NodeCompiler();
+        case NodeTypes.MODULENODE:
+            // should be safe, no known breakage, but not heavily tested
+            return new ModuleNodeCompiler();
         case NodeTypes.NEWLINENODE:
             // safe
             return new NewlineNodeCompiler();

@@ -492,4 +492,6 @@ public interface Compiler {
     public void createNewRegexp(ByteList value, int options, String lang);
     
     public void defineClass(String name, StaticScope staticScope, ClosureCallback superCallback, ClosureCallback pathCallback, ClosureCallback bodyCallback);
+    
+    public void defineModule(String name, StaticScope staticScope, ClosureCallback pathCallback, ClosureCallback bodyCallback);
 }

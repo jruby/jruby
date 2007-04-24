@@ -200,3 +200,30 @@ test_exception {
 test_exception {
   compile_and_run("1.times {|*x|}")
 }
+
+class_string = <<EOS
+class CompiledClass1
+  def foo
+    "cc1"
+  end
+end
+CompiledClass1.new.foo
+EOS
+
+test_equal("cc1", compile_and_run(class_string))
+
+module_string = <<EOS
+module CompiledModule1
+  def bar
+    "cm1"
+  end
+end
+
+class CompiledClass2
+  include CompiledModule1
+end
+
+CompiledClass2.new.bar
+EOS
+
+test_equal("cm1", compile_and_run(module_string))
