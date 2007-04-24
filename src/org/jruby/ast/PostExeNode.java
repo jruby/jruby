@@ -40,18 +40,11 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *
  * @author  jpetersen
  */
-public class PostExeNode extends Node {
+public class PostExeNode extends IterNode {
     static final long serialVersionUID = -2851659895226590014L;
-    private Node body;
 
     public PostExeNode(ISourcePosition position, Node body) {
-        super(position, NodeTypes.POSTEXENODE);
-        
-        this.body = body;
-    }
-    
-    public Node getBodyNode() {
-        return body;
+        super(position, null, null, body, NodeTypes.POSTEXENODE);
     }
 
     /**
@@ -60,9 +53,5 @@ public class PostExeNode extends Node {
      **/
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitPostExeNode(this);
-    }
-    
-    public List childNodes() {
-        return Node.createList(body);
     }
 }

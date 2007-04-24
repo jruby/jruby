@@ -28,7 +28,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.AbstractCallable;
+import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -45,7 +45,6 @@ public class CallBlock extends Block {
 
     public CallBlock(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext ctx) {
         super(null,
-                new CallMethod(callback),
                 self,
                 ctx.getCurrentFrame(),
                 ctx.peekCRef(),
@@ -62,6 +61,62 @@ public class CallBlock extends Block {
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
+    
+    public IRubyObject yield(ThreadContext context, IRubyObject value) {
+        return yield(context, value, null, null, false);
+    }
+
+    /**
+     * Yield to this block, usually passed to the current call.
+     * 
+     * @param context represents the current thread-specific data
+     * @param value The value to yield, either a single value or an array of values
+     * @param self The current self
+     * @param klass
+     * @param aValue Should value be arrayified or not?
+     * @return
+     */
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
+            RubyModule klass, boolean aValue) {
+        if (klass == null) {
+            self = this.self;
+            frame.setSelf(self);
+        }
+        
+        pre(context, klass);
+
+        try {
+            IRubyObject[] args = new IRubyObject[] {value};
+            // This while loop is for restarting the block call in case a 'redo' fires.
+            while (true) {
+                try {
+                    return callback.call(context, args, NULL_BLOCK);
+                } catch (JumpException je) {
+                    if (je.getJumpType() == JumpException.JumpType.RedoJump) {
+                        context.pollThreadEvents();
+                        // do nothing, allow loop to redo
+                    } else {
+                        if (je.getJumpType() == JumpException.JumpType.BreakJump && je.getTarget() == null) {
+                            je.setTarget(this);                            
+                        }                        
+                        throw je;
+                    }
+                }
+            }
+            
+        } catch (JumpException je) {
+            // A 'next' is like a local return from the block, ending this call or yield.
+        	if (je.getJumpType() == JumpException.JumpType.NextJump) return (IRubyObject) je.getValue();
+
+            throw je;
+        } finally {
+            post(context);
+        }
+    }
+
+    private IRubyObject[] getBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, boolean valueIsArray) {
+        return new IRubyObject[]{value};
+    }
 
     public Block cloneBlock() {
         return new CallBlock(self,imClass,arity,callback,tc);
@@ -70,19 +125,4 @@ public class CallBlock extends Block {
     public Arity arity() {
         return arity;
     }
-
-    public static class CallMethod extends AbstractCallable {
-        private BlockCallback callback;
-        public CallMethod(BlockCallback callback) {
-            this.callback = callback;
-        }
-
-        public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block) {
-            return callback.call(context, args, block);
-        }
-
-        public ICallable dup() {
-            return new CallMethod(callback);
-        }
-    }    
 }

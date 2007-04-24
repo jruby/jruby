@@ -33,9 +33,9 @@ package org.jruby;
 
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.IterateCallable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -67,19 +67,19 @@ public class RubyMethod extends RubyObject {
      */
     public static RubyClass createMethodClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-		RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-    	
-		CallbackFactory callbackFactory = runtime.callbackFactory(RubyMethod.class);
+        RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         
-		methodClass.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
-		methodClass.defineMethod("to_proc", callbackFactory.getMethod("to_proc"));
-		methodClass.defineMethod("unbind", callbackFactory.getMethod("unbind"));
-		methodClass.defineMethod("call", callbackFactory.getOptMethod("call"));
-		methodClass.defineMethod("[]", callbackFactory.getOptMethod("call"));
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyMethod.class);
+        
+        methodClass.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
+        methodClass.defineMethod("to_proc", callbackFactory.getMethod("to_proc"));
+        methodClass.defineMethod("unbind", callbackFactory.getMethod("unbind"));
+        methodClass.defineMethod("call", callbackFactory.getOptMethod("call"));
+        methodClass.defineMethod("[]", callbackFactory.getOptMethod("call"));
         methodClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
         methodClass.defineFastMethod("to_s", callbackFactory.getFastMethod("inspect"));
-
-		return methodClass;
+        
+        return methodClass;
     }
 
     public static RubyMethod newMethod(
@@ -127,17 +127,16 @@ public class RubyMethod extends RubyObject {
      * 
      */
     public IRubyObject to_proc(Block unusedBlock) {
-    	CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
-		Ruby r = getRuntime();
+        CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
+        Ruby r = getRuntime();
         ThreadContext tc = r.getCurrentContext();
-        Block block = Block.createBlock(tc, null, tc.getCurrentScope().cloneScope(), 
-                new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf());
+        Block block = MethodBlock.createMethodBlock(tc, tc.getCurrentScope().cloneScope(), f.getBlockMethod("bmcall"), this, r.getTopSelf());
         
         while (true) {
             try {
                 // FIXME: We should not be regenerating this over and over
                 return f.getSingletonMethod("mproc").execute(getRuntime().getNil(), 
-                            IRubyObject.NULL_ARRAY, block);
+                        IRubyObject.NULL_ARRAY, block);
             } catch (JumpException je) {
                 if (je.getJumpType() == JumpException.JumpType.BreakJump) {
                     return (IRubyObject) je.getValue();
@@ -148,7 +147,7 @@ public class RubyMethod extends RubyObject {
                 } else {
                     throw je;
                 }
-		    }
+            }
         }
     }
 

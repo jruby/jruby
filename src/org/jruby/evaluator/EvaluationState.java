@@ -141,7 +141,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.JumpException.JumpType;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.EvaluateCallable;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -1099,8 +1098,8 @@ public class EvaluationState {
     private static IRubyObject forNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         ForNode iVisited = (ForNode) node;
         
-        Block block = SharedScopeBlock.createBlock(context, iVisited.getVarNode(), 
-                context.getCurrentScope(), iVisited.getCallable(), self);
+        Block block = SharedScopeBlock.createSharedScopeBlock(context, iVisited, 
+                context.getCurrentScope(), self);
    
         try {
             while (true) {
@@ -1472,8 +1471,7 @@ public class EvaluationState {
         
         // FIXME: I use a for block to implement END node because we need a proc which captures
         // its enclosing scope.   ForBlock now represents these node and should be renamed.
-        Block block = SharedScopeBlock.createBlock(context, null,
-                context.getCurrentScope(), new EvaluateCallable(iVisited.getBodyNode(), null), self);
+        Block block = SharedScopeBlock.createSharedScopeBlock(context, iVisited, context.getCurrentScope(), self);
         
         runtime.pushExitBlock(runtime.newProc(true, block));
         
@@ -1902,9 +1900,8 @@ public class EvaluationState {
             IterNode iterNode = (IterNode) blockNode;
             // Create block for this iter node
             // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
-            return Block.createBlock(context, iterNode.getVarNode(),
-                    new DynamicScope(iterNode.getScope(), context.getCurrentScope()),
-                    iterNode.getCallable(), self);
+            return Block.createBlock(context, iterNode,
+                    new DynamicScope(iterNode.getScope(), context.getCurrentScope()), self);
         } else if (blockNode instanceof BlockPassNode) {
             BlockPassNode blockPassNode = (BlockPassNode) blockNode;
             IRubyObject proc = evalInternal(runtime,context, blockPassNode.getBodyNode(), self, currentBlock);

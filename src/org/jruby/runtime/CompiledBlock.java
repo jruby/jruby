@@ -46,7 +46,6 @@ public class CompiledBlock extends Block {
 
     public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, IRubyObject[][] scopes, Block block, CompiledBlockCallback callback) {
         super(null,
-                null,
                 self,
                 context.getCurrentFrame(),
                 context.peekCRef(),

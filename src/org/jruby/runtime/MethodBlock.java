@@ -33,6 +33,7 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.ast.IterNode;
@@ -45,52 +46,36 @@ import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public class Block {
-    /**
-     * All Block variables should either refer to a real block or this NULL_BLOCK.
-     */
-    public static final Block NULL_BLOCK = new Block() {
-        public boolean isGiven() {
-            return false;
-        }
-        
-        public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-                RubyModule klass, boolean aValue) {
-            throw context.getRuntime().newLocalJumpError("yield called out of block");
-        }
-        
-        public Block cloneBlock() {
-            return this;
-        }
-    };
+public class MethodBlock extends Block{
 
     /**
      * 'self' at point when the block is defined
      */
     private IRubyObject self;
-
-    /**
-     * AST Node representing the parameter (VARiable) list to the block.
-     */
-    private IterNode iterNode;
+    
+    private RubyMethod method;
+    private Callback callback;
+    
+    private final Arity arity;
     
     /**
      * frame of method which defined this block
      */
-    protected Frame frame;
-    private SinglyLinkedList cref;
+    protected final Frame frame;
+    private final SinglyLinkedList cref;
     private Visibility visibility;
-    private RubyModule klass;
+    private final RubyModule klass;
     
     /**
      * A reference to all variable values (and names) that are in-scope for this block.
      */
-    private DynamicScope dynamicScope;
+    private final DynamicScope dynamicScope;
     
     /**
      * The Proc that this block is associated with.  When we reference blocks via variable
@@ -100,74 +85,31 @@ public class Block {
     private RubyProc proc = null;
     
     public boolean isLambda = false;
-    
-    protected final Arity arity;
 
-    public static Block createBlock(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
-        return new Block(iterNode,
-                         self,
+    public static MethodBlock createMethodBlock(ThreadContext context, DynamicScope dynamicScope, Callback callback, RubyMethod method, IRubyObject self) {
+        return new MethodBlock(self,
                          context.getCurrentFrame(),
                          context.peekCRef(),
                          context.getCurrentFrame().getVisibility(),
                          context.getRubyClass(),
-                         dynamicScope);
-    }
-    
-    protected Block() {
-        this(null, null, null, null, null, null, null);
+                         dynamicScope,
+                         callback,
+                         method);
     }
 
-    public Block(IterNode iterNode, IRubyObject self, Frame frame,
+    public MethodBlock(IRubyObject self, Frame frame,
         SinglyLinkedList cref, Visibility visibility, RubyModule klass,
-        DynamicScope dynamicScope) {
-    	
-        //assert method != null;
+        DynamicScope dynamicScope, Callback callback, RubyMethod method) {
 
-        this.iterNode = iterNode;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
         this.klass = klass;
         this.cref = cref;
         this.dynamicScope = dynamicScope;
-        this.arity = iterNode == null ? null : Arity.procArityOf(iterNode.getVarNode());
-    }
-    
-    public static Block createBinding(Frame frame, DynamicScope dynamicScope) {
-        ThreadContext context = frame.getSelf().getRuntime().getCurrentContext();
-        
-        // We create one extra dynamicScope on a binding so that when we 'eval "b=1", binding' the
-        // 'b' will get put into this new dynamic scope.  The original scope does not see the new
-        // 'b' and successive evals with this binding will.  I take it having the ability to have 
-        // succesive binding evals be able to share same scope makes sense from a programmers 
-        // perspective.   One crappy outcome of this design is it requires Dynamic and Static 
-        // scopes to be mutable for this one case.
-        
-        // Note: In Ruby 1.9 all of this logic can go away since they will require explicit
-        // bindings for evals.
-        
-        // We only define one special dynamic scope per 'logical' binding.  So all bindings for
-        // the same scope should share the same dynamic scope.  This allows multiple evals with
-        // different different bindings in the same scope to see the same stuff.
-        DynamicScope extraScope = dynamicScope.getBindingScope();
-        
-        // No binding scope so we should create one
-        if (extraScope == null) {
-            // If the next scope out has the same binding scope as this scope it means
-            // we are evaling within an eval and in that case we should be sharing the same
-            // binding scope.
-            DynamicScope parent = dynamicScope.getNextCapturedScope(); 
-            if (parent != null && parent.getBindingScope() == dynamicScope) {
-                extraScope = dynamicScope;
-            } else {
-                extraScope = new DynamicScope(new BlockStaticScope(dynamicScope.getStaticScope()), dynamicScope);
-                dynamicScope.setBindingScope(extraScope);
-            }
-        } 
-        
-        // FIXME: Ruby also saves wrapper, which we do not
-        return new Block(null, frame.getSelf(), frame, context.peekCRef(), frame.getVisibility(), 
-                context.getBindingRubyClass(), extraScope);
+        this.callback = callback;
+        this.method = method;
+        this.arity = Arity.createArity((int) method.arity().getLongValue());
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
@@ -206,11 +148,10 @@ public class Block {
         pre(context, klass);
 
         try {
-            IRubyObject[] args = getBlockArgsEvaluate(context, value, self, aValue);
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    return EvaluationState.eval(context.getRuntime(), context, iterNode.getBodyNode(), self, NULL_BLOCK);
+                    return callback.execute(value, new IRubyObject[] { method, self }, NULL_BLOCK);
                 } catch (JumpException je) {
                     if (je.getJumpType() == JumpException.JumpType.RedoJump) {
                         context.pollThreadEvents();
@@ -234,68 +175,13 @@ public class Block {
         }
     }
 
-    private IRubyObject[] getBlockArgsEvaluate(ThreadContext context, IRubyObject value, IRubyObject self, boolean valueIsArray) {
-        //FIXME: block arg handling is mucked up in strange ways and NEED to
-        // be fixed. Especially with regard to Enumerable. See RubyEnumerable#eachToList too.
-        Node varNode = iterNode.getVarNode();
-        if (varNode == null) {
-            return IRubyObject.NULL_ARRAY;
-        }
-        
-        Ruby runtime = self.getRuntime();
-
-
-        if(valueIsArray) {
-            switch (varNode.nodeId) {
-            case NodeTypes.ZEROARGNODE:
-                break;
-            case NodeTypes.MULTIPLEASGNNODE:
-                value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode, (RubyArray)value, false);
-                break;
-            default:
-                int length = arrayLength(value);
-                switch (length) {
-                case 0:
-                    value = runtime.getNil();
-                    break;
-                case 1:
-                    value = ((RubyArray)value).eltInternal(0);
-                    break;
-                default:
-                    runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
-                }
-                AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
-            }
-        } else {
-            switch (varNode.nodeId) {
-            case NodeTypes.ZEROARGNODE:
-                return IRubyObject.NULL_ARRAY;
-            case NodeTypes.MULTIPLEASGNNODE:
-                value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode,
-                                                      ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null)
-                                                      , false);
-                break;
-            default:
-                if (value == null) { 
-                    runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
-                }
-                AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
-            }
-        }
-        return IRubyObject.NULL_ARRAY;
-    }
-    
-    private int arrayLength(IRubyObject node) {
-        return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
-    }
-
     public Block cloneBlock() {
         // We clone dynamic scope because this will be a new instance of a block.  Any previously
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
         // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        Block newBlock = new Block(iterNode, self, frame.duplicate(), cref, visibility, klass, 
-                dynamicScope.cloneScope());
+        Block newBlock = new MethodBlock(self, frame.duplicate(), cref, visibility, klass, 
+                dynamicScope.cloneScope(), callback, method);
         
         newBlock.isLambda = isLambda;
 

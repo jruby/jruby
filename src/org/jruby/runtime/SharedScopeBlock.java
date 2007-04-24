@@ -28,6 +28,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
+import org.jruby.ast.IterNode;
 import org.jruby.ast.Node;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -40,15 +41,14 @@ import org.jruby.util.collections.SinglyLinkedList;
  * 
  */
 public class SharedScopeBlock extends Block {
-    private SharedScopeBlock(Node varNode, ICallable method, IRubyObject self, Frame frame,
+    private SharedScopeBlock(IterNode iterNode, IRubyObject self, Frame frame,
             SinglyLinkedList cref, Visibility visibility, RubyModule klass,
             DynamicScope dynamicScope) {
-        super(varNode, method, self, frame, cref, visibility, klass, dynamicScope);
+        super(iterNode, self, frame, cref, visibility, klass, dynamicScope);
     }
     
-    public static Block createBlock(ThreadContext context, Node varNode, DynamicScope dynamicScope,
-            ICallable method, IRubyObject self) {
-        return new SharedScopeBlock(varNode, method, self,
+    public static Block createSharedScopeBlock(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
+        return new SharedScopeBlock(iterNode, self,
                 context.getCurrentFrame(),
                 context.peekCRef(),
                 context.getCurrentFrame().getVisibility(),
