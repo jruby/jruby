@@ -310,7 +310,8 @@ public class RubyClass extends RubyModule {
 
         ThreadContext tc = runtime.getCurrentContext();
         // use allocator of superclass, since this will be a pure Ruby class
-        RubyClass newClass = superClass.newSubClass(null, superClass.getAllocator(),tc.peekCRef(),invokeInherited);
+        RubyClass newClass = superClass.newSubClass(null, superClass.getAllocator(), 
+                tc.peekCRef(), invokeInherited, true);
 
         // call "initialize" method
         newClass.callInit(args, block);
@@ -361,7 +362,7 @@ public class RubyClass extends RubyModule {
     }
 
     public RubyClass newSubClass(String name, ObjectAllocator allocator,
-            SinglyLinkedList parentCRef, boolean invokeInherited) {
+            SinglyLinkedList parentCRef, boolean invokeInherited, boolean warnOnRedefinition) {
         RubyClass classClass = runtime.getClass("Class");
         
         // Cannot subclass 'Class' or metaclasses
@@ -380,13 +381,18 @@ public class RubyClass extends RubyModule {
         }
 
         if(null != name) {
-            ((RubyModule)parentCRef.getValue()).setConstant(name, newClass);
+            if (warnOnRedefinition) {
+                ((RubyModule)parentCRef.getValue()).setConstant(name, newClass);
+            } else {
+                ((RubyModule)parentCRef.getValue()).setInstanceVariable(name, newClass);
+            }
         }
 
         return newClass;
     }
-    public RubyClass newSubClass(String name, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
-        return newSubClass(name,allocator,parentCRef,true);
+    public RubyClass newSubClass(String name, ObjectAllocator allocator, 
+            SinglyLinkedList parentCRef, boolean warnOnRedefinition) {
+        return newSubClass(name,allocator,parentCRef,true, warnOnRedefinition);
     }
     
     

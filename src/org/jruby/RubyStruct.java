@@ -205,7 +205,7 @@ public class RubyStruct extends RubyObject {
             if (type != null) {
                 runtime.getWarnings().warn(runtime.getCurrentContext().getFramePosition(), "redefining constant Struct::" + name);
             }
-            newStruct = superClass.newSubClass(name, superClass.getAllocator(), superClass.getCRef());
+            newStruct = superClass.newSubClass(name, superClass.getAllocator(), superClass.getCRef(), false);
         }
 
         newStruct.index = ClassIndex.STRUCT;

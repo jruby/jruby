@@ -433,11 +433,9 @@ public final class Ruby {
     }
 
     public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
-        if (superClass == null) {
-            superClass = objectClass;
-        }
+        if (superClass == null) superClass = objectClass;
 
-        return superClass.newSubClass(name, allocator, parentCRef);
+        return superClass.newSubClass(name, allocator, parentCRef, true);
     }
 
     /** rb_define_module / rb_define_module_id
