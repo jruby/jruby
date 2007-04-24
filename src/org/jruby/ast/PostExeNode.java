@@ -30,8 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.util.List;
-
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;

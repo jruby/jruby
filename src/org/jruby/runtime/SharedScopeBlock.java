@@ -29,7 +29,6 @@ package org.jruby.runtime;
 
 import org.jruby.RubyModule;
 import org.jruby.ast.IterNode;
-import org.jruby.ast.Node;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 

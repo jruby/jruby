@@ -31,20 +31,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
-import org.jruby.ast.IterNode;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.NodeTypes;
-import org.jruby.ast.util.ArgsUtil;
-import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
-import org.jruby.parser.BlockStaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.util.collections.SinglyLinkedList;

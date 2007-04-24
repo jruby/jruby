@@ -206,7 +206,8 @@ public class Block {
         pre(context, klass);
 
         try {
-            IRubyObject[] args = getBlockArgsEvaluate(context, value, self, aValue);
+            evaluateBlockArgs(context, value, self, aValue);
+            
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
@@ -234,16 +235,13 @@ public class Block {
         }
     }
 
-    private IRubyObject[] getBlockArgsEvaluate(ThreadContext context, IRubyObject value, IRubyObject self, boolean valueIsArray) {
+    private void evaluateBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, boolean valueIsArray) {
         //FIXME: block arg handling is mucked up in strange ways and NEED to
         // be fixed. Especially with regard to Enumerable. See RubyEnumerable#eachToList too.
         Node varNode = iterNode.getVarNode();
-        if (varNode == null) {
-            return IRubyObject.NULL_ARRAY;
-        }
+        if (varNode == null) return;
         
         Ruby runtime = self.getRuntime();
-
 
         if(valueIsArray) {
             switch (varNode.nodeId) {
@@ -269,7 +267,7 @@ public class Block {
         } else {
             switch (varNode.nodeId) {
             case NodeTypes.ZEROARGNODE:
-                return IRubyObject.NULL_ARRAY;
+                return;
             case NodeTypes.MULTIPLEASGNNODE:
                 value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode,
                                                       ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null)
@@ -282,7 +280,6 @@ public class Block {
                 AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
             }
         }
-        return IRubyObject.NULL_ARRAY;
     }
     
     private int arrayLength(IRubyObject node) {

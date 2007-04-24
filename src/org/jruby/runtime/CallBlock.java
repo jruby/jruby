@@ -114,10 +114,6 @@ public class CallBlock extends Block {
         }
     }
 
-    private IRubyObject[] getBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, boolean valueIsArray) {
-        return new IRubyObject[]{value};
-    }
-
     public Block cloneBlock() {
         return new CallBlock(self,imClass,arity,callback,tc);
     }

@@ -35,6 +35,7 @@ package org.jruby;
 import java.util.List;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -82,6 +83,7 @@ public class RubyStruct extends RubyObject {
         structClass.defineFastMethod("values", callbackFactory.getFastMethod("to_a"));
         structClass.defineFastMethod("size", callbackFactory.getFastMethod("size"));
         structClass.defineFastMethod("length", callbackFactory.getFastMethod("size"));
+        structClass.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
 
         structClass.defineMethod("each", callbackFactory.getMethod("each"));
         structClass.defineMethod("each_pair", callbackFactory.getMethod("each_pair"));
@@ -96,7 +98,7 @@ public class RubyStruct extends RubyObject {
     public int getNativeTypeIndex() {
         return ClassIndex.STRUCT;
     }
-
+    
     private static IRubyObject getInstanceVariable(RubyClass type, String name) {
         RubyClass structClass = type.getRuntime().getClass("Struct");
 
@@ -122,6 +124,19 @@ public class RubyStruct extends RubyObject {
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw getRuntime().newSecurityError("Insecure: can't modify struct");
         }
+    }
+    
+    public RubyFixnum hash() {
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        int h = getMetaClass().getRealClass().hashCode();
+
+        for (int i = 0; i < values.length; i++) {
+            h = (h << 1) | (h < 0 ? 1 : 0);
+            h ^= RubyNumeric.num2long(values[i].callMethod(context, MethodIndex.HASH, "hash"));
+        }
+        
+        return runtime.newFixnum(h);
     }
 
     private IRubyObject setByName(String name, IRubyObject value) {

@@ -85,3 +85,9 @@ end
 # Even though they have different metaclasses they are still equal in the eyes of Ruby
 test_equal(b, c)
 
+c = Struct.new(:a)
+s1 = c.new(1)
+s2 = c.new(1)
+test_ok(true, s1.eql?(s2))
+test_equal(s1.hash, s2.hash)
+
