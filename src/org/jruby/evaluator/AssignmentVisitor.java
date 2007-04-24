@@ -183,8 +183,6 @@ public class AssignmentVisitor {
     private static void localAsgnNode(ThreadContext context, Node node, IRubyObject value) {
         LocalAsgnNode iVisited = (LocalAsgnNode)node;
         
-        //System.out.println("Assigning to " + iVisited.getName() + "@"+ iVisited.getPosition());
-        //context.printScope();
         context.getCurrentScope().setValue(iVisited.getIndex(), value, iVisited.getDepth());
     }
 

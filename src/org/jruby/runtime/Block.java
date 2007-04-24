@@ -206,7 +206,13 @@ public class Block {
         pre(context, klass);
 
         try {
-            evaluateBlockArgs(context, value, self, aValue);
+            if (iterNode.getVarNode() != null) {
+                if (aValue) {
+                    setupBlockArgs(context, iterNode.getVarNode(), value, self);
+                } else {
+                    setupBlockArg(context, iterNode.getVarNode(), value, self);
+                }
+            }
             
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
@@ -235,50 +241,46 @@ public class Block {
         }
     }
 
-    private void evaluateBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, boolean valueIsArray) {
-        //FIXME: block arg handling is mucked up in strange ways and NEED to
-        // be fixed. Especially with regard to Enumerable. See RubyEnumerable#eachToList too.
-        Node varNode = iterNode.getVarNode();
-        if (varNode == null) return;
-        
+    private void setupBlockArgs(ThreadContext context, Node varNode, IRubyObject value, IRubyObject self) {
         Ruby runtime = self.getRuntime();
+        
+        switch (varNode.nodeId) {
+        case NodeTypes.ZEROARGNODE:
+            break;
+        case NodeTypes.MULTIPLEASGNNODE:
+            value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode, (RubyArray)value, false);
+            break;
+        default:
+            int length = arrayLength(value);
+            switch (length) {
+            case 0:
+                value = runtime.getNil();
+                break;
+            case 1:
+                value = ((RubyArray)value).eltInternal(0);
+                break;
+            default:
+                runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
+            }
+            AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
+        }
+    }
 
-        if(valueIsArray) {
-            switch (varNode.nodeId) {
-            case NodeTypes.ZEROARGNODE:
-                break;
-            case NodeTypes.MULTIPLEASGNNODE:
-                value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode, (RubyArray)value, false);
-                break;
-            default:
-                int length = arrayLength(value);
-                switch (length) {
-                case 0:
-                    value = runtime.getNil();
-                    break;
-                case 1:
-                    value = ((RubyArray)value).eltInternal(0);
-                    break;
-                default:
-                    runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
-                }
-                AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
+    private void setupBlockArg(ThreadContext context, Node varNode, IRubyObject value, IRubyObject self) {
+        Ruby runtime = self.getRuntime();
+        
+        switch (varNode.nodeId) {
+        case NodeTypes.ZEROARGNODE:
+            return;
+        case NodeTypes.MULTIPLEASGNNODE:
+            value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode,
+                    ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null), false);
+            break;
+        default:
+            if (value == null) {
+                runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
             }
-        } else {
-            switch (varNode.nodeId) {
-            case NodeTypes.ZEROARGNODE:
-                return;
-            case NodeTypes.MULTIPLEASGNNODE:
-                value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode,
-                                                      ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null)
-                                                      , false);
-                break;
-            default:
-                if (value == null) { 
-                    runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
-                }
-                AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
-            }
+            AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
         }
     }
     

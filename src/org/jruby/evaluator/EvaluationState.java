@@ -1810,9 +1810,9 @@ public class EvaluationState {
     private static IRubyObject yieldNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         YieldNode iVisited = (YieldNode) node;
    
-        IRubyObject result = evalInternal(runtime,context, iVisited.getArgsNode(), self, aBlock);
-        if (iVisited.getArgsNode() == null) {
-            result = null;
+        IRubyObject result = null;
+        if (iVisited.getArgsNode() != null) {
+            result = evalInternal(runtime, context, iVisited.getArgsNode(), self, aBlock);
         }
 
         Block block = context.getCurrentFrame().getBlock();
