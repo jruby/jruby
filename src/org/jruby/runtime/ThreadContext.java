@@ -601,6 +601,16 @@ public class ThreadContext {
         getCurrentFrame().setSelf(runtime.getTopSelf());
     }
     
+    public void preCompiledClass(RubyModule type) {
+        pushCRef(type);
+        pushRubyClass(type);
+    }
+    
+    public void postCompiledClass() {
+        popCRef();
+        popRubyClass();
+    }
+    
     public void preClassEval(StaticScope staticScope, RubyModule type) {
         pushCRef(type);
         pushRubyClass(type);

@@ -371,6 +371,11 @@ public interface Compiler {
     public void loadSymbol(String symbol);
     
     /**
+     * Load the Object class
+     */
+    public void loadObject();
+    
+    /**
      * Retrieve the instance variable with the given name, based on the current "self".
      * 
      * @param name The name of the instance variable to retrieve.
@@ -485,4 +490,6 @@ public interface Compiler {
     public void match3();
 
     public void createNewRegexp(ByteList value, int options, String lang);
+    
+    public void defineClass(String name, StaticScope staticScope, ClosureCallback superCallback, ClosureCallback pathCallback, ClosureCallback bodyCallback);
 }

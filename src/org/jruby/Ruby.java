@@ -1140,6 +1140,27 @@ public final class Ruby {
         }
     }
 
+    public void loadScript(Script script) {
+        IRubyObject self = getTopSelf();
+        ThreadContext context = getCurrentContext();
+
+        try {
+            secure(4); /* should alter global state */
+
+            context.preNodeEval(objectClass, self);
+
+            script.run(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        } catch (JumpException je) {
+            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                // Make sure this does not bubble out to java caller.
+            } else {
+                throw je;
+            }
+        } finally {
+            context.postNodeEval();
+        }
+    }
+
     public void loadNode(String scriptName, Node node) {
         IRubyObject self = getTopSelf();
         ThreadContext context = getCurrentContext();

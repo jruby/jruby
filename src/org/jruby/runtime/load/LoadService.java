@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -254,9 +255,20 @@ public class LoadService {
 
         library = tryLoadExtension(library,file);
         
-        // no library or extension found, bail out
+        // no library or extension found, try to load directly as a class
+        Script script = null;
         if (library == null) {
-            throw runtime.newLoadError("no such file to load -- " + file);
+            String className = file;
+            if (file.lastIndexOf(".") > file.lastIndexOf("/")) {
+                className = file.substring(file.lastIndexOf(".") + 1);
+            }
+            className = className.replace("/", ".");
+            try {
+                Class scriptClass = Class.forName(className);
+                script = (Script)scriptClass.newInstance();
+            } catch (Exception cnfe) {
+                throw runtime.newLoadError("no such file to load -- " + file);
+            }
         }
         
         if (loadedFeaturesInternal.contains(loadName)) {
@@ -271,6 +283,11 @@ public class LoadService {
                 loadedFeatures.add(runtime.newString(loadName));
             }
 
+            if (script != null) {
+                runtime.loadScript(script);
+                return true;
+            }
+            
             library.load(runtime);
             return true;
         } catch (Exception e) {

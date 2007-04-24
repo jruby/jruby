@@ -83,6 +83,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 
 import jregex.Pattern;
+import org.jruby.RubyObject;
 
 /**
  *
@@ -105,7 +106,8 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     private static final int CLOSURE_INDEX = 3;
     private static final int SCOPE_INDEX = 4;
     private static final int RUNTIME_INDEX = 5;
-    private static final int LOCAL_VARS_INDEX = 6;
+    private static final int VISIBILITY_INDEX = 6;
+    private static final int LOCAL_VARS_INDEX = 7;
     
     private Stack SkinnyMethodAdapters = new Stack();
     private Stack arities = new Stack();
@@ -303,6 +305,9 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         // logic to start off the root node's code with local var slots and all
         newMethod.ldc(new Integer(localVarCount));
         newMethod.anewarray(cg.p(IRubyObject.class));
+        
+        newMethod.getstatic(cg.p(Visibility.class), "PRIVATE", cg.ci(Visibility.class));
+        newMethod.astore(VISIBILITY_INDEX);
         
         // store the local vars in a local variable
         newMethod.astore(LOCAL_VARS_INDEX);
@@ -542,6 +547,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         getMethodAdapter().aload(RUNTIME_INDEX);
     }
     
+    public void loadVisibility() {
+        getMethodAdapter().aload(VISIBILITY_INDEX);
+    }
+    
     public void loadNil() {
         loadRuntime();
         invokeIRuby("getNil", cg.sig(IRubyObject.class));
@@ -555,6 +564,12 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.ldc(symbol);
         
         invokeIRuby("newSymbol", cg.sig(RubySymbol.class, cg.params(String.class)));
+    }
+    
+    public void loadObject() {
+        loadRuntime();
+        
+        invokeIRuby("getObject", cg.sig(RubyClass.class, cg.params()));
     }
     
     public void consumeCurrentValue() {
@@ -1234,12 +1249,12 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         // TODO: should call method_added, and possibly push nil.
     }
     
-    public static IRubyObject def(ThreadContext context, IRubyObject self, Class compiledClass, String name, String javaName, int arity) {
+    public static IRubyObject def(ThreadContext context, Visibility visibility, IRubyObject self, Class compiledClass, String name, String javaName, int arity) {
         Ruby runtime = context.getRuntime();
         
         // FIXME: This is what the old def did, but doesn't work in the compiler for top-level methods. Hmm.
-        //RubyModule containingClass = context.getRubyClass();
-        RubyModule containingClass = self.getMetaClass();
+        RubyModule containingClass = context.getRubyClass();
+        //RubyModule containingClass = self.getMetaClass();
         
         if (containingClass == null) {
             throw runtime.newTypeError("No class to add method.");
@@ -1248,8 +1263,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         if (containingClass == runtime.getObject() && name == "initialize") {
             runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
         }
-        
-        Visibility visibility = context.getCurrentVisibility();
         if (name == "initialize" || visibility.isModuleFunction() || context.isTopLevel()) {
             visibility = Visibility.PRIVATE;
         }
@@ -1304,6 +1317,8 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         // prepare to call "def" utility method to handle def logic
         loadThreadContext();
         
+        loadVisibility();
+        
         loadSelf();
         
         // load the class we're creating, for binding purposes
@@ -1318,7 +1333,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         
         mv.invokestatic(cg.p(StandardASMCompiler.class),
                 "def",
-                cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, Class.class, String.class, String.class, Integer.TYPE)));
+                cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Visibility.class, IRubyObject.class, Class.class, String.class, String.class, Integer.TYPE)));
     }
     
     public void loadFalse() {
@@ -1634,5 +1649,87 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         }
 
         mv.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, String.class, Pattern.class, Integer.TYPE, String.class)));
+    }
+    
+    public void defineClass(String name, StaticScope staticScope, ClosureCallback superCallback, ClosureCallback pathCallback, ClosureCallback bodyCallback) {
+        // TODO: build arg list based on number of args, optionals, etc
+        ++methodIndex;
+        String methodName = "rubyclass__" + cg.cleanJavaIdentifier(name) + "__" + methodIndex;
+        
+        beginMethod(methodName, 0, staticScope.getNumberOfVariables());
+        
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        // put a null at register 4, for closure creation to know we're at top-level or local scope
+        mv.aconst_null();
+        mv.astore(SCOPE_INDEX);
+        
+        // class def bodies default to public visibility
+        mv.getstatic(cg.p(Visibility.class), "PUBLIC", cg.ci(Visibility.class));
+        mv.astore(VISIBILITY_INDEX);
+        
+        // Here starts the logic for the class definition
+        loadRuntime();
+        
+        superCallback.compile(this);
+        
+        invokeUtilityMethod("prepareSuperClass", cg.sig(RubyClass.class, cg.params(Ruby.class, IRubyObject.class)));
+        
+        loadThreadContext();
+        
+        pathCallback.compile(this);
+        
+        invokeUtilityMethod("prepareClassNamespace", cg.sig(RubyModule.class, cg.params(ThreadContext.class, IRubyObject.class)));
+        
+        mv.swap();
+        
+        mv.ldc(name);
+        
+        mv.swap();
+        
+        mv.invokevirtual(cg.p(RubyModule.class), "defineOrGetClassUnder", cg.sig(RubyClass.class, cg.params(String.class, RubyClass.class)));
+        
+        // CLASS BODY
+        loadThreadContext();
+        mv.swap();
+        
+        // FIXME: this should be in a try/finally
+        invokeThreadContext("preCompiledClass", cg.sig(Void.TYPE, cg.params(RubyModule.class)));
+        
+        bodyCallback.compile(this);
+        
+        loadThreadContext();
+        invokeThreadContext("postCompiledClass", cg.sig(Void.TYPE, cg.params()));
+        
+        endMethod(mv);
+        
+        // return to previous method
+        mv = getMethodAdapter();
+        
+        // prepare to call class definition method
+        loadThreadContext();
+        loadSelf();
+        mv.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+        mv.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
+        
+        mv.invokestatic(classname, methodName, METHOD_SIGNATURE);
+    }
+    
+    public static RubyClass prepareSuperClass(Ruby runtime, IRubyObject rubyClass) {
+        if (rubyClass != null) {
+            if(!(rubyClass instanceof RubyClass)) {
+                throw runtime.newTypeError("superclass must be a Class (" + RubyObject.trueFalseNil(rubyClass) + ") given");
+            }
+            return (RubyClass)rubyClass;
+        }
+        return (RubyClass)null;
+    }
+    
+    public static RubyModule prepareClassNamespace(ThreadContext context, IRubyObject rubyModule) {
+        if (rubyModule == null || rubyModule.isNil()) {
+            rubyModule = (RubyModule) context.peekCRef().getValue();
+        }
+        
+        return (RubyModule)rubyModule;
     }
 }

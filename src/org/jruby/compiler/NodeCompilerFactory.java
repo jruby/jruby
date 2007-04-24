@@ -86,6 +86,9 @@ public class NodeCompilerFactory {
         case NodeTypes.CALLNODE:
             // safe; yield or block nodes that aren't should raise
             return new CallNodeCompiler();
+        case NodeTypes.CLASSNODE:
+            // This is *probably* safe...all the logic is present for this to work, and I don't know of breakage
+            return new ClassNodeCompiler();
         case NodeTypes.CONSTDECLNODE:
             // this should be safe as well with TC doing the right thing
             return new ConstDeclNodeCompiler();
