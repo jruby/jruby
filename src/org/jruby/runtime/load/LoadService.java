@@ -262,7 +262,7 @@ public class LoadService {
             if (file.lastIndexOf(".") > file.lastIndexOf("/")) {
                 className = file.substring(file.lastIndexOf(".") + 1);
             }
-            className = className.replace("/", ".");
+            className = className.replace('/', '.');
             try {
                 Class scriptClass = Class.forName(className);
                 script = (Script)scriptClass.newInstance();
