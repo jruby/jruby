@@ -408,11 +408,12 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     public IRubyObject match_m(IRubyObject target) {
-        if (target.isNil()) {
-            return target;
-        }
+        if (target.isNil()) return target;
+
         IRubyObject result = match(target);
-        return result.isNil() ? result : getRuntime().getCurrentContext().getBackref().rbClone();
+        
+        return result.isNil() ? result : 
+            getRuntime().getCurrentContext().getBackref().rbClone(Block.NULL_BLOCK);
     }
 
     /** rb_reg_source

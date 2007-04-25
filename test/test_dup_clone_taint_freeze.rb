@@ -41,4 +41,21 @@ class TestDupCloneTaintFreeze < Test::Unit::TestCase
     assert({}.freeze.clone.frozen?)
     assert(//.freeze.clone.frozen?)
   end
+  
+  class Foo
+    attr_reader :a
+    def initialize
+      @a = 2
+    end
+  	protected
+
+	def initialize_copy(from)
+      @a = 1
+    end
+  end
+  
+  def test_clone_protected_initialize_copy
+    b = Foo.new.clone
+    assert(1, b.a)
+  end
 end

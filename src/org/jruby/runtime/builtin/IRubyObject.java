@@ -494,7 +494,7 @@ public interface IRubyObject {
      * RubyMethod rbClone.
      * @return IRubyObject
      */
-    IRubyObject rbClone();
+    IRubyObject rbClone(Block unusedBlock);
     
     
     /**

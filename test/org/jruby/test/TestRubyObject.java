@@ -33,6 +33,7 @@ import junit.framework.TestCase;
 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TestRubyObject extends TestCase {
@@ -61,7 +62,7 @@ public class TestRubyObject extends TestCase {
     }
 
     public void testClone() {
-        assertTrue(rubyObject.rbClone().getType() == rubyObject.getType());
+        assertTrue(rubyObject.rbClone(Block.NULL_BLOCK).getType() == rubyObject.getType());
     }
 
     public void testDup() {

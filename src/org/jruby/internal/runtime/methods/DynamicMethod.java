@@ -95,9 +95,8 @@ public abstract class DynamicMethod {
             while (defined.isIncluded()) {
                 defined = defined.getMetaClass();
             }
-            if (!caller.isKindOf(defined)) {
-                return false;
-            }
+
+            if (!caller.isKindOf(defined)) return false;
         }
         
         return true;

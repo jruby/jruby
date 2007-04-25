@@ -165,7 +165,7 @@ public class RubyException extends RubyObject {
                 if(args[0] == this) {
                     return this;
                 }
-                RubyException ret = (RubyException)rbClone();
+                RubyException ret = (RubyException)rbClone(Block.NULL_BLOCK);
                 ret.initialize(args, Block.NULL_BLOCK); // This looks wrong, but it's the way MRI does it.
                 return ret;
             default :

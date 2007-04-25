@@ -412,9 +412,9 @@ public class RubyObject implements Cloneable, IRubyObject {
         assert !clone.isFrozen() : "frozen object (" + clone.getMetaClass().getName() + ") allocated";
 
         if (original.safeHasInstanceVariables()) {
-        clone.setInstanceVariables(new HashMap(original.getInstanceVariables()));
+            clone.setInstanceVariables(new HashMap(original.getInstanceVariables()));
         }
-
+        
         /* FIXME: finalizer should be dupped here */
         clone.callMethod(clone.getRuntime().getCurrentContext(), "initialize_copy", original);
     }
@@ -1042,7 +1042,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_clone
      *  should be overriden only by: Proc, Method, UnboundedMethod, Binding
      */
-    public IRubyObject rbClone() {
+    public IRubyObject rbClone(Block unusedBlock) {
         if (isImmediate()) { // rb_special_const_p(obj) equivalent
             throw getRuntime().newTypeError("can't clone " + getMetaClass().getName());
         }
