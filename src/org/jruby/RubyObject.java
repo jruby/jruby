@@ -1307,10 +1307,10 @@ public class RubyObject implements Cloneable, IRubyObject {
         Arity.checkArgumentCount(getRuntime(), args, 1, -1);
 
         // Make sure all arguments are modules before calling the callbacks
-        RubyClass module = getRuntime().getClass("Module");
         for (int i = 0; i < args.length; i++) {
-            if (!args[i].isKindOf(module)) {
-                throw getRuntime().newTypeError(args[i], module);
+            IRubyObject obj;
+            if (!(((obj = args[i]) instanceof RubyModule) && ((RubyModule)obj).isModule())){
+                throw getRuntime().newTypeError(obj,getRuntime().getClass("Module"));
             }
         }
 

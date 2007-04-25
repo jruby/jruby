@@ -162,11 +162,24 @@ class ClassVarTest
   def y
     @@foo
   end
+  
+  def self.w
+    @@foo
+  end
 end
 
 test_no_exception {ClassVarTest.x }
 test_no_exception {ClassVarTest.new.z }
 test_equal(ClassVarTest.new.y, "foonew")
+
+##### JRUBY-793 test class var get/set #####
+test_exception(NameError) { ClassVarTest.send(:class_variable_get, :@foo) }
+test_exception(NameError) { ClassVarTest.send(:class_variable_set, :@foo, "foodoo") }
+test_no_exception { ClassVarTest.send(:class_variable_get, :@@foo) }
+test_no_exception { ClassVarTest.send(:class_variable_set, :@@foo, "fooset") }
+test_equal(ClassVarTest.send(:class_variable_get, :@@foo), "fooset")
+test_equal(ClassVarTest.w, "fooset")
+test_equal(ClassVarTest.new.y, "fooset")
 
 class TestClassVarAssignmentInSingleton
   @@a = nil
@@ -209,3 +222,24 @@ end
 test_equal([], NoConstantInInstanceVariables.new.class.instance_variables)
 
 test_equal(3, @@a = 3)
+
+class C7
+end
+
+class C7A
+end
+
+module M7A
+end
+
+test_exception(TypeError) do
+  C7A.module_eval do
+     include C7
+  end
+end
+
+test_exception(TypeError) do
+  M7A.module_eval do
+    include C7
+  end    
+end

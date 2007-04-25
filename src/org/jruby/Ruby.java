@@ -1559,7 +1559,8 @@ public final class Ruby {
     }
 
     public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType) {
-        return newRaiseException(getClass("TypeError"), "wrong argument type " + receivedObject.getMetaClass() + " (expected " + expectedType);
+        return newRaiseException(getClass("TypeError"), "wrong argument type " +
+                receivedObject.getMetaClass() + " (expected " + expectedType + ")");
     }
 
     public RaiseException newEOFError() {

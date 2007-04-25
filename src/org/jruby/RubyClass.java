@@ -223,6 +223,8 @@ public class RubyClass extends RubyModule {
         classClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", RubyKernel.IRUBY_OBJECT));
         classClass.defineMethod("inherited", callbackFactory.getSingletonMethod("inherited", RubyKernel.IRUBY_OBJECT));
         classClass.undefineMethod("module_function");
+        classClass.undefineMethod("append_features");
+        classClass.undefineMethod("extend_object");
     }
     
     public static IRubyObject inherited(IRubyObject recv, IRubyObject arg, Block block) {
@@ -315,11 +317,6 @@ public class RubyClass extends RubyModule {
 
         // call "initialize" method
         newClass.callInit(args, block);
-
-        // FIXME: inheritedBy called in superClass.newSubClass, so I
-        // assume this second call is a bug...?
-        // call "inherited" method of the superclass
-        //newClass.inheritedBy(superClass);
 
 		if (block.isGiven()) block.yield(tc, null, newClass, newClass, false);
 

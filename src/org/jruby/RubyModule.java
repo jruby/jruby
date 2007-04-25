@@ -160,6 +160,8 @@ public class RubyModule extends RubyObject {
         moduleClass.defineFastPrivateMethod("attr_reader", callbackFactory.getFastOptMethod("attr_reader"));
         moduleClass.defineFastPrivateMethod("attr_writer", callbackFactory.getFastOptMethod("attr_writer"));
         moduleClass.defineFastPrivateMethod("attr_accessor", callbackFactory.getFastOptMethod("attr_accessor"));
+        moduleClass.defineFastPrivateMethod("class_variable_get", callbackFactory.getFastMethod("class_variable_get", IRubyObject.class));
+        moduleClass.defineFastPrivateMethod("class_variable_set", callbackFactory.getFastMethod("class_variable_set", IRubyObject.class, IRubyObject.class));
         moduleClass.definePrivateMethod("define_method", callbackFactory.getOptMethod("define_method"));
         moduleClass.defineFastPrivateMethod("extend_object", callbackFactory.getFastMethod("extend_object", IRubyObject.class));
         moduleClass.defineFastPrivateMethod("include", callbackFactory.getFastOptMethod("include"));
@@ -1158,6 +1160,32 @@ public class RubyModule extends RubyObject {
         return ary;
     }
 
+    /** rb_mod_cvar_get
+    *
+    */
+    public IRubyObject class_variable_get(IRubyObject var) {
+        String varName = var.asSymbol();
+
+        if (!IdUtil.isClassVariable(varName)) {
+            throw getRuntime().newNameError("`" + varName + "' is not allowed as a class variable name", varName);
+        }
+
+        return getClassVar(varName);
+    }
+
+    /** rb_mod_cvar_set
+    *
+    */
+    public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
+        String varName = var.asSymbol();
+
+        if (!IdUtil.isClassVariable(varName)) {
+            throw getRuntime().newNameError("`" + varName + "' is not allowed as a class variable name", varName);
+        }
+
+        return setClassVar(varName, value);
+    }
+
     protected IRubyObject cloneMethods(RubyModule clone) {
         RubyModule realType = this.getNonIncludedClass();
         for (Iterator iter = getMethods().entrySet().iterator(); iter.hasNext(); ) {
@@ -1625,8 +1653,11 @@ public class RubyModule extends RubyObject {
     /** rb_mod_append_features
      *
      */
-    // TODO: Proper argument check (conversion?)
     public RubyModule append_features(IRubyObject module) {
+        if (!(module instanceof RubyModule)) {
+            // MRI error message says Class, even though Module is ok 
+            throw getRuntime().newTypeError(module,getRuntime().getClass("Class"));
+        }
         ((RubyModule) module).includeModule(this);
         return this;
     }
@@ -1644,7 +1675,13 @@ public class RubyModule extends RubyObject {
      */
     public RubyModule include(IRubyObject[] modules) {
         ThreadContext context = getRuntime().getCurrentContext();
-
+        // MRI checks all types first:
+        for (int i = modules.length; --i >= 0; ) {
+            IRubyObject obj;
+            if (!(((obj = modules[i]) instanceof RubyModule) && ((RubyModule)obj).isModule())){
+                throw getRuntime().newTypeError(obj,getRuntime().getClass("Module"));
+            }
+        }
         for (int i = modules.length - 1; i >= 0; i--) {
             modules[i].callMethod(context, "append_features", this);
             modules[i].callMethod(context, "included", this);
