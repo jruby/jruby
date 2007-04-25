@@ -1005,7 +1005,14 @@ public class Ustr
         int start = strlen() - suffix.strlen();
         if (start < 0)
             return false;
-        return (strcmp(s, base + start, suffix.s, suffix.base) == 0);
+        //      can't use strcmp because we're just seeing if the byte encodings end the same
+        // irrespective of the Unicode chars they encode
+        int i = 0;
+        while (s[base + start + i] != 0 && suffix.s[suffix.base + i] != 0 &&
+               s[base + start + i] == suffix.s[suffix.base + i])
+            i++;
+        
+        return (s[base + start + i] == suffix.s[suffix.base + i]);
     }
     
     /**
