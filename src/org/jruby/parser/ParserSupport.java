@@ -88,6 +88,7 @@ import org.jruby.ast.SelfNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.SuperNode;
+import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.types.ILiteralNode;
@@ -511,6 +512,21 @@ public class ParserSupport {
                 return true;
             }
         } while (true);
+    }
+    
+    /**
+     * Is this a literal in the sense that MRI has a NODE_LIT for.  This is different than
+     * ILiteralNode.  We should pick a different name since ILiteralNode is something we created
+     * which is similiar but used for a slightly different condition (can I do singleton things).
+     * 
+     * @param node to be tested
+     * @return true if it is a literal
+     */
+    public boolean isLiteral(Node node) {
+        return node != null && (node instanceof FixnumNode || node instanceof BignumNode || 
+                node instanceof FloatNode || node instanceof SymbolNode || 
+                (node instanceof RegexpNode && 
+                        (((RegexpNode) node).getOptions() & ~ReOptions.RE_OPTION_ONCE) == 0));
     }
 
     private void handleUselessWarn(Node node, String useless) {

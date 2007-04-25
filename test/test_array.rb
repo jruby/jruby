@@ -206,4 +206,11 @@ class TestArray < Test::Unit::TestCase
   def test_raises_stack_exception
     assert_raises(SystemStackError) { a = []; a << a; a <=> a }
   end
+  
+  def test_multiline_array_not_really_add
+    assert_raises(NoMethodError) do
+  	  [1,2,3]
+  	  +[2,3]
+  	end
+  end
 end

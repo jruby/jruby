@@ -749,7 +749,7 @@ arg           : lhs '=' arg {
                   $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, getPosition(null)), "-@");
               }
               | tUPLUS arg {
- 	          if ($2 != null && $2 instanceof ILiteralNode) {
+                  if (support.isLiteral($2)) {
 		      $$ = $2;
 		  } else {
                       $$ = support.getOperatorCallNode($2, "+@");

@@ -603,3 +603,4 @@ test_equal(345, "str".sum(IntClass.new(16)))
 test_exception(TypeError) { "s" << -1 }
 test_exception(TypeError) { "s" << 256 }
 test_equal("s\001", "s" << 1)
+test_exception(NoMethodError) { +"s" }

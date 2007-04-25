@@ -1693,7 +1693,7 @@ case 191:
 case 192:
 					// line 751 "DefaultRubyParser.y"
   {
- 	          if (((Node)yyVals[0+yyTop]) != null && ((Node)yyVals[0+yyTop]) instanceof ILiteralNode) {
+                  if (support.isLiteral(((Node)yyVals[0+yyTop]))) {
 		      yyVal = ((Node)yyVals[0+yyTop]);
 		  } else {
                       yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop]), "+@");

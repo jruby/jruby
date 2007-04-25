@@ -136,3 +136,5 @@ test_equal $&, "11"
 test_equal("/[:alpha:]/", %r{[:alpha:]}.inspect)
 test_equal("[:alpha:]", %r{[:alpha:]}.source)
 
+# Why anyone would do this I have no idea, but it matches MRI
+test_equal(/x/, +/x/)
