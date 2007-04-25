@@ -30,6 +30,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -65,4 +67,9 @@ public class ForNode extends IterNode {
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitForNode(this);
     }
+    
+    public List childNodes() {
+        return Node.createList(getVarNode(), getBodyNode(), iterNode);
+    }
+
 }
