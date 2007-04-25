@@ -72,6 +72,7 @@ public class RubyStruct extends RubyObject {
         structClass.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
 
         structClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        structClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", RubyKernel.IRUBY_OBJECT));
         structClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
 
         structClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
@@ -184,17 +185,17 @@ public class RubyStruct extends RubyObject {
             name = args[0].toString();
         }
 
-        RubyArray member = recv.getRuntime().newArray();
+        RubyArray member = runtime.newArray();
 
         for (int i = name == null ? 0 : 1; i < args.length; i++) {
-            member.append(RubySymbol.newSymbol(recv.getRuntime(), args[i].asSymbol()));
+            member.append(RubySymbol.newSymbol(runtime, args[i].asSymbol()));
         }
 
         RubyClass newStruct;
         RubyClass superClass = (RubyClass)recv;
 
         if (name == null) {
-            newStruct = new RubyClass(superClass, superClass.getAllocator());
+            newStruct = new RubyClass(superClass, STRUCT_INSTANCE_ALLOCATOR);
         } else {
             if (!IdUtil.isConstant(name)) {
                 throw runtime.newNameError("identifier " + name + " needs to be constant", name);
@@ -205,7 +206,7 @@ public class RubyStruct extends RubyObject {
             if (type != null) {
                 runtime.getWarnings().warn(runtime.getCurrentContext().getFramePosition(), "redefining constant Struct::" + name);
             }
-            newStruct = superClass.newSubClass(name, superClass.getAllocator(), superClass.getCRef(), false);
+            newStruct = superClass.newSubClass(name, STRUCT_INSTANCE_ALLOCATOR, superClass.getCRef(), false);
         }
 
         newStruct.index = ClassIndex.STRUCT;
@@ -213,7 +214,7 @@ public class RubyStruct extends RubyObject {
         newStruct.setInstanceVariable("__size__", member.length());
         newStruct.setInstanceVariable("__member__", member);
 
-        CallbackFactory callbackFactory = recv.getRuntime().callbackFactory(RubyStruct.class);
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyStruct.class);
         newStruct.getSingletonClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newStruct"));
         newStruct.getSingletonClass().defineMethod("[]", callbackFactory.getOptSingletonMethod("newStruct"));
         newStruct.getSingletonClass().defineMethod("members", callbackFactory.getSingletonMethod("members"));
@@ -226,7 +227,7 @@ public class RubyStruct extends RubyObject {
         }
         
         if (block.isGiven()) {
-            block.yield(recv.getRuntime().getCurrentContext(), null, newStruct, newStruct, false);
+            block.yield(runtime.getCurrentContext(), null, newStruct, newStruct, false);
         }
 
         return newStruct;
@@ -510,5 +511,25 @@ public class RubyStruct extends RubyObject {
         // FIXME: Throw the right ArgumentError's if the class is missing
         // or if it's a module.
         return (RubyClass) runtime.getClassFromPath(path);
+    }
+    
+    private static ObjectAllocator STRUCT_INSTANCE_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            RubyStruct instance = new RubyStruct(runtime, klass);
+            
+            instance.setMetaClass(klass);
+            
+            return instance;
+        }
+    };
+    
+    public IRubyObject initialize_copy(IRubyObject arg) {
+        if (this == arg) return this;
+        RubyStruct original = (RubyStruct) arg;
+        
+        values = new IRubyObject[original.values.length];
+        System.arraycopy(original.values, 0, values, 0, original.values.length);
+
+        return this;
     }
 }

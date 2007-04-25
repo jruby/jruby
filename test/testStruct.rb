@@ -91,3 +91,4 @@ s2 = c.new(1)
 test_ok(true, s1.eql?(s2))
 test_equal(s1.hash, s2.hash)
 
+test_no_exception { Struct.new(:icandup).new(1).dup }
