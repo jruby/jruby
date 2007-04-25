@@ -959,8 +959,8 @@ public class RubyString extends RubyObject {
     /** rb_str_dump
      *
      */
-    public RubyString dump() {
-        return inspect(true);
+    public IRubyObject dump() {
+        return inspect();
     }
 
     public IRubyObject insert(IRubyObject indexArg, IRubyObject stringArg) {
@@ -982,10 +982,6 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject inspect() {
-        return inspect(false);
-    }
-
-    private RubyString inspect(boolean dump) {
         final int length = value.length();
         Ruby runtime = getRuntime();
         ByteList sb = new ByteList(length + 2 + length / 100);
@@ -1005,7 +1001,7 @@ public class RubyString extends RubyObject {
                 sb.append((char)(value.get(++i) & 0xFF));
             } else if (c == '\"' || c == '\\') {
                 sb.append('\\').append((char)c);
-            } else if (c == '#') {
+            } else if (c == '#' && isEVStr(i, length)) {
                 sb.append('\\').append((char)c);
             } else if (isPrint(c)) {
                 sb.append((char)c);
@@ -1030,6 +1026,13 @@ public class RubyString extends RubyObject {
 
         sb.append('\"');
         return getRuntime().newString(sb);
+    }
+    
+    private boolean isEVStr(int i, int length) {
+        if (i+1 >= length) return false;
+        int c = value.get(i+1) & 0xFF;
+        
+        return c == '$' || c == '@' || c == '{';
     }
 
     /** rb_str_length
