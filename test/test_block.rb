@@ -193,4 +193,14 @@ class TestBlock < Test::Unit::TestCase
     assert_nothing_raised { assert_equal 42, proc_return1 }
     assert_nothing_raised { assert_equal 42, proc_return2 }
   end
+
+  def bar(a, b)
+    yield a, b
+  end
+  
+  def test_block_hash_args
+    h = Hash.new
+    bar(1, 2) { |h[:v], h[:u]| }
+    puts h[:v], h[:u]
+  end
 end
