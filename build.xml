@@ -175,7 +175,7 @@
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Main-Class" value="org.jruby.Main"/>
-        <attribute name="Class-Path" value="asm-2.2.3.jar asm-commons-2.2.3.jar"/>
+        <attribute name="Class-Path" value="asm-2.2.3.jar asm-commons-2.2.3.jar jline-0.9.91.jar bsf.jar backport-util-concurrent.jar"/>
       </manifest>
     </jar>
   </target>
