@@ -609,7 +609,7 @@ public final class Ruby {
     }
 
     private void initLibraries() {
-        loadService = new LoadService(this);
+        loadService = config.createLoadService(this);new LoadService(this);
         registerBuiltin("java.rb", new Library() {
                 public void load(Ruby runtime) throws IOException {
                     Java.createJavaModule(runtime);

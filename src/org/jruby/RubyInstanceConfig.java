@@ -30,6 +30,7 @@ package org.jruby;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Map;
+import org.jruby.runtime.load.LoadService;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.CommandlineParser;
 
@@ -41,6 +42,18 @@ public class RubyInstanceConfig {
     private boolean objectSpaceEnabled = true;
     private String currentDirectory;
     private Map environment;
+    
+    public static interface LoadServiceCreator {
+        LoadService create(Ruby runtime);
+
+        LoadServiceCreator DEFAULT = new LoadServiceCreator() {
+                public LoadService create(Ruby runtime) {
+                    return new LoadService(runtime);
+                }
+            };
+    }
+
+    private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
 
     {
         if (Ruby.isSecurityRestricted())
@@ -51,6 +64,18 @@ public class RubyInstanceConfig {
                 objectSpaceEnabled = Boolean.getBoolean("jruby.objectspace.enabled");
             }
         }
+    }
+
+    public LoadServiceCreator getLoadServiceCreator() {
+        return creator;
+    }
+
+    public void setLoadServiceCreator(LoadServiceCreator creator) {
+        this.creator = creator;
+    }
+
+    public LoadService createLoadService(Ruby runtime) {
+        return this.creator.create(runtime);
     }
 
     public void updateWithCommandline(CommandlineParser cmdline) {

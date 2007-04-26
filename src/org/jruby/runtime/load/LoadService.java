@@ -117,25 +117,25 @@ import org.jruby.util.PreparsedScript;
  * @author jpetersen
  */
 public class LoadService {
-    private static final String JRUBY_BUILTIN_SUFFIX = ".rb";
+    protected static final String JRUBY_BUILTIN_SUFFIX = ".rb";
 
-    private static final String[] sourceSuffixes = { ".rb", ".rb.ast.ser" };
-    private static final String[] extensionSuffixes = { ".so", ".jar" };
-    private static final String[] allSuffixes = { ".rb", ".rb.ast.ser", ".so", ".jar" };
-    private static final Pattern sourcePattern = Pattern.compile("\\.(?:rb|rb\\.ast\\.ser)$");
-    private static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|dll|jar)$");
+    protected static final String[] sourceSuffixes = { ".rb", ".rb.ast.ser" };
+    protected static final String[] extensionSuffixes = { ".so", ".jar" };
+    protected static final String[] allSuffixes = { ".rb", ".rb.ast.ser", ".so", ".jar" };
+    protected static final Pattern sourcePattern = Pattern.compile("\\.(?:rb|rb\\.ast\\.ser)$");
+    protected static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|dll|jar)$");
 
-    private final RubyArray loadPath;
-    private final RubyArray loadedFeatures;
-    private final Set loadedFeaturesInternal = Collections.synchronizedSet(new HashSet());
-    private final Set firstLineLoadedFeatures = Collections.synchronizedSet(new HashSet());
-    private final Map builtinLibraries = new HashMap();
+    protected final RubyArray loadPath;
+    protected final RubyArray loadedFeatures;
+    protected final Set loadedFeaturesInternal = Collections.synchronizedSet(new HashSet());
+    protected final Set firstLineLoadedFeatures = Collections.synchronizedSet(new HashSet());
+    protected final Map builtinLibraries = new HashMap();
 
-    private final Map jarFiles = new HashMap();
+    protected final Map jarFiles = new HashMap();
 
-    private final Map autoloadMap = new HashMap();
+    protected final Map autoloadMap = new HashMap();
 
-    private final Ruby runtime;
+    protected final Ruby runtime;
     
     public LoadService(Ruby runtime) {
         this.runtime = runtime;
