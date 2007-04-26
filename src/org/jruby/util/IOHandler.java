@@ -205,6 +205,10 @@ public abstract class IOHandler {
     public abstract void seek(long offset, int type) throws IOException, PipeException, InvalidValueException;
     public abstract void truncate(long newLength) throws IOException, PipeException;
     
+    public boolean hasPendingBuffered() {
+        return false;
+    }
+    
     public class PipeException extends Exception {
 		private static final long serialVersionUID = 1L;
     }

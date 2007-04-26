@@ -45,8 +45,10 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -75,7 +77,7 @@ public class RubyIO extends RubyObject {
     public static final int STDOUT = 1;
     public static final int STDERR = 2;
     
-    protected IOHandler handler = null;
+    protected IOHandler handler;
     protected IOModes modes = null;
     protected int lineNumber = 0;
     
@@ -674,11 +676,11 @@ public class RubyIO extends RubyObject {
     public IRubyObject pid() {
         int pid = handler.pid();
         
-        if (pid == -1) {
-            return getRuntime().getNil();
-        }
-        
-        return getRuntime().newFixnum(pid);
+        return pid == -1 ? getRuntime().getNil() : getRuntime().newFixnum(pid); 
+    }
+    
+    public boolean hasPendingBuffered() {
+        return handler.hasPendingBuffered();
     }
     
     public RubyFixnum pos() {
@@ -755,8 +757,7 @@ public class RubyIO extends RubyObject {
             if (value.length() > 0) {
                 c = value.charAt(0);
             } else {
-                throw getRuntime().newTypeError(
-                        "Cannot convert String to Integer");
+                throw getRuntime().newTypeError("Cannot convert String to Integer");
             }
         } else if (object.isKindOf(getRuntime().getFixnum())){
             c = RubyNumeric.fix2int(object);
@@ -893,8 +894,7 @@ public class RubyIO extends RubyObject {
      * @return The IO.
      */
     public RubyBoolean closed() {
-        return isOpen() ? getRuntime().getFalse() :
-            getRuntime().getTrue();
+        return isOpen() ? getRuntime().getFalse() : getRuntime().getTrue();
     }
 
     /** 
@@ -941,17 +941,13 @@ public class RubyIO extends RubyObject {
     public IRubyObject gets(IRubyObject[] args) {
         IRubyObject result = internalGets(args);
 
-        if (!result.isNil()) {
-            getRuntime().getCurrentContext().setLastline(result);
-        }
+        if (!result.isNil()) getRuntime().getCurrentContext().setLastline(result);
 
         return result;
     }
 
     public boolean getBlocking() {
-        if (!(handler instanceof IOHandlerNio)) {
-            return true;
-        }
+        if (!(handler instanceof IOHandlerNio)) return true;
 
         return ((IOHandlerNio) handler).getBlocking();
      }
@@ -961,9 +957,7 @@ public class RubyIO extends RubyObject {
         
         // FIXME: Arg may also be true, false, and nil and still be valid.  Strangely enough, 
         // protocol conversion is not happening in Ruby on this arg?
-        if (!(arg instanceof RubyNumeric)) {
-            return getRuntime().newFixnum(0);
-        }
+        if (!(arg instanceof RubyNumeric)) return getRuntime().newFixnum(0);
         
         long realArg = ((RubyNumeric)arg).getLongValue();
 
@@ -971,16 +965,16 @@ public class RubyIO extends RubyObject {
         if (realCmd == 1L) {  // cmd is F_SETFL
             boolean block = true;
             
-            if((realArg & IOModes.NONBLOCK) == IOModes.NONBLOCK) {
+            if ((realArg & IOModes.NONBLOCK) == IOModes.NONBLOCK) {
                 block = false;
             }
             
- 	    if(!(handler instanceof IOHandlerNio)) {
- 		// cryptic for the uninitiated...
- 		throw getRuntime().newNotImplementedError("FCNTL only works with Nio based handlers");
- 	    }
- 	
- 	    try {
+            if (!(handler instanceof IOHandlerNio)) {
+                // cryptic for the uninitiated...
+                throw getRuntime().newNotImplementedError("FCNTL only works with Nio based handlers");
+            }
+
+            try {
                 ((IOHandlerNio) handler).setBlocking(block);
             } catch (IOException e) {
                 throw getRuntime().newIOError(e.getMessage());
@@ -1112,9 +1106,7 @@ public class RubyIO extends RubyObject {
             // Reads when already at EOF keep us at EOF
             // We do retain the possibility of un-EOFing if the handler
             // gets new data
-            if (atEOF && handler.isEOF()) {
-                throw new EOFException();
-            }
+            if (atEOF && handler.isEOF()) throw new EOFException();
 
             if (argCount == 2) {
                 // rdocs say the second arg must be a String if present,
@@ -1125,12 +1117,10 @@ public class RubyIO extends RubyObject {
                 callerBuffer = (RubyString) args[1];
             }
 
-            ByteList buf = readEntireStream ? handler.getsEntireStream() : handler.read(RubyNumeric
-                    .fix2int(args[0]));
+            ByteList buf = readEntireStream ? handler.getsEntireStream() : 
+                handler.read(RubyNumeric.fix2int(args[0]));
             
-            if (buf == null) {
-                throw new EOFException();
-            }
+            if (buf == null) throw new EOFException();
 
             // If we get here then no EOFException was thrown in the handler.  We
             // might still need to set our atEOF flag back to true depending on
@@ -1142,7 +1132,6 @@ public class RubyIO extends RubyObject {
             }
             
             return RubyString.newString(getRuntime(), buf);
-            
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {
@@ -1175,9 +1164,7 @@ public class RubyIO extends RubyObject {
         try {
             int c = handler.getc();
         
-            if (c == -1) {
-                throw getRuntime().newEOFError();
-            }
+            if (c == -1) throw getRuntime().newEOFError();
         
             return getRuntime().newFixnum(c);
         } catch (IOHandler.BadDescriptorException e) {
@@ -1283,33 +1270,34 @@ public class RubyIO extends RubyObject {
        return runtime.getNil();
    }
    
-   private static void registerSelect(Selector selector, IRubyObject obj, int ops) throws IOException {
+   private static RubyIO registerSelect(Selector selector, IRubyObject obj, int ops) throws IOException {
        RubyIO ioObj;
        
-       if(!(obj instanceof RubyIO)) {
+       if (!(obj instanceof RubyIO)) {
            // invoke to_io
-           if(!obj.respondsTo("to_io")) {
-               return;
-           }
+           if (!obj.respondsTo("to_io")) return null;
+
            ioObj = (RubyIO) obj.callMethod(obj.getRuntime().getCurrentContext(), "to_io");
        } else {
            ioObj = (RubyIO) obj;
        }
        
        Channel channel = ioObj.getChannel();
-       if(channel == null || !(channel instanceof SelectableChannel)) {
-           return;
+       if (channel == null || !(channel instanceof SelectableChannel)) {
+           return null;
        }
        
        ((SelectableChannel) channel).configureBlocking(false);
        int real_ops = ((SelectableChannel) channel).validOps() & ops;
        SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
        
-       if(key == null) {
+       if (key == null) {
            ((SelectableChannel) channel).register(selector, real_ops, obj);
        } else {
            key.interestOps(key.interestOps()|real_ops);
        }
+       
+       return ioObj;
    }
    
    public static IRubyObject select(IRubyObject recv, IRubyObject[] args) {
@@ -1320,6 +1308,7 @@ public class RubyIO extends RubyObject {
        try {
            boolean atLeastOneDescriptor = false;
            
+           Set pending = new HashSet();
            Selector selector = Selector.open();
            if (!args[0].isNil()) {
                atLeastOneDescriptor = true;
@@ -1327,7 +1316,10 @@ public class RubyIO extends RubyObject {
                // read
                for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
                    IRubyObject obj = (IRubyObject) i.next();
-                   registerSelect(selector, obj, SelectionKey.OP_READ|SelectionKey.OP_ACCEPT);
+                   RubyIO ioObj = registerSelect(selector, obj, 
+                           SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
+                   
+                   if (ioObj!=null && ioObj.hasPendingBuffered()) pending.add(obj);
                }
            }
            if (args.length > 1 && !args[1].isNil()) {
@@ -1360,10 +1352,18 @@ public class RubyIO extends RubyObject {
                return runtime.getNil();
            }
            
-           if(args.length > 3) {
-               selector.select(timeout);
+           if (pending.isEmpty()) {
+               if (args.length > 3) {
+                   if (timeout==0) {
+                       selector.selectNow();
+                   } else {
+                       selector.select(timeout);                       
+                   }
+               } else {
+                   selector.select();
+               }
            } else {
-               selector.select();
+               selector.selectNow();               
            }
            
            List r = new ArrayList();
@@ -1374,11 +1374,13 @@ public class RubyIO extends RubyObject {
                if ((key.interestOps() & key.readyOps()
                        & (SelectionKey.OP_READ|SelectionKey.OP_ACCEPT|SelectionKey.OP_CONNECT)) != 0) {
                    r.add(key.attachment());
+                   pending.remove(key.attachment());
                }
                if ((key.interestOps() & key.readyOps() & (SelectionKey.OP_WRITE)) != 0) {
                    w.add(key.attachment());
                }
            }
+           r.addAll(pending);
            
            // make all sockets blocking as configured again
            for (Iterator i = selector.keys().iterator(); i.hasNext(); ) {

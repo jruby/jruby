@@ -505,4 +505,8 @@ public class IOHandlerNio extends IOHandler {
         // FIXME: Satisfied for IOHandler, but this should throw some unsupported operation?
         return null;
     }
+    
+    public boolean hasPendingBuffered() {
+        return ungotc >= 0 || (bufferedIO && inBuffer.remaining() > 0);
+    }
 }
