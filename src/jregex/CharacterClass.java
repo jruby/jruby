@@ -450,6 +450,10 @@ class CharacterClass extends Term implements UnicodeConstants{
                      c='\n';
                      break handle_special;
                      
+                  case 'e':
+                     c='\u001B';
+                     break handle_special;
+                     
                   case 't':
                      c='\t';
                      break handle_special;
