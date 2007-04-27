@@ -867,9 +867,21 @@ public class RubyKernel {
         switch(cmd) {
         
         // implemented commands
+        case 'C': // ?C  | Time    | Last change time for file1
         case 'd': // ?d  | boolean | True if file1 exists and is a directory
+        case 'e': // ?e  | boolean | True if file1 exists
         case 'f':
         case 'M':
+        case 's': // ?s  | int/nil | If file1 has nonzero size, return the size,
+                  //     |         | otherwise return nil
+        case 'z': // ?z  | boolean | True if file1 exists and has a zero length
+        case '=': // ?=  | boolean | True if the modification times of file1
+                  //     |         | and file2 are equal
+        case '<': // ?<  | boolean | True if the modification time of file1
+                  //     |         | is prior to that of file2
+        case '>': // ?>  | boolean | True if the modification time of file1
+                  //     |         | is after that of file2
+        case '-': // ?-  | boolean | True if file1 and file2 are identical
             break;
 
         // unimplemented commands
@@ -880,8 +892,6 @@ public class RubyKernel {
         case 'A': // ?A  | Time    | Last access time for file1
         case 'b': // ?b  | boolean | True if file1 is a block device
         case 'c': // ?c  | boolean | True if file1 is a character device
-        case 'C': // ?C  | Time    | Last change time for file1
-        case 'e': // ?e  | boolean | True if file1 exists
         case 'g': // ?g  | boolean | True if file1 has the \CF{setgid} bit
         case 'G': // ?G  | boolean | True if file1 exists and has a group
                   //     |         | ownership equal to the caller's group
@@ -896,8 +906,6 @@ public class RubyKernel {
                   //     |         | uid/gid of the caller
         case 'R': // ?R  | boolean | True if file is readable by the real
                   //     |         | uid/gid of the caller
-        case 's': // ?s  | int/nil | If file1 has nonzero size, return the size,
-                  //     |         | otherwise return nil
         case 'S': // ?S  | boolean | True if file1 exists and is a socket
         case 'u': // ?u  | boolean | True if file1 has the setuid bit set
         case 'w': // ?w  | boolean | True if file1 exists and is writable by
@@ -907,20 +915,7 @@ public class RubyKernel {
                   //     |         | the effective uid/gid
         case 'X': // ?X  | boolean | True if file1 exists and is executable by
                   //     |         | the real uid/gid
-        case 'z': // ?z  | boolean | True if file1 exists and has a zero length
-                  //
-                  //        Tests that take two files:
-                  //
-        case '-': // ?-  | boolean | True if file1 and file2 are identical
-        case '=': // ?=  | boolean | True if the modification times of file1
-                  //     |         | and file2 are equal
-        case '<': // ?<  | boolean | True if the modification time of file1
-                  //     |         | is prior to that of file2
-        case '>': // ?>  | boolean | True if the modification time of file1
-                  //     |         | is after that of file2
-            
             throw runtime.newArgumentError("unimplemented command ?"+(char)cmd);
-            
         default:
             // matches MRI message
             throw runtime.newArgumentError("unknown command ?"+(char)cmd);
@@ -947,18 +942,49 @@ public class RubyKernel {
         
         File pwd = new File(runtime.getCurrentDirectory());
         File file1 = new File(pwd,args[1].convertToString().toString());
+        File file2 = null;
         Calendar calendar = null;
                 
         switch (cmd) {
+        case 'C': // ?C  | Time    | Last change time for file1
+            return runtime.newFixnum(file1.lastModified());
         case 'd': // ?d  | boolean | True if file1 exists and is a directory
-            return RubyBoolean.newBoolean(runtime, file1.isDirectory());
+            return runtime.newBoolean(file1.isDirectory());
+        case 'e': // ?e  | boolean | True if file1 exists
+            return runtime.newBoolean(file1.exists());
         case 'f': // ?f  | boolean | True if file1 exists and is a regular file
-            return RubyBoolean.newBoolean(runtime, file1.isFile());
+            return runtime.newBoolean(file1.isFile());
         
         case 'M': // ?M  | Time    | Last modification time for file1
             calendar = Calendar.getInstance();
             calendar.setTimeInMillis(file1.lastModified());
             return RubyTime.newTime(runtime, calendar);
+        case 's': // ?s  | int/nil | If file1 has nonzero size, return the size,
+                  //     |         | otherwise return nil
+            long length = file1.length();
+
+            return length == 0 ? runtime.getNil() : runtime.newFixnum(length);
+        case 'z': // ?z  | boolean | True if file1 exists and has a zero length
+            return runtime.newBoolean(file1.exists() && file1.length() == 0);
+        case '=': // ?=  | boolean | True if the modification times of file1
+                  //     |         | and file2 are equal
+            file2 = new File(pwd, args[2].convertToString().toString());
+            
+            return runtime.newBoolean(file1.lastModified() == file2.lastModified());
+        case '<': // ?<  | boolean | True if the modification time of file1
+                  //     |         | is prior to that of file2
+            file2 = new File(pwd, args[2].convertToString().toString());
+            
+            return runtime.newBoolean(file1.lastModified() < file2.lastModified());
+        case '>': // ?>  | boolean | True if the modification time of file1
+                  //     |         | is after that of file2
+            file2 = new File(pwd, args[2].convertToString().toString());
+            
+            return runtime.newBoolean(file1.lastModified() > file2.lastModified());
+        case '-': // ?-  | boolean | True if file1 and file2 are identical
+            file2 = new File(pwd, args[2].convertToString().toString());
+
+            return runtime.newBoolean(file1.equals(file2));
         default:
             throw new InternalError("unreachable code reached!");
         }
