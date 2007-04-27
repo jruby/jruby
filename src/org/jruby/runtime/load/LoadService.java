@@ -271,7 +271,7 @@ public class LoadService {
             }
         }
         
-        if (loadedFeaturesInternal.contains(loadName)) {
+        if (loadedFeaturesInternal.contains(loadName) || loadedFeatures.include_p(runtime.newString(loadName)).isTrue()) {
             return false;
         }
         
@@ -280,7 +280,7 @@ public class LoadService {
             loadedFeaturesInternal.add(loadName);
             firstLineLoadedFeatures.add(file);
             synchronized(loadedFeatures) {
-                loadedFeatures.add(runtime.newString(loadName));
+                loadedFeatures.append(runtime.newString(loadName));
             }
 
             if (script != null) {
