@@ -650,6 +650,10 @@ public final class Ruby {
         registerBuiltin("digest/sha1.rb", new DigestLibrary.SHA1());
         registerBuiltin("digest/sha2.rb", new DigestLibrary.SHA2());
         registerBuiltin("bigdecimal.rb", new BigDecimalLibrary());
+        registerBuiltin("etc.so", new Library() {
+                public void load(Ruby runtime) throws IOException {
+                    //TODO: implement this
+                }});
     }
 
     private void registerBuiltin(String nm, Library lib) {
