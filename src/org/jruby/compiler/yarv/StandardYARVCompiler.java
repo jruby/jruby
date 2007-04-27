@@ -332,7 +332,9 @@ public class StandardYARVCompiler implements NodeCompiler {
                 node = ((NewlineNode)node).getNextNode();
                 continue compileLoop;
             case NodeTypes.ROOTNODE:
-                locals = ((RootNode)node).getStaticScope().getAllNamesInScope();
+                // getAllNamesInScope now gets all names in scope that have been seen at the current point
+                // of execution.  This may or may not work in this case....?
+                locals = ((RootNode)node).getStaticScope().getAllNamesInScope(((RootNode) node).getScope());
                 node = ((RootNode)node).getBodyNode();
                 continue compileLoop;
             case NodeTypes.DEFNNODE:

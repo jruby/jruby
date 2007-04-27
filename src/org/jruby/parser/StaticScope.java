@@ -32,6 +32,7 @@ import java.io.Serializable;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.DynamicScope;
 
 public abstract class StaticScope implements Serializable {
     private static final long serialVersionUID = 4843861446986961013L;
@@ -139,11 +140,12 @@ public abstract class StaticScope implements Serializable {
     }
     
     /**
-     * Get all visible variables that we can see from this scope
+     * Get all visible variables that we can see from this scope that have been assigned
+     * (e.g. seen so far)
      * 
      * @return a list of all names (sans $~ and $_ which are special names)
      */
-    public abstract String[] getAllNamesInScope();
+    public abstract String[] getAllNamesInScope(DynamicScope dynamicScope);
     
     protected abstract int isDefined(String name, int depth);
     protected abstract AssignableNode assign(ISourcePosition position, String name, Node value, 

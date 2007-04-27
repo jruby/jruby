@@ -27,12 +27,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.VCallNode;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.DynamicScope;
 
 public class LocalStaticScope extends StaticScope {
     private static final long serialVersionUID = 2204064248888411628L;
@@ -55,16 +59,20 @@ public class LocalStaticScope extends StaticScope {
     /**
      * @see org.jruby.parser.StaticScope#getAllNamesInScope()
      */
-    public String[] getAllNamesInScope() {
+    public String[] getAllNamesInScope(DynamicScope dynamicScope) {
         String[] variables = getVariables();
+        List resultList = new ArrayList();
 
-        // We subtract two since we know $_ and $~ are there and they are special and not
+        // We start at two since we know $_ and $~ are there and they are special and not
         // what Ruby considers a local name.  BTW- We always add $~ and $_ so we know variables
         // cannot be null.
-        int localNamesSize = variables.length - 2;
+        for (int i = 2; i < variables.length; i++) {
+            if (dynamicScope.getValue(i, 0) != null) resultList.add(variables[i]);
+        }
+        int localNamesSize = resultList.size();
         
         String[] names = new String[localNamesSize];
-        System.arraycopy(variables, 2, names, 0, localNamesSize);
+        resultList.toArray(names);
         
         return names;
     }

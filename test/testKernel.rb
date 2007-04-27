@@ -161,3 +161,18 @@ test_exception(TypeError) { "%01.3f" % nil }
 
 # test bare srand (JRUBY-487)
 srand
+
+
+def lvars_test
+  d = proc {
+    test_equal(["d"], local_variables)
+    a = 1
+    test_equal(["d", "a"], local_variables)
+    b = 2
+    test_equal(["d", "a", "b"], local_variables)
+  }
+
+  d.call
+end
+
+lvars_test

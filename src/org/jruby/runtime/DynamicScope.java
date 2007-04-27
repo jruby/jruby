@@ -59,7 +59,7 @@ public class DynamicScope {
      * @return a list of variable names
      */
     public String[] getAllNamesInScope() {
-        return staticScope.getAllNamesInScope();
+        return staticScope.getAllNamesInScope(this);
     }
 
     public IRubyObject[] getValues() {

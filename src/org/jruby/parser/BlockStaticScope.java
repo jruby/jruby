@@ -27,11 +27,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.DynamicScope;
 
 public class BlockStaticScope extends StaticScope {
     private static final long serialVersionUID = -3882063260379968149L;
@@ -54,19 +58,28 @@ public class BlockStaticScope extends StaticScope {
     /**
      * @see org.jruby.parser.StaticScope#getAllNamesInScope()
      */
-    public String[] getAllNamesInScope() {
-        String[] variables = getEnclosingScope().getAllNamesInScope();
+    public String[] getAllNamesInScope(DynamicScope dynamicScope) {
+        String[] variables = getEnclosingScope().getAllNamesInScope(dynamicScope.getNextCapturedScope());
         String[] ourVariables = getVariables();
+        List resultList = new ArrayList();
 
         // We have no names to add to existing list
         if (ourVariables == null) return variables;
+
+        for (int i = 0; i < ourVariables.length; i++) {
+            if (dynamicScope.getValue(i, 0) != null) resultList.add(ourVariables[i]);
+        }
+        int localNamesSize = resultList.size();
+        
+        String[] ourNames = new String[localNamesSize];
+        resultList.toArray(ourNames);
         
         // we know variables cannot be null since localstaticscope will create a 0 length one.
-        int newSize = variables.length + ourVariables.length;
+        int newSize = variables.length + resultList.size();
         String[] names = new String[newSize];
         
         System.arraycopy(variables, 0, names, 0, variables.length);
-        System.arraycopy(ourVariables, 0, names, variables.length, ourVariables.length);
+        System.arraycopy(ourNames, 0, names, variables.length, ourNames.length);
         
         return names;
     }
