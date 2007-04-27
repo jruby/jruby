@@ -367,3 +367,7 @@ test_no_exception do
     M2.clone.instance_eval{meth}
     M2.dup.instance_eval{meth}
 end
+
+test_ok(9.class.include?(Precision))
+test_ok(9.class.include?(Kernel))
+test_equal(false, Precision.include?(Precision))

@@ -136,6 +136,7 @@ public class RubyModule extends RubyObject {
         moduleClass.defineFastMethod("const_set", callbackFactory.getFastMethod("const_set", IRubyObject.class, IRubyObject.class));
         moduleClass.defineFastMethod("constants", callbackFactory.getFastMethod("constants"));
         moduleClass.defineMethod("extended", callbackFactory.getMethod("extended", IRubyObject.class));
+        moduleClass.defineFastMethod("include?", callbackFactory.getFastMethod("include_p", IRubyObject.class));
         moduleClass.defineFastMethod("included", callbackFactory.getFastMethod("included", IRubyObject.class));
         moduleClass.defineFastMethod("included_modules", callbackFactory.getFastMethod("included_modules"));
         moduleClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
@@ -596,6 +597,20 @@ public class RubyModule extends RubyObject {
         }else{
             callMethod(runtime.getCurrentContext(), "method_undefined", getRuntime().newSymbol(name));
     }
+    }
+    
+    public IRubyObject include_p(IRubyObject arg) {
+        if (!((arg instanceof RubyModule) && ((RubyModule)arg).isModule())){
+            throw getRuntime().newTypeError(arg, getRuntime().getClass("Module"));
+        }
+        
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+            if ((p instanceof IncludedModuleWrapper) && ((IncludedModuleWrapper) p).getNonIncludedClass() == arg) {
+                return getRuntime().newBoolean(true);
+            }
+        }
+        
+        return getRuntime().newBoolean(false);
     }
 
     private void addCachedMethod(String name, DynamicMethod method) {
