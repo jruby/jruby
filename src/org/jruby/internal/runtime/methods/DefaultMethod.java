@@ -134,7 +134,7 @@ public final class DefaultMethod extends DynamicMethod {
         
         Ruby runtime = context.getRuntime();
         
-        if (JIT_ENABLED) runJIT(runtime, name);
+        if (JIT_ENABLED) runJIT(runtime, context, name);
         
         if (JIT_ENABLED && jitCompiledScript != null) {
             return jitCompiledScript.run(context, self, args, block);
@@ -178,7 +178,7 @@ public final class DefaultMethod extends DynamicMethod {
         }
     }
 
-    private void runJIT(Ruby runtime, String name) {
+    private void runJIT(Ruby runtime, ThreadContext context, String name) {
         if (callCount >= 0) {
             // we can only compile normal args, not block, opt, or rest
             if (!(getArity().isFixed() && // perhaps redundant to check the others
@@ -205,7 +205,7 @@ public final class DefaultMethod extends DynamicMethod {
                 
                 try {
                     String cleanName = CodegenUtils.cleanJavaIdentifier(name);
-                    StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode(), body.getPosition().getFile());
+                    StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), body.getPosition().getFile());
                     compiler.startScript();
                     Object methodToken = compiler.beginMethod("__file__", getArity().getValue(), staticScope.getNumberOfVariables());
                     NodeCompilerFactory.getCompiler(body).compile(body, compiler);
