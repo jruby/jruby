@@ -867,6 +867,7 @@ public class RubyKernel {
         switch(cmd) {
         
         // implemented commands
+        case 'd': // ?d  | boolean | True if file1 exists and is a directory
         case 'f':
         case 'M':
             break;
@@ -880,7 +881,6 @@ public class RubyKernel {
         case 'b': // ?b  | boolean | True if file1 is a block device
         case 'c': // ?c  | boolean | True if file1 is a character device
         case 'C': // ?C  | Time    | Last change time for file1
-        case 'd': // ?d  | boolean | True if file1 exists and is a directory
         case 'e': // ?e  | boolean | True if file1 exists
         case 'g': // ?g  | boolean | True if file1 has the \CF{setgid} bit
         case 'G': // ?G  | boolean | True if file1 exists and has a group
@@ -950,6 +950,8 @@ public class RubyKernel {
         Calendar calendar = null;
                 
         switch (cmd) {
+        case 'd': // ?d  | boolean | True if file1 exists and is a directory
+            return RubyBoolean.newBoolean(runtime, file1.isDirectory());
         case 'f': // ?f  | boolean | True if file1 exists and is a regular file
             return RubyBoolean.newBoolean(runtime, file1.isFile());
         
