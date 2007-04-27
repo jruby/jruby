@@ -49,6 +49,8 @@ public class NodeCompilerFactory {
         UNSAFE_CALLS.add("public");
         UNSAFE_CALLS.add("protected");
         UNSAFE_CALLS.add("eval");
+        UNSAFE_CALLS.add("class_eval");
+        UNSAFE_CALLS.add("module_eval");
         UNSAFE_CALLS.add("local_variables");
         UNSAFE_CALLS.add("block_given?");
     }
