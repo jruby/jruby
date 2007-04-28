@@ -25,6 +25,8 @@ public class TrueNodeCompiler implements NodeCompiler {
         context.lineNumber(node.getPosition());
         
         context.loadTrue();
+        
+        context.pollThreadEvents();
     }
     
 }

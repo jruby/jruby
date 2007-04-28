@@ -36,8 +36,11 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
-import org.jruby.Ruby;
+
+import jregex.Pattern;
+
 import org.jruby.MetaClass;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
@@ -46,14 +49,18 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
-import org.jruby.compiler.*;
+import org.jruby.compiler.ArrayCallback;
+import org.jruby.compiler.BranchCallback;
+import org.jruby.compiler.ClosureCallback;
 import org.jruby.compiler.Compiler;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -71,7 +78,6 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -85,9 +91,6 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
-
-import jregex.Pattern;
-import org.jruby.RubyObject;
 
 /**
  *
@@ -759,6 +762,51 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         loadThreadContext();
         mv.ldc(name);
         invokeThreadContext("getConstant", cg.sig(IRubyObject.class, cg.params(String.class)));
+    }
+    
+    public void retrieveClassVariable(String name) {
+        loadThreadContext();
+        loadRuntime();
+        loadSelf();
+        getMethodAdapter().ldc(name);
+        
+        invokeUtilityMethod("fetchClassVariable", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class)));
+    }
+    
+    public void assignClassVariable(String name) {
+        SkinnyMethodAdapter method = getMethodAdapter();
+        
+        loadThreadContext();
+        method.swap();
+        loadRuntime();
+        method.swap();
+        loadSelf();
+        method.swap();
+        getMethodAdapter().ldc(name);
+        method.swap();
+        
+        invokeUtilityMethod("setClassVariable", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
+    }
+    
+    public static IRubyObject fetchClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String name) {
+        RubyModule rubyClass = EvaluationState.getClassVariableBase(context, runtime);
+   
+        if (rubyClass == null) {
+            rubyClass = self.getMetaClass();
+        }
+
+        return rubyClass.getClassVar(name);
+    }
+    
+    public static IRubyObject setClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String name, IRubyObject value) {
+        RubyModule rubyClass = EvaluationState.getClassVariableBase(context, runtime);
+   
+        if (rubyClass == null) {
+            rubyClass = self.getMetaClass();
+        }     
+        rubyClass.setClassVar(name, value);
+   
+        return value;
     }
     
     private void loadScope(int depth) {
@@ -1795,5 +1843,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         }
         
         return (RubyModule)rubyModule;
+    }
+    
+    public void pollThreadEvents() {
+        loadThreadContext();
+        invokeThreadContext("pollThreadEvents", cg.sig(Void.TYPE));
     }
 }

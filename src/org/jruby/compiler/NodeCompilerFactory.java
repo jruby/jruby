@@ -91,6 +91,10 @@ public class NodeCompilerFactory {
         case NodeTypes.CLASSNODE:
             // This is *probably* safe...all the logic is present for this to work, and I don't know of breakage
             return new ClassNodeCompiler();
+        case NodeTypes.CLASSVARNODE:
+            return new ClassVarNodeCompiler();
+        case NodeTypes.CLASSVARASGNNODE:
+            return new ClassVarAsgnNodeCompiler();
         case NodeTypes.CONSTDECLNODE:
             // this should be safe as well with TC doing the right thing
             return new ConstDeclNodeCompiler();

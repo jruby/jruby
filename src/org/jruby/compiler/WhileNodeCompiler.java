@@ -46,6 +46,8 @@ public class WhileNodeCompiler implements NodeCompiler {
         };
         
         context.performBooleanLoop(condition, body, whileNode.evaluateAtStart());
+        
+        context.pollThreadEvents();
     }
     
 }

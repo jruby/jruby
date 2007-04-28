@@ -25,6 +25,8 @@ public class FalseNodeCompiler implements NodeCompiler{
         context.lineNumber(node.getPosition());
         
         context.loadFalse();
+
+        context.pollThreadEvents();
     }
     
 }

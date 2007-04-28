@@ -199,6 +199,10 @@ public interface Compiler {
      */
     public void retrieveSelfClass();
     
+    public void retrieveClassVariable(String name);
+    
+    public void assignClassVariable(String name);
+    
     /**
      * Generate a new "Fixnum" value.
      */
@@ -509,4 +513,6 @@ public interface Compiler {
     public void defineClass(String name, StaticScope staticScope, ClosureCallback superCallback, ClosureCallback pathCallback, ClosureCallback bodyCallback);
     
     public void defineModule(String name, StaticScope staticScope, ClosureCallback pathCallback, ClosureCallback bodyCallback);
+    
+    public void pollThreadEvents();
 }

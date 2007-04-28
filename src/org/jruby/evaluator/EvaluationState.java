@@ -1936,7 +1936,7 @@ public class EvaluationState {
 
     /* Something like cvar_cbase() from eval.c, factored out for the benefit
      * of all the classvar-related node evaluations */
-    private static RubyModule getClassVariableBase(ThreadContext context, Ruby runtime) {
+    public static RubyModule getClassVariableBase(ThreadContext context, Ruby runtime) {
         SinglyLinkedList cref = context.peekCRef();
         RubyModule rubyClass = (RubyModule) cref.getValue();
         if (rubyClass.isSingleton()) {

@@ -25,6 +25,8 @@ public class NilNodeCompiler implements NodeCompiler{
         context.lineNumber(node.getPosition());
         
         context.loadNil();
+        
+        context.pollThreadEvents();
     }
     
 }

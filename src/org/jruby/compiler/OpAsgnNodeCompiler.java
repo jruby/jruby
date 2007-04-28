@@ -89,7 +89,8 @@ public class OpAsgnNodeCompiler implements NodeCompiler {
             // evaluate the rhs, call the operator, and assign
             operateAndAssignBranch.branch(context);
         }
-        // FIXME: evaluator has a thread event poll here
+
+        context.pollThreadEvents();
     }
     
 }
