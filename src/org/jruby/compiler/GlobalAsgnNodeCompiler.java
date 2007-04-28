@@ -33,7 +33,7 @@ public class GlobalAsgnNodeCompiler implements NodeCompiler {
             // FIXME: This is not aware of lexical scoping
             switch (globalAsgnNode.getName().charAt(1)) {
             case '_':
-                context.assignLocalVariable(0);
+                context.assignLastLine();
                 return;
             case '~':
                 assert false: "Parser shouldn't allow assigning to $~";

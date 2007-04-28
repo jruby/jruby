@@ -71,6 +71,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -618,6 +619,16 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
     }
     
+    public void assignLastLine() {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        mv.dup();
+
+        loadThreadContext();
+        invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
+        mv.swap();
+        mv.invokevirtual(cg.p(DynamicScope.class), "setLastLine", cg.sig(Void.TYPE, cg.params(IRubyObject.class)));
+    }
+    
     public void assignLocalVariableBlockArg(int argIndex, int varIndex) {
         SkinnyMethodAdapter mv = getMethodAdapter();
         
@@ -638,6 +649,14 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.ldc(new Integer(index));
         mv.iconst_0();
         mv.invokevirtual(cg.p(DynamicScope.class), "getValue", cg.sig(IRubyObject.class, cg.params(Integer.TYPE, Integer.TYPE)));
+    }
+    
+    public void retrieveLastLine() {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        loadThreadContext();
+        invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
+        mv.invokevirtual(cg.p(DynamicScope.class), "getLastLine", cg.sig(IRubyObject.class));
     }
     
     public void assignLocalVariable(int index, int depth) {

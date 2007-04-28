@@ -132,6 +132,11 @@ public interface Compiler {
     public void assignLocalVariable(int index);
     
     /**
+     * Assigns the special "last line" variable $_ in the outermost local scope.
+     */
+    public void assignLastLine();
+    
+    /**
      * Assigns the value from incoming block args to a local variable at the specified index, consuming
      * that value in the process. This assumes a lexical scoping depth of 0.
      * 
@@ -146,6 +151,11 @@ public interface Compiler {
      * @param index The index of the local variable to retrieve
      */
     public void retrieveLocalVariable(int index);
+    
+    /**
+     * Retrieve the special "last line" variable $_ from the outermost local scope.
+     */
+    public void retrieveLastLine();
     
     /**
      * Assign the value on top of the stack to a local variable at the specified index and

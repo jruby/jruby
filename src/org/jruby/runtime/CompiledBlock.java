@@ -72,6 +72,10 @@ public class CompiledBlock extends Block {
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
+        if (klass == null) {
+            self = this.self;
+            frame.setSelf(self);
+        }
         IRubyObject[] realArgs = null;
         if (!aValue) {
             // handle as though it's just an array coming in...i.e. it should be multiassigned or just assigned as is to var 0.
@@ -82,7 +86,7 @@ public class CompiledBlock extends Block {
         }
         try {
             pre(context, klass);
-            return callback.call(context, this.self, realArgs);
+            return callback.call(context, self, realArgs);
         } finally {
             post(context);
         }

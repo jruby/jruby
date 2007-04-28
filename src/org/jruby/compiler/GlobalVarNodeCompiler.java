@@ -31,7 +31,7 @@ public class GlobalVarNodeCompiler implements NodeCompiler {
             // FIXME: This is not aware of lexical scoping
             switch (globalVarNode.getName().charAt(1)) {
             case '_':
-                context.retrieveLocalVariable(0);
+                context.retrieveLastLine();
                 return;
             case '~':
                 context.retrieveLocalVariable(1);
