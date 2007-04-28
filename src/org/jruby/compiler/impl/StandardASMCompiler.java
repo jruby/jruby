@@ -61,6 +61,8 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.BlockStaticScope;
+import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -68,6 +70,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -98,7 +101,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     private static final String METHOD_SIGNATURE =
             cg.sig(IRubyObject.class, new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class });
     private static final String CLOSURE_SIGNATURE =
-            cg.sig(IRubyObject.class, new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class, IRubyObject[][].class });
+        cg.sig(IRubyObject.class, new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject[].class });
     
     private static final int THREADCONTEXT_INDEX = 0;
     private static final int SELF_INDEX = 1;
@@ -284,7 +287,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.end();
     }
     
-    public Object beginMethod(String friendlyName, int arity, int localVarCount) {
+    public Object beginMethod(String friendlyName, int arity) {
         SkinnyMethodAdapter newMethod = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null));
         pushMethodAdapter(newMethod);
         
@@ -302,28 +305,20 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         newMethod.aload(ARGS_INDEX);
         newMethod.invokevirtual(cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
         
-        // logic to start off the root node's code with local var slots and all
-        newMethod.ldc(new Integer(localVarCount));
-        newMethod.anewarray(cg.p(IRubyObject.class));
-        
+        // set visibility
         newMethod.getstatic(cg.p(Visibility.class), "PRIVATE", cg.ci(Visibility.class));
         newMethod.astore(VISIBILITY_INDEX);
         
         // store the local vars in a local variable
+        loadThreadContext();
+        invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
         newMethod.astore(LOCAL_VARS_INDEX);
         
         // arraycopy arguments into local vars array
-        newMethod.aload(ARGS_INDEX);
-        newMethod.iconst_0();
         newMethod.aload(LOCAL_VARS_INDEX);
-        newMethod.iconst_2();
+        newMethod.aload(ARGS_INDEX);
         newMethod.ldc(new Integer(arity));
-        
-        newMethod.invokestatic(cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));
-        
-        // put a null at register 4, for closure creation to know we're at top-level or local scope
-        newMethod.aconst_null();
-        newMethod.astore(SCOPE_INDEX);
+        newMethod.invokevirtual(cg.p(DynamicScope.class), "setArgValues", cg.sig(Void.TYPE, cg.params(IRubyObject[].class, Integer.TYPE)));
         
         // visit a label to start scoping for local vars in this method
         Label start = new Label();
@@ -536,7 +531,8 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     }
     
     public void loadClosure() {
-        getMethodAdapter().aload(CLOSURE_INDEX);
+        loadThreadContext();
+        invokeThreadContext("getFrameBlock", cg.sig(Block.class));
     }
     
     public void loadSelf() {
@@ -596,21 +592,13 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     public void assignLocalVariable(int index) {
         SkinnyMethodAdapter mv = getMethodAdapter();
         mv.dup();
-        //if ((index - 2) < Math.abs(getArity())) {
-            // load from the incoming params
-            // index is 2-based, and our zero is runtime
-            
-            // load args array
-        //    mv.aload(ARGS_INDEX);
-        //    index = index - 2;
-        //} else {
-            mv.aload(LOCAL_VARS_INDEX);
-        //}
-        
+
+        mv.aload(LOCAL_VARS_INDEX);
         mv.swap();
         mv.ldc(new Integer(index));
         mv.swap();
-        mv.arraystore();
+        mv.iconst_0();
+        mv.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
     }
     
     public void assignLocalVariableBlockArg(int argIndex, int varIndex) {
@@ -622,27 +610,17 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.aload(ARGS_INDEX);
         mv.ldc(new Integer(argIndex));
         mv.arrayload();
-        mv.arraystore();
+        mv.iconst_0();
+        mv.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
     }
     
     public void retrieveLocalVariable(int index) {
         SkinnyMethodAdapter mv = getMethodAdapter();
         
-        
-        // check if it's an argument
-        //if ((index - 2) < Math.abs(getArity())) {
-            // load from the incoming params
-            // index is 2-based, and our zero is runtime
-            
-            // load args array
-        //    mv.aload(ARGS_INDEX);
-        //    mv.ldc(new Integer(index - 2));
-        //    mv.arrayload();
-        //} else {
-            mv.aload(LOCAL_VARS_INDEX);
-            mv.ldc(new Integer(index));
-            mv.arrayload();
-        //}
+        mv.aload(LOCAL_VARS_INDEX);
+        mv.ldc(new Integer(index));
+        mv.iconst_0();
+        mv.invokevirtual(cg.p(DynamicScope.class), "getValue", cg.sig(IRubyObject.class, cg.params(Integer.TYPE, Integer.TYPE)));
     }
     
     public void assignLocalVariable(int index, int depth) {
@@ -653,14 +631,13 @@ public class StandardASMCompiler implements Compiler, Opcodes {
 
         SkinnyMethodAdapter mv = getMethodAdapter();
         mv.dup();
-        
-        loadScope(depth);
-        
-        // insert the value into the array at the specified index
+
+        mv.aload(LOCAL_VARS_INDEX);
         mv.swap();
         mv.ldc(new Integer(index));
         mv.swap();
-        mv.arraystore();
+        mv.ldc(new Integer(depth));
+        mv.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
     }
     
     public void assignLocalVariableBlockArg(int argIndex, int varIndex, int depth) {
@@ -671,15 +648,13 @@ public class StandardASMCompiler implements Compiler, Opcodes {
 
         SkinnyMethodAdapter mv = getMethodAdapter();
         
-        loadScope(depth);
-        
+        mv.aload(LOCAL_VARS_INDEX);
         mv.ldc(new Integer(varIndex));
-        
         mv.aload(ARGS_INDEX);
         mv.ldc(new Integer(argIndex));
         mv.arrayload();
-        
-        mv.arraystore();
+        mv.ldc(new Integer(depth));
+        mv.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
     }
     
     public void retrieveLocalVariable(int index, int depth) {
@@ -690,11 +665,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         
         SkinnyMethodAdapter mv = getMethodAdapter();
         
-        loadScope(depth);
-        
-        // load the value from the array at the specified index
+        mv.aload(LOCAL_VARS_INDEX);
         mv.ldc(new Integer(index));
-        mv.arrayload();
+        mv.ldc(new Integer(depth));
+        mv.invokevirtual(cg.p(DynamicScope.class), "getValue", cg.sig(IRubyObject.class, cg.params(Integer.TYPE, Integer.TYPE)));
     }
     
     public void assignConstantInCurrent(String name) {
@@ -1038,8 +1012,9 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.areturn();
     }
     
-    public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, IRubyObject[][] scopes, Block block, CompiledBlockCallback callback) {
-        return new CompiledBlock(context, self, Arity.createArity(arity), scopes, block, callback);
+    public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, String[] staticScopeNames, CompiledBlockCallback callback) {
+        StaticScope staticScope = new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
+        return new CompiledBlock(context, self, Arity.createArity(arity), new DynamicScope(staticScope, context.getCurrentScope()), callback);
     }
     
     public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args) {
@@ -1065,14 +1040,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         
         method.start();
         
-        // logic to start off the closure with dvar slots
-        method.ldc(new Integer(scope.getNumberOfVariables()));
-        method.anewarray(cg.p(IRubyObject.class));
-        
-        // store the dvars in a local variable
+        // store the local vars in a local variable
+        loadThreadContext();
+        invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
         method.astore(LOCAL_VARS_INDEX);
-        
-        // Containing scopes are passed as IRubyObject[][] in the SCOPE_INDEX var
         
         // set up a local IRuby variable
         method.aload(THREADCONTEXT_INDEX);
@@ -1127,58 +1098,23 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         loadSelf();
         method.ldc(new Integer(arity));
         
-        // create an array of scopes to use
-        
-        // check if we have containing scopes
-        method.aload(SCOPE_INDEX);
-        Label noScopes = new Label();
-        Label copyLocals = new Label();
-        method.ifnull(noScopes);
-        
-        // we have containing scopes, include them
-        
-        // get length of current scopes array, add one
-        method.aload(SCOPE_INDEX);
-        method.arraylength();
-        method.iconst_1();
-        method.iadd();
-        
-        // create new scopes array
-        method.anewarray(cg.p(IRubyObject[].class));
-        
-        // copy containing scopes to index one and on
-        method.dup();
-        method.aload(SCOPE_INDEX);
-        method.swap();
-        method.iconst_0();
-        method.swap();
-        // new scopes array is here now
-        method.iconst_1();
-        method.aload(SCOPE_INDEX);
-        method.arraylength();
-        method.invokestatic(cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));
-
-        method.go_to(copyLocals);
-        
-        method.label(noScopes);
-
-        // create new scopes array
-        method.iconst_1();
-        method.anewarray(cg.p(IRubyObject[].class));
-        
-        method.label(copyLocals);
-
-        // store local vars at index zero
-        method.dup();
-        method.iconst_0();
-        method.aload(LOCAL_VARS_INDEX);
-        method.arraystore();
-        
-        loadClosure();
+        buildStaticScopeNames(method, scope);
         
         method.getstatic(classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
         
-        invokeUtilityMethod("createBlock", cg.sig(CompiledBlock.class, cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, IRubyObject[][].class, Block.class, CompiledBlockCallback.class)));
+        invokeUtilityMethod("createBlock", cg.sig(CompiledBlock.class, cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, String[].class, CompiledBlockCallback.class)));
+    }
+    
+    private void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {
+        // construct static scope list of names
+        method.ldc(new Integer(scope.getNumberOfVariables()));
+        method.anewarray(cg.p(String.class));
+        for (int i = 0; i < scope.getNumberOfVariables(); i++) {
+            method.dup();
+            method.ldc(new Integer(i));
+            method.ldc(scope.getVariables()[i]);
+            method.arraystore();
+        }
     }
     
     /**
@@ -1249,7 +1185,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         // TODO: should call method_added, and possibly push nil.
     }
     
-    public static IRubyObject def(ThreadContext context, Visibility visibility, IRubyObject self, Class compiledClass, String name, String javaName, int arity) {
+    public static IRubyObject def(ThreadContext context, Visibility visibility, IRubyObject self, Class compiledClass, String name, String javaName, String[] scopeNames, int arity) {
         Ruby runtime = context.getRuntime();
         
         // FIXME: This is what the old def did, but doesn't work in the compiler for top-level methods. Hmm.
@@ -1265,14 +1201,15 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         }
         
         SinglyLinkedList cref = context.peekCRef();
+        StaticScope scope = new LocalStaticScope(null, scopeNames);
         
         MethodFactory factory = MethodFactory.createFactory();
         DynamicMethod method = null;
         
         if (name == "initialize" || visibility.isModuleFunction() || context.isTopLevel()) {
-            method = factory.getCompiledMethod(containingClass, compiledClass, javaName, Arity.createArity(arity), Visibility.PRIVATE, cref);
+            method = factory.getCompiledMethod(containingClass, compiledClass, javaName, Arity.createArity(arity), Visibility.PRIVATE, cref, scope);
         } else {
-            method = factory.getCompiledMethod(containingClass, compiledClass, javaName, Arity.createArity(arity), visibility, cref);
+            method = factory.getCompiledMethod(containingClass, compiledClass, javaName, Arity.createArity(arity), visibility, cref, scope);
         }
         
         containingClass.addMethod(name, method);
@@ -1296,12 +1233,12 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         return runtime.getNil();
     }
     
-    public void defineNewMethod(String name, int arity, int localVarCount, ClosureCallback body) {
+    public void defineNewMethod(String name, int arity, StaticScope scope, ClosureCallback body) {
         // TODO: build arg list based on number of args, optionals, etc
         ++methodIndex;
         String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;
         
-        beginMethod(methodName, arity, localVarCount);
+        beginMethod(methodName, arity);
         
         SkinnyMethodAdapter mv = getMethodAdapter();
         
@@ -1332,11 +1269,13 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         
         mv.ldc(methodName);
         
+        buildStaticScopeNames(mv, scope);
+        
         mv.ldc(new Integer(arity));
         
         mv.invokestatic(cg.p(StandardASMCompiler.class),
                 "def",
-                cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Visibility.class, IRubyObject.class, Class.class, String.class, String.class, Integer.TYPE)));
+                cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Visibility.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE)));
     }
     
     public void loadFalse() {
@@ -1659,7 +1598,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         ++methodIndex;
         String methodName = "rubyclass__" + cg.cleanJavaIdentifier(name) + "__" + methodIndex;
         
-        beginMethod(methodName, 0, staticScope.getNumberOfVariables());
+        beginMethod(methodName, 0);
         
         SkinnyMethodAdapter mv = getMethodAdapter();
         
@@ -1727,7 +1666,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         ++methodIndex;
         String methodName = "rubymodule__" + cg.cleanJavaIdentifier(name) + "__" + methodIndex;
         
-        beginMethod(methodName, 0, staticScope.getNumberOfVariables());
+        beginMethod(methodName, 0);
         
         SkinnyMethodAdapter mv = getMethodAdapter();
         

@@ -120,6 +120,10 @@ public class DynamicScope {
     public void setArgValues(IRubyObject[] values, int size) {
         System.arraycopy(values, 0, variableValues, 2, size);
     }
+    
+    public void setBlockArgValues(IRubyObject[] blockArgValues, int size) {
+        System.arraycopy(blockArgValues, 0, variableValues, 0, size);
+    }
 
     /**
      * Copy variable values back for ZSuper call.

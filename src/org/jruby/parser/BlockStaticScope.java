@@ -36,12 +36,17 @@ import org.jruby.ast.DVarNode;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class BlockStaticScope extends StaticScope {
     private static final long serialVersionUID = -3882063260379968149L;
 
     public BlockStaticScope(StaticScope parentScope) {
         super(parentScope);
+    }
+
+    public BlockStaticScope(StaticScope parentScope, String[] names) {
+        super(parentScope, names);
     }
     
     public StaticScope getLocalScope() {

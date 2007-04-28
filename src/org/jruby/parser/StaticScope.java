@@ -46,6 +46,11 @@ public abstract class StaticScope implements Serializable {
         this.enclosingScope = enclosingScope;
     }
     
+    protected StaticScope(StaticScope enclosingScope, String[] names) {
+        this.enclosingScope = enclosingScope;
+        this.variableNames = names;
+    }
+    
     public int addVariable(String name) {
         int slot = isDefined(name); 
 

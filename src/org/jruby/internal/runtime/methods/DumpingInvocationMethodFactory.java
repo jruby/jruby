@@ -32,6 +32,7 @@ import java.io.FileOutputStream;
 
 import org.jruby.Ruby;
 import org.jruby.RubyKernel;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -250,7 +251,7 @@ public class DumpingInvocationMethodFactory extends MethodFactory implements Opc
         return getMethod(implementationClass,type,method,arity,visibility,SIMPLE_SUPER_CLASS, false);
     }
 
-    public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref) {
+    public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope scope) {
         return getCompleteMethod(implementationClass,type,method,arity,visibility,cref,COMPILED_SUPER_CLASS);
     }
 }// DumpingInvocationMethodFactory

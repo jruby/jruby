@@ -304,6 +304,10 @@ public class ThreadContext {
         return getCurrentFrame().getKlazz();
     }
     
+    public Block getFrameBlock() {
+        return getCurrentFrame().getBlock();
+    }
+    
     public ISourcePosition getFramePosition() {
         return getCurrentFrame().getPosition();
     }
@@ -761,7 +765,6 @@ public class ThreadContext {
     }
     
     public void preYieldSpecificBlock(Block block, RubyModule klass) {
-        //System.out.println("IN RESTORE BLOCK (" + block.getDynamicScope() + ")");
         pushFrame(block.getFrame());
         setCRef(block.getCRef());
         getCurrentFrame().setVisibility(block.getVisibility());

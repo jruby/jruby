@@ -72,7 +72,7 @@ public class Block {
     /**
      * 'self' at point when the block is defined
      */
-    private IRubyObject self;
+    protected IRubyObject self;
 
     /**
      * AST Node representing the parameter (VARiable) list to the block.
@@ -83,14 +83,14 @@ public class Block {
      * frame of method which defined this block
      */
     protected Frame frame;
-    private SinglyLinkedList cref;
-    private Visibility visibility;
-    private RubyModule klass;
+    protected SinglyLinkedList cref;
+    protected Visibility visibility;
+    protected RubyModule klass;
     
     /**
      * A reference to all variable values (and names) that are in-scope for this block.
      */
-    private DynamicScope dynamicScope;
+    protected DynamicScope dynamicScope;
     
     /**
      * The Proc that this block is associated with.  When we reference blocks via variable
@@ -101,7 +101,7 @@ public class Block {
     
     public boolean isLambda = false;
     
-    protected final Arity arity;
+    protected Arity arity;
 
     public static Block createBlock(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
         return new Block(iterNode,

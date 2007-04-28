@@ -28,8 +28,11 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
+import org.jruby.ast.IterNode;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * A Block implemented using a Java-based BlockCallback implementation
@@ -37,32 +40,35 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Java code.
  */
 public class CompiledBlock extends Block {
-    private Arity arity;
     private CompiledBlockCallback callback;
-    private ThreadContext context;
-    private IRubyObject self;
-    private IRubyObject[][] scopes;
-    private Block block;
 
-    public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, IRubyObject[][] scopes, Block block, CompiledBlockCallback callback) {
-        super(null,
-                self,
+    public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope, CompiledBlockCallback callback) {
+        this(self,
                 context.getCurrentFrame(),
                 context.peekCRef(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
-                context.getCurrentScope());
+                dynamicScope, arity, callback);
+    }
+
+    private CompiledBlock(IRubyObject self, Frame frame,
+        SinglyLinkedList cref, Visibility visibility, RubyModule klass,
+        DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback) {
+        super(null, self, frame, cref, visibility, klass, dynamicScope);
         this.arity = arity;
         this.callback = callback;
-        this.context = context;
-        this.self = self;
-        this.scopes = scopes;
-        this.block = block;
+    }
+    
+    protected void pre(ThreadContext context, RubyModule klass) {
+        context.preYieldSpecificBlock(this, klass);
+    }
+    
+    protected void post(ThreadContext context) {
+        context.postYield();
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        // FIXME: This used replacementSelf before, but that's null in most cases...so why am I supposed to use it?
-        return callback.call(context, this.self, args, block, scopes);
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
@@ -74,11 +80,17 @@ public class CompiledBlock extends Block {
         } else {
             realArgs = ArgsUtil.convertToJavaArray(args);
         }
-        return callback.call(context, this.self, realArgs, block, scopes);
+        try {
+            pre(context, klass);
+            return callback.call(context, this.self, realArgs);
+        } finally {
+            post(context);
+        }
     }
 
     public Block cloneBlock() {
-        return new CompiledBlock(context, self, arity, scopes, block, callback);
+        return new CompiledBlock(self, frame.duplicate(), cref, visibility, klass, 
+                dynamicScope.cloneScope(), arity, callback);
     }
 
     public Arity arity() {

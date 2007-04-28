@@ -66,7 +66,7 @@ public interface Compiler {
      * @return An Object that represents the method within this compiler. Used in calls to
      * endMethod once compilation for this method is completed.
      */
-    public Object beginMethod(String friendlyName, int arity, int localVarCount);
+    public Object beginMethod(String friendlyName, int arity);
     
     /**
      * End compilation for the method associated with the specified token. This should
@@ -324,7 +324,7 @@ public interface Compiler {
      * @param localVarCount The number of local variables within the method
      * @param body The callback which will generate the method's body.
      */
-    public void defineNewMethod(String name, int arity, int localVarCount, ClosureCallback body);
+    public void defineNewMethod(String name, int arity, StaticScope scope, ClosureCallback body);
     
     /**
      * Define an alias for a new name to an existing oldName'd method.

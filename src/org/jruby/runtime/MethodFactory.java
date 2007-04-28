@@ -33,6 +33,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ReflectionMethodFactory;
 import org.jruby.internal.runtime.methods.InvocationMethodFactory;
 import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
+import org.jruby.parser.StaticScope;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
@@ -41,7 +42,7 @@ import org.jruby.util.collections.SinglyLinkedList;
 public abstract class MethodFactory {
     public abstract DynamicMethod getFullMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility);
     public abstract DynamicMethod getSimpleMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility);
-    public abstract DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref);
+    public abstract DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope scope);
 
     private static boolean reflection = false;
     private static boolean dumping = false;

@@ -48,6 +48,10 @@ public class LocalStaticScope extends StaticScope {
         addVariable("$_");
     }
 
+    public LocalStaticScope(StaticScope enclosingScope, String[] names) {
+        super(enclosingScope, names);
+    }
+
     public StaticScope getLocalScope() {
         return this;
     }

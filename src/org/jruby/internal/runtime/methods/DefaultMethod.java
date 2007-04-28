@@ -114,11 +114,12 @@ public final class DefaultMethod extends DynamicMethod {
             RubyModule clazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
         if (jitCompiledScript != null) {
             try {
-                context.preCompiledMethod(implementationClass, cref);
+                context.preDefMethodInternalCall(clazz, name, self, args, getArity().required(), block, noSuper, cref, staticScope, this);
+                //context.preCompiledMethod(implementationClass, cref);
                 // FIXME: pass block when available
                 return jitCompiledScript.run(context, self, args, block);
             } finally {
-                context.postCompiledMethod();
+                context.postDefMethodInternalCall();
             }
         } 
           
@@ -207,7 +208,7 @@ public final class DefaultMethod extends DynamicMethod {
                     String cleanName = CodegenUtils.cleanJavaIdentifier(name);
                     StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), body.getPosition().getFile());
                     compiler.startScript();
-                    Object methodToken = compiler.beginMethod("__file__", getArity().getValue(), staticScope.getNumberOfVariables());
+                    Object methodToken = compiler.beginMethod("__file__", getArity().getValue());
                     NodeCompilerFactory.getCompiler(body).compile(body, compiler);
                     compiler.endMethod(methodToken);
                     compiler.endScript();

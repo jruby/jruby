@@ -52,7 +52,7 @@ public class DefnNodeCompiler implements NodeCompiler {
 
         arity = ((ArgsNode)defnNode.getArgsNode()).getArgsCount();
         
-        context.defineNewMethod(defnNode.getName(), arity, defnNode.getScope().getNumberOfVariables(), body);
+        context.defineNewMethod(defnNode.getName(), arity, defnNode.getScope(), body);
     }
     
 }

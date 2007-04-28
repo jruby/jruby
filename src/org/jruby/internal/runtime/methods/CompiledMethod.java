@@ -31,6 +31,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyBinding;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -45,21 +46,22 @@ import org.jruby.util.collections.SinglyLinkedList;
 public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
     private Arity arity;
     private SinglyLinkedList cref;
+    private StaticScope staticScope;
     
-    public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, SinglyLinkedList cref) {
+    public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope staticScope) {
     	super(implementationClass, visibility);
         this.arity = arity;
         this.cref = cref;
+        this.staticScope = staticScope;
     }
 
-    public void preMethod(ThreadContext context, RubyModule clazz, 
-            IRubyObject self, String name, IRubyObject[] args, boolean noSuper) {
-        // needed for const lookups to work
-        context.preCompiledMethod(implementationClass, cref);
+    public void preMethod(ThreadContext context, RubyModule clazz,
+            IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preDefMethodInternalCall(clazz, name, self, args, arity.required(), block, noSuper, cref, staticScope, this);
     }
     
     public void postMethod(ThreadContext context) {
-        context.postCompiledMethod();
+        context.postDefMethodInternalCall();
     }
     
     public IRubyObject internalCall(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
@@ -88,18 +90,23 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
         Ruby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
 
-        if(runtime.getTraceFunction() != null) {
-            ISourcePosition position = context.getPosition();
-            RubyBinding binding = RubyBinding.newBinding(runtime);
-
-            runtime.callTraceFunction(context, "c-call", position, binding, name, getImplementationClass());
-            try {
-                return wrap(context, runtime, self, args, block);
-            } finally {
-                runtime.callTraceFunction(context, "c-return", position, binding, name, getImplementationClass());
+        try {
+            preMethod(context, klazz, self, name, args, noSuper, block);
+            if(runtime.getTraceFunction() != null) {
+                ISourcePosition position = context.getPosition();
+                RubyBinding binding = RubyBinding.newBinding(runtime);
+    
+                runtime.callTraceFunction(context, "c-call", position, binding, name, getImplementationClass());
+                try {
+                    return wrap(context, runtime, self, args, block);
+                } finally {
+                    runtime.callTraceFunction(context, "c-return", position, binding, name, getImplementationClass());
+                }
             }
+            return wrap(context, runtime, self, args, block);
+        } finally {
+            postMethod(context);
         }
-        return wrap(context, runtime, self, args, block);
     }
 
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);

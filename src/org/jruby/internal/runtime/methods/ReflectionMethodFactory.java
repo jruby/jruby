@@ -28,6 +28,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Visibility;
@@ -45,7 +46,7 @@ public class ReflectionMethodFactory extends MethodFactory {
         return new SimpleReflectedMethod(implementationClass,type,methodName,arity,visibility);
     }
 
-    public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility, SinglyLinkedList cref) {
+    public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope scope) {
         assert false: "Not yet implemented";
         return null;
     }

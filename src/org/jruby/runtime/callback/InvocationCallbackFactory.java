@@ -55,8 +55,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     private final static String FAST_CALL_SIG = cg.sig(RubyKernel.IRUBY_OBJECT, cg.params(
             Object.class, Object[].class));
     private final static String BLOCK_CALL_SIG = cg.sig(RubyKernel.IRUBY_OBJECT, cg.params(
-            ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject[].class, Block.class,
-            IRubyObject[][].class));
+            ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject[].class));
     private final static String IRUB = cg.p(RubyKernel.IRUBY_OBJECT);
     private final static String IRUB_ID = cg.ci(RubyKernel.IRUBY_OBJECT);
 
@@ -468,12 +467,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     mv.visitVarInsn(ALOAD, 1);
                     mv.visitVarInsn(ALOAD, 2);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitVarInsn(ALOAD, 4);
-                    mv.visitVarInsn(ALOAD, 5);
                     mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(
                             RubyKernel.IRUBY_OBJECT, cg.params(ThreadContext.class,
-                                    RubyKernel.IRUBY_OBJECT, IRubyObject[].class, Block.class,
-                                    IRubyObject[][].class)));
+                                    RubyKernel.IRUBY_OBJECT, IRubyObject[].class)));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(2, 3);
                     c = endCall(cw, mv, mname);
