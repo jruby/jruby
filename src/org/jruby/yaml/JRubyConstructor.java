@@ -161,11 +161,23 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public static Object constructYamlOmap(final Constructor ctor, final Node node) {
-        return ((JRubyConstructor)ctor).constructRubyPairs(node);
+        Ruby runtime = ((JRubyConstructor)ctor).runtime;
+        RubyArray arr = (RubyArray)(runtime.getModule("YAML").getConstant("Omap").callMethod(runtime.getCurrentContext(),"new"));
+        List l = (List)ctor.constructSequence(node);
+        ctor.doRecursionFix(node, arr);
+        for(Iterator iter = l.iterator();iter.hasNext();) {
+            IRubyObject v = (IRubyObject)iter.next();
+            if(v instanceof RubyHash) {
+                arr.concat(((RubyHash)v).to_a());
+            } else {
+                throw new ConstructorException(null,"Invalid !omap entry: " + l,null);
+            }
+        }
+        return arr;
     }
 
     public static Object constructYamlPairs(final Constructor ctor, final Node node) {
-        return constructYamlOmap(ctor,node);
+        return ((JRubyConstructor)ctor).constructRubyPairs(node);
     }
 
     public static Object constructYamlSet(final Constructor ctor, final Node node) {
