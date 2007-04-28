@@ -497,7 +497,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
             if (index != 0) {
                 invokeUtilityMethod("doAttrAssignIndexed", callSigIndexed);
             } else {
-                invokeUtilityMethod("doAttrAssignDynamic", callSig);
+                invokeUtilityMethod("doAttrAssign", callSig);
             }
         } else {
             if (index != 0) {
