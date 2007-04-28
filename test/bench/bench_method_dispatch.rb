@@ -1,40 +1,21 @@
 require 'benchmark'
 
-def foo
-a = 1
-    a; a; a; a; a; a; a; a; a; a;
-    a; a; a; a; a; a; a; a; a; a;
-    a; a; a; a; a; a; a; a; a; a;
-    a; a; a; a; a; a; a; a; a; a;
-    a; a; a; a; a; a; a; a; a; a;
-    a; a; a; a; a; a; a; a; a; a;
-    a; a; a; a; a; a; a; a; a; a;
-    a; a; a; a; a; a; a; a; a; a;
-    a; a; a; a; a; a; a; a; a; a;
-    a; a; a; a; a; a; a; a; a; a;
-end
-
-def foo2
-a = 5
-    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
-    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
-    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
-    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
-    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
-    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
-    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
-    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
-    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
-    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
-end
-
 puts "Control: 100k loops accessing a local variable 100 times"
 10.times {
 puts Benchmark.measure {
   a = 5; 
   i = 0;
   while i < 100000
-foo
+    a; a; a; a; a; a; a; a; a; a;
+    a; a; a; a; a; a; a; a; a; a;
+    a; a; a; a; a; a; a; a; a; a;
+    a; a; a; a; a; a; a; a; a; a;
+    a; a; a; a; a; a; a; a; a; a;
+    a; a; a; a; a; a; a; a; a; a;
+    a; a; a; a; a; a; a; a; a; a;
+    a; a; a; a; a; a; a; a; a; a;
+    a; a; a; a; a; a; a; a; a; a;
+    a; a; a; a; a; a; a; a; a; a;
     i += 1;
   end
 }
@@ -46,7 +27,16 @@ puts Benchmark.measure {
   a = 5; 
   i = 0;
   while i < 100000
-foo2
+    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
+    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
+    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
+    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
+    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
+    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
+    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
+    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
+    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
+    a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
     i += 1;
   end
 }
