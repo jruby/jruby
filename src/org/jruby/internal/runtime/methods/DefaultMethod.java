@@ -79,12 +79,15 @@ public final class DefaultMethod extends DynamicMethod {
             JIT_ENABLED = false;
             JIT_LOGGING = false;
             JIT_LOGGING_VERBOSE = false;
-            JIT_THRESHOLD = 50;
+            JIT_THRESHOLD = -1;
         } else {
-            JIT_ENABLED = Boolean.getBoolean("jruby.jit.enabled");
+            String enabledValue = System.getProperty("jruby.jit.enabled");
+            String threshold = System.getProperty("jruby.jit.threshold");
+           
+            JIT_ENABLED = enabledValue == null ? true : Boolean.parseBoolean(enabledValue);
             JIT_LOGGING = Boolean.getBoolean("jruby.jit.logging");
             JIT_LOGGING_VERBOSE = Boolean.getBoolean("jruby.jit.logging.verbose");
-            JIT_THRESHOLD = Integer.parseInt(System.getProperty("jruby.jit.threshold", "50"));
+            JIT_THRESHOLD = threshold == null ? 0 : Integer.parseInt(threshold); 
         }
     }
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
