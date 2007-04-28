@@ -316,7 +316,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         // store the local vars in a local variable
         loadThreadContext();
         invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
+        newMethod.dup();
         newMethod.astore(LOCAL_VARS_INDEX);
+        newMethod.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
+        newMethod.astore(SCOPE_INDEX);
         
         // arraycopy arguments into local vars array
         newMethod.aload(LOCAL_VARS_INDEX);
@@ -384,9 +387,8 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.pop();
     }
     
-    public static IRubyObject doInvokeDynamic(IRubyObject receiver, IRubyObject[] args, ThreadContext context, String name, IRubyObject caller, CallType callType, Block block, boolean attrAssign) {
-        // FIXME: This should not always be VARIABLE...only for attr assign that I know of
-        if (receiver == caller && attrAssign) {
+    public static IRubyObject doAttrAssign(IRubyObject receiver, IRubyObject[] args, ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
+        if (receiver == caller) {
             callType = CallType.VARIABLE;
         }
         
@@ -397,9 +399,8 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         }
     }
     
-    public static IRubyObject doInvokeDynamicIndexed(IRubyObject receiver, IRubyObject[] args, ThreadContext context, byte methodIndex, String name, IRubyObject caller, CallType callType, Block block, boolean attrAssign) {
-        // FIXME: This should not always be VARIABLE...only for attr assign that I know of
-        if (receiver == caller && attrAssign) {
+    public static IRubyObject doAttrAssignIndexed(IRubyObject receiver, IRubyObject[] args, ThreadContext context, byte methodIndex, String name, IRubyObject caller, CallType callType, Block block) {
+        if (receiver == caller) {
             callType = CallType.VARIABLE;
         }
         
@@ -410,10 +411,26 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         }
     }
     
+    public static IRubyObject doInvokeDynamic(IRubyObject receiver, IRubyObject[] args, ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
+        try {
+            return receiver.compilerCallMethod(context, name, args, caller, callType, block);
+        } catch (StackOverflowError sfe) {
+            throw context.getRuntime().newSystemStackError("stack level too deep");
+        }
+    }
+    
+    public static IRubyObject doInvokeDynamicIndexed(IRubyObject receiver, IRubyObject[] args, ThreadContext context, byte methodIndex, String name, IRubyObject caller, CallType callType, Block block) {
+        try {
+            return receiver.compilerCallMethodWithIndex(context, methodIndex, name, args, caller, callType, block);
+        } catch (StackOverflowError sfe) {
+            throw context.getRuntime().newSystemStackError("stack level too deep");
+        }
+    }
+    
     public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
         SkinnyMethodAdapter mv = getMethodAdapter();
-        String callSig = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class, Boolean.TYPE));
-        String callSigIndexed = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class, Boolean.TYPE));
+        String callSig = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class));
+        String callSigIndexed = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class));
         
         int index = MethodIndex.getIndex(name);
         
@@ -477,15 +494,17 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         }
         
         if (attrAssign) {
-            mv.ldc(Boolean.TRUE);
+            if (index != 0) {
+                invokeUtilityMethod("doAttrAssignIndexed", callSigIndexed);
+            } else {
+                invokeUtilityMethod("doAttrAssignDynamic", callSig);
+            }
         } else {
-            mv.ldc(Boolean.FALSE);
-        }
-        
-        if (index != 0) {
-            invokeUtilityMethod("doInvokeDynamicIndexed", callSigIndexed);
-        } else {
-            invokeUtilityMethod("doInvokeDynamic", callSig);
+            if (index != 0) {
+                invokeUtilityMethod("doInvokeDynamicIndexed", callSigIndexed);
+            } else {
+                invokeUtilityMethod("doInvokeDynamic", callSig);
+            }
         }
         
         if (closureArg != null) {
@@ -614,12 +633,11 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         SkinnyMethodAdapter mv = getMethodAdapter();
         mv.dup();
 
-        mv.aload(LOCAL_VARS_INDEX);
+        mv.aload(SCOPE_INDEX);
         mv.swap();
         mv.ldc(new Integer(index));
         mv.swap();
-        mv.iconst_0();
-        mv.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
+        mv.arraystore();
     }
     
     public void assignLastLine() {
@@ -648,10 +666,9 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     public void retrieveLocalVariable(int index) {
         SkinnyMethodAdapter mv = getMethodAdapter();
         
-        mv.aload(LOCAL_VARS_INDEX);
+        mv.aload(SCOPE_INDEX);
         mv.ldc(new Integer(index));
-        mv.iconst_0();
-        mv.invokevirtual(cg.p(DynamicScope.class), "getValue", cg.sig(IRubyObject.class, cg.params(Integer.TYPE, Integer.TYPE)));
+        mv.arrayload();
     }
     
     public void retrieveLastLine() {
@@ -1143,7 +1160,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         // store the local vars in a local variable
         loadThreadContext();
         invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
+        method.dup();
         method.astore(LOCAL_VARS_INDEX);
+        method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
+        method.astore(SCOPE_INDEX);
         
         // set up a local IRuby variable
         method.aload(THREADCONTEXT_INDEX);
@@ -1345,10 +1365,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         beginMethod(methodName, arity);
         
         SkinnyMethodAdapter mv = getMethodAdapter();
-        
-        // put a null at register 4, for closure creation to know we're at top-level or local scope
-        mv.aconst_null();
-        mv.astore(SCOPE_INDEX);
         
         // callback to fill in method body
         body.compile(this);
@@ -1706,10 +1722,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         
         SkinnyMethodAdapter mv = getMethodAdapter();
         
-        // put a null at register 4, for closure creation to know we're at top-level or local scope
-        mv.aconst_null();
-        mv.astore(SCOPE_INDEX);
-        
         // class def bodies default to public visibility
         mv.getstatic(cg.p(Visibility.class), "PUBLIC", cg.ci(Visibility.class));
         mv.astore(VISIBILITY_INDEX);
@@ -1773,10 +1785,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         beginMethod(methodName, 0);
         
         SkinnyMethodAdapter mv = getMethodAdapter();
-        
-        // put a null at register 4, for closure creation to know we're at top-level or local scope
-        mv.aconst_null();
-        mv.astore(SCOPE_INDEX);
         
         // module def bodies default to public visibility
         mv.getstatic(cg.p(Visibility.class), "PUBLIC", cg.ci(Visibility.class));
