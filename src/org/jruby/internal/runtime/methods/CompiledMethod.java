@@ -57,33 +57,14 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
 
     public void preMethod(ThreadContext context, RubyModule clazz,
             IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preDefMethodInternalCall(clazz, name, self, args, arity.required(), block, noSuper, cref, staticScope, this);
     }
     
     public void postMethod(ThreadContext context) {
-        context.postDefMethodInternalCall();
     }
     
     public IRubyObject internalCall(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
         assert false;
         return null;
-    }
-    
-    private IRubyObject wrap(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args, Block block) {
-        try {
-            return call(context, self, args, block);
-        } catch(RaiseException e) {
-            throw e;
-        } catch(JumpException e) {
-            throw e;
-        } catch(ThreadKill e) {
-            throw e;
-        } catch(MainExitException e) {
-            throw e;
-        } catch(Exception e) {
-            runtime.getJavaSupport().handleNativeException(e);
-            return runtime.getNil();
-        }        
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
@@ -91,25 +72,26 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
         arity.checkArity(runtime, args);
 
         try {
-            preMethod(context, klazz, self, name, args, noSuper, block);
-            if(runtime.getTraceFunction() != null) {
-                ISourcePosition position = context.getPosition();
-                RubyBinding binding = RubyBinding.newBinding(runtime);
-    
-                runtime.callTraceFunction(context, "c-call", position, binding, name, getImplementationClass());
-                try {
-                    return wrap(context, runtime, self, args, block);
-                } finally {
-                    runtime.callTraceFunction(context, "c-return", position, binding, name, getImplementationClass());
-                }
-            }
-            return wrap(context, runtime, self, args, block);
+            context.preDefMethodInternalCall(klazz, name, self, args, arity.required(), block, noSuper, cref, staticScope, this);
+            // tracing doesn't really work (or make sense yet?) for AOT compiled code
+//            if(runtime.getTraceFunction() != null) {
+//                ISourcePosition position = context.getPosition();
+//                RubyBinding binding = RubyBinding.newBinding(runtime);
+//    
+//                runtime.callTraceFunction(context, "c-call", position, binding, name, getImplementationClass());
+//                try {
+//                    return call(context, self, args, block);
+//                } finally {
+//                    runtime.callTraceFunction(context, "c-return", position, binding, name, getImplementationClass());
+//                }
+//            }
+            return call(context, self, args, block);
         } finally {
-            postMethod(context);
+            context.postDefMethodInternalCall();
         }
     }
 
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
+    protected abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
     
     public DynamicMethod dup() {
         try {

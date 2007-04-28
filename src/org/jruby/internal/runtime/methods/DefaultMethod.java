@@ -135,10 +135,12 @@ public final class DefaultMethod extends DynamicMethod {
         
         Ruby runtime = context.getRuntime();
         
-        if (JIT_ENABLED) runJIT(runtime, context, name);
+        if (JIT_ENABLED) {
+            runJIT(runtime, context, name);
         
-        if (JIT_ENABLED && jitCompiledScript != null) {
-            return jitCompiledScript.run(context, self, args, block);
+            if (jitCompiledScript != null) {
+                return call(context, self, clazz, name, args, noSuper, block);
+            }
         }
 
         if (argsNode.getBlockArgNode() != null && block.isGiven()) {
