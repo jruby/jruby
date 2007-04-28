@@ -364,41 +364,52 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     public void invokeAttrAssign(String name) {
         SkinnyMethodAdapter mv = getMethodAdapter();
         
-        // get args[0] and stuff it under the receiver
+        // get args[length - 1] and stuff it under the receiver
         mv.dup();
-        mv.iconst_0();
+        mv.dup();
+        mv.arraylength();
+        mv.iconst_1();
+        mv.isub();
         mv.arrayload();
         mv.dup_x2();
         mv.pop();
         
-        invokeDynamic(name, true, true, CallType.NORMAL, null);
+        invokeDynamic(name, true, true, CallType.NORMAL, null, true);
         
-        // pop result, use args[0] captured above
+        // pop result, use args[length - 1] captured above
         mv.pop();
     }
     
-    public static IRubyObject doInvokeDynamic(IRubyObject receiver, IRubyObject[] args, ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
+    public static IRubyObject doInvokeDynamic(IRubyObject receiver, IRubyObject[] args, ThreadContext context, String name, IRubyObject caller, CallType callType, Block block, boolean attrAssign) {
         // FIXME: This should not always be VARIABLE...only for attr assign that I know of
-        if (receiver == caller) {
+        if (receiver == caller && attrAssign) {
             callType = CallType.VARIABLE;
         }
         
-        return receiver.compilerCallMethod(context, name, args, caller, callType, block);
+        try {
+            return receiver.compilerCallMethod(context, name, args, caller, callType, block);
+        } catch (StackOverflowError sfe) {
+            throw context.getRuntime().newSystemStackError("stack level too deep");
+        }
     }
     
-    public static IRubyObject doInvokeDynamicIndexed(IRubyObject receiver, IRubyObject[] args, ThreadContext context, byte methodIndex, String name, IRubyObject caller, CallType callType, Block block) {
+    public static IRubyObject doInvokeDynamicIndexed(IRubyObject receiver, IRubyObject[] args, ThreadContext context, byte methodIndex, String name, IRubyObject caller, CallType callType, Block block, boolean attrAssign) {
         // FIXME: This should not always be VARIABLE...only for attr assign that I know of
-        if (receiver == caller) {
+        if (receiver == caller && attrAssign) {
             callType = CallType.VARIABLE;
         }
         
-        return receiver.compilerCallMethodWithIndex(context, methodIndex, name, args, caller, callType, block);
+        try {
+            return receiver.compilerCallMethodWithIndex(context, methodIndex, name, args, caller, callType, block);
+        } catch (StackOverflowError sfe) {
+            throw context.getRuntime().newSystemStackError("stack level too deep");
+        }
     }
     
-    public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg) {
+    public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
         SkinnyMethodAdapter mv = getMethodAdapter();
-        String callSig = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class));
-        String callSigIndexed = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class));
+        String callSig = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class, Boolean.TYPE));
+        String callSigIndexed = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class, Boolean.TYPE));
         
         int index = MethodIndex.getIndex(name);
         
@@ -461,6 +472,12 @@ public class StandardASMCompiler implements Compiler, Opcodes {
             mv.label(tryBegin);
         }
         
+        if (attrAssign) {
+            mv.ldc(Boolean.TRUE);
+        } else {
+            mv.ldc(Boolean.FALSE);
+        }
+        
         if (index != 0) {
             invokeUtilityMethod("doInvokeDynamicIndexed", callSigIndexed);
         } else {
@@ -515,8 +532,8 @@ public class StandardASMCompiler implements Compiler, Opcodes {
             method.aconst_null();
         }
         
-        loadSelf();
-        getRubyClass();
+        method.aconst_null();
+        method.aconst_null();
         method.ldc(Boolean.FALSE);
         
         method.invokevirtual(cg.p(Block.class), "yield", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyModule.class, Boolean.TYPE)));

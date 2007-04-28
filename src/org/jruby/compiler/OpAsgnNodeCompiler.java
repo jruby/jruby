@@ -33,7 +33,7 @@ public class OpAsgnNodeCompiler implements NodeCompiler {
         NodeCompilerFactory.getCompiler(opAsgnNode.getReceiverNode()).compile(opAsgnNode.getReceiverNode(), context);
         
         context.duplicateCurrentValue();
-        context.invokeDynamic(opAsgnNode.getVariableName(), true, false, CallType.FUNCTIONAL, null);
+        context.invokeDynamic(opAsgnNode.getVariableName(), true, false, CallType.FUNCTIONAL, null, false);
         
         BranchCallback doneBranch = new BranchCallback() {
             public void branch(Compiler context) {
@@ -56,7 +56,7 @@ public class OpAsgnNodeCompiler implements NodeCompiler {
             public void nextValue(Compiler context, Object sourceArray,
                     int index) {
                 context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, justEvalValue);
-                context.invokeDynamic(opAsgnNode.getOperatorName(), true, true, CallType.FUNCTIONAL, null);
+                context.invokeDynamic(opAsgnNode.getOperatorName(), true, true, CallType.FUNCTIONAL, null, false);
             }
         };
         

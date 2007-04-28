@@ -130,6 +130,9 @@ public class CodegenUtils {
     public static Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g, Class h) {
         return new Class[] {a,b,c,d,e,f,g,h};
     }
+    public static Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g, Class h, Class i) {
+        return new Class[] {a,b,c,d,e,f,g,h,i}; 
+    }
     
     public static String cleanJavaIdentifier(String name) {
         char[] characters = name.toCharArray();

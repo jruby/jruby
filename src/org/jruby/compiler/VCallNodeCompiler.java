@@ -53,6 +53,6 @@ public class VCallNodeCompiler implements NodeCompiler {
             }
         }
         
-        context.invokeDynamic(vcallNode.getName(), false, false, CallType.VARIABLE, null);
+        context.invokeDynamic(vcallNode.getName(), false, false, CallType.VARIABLE, null, false);
     }
 }

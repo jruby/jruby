@@ -52,6 +52,6 @@ public class AliasNodeCompiler implements NodeCompiler {
             }
         });
         
-        context.invokeDynamic("method_added", true, true, CallType.FUNCTIONAL, null);
+        context.invokeDynamic("method_added", true, true, CallType.FUNCTIONAL, null, false);
     }
 }// AliasNodeCompiler

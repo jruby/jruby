@@ -44,7 +44,7 @@ public class NodeCompilerFactory {
     static {
         UNSAFE_CALLS = new HashSet();
         
-        UNSAFE_CALLS.add("binding");
+        /*UNSAFE_CALLS.add("binding");
         UNSAFE_CALLS.add("private");
         UNSAFE_CALLS.add("public");
         UNSAFE_CALLS.add("protected");
@@ -52,7 +52,7 @@ public class NodeCompilerFactory {
         UNSAFE_CALLS.add("class_eval");
         UNSAFE_CALLS.add("module_eval");
         UNSAFE_CALLS.add("local_variables");
-        UNSAFE_CALLS.add("block_given?");
+        UNSAFE_CALLS.add("block_given?");*/
     }
     
     public static YARVNodesCompiler getYARVCompiler() {

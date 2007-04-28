@@ -43,9 +43,9 @@ public class FCallNodeCompiler implements NodeCompiler {
                 
                 argsCompiler.compile(fcallNode.getArgsNode(), context);
 
-                context.invokeDynamic(fcallNode.getName(), false, true, CallType.FUNCTIONAL, null);
+                context.invokeDynamic(fcallNode.getName(), false, true, CallType.FUNCTIONAL, null, false);
             } else {
-                context.invokeDynamic(fcallNode.getName(), false, false, CallType.FUNCTIONAL, null);
+                context.invokeDynamic(fcallNode.getName(), false, false, CallType.FUNCTIONAL, null, false);
             }
         } else {
             // FIXME: Missing blockpasnode stuff here
@@ -64,9 +64,9 @@ public class FCallNodeCompiler implements NodeCompiler {
                 
                 argsCompiler.compile(fcallNode.getArgsNode(), context);
                 
-                context.invokeDynamic(fcallNode.getName(), false, true, CallType.FUNCTIONAL, closureArg);
+                context.invokeDynamic(fcallNode.getName(), false, true, CallType.FUNCTIONAL, closureArg, false);
             } else {
-                context.invokeDynamic(fcallNode.getName(), false, false, CallType.FUNCTIONAL, closureArg);
+                context.invokeDynamic(fcallNode.getName(), false, false, CallType.FUNCTIONAL, closureArg, false);
             }
         }
     }

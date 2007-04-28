@@ -47,9 +47,9 @@ public class CallNodeCompiler implements NodeCompiler {
                 
                 argsCompiler.compile(callNode.getArgsNode(), context);
 
-                context.invokeDynamic(callNode.getName(), true, true, CallType.NORMAL, null);
+                context.invokeDynamic(callNode.getName(), true, true, CallType.NORMAL, null, false);
             } else {
-                context.invokeDynamic(callNode.getName(), true, false, CallType.NORMAL, null);
+                context.invokeDynamic(callNode.getName(), true, false, CallType.NORMAL, null, false);
             }
         } else {
             // FIXME: Missing blockpassnode handling
@@ -70,9 +70,9 @@ public class CallNodeCompiler implements NodeCompiler {
                 
                 argsCompiler.compile(callNode.getArgsNode(), context);
 
-                context.invokeDynamic(callNode.getName(), true, true, CallType.NORMAL, closureArg);
+                context.invokeDynamic(callNode.getName(), true, true, CallType.NORMAL, closureArg, false);
             } else {
-                context.invokeDynamic(callNode.getName(), true, false, CallType.NORMAL, closureArg);
+                context.invokeDynamic(callNode.getName(), true, false, CallType.NORMAL, closureArg, false);
             }
         }
     }

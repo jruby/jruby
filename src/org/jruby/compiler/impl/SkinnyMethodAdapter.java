@@ -104,6 +104,10 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         mv.visitInsn(ICONST_2);
     }
     
+    public void isub() {
+        mv.visitInsn(ISUB);
+    }
+    
     public void aconst_null() {
         mv.visitInsn(ACONST_NULL);
     }
