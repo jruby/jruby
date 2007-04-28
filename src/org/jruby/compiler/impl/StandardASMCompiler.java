@@ -39,7 +39,6 @@ import java.util.Stack;
 
 import jregex.Pattern;
 
-import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -49,7 +48,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -65,11 +63,8 @@ import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.parser.BlockStaticScope;
-import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -78,7 +73,6 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -391,46 +385,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.pop(); // [val]
     }
     
-    public static IRubyObject doAttrAssign(IRubyObject receiver, IRubyObject[] args, ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
-        if (receiver == caller) {
-            callType = CallType.VARIABLE;
-        }
-        
-        try {
-            return receiver.compilerCallMethod(context, name, args, caller, callType, block);
-        } catch (StackOverflowError sfe) {
-            throw context.getRuntime().newSystemStackError("stack level too deep");
-        }
-    }
-    
-    public static IRubyObject doAttrAssignIndexed(IRubyObject receiver, IRubyObject[] args, ThreadContext context, byte methodIndex, String name, IRubyObject caller, CallType callType, Block block) {
-        if (receiver == caller) {
-            callType = CallType.VARIABLE;
-        }
-        
-        try {
-            return receiver.compilerCallMethodWithIndex(context, methodIndex, name, args, caller, callType, block);
-        } catch (StackOverflowError sfe) {
-            throw context.getRuntime().newSystemStackError("stack level too deep");
-        }
-    }
-    
-    public static IRubyObject doInvokeDynamic(IRubyObject receiver, IRubyObject[] args, ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
-        try {
-            return receiver.compilerCallMethod(context, name, args, caller, callType, block);
-        } catch (StackOverflowError sfe) {
-            throw context.getRuntime().newSystemStackError("stack level too deep");
-        }
-    }
-    
-    public static IRubyObject doInvokeDynamicIndexed(IRubyObject receiver, IRubyObject[] args, ThreadContext context, byte methodIndex, String name, IRubyObject caller, CallType callType, Block block) {
-        try {
-            return receiver.compilerCallMethodWithIndex(context, methodIndex, name, args, caller, callType, block);
-        } catch (StackOverflowError sfe) {
-            throw context.getRuntime().newSystemStackError("stack level too deep");
-        }
-    }
-    
     public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
         SkinnyMethodAdapter mv = getMethodAdapter();
         String callSig = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class));
@@ -526,18 +480,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
 
             mv.label(normalEnd);
         }
-    }
-    
-    public static IRubyObject handleJumpException(JumpException je, Block block) {
-        // JRUBY-530, Kernel#loop case:
-        if (je.isBreakInKernelLoop()) {
-            // consume and rethrow or just keep rethrowing?
-            if (block == je.getTarget()) je.setBreakInKernelLoop(false);
-
-            throw je;
-        }
-
-        return (IRubyObject) je.getValue();
     }
     
     public void yield(boolean hasArgs) {
@@ -673,6 +615,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.aload(SCOPE_INDEX);
         mv.ldc(new Integer(index));
         mv.arrayload();
+        nullToNil();
     }
     
     public void retrieveLastLine() {
@@ -681,8 +624,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         loadThreadContext();
         invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
         mv.invokevirtual(cg.p(DynamicScope.class), "getLastLine", cg.sig(IRubyObject.class));
-        loadRuntime();
-        invokeUtilityMethod("nullToNil", cg.sig(IRubyObject.class, cg.params(IRubyObject.class, Ruby.class)));
+        nullToNil();
     }
     
     public void retrieveBackRef() {
@@ -691,12 +633,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         loadThreadContext();
         invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
         mv.invokevirtual(cg.p(DynamicScope.class), "getBackRef", cg.sig(IRubyObject.class));
-        loadRuntime();
-        invokeUtilityMethod("nullToNil", cg.sig(IRubyObject.class, cg.params(IRubyObject.class, Ruby.class)));
-    }
-    
-    public static IRubyObject nullToNil(IRubyObject value, Ruby runtime) {
-        return value != null ? value : runtime.getNil();
+        nullToNil();
     }
     
     public void assignLocalVariable(int index, int depth) {
@@ -745,6 +682,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.ldc(new Integer(index));
         mv.ldc(new Integer(depth));
         mv.invokevirtual(cg.p(DynamicScope.class), "getValue", cg.sig(IRubyObject.class, cg.params(Integer.TYPE, Integer.TYPE)));
+        nullToNil();
     }
     
     public void assignConstantInCurrent(String name) {
@@ -807,27 +745,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         method.swap();
         
         invokeUtilityMethod("setClassVariable", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
-    }
-    
-    public static IRubyObject fetchClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String name) {
-        RubyModule rubyClass = EvaluationState.getClassVariableBase(context, runtime);
-   
-        if (rubyClass == null) {
-            rubyClass = self.getMetaClass();
-        }
-
-        return rubyClass.getClassVar(name);
-    }
-    
-    public static IRubyObject setClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String name, IRubyObject value) {
-        RubyModule rubyClass = EvaluationState.getClassVariableBase(context, runtime);
-   
-        if (rubyClass == null) {
-            rubyClass = self.getMetaClass();
-        }     
-        rubyClass.setClassVar(name, value);
-   
-        return value;
     }
     
     private void loadScope(int depth) {
@@ -1153,11 +1070,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.areturn();
     }
     
-    public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, String[] staticScopeNames, CompiledBlockCallback callback) {
-        StaticScope staticScope = new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
-        return new CompiledBlock(context, self, Arity.createArity(arity), new DynamicScope(staticScope, context.getCurrentScope()), callback);
-    }
-    
     public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args) {
         // FIXME: This isn't quite done yet; waiting to have full support for passing closures so we can test it
         ClassVisitor cv = getClassVisitor();
@@ -1262,11 +1174,11 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     }
     
     /**
-     * This is for utility methods used by the compiler, to reduce the amount of code generation necessary.
-     * Most of these currently live on StandardASMCompiler, but should be moved to a more appropriate location.
+     * This is for utility methods used by the compiler, to reduce the amount of code generation 
+     * necessary.  All of these live in CompilerHelpers.
      */
     private void invokeUtilityMethod(String methodName, String signature) {
-        getMethodAdapter().invokestatic(cg.p(StandardASMCompiler.class), methodName, signature);
+        getMethodAdapter().invokestatic(cg.p(CompilerHelpers.class), methodName, signature);
     }
     
     private void invokeThreadContext(String methodName, String signature) {
@@ -1329,54 +1241,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         // TODO: should call method_added, and possibly push nil.
     }
     
-    public static IRubyObject def(ThreadContext context, Visibility visibility, IRubyObject self, Class compiledClass, String name, String javaName, String[] scopeNames, int arity) {
-        Ruby runtime = context.getRuntime();
-        
-        // FIXME: This is what the old def did, but doesn't work in the compiler for top-level methods. Hmm.
-        RubyModule containingClass = context.getRubyClass();
-        //RubyModule containingClass = self.getMetaClass();
-        
-        if (containingClass == null) {
-            throw runtime.newTypeError("No class to add method.");
-        }
-        
-        if (containingClass == runtime.getObject() && name == "initialize") {
-            runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
-        }
-        
-        SinglyLinkedList cref = context.peekCRef();
-        StaticScope scope = new LocalStaticScope(null, scopeNames);
-        
-        MethodFactory factory = MethodFactory.createFactory();
-        DynamicMethod method = null;
-        
-        if (name == "initialize" || visibility.isModuleFunction() || context.isTopLevel()) {
-            method = factory.getCompiledMethod(containingClass, compiledClass, javaName, Arity.createArity(arity), Visibility.PRIVATE, cref, scope);
-        } else {
-            method = factory.getCompiledMethod(containingClass, compiledClass, javaName, Arity.createArity(arity), visibility, cref, scope);
-        }
-        
-        containingClass.addMethod(name, method);
-        
-        if (visibility.isModuleFunction()) {
-            containingClass.getSingletonClass().addMethod(
-                    name,
-                    new WrapperMethod(containingClass.getSingletonClass(), method,
-                    Visibility.PUBLIC));
-            containingClass.callMethod(context, "singleton_method_added", runtime.newSymbol(name));
-        }
-        
-        // 'class << state.self' and 'class << obj' uses defn as opposed to defs
-        if (containingClass.isSingleton()) {
-            ((MetaClass) containingClass).getAttachedObject().callMethod(
-                    context, "singleton_method_added", runtime.newSymbol(name));
-        } else {
-            containingClass.callMethod(context, "method_added", runtime.newSymbol(name));
-        }
-        
-        return runtime.getNil();
-    }
-    
     public void defineNewMethod(String name, int arity, StaticScope scope, ClosureCallback body) {
         if (isCompilingClosure) {
             throw new NotCompilableException("Can't compile def within closure yet");
@@ -1417,8 +1281,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         
         mv.ldc(new Integer(arity));
         
-        mv.invokestatic(cg.p(StandardASMCompiler.class),
-                "def",
+        invokeUtilityMethod("def",
                 cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Visibility.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE)));
     }
     
@@ -1541,16 +1404,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     }
     
     public void ensureRubyArray() {
-        SkinnyMethodAdapter method = getMethodAdapter();
-        
-        method.invokestatic(cg.p(StandardASMCompiler.class), "ensureRubyArray", cg.sig(RubyArray.class, cg.params(IRubyObject.class)));
-    }
-    
-    public static RubyArray ensureRubyArray(IRubyObject value) {
-        if (!(value instanceof RubyArray)) {
-            value = RubyArray.newArray(value.getRuntime(), value);
-        }
-        return (RubyArray)value;
+        invokeUtilityMethod("ensureRubyArray", cg.sig(RubyArray.class, cg.params(IRubyObject.class)));
     }
     
     public void forEachInValueArray(int start, int count, Object source, ArrayCallback callback) {
@@ -1679,20 +1533,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         // declare the field
         cv.visitField(ACC_PRIVATE|ACC_STATIC, realName, type, null, null).visitEnd();
         return realName;
-    }
-
-    private final static org.jruby.RegexpTranslator TRANS = new org.jruby.RegexpTranslator();
-
-    public static int regexpLiteralFlags(int options) {
-        return TRANS.flagsFor(options,0);
-    }
-
-    public static Pattern regexpLiteral(Ruby runtime, String ptr, int options) {
-        try {
-            return TRANS.translate(ptr, options, 0);
-        } catch(jregex.PatternSyntaxException e) {
-            throw runtime.newRegexpError(e.getMessage());
-        }
     }
 
     public void createNewRegexp(final ByteList value, final int options, final String lang) {
@@ -1855,30 +1695,13 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.invokestatic(classname, methodName, METHOD_SIGNATURE);
     }
     
-    public static RubyClass prepareSuperClass(Ruby runtime, IRubyObject rubyClass) {
-        if (rubyClass != null) {
-            if(!(rubyClass instanceof RubyClass)) {
-                throw runtime.newTypeError("superclass must be a Class (" + RubyObject.trueFalseNil(rubyClass) + ") given");
-            }
-            return (RubyClass)rubyClass;
-        }
-        return (RubyClass)null;
-    }
-    
-    public static RubyModule prepareClassNamespace(ThreadContext context, IRubyObject rubyModule) {
-        if (rubyModule == null || rubyModule.isNil()) {
-            rubyModule = (RubyModule) context.peekCRef().getValue();
-            
-            if (rubyModule == null) {
-                throw context.getRuntime().newTypeError("no outer class/module");
-            }
-        }
-        
-        return (RubyModule)rubyModule;
-    }
-    
     public void pollThreadEvents() {
         loadThreadContext();
         invokeThreadContext("pollThreadEvents", cg.sig(Void.TYPE));
+    }
+    
+    private void nullToNil() {
+        loadRuntime();
+        invokeUtilityMethod("nullToNil", cg.sig(IRubyObject.class, cg.params(IRubyObject.class, Ruby.class)));
     }
 }
