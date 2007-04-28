@@ -370,21 +370,25 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     
     public void invokeAttrAssign(String name) {
         SkinnyMethodAdapter mv = getMethodAdapter();
+
+        // start with [recv, args]
         
         // get args[length - 1] and stuff it under the receiver
-        mv.dup();
-        mv.dup();
-        mv.arraylength();
-        mv.iconst_1();
-        mv.isub();
-        mv.arrayload();
-        mv.dup_x2();
-        mv.pop();
+        // dup args * 2
+        mv.dup(); // [recv, args, args]
+        mv.dup(); // [recv, args, args, args]
+        mv.arraylength(); // [recv, args, args, len]
+        mv.iconst_1(); // [recv, args, args, len, 1]
+        mv.isub(); // [recv, args, args, len-1]
+        // load from array
+        mv.arrayload(); // [recv, args, val]
+        mv.dup_x2(); // [val, recv, args, val]
+        mv.pop(); // [val, recv, args]
         
-        invokeDynamic(name, true, true, CallType.NORMAL, null, true);
+        invokeDynamic(name, true, true, CallType.NORMAL, null, true); // [val, result]
         
         // pop result, use args[length - 1] captured above
-        mv.pop();
+        mv.pop(); // [val]
     }
     
     public static IRubyObject doAttrAssign(IRubyObject receiver, IRubyObject[] args, ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
@@ -907,6 +911,26 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     
     public void createObjectArray(Object[] sourceArray, ArrayCallback callback) {
         buildObjectArray(IRUBYOBJECT, sourceArray, callback);
+    }
+    
+    public void createObjectArray(int elementCount) {
+        SkinnyMethodAdapter method = getMethodAdapter();
+        
+        // create the array
+        method.ldc(new Integer(elementCount));
+        method.anewarray(cg.p(IRubyObject.class));
+        
+        // for each element, swap with array and insert
+        for (int i = 0; i < elementCount; i++) {
+            method.dup_x1();
+            method.dup_x1();
+            method.pop();
+            
+            method.ldc(new Integer(elementCount - 1 - i));
+            method.swap();
+            
+            method.arraystore();
+        }
     }
     
     private void buildObjectArray(String type, Object[] sourceArray, ArrayCallback callback) {

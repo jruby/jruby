@@ -30,10 +30,10 @@ public class OpAsgnNodeCompiler implements NodeCompiler {
         
         final OpAsgnNode opAsgnNode = (OpAsgnNode)node;
         
-        NodeCompilerFactory.getCompiler(opAsgnNode.getReceiverNode()).compile(opAsgnNode.getReceiverNode(), context);
+        NodeCompilerFactory.getCompiler(opAsgnNode.getReceiverNode()).compile(opAsgnNode.getReceiverNode(), context); // [recv]
         
-        context.duplicateCurrentValue();
-        context.invokeDynamic(opAsgnNode.getVariableName(), true, false, CallType.FUNCTIONAL, null, false);
+        context.duplicateCurrentValue(); // [recv, recv]
+        context.invokeDynamic(opAsgnNode.getVariableName(), true, false, CallType.FUNCTIONAL, null, false); // [recv, varValue]
         
         BranchCallback doneBranch = new BranchCallback() {
             public void branch(Compiler context) {
@@ -51,28 +51,11 @@ public class OpAsgnNodeCompiler implements NodeCompiler {
             }
         };
         
-        // Do the above, but then pass it to the operator call and stuff that result into an argument array
-        final ArrayCallback evalAndCallOperator = new ArrayCallback() {
-            public void nextValue(Compiler context, Object sourceArray,
-                    int index) {
-                context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, justEvalValue);
-                context.invokeDynamic(opAsgnNode.getOperatorName(), true, true, CallType.FUNCTIONAL, null, false);
-            }
-        };
-        
         BranchCallback assignBranch = new BranchCallback() {
             public void branch(Compiler context) {
                 // eliminate extra value, eval new one and assign
                 context.consumeCurrentValue();
                 context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, justEvalValue);
-                context.invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
-            }
-        };
-        
-        BranchCallback operateAndAssignBranch = new BranchCallback() {
-            public void branch(Compiler context) {
-                // eval new value, call operator on old value, and assign
-                context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, evalAndCallOperator);
                 context.invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
             }
         };
@@ -86,8 +69,11 @@ public class OpAsgnNodeCompiler implements NodeCompiler {
             context.duplicateCurrentValue();
             context.performBooleanBranch(assignBranch, doneBranch);
         } else {
-            // evaluate the rhs, call the operator, and assign
-            operateAndAssignBranch.branch(context);
+            // eval new value, call operator on old value, and assign
+            context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, justEvalValue);
+            context.invokeDynamic(opAsgnNode.getOperatorName(), true, true, CallType.FUNCTIONAL, null, false);
+            context.createObjectArray(1);
+            context.invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
         }
 
         context.pollThreadEvents();

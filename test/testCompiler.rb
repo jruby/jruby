@@ -228,3 +228,12 @@ CompiledClass2.new.bar
 EOS
 
 test_equal("cm1", compile_and_run(module_string))
+
+# opasgn with anything other than || or && was broken
+class Holder
+  attr_accessor :value
+end
+$h = Holder.new
+test_equal(1, compile_and_run("$h.value ||= 1"))
+test_equal(2, compile_and_run("$h.value &&= 2"))
+test_equal(3, compile_and_run("$h.value += 1"))
