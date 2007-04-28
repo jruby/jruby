@@ -657,6 +657,22 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         loadThreadContext();
         invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
         mv.invokevirtual(cg.p(DynamicScope.class), "getLastLine", cg.sig(IRubyObject.class));
+        loadRuntime();
+        invokeUtilityMethod("nullToNil", cg.sig(IRubyObject.class, cg.params(IRubyObject.class, Ruby.class)));
+    }
+    
+    public void retrieveBackRef() {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        loadThreadContext();
+        invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
+        mv.invokevirtual(cg.p(DynamicScope.class), "getBackRef", cg.sig(IRubyObject.class));
+        loadRuntime();
+        invokeUtilityMethod("nullToNil", cg.sig(IRubyObject.class, cg.params(IRubyObject.class, Ruby.class)));
+    }
+    
+    public static IRubyObject nullToNil(IRubyObject value, Ruby runtime) {
+        return value != null ? value : runtime.getNil();
     }
     
     public void assignLocalVariable(int index, int depth) {
@@ -1270,6 +1286,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     }
     
     public void defineNewMethod(String name, int arity, StaticScope scope, ClosureCallback body) {
+        if (isCompilingClosure) {
+            throw new NotCompilableException("Can't compile def within closure yet");
+        }
+        
         // TODO: build arg list based on number of args, optionals, etc
         ++methodIndex;
         String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;

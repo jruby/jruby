@@ -158,6 +158,11 @@ public interface Compiler {
     public void retrieveLastLine();
     
     /**
+     * Retrieve the special "back ref" variable $~ from the outermost local scope.
+     */
+    public void retrieveBackRef();
+    
+    /**
      * Assign the value on top of the stack to a local variable at the specified index and
      * lexical scoping depth (0 = current scope), consuming that value in the process.
      * 

@@ -34,7 +34,7 @@ public class GlobalVarNodeCompiler implements NodeCompiler {
                 context.retrieveLastLine();
                 return;
             case '~':
-                context.retrieveLocalVariable(1);
+                context.retrieveBackRef();
                 return;
             }
         }
