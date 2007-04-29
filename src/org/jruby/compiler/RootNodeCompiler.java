@@ -47,7 +47,7 @@ public class RootNodeCompiler implements NodeCompiler {
         context.startScript();
         
         // create method for toplevel of script
-        Object methodToken = context.beginMethod("__file__", 0);
+        Object methodToken = context.beginMethod("__file__", null);
 
         // try to compile the script's body
         try {

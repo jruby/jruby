@@ -237,3 +237,16 @@ $h = Holder.new
 test_equal(1, compile_and_run("$h.value ||= 1"))
 test_equal(2, compile_and_run("$h.value &&= 2"))
 test_equal(3, compile_and_run("$h.value += 1"))
+
+# opt args
+optargs_method = <<EOS
+def foo(a, b = 1)
+  [a, b]
+end
+EOS
+test_no_exception {
+  compile_and_run(optargs_method)
+}
+test_equal([1, 1], compile_and_run("foo(1)"))
+test_equal([1, 2], compile_and_run("foo(1, 2)"))
+test_exception { compile_and_run("foo(1, 2, 3)") }

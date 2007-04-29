@@ -204,12 +204,12 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         return ((Integer)arities.peek()).intValue();
     }
     
-    public void pushArity(int arity) {
-        arities.push(new Integer(arity));
+    public void pushArity(Arity arity) {
+        arities.push(arity);
     }
     
-    public int popArity() {
-        return ((Integer)arities.pop()).intValue();
+    public Arity popArity() {
+        return (Arity)arities.pop();
     }
     
     public void pushScopeStart(Label start) {
@@ -285,7 +285,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.end();
     }
     
-    public Object beginMethod(String friendlyName, int arity) {
+    public Object beginMethod(String friendlyName, ClosureCallback args) {
         SkinnyMethodAdapter newMethod = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null));
         pushMethodAdapter(newMethod);
         
@@ -295,13 +295,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         newMethod.aload(THREADCONTEXT_INDEX);
         invokeThreadContext("getRuntime", cg.sig(Ruby.class));
         newMethod.astore(RUNTIME_INDEX);
-        
-        // check arity
-        newMethod.ldc(new Integer(arity));
-        newMethod.invokestatic(cg.p(Arity.class), "createArity", cg.sig(Arity.class, cg.params(Integer.TYPE)));
-        loadRuntime();
-        newMethod.aload(ARGS_INDEX);
-        newMethod.invokevirtual(cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
         
         // set visibility
         newMethod.getstatic(cg.p(Visibility.class), "PRIVATE", cg.ci(Visibility.class));
@@ -315,19 +308,16 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         newMethod.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
         newMethod.astore(SCOPE_INDEX);
         
-        // arraycopy arguments into local vars array
-        newMethod.aload(LOCAL_VARS_INDEX);
-        newMethod.aload(ARGS_INDEX);
-        newMethod.ldc(new Integer(arity));
-        newMethod.invokevirtual(cg.p(DynamicScope.class), "setArgValues", cg.sig(Void.TYPE, cg.params(IRubyObject[].class, Integer.TYPE)));
+        if (args != null) {
+            args.compile(this);
+        } else {
+            pushArity(null);
+        }
         
         // visit a label to start scoping for local vars in this method
         Label start = new Label();
         newMethod.label(start);
         pushScopeStart(start);
-        
-        // push down the argument count of this method
-        pushArity(arity);
         
         return newMethod;
     }
@@ -1241,7 +1231,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         // TODO: should call method_added, and possibly push nil.
     }
     
-    public void defineNewMethod(String name, int arity, StaticScope scope, ClosureCallback body) {
+    public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args) {
         if (isCompilingClosure) {
             throw new NotCompilableException("Can't compile def within closure yet");
         }
@@ -1250,11 +1240,11 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         ++methodIndex;
         String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;
         
-        beginMethod(methodName, arity);
+        beginMethod(methodName, args);
         
         SkinnyMethodAdapter mv = getMethodAdapter();
         
-        // callback to fill in method body
+        // callbacks to fill in method body
         body.compile(this);
         
         endMethod(mv);
@@ -1279,10 +1269,75 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         
         buildStaticScopeNames(mv, scope);
         
-        mv.ldc(new Integer(arity));
+        mv.ldc(new Integer(0));
         
         invokeUtilityMethod("def",
                 cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Visibility.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE)));
+    }
+    
+    public void processRequiredArgs(Arity arity, int totalArgs) {
+        SkinnyMethodAdapter newMethod = getMethodAdapter();
+        
+        // check arity
+        newMethod.ldc(new Integer(arity.getValue()));
+        newMethod.invokestatic(cg.p(Arity.class), "createArity", cg.sig(Arity.class, cg.params(Integer.TYPE)));
+        loadRuntime();
+        newMethod.aload(ARGS_INDEX);
+        newMethod.invokevirtual(cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
+        
+        // optional has different checks for size
+        if (!arity.isFixed()) {
+            loadRuntime();
+            newMethod.aload(ARGS_INDEX);
+            newMethod.arraylength();
+            newMethod.ldc(new Integer(totalArgs));
+            invokeUtilityMethod("raiseArgumentError", cg.sig(Void.TYPE, cg.params(Ruby.class, Integer.TYPE, Integer.TYPE)));
+        }
+        
+        // arraycopy all arguments into local vars array
+        Label noArgs = new Label();
+        newMethod.aload(ARGS_INDEX);
+        newMethod.ifnull(noArgs);
+        newMethod.aload(ARGS_INDEX);
+        newMethod.arraylength();
+        newMethod.ifeq(noArgs);
+        newMethod.aload(LOCAL_VARS_INDEX);
+        newMethod.aload(ARGS_INDEX);
+        newMethod.dup();
+        newMethod.arraylength();
+        newMethod.invokevirtual(cg.p(DynamicScope.class), "setArgValues", cg.sig(Void.TYPE, cg.params(IRubyObject[].class, Integer.TYPE)));
+        newMethod.label(noArgs);
+        
+        // push down the argument count of this method
+        pushArity(arity);
+    }
+    
+    public void assignOptionalArgs(Object object, int expectedArgsCount, int size, ArrayCallback optEval) {
+        SkinnyMethodAdapter newMethod = getMethodAdapter();
+        
+        // NOTE: By the time we're here, arity should have already been checked. We proceed without boundschecking.
+        
+        // opt args are handled with a switch; the key is how many args we have coming in, and the cases are
+        // each opt arg index. The cases fall-through, so remaining opt args are handled.
+        newMethod.aload(ARGS_INDEX);
+        newMethod.arraylength();
+        
+        Label defaultLabel = new Label();
+        Label[] labels = new Label[size];
+        
+        for (int i = 0; i < size; i++) {
+            labels[i] = new Label();
+        }
+        
+        newMethod.tableswitch(expectedArgsCount, expectedArgsCount + size - 1, defaultLabel, labels);
+        
+        for (int i = 0; i < size; i++) {
+            newMethod.label(labels[i]);
+            optEval.nextValue(this, object, i);
+            newMethod.pop();
+        }
+        
+        newMethod.label(defaultLabel);
     }
     
     public void loadFalse() {
@@ -1582,7 +1637,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         ++methodIndex;
         String methodName = "rubyclass__" + cg.cleanJavaIdentifier(name) + "__" + methodIndex;
         
-        beginMethod(methodName, 0);
+        beginMethod(methodName, null);
         
         SkinnyMethodAdapter mv = getMethodAdapter();
         
@@ -1646,7 +1701,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         ++methodIndex;
         String methodName = "rubymodule__" + cg.cleanJavaIdentifier(name) + "__" + methodIndex;
         
-        beginMethod(methodName, 0);
+        beginMethod(methodName, null);
         
         SkinnyMethodAdapter mv = getMethodAdapter();
         

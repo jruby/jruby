@@ -11,7 +11,9 @@ package org.jruby.compiler;
 
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.DefnNode;
+import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
+import org.jruby.runtime.Arity;
 
 /**
  *
@@ -28,6 +30,13 @@ public class DefnNodeCompiler implements NodeCompiler {
         context.lineNumber(node.getPosition());
         
         final DefnNode defnNode = (DefnNode)node;
+        final ArgsNode argsNode = (ArgsNode)defnNode.getArgsNode();
+        
+        // FIXME: simple arity check assumes simple arg list; expand to support weirder arg lists
+        if (NodeCompilerFactory.SAFE) {
+            if (argsNode.getBlockArgNode() != null) throw new NotCompilableException("Can't compile def with block arg at: " + node.getPosition());
+            if (argsNode.getRestArg() != -1) throw new NotCompilableException("Can't compile def with rest arg at: " + node.getPosition());
+        }
         
         ClosureCallback body = new ClosureCallback() {
             public void compile(Compiler context) {
@@ -39,20 +48,44 @@ public class DefnNodeCompiler implements NodeCompiler {
             }
         };
         
-        int arity = 0;
-        
-        // FIXME: simple arity check assumes simple arg list; expand to support weirder arg lists
-        if (NodeCompilerFactory.SAFE) {
-            ArgsNode argsNode = (ArgsNode)defnNode.getArgsNode();
-            
-            if (argsNode.getBlockArgNode() != null) throw new NotCompilableException("Can't compile def with block arg at: " + node.getPosition());
-            if (argsNode.getOptArgs() != null) throw new NotCompilableException("Can't compile def with optional params at: " + node.getPosition());
-            if (argsNode.getRestArg() != -1) throw new NotCompilableException("Can't compile def with rest arg at: " + node.getPosition());
-        }
+        final ArrayCallback evalOptionalValue = new ArrayCallback() {
+            public void nextValue(Compiler context, Object object, int index) {
+                ListNode optArgs = (ListNode)object;
+                
+                Node node = optArgs.get(index);
 
-        arity = ((ArgsNode)defnNode.getArgsNode()).getArgsCount();
+                NodeCompilerFactory.getCompiler(node).compile(node, context);
+            }
+        };
         
-        context.defineNewMethod(defnNode.getName(), arity, defnNode.getScope(), body);
+        ClosureCallback args = new ClosureCallback() {
+            public void compile(Compiler context) {
+                int expectedArgsCount = argsNode.getArgsCount();
+                int restArg = argsNode.getRestArg();
+                boolean hasOptArgs = argsNode.getOptArgs() != null;
+                Arity arity = argsNode.getArity();
+                
+                if (hasOptArgs) {
+                    if (restArg > -1) {
+                        throw new NotCompilableException("Can't compile def with rest arg at: " + defnNode.getPosition());
+                    } else {
+                        int opt = expectedArgsCount + argsNode.getOptArgs().size();
+                        context.processRequiredArgs(arity, opt);
+                        
+                        ListNode optArgs = argsNode.getOptArgs();
+                        context.assignOptionalArgs(optArgs, expectedArgsCount, optArgs.size(), evalOptionalValue);
+                    }
+                } else {
+                    if (restArg > -1) {
+                        throw new NotCompilableException("Can't compile def with rest arg at: " + defnNode.getPosition());
+                    } else {
+                        context.processRequiredArgs(arity, expectedArgsCount);
+                    }
+                }
+            }
+        };
+        
+        context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args);
     }
     
 }

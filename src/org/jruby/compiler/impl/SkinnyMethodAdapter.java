@@ -309,5 +309,9 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     public void visitEnd() {
         mv.visitEnd();
     }
+    
+    public void tableswitch(int min, int max, Label defaultLabel, Label[] cases) {
+        mv.visitTableSwitchInsn(min, max, defaultLabel, cases);
+    }
 
 }

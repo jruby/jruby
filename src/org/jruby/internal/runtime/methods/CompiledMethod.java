@@ -63,9 +63,6 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        Ruby runtime = context.getRuntime();
-        arity.checkArity(runtime, args);
-
         try {
             context.preDefMethodInternalCall(klazz, name, self, args, arity.required(), block, noSuper, cref, staticScope, this);
             // tracing doesn't really work (or make sense yet?) for AOT compiled code

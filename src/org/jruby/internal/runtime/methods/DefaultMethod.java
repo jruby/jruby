@@ -42,6 +42,9 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
+import org.jruby.compiler.ArrayCallback;
+import org.jruby.compiler.ClosureCallback;
+import org.jruby.compiler.Compiler;
 import org.jruby.compiler.NodeCompilerFactory;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
@@ -195,9 +198,7 @@ public final class DefaultMethod extends DynamicMethod {
     private void runJIT(Ruby runtime, ThreadContext context, String name) {
         if (callCount >= 0) {
             // we can only compile normal args, not block, opt, or rest
-            if (!(getArity().isFixed() && // perhaps redundant to check the others
-                    argsNode.getBlockArgNode() == null &&
-                    argsNode.getOptArgs() == null &&
+            if (!(argsNode.getBlockArgNode() == null &&
                     argsNode.getRestArg() == -1) ||
                     // for some reason anonymous classes don't mix well with the compiler yet (JRUBY-831 and JRUBY-857)
                     implementationClass.getName() == null) {
@@ -218,10 +219,50 @@ public final class DefaultMethod extends DynamicMethod {
                 }
                 
                 try {
+                    // FIXME: Total duplication from DefnNodeCompiler...need to refactor this
+                    final ArrayCallback evalOptionalValue = new ArrayCallback() {
+                        public void nextValue(Compiler context, Object object, int index) {
+                            ListNode optArgs = (ListNode)object;
+                            
+                            Node node = optArgs.get(index);
+
+                            NodeCompilerFactory.getCompiler(node).compile(node, context);
+                        }
+                    };
+                    
+                    ClosureCallback args = new ClosureCallback() {
+                        public void compile(Compiler context) {
+                            int expectedArgsCount = argsNode.getArgsCount();
+                            int restArg = argsNode.getRestArg();
+                            boolean hasOptArgs = argsNode.getOptArgs() != null;
+                            Arity arity = argsNode.getArity();
+                            
+                            if (hasOptArgs) {
+                                if (restArg > -1) {
+                                    callCount = -1;
+                                    return;
+                                } else {
+                                    int opt = expectedArgsCount + argsNode.getOptArgs().size();
+                                    context.processRequiredArgs(arity, opt);
+                                    
+                                    ListNode optArgs = argsNode.getOptArgs();
+                                    context.assignOptionalArgs(optArgs, expectedArgsCount, optArgs.size(), evalOptionalValue);
+                                }
+                            } else {
+                                if (restArg > -1) {
+                                    callCount = -1;
+                                    return;
+                                } else {
+                                    context.processRequiredArgs(arity, expectedArgsCount);
+                                }
+                            }
+                        }
+                    };
+                    
                     String cleanName = CodegenUtils.cleanJavaIdentifier(name);
                     StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), body.getPosition().getFile());
                     compiler.startScript();
-                    Object methodToken = compiler.beginMethod("__file__", getArity().getValue());
+                    Object methodToken = compiler.beginMethod("__file__", args);
                     NodeCompilerFactory.getCompiler(body).compile(body, compiler);
                     compiler.endMethod(methodToken);
                     compiler.endScript();

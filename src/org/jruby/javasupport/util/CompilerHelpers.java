@@ -215,5 +215,9 @@ public class CompilerHelpers {
         return value;
     }
     
-    
+    public static void raiseArgumentError(Ruby runtime, int given, int maximum) {
+        if (given > maximum) {
+            throw runtime.newArgumentError("wrong # of arguments(" + given + " for " + maximum + ")");
+        }
+    }
 }

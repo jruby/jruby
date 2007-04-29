@@ -30,6 +30,7 @@ package org.jruby.compiler;
 
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.util.ByteList;
 
@@ -66,7 +67,7 @@ public interface Compiler {
      * @return An Object that represents the method within this compiler. Used in calls to
      * endMethod once compilation for this method is completed.
      */
-    public Object beginMethod(String friendlyName, int arity);
+    public Object beginMethod(String friendlyName, ClosureCallback argsHandler);
     
     /**
      * End compilation for the method associated with the specified token. This should
@@ -188,6 +189,8 @@ public interface Compiler {
      * @param depth The lexical scoping depth from which to retrieve the variable
      */
     public void retrieveLocalVariable(int index, int depth);
+    
+    public void assignOptionalArgs(Object object, int expectedArgsCount, int size, ArrayCallback optEval);
     
     /**
      * Retrieve the current "self" and put a reference on top of the stack.
@@ -345,7 +348,9 @@ public interface Compiler {
      * @param localVarCount The number of local variables within the method
      * @param body The callback which will generate the method's body.
      */
-    public void defineNewMethod(String name, int arity, StaticScope scope, ClosureCallback body);
+    public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args);
+    
+    public void processRequiredArgs(Arity arity, int totalArgs);
     
     /**
      * Define an alias for a new name to an existing oldName'd method.
