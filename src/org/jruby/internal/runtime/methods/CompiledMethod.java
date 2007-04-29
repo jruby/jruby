@@ -28,18 +28,13 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
-import org.jruby.RubyBinding;
 import org.jruby.RubyModule;
-import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.ThreadKill;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Block;
 import org.jruby.util.collections.SinglyLinkedList;
 
@@ -86,6 +81,12 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
 //                }
 //            }
             return call(context, self, args, block);
+        } catch (JumpException je) {
+            if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
+                    return (IRubyObject) je.getValue();
+            }
+            
+            throw je;
         } finally {
             context.postDefMethodInternalCall();
         }

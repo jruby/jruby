@@ -142,7 +142,15 @@ public final class DefaultMethod extends DynamicMethod {
             runJIT(runtime, context, name);
         
             if (jitCompiledScript != null) {
-                return call(context, self, clazz, name, args, noSuper, block);
+                try {
+                    return call(context, self, clazz, name, args, noSuper, block);
+                } catch (JumpException je) {
+                    if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
+                            return (IRubyObject) je.getValue();
+                    }
+                    
+                    throw je;
+                }
             }
         }
 
