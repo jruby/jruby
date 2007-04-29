@@ -36,7 +36,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class Constants {
-	private static final Properties properties = new Properties();
+    private static final Properties properties = new Properties();
     public static final String PLATFORM = "java";
 
     public static final int MARSHAL_MAJOR = 4;
@@ -51,21 +51,24 @@ public final class Constants {
     public static final String REVISION;
 
     static {
-    	try {
-    		properties.load(Constants.class.getResourceAsStream("/jruby.properties"));
-    	} catch (IOException ioe) {
-    		ioe.printStackTrace();
-    	}
-    	
-    	RUBY_MAJOR_VERSION = properties.getProperty("version.ruby.major");
-    	RUBY_VERSION = properties.getProperty("version.ruby");
-    	COMPILE_DATE = properties.getProperty("release.date");
-    	VERSION = properties.getProperty("version.jruby");
+        try {
+            properties.load(Constants.class.getResourceAsStream("/jruby.properties"));
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        
+        RUBY_MAJOR_VERSION = properties.getProperty("version.ruby.major");
+        RUBY_VERSION = properties.getProperty("version.ruby");
+        COMPILE_DATE = properties.getProperty("release.date");
+        VERSION = properties.getProperty("version.jruby");
         BUILD = properties.getProperty("build.jruby");
         TARGET = properties.getProperty("target.jruby");
         Matcher matcher = Pattern.compile("\\$Revision: (.*?) \\$").matcher(properties.getProperty("revision.jruby"));
-        matcher.find();
-        REVISION = matcher.group(1);
+        if (matcher.find()) {
+            REVISION = matcher.group(1);
+        } else {
+            REVISION = "unknown";
+        }
     }
     
     private Constants() {}
