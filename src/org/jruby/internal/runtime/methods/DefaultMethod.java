@@ -84,7 +84,7 @@ public final class DefaultMethod extends DynamicMethod {
             String enabledValue = System.getProperty("jruby.jit.enabled");
             String threshold = System.getProperty("jruby.jit.threshold");
            
-            JIT_ENABLED = enabledValue == null ? true : Boolean.parseBoolean(enabledValue);
+            JIT_ENABLED = enabledValue == null ? true : Boolean.getBoolean(enabledValue);
             JIT_LOGGING = Boolean.getBoolean("jruby.jit.logging");
             JIT_LOGGING_VERBOSE = Boolean.getBoolean("jruby.jit.logging.verbose");
             JIT_THRESHOLD = threshold == null ? 0 : Integer.parseInt(threshold); 
