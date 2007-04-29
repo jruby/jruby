@@ -430,7 +430,7 @@ public class LoadService {
                 }
                 if (current.getJarEntry(name) != null) {
                     try {
-                        return new LoadServiceResource(new URL(entry + name), entry + name);
+                        return new LoadServiceResource(new URL("jar:file:" + entry.substring(4) + "!/" + name), entry + name);
                     } catch (MalformedURLException e) {
                         throw runtime.newIOErrorFromException(e);
                     }
