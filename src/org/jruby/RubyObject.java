@@ -21,6 +21,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2007 MenTaLguY <mental@rydia.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -773,7 +774,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (block.isGiven()) {
             if (args.length > 0) throw getRuntime().newArgumentError(args.length, 0);
 
-            return yieldUnder(mod, block);
+            return yieldUnder(mod, new IRubyObject[] { this }, block);
         }
         ThreadContext tc = getRuntime().getCurrentContext();
 
@@ -832,7 +833,8 @@ public class RubyObject implements Cloneable, IRubyObject {
         }, new IRubyObject[] { this, src, file, line }, Block.NULL_BLOCK);
     }
 
-    private IRubyObject yieldUnder(RubyModule under, Block block) {
+    private IRubyObject yieldUnder(RubyModule under, IRubyObject[] args, Block block) {
+        final IRubyObject selfInYield = this;
         return under.executeUnder(new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                 ThreadContext context = getRuntime().getCurrentContext();
@@ -841,9 +843,16 @@ public class RubyObject implements Cloneable, IRubyObject {
 
                 block.setVisibility(Visibility.PUBLIC);
                 try {
-                    IRubyObject valueInYield = args[0];
-                    IRubyObject selfInYield = args[0];
-                    return block.yield(context, valueInYield, selfInYield, context.getRubyClass(), false);
+                    IRubyObject valueInYield;
+                    boolean aValue;
+                    if (args.length == 1) {
+                        valueInYield = args[0];
+                        aValue = false;
+                    } else {
+                        valueInYield = RubyArray.newArray(getRuntime(), args);
+                        aValue = true;
+                    }
+                    return block.yield(context, valueInYield, selfInYield, context.getRubyClass(), aValue);
                     //TODO: Should next and return also catch here?
                 } catch (JumpException je) {
                 	if (je.getJumpType() == JumpException.JumpType.BreakJump) {
@@ -859,7 +868,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             public Arity getArity() {
                 return Arity.optional();
             }
-        }, new IRubyObject[] { this }, block);
+        }, args, block);
     }
 
     /* (non-Javadoc)
@@ -1301,6 +1310,13 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public IRubyObject instance_eval(IRubyObject[] args, Block block) {
         return specificEval(getSingletonClass(), args, block);
+    }
+
+    public IRubyObject instance_exec(IRubyObject[] args, Block block) {
+        if (!block.isGiven()) {
+            throw getRuntime().newArgumentError("block not supplied");
+        }
+        return yieldUnder(getSingletonClass(), args, block);
     }
 
     public IRubyObject extend(IRubyObject[] args) {

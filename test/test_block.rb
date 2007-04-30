@@ -156,6 +156,36 @@ class TestBlock < Test::Unit::TestCase
     assert_equal(["C: b true", "D: c false", "C: a true"], $results)
   end
 
+  def test_instance_exec_self
+    o = Object.new
+    assert_equal(o, o.instance_exec { self })
+  end
+
+  def test_instance_exec_self_args
+    o = Object.new
+    assert_equal(o, o.instance_exec(1) { self })
+  end
+
+  def test_instance_exec_args_result
+    o = Object.new
+    assert_equal(2, o.instance_exec(1) { |x| x + 1 })
+  end
+
+  def test_instance_exec_args_multiple_result
+    o = Object.new
+    assert_equal([1, 3], o.instance_exec(1, 2, 3) { |a, b, c| [a, c] })
+  end
+
+  def test_instance_exec_no_block
+    o = Object.new
+    assert_raise(ArgumentError) { o.instance_exec }
+  end
+
+  def test_instance_exec_no_block_args
+    o = Object.new
+    assert_raise(ArgumentError) { o.instance_exec(1) }
+  end
+
   # ensure proc-ified blocks can be yielded to when no block arg is specified in declaration
   class Holder
     def call_block
