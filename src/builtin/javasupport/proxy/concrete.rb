@@ -7,6 +7,7 @@ class ConcreteJavaProxy < JavaProxy
       proxy.__jcreate!(*args) unless proxy.java_object
       proxy
     end
+    
   end
   
   def __jcreate!(*args)

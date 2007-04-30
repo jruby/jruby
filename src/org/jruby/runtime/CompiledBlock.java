@@ -28,9 +28,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
-import org.jruby.ast.IterNode;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 

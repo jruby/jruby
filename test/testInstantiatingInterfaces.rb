@@ -5,7 +5,13 @@ if defined? Java
   require 'java'
 
   # Tests unimplemented interface methods
-  class A < java.lang.Runnable
+  if java.lang.Runnable.instance_of?(Module)
+    class A
+      include java.lang.Runnable
+    end
+  else 
+    class A < java.lang.Runnable
+    end
   end
   test_exception(NoMethodError) do
     A.new.run

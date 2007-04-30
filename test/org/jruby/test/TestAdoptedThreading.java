@@ -44,17 +44,28 @@ public class TestAdoptedThreading extends TestCase {
     // Uncomment the "puts" lines if you want to see more detail
     private static final String SCRIPT = "require 'java'\n"
             + "include_class 'org.jruby.test.ITest'\n"
-            + "class TestImpl < ITest\n" + "    def exec(_value)\n"
+            + "if ITest.instance_of?(Module)\n"
+            + "  class TestImpl; include ITest; end\n"
+            + "else\n"
+            + "  class TestImpl < ITest; end\n"
+            + "end\n"
+            + "class TestImpl\n"
+            + "    def exec(_value)\n"
             + "        #puts \"start executing!\"\n"
             + "        100.times do | item |\n"
-            + "           value = \"#{item}\"\n" + "        end\n"
-            + "        #puts \"end executing1!\"\n" + "        exec2(_value)\n"
+            + "           value = \"#{item}\"\n"
+            + "        end\n"
+            + "        #puts \"end executing1!\"\n"
+            + "        exec2(_value)\n"
             + "    end\n" + "    def exec2(_value)\n"
             + "        #puts \"start executing2!\"\n"
             + "        500.times do | item |\n"
-            + "           value = \"#{item}\"\n" + "        end\n"
+            + "           value = \"#{item}\"\n"
+            + "        end\n"
             + "        #puts \"end executing2!\"\n"
-            + "        \"VALUE: #{_value}\"\n" + "    end\n" + "end";
+            + "        \"VALUE: #{_value}\"\n"
+            + "    end\n"
+            + "end";
 
     public TestAdoptedThreading(String _name) {
         super(_name);

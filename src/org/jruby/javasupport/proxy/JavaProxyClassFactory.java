@@ -37,11 +37,13 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -97,12 +99,20 @@ public class JavaProxyClassFactory {
 
     private static int counter;
 
-    private static Map proxies = new HashMap();
+    private static Map proxies = Collections.synchronizedMap(new HashMap());
 
-    private static Method defineClass_method;
+    private static Method defineClass_method; // statically initialized below
 
+    private static synchronized int nextId() {
+        return counter++;
+    }
+    
+    // TODO: we should be able to optimize this quite a bit post-1.0.  JavaClass already
+    // has all the methods organized by method name; the next version (supporting protected
+    // methods/fields) will have them organized even further. So collectMethods here can
+    // just lookup the overridden methods in the JavaClass map, should be much faster.
     static JavaProxyClass newProxyClass(ClassLoader loader,
-            String targetClassName, Class superClass, Class[] interfaces)
+            String targetClassName, Class superClass, Class[] interfaces, TreeSet names)
             throws InvocationTargetException {
         if (loader == null) {
             loader = JavaProxyClassFactory.class.getClassLoader();
@@ -116,38 +126,46 @@ public class JavaProxyClassFactory {
             interfaces = EMPTY_CLASS_ARR;
         }
 
-        if (targetClassName == null) {
-            String pkg = packageName(superClass);
-            String fullName = superClass.getName();
-            int ix = fullName.lastIndexOf('.');
-            String cName = fullName;
-            if(ix != -1) {
-                cName = fullName.substring(ix+1);
-            }
-            if (pkg.startsWith("java.") || pkg.startsWith("javax.")) {
-                pkg = packageName(JavaProxyClassFactory.class) + ".gen";
-            }
-            if(ix == -1) {
-                targetClassName = cName + "$Proxy" + counter++;
-            } else {
-                targetClassName = pkg + "." + cName + "$Proxy"
-                    + counter++;
-            }
-        }
-
         Set key = new HashSet();
         key.add(superClass);
         for (int i = 0; i < interfaces.length; i++) {
             key.add(interfaces[i]);
         }
 
+        // add (potentially) overridden names to the key.
+        // TODO: see note above re: optimizations
+        if (names != null) {
+            for (Iterator iter = names.iterator(); iter.hasNext(); ) {
+                key.add(iter.next());
+            }
+        }
+
         JavaProxyClass proxyClass = (JavaProxyClass) proxies.get(key);
         if (proxyClass == null) {
+
+            if (targetClassName == null) {
+                String pkg = packageName(superClass);
+                String fullName = superClass.getName();
+                int ix = fullName.lastIndexOf('.');
+                String cName = fullName;
+                if(ix != -1) {
+                    cName = fullName.substring(ix+1);
+                }
+                if (pkg.startsWith("java.") || pkg.startsWith("javax.")) {
+                    pkg = packageName(JavaProxyClassFactory.class) + ".gen";
+                }
+                if(ix == -1) {
+                    targetClassName = cName + "$Proxy" + nextId();
+                } else {
+                    targetClassName = pkg + "." + cName + "$Proxy"
+                        + nextId();
+                }
+            }
 
             validateArgs(targetClassName, superClass);
 
             Map methods = new HashMap();
-            collectMethods(superClass, interfaces, methods);
+            collectMethods(superClass, interfaces, methods, names);
 
             Type selfType = Type.getType("L"
                     + toInternalClassName(targetClassName) + ";");
@@ -158,6 +176,12 @@ public class JavaProxyClassFactory {
         }
 
         return proxyClass;
+    }
+
+    static JavaProxyClass newProxyClass(ClassLoader loader,
+            String targetClassName, Class superClass, Class[] interfaces)
+            throws InvocationTargetException {
+        return newProxyClass(loader,targetClassName,superClass,interfaces,null);
     }
 
     private static JavaProxyClass generate(final ClassLoader loader,
@@ -526,10 +550,10 @@ public class JavaProxyClassFactory {
     }
 
     private static void collectMethods(Class superClass, Class[] interfaces,
-            Map methods) {
+            Map methods, Set names) {
         HashSet allClasses = new HashSet();
-        addClass(allClasses, methods, superClass);
-        addInterfaces(allClasses, methods, interfaces);
+        addClass(allClasses, methods, superClass, names);
+        addInterfaces(allClasses, methods, interfaces, names);
     }
 
     static class MethodData {
@@ -684,29 +708,30 @@ public class JavaProxyClassFactory {
     }
 
     private static void addInterfaces(Set allClasses, Map methods,
-            Class[] interfaces) {
+            Class[] interfaces, Set names) {
         for (int i = 0; i < interfaces.length; i++) {
-            addInterface(allClasses, methods, interfaces[i]);
+            addInterface(allClasses, methods, interfaces[i], names);
         }
     }
 
     private static void addInterface(Set allClasses, Map methods,
-            Class interfaze) {
+            Class interfaze, Set names) {
         if (allClasses.add(interfaze)) {
-            addMethods(methods, interfaze);
-            addInterfaces(allClasses, methods, interfaze.getInterfaces());
+            addMethods(methods, interfaze, names);
+            addInterfaces(allClasses, methods, interfaze.getInterfaces(), names);
         }
     }
 
-    private static void addMethods(Map methods, Class classOrInterface) {
+    private static void addMethods(Map methods, Class classOrInterface, Set names) {
         Method[] mths = classOrInterface.getDeclaredMethods();
         for (int i = 0; i < mths.length; i++) {
-            addMethod(methods, mths[i]);
+            if (names == null || names.contains(mths[i].getName())) {
+                addMethod(methods, mths[i]);
+            }
         }
     }
 
     private static void addMethod(Map methods, Method method) {
-
         int acc = method.getModifiers();
         if (Modifier.isStatic(acc) || Modifier.isPrivate(acc)) {
             return;
@@ -721,15 +746,15 @@ public class JavaProxyClassFactory {
         md.add(method);
     }
 
-    private static void addClass(Set allClasses, Map methods, Class clazz) {
+    private static void addClass(Set allClasses, Map methods, Class clazz, Set names) {
         if (allClasses.add(clazz)) {
-            addMethods(methods, clazz);
+            addMethods(methods, clazz, names);
             Class superClass = clazz.getSuperclass();
             if (superClass != null) {
-                addClass(allClasses, methods, superClass);
+                addClass(allClasses, methods, superClass, names);
             }
 
-            addInterfaces(allClasses, methods, clazz.getInterfaces());
+            addInterfaces(allClasses, methods, clazz.getInterfaces(), names);
         }
     }
 

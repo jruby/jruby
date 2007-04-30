@@ -158,22 +158,15 @@ public class JavaMethod extends JavaCallable {
         // this test really means, that this is a ruby-defined subclass of a java class
         //
         if (javaInvokee instanceof InternalJavaProxy &&
-                // don't bother to check if final method, it won't be there
+                // don't bother to check if final method, it won't
+                // be there (not generated, can't be!)
                 !Modifier.isFinal(method.getModifiers())) {
             JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee)
                     .___getProxyClass();
             JavaProxyMethod jpm;
-            try {
-                jpm = jpc.getMethod(method.getName(), parameterTypes);
-            } catch (NoSuchMethodException e) {
-                // ok, this just means there's no generated proxy method (which
-                // there wouldn't be for final methods, possibly other cases?).
-                // Try to invoke anyway.
-                return invokeWithExceptionHandling(method, javaInvokee, arguments);
-            }
-            if (jpm.hasSuperImplementation()) {
-                return invokeWithExceptionHandling(jpm.getSuperMethod(),
-                        javaInvokee, arguments);
+            if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null &&
+                    jpm.hasSuperImplementation()) {
+                return invokeWithExceptionHandling(jpm.getSuperMethod(), javaInvokee, arguments);
             }
         }
         return invokeWithExceptionHandling(method, javaInvokee, arguments);

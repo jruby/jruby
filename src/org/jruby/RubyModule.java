@@ -544,12 +544,20 @@ public class RubyModule extends RubyObject {
         addMethod(name, new SimpleCallbackMethod(this, method, visibility));
     }
 
+    public void defineFastMethod(String name, Callback method, Visibility visibility) {
+        addMethod(name, new SimpleCallbackMethod(this, method, visibility));
+    }
+
     public void definePrivateMethod(String name, Callback method) {
         addMethod(name, new FullFunctionCallbackMethod(this, method, Visibility.PRIVATE));
     }
 
     public void defineFastPrivateMethod(String name, Callback method) {
         addMethod(name, new SimpleCallbackMethod(this, method, Visibility.PRIVATE));
+    }
+
+    public void defineFastProtectedMethod(String name, Callback method) {
+        addMethod(name, new SimpleCallbackMethod(this, method, Visibility.PROTECTED));
     }
 
     public void undefineMethod(String name) {

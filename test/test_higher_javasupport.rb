@@ -148,7 +148,17 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_extending_java_interfaces
-    assert Class.new(java.lang.Comparable)
+    if java.lang.Comparable.instance_of?(Module)
+      anonymous = Class.new(Object)
+      anonymous.send :include, java.lang.Comparable
+      anonymous.send :include, java.lang.Runnable
+      assert anonymous < java.lang.Comparable
+      assert anonymous < java.lang.Runnable
+      assert anonymous.new.kind_of?(java.lang.Runnable)
+      assert anonymous.new.kind_of?(java.lang.Comparable)
+    else
+      assert Class.new(java.lang.Comparable)
+    end
   end
 
   def test_support_of_other_class_loaders
@@ -301,7 +311,13 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal("b", p.getProperty("a"))
   end
 
-  class MyBadActionListener < java.awt.event.ActionListener
+  if java.awt.event.ActionListener.instance_of?(Module)
+    class MyBadActionListener
+      include java.awt.event.ActionListener
+    end
+  else
+    class MyBadActionListener < java.awt.event.ActionListener
+    end
   end
 
   def test_expected_missing_interface_method
@@ -366,15 +382,26 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   unless (java.lang.System.getProperty("java.specification.version") == "1.4")
-    class NSCT < javax.xml.namespace.NamespaceContext
-      # JRUBY-66: No super here...make sure we still work.
-      def initialize(arg)
+    if javax.xml.namespace.NamespaceContext.instance_of?(Module)
+      class NSCT
+        include javax.xml.namespace.NamespaceContext
+        # JRUBY-66: No super here...make sure we still work.
+        def initialize(arg)
+        end
+        def getNamespaceURI(prefix)
+          'ape:sex'
+        end
       end
-      def getNamespaceURI(prefix)
-        'ape:sex'
+    else
+      class NSCT < javax.xml.namespace.NamespaceContext
+        # JRUBY-66: No super here...make sure we still work.
+        def initialize(arg)
+        end
+        def getNamespaceURI(prefix)
+          'ape:sex'
+        end
       end
     end
-
     def test_no_need_to_call_super_in_initialize_when_implementing_java_interfaces
       # No error is a pass here for JRUBY-66
       assert_nothing_raised do
@@ -394,12 +421,23 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert(java.lang.System.respond_to?("current_time_millis"))
   end
 
-  class TestInitBlock < Java::java.lang.Runnable
-    def initialize(&block)
-      raise if !block
-      @bar = block.call
+  if Java::java.lang.Runnable.instance_of?(Module)
+    class TestInitBlock
+      include Java::java.lang.Runnable
+      def initialize(&block)
+        raise if !block
+        @bar = block.call
+      end
+      def bar; @bar; end
     end
-    def bar; @bar; end
+  else
+    class TestInitBlock < Java::java.lang.Runnable
+      def initialize(&block)
+        raise if !block
+        @bar = block.call
+      end
+      def bar; @bar; end
+    end
   end
 
   def test_that_blocks_are_passed_through_to_the_constructor_for_an_interface_impl

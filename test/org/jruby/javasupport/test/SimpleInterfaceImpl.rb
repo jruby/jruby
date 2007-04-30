@@ -2,7 +2,16 @@ require 'java'
 
 include_class 'org.jruby.javasupport.test.SimpleInterface'
 
-class SimpleInterfaceImpl < SimpleInterface
+if SimpleInterface.instance_of?(Module)
+  class SimpleInterfaceImpl
+    include SimpleInterface
+  end
+else
+  class SimpleInterfaceImpl < SimpleInterface
+  end
+end
+
+class SimpleInterfaceImpl
   def initialize
   	super
   	@list = [1,2,3]

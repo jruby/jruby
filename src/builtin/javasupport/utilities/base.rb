@@ -5,25 +5,27 @@ module JavaUtilities
 
   def JavaUtilities.setup_java_subclass(subclass, java_class)
     # add new class-variable to hold the JavaProxyClass instance
-    subclass.class.send :attr, :java_proxy_class, true
-    
+    subclass.module_eval do
+      class << self
+        attr :java_proxy_class, true
+        def java_interfaces
+          @java_interfaces.dup if @java_interfaces        
+        end     
+      end #self  
+    end
+
     subclass.send(:define_method, "__jcreate!") {|*args|
+      self.class.java_proxy_class ||= Java::JavaProxyClass.get_with_class(self.java_class,
+        self.class.java_interfaces,self.class)
       constructors = self.class.java_proxy_class.constructors.select {|c| c.arity == args.length }
       raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
       args.collect! { |v| Java.ruby_to_java(v) }
       self.java_object = JavaUtilities.matching_method(constructors, args).new_instance(args) { |proxy, method, *args|
-        args.collect! { |arg| Java.java_to_ruby(arg) } 
+        args.collect! { |arg| Java.java_to_ruby(arg) }
         result = __jsend!(method.name, *args)
         Java.ruby_to_java(result)
       } 
     }
-		
-    subclass.send(:define_method, "setup_instance_methods") {
-      puts "subclass #{self} calling JPC.dimfp" # never called?
-      self.java_proxy_class.define_instance_methods_for_proxy(subclass)
-    }
-    
-    subclass.java_proxy_class = Java::JavaProxyClass.get(java_class)
   end
 
   def JavaUtilities.get_java_class(name)

@@ -70,6 +70,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.util.IdUtil;
@@ -86,8 +87,13 @@ public class JavaClass extends JavaObject {
         static final int RESERVED = 0;
         static final int METHOD = 1;
         static final int FIELD = 2;
-        static final int WEAKLY_RESERVED = 3; // we'll be peeved, but not devastated, if you override
-        static final int ALIAS = 4;
+        static final int PROTECTED_METHOD = 3;
+        static final int WEAKLY_RESERVED = 4; // we'll be peeved, but not devastated, if you override
+        static final int ALIAS = 5;
+        // yes, protected fields are weaker than aliases. many conflicts
+        // in the old AWT code, for example, where you really want 'size'
+        // to mean the public method getSize, not the protected field 'size'.
+        static final int PROTECTED_FIELD = 6;
         String name;
         int type;
         AssignedName () {}
@@ -100,9 +106,16 @@ public class JavaClass extends JavaObject {
     // TODO: other reserved names?
     private static final Map RESERVED_NAMES = new HashMap();
     static {
-        RESERVED_NAMES.put("class", new AssignedName("class", AssignedName.RESERVED));
         RESERVED_NAMES.put("__id__", new AssignedName("__id__", AssignedName.RESERVED));
+        RESERVED_NAMES.put("__send__", new AssignedName("__send__", AssignedName.RESERVED));
+        RESERVED_NAMES.put("class", new AssignedName("class", AssignedName.RESERVED));
+        RESERVED_NAMES.put("initialize", new AssignedName("initialize", AssignedName.RESERVED));
         RESERVED_NAMES.put("object_id", new AssignedName("object_id", AssignedName.RESERVED));
+        RESERVED_NAMES.put("private", new AssignedName("private", AssignedName.RESERVED));
+        RESERVED_NAMES.put("protected", new AssignedName("protected", AssignedName.RESERVED));
+        RESERVED_NAMES.put("public", new AssignedName("public", AssignedName.RESERVED));
+
+        // weakly reserved names
         RESERVED_NAMES.put("id", new AssignedName("id", AssignedName.WEAKLY_RESERVED));
     }
     private static final Map STATIC_RESERVED_NAMES = new HashMap(RESERVED_NAMES);
@@ -118,6 +131,8 @@ public class JavaClass extends JavaObject {
         static final int INSTANCE_METHOD = 4;
         String name;
         int type;
+        Visibility visibility = Visibility.PUBLIC;
+        boolean isProtected;
         NamedCallback () {}
         NamedCallback (String name, int type) {
             this.name = name;
@@ -127,6 +142,12 @@ public class JavaClass extends JavaObject {
         // small hack to save a cast later on
         boolean hasLocalMethod() {
             return true;
+        }
+        boolean isPublic() {
+            return visibility == Visibility.PUBLIC;
+        }
+        boolean isProtected() {
+            return visibility == Visibility.PROTECTED;
         }
         void logMessage(IRubyObject self, IRubyObject[] args) {
             if (!DEBUG) {
@@ -156,6 +177,10 @@ public class JavaClass extends JavaObject {
         FieldCallback(String name, int type, Field field) {
             super(name,type);
             this.field = field;
+//            if (Modifier.isProtected(field.getModifiers())) {
+//                field.setAccessible(true);
+//                this.visibility = Visibility.PROTECTED;
+//            }
         }
     }
 
@@ -165,7 +190,7 @@ public class JavaClass extends JavaObject {
             super(name,STATIC_FIELD,field);
         }
         void install(RubyClass proxy) {
-            proxy.getSingletonClass().defineFastMethod(this.name,this);
+            proxy.getSingletonClass().defineFastMethod(this.name,this,this.visibility);
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
             logMessage(self,args);
@@ -185,7 +210,7 @@ public class JavaClass extends JavaObject {
             super(name,STATIC_FIELD,field);
         }
         void install(RubyClass proxy) {
-            proxy.getSingletonClass().defineFastMethod(this.name,this);
+            proxy.getSingletonClass().defineFastMethod(this.name,this,this.visibility);
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
             logMessage(self,args);
@@ -207,7 +232,7 @@ public class JavaClass extends JavaObject {
             super(name,INSTANCE_FIELD,field);
         }
         void install(RubyClass proxy) {
-            proxy.defineFastMethod(this.name,this);
+            proxy.defineFastMethod(this.name,this,this.visibility);
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
             logMessage(self,args);
@@ -229,7 +254,7 @@ public class JavaClass extends JavaObject {
             super(name,INSTANCE_FIELD,field);
         }
         void install(RubyClass proxy) {
-            proxy.defineFastMethod(this.name,this);
+            proxy.defineFastMethod(this.name,this,this.visibility);
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
             logMessage(self,args);
@@ -262,7 +287,10 @@ public class JavaClass extends JavaObject {
                 methods = new ArrayList();
             }
             methods.add(method);
-            haveLocalMethod = (haveLocalMethod || javaClass == method.getDeclaringClass());
+//            if (Modifier.isProtected(method.getModifiers())) {
+//                visibility = Visibility.PROTECTED;
+//            }
+            haveLocalMethod |= javaClass == method.getDeclaringClass();
         }
         void addAlias(String alias) {
             if (aliases == null) {
@@ -319,8 +347,8 @@ public class JavaClass extends JavaObject {
         void install(RubyClass proxy) {
             if (haveLocalMethod) {
                 RubyClass singleton = proxy.getSingletonClass();
-                singleton.defineFastMethod(this.name,this);
-                if (aliases != null) {
+                singleton.defineFastMethod(this.name,this,this.visibility);
+                if (aliases != null && isPublic() ) {
                     for (Iterator iter = aliases.iterator(); iter.hasNext(); ) {
                         singleton.defineAlias((String)iter.next(), this.name);
                     }
@@ -370,8 +398,8 @@ public class JavaClass extends JavaObject {
         }
         void install(RubyClass proxy) {
             if (haveLocalMethod) {
-                proxy.defineFastMethod(this.name,this);
-                if (aliases != null) {
+                proxy.defineFastMethod(this.name,this,this.visibility);
+                if (aliases != null && isPublic()) {
                     for (Iterator iter = aliases.iterator(); iter.hasNext(); ) {
                         proxy.defineAlias((String)iter.next(), this.name);
                     }
@@ -422,7 +450,7 @@ public class JavaClass extends JavaObject {
         ConstantField(Field field) {
             this.field = field;
         }
-        void install(RubyClass proxy) {
+        void install(RubyModule proxy) {
             if (proxy.getConstantAt(field.getName()) == null) {
                 JavaField javaField = new JavaField(proxy.getRuntime(),field);
                 RubyString name = javaField.name();
@@ -434,7 +462,6 @@ public class JavaClass extends JavaObject {
                 Character.isUpperCase(field.getName().charAt(0));
         }
     }
-    
     
     private final RubyModule JAVA_UTILITIES = getRuntime().getModule("JavaUtilities");
     
@@ -464,23 +491,17 @@ public class JavaClass extends JavaObject {
     }
     
     private void initializeInterface(Class javaClass) {
-        Class superclass = javaClass.getSuperclass();
-        Map staticNames;
-        if (superclass == null) {
-            staticNames = new HashMap();
-        } else {
-            JavaClass superJavaClass = get(getRuntime(),superclass);
-            staticNames = new HashMap(superJavaClass.getStaticAssignedNames());
-        }
-        staticNames.putAll(STATIC_RESERVED_NAMES);
+        Map staticNames  = new HashMap(STATIC_RESERVED_NAMES);
         List constantFields = new ArrayList(); 
-        Field[] fields = javaClass.getFields();
+        Field[] fields;
+        try {
+            fields = javaClass.getDeclaredFields();
+        } catch (SecurityException e) {
+            fields = javaClass.getFields();
+        }
         for (int i = fields.length; --i >= 0; ) {
             Field field = fields[i];
-            // treating constants specially until interface modules
-            // are implemented. we'll define any as-yet undefined
-            // constant, regardless of declaring class. this will
-            // slow us down a bit in setupProxy.
+            if (javaClass != field.getDeclaringClass()) continue;
             if (ConstantField.isConstant(field)) {
                 constantFields.add(new ConstantField(field));
             }
@@ -488,6 +509,7 @@ public class JavaClass extends JavaObject {
         this.staticAssignedNames = staticNames;
         this.constantFields = constantFields;
     }
+
     private void initializeClass(Class javaClass) {
         Class superclass = javaClass.getSuperclass();
         Map staticNames;
@@ -508,25 +530,21 @@ public class JavaClass extends JavaObject {
         Field[] fields = javaClass.getFields();
         for (int i = fields.length; --i >= 0; ) {
             Field field = fields[i];
-            // treating constants specially until interface modules
-            // are implemented. we'll define any as-yet undefined
-            // constant, regardless of declaring class. this will
-            // slow us down a bit in setupProxy.
+            if (javaClass != field.getDeclaringClass()) continue;
+
             if (ConstantField.isConstant(field)) {
                 constantFields.add(new ConstantField(field));
                 continue;
             }
-            // for everything else, must be declared in this class
-            if (!javaClass.equals(field.getDeclaringClass()))
-                continue;
             String name = field.getName();
-            if (Modifier.isStatic(field.getModifiers())) {
+            int modifiers = field.getModifiers();
+            if (Modifier.isStatic(modifiers)) {
                 AssignedName assignedName = (AssignedName)staticNames.get(name);
                 if (assignedName != null && assignedName.type < AssignedName.FIELD)
                     continue;
                 staticNames.put(name,new AssignedName(name,AssignedName.FIELD));
                 staticCallbacks.put(name,new StaticFieldGetter(name,field));
-                if (!Modifier.isFinal(field.getModifiers())) {
+                if (!Modifier.isFinal(modifiers)) {
                     String setName = name + '=';
                     staticCallbacks.put(setName,new StaticFieldSetter(setName,field));
                 }
@@ -536,12 +554,14 @@ public class JavaClass extends JavaObject {
                     continue;
                 instanceNames.put(name,new AssignedName(name,AssignedName.FIELD));
                 instanceCallbacks.put(name,new InstanceFieldGetter(name,field));
-                if (!Modifier.isFinal(field.getModifiers())) {
+                if (!Modifier.isFinal(modifiers)) {
                     String setName = name + '=';
                     instanceCallbacks.put(setName,new InstanceFieldSetter(setName,field));
                 }
             }
         }
+        // TODO: protected methods.  this is going to require a rework 
+        // of some of the mechanism.  
         Method[] methods = javaClass.getMethods();
         for (int i = methods.length; --i >= 0; ) {
             // we need to collect all methods, though we'll only
@@ -692,14 +712,20 @@ public class JavaClass extends JavaObject {
         }
     }
     
-    private static void addUnassignedAlias(String name, Map assignedNames, MethodCallback callback ) {
+    private static void addUnassignedAlias(String name, Map assignedNames,
+            MethodCallback callback) {
         if (name != null) {
             AssignedName assignedName = (AssignedName)assignedNames.get(name);
-            if (assignedName == null || assignedName.type >= AssignedName.ALIAS) {
+            if (assignedName == null) {
                 callback.addAlias(name);
-                if (assignedName == null || assignedName.type != AssignedName.ALIAS) {
-                    assignedNames.put(name,new AssignedName(name,AssignedName.ALIAS));
-                }
+                assignedNames.put(name,new AssignedName(name,AssignedName.ALIAS));
+            } else if (assignedName.type == AssignedName.ALIAS) {
+                callback.addAlias(name);
+            } else if (assignedName.type > AssignedName.ALIAS) {
+                // TODO: there will be some additional logic in this branch
+                // dealing with conflicting protected fields. 
+                callback.addAlias(name);
+                assignedNames.put(name,new AssignedName(name,AssignedName.ALIAS));
             }
         }
     }
@@ -740,6 +766,28 @@ public class JavaClass extends JavaObject {
                 // Ignore bad constant named inner classes pending JRUBY-697
                 if (IdUtil.isConstant(simpleName) && proxy.getConstantAt(simpleName) == null) {
                     proxy.const_set(getRuntime().newString(simpleName),
+                        Java.get_proxy_class(JAVA_UTILITIES,get(getRuntime(),clazz)));
+                }
+            }
+        }
+    }
+    
+    public void setupInterfaceModule(RubyModule module) {
+        Class javaClass = javaClass();
+        for (Iterator iter = constantFields.iterator(); iter.hasNext(); ){
+            ((ConstantField)iter.next()).install(module);
+        }
+        // setup constants for public inner classes
+        Class[] classes = javaClass.getClasses();
+        for (int i = classes.length; --i >= 0; ) {
+            if (javaClass == classes[i].getDeclaringClass()) {
+                Class clazz = classes[i];
+                String simpleName = getSimpleName(clazz);
+                if (simpleName.length() == 0) continue;
+                
+                // Ignore bad constant named inner classes pending JRUBY-697
+                if (IdUtil.isConstant(simpleName) && module.getConstantAt(simpleName) == null) {
+                    module.const_set(getRuntime().newString(simpleName),
                         Java.get_proxy_class(JAVA_UTILITIES,get(getRuntime(),clazz)));
                 }
             }
@@ -1103,7 +1151,7 @@ public class JavaClass extends JavaObject {
         return getRuntime().newBoolean(Modifier.isPrivate(javaClass().getModifiers()));
     }
 
-	Class javaClass() {
+	public Class javaClass() {
 		return (Class) getValue();
 	}
 

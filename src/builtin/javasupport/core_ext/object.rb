@@ -53,9 +53,19 @@ class Object
       end
     end
   end
+  
+  class << self
+    alias_method :__jredef_const_missing, :const_missing
+    def const_missing(const)
+      if const.to_s =~ /^((Java|Javax|Com|Org|Edu)[A-Z])/
+        JavaUtilities.get_package_module(const)
+      else
+        __jredef_const_missing const
+      end    
+    end
+  end
 
-  # sneaking this in with the array support, getting
-  # tired of having to define it in all my code  -BD
+  # TODO: this can go away now, but people may be using it
   def java_kind_of?(other)
     return true if self.kind_of?(other)
     return false unless self.respond_to?(:java_class) && other.respond_to?(:java_class) &&

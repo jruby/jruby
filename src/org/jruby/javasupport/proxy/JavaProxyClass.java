@@ -38,8 +38,11 @@ import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -94,18 +97,23 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     public static JavaProxyClass getProxyClass(Ruby runtime, Class superClass,
-            Class[] interfaces) throws InvocationTargetException {
+            Class[] interfaces, TreeSet names) throws InvocationTargetException {
         Object save = runtimeTLS.get();
         runtimeTLS.set(runtime);
         try {
             ClassLoader loader = runtime.getJavaSupport().getJavaClassLoader();
 
-            return JavaProxyClassFactory.newProxyClass(loader, null, superClass, interfaces);
+            return JavaProxyClassFactory.newProxyClass(loader, null, superClass, interfaces, names);
         } finally {
             runtimeTLS.set(save);
         }
     }
 
+    public static JavaProxyClass getProxyClass(Ruby runtime, Class superClass,
+            Class[] interfaces) throws InvocationTargetException {
+        return getProxyClass(runtime,superClass,interfaces,null);
+    }
+    
     public static Object newProxyInstance(Ruby runtime, Class superClass, Class[] interfaces, 
             Class[] constructorParameters, Object[] constructorArgs, 
             JavaProxyInvocationHandler handler) throws IllegalArgumentException, 
@@ -159,8 +167,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return (JavaProxyMethod[]) methods.toArray(new JavaProxyMethod[methods.size()]);
     }
 
-    public JavaProxyMethod getMethod(String name, Class[] parameterTypes)
-            throws NoSuchMethodException {
+    public JavaProxyMethod getMethod(String name, Class[] parameterTypes) {
         List methods = (List)methodMap.get(name);
         if (methods != null) {
             for (int i = methods.size(); --i >= 0; ) {
@@ -168,7 +175,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 if (jpm.matches(name, parameterTypes)) return jpm;
             }
         }
-        throw new NoSuchMethodException();
+        return null;
     }
 
     /** return the class of instances of this proxy class */
@@ -474,6 +481,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         result.getMetaClass().defineFastMethod("get", 
                 callbackFactory.getFastSingletonMethod("get", JavaClass.class));
+        result.getMetaClass().defineFastMethod("get_with_class", 
+                callbackFactory.getFastSingletonMethod("get_with_class", JavaClass.class, IRubyObject.class, RubyClass.class));
 
         return result;
     }
@@ -487,6 +496,79 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             throw ex;
         } catch (InvocationTargetException e) {
             RaiseException ex = recv.getRuntime().newArgumentError("unable to create proxy class for " + type.getValue());
+            ex.initCause(e);
+            throw ex;
+        }
+    }
+    
+    private static final HashSet EXCLUDE_MODULES = new HashSet();
+    static {
+        EXCLUDE_MODULES.add("Kernel");
+        EXCLUDE_MODULES.add("Java");
+        EXCLUDE_MODULES.add("JavaProxyMethods");
+        EXCLUDE_MODULES.add("Enumerable");
+    }
+
+    public static RubyObject get_with_class(IRubyObject recv, JavaClass type, IRubyObject ifcArray, RubyClass clazz) {
+        Ruby runtime = recv.getRuntime();
+        Map methods;
+        TreeSet names = new TreeSet(); // need names ordered for key generation later
+        Class[] interfaces;
+        
+        // Let's only generate methods for those the user may actually 
+        // intend to override.  That includes any defined in the current
+        // class, but none from any ancestor class. Methods defined in
+        // mixins will be considered intentionally overridden, except those
+        // from Kernel, Java, and JavaProxyMethods.
+        // TODO: may want to exclude Enumerable, others?
+        synchronized(methods = clazz.getMethods()) {
+            for (Iterator iter = methods.keySet().iterator(); iter.hasNext(); ) {
+                names.add(iter.next());
+            }
+        }
+        List ancestors = clazz.getAncestorList();
+        for (Iterator iter = ancestors.iterator(); iter.hasNext(); ) {
+            RubyModule ancestor = (RubyModule)iter.next();
+            if (ancestor instanceof RubyClass ||
+                    EXCLUDE_MODULES.contains(ancestor.getName())) {
+                continue;
+            }
+            synchronized(methods = ancestor.getMethods()) {
+                for (Iterator meths = methods.keySet().iterator(); meths.hasNext(); ) {
+                    names.add(meths.next());
+                }
+            }
+        }
+
+        if (ifcArray instanceof RubyArray) {
+            RubyArray ifcs = (RubyArray)ifcArray;
+            int size = ifcs.size();
+            interfaces = new Class[size];
+            for (int i = size; --i >= 0; ) {
+                IRubyObject ifc = ifcs.eltInternal(i);
+                if (!(ifc instanceof JavaClass)) {
+                    throw runtime.newArgumentError("unable to create proxy class for " + type.getValue() + " - invalid interface");
+                }
+                Class ifcClass = ((JavaClass)ifc).javaClass();
+                if (!ifcClass.isInterface()) {
+                    throw runtime.newArgumentError("unable to create proxy class for " + type.getValue() + " - invalid interface");
+                }
+                interfaces[i] = ifcClass;
+            }
+        } else {
+            interfaces = new Class[0];
+        }
+        
+        try {
+            return getProxyClass(recv.getRuntime(), (Class) type.getValue(), interfaces, names);
+        } catch (Error e) {
+            RaiseException ex = recv.getRuntime().newArgumentError("unable to create proxy class for " + type.getValue() + " : " + e.getMessage());
+            //e.printStackTrace();
+            ex.initCause(e);
+            throw ex;
+        } catch (InvocationTargetException e) {
+            RaiseException ex = recv.getRuntime().newArgumentError("unable to create proxy class for " + type.getValue() + " : " + e.getMessage());
+            //e.printStackTrace();
             ex.initCause(e);
             throw ex;
         }
