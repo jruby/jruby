@@ -34,6 +34,7 @@ import org.jruby.internal.runtime.methods.ReflectionMethodFactory;
 import org.jruby.internal.runtime.methods.InvocationMethodFactory;
 import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
 import org.jruby.parser.StaticScope;
+import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
@@ -69,6 +70,16 @@ public abstract class MethodFactory {
             return new DumpingInvocationMethodFactory(dumpingPath);
         } else {
             return new InvocationMethodFactory();
+        }
+    }
+
+    public static MethodFactory createFactory(ClassLoader classLoader) {
+        if(reflection) {
+            return new ReflectionMethodFactory();
+        } else if(dumping) {
+            return new DumpingInvocationMethodFactory(dumpingPath);
+        } else {
+            return new InvocationMethodFactory((JRubyClassLoader)classLoader);
         }
     }
 }// MethodFactory

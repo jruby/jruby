@@ -62,7 +62,7 @@ public class CompilerHelpers {
         SinglyLinkedList cref = context.peekCRef();
         StaticScope scope = new LocalStaticScope(null, scopeNames);
         
-        MethodFactory factory = MethodFactory.createFactory();
+        MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method;
         
         if (name == "initialize" || visibility.isModuleFunction() || context.isTopLevel()) {

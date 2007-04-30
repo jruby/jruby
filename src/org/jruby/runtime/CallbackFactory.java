@@ -36,6 +36,7 @@ import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callback.ReflectionCallbackFactory;
 import org.jruby.runtime.callback.InvocationCallbackFactory;
 import org.jruby.runtime.callback.DumpingInvocationCallbackFactory;
+import org.jruby.util.JRubyClassLoader;
 
 /**
  * Helper class to build Callback method.
@@ -160,7 +161,18 @@ public abstract class CallbackFactory {
         } else if(dumping) {
             return new DumpingInvocationCallbackFactory(runtime, type, dumpingPath);
         } else {
-            return new InvocationCallbackFactory(runtime, type);
+            return new InvocationCallbackFactory(runtime, type, runtime.getJRubyClassLoader());
+        }
+    }
+
+    public static CallbackFactory createFactory(Ruby runtime, Class type, ClassLoader classLoader) {
+        if(reflection) {
+            return new ReflectionCallbackFactory(type);
+        } else if(dumping) {
+            return new DumpingInvocationCallbackFactory(runtime, type, dumpingPath);
+        } else {
+            // FIXME: No, I don't like it.
+            return new InvocationCallbackFactory(runtime, type, (JRubyClassLoader)classLoader);
         }
     }
 }

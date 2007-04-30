@@ -39,11 +39,13 @@ import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.JRubyClassLoader;
 
 public class InvocationCallbackFactory extends CallbackFactory implements Opcodes {
     private final static CodegenUtils cg = CodegenUtils.instance;
 
     private final Class type;
+    private final JRubyClassLoader classLoader;
     private final String typePath;
     private final Ruby runtime;
 
@@ -59,8 +61,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     private final static String IRUB = cg.p(RubyKernel.IRUBY_OBJECT);
     private final static String IRUB_ID = cg.ci(RubyKernel.IRUBY_OBJECT);
 
-    public InvocationCallbackFactory(Ruby runtime, Class type) {
+    public InvocationCallbackFactory(Ruby runtime, Class type, JRubyClassLoader classLoader) {
         this.type = type;
+        this.classLoader = classLoader;
         this.typePath = cg.p(type);
         this.runtime = runtime;
     }
@@ -116,7 +119,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private Class tryClass(String name) {
         try {
-            return Class.forName(name, true, runtime.getJRubyClassLoader());
+            return classLoader.loadClass(name);
         } catch (Exception e) {
             return null;
         }
@@ -169,7 +172,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.visitEnd();
         cw.visitEnd();
         byte[] code = cw.toByteArray();
-        return runtime.getJRubyClassLoader().defineClass(name, code);
+        return classLoader.defineClass(name, code);
     }
 
     public Callback getMethod(String method) {
@@ -458,7 +461,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     public CompiledBlockCallback getBlockCallback(String method) {
         String mname = type.getName() + "Block" + method + "xx1";
         String mnamePath = typePath + "Block" + method + "xx1";
-        synchronized (runtime.getJRubyClassLoader()) {
+        synchronized (classLoader) {
             Class c = tryClass(mname);
             try {
                 if (c == null) {

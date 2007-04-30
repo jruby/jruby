@@ -290,7 +290,7 @@ public final class Ruby {
             StandardASMCompiler compiler = new StandardASMCompiler(node);
             NodeCompilerFactory.getCompiler(node).compile(node, compiler);
 
-            Class scriptClass = compiler.loadClass(this);
+            Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
 
             Script script = (Script)scriptClass.newInstance();
             // FIXME: Pass something better for args and block here?

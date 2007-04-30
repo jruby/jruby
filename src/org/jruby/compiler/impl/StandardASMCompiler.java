@@ -144,12 +144,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         sourcename = "EVAL" + hashCode();
     }
     
-    public Class loadClass(Ruby runtime) throws ClassNotFoundException {
-        JRubyClassLoader jcl = runtime.getJRubyClassLoader();
+    public Class loadClass(JRubyClassLoader classLoader) throws ClassNotFoundException {
+        classLoader.defineClass(cg.c(classname), classWriter.toByteArray());
         
-        jcl.defineClass(cg.c(classname), classWriter.toByteArray());
-        
-        return jcl.loadClass(cg.c(classname));
+        return classLoader.loadClass(cg.c(classname));
     }
     
     public void writeClass(File destination) throws IOException {
@@ -227,6 +225,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         classWriter.visit(V1_4, ACC_PUBLIC + ACC_SUPER, classname, null, cg.p(Object.class), new String[] {cg.p(Script.class)});
         classWriter.visitSource(sourcename, null);
         
+        createClassInit();
         createConstructor();
     }
     
@@ -281,6 +280,31 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.aload(0);
         mv.invokespecial(cg.p(Object.class), "<init>",
                 cg.sig(Void.TYPE));
+        mv.voidreturn();
+        mv.end();
+    }
+    
+    private void createClassInit() {
+        ClassVisitor cv = getClassVisitor();
+
+        cv.visitField(ACC_STATIC | ACC_PRIVATE | ACC_FINAL, "$isClassLoaded", cg.ci(Boolean.TYPE), null, Boolean.FALSE);
+        cv.visitField(ACC_STATIC | ACC_PRIVATE | ACC_FINAL, "$class", cg.ci(Class.class), null, null);
+        
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC, "<clinit>", cg.sig(Void.TYPE), null, null));
+        mv.start();
+        
+        // This is a little hacky...since clinit recurses, set a boolean so we don't continue trying to load class
+        mv.getstatic(classname, "$isClassLoaded", cg.ci(Boolean.TYPE));
+        Label doNotLoadClass = new Label();
+        mv.ifne(doNotLoadClass);
+        
+        mv.ldc(Boolean.TRUE);
+        mv.putstatic(classname, "$isClassLoaded", cg.ci(Boolean.TYPE));
+        mv.ldc(cg.c(classname));
+        mv.invokestatic(cg.p(Class.class), "forName", cg.sig(Class.class, cg.params(String.class)));
+        mv.putstatic(classname, "$class", cg.ci(Class.class));
+        
+        mv.label(doNotLoadClass);
         mv.voidreturn();
         mv.end();
     }
@@ -1182,11 +1206,17 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     }
     
     private void getCallbackFactory() {
-        loadRuntime();
         SkinnyMethodAdapter mv = getMethodAdapter();
-        mv.ldc(classname);
-        mv.invokestatic(cg.p(Class.class), "forName", cg.sig(Class.class, cg.params(String.class)));
-        invokeIRuby("callbackFactory", cg.sig(CallbackFactory.class, cg.params(Class.class)));
+        loadRuntime();
+        getCompiledClass();
+        mv.dup();
+        mv.invokevirtual(cg.p(Class.class), "getClassLoader", cg.sig(ClassLoader.class));
+        mv.invokestatic(cg.p(CallbackFactory.class), "createFactory", cg.sig(CallbackFactory.class, cg.params(Ruby.class, Class.class, ClassLoader.class)));
+    }
+    
+    private void getCompiledClass() {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        mv.getstatic(classname, "$class", cg.ci(Class.class));
     }
     
     private void getRubyClass() {
@@ -1260,8 +1290,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         loadSelf();
         
         // load the class we're creating, for binding purposes
-        mv.ldc(classname.replace('/', '.'));
-        mv.invokestatic(cg.p(Class.class), "forName", cg.sig(Class.class, cg.params(String.class)));
+        getCompiledClass();
         
         mv.ldc(name);
         

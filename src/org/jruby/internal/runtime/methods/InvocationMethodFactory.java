@@ -39,6 +39,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
@@ -57,6 +58,15 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private final static String SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ")V";
     private final static String COMPILED_SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ci(SinglyLinkedList.class) + ci(StaticScope.class) + ")V";
 
+    private JRubyClassLoader classLoader;
+    
+    public InvocationMethodFactory() {
+    }
+    
+    public InvocationMethodFactory(JRubyClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
+    
     /**
      * Creates a class path name, from a Class.
      */
@@ -107,7 +117,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     private Class tryClass(Ruby runtime, String name) {
         try {
-            return Class.forName(name,true,runtime.getJRubyClassLoader());
+            if (classLoader == null) {
+                return Class.forName(name, true, runtime.getJRubyClassLoader());
+            } else {
+                return classLoader.loadClass(name);
+            }
         } catch(Exception e) {
             return null;
         }
@@ -118,7 +132,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.visitEnd();
         cw.visitEnd();
         byte[] code = cw.toByteArray();
-        return runtime.getJRubyClassLoader().defineClass(name, code);
+        if (classLoader == null) {
+            return runtime.getJRubyClassLoader().defineClass(name, code);
+        } else {
+            return classLoader.defineClass(name, code);
+        }
     }
 
     private String getReturnName(Class type, String method, Class[] args) throws Exception {

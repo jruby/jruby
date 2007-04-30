@@ -12,7 +12,7 @@ def compile_to_class(src)
   context = StandardASMCompiler.new(node)
   NodeCompilerFactory.getCompiler(node).compile(node, context)
 
-  context.loadClass(JRuby.runtime)
+  context.loadClass(JRuby.runtime.getJRubyClassLoader)
 end
 
 def compile_and_run(src)
