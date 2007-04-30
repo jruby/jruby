@@ -320,7 +320,8 @@
     </emma>
   </target>
 
-  <target name="test" depends="copy-test-files,instrument,run-junit,coverage-report"/>
+  <!-- This now has enabled the compiler by default; we may want to run both with and without compilation later -->
+  <target name="test" depends="copy-test-files,instrument,enable-compiler,run-junit,coverage-report"/>
 
   <target name="test-compiler" depends="copy-test-files,instrument,enable-compiler,run-junit,coverage-report"/>
   
