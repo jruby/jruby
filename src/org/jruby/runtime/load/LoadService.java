@@ -428,6 +428,7 @@ public class LoadService {
                         throw runtime.newIOErrorFromException(e);
                     }
                 }
+                System.err.println("looking in " + entry + " for " + name);
                 if (current.getJarEntry(name) != null) {
                     try {
                         return new LoadServiceResource(new URL("jar:file:" + entry.substring(4) + "!/" + name), entry + name);
