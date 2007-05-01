@@ -105,23 +105,21 @@ if [ -z "$JRUBY_BASE" ] ; then
   JRUBY_BASE="$JRUBY_HOME"
 fi
 
-# ----- Execute The Requested Command -----------------------------------------
+# ----- Parse additional java arguments ------------------------------------
 
-DEBUG=""
-if [ "$1" = "JAVA_DEBUG" ]; then
-  DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=y"
-  shift
-else
-  if [ "$1" = "JPROFILER" ]; then
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$JPROFILER_PATH/bin/linux-x86
-    DEBUG="-Xrunjprofiler:port=8000,noexit -Xbootclasspath/a:/$JPROFILER_PATH/bin/agent.jar"
+parse_args() {
+while [ $# -gt 0 ] ; do
+    case "$1" in
+        -J*) jopt=`expr "X-$1" : 'X--J\(.*\)'`; jargs="$jargs $jopt";;
+        *) args="$args $1" ;;
+    esac
     shift
-  else if [ "$1" = "HPROF" ]; then
-      DEBUG="-Xrunhprof:cpu=samples"
-      shift
-  fi
-  fi
-fi
+done
+} # parse_args()
+
+parse_args "$@"
+
+# ----- Execute The Requested Command -----------------------------------------
 
 if $cygwin; then
   JAVA_HOME=`cygpath --mixed "$JAVA_HOME"`
@@ -136,14 +134,9 @@ if [ "$1" = "EN_US" ]; then
   shift
 fi
 
-if [ "$1" = "SERVER" ]; then
-  DEBUG="-server"
-  shift
-fi
-
-exec "$JAVA_CMD" $JAVA_OPTS $DEBUG -Xmx256m -Xss1024k -da -classpath "$CP"	\
+exec "$JAVA_CMD" -Xmx256m -Xss1024k -da $jargs $JAVA_OPTS -classpath "$CP"	\
   "-Djruby.base=$JRUBY_BASE" "-Djruby.home=$JRUBY_HOME"				\
   "-Djruby.lib=$JRUBY_BASE/lib" -Djruby.script=jruby				\
   "-Djruby.shell=$JRUBY_SHELL" $EN_US 						\
-  org.jruby.Main $JRUBY_OPTS "$@" 
+  org.jruby.Main $JRUBY_OPTS $args 
 
