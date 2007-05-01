@@ -397,6 +397,19 @@
         <exclude name="lib/ant.jar"/>
       </tarfileset>
     </tar>
+    <zip destfile="jruby-bin-${version.jruby}.zip">
+      <zipfileset dir="." filemode="755" prefix="jruby-${version.jruby}">
+        <include name="bin/**"/>
+      </zipfileset>
+      <zipfileset dir="." prefix="jruby-${version.jruby}">
+        <include name="lib/**"/>
+        <include name="samples/**"/>
+        <include name="docs/**"/>
+        <include name="COPYING*"/>
+        <include name="README"/>
+        <exclude name="lib/ant.jar"/>
+      </zipfileset>
+    </zip>
   </target>
 
   <target name="dist-src" depends="jar">
@@ -420,6 +433,26 @@
         <exclude name="lib/jruby.jar"/>
       </tarfileset>
     </tar>
+    <zip destfile="jruby-src-${version.jruby}.zip">
+      <zipfileset dir="." filemode="755" prefix="jruby-${version.jruby}">
+        <include name="bin/**"/>
+      </zipfileset>
+      <zipfileset dir="." prefix="jruby-${version.jruby}">
+        <include name="lib/**"/>
+        <include name="samples/**"/>
+        <include name="docs/**"/>
+        <include name="src/**"/>
+        <include name="test/**"/>
+        <include name="build.xml"/>
+        <include name="build-config.xml"/>
+        <include name="COPYING*"/>
+        <include name="README"/>
+        <include name=".project"/>
+        <include name=".classpath"/>
+        <include name="default.build.properties"/>
+        <exclude name="lib/jruby.jar"/>
+      </zipfileset>
+    </zip>
   </target>
 
   <target name="dist" depends="dist-bin,dist-src"/>
