@@ -463,11 +463,16 @@ public class RubyDir extends RubyObject {
 	}
 	
 	public static RubyString getHomeDirectoryPath(IRubyObject recv) {
-		RubyHash hash = (RubyHash) recv.getRuntime().getObject().getConstant("ENV_JAVA");
-		IRubyObject home = hash.aref(recv.getRuntime().newString("user.home"));
-		
+        RubyHash systemHash = (RubyHash) recv.getRuntime().getObject().getConstant("ENV_JAVA");
+        RubyHash envHash = (RubyHash) recv.getRuntime().getObject().getConstant("ENV");
+        IRubyObject  home = envHash.aref(recv.getRuntime().newString("HOME"));
+
+        if (home == null || home.isNil()) {
+            home = systemHash.aref(recv.getRuntime().newString("user.home"));
+        }
+        
 		if (home == null || home.isNil()) {
-			home = hash.aref(recv.getRuntime().newString("LOGDIR"));
+			home = envHash.aref(recv.getRuntime().newString("LOGDIR"));
 		}
 		
 		if (home == null || home.isNil()) {

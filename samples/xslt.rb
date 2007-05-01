@@ -1,9 +1,10 @@
-require 'java'
+include Java
 require 'optparse'
 require 'ostruct'
 
-FileOutputStream = java.io.FileOutputStream
-StreamSource = javax.xml.transform.stream.StreamSource
+import java.io.FileOutputStream
+import javax.xml.transform.stream.StreamSource
+import javax.xml.transform.TransformerFactory
 
 class XSLTOptions
   def self.parse(args)
@@ -21,7 +22,6 @@ class XSLTOptions
 	  options.parameters[name] = value
 	end
       end
-
     end  
     opts.parse!(args)
     options
@@ -37,12 +37,12 @@ end
 
 document = StreamSource.new ARGV[0]
 stylesheet = StreamSource.new ARGV[1]
-output = ARGV.length == 2 ? java.lang.System::out : FileOutputStream.new(ARGV[2])
+output = ARGV.length < 3 ? java.lang.System::out : FileOutputStream.new(ARGV[2])
 result = javax.xml.transform.stream.StreamResult.new output
 
 begin
-  transformer = javax.xml.transform.TransformerFactory.newInstance.newTransformer(stylesheet)
-  options.parameters.each {|name, value| transformer.setParameter name, value }
+  transformer = TransformerFactory.newInstance.newTransformer(stylesheet)
+  options.parameters.each {|name, value| transformer.setParameter(name, value) }
   transformer.transform(document, result)
 rescue java.lang.Exception => e
   puts e
