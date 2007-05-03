@@ -153,7 +153,6 @@ public class Main {
             out.println("    -d              set debugging flags (set $DEBUG to true)");
             out.println("    -v              print version number, then turn on verbose mode");
             out.println("    -O              run with ObjectSpace disabled (improves performance)");
-            out.println("    -J<option>      pass <option> to the underlying JVM");
             out.println("    -S cmd          run the specified command in JRuby's bin dir");
             out.println("    -C              pre-compile scripts before running (EXPERIMENTAL)");
             out.println("    -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)");
