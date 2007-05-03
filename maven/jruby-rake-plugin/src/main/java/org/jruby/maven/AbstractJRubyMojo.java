@@ -147,7 +147,7 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
             Object elem = i.next();
             String path;
             if (elem instanceof Artifact) {
-                Artifact a = (Artifact) i.next();
+                Artifact a = (Artifact) elem;
                 File file = a.getFile();
                 if (file == null) {
                     throw new DependencyResolutionRequiredException(a);
