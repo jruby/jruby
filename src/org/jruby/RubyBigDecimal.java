@@ -496,6 +496,43 @@ public class RubyBigDecimal extends RubyNumeric {
         return in;
     }
 
+    private String toSpecialString(BigDecimal abs) {
+      if (abs.compareTo(BigDecimal.ZERO)== 0) {
+        return "0.0";
+      }
+      //TODO: match the MRI code below!
+      //TODO: refactor the overly-long branches in to_s so we can reuse the sign processing here
+      return null;
+//      if(VpIsNaN(a)) {
+//          sprintf(psz,SZ_NaN);
+//          return 1;
+//      }
+//
+//      if(VpIsPosInf(a)) {
+//          if(fPlus==1) {
+//             *psz++ = ' ';
+//          } else if(fPlus==2) {
+//             *psz++ = '+';
+//          }
+//          sprintf(psz,SZ_INF);
+//          return 1;
+//      }
+//      if(VpIsNegInf(a)) {
+//          sprintf(psz,SZ_NINF);
+//          return 1;
+//      }
+//      if(VpIsZero(a)) {
+//          if(VpIsPosZero(a)) {
+//              if(fPlus==1)      sprintf(psz, " 0.0");
+//              else if(fPlus==2) sprintf(psz, "+0.0");
+//              else              sprintf(psz, "0.0");
+//          } else    sprintf(psz, "-0.0");
+//          return 1;
+//      }
+//      return 0;
+
+    }
+
     public IRubyObject to_s(IRubyObject[] args) {
         boolean engineering = true;
         boolean pos_sign = false;
@@ -528,9 +565,14 @@ public class RubyBigDecimal extends RubyNumeric {
         }
 
         String out = null;
+        BigDecimal abs = value.abs();
+        String unscaled = abs.unscaledValue().toString();
+
+        //not beautiful, but parallel to MRI's VpToSpecialString
+        if (null != (out = toSpecialString(abs))) {
+          return getRuntime().newString(out);
+        }
         if(engineering) {
-            BigDecimal abs = value.abs();
-            String unscaled = abs.unscaledValue().toString();
             int exponent = exp();
             int signum = value.signum();
             StringBuffer build = new StringBuffer();
@@ -559,8 +601,6 @@ public class RubyBigDecimal extends RubyNumeric {
             build.append("E").append(exponent);
             out = build.toString();
         } else {
-            BigDecimal abs = value.abs();
-            String unscaled = abs.unscaledValue().toString();
             int ix = abs.toString().indexOf('.');
             String whole = unscaled;
             String after = null;
