@@ -497,7 +497,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private String toSpecialString(BigDecimal abs) {
-      if (abs.compareTo(BigDecimal.ZERO)== 0) {
+      if (abs.compareTo(BigDecimal.valueOf(0))== 0) {
         return "0.0";
       }
       //TODO: match the MRI code below!
