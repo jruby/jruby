@@ -8,7 +8,7 @@ import org.apache.tools.ant.taskdefs.Java;
  */
 public class JRubyMojo extends AbstractJRubyMojo {
     /**
-     * @parameter
+     * @parameter expression="${jruby.args}"
      */
     protected String args = null;
 

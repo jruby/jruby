@@ -3,7 +3,6 @@ package org.jruby.maven;
 import org.apache.maven.plugin.AbstractMojo;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -24,8 +23,12 @@ import org.codehaus.plexus.util.StringUtils;
 
 /**
  * Base for all JRuby mojos.
+ *
+ * @requiresDependencyResolution compile
  */
 public abstract class AbstractJRubyMojo extends AbstractMojo {
+
+    protected boolean shouldFork = true;
 
     /**
      * @parameter expression="${project}"
@@ -44,13 +47,22 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
     protected String jrubyHome;
 
     /**
+     * The project compile classpath.
+     *
+     * @parameter default-value="${project.compileClasspathElements}"
+     * @required
+     * @readonly
+     */
+    private List compileClasspathElements;
+
+    /**
      * The plugin dependencies.
      *
      * @parameter expression="${plugin.artifacts}"
      * @required
      * @readonly
      */
-    private List artifacts;
+    private List pluginArtifacts;
 
     protected Java jruby(String[] args) throws MojoExecutionException {
         launchDirectory.mkdirs();
@@ -65,11 +77,23 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
         java.setProject(project);
         java.setClassname("org.jruby.Main");
         java.setFailonerror(true);
-        java.setFork(true);
-        java.setDir(launchDirectory);
 
-        Argument arg = java.createJvmarg();
-        arg.setValue("-Xmx256m");
+        Path p;
+        Argument arg;
+
+        if (shouldFork) {
+            java.setFork(true);
+            java.setDir(launchDirectory);
+
+            arg = java.createJvmarg();
+            arg.setValue("-Xmx256m");
+
+            Variable classpath = new Variable();
+            p = (Path) project.getReference("maven.plugin.classpath");
+            classpath.setKey("JRUBY_PARENT_CLASSPATH");
+            classpath.setValue(p.toString());
+            java.addEnv(classpath);
+        }
 
         if (jrubyHome != null) {
             Variable v = new Variable();
@@ -78,14 +102,10 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
             java.addSysproperty(v);
         }
 
-        Path p = java.createClasspath();
+        p = java.createClasspath();
         p.setRefid(new Reference("maven.plugin.classpath"));
-
-        Variable classpath = new Variable();
-        p = (Path) project.getReference("maven.plugin.classpath");
-        classpath.setKey("JRUBY_PARENT_CLASSPATH");
-        classpath.setValue(p.toString());
-        java.addEnv(classpath);
+        p = java.createClasspath();
+        p.setRefid(new Reference("maven.compile.classpath"));
 
         for (int i = 0; i < args.length; i++) {
             arg = java.createArg();
@@ -115,23 +135,35 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
         Project project = new Project();
         project.setBaseDir(mavenProject.getBasedir());
         project.addBuildListener(new LogAdapter());
+        addReference(project, "maven.compile.classpath", compileClasspathElements);
+        addReference(project, "maven.plugin.classpath", pluginArtifacts);
+        return project;
+    }
+
+    protected void addReference(Project project, String reference, List artifacts) throws DependencyResolutionRequiredException {
         List list = new ArrayList(artifacts.size());
 
         for (Iterator i = artifacts.iterator(); i.hasNext();) {
-            Artifact a = (Artifact) i.next();
-            File file = a.getFile();
-            if (file == null) {
-                throw new DependencyResolutionRequiredException(a);
+            Object elem = i.next();
+            String path;
+            if (elem instanceof Artifact) {
+                Artifact a = (Artifact) i.next();
+                File file = a.getFile();
+                if (file == null) {
+                    throw new DependencyResolutionRequiredException(a);
+                }
+                path = file.getPath();
+            } else {
+                path = elem.toString();
             }
-            list.add(file.getPath());
+            list.add(path);
         }
 
         Path p = new Path(project);
         p.setPath(StringUtils.join(list.iterator(), File.pathSeparator));
-        project.addReference("maven.plugin.classpath", p);
-        return project;
+        project.addReference(reference, p);        
     }
-
+    
     public class LogAdapter implements BuildListener {
         public void buildStarted(BuildEvent event) {
             log(event);

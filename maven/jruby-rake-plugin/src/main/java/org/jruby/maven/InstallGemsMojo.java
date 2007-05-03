@@ -8,7 +8,7 @@ import org.apache.maven.plugin.MojoExecutionException;
  */
 public class InstallGemsMojo extends AbstractJRubyMojo {
     /**
-     * @parameter
+     * @parameter expression="${jruby.gems}"
      */
     private String gems = null;
 

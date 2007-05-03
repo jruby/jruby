@@ -14,7 +14,7 @@ import org.apache.tools.ant.taskdefs.Java;
  */
 public class RakeMojo extends AbstractJRubyMojo {
     /**
-     * @parameter
+     * @parameter expression="${jruby.rakefile}"
      */
     private String rakefile = null;
     
@@ -30,7 +30,7 @@ public class RakeMojo extends AbstractJRubyMojo {
     private String script = null;
 
     /**
-     * @parameter
+     * @parameter expression="${jruby.rake.args}"
      */
     private String args = null;
 
