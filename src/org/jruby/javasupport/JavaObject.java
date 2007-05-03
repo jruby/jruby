@@ -127,7 +127,7 @@ public class JavaObject extends RubyObject {
 
     public IRubyObject to_s() {
         return RubyString.newUnicodeString(getRuntime(),
-           value == null ? "null" : value.toString());
+           value == null || value.toString() == null ? "" : value.toString());
     }
 
     public IRubyObject equal(IRubyObject other) {
