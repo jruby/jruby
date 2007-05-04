@@ -254,7 +254,7 @@ public class LoadService {
         }
 
         library = tryLoadExtension(library,file);
-        
+
         // no library or extension found, try to load directly as a class
         Script script = null;
         if (library == null) {
@@ -291,6 +291,10 @@ public class LoadService {
             library.load(runtime);
             return true;
         } catch (Exception e) {
+            if(library instanceof JarredScript && file.endsWith(".jar")) {
+                return true;
+            }
+
             loadedFeaturesInternal.remove(loadName);
             firstLineLoadedFeatures.remove(file);
             synchronized(loadedFeatures) {
@@ -428,7 +432,7 @@ public class LoadService {
                         throw runtime.newIOErrorFromException(e);
                     }
                 }
-                System.err.println("looking in " + entry + " for " + name);
+
                 if (current.getJarEntry(name) != null) {
                     try {
                         return new LoadServiceResource(new URL("jar:file:" + entry.substring(4) + "!/" + name), entry + name);
@@ -528,6 +532,7 @@ public class LoadService {
                 library = new ClassExtensionLibrary(theClass);
             } catch(Exception ee) {
                 library = null;
+                runtime.getGlobalVariables().set("$!", runtime.getNil());
             }
         }
         
