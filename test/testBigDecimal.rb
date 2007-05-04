@@ -95,17 +95,3 @@ test_equal 1.0-one, 0.0
 test_equal("1.0", BigDecimal.new('1.0').to_s('F'))
 test_equal("0.0", BigDecimal.new('0.0').to_s)
 
-test_equal(BigDecimal("2"), BigDecimal("1.5").round)
-test_equal(BigDecimal("15"), BigDecimal("15").round)
-test_equal(BigDecimal("20"), BigDecimal("15").round(-1))
-test_equal(BigDecimal("0"), BigDecimal("15").round(-2))
-test_equal(BigDecimal("15.99"), BigDecimal("15.993").round(2))
-
-test_equal(BigDecimal("1"), BigDecimal("1.8").round(0, BigDecimal::ROUND_DOWN))
-test_equal(BigDecimal("2"), BigDecimal("1.2").round(0, BigDecimal::ROUND_UP))
-test_equal(BigDecimal("-1"), BigDecimal("-1.5").round(0, BigDecimal::ROUND_CEILING))
-test_equal(BigDecimal("-2"), BigDecimal("-1.5").round(0, BigDecimal::ROUND_FLOOR))
-test_equal(BigDecimal("-2"), BigDecimal("-1.5").round(0, BigDecimal::ROUND_FLOOR))
-test_equal(BigDecimal("1"), BigDecimal("1.5").round(0, BigDecimal::ROUND_HALF_DOWN))
-test_equal(BigDecimal("2"), BigDecimal("1.5").round(0, BigDecimal::ROUND_HALF_EVEN))
-test_equal(BigDecimal("2"), BigDecimal("2.5").round(0, BigDecimal::ROUND_HALF_EVEN))
