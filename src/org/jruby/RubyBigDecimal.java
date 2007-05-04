@@ -27,7 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.math.BigDecimal;
+import java.math.*;
+
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
@@ -453,16 +454,21 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public IRubyObject round(IRubyObject[] args) {
-        System.err.println("unimplemented: round");
-        // TODO: implement
-        return this;
+      int scale = args.length > 0 ? num2int(args[0]) : 0;
+      int mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(args[1]) : BigDecimal.ROUND_HALF_UP;
+      return new RubyBigDecimal(getRuntime(), value.setScale(scale, mode));
     }
 
-    public IRubyObject sign() {
-        System.err.println("unimplemented: sign");
-        // TODO: implement correctly
-        return getRuntime().newFixnum(value.signum());
-    }
+  //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are
+  private int javaRoundingModeFromRubyRoundingMode(IRubyObject arg) {
+    return num2int(arg);
+  }
+
+  public IRubyObject sign() {
+      System.err.println("unimplemented: sign");
+      // TODO: implement correctly
+      return getRuntime().newFixnum(value.signum());
+  }
 
     public IRubyObject split() {
         System.err.println("unimplemented: split");
