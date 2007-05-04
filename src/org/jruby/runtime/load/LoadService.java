@@ -49,6 +49,8 @@ import java.util.regex.Pattern;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyHash;
+import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Constants;
@@ -148,6 +150,17 @@ public class LoadService {
         for (Iterator iter = additionalDirectories.iterator(); iter.hasNext();) {
             addPath((String) iter.next());
         }
+
+        // add $RUBYLIB paths
+       RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
+       RubyString env_rubylib = runtime.newString("RUBYLIB");
+       if (env.has_key(env_rubylib).isTrue()) {
+           String rubylib = env.aref(env_rubylib).toString();
+           String[] paths = rubylib.split(":");
+           for (int i = 0; i < paths.length; i++) {
+               addPath(paths[i]);
+           }
+       }
 
         // wrap in try/catch for security exceptions in an applet
         if (!Ruby.isSecurityRestricted()) {
