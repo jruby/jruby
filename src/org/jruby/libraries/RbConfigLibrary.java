@@ -114,6 +114,7 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "datadir", new NormalizedFile(runtime.getJRubyHome(), "share").getAbsolutePath());
         setConfig(configHash, "mandir", new NormalizedFile(runtime.getJRubyHome(), "man").getAbsolutePath());
         setConfig(configHash, "sysconfdir", new NormalizedFile(runtime.getJRubyHome(), "etc").getAbsolutePath());
+        setConfig(configHash, "DLEXT", "jar");
 
         if (isWindows()) {
             setConfig(configHash, "EXEEXT", ".exe");

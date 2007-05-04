@@ -1,6 +1,5 @@
 grammar Ruby;
 
-class DefaultRubyParser extends Parser;
 options {
         importVocab=Ruby;
 }
