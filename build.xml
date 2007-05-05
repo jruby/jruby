@@ -321,15 +321,12 @@
   </target>
 
   <!-- This now has enabled the compiler by default; we may want to run both with and without compilation later -->
-  <target name="test" depends="copy-test-files,instrument,enable-compiler,run-junit,coverage-report"/>
+  <target name="test" depends="copy-test-files,instrument,run-junit-compiled,run-junit-interpreted,coverage-report"/>
 
-  <target name="test-compiler" depends="copy-test-files,instrument,enable-compiler,run-junit,coverage-report"/>
+  <target name="test-compiled" depends="copy-test-files,run-junit-compiled"/>
+  <target name="test-interpreted" depends="copy-test-files,run-junit-interpreted"/>
   
-  <target name="enable-compiler">
-      <property name="jruby.jit.enabled" value="true"/>
-  </target>
-  
-  <target name="run-junit" description="runs junit tests">
+  <target name="run-junit-interpreted" description="runs junit tests">
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
     <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="384M">
       <classpath>
@@ -345,7 +342,38 @@
       <sysproperty key="jruby.base" value="${basedir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.jit.enabled" value="${jruby.jit.enabled}"/>
+      <sysproperty key="jruby.jit.enabled" value="false"/>
+      <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
+      <sysproperty key="emma.coverage.out.merge" value="true" />
+
+      <formatter type="xml"/>
+      <formatter type="brief" usefile="false"/>
+
+      <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}"/>
+      <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}"/>
+      <test name="org.jruby.test.TestUnitTestSuite" todir="${test.results.dir}"/>
+      <test name="org.jvyamlb.YAMLLoadTest" todir="${test.results.dir}"/>
+      <test name="org.jvyamlb.YAMLDumpTest" todir="${test.results.dir}"/>
+    </junit>
+  </target>
+  
+  <target name="run-junit-compiled" description="runs junit tests">
+    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
+    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="384M">
+      <classpath>
+        <pathelement location="${jruby.instrumented.classes.dir}" />
+        <path refid="build.classpath"/>
+        <pathelement path="${java.class.path}"/>
+        <pathelement path="${lib.dir}/jruby.jar"/>
+        <pathelement location="${test.classes.dir}"/>
+        <pathelement path="${test.dir}/requireTest.jar"/>
+        <pathelement location="${test.dir}"/>
+      </classpath>
+      <sysproperty key="java.awt.headless" value="true"/>
+      <sysproperty key="jruby.base" value="${basedir}"/>
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      <sysproperty key="jruby.lib" value="${lib.dir}"/>
+      <sysproperty key="jruby.jit.enabled" value="true"/>
       <sysproperty key="jruby.jit.threshold" value="0"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
