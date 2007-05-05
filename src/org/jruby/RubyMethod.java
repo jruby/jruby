@@ -141,7 +141,7 @@ public class RubyMethod extends RubyObject {
                 if (je.getJumpType() == JumpException.JumpType.BreakJump) {
                     return (IRubyObject) je.getValue();
                 } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                    return (IRubyObject) je.getTarget();
+                    return (IRubyObject) je.getValue();
                 } else if (je.getJumpType() == JumpException.JumpType.RetryJump) {
                     // Execute iterateMethod again.
                 } else {
