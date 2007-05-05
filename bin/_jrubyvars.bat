@@ -53,7 +53,7 @@ rem set _STARTJAVA=start "%JAVA_HOME%\bin\java"
 set _STARTJAVA="%JAVA_HOME%\bin\%JAVA_COMMAND%"
 :gotTitle
 
-set _VM_OPTS=-Xmx256m -Xss1024k -da
+set _VM_OPTS=-Xmx256m -Xss1024k -Xverify:none -da
 set _RUNJAVA="%JAVA_HOME%\bin\java"
 
 rem ----- Set Up The Runtime Classpath ----------------------------------------
