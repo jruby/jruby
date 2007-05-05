@@ -66,4 +66,13 @@ class TestStringPrintf < Test::Unit::TestCase
     assert_equal("  nil", "%5p" % nil)
   end
 
+  def strangePrintf
+    game = '41181 jpa:awh'
+    opponent = game.scan("jpa")[0]
+    sprintf "%s", opponent
+  end
+
+  def testStrangePrintf
+    assert_equal('jpa', strangePrintf)
+  end
 end

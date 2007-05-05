@@ -499,7 +499,7 @@ public class Sprintf {
                     if (arg instanceof RubyString) {
                         ByteList bytes = ((RubyString)arg).getByteList();
                         if (bytes.length() == 1) {
-                            c = bytes.unsafeBytes()[0];
+                            c = bytes.unsafeBytes()[bytes.begin()];
                         } else {
                             raiseArgumentError(args,"%c requires a character");
                         }
@@ -546,14 +546,14 @@ public class Sprintf {
                     if ((flags & FLAG_WIDTH) != 0 && width > len) {
                         width -= len;
                         if ((flags & FLAG_MINUS) != 0) {
-                            buf.write(bytes.unsafeBytes(),0,len);
+                            buf.write(bytes.unsafeBytes(),bytes.begin(),len);
                             buf.fill(' ',width);
                         } else {
                             buf.fill(' ',width);
-                            buf.write(bytes.unsafeBytes(),0,len);
+                            buf.write(bytes.unsafeBytes(),bytes.begin(),len);
                         }
                     } else {
-                        buf.write(bytes.unsafeBytes(),0,len);
+                        buf.write(bytes.unsafeBytes(),bytes.begin(),len);
                     }
                     offset++;
                     incomplete = false;
