@@ -6,6 +6,8 @@ module JavaUtilities
   def JavaUtilities.setup_java_subclass(subclass, java_class)
     # add new class-variable to hold the JavaProxyClass instance
     subclass.module_eval do
+      #want this var defined as a double-check in proxy generation
+      @java_proxy_class = nil
       class << self
         attr :java_proxy_class, true
         def java_interfaces
@@ -15,8 +17,7 @@ module JavaUtilities
     end
 
     subclass.send(:define_method, "__jcreate!") {|*args|
-      self.class.java_proxy_class ||= Java::JavaProxyClass.get_with_class(self.java_class,
-        self.class.java_interfaces,self.class)
+      self.class.java_proxy_class ||= Java::JavaProxyClass.get_with_class(self.class)
       constructors = self.class.java_proxy_class.constructors.select {|c| c.arity == args.length }
       raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
       args.collect! { |v| Java.ruby_to_java(v) }

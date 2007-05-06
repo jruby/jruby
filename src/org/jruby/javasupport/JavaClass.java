@@ -1084,11 +1084,11 @@ public class JavaClass extends JavaObject {
     
     private static final Callback __jsend_method = new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                String methodSymbol = args[0].asSymbol();
-                RubyMethod method = (org.jruby.RubyMethod)self.getMetaClass().newMethod(self, methodSymbol, true);
-                int v = RubyNumeric.fix2int(method.arity());
-                // TODO: why twice?
                 String name = args[0].asSymbol();
+                
+                // FIXME: why newMethod ?
+                RubyMethod method = (org.jruby.RubyMethod)self.getMetaClass().newMethod(self, name, true);
+                int v = RubyNumeric.fix2int(method.arity());
 
                 IRubyObject[] newArgs = new IRubyObject[args.length - 1];
                 System.arraycopy(args, 1, newArgs, 0, newArgs.length);

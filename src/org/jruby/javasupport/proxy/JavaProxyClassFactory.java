@@ -43,7 +43,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -112,7 +111,7 @@ public class JavaProxyClassFactory {
     // methods/fields) will have them organized even further. So collectMethods here can
     // just lookup the overridden methods in the JavaClass map, should be much faster.
     static JavaProxyClass newProxyClass(ClassLoader loader,
-            String targetClassName, Class superClass, Class[] interfaces, TreeSet names)
+            String targetClassName, Class superClass, Class[] interfaces, Set names)
             throws InvocationTargetException {
         if (loader == null) {
             loader = JavaProxyClassFactory.class.getClassLoader();
@@ -135,9 +134,7 @@ public class JavaProxyClassFactory {
         // add (potentially) overridden names to the key.
         // TODO: see note above re: optimizations
         if (names != null) {
-            for (Iterator iter = names.iterator(); iter.hasNext(); ) {
-                key.add(iter.next());
-            }
+            key.addAll(names);
         }
 
         JavaProxyClass proxyClass = (JavaProxyClass) proxies.get(key);

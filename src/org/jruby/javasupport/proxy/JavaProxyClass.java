@@ -42,7 +42,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.Set;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -50,6 +50,8 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyNil;
+import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaObject;
@@ -97,7 +99,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     public static JavaProxyClass getProxyClass(Ruby runtime, Class superClass,
-            Class[] interfaces, TreeSet names) throws InvocationTargetException {
+            Class[] interfaces, Set names) throws InvocationTargetException {
         Object save = runtimeTLS.get();
         runtimeTLS.set(runtime);
         try {
@@ -482,7 +484,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         result.getMetaClass().defineFastMethod("get", 
                 callbackFactory.getFastSingletonMethod("get", JavaClass.class));
         result.getMetaClass().defineFastMethod("get_with_class", 
-                callbackFactory.getFastSingletonMethod("get_with_class", JavaClass.class, IRubyObject.class, RubyClass.class));
+                callbackFactory.getFastSingletonMethod("get_with_class", RubyClass.class));
 
         return result;
     }
@@ -509,65 +511,164 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         EXCLUDE_MODULES.add("Enumerable");
     }
 
-    public static RubyObject get_with_class(IRubyObject recv, JavaClass type, IRubyObject ifcArray, RubyClass clazz) {
+    private static final HashSet EXCLUDE_METHODS = new HashSet();
+    static {
+        EXCLUDE_METHODS.add("class");
+        EXCLUDE_METHODS.add("finalize");
+        EXCLUDE_METHODS.add("initialize");
+        EXCLUDE_METHODS.add("java_class");
+        EXCLUDE_METHODS.add("java_object");
+        EXCLUDE_METHODS.add("__jcreate!");
+        EXCLUDE_METHODS.add("__jsend!");
+    }
+
+    public static RubyObject get_with_class(IRubyObject recv, RubyClass clazz) {
         Ruby runtime = recv.getRuntime();
-        Map methods;
-        TreeSet names = new TreeSet(); // need names ordered for key generation later
-        Class[] interfaces;
         
         // Let's only generate methods for those the user may actually 
         // intend to override.  That includes any defined in the current
-        // class, but none from any ancestor class. Methods defined in
-        // mixins will be considered intentionally overridden, except those
-        // from Kernel, Java, and JavaProxyMethods.
-        // TODO: may want to exclude Enumerable, others?
-        synchronized(methods = clazz.getMethods()) {
-            for (Iterator iter = methods.keySet().iterator(); iter.hasNext(); ) {
-                names.add(iter.next());
-            }
-        }
+        // class, and any ancestors that are also JavaProxyClasses (but none
+        // from any other ancestor classes). Methods defined in mixins will
+        // be considered intentionally overridden, except those from Kernel,
+        // Java, and JavaProxyMethods, as well as Enumerable. 
+        // TODO: may want to exclude other common mixins?
+
+        JavaClass javaClass = null;
+        Set names = new HashSet(); // need names ordered for key generation later
+        List interfaceList = new ArrayList();
+
         List ancestors = clazz.getAncestorList();
+        boolean skipRemainingClasses = false;
         for (Iterator iter = ancestors.iterator(); iter.hasNext(); ) {
             RubyModule ancestor = (RubyModule)iter.next();
-            if (ancestor instanceof RubyClass ||
-                    EXCLUDE_MODULES.contains(ancestor.getName())) {
-                continue;
-            }
-            synchronized(methods = ancestor.getMethods()) {
-                for (Iterator meths = methods.keySet().iterator(); meths.hasNext(); ) {
-                    names.add(meths.next());
+            if (ancestor instanceof RubyClass) {
+                if (skipRemainingClasses) continue;
+                Map vars = ancestor.getInstanceVariables();
+                // we only collect methods and interfaces for 
+                // user-defined proxy classes.
+                if (!vars.containsKey("@java_proxy_class")) {
+                    skipRemainingClasses = true;
+                    continue;
+                }
+
+                // get JavaClass if this is the new proxy class; verify it
+                // matches if this is a superclass proxy.
+                IRubyObject var = (IRubyObject)vars.get("@java_class");
+                if (var == null) {
+                    throw runtime.newTypeError(
+                            "no java_class defined for proxy (or ancestor): " + ancestor);
+                } else if (!(var instanceof JavaClass)) {
+                    throw runtime.newTypeError(
+                            "invalid java_class defined for proxy (or ancestor): " +
+                            ancestor + ": " + var);
+                }
+                if (javaClass == null) {
+                    javaClass = (JavaClass)var;
+                } else if (javaClass != var) {
+                    throw runtime.newTypeError(
+                            "java_class defined for " + clazz + " (" + javaClass +
+                            ") does not match java_class for ancestor " + ancestor +
+                            " (" + var + ")");
+                }
+                // get any included interfaces
+                var = (IRubyObject)vars.get("@java_interfaces");
+                if (var != null && !(var instanceof RubyNil)) {
+                    if (!(var instanceof RubyArray)) {
+                        throw runtime.newTypeError(
+                                "invalid java_interfaces defined for proxy (or ancestor): " +
+                                ancestor + ": " + var);
+                    }
+                    RubyArray ifcArray = (RubyArray)var;
+                    int size = ifcArray.size();
+                    for (int i = size; --i >= 0; ) {
+                        IRubyObject ifc = ifcArray.eltInternal(i);
+                        if (!(ifc instanceof JavaClass)) {
+                            throw runtime.newTypeError(
+                                "invalid java interface defined for proxy (or ancestor): " +
+                                ancestor + ": " + ifc);
+                        }
+                        Class interfaceClass = ((JavaClass)ifc).javaClass();
+                        if (!interfaceClass.isInterface()) {
+                            throw runtime.newTypeError(
+                                    "invalid java interface defined for proxy (or ancestor): " +
+                                    ancestor + ": " + ifc + " (not an interface)");
+                        }
+                        if (!interfaceList.contains(interfaceClass)) {
+                            interfaceList.add(interfaceClass);
+                        }
+                    }
+                }
+                // set this class's method names in var @__java_ovrd_methods if this
+                // is the new class; otherwise, get method names from there if this is
+                // a proxy superclass.
+                var = (IRubyObject)vars.get("@__java_ovrd_methods");
+                if (var == null) {
+                    // lock in the overridden methods for the new class, and any as-yet
+                    // uninstantiated ancestor class.
+                    Map methods;
+                    RubyArray methodNames;
+                    synchronized(methods = ancestor.getMethods()) {
+                        methodNames = RubyArray.newArrayLight(runtime,methods.size());
+                        for (Iterator meths = methods.keySet().iterator(); meths.hasNext(); ) {
+                            String methodName = (String)meths.next();
+                            if (!EXCLUDE_METHODS.contains(methodName)) {
+                                names.add(methodName);
+                                methodNames.add(runtime.newString(methodName));
+                            }
+                        }
+                    }
+                    // TODO: OK to just do a put here?
+                    ancestor.setInstanceVariable("@__java_ovrd_methods",methodNames);
+                } else {
+                    if (!(var instanceof RubyArray)) {
+                        throw runtime.newTypeError(
+                                "invalid @__java_ovrd_methods defined for proxy: " +
+                                ancestor + ": " + var);
+                    }
+                    RubyArray methodNames = (RubyArray)var;
+                    int size = methodNames.size();
+                    for (int i = size; --i >= 0; ) {
+                        IRubyObject methodName = methodNames.eltInternal(i);
+                        if (!(methodName instanceof RubyString)) {
+                            throw runtime.newTypeError(
+                                    "invalid method name defined for proxy (or ancestor): " +
+                                    ancestor + ": " + methodName);
+                        }
+                        names.add(methodName.asSymbol());
+                    }
+                }
+            } else if (!EXCLUDE_MODULES.contains(ancestor.getName())) {
+                Map methods;
+                synchronized(methods = ancestor.getMethods()) {
+                    for (Iterator meths = methods.keySet().iterator(); meths.hasNext(); ) {
+                        String methodName = (String)meths.next();
+                        if (!EXCLUDE_METHODS.contains(methodName)) {
+                            names.add(methodName);
+                        }
+                    }
                 }
             }
         }
 
-        if (ifcArray instanceof RubyArray) {
-            RubyArray ifcs = (RubyArray)ifcArray;
-            int size = ifcs.size();
-            interfaces = new Class[size];
-            for (int i = size; --i >= 0; ) {
-                IRubyObject ifc = ifcs.eltInternal(i);
-                if (!(ifc instanceof JavaClass)) {
-                    throw runtime.newArgumentError("unable to create proxy class for " + type.getValue() + " - invalid interface");
-                }
-                Class ifcClass = ((JavaClass)ifc).javaClass();
-                if (!ifcClass.isInterface()) {
-                    throw runtime.newArgumentError("unable to create proxy class for " + type.getValue() + " - invalid interface");
-                }
-                interfaces[i] = ifcClass;
-            }
-        } else {
-            interfaces = new Class[0];
+        if (javaClass == null) {
+            throw runtime.newArgumentError("unable to create proxy class: no java_class defined for " + clazz);
         }
         
+        int interfaceCount = interfaceList.size();
+        Class[] interfaces = new Class[interfaceCount];
+        for (int i = interfaceCount; --i >= 0; ) {
+            interfaces[i] = (Class)interfaceList.get(i);
+        }
+       
         try {
-            return getProxyClass(recv.getRuntime(), (Class) type.getValue(), interfaces, names);
+            return getProxyClass(recv.getRuntime(), javaClass.javaClass(), interfaces, names);
         } catch (Error e) {
-            RaiseException ex = recv.getRuntime().newArgumentError("unable to create proxy class for " + type.getValue() + " : " + e.getMessage());
+            RaiseException ex = recv.getRuntime().newArgumentError("unable to create proxy class for " + javaClass.getValue() + " : " + e.getMessage());
             //e.printStackTrace();
             ex.initCause(e);
             throw ex;
         } catch (InvocationTargetException e) {
-            RaiseException ex = recv.getRuntime().newArgumentError("unable to create proxy class for " + type.getValue() + " : " + e.getMessage());
+            RaiseException ex = recv.getRuntime().newArgumentError("unable to create proxy class for " + javaClass.getValue() + " : " + e.getMessage());
             //e.printStackTrace();
             ex.initCause(e);
             throw ex;

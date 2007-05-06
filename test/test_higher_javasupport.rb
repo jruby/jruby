@@ -568,4 +568,35 @@ class TestHigherJavasupport < Test::Unit::TestCase
   #     assert(m.updated)
   #   end
   # end
+  
+  class A < java.lang.Object
+    include org.jruby.javasupport.test.Interface1
+    
+    def method1
+    end
+  end
+  A.new
+  
+  class B < A
+  	include org.jruby.javasupport.test.Interface2
+  	
+  	def method2
+  	end
+  end
+  B.new
+  
+  class C < B
+  end
+  C.new
+ 
+  def test_interface_methods_seen
+     ci = org.jruby.javasupport.test.ConsumeInterfaces.new
+     ci.addInterface1(A.new)
+     ci.addInterface1(B.new)
+     ci.addInterface2(B.new)
+     ci.addInterface1(C.new)
+     ci.addInterface2(C.new)
+  	
+  end
 end
+
