@@ -440,13 +440,17 @@ public class ThreadContext {
     
     public boolean getConstantDefined(String name) {
         IRubyObject result = null;
+        IRubyObject undef = runtime.getUndef();
         
         // flipped from while to do to search current class first
         for (SinglyLinkedList cbase = peekCRef(); cbase != null; cbase = cbase.getNext()) {
-            result = ((RubyModule) cbase.getValue()).getConstantAt(name);
-            if (result != null || runtime.getLoadService().autoload(name) != null) {
-                return true;
+            RubyModule module = (RubyModule) cbase.getValue();
+            result = module.getInstanceVariable(name);
+            if (result == undef) {
+                module.removeInstanceVariable(name);
+                return runtime.getLoadService().autoload(module.getName() + "::" + name) != null;
             }
+            if (result != null) return true;
         }
         
         return false;
@@ -460,6 +464,7 @@ public class ThreadContext {
         SinglyLinkedList cbase = peekCRef();
         RubyClass object = runtime.getObject();
         IRubyObject result = null;
+        IRubyObject undef = runtime.getUndef();
         
         // flipped from while to do to search current class first
         do {
@@ -467,12 +472,12 @@ public class ThreadContext {
             
             // Not sure how this can happen
             //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
-            result = klass.getConstantAt(name);
-            if (result == null) {
-                if (runtime.getLoadService().autoload(name) != null) {
-                    continue;
-                }
-            } else {
+            result = klass.getInstanceVariable(name);
+            if (result == undef) {
+                klass.removeInstanceVariable(name);
+                if (runtime.getLoadService().autoload(klass.getName() + "::" + name) == null) break;
+                continue;
+            } else if (result != null) {
                 return result;
             }
             cbase = cbase.getNext();
@@ -524,19 +529,20 @@ public class ThreadContext {
         //RubyModule self = state.threadContext.getRubyClass();
         SinglyLinkedList cbase = module.getCRef();
         IRubyObject result = null;
+        IRubyObject undef = runtime.getUndef();
         
         // flipped from while to do to search current class first
-        do {
+        redo: do {
             RubyModule klass = (RubyModule) cbase.getValue();
             
             // Not sure how this can happen
             //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
-            result = klass.getConstantAt(name);
-            if (result == null) {
-                if (runtime.getLoadService().autoload(name) != null) {
-                    continue;
-                }
-            } else {
+            result = klass.getInstanceVariable(name);
+            if (result == undef) {
+                klass.removeInstanceVariable(name);
+                if (runtime.getLoadService().autoload(klass.getName() + "::" + name) == null) break;
+                continue redo;
+            } else if (result != null) {
                 return result;
             }
             cbase = cbase.getNext();

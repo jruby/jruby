@@ -193,6 +193,8 @@ public final class Ruby {
     private RubyClass hashClass;    
 
     private IRubyObject tmsStruct;
+    
+    private IRubyObject undef;
 
     private Profile profile;
 
@@ -351,6 +353,10 @@ public final class Ruby {
     public RubyClass getObject() {
         return objectClass;
     }
+    
+    public IRubyObject getUndef() {
+        return undef;
+    }
 
     public RubyModule getKernel() {
         return kernelModule;
@@ -458,16 +464,23 @@ public final class Ruby {
      * new module is created.
      */
     public RubyModule getOrCreateModule(String name) {
-        ThreadContext tc = getCurrentContext();
-        RubyModule module = (RubyModule) tc.getRubyClass().getConstantAt(name);
+        RubyModule parent = getCurrentContext().getRubyClass();
+        IRubyObject module = parent.getConstantAt(name);
+        //IRubyObject module = parent.getInstanceVariable(name);
 
-        if (module == null) {
+        // ENEBO: Matching MRI behavior pending clarification to ruby-core
+        /*if (module == getUndef()) {
+            getLoadService().removeAutoLoadFor(parent.getName() + "::" + name);
+            module = defineModule(name);
+        } else*/ if (module == null) {
             module = defineModule(name);
         } else if (getSafeLevel() >= 4) {
             throw newSecurityError("Extending module prohibited.");
+        } else if (!(module instanceof RubyModule)) {
+            throw newTypeError(name + " is not a Module");
         }
 
-        return module;
+        return (RubyModule) module;
     }
 
 
@@ -543,14 +556,6 @@ public final class Ruby {
      */
     public void defineGlobalConstant(String name, IRubyObject value) {
         objectClass.defineConstant(name, value);
-    }
-
-    public IRubyObject getTopConstant(String name) {
-        IRubyObject constant = getModule(name);
-        if (constant == null) {
-            constant = getLoadService().autoload(name);
-        }
-        return constant;
     }
 
     public boolean isClassDefined(String name) {
@@ -664,6 +669,8 @@ public final class Ruby {
     }
 
     private void initCoreClasses() {
+        undef = new RubyUndef();
+
         RubyClass objectMetaClass = RubyClass.createBootstrapMetaClass(this, "Object", null, RubyObject.OBJECT_ALLOCATOR, null);
         RubyObject.createObjectClass(this, objectMetaClass);
 

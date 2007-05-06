@@ -209,40 +209,41 @@ public class RubyKernel {
     }
 
     public static IRubyObject autoload_p(final IRubyObject recv, IRubyObject symbol) {
-        String name = symbol.asSymbol();
-        if (recv instanceof RubyModule) {
-            name = ((RubyModule)recv).getName() + "::" + name;
-        }
+        RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : recv.getRuntime().getObject();
+        String name = module.getName() + "::" + symbol.asSymbol();
         
         IAutoloadMethod autoloadMethod = recv.getRuntime().getLoadService().autoloadFor(name);
-        if(autoloadMethod == null) return recv.getRuntime().getNil();
+        if (autoloadMethod == null) return recv.getRuntime().getNil();
 
         return recv.getRuntime().newString(autoloadMethod.file());
     }
 
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
-        final LoadService loadService = recv.getRuntime().getLoadService();
+        Ruby runtime = recv.getRuntime(); 
+        final LoadService loadService = runtime.getLoadService();
         final String baseName = symbol.asSymbol();
-        String nm = baseName;
-        if(recv instanceof RubyModule) {
-            nm = ((RubyModule)recv).getName() + "::" + nm;
-        }
+        final RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : runtime.getObject();
+        String nm = module.getName() + "::" + baseName;
+        
+        IRubyObject undef = runtime.getUndef();
+        IRubyObject existingValue = module.getInstanceVariable(baseName); 
+        if (existingValue != null && existingValue != undef) return runtime.getNil();
+        
+        module.setInstanceVariable(baseName, undef);
+        
         loadService.addAutoload(nm, new IAutoloadMethod() {
-                public String file() {
-                    return file.toString();
-                }
+            public String file() {
+                return file.toString();
+            }
             /**
              * @see org.jruby.runtime.load.IAutoloadMethod#load(Ruby, String)
              */
             public IRubyObject load(Ruby runtime, String name) {
                 loadService.require(file.toString());
-                if(recv instanceof RubyModule) {
-                    return ((RubyModule)recv).getConstant(baseName);
-                }
-                return runtime.getObject().getConstant(baseName);
+                return module.getConstant(baseName);
             }
         });
-        return recv;
+        return runtime.getNil();
     }
 
     public static IRubyObject method_missing(IRubyObject recv, IRubyObject[] args, Block block) {

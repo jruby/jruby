@@ -338,12 +338,12 @@ public class LoadService {
         return loadedFeatures;
     }
 
-    public boolean isAutoloadDefined(String name) {
-        return autoloadMap.containsKey(name);
-    }
-
     public IAutoloadMethod autoloadFor(String name) {
         return (IAutoloadMethod)autoloadMap.get(name);
+    }
+    
+    public void removeAutoLoadFor(String name) {
+        autoloadMap.remove(name);
     }
 
     public IRubyObject autoload(String name) {

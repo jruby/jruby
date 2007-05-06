@@ -406,7 +406,11 @@ public class RubyModule extends RubyObject {
      * @see RubyObject#setInstanceVariable(String, IRubyObject, String, String)
      */
     public IRubyObject setConstant(String name, IRubyObject value) {
-        if(getConstantAt(name) != null) {
+        IRubyObject oldValue = getInstanceVariable(name);
+        
+        if (oldValue == getRuntime().getUndef()) {
+            getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + name);
+        } else if (oldValue != null) {
             getRuntime().getWarnings().warn("already initialized constant " + name);
         }
 
@@ -776,17 +780,18 @@ public class RubyModule extends RubyObject {
 
     private IRubyObject getConstantInner(String name, boolean exclude) {
         IRubyObject objectClass = getRuntime().getObject();
+        IRubyObject undef = getRuntime().getUndef();
         boolean retryForModule = false;
         RubyModule p = this;
 
         retry: while (true) {
             while (p != null) {
-                IRubyObject constant = p.getConstantAt(name);
+                IRubyObject constant = p.getInstanceVariable(name);
 
-                if (constant == null) {
-                    if (getRuntime().getLoadService().autoload(p.getName() + "::" + name) != null) {
-                        continue;
-                    }
+                if (constant == undef) {
+                    p.removeInstanceVariable(name);
+                    if (getRuntime().getLoadService().autoload(p.getName() + "::" + name) == null) break;
+                    continue;
                 }
                 if (constant != null) {
                     if (exclude && p == objectClass && this != objectClass) {
@@ -826,6 +831,12 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstantAt(String name) {
+        IRubyObject constant = getInstanceVariable(name);
+
+        if (constant != getRuntime().getUndef()) return constant;
+        
+        removeInstanceVariable(name);
+        getRuntime().getLoadService().autoload(getName() + "::" + name);
         return getInstanceVariable(name);
     }
 
@@ -859,10 +870,13 @@ public class RubyModule extends RubyObject {
         // This method is intended only for defining new classes in Ruby code,
         // so it uses the allocator of the specified superclass or default to
         // the Object allocator. It should NOT be used to define classes that require a native allocator.
-        IRubyObject type = getConstantAt(name);
+        IRubyObject type = getInstanceVariable(name);
         ObjectAllocator allocator = superClazz == null ? getRuntime().getObject().getAllocator() : superClazz.getAllocator();
-
-        if (type == null) {
+        // ENEBO: Matching MRI behavior pending clarification to ruby-core
+        /*if (type == getRuntime().getUndef()) {
+            getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + name);
+            return getRuntime().defineClassUnder(name, superClazz, allocator, cref);
+        } else*/ if (type == null) {
             return getRuntime().defineClassUnder(name, superClazz, allocator, cref);
         } 
 
@@ -879,7 +893,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyClass defineClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator) {
-        IRubyObject type = getConstantAt(name);
+        IRubyObject type = getInstanceVariable(name);
 
         if (type == null) {
             return getRuntime().defineClassUnder(name, superClazz, allocator, cref);
@@ -1509,8 +1523,8 @@ public class RubyModule extends RubyObject {
         if (!IdUtil.isConstant(name)) {
             throw wrongConstantNameError(name);
         }
-
-        return getRuntime().newBoolean(getConstantAt(name) != null);
+        
+        return getRuntime().newBoolean(getInstanceVariable(name) != null);
     }
 
     private RaiseException wrongConstantNameError(String name) {

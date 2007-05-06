@@ -1,14 +1,17 @@
 require "test/minirunit"
 test_check("Test Ruby-Init")
 
-$ruby_init = false
-file = __FILE__
-if (File::Separator == '\\')
-	file.gsub!('\\\\', '/')
+# Allow us to run MRI against non-Java dependent tests
+if RUBY_PLATFORM=~/java/
+  $ruby_init = false
+  file = __FILE__
+  if (File::Separator == '\\')
+    file.gsub!('\\\\', '/')
+  end
+  # Load jar file RubyInitTest.java
+  require File::dirname(file) + "/RubyInitTest"
+  test_ok($ruby_init)
 end
-# Load jar file RubyInitTest.java
-require File::dirname(file) + "/RubyInitTest"
-test_ok($ruby_init)
 
 # Yes, the following line is supposed to appear twice
 test_exception(LoadError) { require 'NonExistantRequriedFile'}
@@ -20,3 +23,27 @@ test_ok !require('test/requireTarget')
 $loaded_foo_bar = false
 test_ok require('test/foo.bar')
 test_ok $loaded_foo_bar
+
+test_equal(nil, autoload("Autoloaded", "#{File.dirname(__FILE__)}/autoloaded.rb"))
+test_ok(Object.const_defined?("Autoloaded"))
+test_equal("#{File.dirname(__FILE__)}/autoloaded.rb", Object.autoload?("Autoloaded"))
+#test_equal("#{File.dirname(__FILE__)}/autoloaded.rb", Object.autoload?("Object::Autoloaded"))
+test_equal(Class, Autoloaded.class)
+# This should not really autoload since it is set for real
+autoload("Autoloaded", "#{File.dirname(__FILE__)}/autoloaded2.rb")
+test_equal(Class, Autoloaded.class)
+# Set versus load (will not perform autoload)
+autoload("Autoloaded2", "#{File.dirname(__FILE__)}/autoloaded3.rb")
+Autoloaded2 = 3
+test_equal(3, Autoloaded2)
+autoload("Autoloaded4", "#{File.dirname(__FILE__)}/autoloaded4.rb")
+test_equal(3, Object::Autoloaded4)
+# PENDING question to ruby-core since I think this is an MRI bug (Enebo).
+#autoload("Autoloaded5", "#{File.dirname(__FILE__)}/autoloaded5.rb")
+#class Autoloaded5; end
+#test_equal(Class, Autoloaded5.class)
+#autoload("Autoloaded6", "#{File.dirname(__FILE__)}/autoloaded6.rb")
+#class Autoloaded6; end
+#test_equal(Class, Autoloaded6.class)
+
+
