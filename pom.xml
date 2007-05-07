@@ -229,7 +229,8 @@
       <id>jruby-release</id>
       <activation>
         <property>
-          <name>release</name>
+          <name>performRelease</name>
+          <value>true</value>
         </property>
       </activation>
       <properties>
