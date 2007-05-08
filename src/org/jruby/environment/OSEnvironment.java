@@ -141,7 +141,7 @@ public class OSEnvironment {
 		Map envs = new HashMap();
 		for (Iterator iter = entrySet.iterator(); iter.hasNext();) {
 			Map.Entry entry  = (Map.Entry) iter.next();
-            envs.put(runtime.newString((String)entry.getKey()),runtime.newString((String)entry.getValue()));
+            envs.put(runtime.newString(entry.getKey().toString()),runtime.newString(entry.getValue().toString()));
 		}
 		return envs;
 	}
