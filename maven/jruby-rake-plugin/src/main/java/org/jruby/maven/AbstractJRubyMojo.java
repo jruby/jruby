@@ -78,7 +78,6 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
         java.setClassname("org.jruby.Main");
         java.setFailonerror(true);
 
-        Path p;
         Argument arg;
 
         if (shouldFork) {
@@ -87,11 +86,14 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
 
             arg = java.createJvmarg();
             arg.setValue("-Xmx256m");
-
             Variable classpath = new Variable();
-            p = (Path) project.getReference("maven.plugin.classpath");
+
+            Path p = new Path(java.getProject());
+            p.add((Path) project.getReference("maven.plugin.classpath"));
+            p.add((Path) project.getReference("maven.compile.classpath"));
             classpath.setKey("JRUBY_PARENT_CLASSPATH");
             classpath.setValue(p.toString());
+            
             java.addEnv(classpath);
         }
 
@@ -102,11 +104,11 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
             java.addSysproperty(v);
         }
 
-        p = java.createClasspath();
-        p.setRefid(new Reference("maven.plugin.classpath"));
-        p = java.createClasspath();
-        p.setRefid(new Reference("maven.compile.classpath"));
-
+        Path p = java.createClasspath();
+        p.add((Path) project.getReference("maven.plugin.classpath"));
+        p.add((Path) project.getReference("maven.compile.classpath"));
+        getLog().debug("java classpath: " + p.toString());
+        
         for (int i = 0; i < args.length; i++) {
             arg = java.createArg();
             arg.setValue(args[i]);
