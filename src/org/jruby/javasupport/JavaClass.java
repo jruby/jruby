@@ -335,7 +335,7 @@ public class JavaClass extends JavaObject {
             for (int i = start ; i < len; i++) {
                 argTypes.add(((JavaClass)((JavaObject)args[i]).java_class()).getValue());
             }
-            throw proxy.getRuntime().newNameError("no " + this.name + " with arguments matching " + argTypes, null);
+            throw proxy.getRuntime().newNameError("no " + this.name + " with arguments matching " + argTypes + " on object " + proxy.callMethod(proxy.getRuntime().getCurrentContext(),"inspect"), null);
         }
     }
 
