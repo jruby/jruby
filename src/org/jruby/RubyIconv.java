@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2007 Koichiro Ohba <koichiro@meadowy.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,6 +35,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import java.nio.charset.UnsupportedCharsetException;
 import org.jruby.runtime.Arity;
@@ -46,6 +49,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 public class RubyIconv extends RubyObject {
+    private CharsetDecoder fromEncoding;
+    private CharsetEncoder toEncoding;
+
     public RubyIconv(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
@@ -58,22 +64,80 @@ public class RubyIconv extends RubyObject {
 
     public static void createIconv(Ruby runtime) {
         RubyClass iconvClass = runtime.defineClass("Iconv", runtime.getObject(), ICONV_ALLOCATOR);
-
-        RubyClass argumentError = runtime.getClass("ArgumentError");
-        iconvClass.defineClassUnder("IllegalSequence", argumentError, argumentError.getAllocator());
-        iconvClass.defineClassUnder("InvalidCharacter", argumentError, argumentError.getAllocator());
-        iconvClass.defineClassUnder("InvalidEncoding", argumentError, argumentError.getAllocator());
-        
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyIconv.class);
 
         iconvClass.getMetaClass().defineFastMethod("iconv", callbackFactory.getOptSingletonMethod("iconv"));
         iconvClass.getMetaClass().defineFastMethod("conv", callbackFactory.getOptSingletonMethod("conv"));
+        iconvClass.getMetaClass().defineMethod("open", callbackFactory.getSingletonMethod("open", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
         
         iconvClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        //iconvClass.defineMethod("iconv", callbackFactory.getOptMethod("iconv"));
+        iconvClass.defineFastMethod("iconv", callbackFactory.getFastOptMethod("iconv"));
+        iconvClass.defineFastMethod("close", callbackFactory.getFastMethod("close"));
 
-        // FIXME: JRUBY-310: Add all other iconv methods...Sopen, Iclose, Iiconv
-        // FIXME: JRUBY-309: Implement IConv Exception classes (e.g. Iconv::IllegalSequence and friends)
+        RubyModule failure = iconvClass.defineModuleUnder("Failure");
+        CallbackFactory failureCallbackFactory = runtime.callbackFactory(RubyFailure.class);
+        RubyClass argumentError = runtime.getClass("ArgumentError");
+
+        String[] iconvErrors = {"IllegalSequence", "InvalidCharacter", "InvalidEncoding", 
+                "OutOfRange", "BrokenLibrary"};
+        
+        for (int i = 0; i < iconvErrors.length; i++) {
+            RubyClass subClass = iconvClass.defineClassUnder(iconvErrors[i], argumentError, RubyFailure.ICONV_FAILURE_ALLOCATOR);
+            subClass.defineMethod("initialize", failureCallbackFactory.getOptMethod("initialize"));
+            subClass.defineFastMethod("success", failureCallbackFactory.getFastMethod("success"));
+            subClass.defineFastMethod("failed", failureCallbackFactory.getFastMethod("failed"));
+            subClass.defineFastMethod("inspect", failureCallbackFactory.getFastMethod("inspect"));
+            subClass.includeModule(failure);
+        }    
+    }
+    
+    public static class RubyFailure extends RubyException {
+        private RubyString success;
+        private RubyString failed;
+
+        public static RubyFailure newInstance(Ruby runtime, RubyClass excptnClass, String msg) {
+            return new RubyFailure(runtime, excptnClass, msg);
+        }
+
+        protected static ObjectAllocator ICONV_FAILURE_ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+                return new RubyFailure(runtime, klass);
+            }
+        };
+
+        protected RubyFailure(Ruby runtime, RubyClass rubyClass) {
+            this(runtime, rubyClass, null);
+        }
+
+        public RubyFailure(Ruby runtime, RubyClass rubyClass, String message) {
+            super(runtime, rubyClass, message);
+        }
+
+        public IRubyObject initialize(IRubyObject[] args, Block block) {
+            Arity.checkArgumentCount(getRuntime(), args, 3, 3);
+            super.initialize(args, block);
+            success = (RubyString) args[1];
+            failed = (RubyString) args[2];
+
+            return this;
+        }
+
+        public IRubyObject success() {
+            return success;
+        }
+
+        public IRubyObject failed() {
+            return failed;
+        }
+
+        public IRubyObject inspect() {
+            RubyModule rubyClass = getMetaClass();
+            StringBuffer buffer = new StringBuffer("#<");
+            buffer.append(rubyClass.getName()).append(": ").append(success.inspect().toString());
+            buffer.append(", ").append(failed.inspect().toString()).append(">");
+
+            return getRuntime().newString(buffer.toString());
+        }
     }
 
     // FIXME: I believe that we are suppose to keep partial character contents between calls
@@ -95,14 +159,109 @@ public class RubyIconv extends RubyObject {
         return array;
     }
     */
+
+
+    public static IRubyObject open(IRubyObject recv, IRubyObject to, IRubyObject from, Block block) {
+        Ruby runtime = recv.getRuntime();
+        RubyIconv iconv =
+            (RubyIconv) runtime.getClass("Iconv").newInstance(
+                    new IRubyObject[] { to, from }, Block.NULL_BLOCK);
+        if (!block.isGiven()) return iconv;
+
+        IRubyObject result = runtime.getNil();
+        try {
+            result = block.yield(recv.getRuntime().getCurrentContext(), iconv);
+        } finally {
+            iconv.close();
+        }
+
+        return result;
+    }
     
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         Arity.checkArgumentCount(getRuntime(), args, 2, 2);
-        
-        //toEncoding = args[0].convertToString().toString();
-        //fromEncoding = args[1].convertToString().toString();
-        
+        Ruby runtime = getRuntime();
+        if (!args[0].respondsTo("to_str")) {
+            throw runtime.newTypeError("can't convert " + args[0].getMetaClass() + " into String");
+        }
+        if (!args[1].respondsTo("to_str")) {
+            throw runtime.newTypeError("can't convert " + args[1].getMetaClass() + " into String");
+        }
+
+        String to = args[0].convertToString().toString();
+        String from = args[1].convertToString().toString();
+
+        try {
+
+            fromEncoding = Charset.forName(from).newDecoder();
+            toEncoding = Charset.forName(to).newEncoder();
+
+            fromEncoding.onUnmappableCharacter(CodingErrorAction.REPORT);
+            toEncoding.onUnmappableCharacter(CodingErrorAction.REPORT);
+
+        } catch (IllegalCharsetNameException e) {
+            throw runtime.newArgumentError("invalid encoding");
+        } catch (UnsupportedCharsetException e) {
+            throw runtime.newArgumentError("invalid encoding");
+        } catch (Exception e) {
+            throw runtime.newSystemCallError(e.toString());
+        }
+
         return this;
+    }
+
+    public IRubyObject close() {
+        toEncoding = null;
+        fromEncoding = null;
+        return getRuntime().newString("");
+    }
+
+    public IRubyObject iconv(IRubyObject[] args) {
+        Ruby runtime = getRuntime();
+        args = Arity.scanArgs(runtime, args, 1, 2);
+        int start = 0;
+        int length = -1;
+
+        if (args[0].isNil()) {
+            fromEncoding.reset();
+            toEncoding.reset();
+            return runtime.newString("");
+        }
+        if (!args[0].respondsTo("to_str")) {
+            throw runtime.newTypeError("can't convert " + args[0].getMetaClass() + " into String");
+        }
+        if (!args[1].isNil()) start = RubyNumeric.fix2int(args[1]);
+        if (!args[2].isNil()) {
+            length = RubyNumeric.fix2int(args[2]);
+        } else {
+            length = -1;
+        }
+
+        IRubyObject result = _iconv(args[0].convertToString(), start, length);
+        return result;
+    }
+
+    // FIXME: We are assuming that original string will be raw bytes.  If -Ku is provided
+    // this will not be true, but that is ok for now.  Deal with that when someone needs it.
+    private IRubyObject _iconv(RubyString str, int start, int length) {
+        ByteList bytes = str.getByteList();
+        
+        if (length < 0) length = bytes.length() - start;
+        
+        ByteBuffer buf = ByteBuffer.wrap(bytes.unsafeBytes(), start, length);
+        
+        try {
+            CharBuffer cbuf = fromEncoding.decode(buf);
+            buf = toEncoding.encode(cbuf);
+        } catch (MalformedInputException e) {
+        } catch (UnmappableCharacterException e) {
+        } catch (CharacterCodingException e) {
+            throw getRuntime().newInvalidEncoding("invalid sequence");
+        } catch (IllegalStateException e) {
+        }
+        byte[] arr = buf.array();
+        
+        return getRuntime().newString(new ByteList(arr, 0, buf.limit()));
     }
 
     public static IRubyObject iconv(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
