@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyProc;
 import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.JRubyClassLoader;
@@ -53,7 +54,10 @@ public class JavaSupport {
     private JRubyClassLoader javaClassLoader;
 
     private Map instanceCache = Collections.synchronizedMap(new WeakIdentityHashMap(100));
-
+    
+    private RubyClass javaObjectClass;
+    private RubyClass javaArrayClass;
+    
     public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
         this.javaClassLoader = ruby.getJRubyClassLoader();
@@ -154,4 +158,20 @@ public class JavaSupport {
     public void putJavaObjectIntoCache(JavaObject object) {
     	instanceCache.put(object.getValue(), new WeakReference(object));
     }
+
+    // not synchronizing, no harm if javaObjectClass gets set twice...
+    public RubyClass getJavaObjectClass() {
+        if (javaObjectClass == null) {
+            javaObjectClass = runtime.getModule("Java").getClass("JavaObject");
+        }
+        return javaObjectClass;
+    }
+
+    public RubyClass getJavaArrayClass() {
+        if (javaArrayClass == null) {
+            javaArrayClass = runtime.getModule("Java").getClass("JavaArray");
+        }
+        return javaArrayClass;
+    }
+
 }

@@ -58,7 +58,7 @@ public class JavaObject extends RubyObject {
     }
 
     protected JavaObject(Ruby runtime, Object value) {
-        this(runtime, runtime.getModule("Java").getClass("JavaObject"), value);
+        this(runtime, runtime.getJavaSupport().getJavaObjectClass(), value);
     }
 
     public static JavaObject wrap(Ruby runtime, Object value) {

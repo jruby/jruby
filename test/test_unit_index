@@ -74,6 +74,7 @@ test_java_extension
 test_pack
 test_primitive_to_java
 test_parsing
+test_string_java_bytes
 test_string_printf
 test_symbol
 test_thread

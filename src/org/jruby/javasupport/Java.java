@@ -106,6 +106,8 @@ public class Java {
 
         javaUtils.dataWrapStruct(new ProxyData(callbackFactory.getFastSingletonMethod("concrete_proxy_inherited", IRubyObject.class)));
 
+        JavaArrayUtilities.createJavaArrayUtilitiesModule(runtime);
+        
         RubyClass javaProxy = runtime.defineClass("JavaProxy", runtime.getObject(), runtime.getObject().getAllocator());
         javaProxy.getMetaClass().defineFastMethod("new_instance_for", callbackFactory.getFastSingletonMethod("new_instance_for", IRubyObject.class));
         javaProxy.getMetaClass().defineFastMethod("to_java_object", callbackFactory.getFastSingletonMethod("to_java_object"));

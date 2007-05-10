@@ -43,7 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaArray extends JavaObject {
 
     public JavaArray(Ruby runtime, Object array) {
-        super(runtime, runtime.getModule("Java").getClass("JavaArray"), array);
+        super(runtime, runtime.getJavaSupport().getJavaArrayClass(), array);
         assert array.getClass().isArray();
     }
 
