@@ -49,6 +49,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 public class RubyIconv extends RubyObject {
+    //static private final String TRANSLIT = "//translit";
+    static private final String IGNORE = "//ignore";
+
     private CharsetDecoder fromEncoding;
     private CharsetEncoder toEncoding;
 
@@ -140,26 +143,20 @@ public class RubyIconv extends RubyObject {
         }
     }
 
-    // FIXME: I believe that we are suppose to keep partial character contents between calls
-    // so that we can pass in arbitrary chunks of bytes.  Charset Encoder needs to be able to
-    // handle this or we need to be able detect it somehow.
-    /*
-    public IRubyObject iconv(IRubyObject[] args) {
-        RubyArray array = getRuntime().newArray();
-        
-        for (int i = 0; i < args.length; i++) {
-            try {
-                array.append(convert(fromEncoding, toEncoding, args[i].convertToString()));
-            } catch (UnsupportedEncodingException e) {
-                throw getRuntime().newErrnoEINVALError("iconv(" + toEncoding + ", " + 
-                        fromEncoding + ", " + args[i] + ")");
-            }
-        }
-
-        return array;
+    private static String getCharset(String encoding) {
+        int index = encoding.indexOf("//");
+        if (index == -1) return encoding;
+        return encoding.substring(0, index);
     }
-    */
-
+    
+    /* Currently dead code, but useful when we figure out how to actually perform translit.
+    private static boolean isTranslit(String encoding) {
+        return encoding.toLowerCase().indexOf(TRANSLIT) != -1 ? true : false;
+    }*/
+    
+    private static boolean isIgnore(String encoding) {
+        return encoding.toLowerCase().indexOf(IGNORE) != -1 ? true : false;
+    }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject to, IRubyObject from, Block block) {
         Ruby runtime = recv.getRuntime();
@@ -193,12 +190,11 @@ public class RubyIconv extends RubyObject {
 
         try {
 
-            fromEncoding = Charset.forName(from).newDecoder();
-            toEncoding = Charset.forName(to).newEncoder();
+            fromEncoding = Charset.forName(getCharset(from)).newDecoder();
+            toEncoding = Charset.forName(getCharset(to)).newEncoder();
 
-            fromEncoding.onUnmappableCharacter(CodingErrorAction.REPORT);
-            toEncoding.onUnmappableCharacter(CodingErrorAction.REPORT);
-
+            if (!isIgnore(from)) fromEncoding.onUnmappableCharacter(CodingErrorAction.REPORT);
+            if (!isIgnore(to)) toEncoding.onUnmappableCharacter(CodingErrorAction.REPORT);
         } catch (IllegalCharsetNameException e) {
             throw runtime.newArgumentError("invalid encoding");
         } catch (UnsupportedCharsetException e) {
@@ -231,12 +227,8 @@ public class RubyIconv extends RubyObject {
             throw runtime.newTypeError("can't convert " + args[0].getMetaClass() + " into String");
         }
         if (!args[1].isNil()) start = RubyNumeric.fix2int(args[1]);
-        if (!args[2].isNil()) {
-            length = RubyNumeric.fix2int(args[2]);
-        } else {
-            length = -1;
-        }
-
+        if (!args[2].isNil()) length = RubyNumeric.fix2int(args[2]);
+        
         IRubyObject result = _iconv(args[0].convertToString(), start, length);
         return result;
     }
@@ -306,13 +298,15 @@ public class RubyIconv extends RubyObject {
             ByteList bytes = original.getByteList();
             ByteBuffer buf = ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), bytes.length());
 
-            CharsetDecoder decoder = Charset.forName(fromEncoding).newDecoder();
+            CharsetDecoder decoder = Charset.forName(getCharset(fromEncoding)).newDecoder();
             
-            decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
+            if (!isIgnore(fromEncoding)) decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
+
             CharBuffer cbuf = decoder.decode(buf);
-            CharsetEncoder encoder = Charset.forName(toEncoding).newEncoder();
+            CharsetEncoder encoder = Charset.forName(getCharset(toEncoding)).newEncoder();
             
-            encoder.onUnmappableCharacter(CodingErrorAction.REPORT);
+            if (!isIgnore(toEncoding)) encoder.onUnmappableCharacter(CodingErrorAction.REPORT);
+
             buf = encoder.encode(cbuf);
             byte[] arr = buf.array();
             return RubyString.newString(original.getRuntime(), new ByteList(arr,0,buf.limit()));
