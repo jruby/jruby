@@ -38,12 +38,10 @@ Autoloaded2 = 3
 test_equal(3, Autoloaded2)
 autoload("Autoloaded4", "#{File.dirname(__FILE__)}/autoloaded4.rb")
 test_equal(3, Object::Autoloaded4)
-# PENDING question to ruby-core since I think this is an MRI bug (Enebo).
-#autoload("Autoloaded5", "#{File.dirname(__FILE__)}/autoloaded5.rb")
-#class Autoloaded5; end
-#test_equal(Class, Autoloaded5.class)
-#autoload("Autoloaded6", "#{File.dirname(__FILE__)}/autoloaded6.rb")
-#class Autoloaded6; end
-#test_equal(Class, Autoloaded6.class)
+autoload("Autoloaded5", "#{File.dirname(__FILE__)}/autoloaded5.rb")
+test_no_exception { require "#{File.dirname(__FILE__)}/autoloaded5.rb" }
+autoload("Autoloaded6", "#{File.dirname(__FILE__)}/autoloaded6.rb")
+test_no_exception { self.class.__send__(:remove_const, :Autoloaded6) }
+test_exception(NameError) { Autoloaded6 }
 
 

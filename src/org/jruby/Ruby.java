@@ -466,13 +466,8 @@ public final class Ruby {
     public RubyModule getOrCreateModule(String name) {
         RubyModule parent = getCurrentContext().getRubyClass();
         IRubyObject module = parent.getConstantAt(name);
-        //IRubyObject module = parent.getInstanceVariable(name);
-
-        // ENEBO: Matching MRI behavior pending clarification to ruby-core
-        /*if (module == getUndef()) {
-            getLoadService().removeAutoLoadFor(parent.getName() + "::" + name);
-            module = defineModule(name);
-        } else*/ if (module == null) {
+        
+        if (module == null) {
             module = defineModule(name);
         } else if (getSafeLevel() >= 4) {
             throw newSecurityError("Extending module prohibited.");

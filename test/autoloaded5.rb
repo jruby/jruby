@@ -1,1 +1,2 @@
-AutoLoaded5 = 3
+module Autoloaded5
+end

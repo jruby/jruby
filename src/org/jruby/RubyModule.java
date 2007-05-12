@@ -836,8 +836,7 @@ public class RubyModule extends RubyObject {
         if (constant != getRuntime().getUndef()) return constant;
         
         removeInstanceVariable(name);
-        getRuntime().getLoadService().autoload(getName() + "::" + name);
-        return getInstanceVariable(name);
+        return getRuntime().getLoadService().autoload(getName() + "::" + name);
     }
 
     /** rb_alias
@@ -872,11 +871,8 @@ public class RubyModule extends RubyObject {
         // the Object allocator. It should NOT be used to define classes that require a native allocator.
         IRubyObject type = getInstanceVariable(name);
         ObjectAllocator allocator = superClazz == null ? getRuntime().getObject().getAllocator() : superClazz.getAllocator();
-        // ENEBO: Matching MRI behavior pending clarification to ruby-core
-        /*if (type == getRuntime().getUndef()) {
-            getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + name);
-            return getRuntime().defineClassUnder(name, superClazz, allocator, cref);
-        } else*/ if (type == null) {
+        
+        if (type == null) {
             return getRuntime().defineClassUnder(name, superClazz, allocator, cref);
         } 
 
@@ -1678,6 +1674,9 @@ public class RubyModule extends RubyObject {
 
         IRubyObject variable = getInstanceVariable(id);
         if (variable != null) {
+            if (variable == getRuntime().getUndef()) {
+                getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + id);
+            }
             return removeInstanceVariable(id);
         }
 
