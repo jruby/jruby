@@ -176,3 +176,8 @@ def lvars_test
 end
 
 lvars_test
+
+###### Kernel#sleep
+
+test_exception(ArgumentError) { sleep(-10) }
+test_equal(0, sleep(0))

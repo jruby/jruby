@@ -130,7 +130,7 @@ public class RubyKernel {
         module.defineModuleFunction("scan", callbackFactory.getSingletonMethod("scan", IRUBY_OBJECT));
         module.defineFastModuleFunction("select", callbackFactory.getFastOptSingletonMethod("select"));
         module.defineModuleFunction("set_trace_func", callbackFactory.getSingletonMethod("set_trace_func", IRUBY_OBJECT));
-        module.defineFastModuleFunction("sleep", callbackFactory.getFastSingletonMethod("sleep", IRUBY_OBJECT));
+        module.defineFastModuleFunction("sleep", callbackFactory.getFastOptSingletonMethod("sleep"));
         module.defineFastModuleFunction("split", callbackFactory.getFastOptSingletonMethod("split"));
         module.defineFastModuleFunction("sprintf", callbackFactory.getFastOptSingletonMethod("sprintf"));
         module.defineFastModuleFunction("srand", callbackFactory.getFastOptSingletonMethod("srand"));
@@ -540,8 +540,21 @@ public class RubyKernel {
         return RubyIO.select_static(recv.getRuntime(), args);
     }
 
-    public static IRubyObject sleep(IRubyObject recv, IRubyObject seconds) {
-        long milliseconds = (long) (seconds.convertToFloat().getDoubleValue() * 1000);
+    public static IRubyObject sleep(IRubyObject recv, IRubyObject[] args) {
+        long milliseconds;
+
+        if (args.length == 0) {
+            // Zero sleeps forever
+            milliseconds = 0;
+        } else {
+            milliseconds = (long) (args[0].convertToFloat().getDoubleValue() * 1000);
+            if (milliseconds < 0) {
+                throw recv.getRuntime().newArgumentError("time interval must be positive");
+            } else if (milliseconds == 0) {
+                // Explicit zero in MRI returns immediately
+                return recv.getRuntime().newFixnum(0);
+            }
+        }
         long startTime = System.currentTimeMillis();
         
         RubyThread rubyThread = recv.getRuntime().getThreadService().getCurrentContext().getThread();
