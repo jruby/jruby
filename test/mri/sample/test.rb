@@ -1957,7 +1957,7 @@ test_ok(File.basename("a/b") == "b")
 test_ok(File.basename("a/b/") == "b")
 test_ok(File.basename("/") == "/")
 test_ok(File.basename("//") == "/")
-#test_ok(File.basename("///") == "/")
+test_ok(File.basename("///") == "/")
 test_ok(File.basename("a/b////") == "b")
 test_ok(File.basename("a.rb", ".rb") == "a")
 test_ok(File.basename("a.rb///", ".rb") == "a")
@@ -1970,7 +1970,7 @@ test_ok(File.dirname("a/b") == "a")
 test_ok(File.dirname("a/b/c") == "a/b")
 test_ok(File.dirname("/a/b/c") == "/a/b")
 test_ok(File.dirname("/a/b/") == "/a")
-#test_ok(File.dirname("/a/b///") == "/a")
+test_ok(File.dirname("/a/b///") == "/a")
 case Dir.pwd
 when %r'\A\w:'
 # JRUBY-546:
@@ -1991,8 +1991,8 @@ if dosish
 #  test_ok(File.expand_path("/", "z:/sub") == "z:/")
 #  test_ok(File.expand_path("/dir", "z:/sub") == "z:/dir")
 end
-#test_ok(File.expand_path(".", "//") == "//")
-#test_ok(File.expand_path("sub", "//") == "//sub")
+test_ok(File.expand_path(".", "//") == "//")
+test_ok(File.expand_path("sub", "//") == "//sub")
 
 test_check "gc"
 begin

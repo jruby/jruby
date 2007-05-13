@@ -444,7 +444,7 @@ public class RubyFile extends RubyIO {
         Arity.checkArgumentCount(recv.getRuntime(), args, 1, 2);
         
         String name = RubyString.stringValue(args[0]).toString();
-        if (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
+        while (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
             name = name.substring(0, name.length() - 1);
         }
         
@@ -542,7 +542,7 @@ public class RubyFile extends RubyIO {
     public static IRubyObject dirname(IRubyObject recv, IRubyObject arg) {
         RubyString filename = RubyString.stringValue(arg);
         String name = filename.toString().replace('\\', '/');
-        if (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
+        while (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
             name = name.substring(0, name.length() - 1);
         }
         //TODO deal with drive letters A: and UNC names
@@ -609,14 +609,6 @@ public class RubyFile extends RubyIO {
             }
         }
         
-        if (new File(relativePath).isAbsolute()) {
-            try {
-                return runtime.newString(JRubyFile.create(relativePath, "").getCanonicalPath());
-            } catch(IOException e) {
-                return runtime.newString(relativePath);
-            }
-        }
-        
         String cwd = runtime.getCurrentDirectory();
         if (args.length == 2 && !args[1].isNil()) {
             cwd = RubyString.stringValue(args[1]).toString();
@@ -625,13 +617,56 @@ public class RubyFile extends RubyIO {
         // Something wrong we don't know the cwd...
         if (cwd == null) return runtime.getNil();
         
+        /* The counting of slashes that follows is simply a way to adhere to 
+         * Ruby's UNC (or something) compatibility. When Ruby's expand_path is 
+         * called with "//foo//bar" it will return "//foo/bar". JRuby uses 
+         * java.io.File, and hence returns "/foo/bar". In order to retain 
+         * java.io.File in the lower layers and provide full Ruby 
+         * compatibility, the number of extra slashes must be counted and 
+         * prepended to the result.
+         */ 
+        
+        // Find out which string to check.
+        String stringToCheck = null;
+        if (relativePath.length() > 0 && relativePath.charAt(0) == '/') {
+        	stringToCheck = relativePath;
+        } else if (cwd.length() > 0 && cwd.charAt(0) == '/') {
+        	stringToCheck = cwd;
+        }
+        
+        String padSlashes = "";
+        if (stringToCheck != null) {
+            // Count number of extra slashes in the beginning of the string.
+            int slashCount = 0;
+            for (int i = 0; i < stringToCheck.length(); i++) {
+            	if (stringToCheck.charAt(i) == '/') {
+            		slashCount++;
+            	} else {
+            		break;
+            	}
+            }
+
+            // If there are N slashes, then we want N-1.
+            if (slashCount > 0) {
+            	slashCount--;
+            }
+            
+            // Prepare a string with the same number of redundant slashes so that 
+            // we easily can prepend it to the result.
+            byte[] slashes = new byte[slashCount];
+            for (int i = 0; i < slashCount; i++) {
+                slashes[i] = '/';
+            }
+            padSlashes = new String(slashes); 
+        }
+        
         JRubyFile path = JRubyFile.create(cwd, relativePath);
         
         String extractedPath;
         try {
-            extractedPath = path.getCanonicalPath();
+            extractedPath = padSlashes + path.getCanonicalPath();
         } catch (IOException e) {
-            extractedPath = path.getAbsolutePath();
+            extractedPath = padSlashes + path.getAbsolutePath();
         }
         return runtime.newString(extractedPath);
     }

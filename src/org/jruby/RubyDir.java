@@ -32,6 +32,7 @@
 package org.jruby;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -450,16 +451,42 @@ public class RubyDir extends RubyObject {
         return result;
     }
 	
-	/*
-	 * Poor mans find home directory.  I am not sure how windows ruby behaves with '~foo', but
-	 * this mostly will work on any unix/linux/cygwin system.  When someone wants to extend this
-	 * to include the windows way, we should consider moving this to an external ruby file.
-	 */
-	public static IRubyObject getHomeDirectoryPath(IRubyObject recv, String user) {
-		// TODO: Having a return where I set user inside readlines created a JumpException.  It seems that
-		// evalScript should catch that and return?
-		return recv.getRuntime().evalScript("File.open('/etc/passwd') do |f| f.readlines.each do" +
-				"|l| f = l.split(':'); return f[5] if f[0] == '" + user + "'; end; end; nil");
+    /**
+     * Returns the home directory of the specified <code>user</code> on the 
+     * system. If the home directory of the specified user cannot be found, 
+     * an <code>ArgumentError it thrown</code>.
+     */
+	public static IRubyObject getHomeDirectoryPath(IRubyObject recv, 
+			String user) {
+		/*
+		 * TODO: This version is better than the hackish previous one. Windows 
+		 *       behavior needs to be defined though. I suppose this version 
+		 *       could be improved more too.
+         * TODO: /etc/passwd is also inadequate for MacOSX since it does not 
+         *       use /etc/passwd for regular user accounts
+		 */
+		
+		String passwd = null;
+		try {
+			FileInputStream stream = new FileInputStream("/etc/passwd");
+			int totalBytes = stream.available();
+			byte[] bytes = new byte[totalBytes];
+			stream.read(bytes);
+			passwd = new String(bytes);
+		} catch (IOException e) {
+			return recv.getRuntime().getNil();
+		}
+		
+		String[] rows = passwd.split("\n");
+		int rowCount = rows.length;
+		for (int i = 0; i < rowCount; i++) {
+			String[] fields = rows[i].split(":");
+			if (fields[0].equals(user)) {
+				return recv.getRuntime().newString(fields[5]);
+			}
+		}
+		
+		throw recv.getRuntime().newArgumentError("user " + user + " doesn't exist");
 	}
 	
 	public static RubyString getHomeDirectoryPath(IRubyObject recv) {

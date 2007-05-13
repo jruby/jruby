@@ -24,6 +24,29 @@ test_equal("a", File.basename("a/"))
 test_equal("b", File.basename("a/b/"))
 test_equal("/", File.basename("/"))
 
+test_equal("/bin", File.expand_path("../../bin", "/foo/bar"))
+test_equal("/foo/bin", File.expand_path("../bin", "/foo/bar"))
+test_equal("//abc/def/jkl/mno", File.expand_path("//abc//def/jkl//mno"))
+test_equal("//abc/def/jkl/mno/foo", File.expand_path("foo", "//abc//def/jkl//mno"))
+begin
+    File.expand_path("~nonexistent")
+    test_ok(false)
+rescue ArgumentError => e
+    test_ok(true)
+rescue Exception => e
+    test_ok(false)
+end
+
+# Until windows and macos have code to get this info correctly we will 
+# not include
+#username = ENV['USER']
+#home = ENV['HOME']
+#if (username && home) 
+#  test_equal(home, File.expand_path("~#{username}"))
+#  test_equal(home, File.expand_path("~"))
+#  test_equal(home, File.expand_path("~/"))
+#end
+
 # dirname
 test_equal(".", File.dirname(""))
 test_equal(".", File.dirname("."))
