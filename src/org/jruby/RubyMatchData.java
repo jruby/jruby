@@ -247,7 +247,7 @@ public abstract class RubyMatchData extends RubyObject {
     public abstract IRubyObject to_s();
     public abstract IRubyObject doClone();
 
-    public static class JavaString extends RubyMatchData {
+    public static final class JavaString extends RubyMatchData {
         private String original;
         public JavaString(Ruby runtime, String original, Matcher matcher) {
             super(runtime, matcher);
@@ -321,7 +321,7 @@ public abstract class RubyMatchData extends RubyObject {
         }
     }
 
-    public static class RString extends RubyMatchData {
+    public static final class RString extends RubyMatchData {
         private RubyString original;
         private int len;
         private int[] start;

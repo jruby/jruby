@@ -571,66 +571,102 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return getRuntime().getNil();
     }
 
-    public void regsub(RubyString str, RubyMatchData match, ByteList sb) {
-        ByteList repl = str.getByteList();
-        int pos = 0;
-        int end = repl.length();
-        char c;
-        IRubyObject ins;
-        while (pos < end) {
-            c = (char)(repl.get(pos++) & 0xFF);
-            if (c == '\\' && pos < end) {
-                c = (char)(repl.get(pos++) & 0xFF);
-                switch (c) {
-                    case '0' :
-                    case '1' :
-                    case '2' :
-                    case '3' :
-                    case '4' :
-                    case '5' :
-                    case '6' :
-                    case '7' :
-                    case '8' :
-                    case '9' :
-                        ins = match.group(c - '0');
-                        break;
-                    case '&' :
-                        ins = match.group(0);
-                        break;
-                    case '`' :
-                        ins = match.pre_match();
-                        break;
-                    case '\'' :
-                        ins = match.post_match();
-                        break;
-                    case '+' :
-                        ins = match_last(match);
-                        break;
-                    case '\\' :
-                        sb.append(c);
-                        continue;
-                    default :
-                        sb.append('\\');
-                        sb.append(c);
-                        continue;
-                }
-                if (!ins.isNil()) {
-                    sb.append(((RubyString) ins).getByteList());
-                }
+    /** rb_reg_regsub
+    *
+    */
+    public RubyString regsub(IRubyObject str, RubyString src, RubyMatchData match) {
+        ByteList val = null;
+
+        ByteList strList = str.convertToString().getByteList();
+        byte[]strBytes = strList.unsafeBytes();
+        int p, s;
+        p = s = strList.begin;
+        int e = s + strList.realSize;
+
+        while (s < e) {
+            int ss = s;
+            char c = (char)(strBytes[s++] & 0xFF);
+            if (c != '\\' || s == e) continue;
+
+            if (val == null) {
+                val = new ByteList(ss - p);
+                val.append(strBytes, p, ss - p);
             } else {
-                sb.append(c);
+                val.append(strBytes, p, ss - p);
+            }
+
+            c = (char)(strBytes[s++] & 0xFF);
+            p = s;
+
+            int no;
+            Matcher mat = match.matcher;
+
+            ByteList srcList;
+            byte[]srcBytes;
+
+            switch (c) {
+                case '0' :
+                case '1' :
+                case '2' :
+                case '3' :
+                case '4' :
+                case '5' :
+                case '6' :
+                case '7' :
+                case '8' :
+                case '9' :
+                    no = c - '0';
+                    break;
+                case '&' :
+                    no = 0;
+                    break;
+                case '`' :
+                    srcList = src.getByteList();
+                    srcBytes = srcList.unsafeBytes();
+                    val.append(srcBytes, srcList.begin, mat.start(0));
+                    continue;
+                case '\'':
+                    srcList = src.getByteList();
+                    srcBytes = srcList.unsafeBytes();
+                    val.append(srcBytes, srcList.begin + mat.end(0), srcList.length() - mat.end(0));
+                    continue;
+
+                case '+' :
+                    no = mat.groupCount() - 1;
+                    while (!mat.isCaptured(no) && no > 0) no--;
+                    if (no == 0) continue;
+                    break;
+
+                case '\\':
+                    val.append(strBytes, s - 1, 1);
+                    continue;
+
+                default:
+                    val.append(strBytes, s - 2, 2);
+                    continue;
+            }
+
+            if (no >= 0) {
+                if (no >= mat.groupCount()) continue;
+                if (!mat.isCaptured(no)) continue;
+                srcList = src.getByteList();
+                srcBytes = srcList.unsafeBytes();
+                val.append(srcBytes, srcList.begin + mat.start(no), mat.end(no) - mat.start(no));
+            }
+            
+        }
+
+        if (p < e) {
+            if (val == null) {
+                val = new ByteList(e - p);
+                val.append(strBytes, p, e - p);
+            } else {
+                val.append(strBytes, p, e - p);
             }
         }
-    }
 
-    /** rb_reg_regsub
-     *
-     */
-    public IRubyObject regsub(IRubyObject str, RubyMatchData match) {
-        RubyString str2 = str.asString();
-        ByteList sb = new ByteList(str2.getByteList().length()+30);
-        regsub(str2,match,sb);
-        return RubyString.newString(getRuntime(),sb);
+        if (val == null) return (RubyString)str;
+        return RubyString.newString(getRuntime(), val);
     }
 
     /** rb_reg_init_copy

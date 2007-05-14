@@ -41,6 +41,7 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     private static final long serialVersionUID = -1286166947275543731L;
 
     public static final byte[] NULL_ARRAY = new byte[0];
+    public static final ByteList EMPTY_BYTELIST = new ByteList(0);
 
     public byte[] bytes;
     public int begin;
@@ -124,8 +125,12 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     public ByteList dup() {
+        return dup(realSize);
+    }
+    
+    public ByteList dup(int length) {
         ByteList dup = new ByteList(false);
-        dup.bytes = new byte[realSize];
+        dup.bytes = new byte[length];
         System.arraycopy(bytes, begin, dup.bytes, 0, realSize);
         dup.realSize = realSize;
         dup.begin = 0;
@@ -136,7 +141,7 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
 
         return dup;        
     }
-
+    
     public ByteList makeShared(int index, int len) {
         ByteList shared = new ByteList(false);        
         shared.bytes = bytes;
@@ -151,10 +156,14 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     public void unshare() {
-        byte[] newBytes = new byte[realSize];
+        unshare(realSize);
+    }
+    
+    public void unshare(int length) {
+        byte[] newBytes = new byte[length];
         System.arraycopy(bytes, begin, newBytes, 0, realSize);
         bytes = newBytes;
-        begin = 0;
+        begin = 0;        
     }
 
     public void invalidate() {
@@ -187,6 +196,12 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
         grow(len);
         System.arraycopy(moreBytes, start, bytes, realSize, len);
         realSize += len;
+    }
+    
+    public void realloc(int length) {
+        byte tmp[] = new byte[length];
+        System.arraycopy(bytes, 0, tmp, 0, realSize);
+        bytes = tmp;
     }
 
     public int length() {
@@ -284,23 +299,29 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     public int indexOf(ByteList find) {
         return indexOf(find, 0);
     }
+    
+    public int indexOf(ByteList find, int i) {
+        return indexOf(bytes, begin, realSize, find.bytes, find.begin, find.realSize, i);
+    }
 
-    public int indexOf(final ByteList find, int pos) {
-        final int len = find.realSize;
-        if (len == 0) return -1;
+    static int indexOf(byte[] source, int sourceOffset, int sourceCount, byte[] target, int targetOffset, int targetCount, int fromIndex) {
+        if (fromIndex >= sourceCount) return (targetCount == 0 ? sourceCount : -1);
+        if (fromIndex < 0) fromIndex = 0;
+        if (targetCount == 0) return fromIndex;
 
-        final byte first = find.bytes[find.begin];
-        final byte[] buf = bytes;
-        final int max = realSize - len + 1;
-        for ( ; pos < max ; pos++ ) {
-            for ( ; pos < max && buf[begin + pos] != first; pos++ ) ;
-            if (pos == max)
-                return -1;
-            int index = len;
-            // TODO: forward/backward scan as in #equals
-            for ( ; --index >= 0 && buf[begin + index + pos] == find.bytes[find.begin + index]; ) ;
-            if (index < 0)
-                return pos;
+        byte first  = target[targetOffset];
+        int max = sourceOffset + (sourceCount - targetCount);
+
+        for (int i = sourceOffset + fromIndex; i <= max; i++) {
+            if (source[i] != first) while (++i <= max && source[i] != first);
+
+            if (i <= max) {
+                int j = i + 1;
+                int end = j + targetCount - 1;
+                for (int k = targetOffset + 1; j < end && source[j] == target[k]; j++, k++);
+
+                if (j == end) return i - sourceOffset;
+            }
         }
         return -1;
     }
@@ -329,27 +350,40 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     public int lastIndexOf(ByteList find) {
-        return lastIndexOf(find, realSize - 1);
+        return lastIndexOf(find, realSize);
     }
 
-    public int lastIndexOf(final ByteList find, int pos) {
-        final int len = find.realSize;
-        if (len == 0) return -1;
+    public int lastIndexOf(ByteList find, int pos) {
+        return lastIndexOf(bytes, begin, realSize, find.bytes, find.begin, find.realSize, pos);
+    }    
 
-        final byte first = find.bytes[find.begin];
-        final byte[] buf = bytes;
-        pos = Math.min(pos,realSize-len);
-        for ( ; pos >= 0 ; pos-- ) {
-            for ( ; pos >= 0 && buf[begin + pos] != first; pos-- ) ;
-            if (pos < 0)
-                return -1;
-            int index = len;
-            // TODO: forward/backward scan as in #equals
-            for ( ; --index >= 0 && buf[begin + index + pos] == find.bytes[find.begin + index]; ) ;
-            if (index < 0)
-                return pos;
-        }
-        return -1;
+    static int lastIndexOf(byte[] source, int sourceOffset, int sourceCount, byte[] target, int targetOffset, int targetCount, int fromIndex) {
+        int rightIndex = sourceCount - targetCount;
+        if (fromIndex < 0) return -1;
+        if (fromIndex > rightIndex) fromIndex = rightIndex;
+        if (targetCount == 0) return fromIndex;
+
+        int strLastIndex = targetOffset + targetCount - 1;
+        byte strLastChar = target[strLastIndex];
+        int min = sourceOffset + targetCount - 1;
+        int i = min + fromIndex;
+
+        startSearchForLastChar:
+            while (true) {
+                while (i >= min && source[i] != strLastChar) i--;
+                if (i < min) return -1;
+                int j = i - 1;
+                int start = j - (targetCount - 1);
+                int k = strLastIndex - 1;
+
+                while (j > start) {
+                    if (source[j--] != target[k--]) {
+                        i--;
+                        continue startSearchForLastChar;
+                    }
+                }
+                return start - sourceOffset + 1;
+            }
     }
 
     public boolean equals(Object other) {
