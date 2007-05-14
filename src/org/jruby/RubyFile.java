@@ -662,13 +662,44 @@ public class RubyFile extends RubyIO {
         
         JRubyFile path = JRubyFile.create(cwd, relativePath);
         
-        String extractedPath;
-        try {
-            extractedPath = padSlashes + path.getCanonicalPath();
-        } catch (IOException e) {
-            extractedPath = padSlashes + path.getAbsolutePath();
+        return runtime.newString(canonicalize(padSlashes + path.getAbsolutePath()));
+    }
+
+    private static String canonicalize(String path) {
+        return canonicalize(null, path);
+    }
+
+    private static String canonicalize(String canonicalPath, String remaining) {
+        if (remaining == null) return canonicalPath;
+
+        String child;
+        int slash = remaining.indexOf('/');
+        if (slash == -1) {
+            child = remaining;
+            remaining = null;
+        } else {
+            child = remaining.substring(0, slash);
+            remaining = remaining.substring(slash + 1);
         }
-        return runtime.newString(extractedPath);
+
+        if (child.equals(".")) {
+            // skip it
+            if (canonicalPath != null && (canonicalPath.length() == 0 || canonicalPath.endsWith("/"))) canonicalPath += "/";
+        } else if (child.equals("..")) {
+            if (canonicalPath == null) throw new IllegalArgumentException("Cannot have .. at the start of an absolute path");
+            int lastDir = canonicalPath.lastIndexOf('/');
+            if (lastDir == -1) {
+                canonicalPath = null;
+            } else {
+                canonicalPath = canonicalPath.substring(0, lastDir);
+            }
+        } else if (canonicalPath == null) {
+            canonicalPath = child;
+        } else {
+            canonicalPath += "/" + child;
+        }
+
+        return canonicalize(canonicalPath, remaining);
     }
 
     /**

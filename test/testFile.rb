@@ -197,5 +197,9 @@ test_ok(stat2.readable?)
 system("ln -s build.xml build.xml.link")
 if File.exist? "build.xml.link"
   test_ok(File.symlink?("build.xml.link"))
+  # JRUBY-683 -  Test that symlinks don't effect Dir and File.expand_path
+  test_equal(['build.xml.link'], Dir['build.xml.link'])
+  test_equal(File.expand_path('.') + '/build.xml.link', File.expand_path('build.xml.link'))
   File.delete("build.xml.link")
 end
+
