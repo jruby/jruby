@@ -187,6 +187,9 @@ public class LoadService {
     }
 
     private void addPath(String path) {
+        // Empty paths do not need to be added
+        if (path == null || path.length() == 0) return;
+        
         synchronized(loadPath) {
             loadPath.add(runtime.newString(path.replace('\\', '/')));
         }
