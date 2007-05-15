@@ -448,7 +448,7 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     public int cmp(final ByteList other) {
-        if (other == this || bytes == other.bytes) return 0;
+        if (other == this) return 0;
         final int size = realSize;
         final int len =  Math.min(size,other.realSize);
         int offset = -1;
