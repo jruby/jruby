@@ -776,7 +776,8 @@ public class RubyKernel {
         Ruby runtime = recv.getRuntime();
 
         String tag = args[0].asSymbol();
-        String[] catches = runtime.getCurrentContext().getActiveCatches();
+        ThreadContext context = runtime.getCurrentContext();
+        String[] catches = context.getActiveCatches();
 
         String message = "uncaught throw '" + tag + '\'';
 
@@ -784,12 +785,7 @@ public class RubyKernel {
         for (int i = catches.length - 1 ; i >= 0 ; i--) {
             if (tag.equals(catches[i])) {
                 //Catch active, throw for catch to handle
-                JumpException je = recv.getRuntime().getCurrentContext().controlException;
-                je.setJumpType(JumpException.JumpType.ThrowJump);
-
-                je.setTarget(tag);
-                je.setValue(args.length > 1 ? args[1] : runtime.getNil());
-                throw je;
+                throw context.prepareJumpException(JumpException.JumpType.ThrowJump, tag, args.length > 1 ? args[1] : runtime.getNil());
             }
         }
 

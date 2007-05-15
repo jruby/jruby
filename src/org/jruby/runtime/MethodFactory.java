@@ -37,12 +37,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.collections.SinglyLinkedList;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
 public abstract class MethodFactory {
-    public abstract DynamicMethod getFullMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility);
-    public abstract DynamicMethod getSimpleMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility);
     public abstract DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope scope);
 
     private static boolean reflection = false;
@@ -53,33 +48,29 @@ public abstract class MethodFactory {
        if (Ruby.isSecurityRestricted())
            reflection = true;
        else {
-           if(System.getProperty("jruby.reflection") != null && Boolean.getBoolean("jruby.reflection")) {
+           if (System.getProperty("jruby.reflection") != null && Boolean.getBoolean("jruby.reflection")) {
                reflection = true;
            }
-           if(System.getProperty("jruby.dump_invocations") != null) {
+           if (System.getProperty("jruby.dump_invocations") != null) {
                dumping = true;
                dumpingPath = System.getProperty("jruby.dump_invocations").toString();
            }
        }
     }
 
+    // Called from compiled code
     public static MethodFactory createFactory() {
-        if(reflection) {
-            return new ReflectionMethodFactory();
-        } else if(dumping) {
-            return new DumpingInvocationMethodFactory(dumpingPath);
-        } else {
-            return new InvocationMethodFactory();
-        }
+        if (reflection) return new ReflectionMethodFactory();
+        if (dumping) return new DumpingInvocationMethodFactory(dumpingPath);
+
+        return new InvocationMethodFactory();
     }
 
+    // Called from compiled code
     public static MethodFactory createFactory(ClassLoader classLoader) {
-        if(reflection) {
-            return new ReflectionMethodFactory();
-        } else if(dumping) {
-            return new DumpingInvocationMethodFactory(dumpingPath);
-        } else {
-            return new InvocationMethodFactory((JRubyClassLoader)classLoader);
-        }
+        if (reflection) return new ReflectionMethodFactory();
+        if (dumping) return new DumpingInvocationMethodFactory(dumpingPath);
+
+        return new InvocationMethodFactory((JRubyClassLoader)classLoader);
     }
-}// MethodFactory
+}

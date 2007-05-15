@@ -33,6 +33,8 @@
 package org.jruby;
 
 import java.util.List;
+
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
@@ -180,6 +182,7 @@ public class RubyStruct extends RubyObject {
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         String name = null;
         Ruby runtime = recv.getRuntime();
+        Arity.checkArgumentCount(runtime, args, 1, -1);
 
         if (args.length > 0 && args[0] instanceof RubyString) {
             name = args[0].toString();

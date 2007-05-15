@@ -34,20 +34,9 @@ import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.collections.SinglyLinkedList;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
 public class ReflectionMethodFactory extends MethodFactory {
-    public DynamicMethod getFullMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility) {
-        return new FullFunctionReflectedMethod(implementationClass,type,methodName,arity,visibility);
-    }
-
-    public DynamicMethod getSimpleMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility) {
-        return new SimpleReflectedMethod(implementationClass,type,methodName,arity,visibility);
-    }
-
     public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope scope) {
         assert false: "Not yet implemented";
         return null;
     }
-}// ReflectionMethodFactory
+}

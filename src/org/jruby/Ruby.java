@@ -72,6 +72,7 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.IConvLibrary;
 import org.jruby.libraries.JRubyLibrary;
+import org.jruby.libraries.NKFLibrary;
 import org.jruby.libraries.RbConfigLibrary;
 import org.jruby.libraries.StringIOLibrary;
 import org.jruby.libraries.StringScannerLibrary;
@@ -109,7 +110,7 @@ import org.jruby.util.collections.SinglyLinkedList;
  * The jruby runtime.
  */
 public final class Ruby {
-    private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "nkf", "yaml/syck" };
+    private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "yaml/syck" };
 
     private CacheMap cacheMap = new CacheMap(this);
     private ThreadService threadService = new ThreadService(this);
@@ -652,6 +653,7 @@ public final class Ruby {
 
         registerBuiltin("jruby.rb", new JRubyLibrary());
         registerBuiltin("iconv.rb", new IConvLibrary());
+        registerBuiltin("nkf.rb", new NKFLibrary());
         registerBuiltin("stringio.rb", new StringIOLibrary());
         registerBuiltin("strscan.rb", new StringScannerLibrary());
         registerBuiltin("zlib.rb", new ZlibLibrary());

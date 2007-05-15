@@ -90,7 +90,15 @@ public class ThreadContext {
     
     private ISourcePosition sourcePosition = new SourcePositionFactory(null).getDummyPosition();
     
-    public final JumpException controlException = new JumpException();
+    public JumpException prepareJumpException(JumpException.JumpType jumpType, Object target, Object value) {
+        JumpException controlException = new JumpException();
+        
+        controlException.setJumpType(jumpType);
+        controlException.setTarget(target);
+        controlException.setValue(value);
+        
+        return controlException;
+    }
     
     /**
      * Constructor for Context.

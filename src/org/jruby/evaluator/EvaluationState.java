@@ -529,12 +529,7 @@ public class EvaluationState {
    
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
-        JumpException je = context.controlException;
-        je.setJumpType(JumpException.JumpType.BreakJump);
-   
-        je.setValue(result);
-   
-        throw je;
+        throw context.prepareJumpException(JumpException.JumpType.BreakJump, null, result);
     }
 
     private static IRubyObject callNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1325,13 +1320,7 @@ public class EvaluationState {
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
         // now used as an interpreter event
-        JumpException je = context.controlException;
-        je.setJumpType(JumpException.JumpType.NextJump);
-   
-        je.setTarget(iVisited);
-        je.setValue(result);
-   
-        throw je;
+        throw context.prepareJumpException(JumpException.JumpType.NextJump, iVisited, result);
     }
 
     private static IRubyObject nilNode(Ruby runtime, ThreadContext context) {
@@ -1482,12 +1471,7 @@ public class EvaluationState {
         context.pollThreadEvents();
    
         // now used as an interpreter event
-        JumpException je = context.controlException;
-        je.setJumpType(JumpException.JumpType.RedoJump);
-   
-        je.setValue(node);
-   
-        throw je;
+        throw context.prepareJumpException(JumpException.JumpType.RedoJump, null, node);
     }
 
     private static IRubyObject regexpNode(Ruby runtime, Node node) {
@@ -1580,10 +1564,7 @@ public class EvaluationState {
     private static IRubyObject retryNode(ThreadContext context) {
         context.pollThreadEvents();
    
-        JumpException je = context.controlException;
-        je.setJumpType(JumpException.JumpType.RetryJump);
-   
-        throw je;
+        throw context.prepareJumpException(JumpException.JumpType.RetryJump, null, null);
     }
     
     private static IRubyObject returnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1591,13 +1572,7 @@ public class EvaluationState {
    
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
-        JumpException je = context.controlException;
-        je.setJumpType(JumpException.JumpType.ReturnJump);
-
-        je.setTarget(context.getFrameJumpTarget());
-        je.setValue(result);
-   
-        throw je;
+        throw context.prepareJumpException(JumpException.JumpType.ReturnJump, context.getFrameJumpTarget(), result);
     }
 
     private static IRubyObject rootNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

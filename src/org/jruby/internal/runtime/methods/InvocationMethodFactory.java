@@ -28,9 +28,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
-import org.jruby.RubyKernel;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -38,7 +36,6 @@ import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.collections.SinglyLinkedList;
 
@@ -46,16 +43,10 @@ import org.jruby.util.collections.SinglyLinkedList;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class InvocationMethodFactory extends MethodFactory implements Opcodes {
-    private final static Class IRUBY_OBJECT_ARR = IRubyObject[].class;
-    private final static String SIMPLE_SUPER_CLASS = SimpleInvocationMethod.class.getName().replace('.','/');
     private final static String COMPILED_SUPER_CLASS = CompiledMethod.class.getName().replace('.','/');
-    private final static String FULL_SUPER_CLASS = FullInvocationMethod.class.getName().replace('.','/');
     private final static String IRUB_ID = "Lorg/jruby/runtime/builtin/IRubyObject;";
     private final static String BLOCK_ID = "Lorg/jruby/runtime/Block;";
-    private final static String CALL_SIG = "(" + IRUB_ID + "[" + IRUB_ID + BLOCK_ID + ")" + IRUB_ID;
-    private final static String CALL_SIG_NB = "(" + IRUB_ID + "[" + IRUB_ID + ")" + IRUB_ID;
     private final static String COMPILED_CALL_SIG = "(Lorg/jruby/runtime/ThreadContext;" + IRUB_ID + "[" + IRUB_ID + BLOCK_ID + ")" + IRUB_ID;
-    private final static String SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ")V";
     private final static String COMPILED_SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ci(SinglyLinkedList.class) + ci(StaticScope.class) + ")V";
 
     private JRubyClassLoader classLoader;
@@ -81,22 +72,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return "L" + p(n) + ";";
     }
 
-    private ClassWriter createCtor(String namePath, String sup) throws Exception {
-        ClassWriter cw = new ClassWriter(true);
-        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", SUPER_SIG, null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitVarInsn(ALOAD, 2);
-        mv.visitVarInsn(ALOAD, 3);
-        mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", SUPER_SIG);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(0,0);
-        mv.visitEnd();
-        return cw;
-    }
-
     private ClassWriter createCompiledCtor(String namePath, String sup) throws Exception {
         ClassWriter cw = new ClassWriter(true);
         cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
@@ -119,9 +94,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         try {
             if (classLoader == null) {
                 return Class.forName(name, true, runtime.getJRubyClassLoader());
-            } else {
-                return classLoader.loadClass(name);
             }
+             
+            return classLoader.loadClass(name);
         } catch(Exception e) {
             return null;
         }
@@ -132,84 +107,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.visitEnd();
         cw.visitEnd();
         byte[] code = cw.toByteArray();
-        if (classLoader == null) {
-            return runtime.getJRubyClassLoader().defineClass(name, code);
-        } else {
-            return classLoader.defineClass(name, code);
-        }
-    }
-
-    private String getReturnName(Class type, String method, Class[] args) throws Exception {
-        String t = ci(type.getMethod(method,args).getReturnType());
-        if("void".equalsIgnoreCase(t)) {
-            throw new IllegalArgumentException("Method " + method + " has a void return type. This is not allowed in JRuby.");
-        }
-        return t;
-    }
-
-    private DynamicMethod getMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, String sup, boolean block) {
-        String typePath = p(type);
-        String mname = type.getName() + "Invoker" + method + arity;
-        String mnamePath = typePath + "Invoker" + method + arity;
-        Class c = tryClass(implementationClass.getRuntime(), mname);
-        try {
-            if(c == null) {
-                ClassWriter cw = createCtor(mnamePath,sup);
-                MethodVisitor mv = null;
-                if(arity.isFixed()) {
-                    int ar_len = arity.getValue();
-                    Class[] sign = new Class[ block ? ar_len+1 : ar_len ];
-                    java.util.Arrays.fill(sign,RubyKernel.IRUBY_OBJECT);
-                    if(block) {
-                        sign[sign.length-1] = Block.class;
-                    }
-                    StringBuffer sbe = new StringBuffer();
-                    for(int i=0;i<ar_len;i++) {
-                        sbe.append(IRUB_ID);
-                    }
-                    if(block) {
-                        sbe.append(BLOCK_ID);
-                    }
-                    String ret = getReturnName(type, method, sign);
-                    mv = cw.visitMethod(ACC_PUBLIC, "call", block ? CALL_SIG : CALL_SIG_NB, null, null);
-                    mv.visitCode();
-                    mv.visitVarInsn(ALOAD, 1);
-                    mv.visitTypeInsn(CHECKCAST, typePath);
-                    for(int i=0;i<ar_len;i++) {
-                        mv.visitVarInsn(ALOAD, 2);
-                        if(i < 6) {
-                            mv.visitInsn(ICONST_0 + i);
-                        } else {
-                            mv.visitIntInsn(BIPUSH,i);
-                        }
-                        mv.visitInsn(AALOAD);
-                    }
-                    if(block) {
-                        mv.visitVarInsn(ALOAD, 3);
-                    }
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "(" + sbe + ")" + ret);
-                    mv.visitInsn(ARETURN);
-                } else {
-                    String ret = getReturnName(type, method, block ? new Class[]{IRUBY_OBJECT_ARR, Block.class} : new Class[]{IRUBY_OBJECT_ARR});
-                    mv = cw.visitMethod(ACC_PUBLIC, "call", block ? CALL_SIG : CALL_SIG_NB, null, null);
-                    mv.visitCode();
-                    mv.visitVarInsn(ALOAD, 1);
-                    mv.visitTypeInsn(CHECKCAST, typePath);
-                    mv.visitVarInsn(ALOAD, 2);
-                    if(block) {
-                        mv.visitVarInsn(ALOAD, 3);
-                    }
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "([" + IRUB_ID + (block ? BLOCK_ID : "") + ")" + ret);
-                    mv.visitInsn(ARETURN);
-                }
-                c = endCall(implementationClass.getRuntime(), cw,mv,mname);
-            }
-            
-            return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class}).newInstance(new Object[]{implementationClass,arity,visibility});
-        } catch(Exception e) {
-            e.printStackTrace();
-            throw implementationClass.getRuntime().newLoadError(e.getMessage());
-        }
+        if (classLoader == null) classLoader = runtime.getJRubyClassLoader();
+         
+        return classLoader.defineClass(name, code);
     }
 
     private DynamicMethod getCompleteMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope scope, String sup) {
@@ -218,7 +118,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String mnamePath = typePath + "Invoker" + method + arity;
         Class c = tryClass(implementationClass.getRuntime(), mname);
         try {
-            if(c == null) {
+            if (c == null) {
                 ClassWriter cw = createCompiledCtor(mnamePath,sup);
                 MethodVisitor mv = null;
 
@@ -244,15 +144,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    public DynamicMethod getFullMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility) {
-        return getMethod(implementationClass,type,method,arity,visibility,FULL_SUPER_CLASS, true);
-    }
-
-    public DynamicMethod getSimpleMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility) {
-        return getMethod(implementationClass,type,method,arity,visibility,SIMPLE_SUPER_CLASS, false);
-    }
-
     public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope scope) {
         return getCompleteMethod(implementationClass,type,method,arity,visibility,cref,scope, COMPILED_SUPER_CLASS);
     }
-}// InvocationMethodFactory
+}
