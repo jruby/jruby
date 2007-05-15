@@ -285,6 +285,33 @@ public final class Ruby {
             throw je;
         }
     }
+    
+    public IRubyObject compileOrFallbackAndRun(Node node) {
+        try {
+            // do the compile
+            Script script = null;
+            try {
+                StandardASMCompiler compiler = new StandardASMCompiler(node);
+                NodeCompilerFactory.getCompiler(node).compile(node, compiler);
+                
+                Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
+                
+                script = (Script)scriptClass.newInstance();
+            } catch (Throwable t) { // The rest of these are all fallbacks
+                return eval(node);
+            }
+            
+            // FIXME: Pass something better for args and block here?
+            return script.run(getCurrentContext(), getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        } catch (JumpException je) {
+            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                return (IRubyObject) je.getValue();
+            } else {
+                throw je;
+            }
+        }
+        
+    }
 
     public IRubyObject compileAndRun(Node node) {
         try {
@@ -307,16 +334,13 @@ public final class Ruby {
                 throw je;
             }
         } catch (ClassNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            System.err.println("Error -- Not compileable: " + e.getMessage());
             return null;
         } catch (InstantiationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            System.err.println("Error -- Not compileable: " + e.getMessage());
             return null;
         } catch (IllegalAccessException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            System.err.println("Error -- Not compileable: " + e.getMessage());
             return null;
         }
     }

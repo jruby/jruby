@@ -138,7 +138,7 @@ public class JumpException extends RuntimeException {
     /**
      * @param target The target (destination) of the jump.
      */
-    public void setTarget(Object target) {
+    public void setxTarget(Object target) {
         this.target = target;
     }
     

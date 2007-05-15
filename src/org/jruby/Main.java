@@ -230,7 +230,7 @@ public class Main {
                 } else if(commandline.isYARVCompileEnabled()) {
                     runtime.ycompileAndRun(parsedScript);
                 } else {
-                    runtime.eval(parsedScript);
+                    runtime.compileOrFallbackAndRun(parsedScript);
                 }
             }
         } finally {
