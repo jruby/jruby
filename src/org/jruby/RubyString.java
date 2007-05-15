@@ -2531,39 +2531,34 @@ public class RubyString extends RubyObject {
             RubyMatchData md = matchdata(runtime, str, mat, utf8); 
             context.setBackref(md);
             while(mat.find()) {
-                if (mat.length(0) > 0) {
-                    int groups = mat.groupCount();
-                    if (groups == 1) {
-                        result.append(substr(runtime, str, mat.start(0), mat.length(0), utf8));
-                    } else {
-                        RubyArray sub = runtime.newArray(groups);
-                        for (int i=1; i < groups; i++){
-                            sub.append(mat.isCaptured(i) ? substr(runtime, str, mat.start(i), mat.length(i), utf8) : runtime.getNil());
-                        }
-                        result.append(sub);
+                int groups = mat.groupCount();
+                if (groups == 1) {
+                    result.append(substr(runtime, str, mat.start(0), mat.length(0), utf8));
+                } else {
+                    RubyArray sub = runtime.newArray(groups);
+                    for (int i=1; i < groups; i++){
+                        sub.append(mat.isCaptured(i) ? substr(runtime, str, mat.start(i), mat.length(i), utf8) : runtime.getNil());
                     }
-                    md.invalidateRegs();
+                    result.append(sub);
                 }
+                md.invalidateRegs();
             }
             return result;
         } 
             
         while(mat.find()) {
-            
-            if (mat.length(0) > 0) {
-                int groups = mat.groupCount();
+            int groups = mat.groupCount();
 
-                context.setBackref(matchdata(runtime, str, mat, utf8));
-                
-                if (groups == 1) {
-                    block.yield(context, substr(runtime, str, mat.start(0), mat.length(0), utf8));
-                } else {
-                    RubyArray sub = runtime.newArray(groups);
-                    for (int i=1; i < groups; i++){
-                        sub.append(mat.isCaptured(i) ? substr(runtime, str, mat.start(i), mat.length(i), utf8) : runtime.getNil());                        
-                    }
-                    block.yield(context, sub);
+            context.setBackref(matchdata(runtime, str, mat, utf8));
+            
+            if (groups == 1) {
+                block.yield(context, substr(runtime, str, mat.start(0), mat.length(0), utf8));
+            } else {
+                RubyArray sub = runtime.newArray(groups);
+                for (int i=1; i < groups; i++){
+                    sub.append(mat.isCaptured(i) ? substr(runtime, str, mat.start(i), mat.length(i), utf8) : runtime.getNil());                        
                 }
+                block.yield(context, sub);
             }
         }
 
