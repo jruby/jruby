@@ -2386,7 +2386,7 @@ public class RubyString extends RubyObject {
             
             for (end = beg = 0; ptr < eptr; ptr++) {
                 if (skip) {
-                    if (Character.isWhitespace(buff[ptr])) {
+                    if (Character.isWhitespace((char)(buff[ptr] & 0xff))) {
                         beg++;
                     } else {
                         end = beg + 1;
@@ -2394,7 +2394,7 @@ public class RubyString extends RubyObject {
                         if (limit && lim <= i) break;
                     }
                 } else {
-                    if (Character.isWhitespace(buff[ptr])) {
+                    if (Character.isWhitespace((char)(buff[ptr] & 0xff))) {
                         result.append(makeShared(beg, end - beg));
                         skip = true;
                         beg = end + 1;
