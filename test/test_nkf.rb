@@ -10,12 +10,12 @@ class NKFTest < Test::Unit::TestCase
     assert_respond_to(NKF, :nkf)
   end
 
-  def test_guess
-    sjis = ["82a082a282a482a682a8"].pack("H*")
-    euc = ["a4a2a4a4a4a6a4a8a4aa"].pack("H*")
-    assert_equal(NKF.guess(sjis), NKF::SJIS)
-    assert_equal(NKF.guess(euc), NKF::EUC)
-  end
+#  def test_guess
+#    sjis = ["82a082a282a482a682a8"].pack("H*")
+#    euc = ["a4a2a4a4a4a6a4a8a4aa"].pack("H*")
+#    assert_equal(NKF.guess(sjis), NKF::SJIS)
+#    assert_equal(NKF.guess(euc), NKF::EUC)
+#  end
   
   def test_sjis_utf
     sjis = ["82a082a282a482a682a8"].pack("H*")
