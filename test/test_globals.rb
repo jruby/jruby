@@ -80,4 +80,19 @@ class TestGlobals < Test::Unit::TestCase
     $_ = 'two'
     'two' =~ /two/
   end
+
+  def test_aliases_backref_globals
+    alias $POSTMATCH $'
+    alias $PREMATCH $`
+    alias $MATCH $&
+
+    /^is/ =~ "isFubared"
+
+	assert_equal "Fubared", $'
+    assert_equal $', $POSTMATCH
+    assert_equal "", $`
+    assert_equal $`, $PREMATCH
+    assert_equal "is", $&
+    assert_equal $&, $MATCH
+  end
 end

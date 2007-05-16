@@ -148,6 +148,11 @@ public class RubyGlobal {
         runtime.defineVariable(new LoadPath(runtime, "$:"));
         runtime.defineVariable(new LoadPath(runtime, "$-I"));
         runtime.defineVariable(new LoadPath(runtime, "$LOAD_PATH"));
+        
+        runtime.defineVariable(new MatchMatchGlobalVariable(runtime, "$&"));
+        runtime.defineVariable(new PreMatchGlobalVariable(runtime, "$`"));
+        runtime.defineVariable(new PostMatchGlobalVariable(runtime, "$'"));
+        runtime.defineVariable(new LastMatchGlobalVariable(runtime, "$+"));
 
         // after defn of $stderr as the call may produce warnings
         defineGlobalEnvConstants(runtime);
@@ -190,6 +195,45 @@ public class RubyGlobal {
         
     }
 
+    private static class MatchMatchGlobalVariable extends GlobalVariable {
+        public MatchMatchGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name, runtime.getNil());
+        }
+        
+        public IRubyObject get() {
+            return RubyRegexp.last_match(runtime.getCurrentContext().getBackref());
+        }
+    }
+
+    private static class PreMatchGlobalVariable extends GlobalVariable {
+        public PreMatchGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name, runtime.getNil());
+        }
+        
+        public IRubyObject get() {
+            return RubyRegexp.match_pre(runtime.getCurrentContext().getBackref());
+        }
+    }
+
+    private static class PostMatchGlobalVariable extends GlobalVariable {
+        public PostMatchGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name, runtime.getNil());
+        }
+        
+        public IRubyObject get() {
+            return RubyRegexp.match_post(runtime.getCurrentContext().getBackref());
+        }
+    }
+
+    private static class LastMatchGlobalVariable extends GlobalVariable {
+        public LastMatchGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name, runtime.getNil());
+        }
+        
+        public IRubyObject get() {
+            return RubyRegexp.match_last(runtime.getCurrentContext().getBackref());
+        }
+    }
 
 
     // Accessor methods.
