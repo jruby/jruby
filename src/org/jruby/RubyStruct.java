@@ -92,6 +92,7 @@ public class RubyStruct extends RubyObject {
         structClass.defineMethod("each_pair", callbackFactory.getMethod("each_pair"));
         structClass.defineFastMethod("[]", callbackFactory.getFastMethod("aref", RubyKernel.IRUBY_OBJECT));
         structClass.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        structClass.defineFastMethod("values_at", callbackFactory.getFastOptMethod("values_at"));
 
         structClass.defineFastMethod("members", callbackFactory.getFastMethod("members"));
 
@@ -468,6 +469,38 @@ public class RubyStruct extends RubyObject {
         modify();
         return values[idx] = value;
     }
+    
+    // FIXME: This is copied code from RubyArray.  Both RE, Struct, and Array should share one impl
+    // This is also hacky since I construct ruby objects to access ruby arrays through aref instead
+    // of something lower.
+    public IRubyObject values_at(IRubyObject[] args) {
+        long olen = values.length;
+        RubyArray result = getRuntime().newArray(args.length);
+
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof RubyFixnum) {
+                result.append(aref(args[i]));
+                continue;
+            }
+
+            long beglen[];
+            if (!(args[i] instanceof RubyRange)) {
+            } else if ((beglen = ((RubyRange) args[i]).begLen(olen, 0)) == null) {
+                continue;
+            } else {
+                int beg = (int) beglen[0];
+                int len = (int) beglen[1];
+                int end = len;
+                for (int j = 0; j < end; j++) {
+                    result.append(aref(getRuntime().newFixnum(j + beg)));
+                }
+                continue;
+            }
+            result.append(aref(getRuntime().newFixnum(RubyNumeric.num2long(args[i]))));
+        }
+
+        return result;
+    }
 
     public static void marshalTo(RubyStruct struct, MarshalStream output) throws java.io.IOException {
         output.dumpDefaultObjectHeader('S', struct.getMetaClass());
@@ -535,4 +568,5 @@ public class RubyStruct extends RubyObject {
 
         return this;
     }
+    
 }
