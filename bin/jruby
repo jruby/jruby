@@ -107,21 +107,36 @@ fi
 
 # ----- Execute The Requested Command -----------------------------------------
 
-DEBUG=""
-if [ "$1" = "JAVA_DEBUG" ]; then
-  DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=y"
-  shift
-else
-  if [ "$1" = "JPROFILER" ]; then
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$JPROFILER_PATH/bin/linux-x86
-    DEBUG="-Xrunjprofiler:port=8000,noexit -Xbootclasspath/a:/$JPROFILER_PATH/bin/agent.jar"
+# Split out any -J argument for passing to the JVM.
+# Scanning for args is aborted by '--'.
+java_args=()
+ruby_args=()
+while [ $# -gt 0 ]
+do
+    case "$1" in
+    # Whole following argument goes to JVM
+    -J) shift; java_args=("${java_args[@]}" "${1}") ;;
+    # Stuff after '-J' in this argument goes to JVM
+    -J*) java_args=("${java_args[@]}" "${1:2}") ;;
+     # Match switches that take an argument
+     -e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
+     # Match same switches with argument stuck together
+     -e*|-I*|-S*) ruby_args=("${ruby_args[@]}" "$1" ) ;;
+     # Abort processing on the double dash
+     --) break ;;
+     # Other opts go to ruby
+     -*) ruby_args=("${ruby_args[@]}" "$1") ;;
+     # Abort processing on first non-opt arg
+     *) break ;;
+    esac
     shift
-  else if [ "$1" = "HPROF" ]; then
-      DEBUG="-Xrunhprof:cpu=samples"
-      shift
-  fi
-  fi
-fi
+done
+
+# Append the rest of the arguments
+ruby_args=("${ruby_args[@]}" "$@")
+
+# Put the ruby_args back into the position arguments $1, $2 etc
+set -- "${ruby_args[@]}"
 
 if $cygwin; then
   JAVA_HOME=`cygpath --mixed "$JAVA_HOME"`
@@ -130,20 +145,9 @@ if $cygwin; then
   JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
 fi
 
-EN_US=
-if [ "$1" = "EN_US" ]; then
-  EN_US="-Duser.language=en -Duser.country=US"
-  shift
-fi
-
-if [ "$1" = "SERVER" ]; then
-  DEBUG="-server"
-  shift
-fi
-
-exec "$JAVA_CMD" $JAVA_OPTS $DEBUG -Xmx256m -Xss1024k -Xverify:none -da -classpath "$CP"	\
+exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -Xmx256m -Xss1024k -Xverify:none -da -classpath "$CP"	\
   "-Djruby.base=$JRUBY_BASE" "-Djruby.home=$JRUBY_HOME"				\
   "-Djruby.lib=$JRUBY_BASE/lib" -Djruby.script=jruby				\
-  "-Djruby.shell=$JRUBY_SHELL" $EN_US 						\
-  org.jruby.Main $JRUBY_OPTS "$@" 
+  "-Djruby.shell=$JRUBY_SHELL"  						\
+  org.jruby.Main $JRUBY_OPTS "$@"
 
