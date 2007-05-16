@@ -20,6 +20,7 @@
  * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2007 Mirko Stocker <me@misto.ch>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -1565,31 +1566,31 @@ f_arglist      : tLPAREN2 f_args opt_nl tRPAREN {
                }
 
 f_args         : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
-                   $$ = new ArgsNode(support.union($1, $6), $1, $3, ((Integer) $5.getValue()).intValue(), $6);
+                   $$ = new ArgsNode(support.union($1, $6), $1, $3, ((Integer) $5.getValue()).intValue(), support.getRestArgNode($5), $6);
                }
                | f_arg ',' f_optarg opt_f_block_arg {
-                   $$ = new ArgsNode(getPosition($1), $1, $3, -1, $4);
+                   $$ = new ArgsNode(getPosition($1), $1, $3, -1, null, $4);
                }
                | f_arg ',' f_rest_arg opt_f_block_arg {
-                   $$ = new ArgsNode(support.union($1, $4), $1, null, ((Integer) $3.getValue()).intValue(), $4);
+                   $$ = new ArgsNode(support.union($1, $4), $1, null, ((Integer) $3.getValue()).intValue(), support.getRestArgNode($3), $4);
                }
                | f_arg opt_f_block_arg {
-                   $$ = new ArgsNode($<ISourcePositionHolder>1.getPosition(), $1, null, -1, $2);
+                   $$ = new ArgsNode($<ISourcePositionHolder>1.getPosition(), $1, null, -1, null, $2);
                }
                | f_optarg ',' f_rest_arg opt_f_block_arg {
-                   $$ = new ArgsNode(getPosition($1), null, $1, ((Integer) $3.getValue()).intValue(), $4);
+                   $$ = new ArgsNode(getPosition($1), null, $1, ((Integer) $3.getValue()).intValue(), support.getRestArgNode($3), $4);
                }
                | f_optarg opt_f_block_arg {
-                   $$ = new ArgsNode(getPosition($1), null, $1, -1, $2);
+                   $$ = new ArgsNode(getPosition($1), null, $1, -1, null, $2);
                }
                | f_rest_arg opt_f_block_arg {
-                   $$ = new ArgsNode(getPosition($1), null, null, ((Integer) $1.getValue()).intValue(), $2);
+                   $$ = new ArgsNode(getPosition($1), null, null, ((Integer) $1.getValue()).intValue(), support.getRestArgNode($1), $2);
                }
                | f_block_arg {
-                   $$ = new ArgsNode(getPosition($1), null, null, -1, $1);
+                   $$ = new ArgsNode(getPosition($1), null, null, -1, null, $1);
                }
                | /* none */ {
-                   $$ = new ArgsNode(support.createEmptyArgsNodePosition(getPosition(null)), null, null, -1, null);
+                   $$ = new ArgsNode(support.createEmptyArgsNodePosition(getPosition(null)), null, null, -1, null, null);
                }
 
 f_norm_arg     : tCONSTANT {

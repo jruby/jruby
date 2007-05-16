@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Mirko Stocker <me@misto.ch>
+ * Copyright (C) 2006-2007 Mirko Stocker <me@misto.ch>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -291,9 +291,9 @@ public class ReWriteVisitor implements NodeVisitor {
         
 		if (iVisited.getOptArgs() != null) arguments.addAll(iVisited.getOptArgs().childNodes());
         
-		if (iVisited.getRestArg() > 0) {
-			arguments.add(new ConstNode(null, '*' + config.getLocalVariables().getLocalVariable(iVisited.getRestArg())));
-        }
+		if (iVisited.getRestArgNode() != null) {
+			arguments.add(new ConstNode(null, '*' + iVisited.getRestArgNode().getName()));
+        	}
         
 		if (iVisited.getBlockArgNode() != null) arguments.add(iVisited.getBlockArgNode());
         
@@ -681,7 +681,7 @@ public class ReWriteVisitor implements NodeVisitor {
 		if (n instanceof ArgsNode) {
 			ArgsNode args = (ArgsNode) n;
 			return (args.getArgs() != null || args.getOptArgs() != null
-					|| args.getBlockArgNode() != null || args.getRestArg() > 0 );
+					|| args.getBlockArgNode() != null || args.getRestArgNode() != null);
 		} else if (n instanceof ArrayNode && n.childNodes().isEmpty()) {
 			return false;
 		}

@@ -17,7 +17,7 @@
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * Copyright (C) 2006 Mirko Stocker <me@misto.ch>
+ * Copyright (C) 2006-2007 Mirko Stocker <me@misto.ch>
  * Copyright (C) 2006 Thomas Corbat <tcorbat@hsr.ch>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -37,6 +37,7 @@ package org.jruby.parser;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsPushNode;
+import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.AttrAssignNode;
@@ -914,5 +915,15 @@ public class ParserSupport {
     
     private Node checkForNilNode(Node node, ISourcePosition defaultPosition) {
         return (node == null) ? new NilNode(defaultPosition) : node; 
+    }
+
+    public ArgumentNode getRestArgNode(Token token) {
+        int index = ((Integer) token.getValue()).intValue();
+        if(index < 0) {
+            return null;
+        }
+        String name = getCurrentScope().getLocalScope().getVariables()[index];
+        ISourcePosition position = new SourcePosition(token.getPosition().getFile(), token.getPosition().getStartLine(), token.getPosition().getEndLine(), token.getPosition().getStartOffset(), token.getPosition().getEndOffset() + name.length());
+        return new ArgumentNode(position, name);
     }
 }

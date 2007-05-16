@@ -16,6 +16,7 @@
  * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2007 Mirko Stocker <me@misto.ch>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -61,6 +62,7 @@ public class ArgsNode extends Node {
 
     private final ListNode arguments;
     private final ListNode optArgs;
+    private final ArgumentNode restArgNode;
     private final int restArg;
     private final BlockArgNode blockArgNode;
     private final Arity arity;
@@ -74,15 +76,17 @@ public class ArgsNode extends Node {
      * 				all additional params)
      * 				or -1 if there is none.
      * @param argsCount number of regular arguments
+     * @param restArgNode The rest argument (*args).
      * @param blockArgNode An optional block argument (&amp;arg).
      **/
     public ArgsNode(ISourcePosition position, ListNode arguments, ListNode optionalArguments, 
-            int restArguments, BlockArgNode blockArgNode) {
+            int restArguments, ArgumentNode restArgNode, BlockArgNode blockArgNode) {
         super(position, NodeTypes.ARGSNODE);
 
         this.arguments = arguments;
         this.optArgs = optionalArguments;
         this.restArg = restArguments;
+        this.restArgNode = restArgNode;
         this.blockArgNode = blockArgNode;
         
         if (getRestArg() == -2) {
@@ -134,6 +138,14 @@ public class ArgsNode extends Node {
     }
 
     /**
+     * Gets the restArgNode.
+     * @return Returns an ArgumentNode
+     */
+    public ArgumentNode getRestArgNode() {
+        return restArgNode;
+    }
+
+    /**
      * Gets the blockArgNode.
      * @return Returns a BlockArgNode
      */
@@ -142,7 +154,7 @@ public class ArgsNode extends Node {
     }
     
     public List childNodes() {
-        return Node.createList(arguments, optArgs, blockArgNode);
+        return Node.createList(arguments, optArgs, restArgNode, blockArgNode);
     }
 
 }
