@@ -134,4 +134,19 @@ class TestThread < Test::Unit::TestCase
     assert_equal(2, Thread.new { 2 }.value)
     assert_raise(RuntimeError) { Thread.new { raise "foo" }.value }
   end
+  
+  class MyThread < Thread
+    def initialize
+      super do; 1; end
+    end
+  end
+  
+  def test_thread_subclass_zsuper
+    x = MyThread.new
+    x.join
+    assert_equal(1, x.value)
+    x = MyThread.start { 2 }
+    x.join
+    assert_equal(2, x.value)
+  end
 end

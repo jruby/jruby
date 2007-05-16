@@ -108,6 +108,7 @@ public class RubyThread extends RubyObject {
         threadClass.defineFastMethod("group", callbackFactory.getFastMethod("group"));
         threadClass.defineFastMethod("join", callbackFactory.getFastOptMethod("join"));
         threadClass.defineFastMethod("value", callbackFactory.getFastMethod("value"));
+        threadClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         threadClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
         threadClass.defineFastMethod("key?", callbackFactory.getFastMethod("has_key", RubyKernel.IRUBY_OBJECT));
         threadClass.defineFastMethod("keys", callbackFactory.getFastMethod("keys"));
@@ -189,25 +190,40 @@ public class RubyThread extends RubyObject {
         runtime.getThreadService().registerNewThread(rubyThread);
         
         runtime.getCurrentContext().preAdoptThread();
-        
-        rubyThread.callInit(IRubyObject.NULL_ARRAY, block);
+
+        // adoptThread does not call init, since init expects a block to be passed in
+        if (USE_POOLING) {
+            rubyThread.threadImpl = new FutureThread(rubyThread, new RubyRunnable(rubyThread, IRubyObject.NULL_ARRAY, block));
+        } else {
+            rubyThread.threadImpl = new NativeThread(rubyThread, new RubyNativeThread(rubyThread, IRubyObject.NULL_ARRAY, block));
+        }
+        rubyThread.threadImpl.start();
         
         return rubyThread;
     }
-
-    private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit, Block block) {
-        if (!block.isGiven()) throw recv.getRuntime().newThreadError("must be called with a block");
-
-        RubyThread rubyThread = new RubyThread(recv.getRuntime(), (RubyClass) recv);
-        
-        if (callInit) rubyThread.callInit(IRubyObject.NULL_ARRAY, block);
+    
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
+        if (!block.isGiven()) throw getRuntime().newThreadError("must be called with a block");
 
         if (USE_POOLING) {
-            rubyThread.threadImpl = new FutureThread(rubyThread, new RubyRunnable(rubyThread, args, block));
+            threadImpl = new FutureThread(this, new RubyRunnable(this, args, block));
         } else {
-            rubyThread.threadImpl = new NativeThread(rubyThread, new RubyNativeThread(rubyThread, args, block));
+            threadImpl = new NativeThread(this, new RubyNativeThread(this, args, block));
         }
-        rubyThread.threadImpl.start();
+        threadImpl.start();
+        
+        return this;
+    }
+
+    private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit, Block block) {
+        RubyThread rubyThread = new RubyThread(recv.getRuntime(), (RubyClass) recv);
+        
+        if (callInit) {
+            rubyThread.callInit(args, block);
+        } else {
+            // for Thread::start, which does not call the subclass's initialize
+            rubyThread.initialize(args, block);
+        }
         
         return rubyThread;
     }
