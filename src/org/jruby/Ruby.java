@@ -639,6 +639,7 @@ public final class Ruby {
                 public void load(Ruby runtime) throws IOException {
                     Java.createJavaModule(runtime);
                     new BuiltinScript("javasupport").load(runtime);
+                    RubyClassPathVariable.createClassPathVariable(runtime);
                 }
             });
         
