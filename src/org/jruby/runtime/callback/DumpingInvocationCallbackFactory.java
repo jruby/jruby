@@ -44,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 
 public class DumpingInvocationCallbackFactory extends CallbackFactory implements Opcodes {
-    private final static CodegenUtils cg = CodegenUtils.instance;
+    private final static CodegenUtils cg = CodegenUtils.cg;
 
     private final Class type;
     private final String typePath;

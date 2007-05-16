@@ -260,7 +260,7 @@ public final class DefaultMethod extends DynamicMethod {
                         }
                     };
                     
-                    String cleanName = CodegenUtils.cleanJavaIdentifier(name);
+                    String cleanName = CodegenUtils.cg.cleanJavaIdentifier(name);
                     // FIXME: not handling empty bodies correctly...
                     StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), body.getPosition().getFile());
                     compiler.startScript();

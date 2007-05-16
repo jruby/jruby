@@ -14,26 +14,26 @@ package org.jruby.util;
  * @author headius
  */
 public class CodegenUtils {
-    public static final CodegenUtils instance = new CodegenUtils();
+    public static final CodegenUtils cg = new CodegenUtils();
     
     /**
      * Creates a dotted class name from a path/package name
      */
-    public static String c(String p) {
+    public String c(String p) {
         return p.replace('/', '.');
     }
 
     /**
      * Creates a class path name, from a Class.
      */
-    public static String p(Class n) {
+    public String p(Class n) {
         return n.getName().replace('.','/');
     }
 
     /**
      * Creates a class identifier of form Labc/abc;, from a Class.
      */
-    public static String ci(Class n) {
+    public String ci(Class n) {
         if (n.isArray()) {
             n = n.getComponentType();
             if (n.isPrimitive()) {
@@ -79,7 +79,7 @@ public class CodegenUtils {
     /**
      * Create a method signature from the given param types and return values
      */
-    public static String sig(Class retval, Class[] params) {
+    public String sig(Class retval, Class[] params) {
         StringBuffer signature = new StringBuffer("(");
         
         for (int i = 0; i < params.length; i++) {
@@ -94,7 +94,7 @@ public class CodegenUtils {
     /**
      * Create a method signature with just a return value
      */
-    public static String sig(Class retval) {
+    public String sig(Class retval) {
         StringBuffer signature = new StringBuffer("()");
         
         signature.append(ci(retval));
@@ -103,38 +103,38 @@ public class CodegenUtils {
     }
     
     // TODO: Wouldn't it be nice to replace this all with a single varargs?
-    public static Class[] params() {
+    public Class[] params() {
         return new Class[0];
     }
-    public static Class[] params(Class a) {
+    public Class[] params(Class a) {
         return new Class[] {a};
     }
-    public static Class[] params(Class a, Class b) {
+    public Class[] params(Class a, Class b) {
         return new Class[] {a,b};
     }
-    public static Class[] params(Class a, Class b, Class c) {
+    public Class[] params(Class a, Class b, Class c) {
         return new Class[] {a,b,c};
     }
-    public static Class[] params(Class a, Class b, Class c, Class d) {
+    public Class[] params(Class a, Class b, Class c, Class d) {
         return new Class[] {a,b,c,d};
     }
-    public static Class[] params(Class a, Class b, Class c, Class d, Class e) {
+    public Class[] params(Class a, Class b, Class c, Class d, Class e) {
         return new Class[] {a,b,c,d,e};
     }
-    public static Class[] params(Class a, Class b, Class c, Class d, Class e, Class f) {
+    public Class[] params(Class a, Class b, Class c, Class d, Class e, Class f) {
         return new Class[] {a,b,c,d,e,f};
     }
-    public static Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g) {
+    public Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g) {
         return new Class[] {a,b,c,d,e,f,g};
     }
-    public static Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g, Class h) {
+    public Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g, Class h) {
         return new Class[] {a,b,c,d,e,f,g,h};
     }
-    public static Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g, Class h, Class i) {
+    public Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g, Class h, Class i) {
         return new Class[] {a,b,c,d,e,f,g,h,i}; 
     }
     
-    public static String cleanJavaIdentifier(String name) {
+    public String cleanJavaIdentifier(String name) {
         char[] characters = name.toCharArray();
         StringBuffer cleanBuffer = new StringBuffer();
         boolean prevWasReplaced = false;

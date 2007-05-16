@@ -42,7 +42,7 @@ import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
 
 public class InvocationCallbackFactory extends CallbackFactory implements Opcodes {
-    private final static CodegenUtils cg = CodegenUtils.instance;
+    private final static CodegenUtils cg = CodegenUtils.cg;
 
     private final Class type;
     private final JRubyClassLoader classLoader;

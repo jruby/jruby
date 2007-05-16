@@ -91,7 +91,7 @@ import org.objectweb.asm.Opcodes;
  * @author headius
  */
 public class StandardASMCompiler implements Compiler, Opcodes {
-    private static final CodegenUtils cg = CodegenUtils.instance;
+    private static final CodegenUtils cg = CodegenUtils.cg;
     private static final String THREADCONTEXT = cg.p(ThreadContext.class);
     private static final String RUBY = cg.p(Ruby.class);
     private static final String IRUBYOBJECT = cg.p(IRubyObject.class);
