@@ -30,7 +30,104 @@ module YAML
       warn "YAML::YPath.each_path isn't supported on JRuby"
     end
   end
+
+  class Emitter
+    def initialize
+      @out = YAML::JvYAML::Out.new self
+    end
+
+    def reset(opts)
+      @opts = opts
+      self
+    end
+
+    def emit(oid, &proc)
+      proc.call(@out)
+    end
+    
+    def has_key?(key)
+    end
+  end
   
+  def YAML.emitter; Emitter.new; end
+
+  #
+  # Allocate an Emitter if needed
+  #
+  def YAML.quick_emit( oid, opts = {}, &e )
+    out = 
+      if opts.is_a? YAML::Emitter
+        opts
+      else
+        emitter.reset( opts )
+      end
+    out.emit( oid, &e )
+  end
+  
+  module JvYAML
+    class Out
+      attr_accessor :emitter
+      
+      def initialize(emitter)
+        @emitter = emitter
+      end
+      
+      def map(type_id, style = nil)
+        map = Map.new(type_id, {}, style)
+        yield map
+        map
+      end
+
+      def seq(type_id, style = nil)
+        seq = Seq.new(type_id, [], style)
+        yield seq
+        seq
+      end
+
+      def scalar(type_id, str, style = nil)
+        Scalar.new(type_id, str, style)
+      end
+    end
+    
+    class Node
+      attr_accessor :value
+      attr_accessor :style
+      attr_accessor :type_id
+    end
+
+    class Scalar < Node
+      def initialize(type_id, val, style)
+        @kind = :scalar
+        self.type_id = type_id
+        self.value = val
+        self.style = style
+      end
+    end
+
+    class Seq < Node
+      def initialize(type_id, val, style)
+        @kind = :seq
+        self.type_id = type_id
+        self.value = val
+        self.style = style
+      end
+      def add(v)
+        @value << v
+      end
+    end
+
+    class Map < Node
+      def initialize(type_id, val, style)
+        @kind = :map
+        self.type_id = type_id
+        self.value = val
+        self.style = style
+      end
+      def add(k, v)
+        @value[k] = v
+      end
+    end
+  end
   
   #
   # YAML::Stream -- for emitting many documents

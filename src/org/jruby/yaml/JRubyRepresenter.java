@@ -29,7 +29,9 @@ package org.jruby.yaml;
 
 import java.io.IOException;
 
+import org.jruby.RubyHash;
 import org.jruby.RubyArray;
+import org.jruby.RubyString;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -109,12 +111,33 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
         }
 
         public Node toYamlNode(final Representer representer) throws IOException {
-            Object val = data.callMethod(data.getRuntime().getCurrentContext(), "to_yaml_node", JavaEmbedUtils.javaToRuby(data.getRuntime(),representer));
-            if(val instanceof Node) {
-                return (Node)val;
-            } else if(val instanceof IRubyObject) {
-                return (Node)JavaEmbedUtils.rubyToJava(data.getRuntime(),(IRubyObject)val,Node.class);
+            if(data.getMetaClass().searchMethod("to_yaml") instanceof org.jruby.internal.runtime.methods.SimpleCallbackMethod) {
+                // to_yaml have not been overridden
+                Object val = data.callMethod(data.getRuntime().getCurrentContext(), "to_yaml_node", JavaEmbedUtils.javaToRuby(data.getRuntime(),representer));
+                if(val instanceof Node) {
+                    return (Node)val;
+                } else if(val instanceof IRubyObject) {
+                    return (Node)JavaEmbedUtils.rubyToJava(data.getRuntime(),(IRubyObject)val,Node.class);
+                }
+            } else {
+                IRubyObject val = data.callMethod(data.getRuntime().getCurrentContext(), "to_yaml", JavaEmbedUtils.javaToRuby(data.getRuntime(),representer));
+                IRubyObject value = val.callMethod(data.getRuntime().getCurrentContext(),"value");
+                IRubyObject style = val.callMethod(data.getRuntime().getCurrentContext(),"style");
+                IRubyObject type_id = val.callMethod(data.getRuntime().getCurrentContext(),"type_id");
+                String s = null;
+                if(!style.isNil()) {
+                    s = style.toString();
+                }
+                String t = type_id.toString();
+                if(value instanceof RubyHash) {
+                    return ((JRubyRepresenter)representer).map(t, (RubyHash)value, s);
+                } else if(value instanceof RubyArray) {
+                    return ((JRubyRepresenter)representer).seq(t, (RubyArray)value, s);
+                } else {
+                    return ((JRubyRepresenter)representer).scalar(t, ((RubyString)value).getByteList(), s);
+                }
             }
+
             return null;
         }
     }

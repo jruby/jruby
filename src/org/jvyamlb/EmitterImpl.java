@@ -1203,6 +1203,16 @@ public class EmitterImpl implements Emitter {
                 suffix = tag.substring(prefix.length());
             }
         }
+        if(handle == null) {
+            if(tag.startsWith("tag:") && tag.indexOf(':', 4) != -1) {
+                int doti = tag.indexOf('.',4);
+                String first = tag.substring(4,doti);
+                String rest = tag.substring(tag.indexOf(':', 4)+1);
+                handle = "!" + first + "/";
+                suffix = rest;
+            }
+        }
+
         final StringBuffer chunks = new StringBuffer();
         int start=0,ending=0;
         while(ending < suffix.length()) {

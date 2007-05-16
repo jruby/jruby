@@ -282,6 +282,33 @@ public class JRubyConstructor extends ConstructorImpl {
         return st;
     }
 
+    public static Object constructRuby(final Constructor ctor, final RubyClass theCls, final Node node) {
+        final Ruby runtime = ((JRubyConstructor)ctor).runtime;
+        if(theCls.respondsTo("yaml_new")) {
+            final RubyHash vars = (RubyHash)(((JRubyConstructor)ctor).constructRubyMapping(node));
+            return theCls.callMethod(runtime.getCurrentContext(), "yaml_new", new IRubyObject[]{theCls, runtime.newString(node.getTag()), vars});
+        } else {
+            final RubyObject oo = (RubyObject)theCls.getAllocator().allocate(runtime, theCls);
+            final Map vars = (Map)(ctor.constructMapping(node));
+            ctor.doRecursionFix(node, oo);
+            for(final Iterator iter = vars.keySet().iterator();iter.hasNext();) {
+                final IRubyObject key = (IRubyObject)iter.next();
+                final Object val = vars.get(key);
+                if(val instanceof LinkNode) {
+                    final String KEY = "@" + key.toString();
+                    ctor.addFixer((Node)(((LinkNode)val).getValue()), new RecursiveFixer() {
+                            public void replace(Node node, Object real) {
+                                oo.setInstanceVariable(KEY,(IRubyObject)real);
+                            }
+                        });
+                } else {
+                    oo.setInstanceVariable("@" + key.toString(),(IRubyObject)val);
+                }
+            }
+            return oo;
+        }
+    }
+
     public static Object constructRuby(final Constructor ctor, final String tag, final Node node) {
         final Ruby runtime = ((JRubyConstructor)ctor).runtime;
         RubyModule objClass = runtime.getModule("Object");
@@ -292,24 +319,7 @@ public class JRubyConstructor extends ConstructorImpl {
             }
         }
         final RubyClass theCls = (RubyClass)objClass;
-        final RubyObject oo = (RubyObject)theCls.getAllocator().allocate(runtime, theCls);
-        final Map vars = (Map)(ctor.constructMapping(node));
-        ctor.doRecursionFix(node, oo);
-        for(final Iterator iter = vars.keySet().iterator();iter.hasNext();) {
-            final IRubyObject key = (IRubyObject)iter.next();
-            final Object val = vars.get(key);
-            if(val instanceof LinkNode) {
-                final String KEY = "@" + key.toString();
-                ctor.addFixer((Node)(((LinkNode)val).getValue()), new RecursiveFixer() {
-                        public void replace(Node node, Object real) {
-                            oo.setInstanceVariable(KEY,(IRubyObject)real);
-                        }
-                    });
-            } else {
-                oo.setInstanceVariable("@" + key.toString(),(IRubyObject)val);
-            }
-        }
-        return oo;
+        return constructRuby(ctor,theCls,node);
     }
 
     public static Object constructRubyRegexp(final Constructor ctor, final Node node) {
@@ -345,6 +355,16 @@ public class JRubyConstructor extends ConstructorImpl {
             boolean excl = ((IRubyObject)vars.get(runtime.newString("excl"))).isTrue();
             return RubyRange.newRange(runtime, beg, end, excl);
         }
+    }
+
+    public static Object findAndCreateFromCustomTagging(final Constructor ctor, final Node node) {
+        String tag = node.getTag();
+        Ruby runtime = ((JRubyConstructor)ctor).runtime;
+        RubyClass clazz = (RubyClass)runtime.getModule("YAML").callMethod(runtime.getCurrentContext(), "tagged_classes").callMethod(runtime.getCurrentContext(),"[]", runtime.newString(tag));
+        if(clazz != null && !clazz.isNil()) {
+            return constructRuby(ctor, clazz, node);
+        }
+        return null;
     }
 
     public static Object constructRubyInt(final Constructor ctor, final String tag, final Node node) {
@@ -478,6 +498,10 @@ public class JRubyConstructor extends ConstructorImpl {
             });
         addConstructor(null,new YamlConstructor() {
                 public Object call(final Constructor self, final Node node) {
+                    Object v1 = findAndCreateFromCustomTagging(self, node);
+                    if(null != v1) {
+                        return v1;
+                    }
                     return self.constructPrivateType(node);
                 }
             });
