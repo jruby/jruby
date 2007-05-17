@@ -1,0 +1,167 @@
+Index: lib/rails_generator/generators/components/model/model_generator.rb
+===================================================================
+--- lib/rails_generator/generators/components/model/model_generator.rb	(revision 4450)
++++ lib/rails_generator/generators/components/model/model_generator.rb	(working copy)
+@@ -29,6 +29,6 @@
+       opt.separator ''
+       opt.separator 'Options:'
+       opt.on("--skip-migration", 
+-             "Don't generate a migration file for this model") { |options[:skip_migration]| }
++             "Don't generate a migration file for this model") { |v| options[:skip_migration] = v }
+     end
+ end
+Index: lib/rails_generator/generators/applications/app/app_generator.rb
+===================================================================
+--- lib/rails_generator/generators/applications/app/app_generator.rb	(revision 4450)
++++ lib/rails_generator/generators/applications/app/app_generator.rb	(working copy)
+@@ -96,15 +96,15 @@
+       opt.separator 'Options:'
+       opt.on("-r", "--ruby=path", String,
+              "Path to the Ruby binary of your choice (otherwise scripts use env, dispatchers current path).",
+-             "Default: #{DEFAULT_SHEBANG}") { |options[:shebang]| }
++             "Default: #{DEFAULT_SHEBANG}") { |v| options[:shebang] = v }
+ 
+       opt.on("-d", "--database=name", String,
+             "Preconfigure for selected database (options: mysql/oracle/postgresql/sqlite2/sqlite3).",
+-            "Default: mysql") { |options[:db]| }
++            "Default: mysql") { |v| options[:db] = v }
+ 
+       opt.on("-f", "--freeze", 
+             "Freeze Rails in vendor/rails from the gems generating the skeleton",
+-            "Default: false") { |options[:freeze]| }
++            "Default: false") { |v| options[:freeze] = v }
+     end
+     
+     def mysql_socket_location
+Index: lib/rails_generator/options.rb
+===================================================================
+--- lib/rails_generator/options.rb	(revision 4450)
++++ lib/rails_generator/options.rb	(working copy)
+@@ -121,12 +121,12 @@
+           opt.separator ''
+           opt.separator 'General Options:'
+ 
+-          opt.on('-p', '--pretend', 'Run but do not make any changes.') { |options[:pretend]| }
++          opt.on('-p', '--pretend', 'Run but do not make any changes.') { |v| options[:pretend] = v }
+           opt.on('-f', '--force', 'Overwrite files that already exist.') { options[:collision] = :force }
+           opt.on('-s', '--skip', 'Skip files that already exist.') { options[:collision] = :skip }
+-          opt.on('-q', '--quiet', 'Suppress normal output.') { |options[:quiet]| }
+-          opt.on('-t', '--backtrace', 'Debugging: show backtrace on errors.') { |options[:backtrace]| }
+-          opt.on('-h', '--help', 'Show this help message.') { |options[:help]| }
++          opt.on('-q', '--quiet', 'Suppress normal output.') { |v| options[:quiet] = v }
++          opt.on('-t', '--backtrace', 'Debugging: show backtrace on errors.') { |v| options[:backtrace] = v }
++          opt.on('-h', '--help', 'Show this help message.') { |v| options[:help] = v }
+           opt.on('-c', '--svn', 'Modify files with subversion. (Note: svn must be in path)') do
+             options[:svn] = `svn status`.inject({}) do |opt, e|
+               opt[e.chomp[7..-1]] = true
+Index: lib/commands/console.rb
+===================================================================
+--- lib/commands/console.rb	(revision 4450)
++++ lib/commands/console.rb	(working copy)
+@@ -4,8 +4,8 @@
+ options = { :sandbox => false, :irb => irb }
+ OptionParser.new do |opt|
+   opt.banner = "Usage: console [environment] [options]"
+-  opt.on('-s', '--sandbox', 'Rollback database modifications on exit.') { |options[:sandbox]| }
+-  opt.on("--irb=[#{irb}]", 'Invoke a different irb.') { |options[:irb]| }
++  opt.on('-s', '--sandbox', 'Rollback database modifications on exit.') { |v| options[:sandbox] = v }
++  opt.on("--irb=[#{irb}]", 'Invoke a different irb.') { |v| options[:irb] = v }
+   opt.parse!(ARGV)
+ end
+ 
+Index: lib/commands/servers/webrick.rb
+===================================================================
+--- lib/commands/servers/webrick.rb	(revision 4450)
++++ lib/commands/servers/webrick.rb	(working copy)
+@@ -19,13 +19,13 @@
+ 
+   opts.on("-p", "--port=port", Integer,
+           "Runs Rails on the specified port.",
+-          "Default: 3000") { |OPTIONS[:port]| }
++          "Default: 3000") { |v| OPTIONS[:port] = v }
+   opts.on("-b", "--binding=ip", String,
+           "Binds Rails to the specified ip.",
+-          "Default: 0.0.0.0") { |OPTIONS[:ip]| }
++          "Default: 0.0.0.0") { |v| OPTIONS[:ip] = v }
+   opts.on("-e", "--environment=name", String,
+           "Specifies the environment to run this server under (test/development/production).",
+-          "Default: development") { |OPTIONS[:environment]| }
++          "Default: development") { |v| OPTIONS[:environment] = v }
+   opts.on("-m", "--mime-types=filename", String,
+                   "Specifies an Apache style mime.types configuration file to be used for mime types",
+                   "Default: none") { |mime_types_file| OPTIONS[:mime_types] = WEBrick::HTTPUtils::load_mime_types(mime_types_file) }
+@@ -36,7 +36,7 @@
+ 
+   opts.on("-c", "--charset=charset", String,
+           "Set default charset for output.",
+-          "Default: UTF-8") { |OPTIONS[:charset]| }
++          "Default: UTF-8") { |v| OPTIONS[:charset] = v }
+ 
+   opts.separator ""
+ 
+Index: lib/commands/runner.rb
+===================================================================
+--- lib/commands/runner.rb	(revision 4450)
++++ lib/commands/runner.rb	(working copy)
+@@ -10,7 +10,7 @@
+ 
+   opts.on("-e", "--environment=name", String,
+           "Specifies the environment for the runner to operate under (test/development/production).",
+-          "Default: development") { |options[:environment]| }
++          "Default: development") { |v| options[:environment] = v }
+ 
+   opts.separator ""
+ 
+Index: lib/commands/process/reaper.rb
+===================================================================
+--- lib/commands/process/reaper.rb	(revision 4450)
++++ lib/commands/process/reaper.rb	(working copy)
+@@ -117,8 +117,8 @@
+ 
+   opts.on("  Options:")
+ 
+-  opts.on("-a", "--action=name", "reload|graceful|kill (default: #{OPTIONS[:action]})", String)  { |OPTIONS[:action]| }
+-  opts.on("-d", "--dispatcher=path", "default: #{OPTIONS[:dispatcher]}", String)                 { |OPTIONS[:dispatcher]| }
++  opts.on("-a", "--action=name", "reload|graceful|kill (default: #{OPTIONS[:action]})", String)  { |v| OPTIONS[:action] = v }
++  opts.on("-d", "--dispatcher=path", "default: #{OPTIONS[:dispatcher]}", String)                 { |v| OPTIONS[:dispatcher] = v }
+ 
+   opts.separator ""
+ 
+Index: lib/commands/process/spinner.rb
+===================================================================
+--- lib/commands/process/spinner.rb	(revision 4450)
++++ lib/commands/process/spinner.rb	(working copy)
+@@ -36,9 +36,9 @@
+ 
+   opts.on("  Options:")
+ 
+-  opts.on("-c", "--command=path",    String) { |OPTIONS[:command]| }
+-  opts.on("-i", "--interval=seconds", Float) { |OPTIONS[:interval]| }
+-  opts.on("-d", "--daemon")                  { |OPTIONS[:daemon]| }
++  opts.on("-c", "--command=path",    String) { |v| OPTIONS[:command] = v }
++  opts.on("-i", "--interval=seconds", Float) { |v| OPTIONS[:interval] = v }
++  opts.on("-d", "--daemon")                  { |v| OPTIONS[:daemon] = v }
+ 
+   opts.separator ""
+ 
+Index: lib/commands/process/spawner.rb
+===================================================================
+--- lib/commands/process/spawner.rb	(revision 4450)
++++ lib/commands/process/spawner.rb	(working copy)
+@@ -65,11 +65,11 @@
+ 
+   opts.on("  Options:")
+ 
+-  opts.on("-p", "--port=number",      Integer, "Starting port number (default: #{OPTIONS[:port]})")                { |OPTIONS[:port]| }
+-  opts.on("-i", "--instances=number", Integer, "Number of instances (default: #{OPTIONS[:instances]})")            { |OPTIONS[:instances]| }
+-  opts.on("-r", "--repeat=seconds",   Integer, "Repeat spawn attempts every n seconds (default: off)")             { |OPTIONS[:repeat]| }
+-  opts.on("-e", "--environment=name", String,  "test|development|production (default: #{OPTIONS[:environment]})")  { |OPTIONS[:environment]| }
+-  opts.on("-s", "--spawner=path",     String,  "default: #{OPTIONS[:spawner]}")                                    { |OPTIONS[:spawner]| }
++  opts.on("-p", "--port=number",      Integer, "Starting port number (default: #{OPTIONS[:port]})")                { |v| OPTIONS[:port] = v }
++  opts.on("-i", "--instances=number", Integer, "Number of instances (default: #{OPTIONS[:instances]})")            { |v| OPTIONS[:instances] = v }
++  opts.on("-r", "--repeat=seconds",   Integer, "Repeat spawn attempts every n seconds (default: off)")             { |v| OPTIONS[:repeat] = v }
++  opts.on("-e", "--environment=name", String,  "test|development|production (default: #{OPTIONS[:environment]})")  { |v| OPTIONS[:environment] = v }
++  opts.on("-s", "--spawner=path",     String,  "default: #{OPTIONS[:spawner]}")                                    { |v| OPTIONS[:spawner] = v }
+   opts.on("-d", "--dispatcher=path",  String,  "default: #{OPTIONS[:dispatcher]}") { |dispatcher| OPTIONS[:dispatcher] = File.expand_path(dispatcher) }
+ 
+   opts.separator ""

@@ -1,0 +1,76 @@
+
+JRuby Developer's Glossary
+--------------------------
+
+
+AST (Abstract Syntax Tree):
+
+    A data structure representation of Ruby code, which is output from the
+    parser. The current JRuby implementation does evaluation by running the
+    interpreter directly on an AST. Also known as a "parse tree".
+
+Block:
+
+    You know, the {}-things in the source. They are passed to methods via the
+    BlockStack.
+
+Frame:
+
+    A Frame is used to represent the actual method (or block) context. For each
+    method (or block) call a new Frame is created.
+    The Frame consists of the name of the method, the class in which the
+    method is implemented and the arguments. It is pushed on to the current
+    FrameStack.
+
+FrameStack:
+
+    Where Frames are put. Used to create exception back-traces and to find the
+    correct super-methods [among other things?].
+
+Interpret:
+
+    To run Ruby code by walking through an AST.
+
+Iter:
+
+    Iter and the IterStack are Used to determine whether a block has been
+    passed to the current method or not. [Exactly how it works and why it is
+    called "Iter" is still shrouded in mystery.]
+
+Meta-class:
+
+    Every class is an object, and that object is an instance of a meta-class.
+    At least internally (and in theory).
+
+MRI (Matz' Ruby Interpreter):
+
+    The original Ruby interpreter, implemented in C. Also known as
+    "ruby" (spelled in all lower-case).
+
+Scope:
+
+    Scopes are used to store local variables and the current method-visibility
+    which is used when a new method is created.
+    The scope of a local variable ranges from class, module, def or do to the
+    corresponding end.
+    Each Scope stores local variables, their names and values.
+    The Scopes are linked with their sub-scopes in a one-directional graph that
+    ends in "topScope". From the viewpoint of a single Scope, this graph
+    appears to be a stack, hence the name ScopeStack.
+
+Type:
+
+    The "type" of an object is almost always used as a synonym for
+    "class" here.
+
+Variable, Block:
+
+    See Variable, Dynamic.
+
+Variable, Dynamic:
+
+    Similar to a Local Variable, used for Block arguments.
+
+Variable, Local:
+
+    Variable with a local Scope.

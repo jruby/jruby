@@ -1,0 +1,87 @@
+#!/bin/bash
+# Usage:  jrubysrv -k <key> -p <port> &
+
+cygwin=false
+
+# ----- Identify OS we are running under --------------------------------------
+case "`uname`" in
+CYGWIN*) cygwin=true
+esac
+
+# ----- Verify and Set Required Environment Variables -------------------------
+
+if [ -z "$JRUBY_HOME" ] ; then
+  ## resolve links - $0 may be a link to  home
+  PRG=$0
+  progname=`basename "$0"`
+  
+  while [ -h "$PRG" ] ; do
+    ls=`ls -ld "$PRG"`
+    link=`expr "$ls" : '.*-> \(.*\)$'`
+    if expr "$link" : '.*/.*' > /dev/null; then
+    PRG="$link"
+    else
+    PRG="`dirname $PRG`/$link"
+    fi
+  done
+  
+  JRUBY_HOME_1=`dirname "$PRG"`           # the ./bin dir
+  JRUBY_HOME_1=`dirname "$JRUBY_HOME_1"`  # the . dir
+  if [ -d "${JRUBY_HOME_1}/lib" ] ; then 
+    JRUBY_HOME="${JRUBY_HOME_1}"
+  fi
+else
+  if $cygwin; then
+    JRUBY_HOME=`cygpath -u "$JRUBY_HOME"`
+  fi
+fi
+
+if [ -z "$JAVA_HOME" ] ; then
+  JAVA_CMD='java'
+else
+  if $cygwin; then
+    JAVA_HOME=`cygpath -u "$JAVA_HOME"`
+  fi
+  JAVA_CMD="$JAVA_HOME/bin/java"
+fi
+
+if [ -z "$JRUBY_BASE" ] ; then
+  JRUBY_BASE="$JRUBY_HOME"
+fi
+
+if $cygwin; then
+  JAVA_HOME=`cygpath --mixed "$JAVA_HOME"`
+  JRUBY_BASE=`cygpath --mixed "$JRUBY_BASE"`
+  JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
+  JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
+fi
+
+if [ "$CLASSPATH" != "" ]; then
+    CP="$CLASSPATH"
+    if $cygwin; then
+        CP=`cygpath -p -u "$CP"`
+    fi
+else
+    CP=""
+fi
+
+CP_DELIMETER=":"
+
+# add necessary jars for command-line execution
+for j in "$JRUBY_HOME"/lib/*.jar; do
+    if [ "$CP" ]; then
+        CP="$CP$CP_DELIMETER$j"
+    else
+        CP="$j"
+    fi
+done
+
+if $cygwin; then
+	CP=`cygpath -p -w "$CP"`
+fi
+
+exec "$JAVA_CMD" -Xmx712m -Xss1024k -Xverify:none -da -classpath "$CP"	\
+  "-Djruby.base=$JRUBY_BASE" "-Djruby.home=$JRUBY_HOME"				\
+  "-Djruby.lib=$JRUBY_BASE/lib" -Djruby.script=jruby				\
+  "-Djruby.shell=$JRUBY_SHELL" 						\
+  org.jruby.JRubyServer "$*"
