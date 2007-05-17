@@ -933,13 +933,13 @@ public class EmitterImpl implements Emitter {
                         stream.write(data.bytes,0,data.realSize);
                         start = ending;
                     }
-                    if(ceh == '\'') {
-                        data = ByteList.create("''");
-                        env.column += 2;
-                        stream.write(data.bytes,0,data.realSize);
-                        start = ending + 1;
-                    }
                 }
+            }
+            if(ceh == '\'') {
+                data = ByteList.create("''");
+                env.column += 2;
+                stream.write(data.bytes,0,data.realSize);
+                start = ending + 1;
             }
             if(ceh != 0) {
                 spaces = ceh == ' ';
