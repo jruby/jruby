@@ -489,8 +489,7 @@ public final class Ruby {
      * new module is created.
      */
     public RubyModule getOrCreateModule(String name) {
-        RubyModule parent = getCurrentContext().getRubyClass();
-        IRubyObject module = parent.getConstantAt(name);
+        IRubyObject module = objectClass.getConstantAt(name);
         
         if (module == null) {
             module = defineModule(name);
