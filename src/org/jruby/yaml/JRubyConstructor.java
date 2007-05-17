@@ -367,7 +367,11 @@ public class JRubyConstructor extends ConstructorImpl {
     public static Object findAndCreateFromCustomTagging(final Constructor ctor, final Node node) {
         String tag = node.getTag();
         Ruby runtime = ((JRubyConstructor)ctor).runtime;
-        RubyClass clazz = (RubyClass)runtime.getModule("YAML").callMethod(runtime.getCurrentContext(), "tagged_classes").callMethod(runtime.getCurrentContext(),"[]", runtime.newString(tag));
+        IRubyObject _cl = runtime.getModule("YAML").callMethod(runtime.getCurrentContext(), "tagged_classes").callMethod(runtime.getCurrentContext(),"[]", runtime.newString(tag));
+        if(!(_cl instanceof RubyClass)) {
+            return null;
+        }
+        RubyClass clazz = (RubyClass)_cl;
         if(clazz != null && !clazz.isNil()) {
             return constructRuby(ctor, clazz, node);
         }
