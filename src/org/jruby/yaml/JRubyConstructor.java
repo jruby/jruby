@@ -314,8 +314,15 @@ public class JRubyConstructor extends ConstructorImpl {
         RubyModule objClass = runtime.getModule("Object");
         if(tag != null) {
             final String[] nms = tag.split("::");
-            for(int i=0,j=nms.length;i<j;i++) {
-                objClass = (RubyModule)objClass.getConstant(nms[i]);
+            try {
+                for(int i=0,j=nms.length;i<j;i++) {
+                    objClass = (RubyModule)objClass.getConstant(nms[i]);
+                }
+            } catch(Exception e) {
+                // No constant available, so we'll fall back on YAML::Object
+                objClass = (RubyClass)runtime.getModule("YAML").getConstant("Object");
+                final RubyHash vars = (RubyHash)(((JRubyConstructor)ctor).constructRubyMapping(node));
+                return objClass.callMethod(runtime.getCurrentContext(), "new", new IRubyObject[]{runtime.newString(tag), vars});
             }
         }
         final RubyClass theCls = (RubyClass)objClass;

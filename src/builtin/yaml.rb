@@ -48,6 +48,23 @@ module YAML
     def has_key?(key)
     end
   end
+
+  class Object
+    attr_accessor :class, :ivars
+    def initialize(cl, iv)
+      @class, @ivars = cl, iv
+    end
+
+    def to_yaml( opts = {} )
+      YAML::quick_emit( object_id, opts ) do |out|
+        out.map( "tag:ruby.yaml.org,2002:object:#{ @class }", to_yaml_style ) do |map|
+          @ivars.each do |k,v|
+            map.add( k, v )
+          end
+        end
+      end
+    end
+  end
   
   def YAML.emitter; Emitter.new; end
 
