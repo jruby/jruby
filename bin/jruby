@@ -107,17 +107,28 @@ fi
 
 # ----- Execute The Requested Command -----------------------------------------
 
+
+JAVA_MEM=-Xmx256m
+JAVA_STACK=-Xss1024k
+
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
 java_args=()
 ruby_args=()
-while [ $# -gt 0 ]
+    while [ $# -gt 0 ]
 do
     case "$1" in
-    # Whole following argument goes to JVM
-    -J) shift; java_args=("${java_args[@]}" "${1}") ;;
     # Stuff after '-J' in this argument goes to JVM
-    -J*) java_args=("${java_args[@]}" "${1:2}") ;;
+    -J*)
+        val=${1:2}
+        if [ "${val:0:4}" = "-Xmx" ]; then
+            JAVA_MEM=$val
+        elif [ "${val:0:4}" = "-Xss" ]; then
+            JAVA_STACK=$val
+        else
+            java_args=("${java_args[@]}" "${1:2}")
+        fi
+        ;;
      # Match switches that take an argument
      -e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
      # Match same switches with argument stuck together
@@ -138,6 +149,8 @@ ruby_args=("${ruby_args[@]}" "$@")
 # Put the ruby_args back into the position arguments $1, $2 etc
 set -- "${ruby_args[@]}"
 
+JAVA_OPTS="$JAVA_OPTS ${java_args[@]} $JAVA_MEM $JAVA_STACK -Xverify:none -da"
+
 if $cygwin; then
   JAVA_HOME=`cygpath --mixed "$JAVA_HOME"`
   JRUBY_BASE=`cygpath --mixed "$JRUBY_BASE"`
@@ -145,7 +158,7 @@ if $cygwin; then
   JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
 fi
 
-exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -Xmx256m -Xss1024k -Xverify:none -da -classpath "$CP"	\
+exec "$JAVA_CMD" $JAVA_OPTS -classpath "$CP"	\
   "-Djruby.base=$JRUBY_BASE" "-Djruby.home=$JRUBY_HOME"				\
   "-Djruby.lib=$JRUBY_BASE/lib" -Djruby.script=jruby				\
   "-Djruby.shell=$JRUBY_SHELL"  						\

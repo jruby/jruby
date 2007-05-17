@@ -16,5 +16,6 @@ set _RUNJAVA=
 set _STARTJAVA=
 set _JAVA_COMMAND=
 set _VM_OPTS=
+set _RUBY_OPTS=
 :finish
 exit /b %E%
