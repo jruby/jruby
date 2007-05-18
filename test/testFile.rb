@@ -203,3 +203,8 @@ if File.exist? "build.xml.link"
   File.delete("build.xml.link")
 end
 
+f1 = open("foo","w")
+f2 = open("foo","w")
+f1.flock(File::LOCK_EX | File::LOCK_NB)
+test_equal(false, f2.flock(File::LOCK_EX | File::LOCK_NB))
+

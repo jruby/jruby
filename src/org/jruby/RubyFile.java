@@ -347,7 +347,15 @@ public class RubyFile extends RubyIO {
 			default:	
 			}
         } catch (IOException ioe) {
-        	throw new RaiseException(new NativeException(getRuntime(), getRuntime().getClass("IOError"), ioe));
+            if(getRuntime().getDebug().isTrue()) {
+                ioe.printStackTrace(System.err);
+            }
+            // Return false here
+        } catch (java.nio.channels.OverlappingFileLockException ioe) {
+            if(getRuntime().getDebug().isTrue()) {
+                ioe.printStackTrace(System.err);
+            }
+            // Return false here
         }
 		
 		return getRuntime().getFalse();
