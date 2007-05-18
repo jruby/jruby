@@ -299,6 +299,16 @@ public class RubyFile extends RubyIO {
 				}
 				break;
 			case LOCK_EX:
+				if (currentLock != null) {
+					currentLock.release();
+					currentLock = null;
+				}
+				currentLock = fileChannel.lock();
+				if (currentLock != null) {
+					return getRuntime().newFixnum(0);
+				}
+
+				break;
 			case LOCK_EX | LOCK_NB:
 				if (currentLock != null) {
 					currentLock.release();
@@ -311,6 +321,17 @@ public class RubyFile extends RubyIO {
 
 				break;
 			case LOCK_SH:
+				if (currentLock != null) {
+					currentLock.release();
+					currentLock = null;
+				}
+				
+				currentLock = fileChannel.lock(0L, Long.MAX_VALUE, true);
+				if (currentLock != null) {
+					return getRuntime().newFixnum(0);
+				}
+
+				break;
 			case LOCK_SH | LOCK_NB:
 				if (currentLock != null) {
 					currentLock.release();

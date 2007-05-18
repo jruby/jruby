@@ -69,15 +69,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         this.cwd = runtime.getCurrentDirectory();
         JRubyFile theFile = JRubyFile.create(cwd,path);
         
-        if (theFile.exists()) {
-            if (modes.shouldTruncate()) {
-                // If we only want to open for writing we should remove
-                // the old file before opening the fresh one.  If it fails
-                // to remove it we should do something?
-                if (!theFile.delete()) {
-                }
-            }
-        } else {
+        if(!theFile.exists()) {
             if (modes.isReadable() && !modes.isWriteable()) {
                 throw new FileNotFoundException();
             }
@@ -92,6 +84,9 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         
         // We always open this rw since we can only open it r or rw.
         file = new RandomAccessFile(theFile, javaMode);
+        if (modes.shouldTruncate()) {
+            file.setLength(0L);
+        }
         channel = file.getChannel();
         isOpen = true;
         buffer = ByteBuffer.allocate(BUFSIZE);
