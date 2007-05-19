@@ -107,11 +107,11 @@ public final class Visibility implements Serializable {
     }
     
     public String errorMessageFormat(CallType callType, String name) {
-        String format = "undefined or inaccessible method `%s' for %s%s%s";
+        String format = "undefined method `%s' for %s%s%s or inaccessible method `%s' for %s%s%s";
         //String format = "undefined method `%s' for %s%s%s";
         if (callType ==  CallType.VARIABLE) {
             if (IdUtil.isLocal(name)) {
-                format = "undefined or inaccessible local variable or method '%s' for %s%s%s";
+                format = "undefined local variable '%s' for %s%s%s or inaccessible local variable or method '%s' for %s%s%s";
                 //format = "undefined local variable or method '%s' for %s%s%s";
             }
 //        } else if (this == Visibility.PRIVATE && callType == CallType.NORMAL) {

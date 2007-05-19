@@ -1369,7 +1369,12 @@ public class RubyObject implements Cloneable, IRubyObject {
         String format = lastVis.errorMessageFormat(lastCallType, name);
         String msg = Sprintf.sprintf(runtime.newString(format), 
                 runtime.newArray(new IRubyObject[] { 
-                        runtime.newString(name), runtime.newString(description),
+                        runtime.newString(name),
+                        runtime.newString(description),
+                        runtime.newString(noClass ? "" : ":"), 
+                        runtime.newString(noClass ? "" : getType().getName()),
+                        runtime.newString(name),
+                        runtime.newString(description),
                         runtime.newString(noClass ? "" : ":"), 
                         runtime.newString(noClass ? "" : getType().getName())
                 })).toString();

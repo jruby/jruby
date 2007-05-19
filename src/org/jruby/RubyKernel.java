@@ -277,6 +277,10 @@ public class RubyKernel {
                         runtime.newString(name), 
                         runtime.newString(description),
                         runtime.newString(noClass ? "" : ":"), 
+                        runtime.newString(noClass ? "" : recv.getType().getName()),
+                        runtime.newString(name), 
+                        runtime.newString(description),
+                        runtime.newString(noClass ? "" : ":"), 
                         runtime.newString(noClass ? "" : recv.getType().getName())
                 })).toString();
         
