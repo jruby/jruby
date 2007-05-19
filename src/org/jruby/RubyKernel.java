@@ -779,7 +779,7 @@ public class RubyKernel {
         ThreadContext context = runtime.getCurrentContext();
         String[] catches = context.getActiveCatches();
 
-        String message = "uncaught throw '" + tag + '\'';
+        String message = "uncaught throw `" + tag + "'";
 
         //Ordering of array traversal not important, just intuitive
         for (int i = catches.length - 1 ; i >= 0 ; i--) {
