@@ -117,25 +117,6 @@ public final class DefaultMethod extends DynamicMethod {
     /**
      * @see AbstractCallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject call(ThreadContext context, IRubyObject self, 
-            RubyModule clazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        if (jitCompiledScript != null) {
-            try {
-                context.preDefMethodInternalCall(clazz, name, self, args, getArity().required(), block, noSuper, cref, staticScope, this);
-                //context.preCompiledMethod(implementationClass, cref);
-                // FIXME: pass block when available
-                return jitCompiledScript.run(context, self, args, block);
-            } finally {
-                context.postDefMethodInternalCall();
-            }
-        } 
-          
-        return super.call(context, self, clazz, name, args, noSuper, block);
-    }
-
-    /**
-     * @see AbstractCallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
-     */
     public IRubyObject internalCall(ThreadContext context, RubyModule clazz, 
             IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
         assert args != null;
@@ -144,18 +125,6 @@ public final class DefaultMethod extends DynamicMethod {
         
         if (JIT_ENABLED) {
             runJIT(runtime, context, name);
-        
-            if (jitCompiledScript != null) {
-                try {
-                    return call(context, self, clazz, name, args, noSuper, block);
-                } catch (JumpException je) {
-                    if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
-                            return (IRubyObject) je.getValue();
-                    }
-                    
-                    throw je;
-                }
-            }
         }
 
         if (argsNode.getBlockArgNode() != null && block.isGiven()) {
@@ -182,6 +151,10 @@ public final class DefaultMethod extends DynamicMethod {
                 traceCall(context, runtime, binding, name);
             }
                     
+            if (jitCompiledScript != null && binding != null) {
+                return jitCompiledScript.run(context, self, args, block);
+            }
+            
             return EvaluationState.eval(runtime, context, body, self, block);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
