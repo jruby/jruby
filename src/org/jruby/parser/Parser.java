@@ -52,11 +52,11 @@ public class Parser {
         this.runtime = runtime;
     }
 
-    public Node parse(String file, String content, DynamicScope blockScope) {
-        return parse(file, new StringReader(content), blockScope);
+    public Node parse(String file, String content, DynamicScope blockScope, int lineNumber) {
+        return parse(file, new StringReader(content), blockScope, lineNumber);
     }
 
-    public Node parse(String file, Reader content, DynamicScope blockScope) {
+    public Node parse(String file, Reader content, DynamicScope blockScope, int lineNumber) {
         RubyParserConfiguration configuration = new RubyParserConfiguration(); 
         SinglyLinkedList cref = runtime.getObject().getCRef();
         ThreadContext tc = runtime.getCurrentContext();
@@ -74,7 +74,7 @@ public class Parser {
             parser = RubyParserPool.getInstance().borrowParser();
             parser.setWarnings(runtime.getWarnings());
             tc.setCRef(cref);
-            LexerSource lexerSource = LexerSource.getSource(file, content);
+            LexerSource lexerSource = LexerSource.getSource(file, content, lineNumber);
             result = parser.parse(configuration, lexerSource);
             if (result.isEndSeen()) {
                 org.jruby.runtime.builtin.IRubyObject verbose = runtime.getVerbose();

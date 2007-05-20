@@ -85,7 +85,7 @@ public class JRubyEngine extends BSFEngineImpl {
         	// See eval todo about why this is commented out
             //runtime.setPosition(file, line);
 
-            Node node = runtime.parse(file, funcBody.toString(), null);
+            Node node = runtime.parse(file, funcBody.toString(), null, 0);
             IRubyObject result = EvaluationState.eval(runtime, runtime.getCurrentContext(), node, runtime.getTopSelf(), Block.NULL_BLOCK);
             return JavaEmbedUtils.rubyToJava(runtime, result, Object.class);
         } finally {

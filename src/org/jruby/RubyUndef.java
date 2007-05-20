@@ -175,7 +175,7 @@ public class RubyUndef implements IRubyObject {
     }
 
     public IRubyObject evalWithBinding(ThreadContext context, IRubyObject evalString,
-            IRubyObject binding, String file) {
+            IRubyObject binding, String file, int lineNumber) {
         return null;
     }
 

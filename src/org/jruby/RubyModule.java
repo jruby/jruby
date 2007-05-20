@@ -144,6 +144,9 @@ public class RubyModule extends RubyObject {
         moduleClass.defineFastMethod("instance_method", callbackFactory.getFastMethod("instance_method", IRubyObject.class));
         moduleClass.defineFastMethod("instance_methods",callbackFactory.getFastOptMethod("instance_methods"));
         moduleClass.defineFastMethod("method_defined?", callbackFactory.getFastMethod("method_defined", IRubyObject.class));
+        moduleClass.defineFastMethod("public_method_defined?", callbackFactory.getFastMethod("public_method_defined", IRubyObject.class));
+        moduleClass.defineFastMethod("protected_method_defined?", callbackFactory.getFastMethod("protected_method_defined", IRubyObject.class));
+        moduleClass.defineFastMethod("private_method_defined?", callbackFactory.getFastMethod("private_method_defined", IRubyObject.class));
         moduleClass.defineMethod("module_eval", callbackFactory.getOptMethod("module_eval"));
         moduleClass.defineFastMethod("name", callbackFactory.getFastMethod("name"));
         moduleClass.defineFastMethod("private_class_method", callbackFactory.getFastOptMethod("private_class_method"));
@@ -1812,6 +1815,24 @@ public class RubyModule extends RubyObject {
     
     public RubyBoolean method_defined(IRubyObject symbol) {
         return isMethodBound(symbol.asSymbol(), true) ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
+
+    public IRubyObject public_method_defined(IRubyObject symbol) {
+	    DynamicMethod method = searchMethod(symbol.asSymbol());
+	    
+		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility().isPublic());
+    }
+
+    public IRubyObject protected_method_defined(IRubyObject symbol) {
+	    DynamicMethod method = searchMethod(symbol.asSymbol());
+	    
+		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility().isProtected());
+    }
+	
+    public IRubyObject private_method_defined(IRubyObject symbol) {
+	    DynamicMethod method = searchMethod(symbol.asSymbol());
+	    
+		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility().isPrivate());
     }
 
     public RubyModule public_class_method(IRubyObject[] args) {

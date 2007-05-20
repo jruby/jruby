@@ -55,7 +55,7 @@ public class JRubyC {
             new FileInputStream(srcfile).read(chars);
             // FIXME: encoding?
             String content = new String(chars);
-            Node scriptNode = runtime.parse(content, filename, null);
+            Node scriptNode = runtime.parse(content, filename, null, 0);
             
             // do the compile
             StandardASMCompiler compiler = new StandardASMCompiler(filename.substring(0, filename.lastIndexOf(".")), filename);

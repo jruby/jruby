@@ -267,7 +267,7 @@ public final class Ruby {
      * Evaluates a script and returns a RubyObject.
      */
     public IRubyObject evalScript(String script) {
-        return eval(parse(script, "<script>", getCurrentContext().getCurrentScope()));
+        return eval(parse(script, "<script>", getCurrentContext().getCurrentScope(), 0));
     }
 
     public IRubyObject eval(Node node) {
@@ -995,12 +995,12 @@ public final class Ruby {
         globalVariables.defineReadonly(name, new ValueAccessor(value));
     }
 
-    public Node parse(Reader content, String file, DynamicScope scope) {
-        return parser.parse(file, content, scope);
+    public Node parse(Reader content, String file, DynamicScope scope, int lineNumber) {
+        return parser.parse(file, content, scope, lineNumber);
     }
 
-    public Node parse(String content, String file, DynamicScope scope) {
-        return parser.parse(file, content, scope);
+    public Node parse(String content, String file, DynamicScope scope, int lineNumber) {
+        return parser.parse(file, content, scope, lineNumber);
     }
 
     public ThreadService getThreadService() {
@@ -1158,7 +1158,7 @@ public final class Ruby {
 
             context.preNodeEval(objectClass, self);
 
-            Node node = parse(source, scriptName, null);
+            Node node = parse(source, scriptName, null, 0);
             EvaluationState.eval(this, context, node, self, Block.NULL_BLOCK);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {

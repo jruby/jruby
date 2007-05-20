@@ -729,8 +729,8 @@ public class RubyKernel {
                 file = args[2].toString();
             }
         }
-        // FIXME: line number is not supported yet
-        //int line = args.length > 3 ? RubyNumeric.fix2int(args[3]) : 1;
+
+        int line = args.length > 3 ? RubyNumeric.fix2int(args[3]) - 1 : 1;
 
         recv.getRuntime().checkSafeString(src);
         ThreadContext context = recv.getRuntime().getCurrentContext();
@@ -739,7 +739,7 @@ public class RubyKernel {
             scope = RubyBinding.newBindingForEval(recv.getRuntime());
         }
         
-        return recv.evalWithBinding(context, src, scope, file);
+        return recv.evalWithBinding(context, src, scope, file, line);
     }
 
     public static IRubyObject callcc(IRubyObject recv, IRubyObject[] args, Block block) {

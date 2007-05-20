@@ -76,7 +76,7 @@ public class ASTSerializer {
         try {
             parser = RubyParserPool.getInstance().borrowParser();
             parser.setWarnings(new NullWarnings());
-            result = parser.parse(config, LexerSource.getSource(input.toString(), reader));
+            result = parser.parse(config, LexerSource.getSource(input.toString(), reader, 0));
         } catch (SyntaxException e) {
             // ignore the syntax exception
         } finally {

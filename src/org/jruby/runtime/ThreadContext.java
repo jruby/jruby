@@ -88,7 +88,7 @@ public class ThreadContext {
     private String[] catchStack = new String[INITIAL_SIZE];
     private int catchIndex = -1;
     
-    private ISourcePosition sourcePosition = new SourcePositionFactory(null).getDummyPosition();
+    private ISourcePosition sourcePosition = new SourcePositionFactory(null, 0).getDummyPosition();
     
     public JumpException prepareJumpException(JumpException.JumpType jumpType, Object target, Object value) {
         JumpException controlException = new JumpException();

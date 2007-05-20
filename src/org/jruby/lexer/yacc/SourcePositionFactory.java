@@ -29,11 +29,12 @@
 
 public class SourcePositionFactory implements ISourcePositionFactory {
     // Position of last token returned.
-    private SourcePosition lastPosition = new SourcePosition();
+    private SourcePosition lastPosition;
     private LexerSource source;
     
-    public SourcePositionFactory(LexerSource source) {
+    public SourcePositionFactory(LexerSource source, int line) {
         this.source = source;
+        lastPosition = new SourcePosition("", line, line);
     }
 
     public ISourcePosition getPosition(ISourcePosition startPosition, boolean inclusive) {

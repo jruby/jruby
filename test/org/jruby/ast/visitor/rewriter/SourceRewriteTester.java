@@ -65,7 +65,7 @@ public class SourceRewriteTester extends TestSuite {
 		DefaultRubyParser parser = RubyParserPool.getInstance().borrowParser();
 		parser.setWarnings(new NullWarnings());
 		
-		LexerSource lexerSource = new LexerSource("", new StringReader(original));
+		LexerSource lexerSource = new LexerSource("", new StringReader(original), 0);
 		StringWriter outputWriter = new StringWriter();
 		ReWriteVisitor visitor = new ReWriteVisitor(outputWriter, original);
 		parser.parse(new RubyParserConfiguration(), lexerSource).getAST().accept(visitor);

@@ -58,7 +58,7 @@ public class SourcePosition implements ISourcePosition, Serializable {
      * Creates a default source position - required for serialization.
      */
     public SourcePosition() {
-    	this("", 0);
+    	this("", 0, 0);
     }
     
     /**
@@ -67,12 +67,12 @@ public class SourcePosition implements ISourcePosition, Serializable {
      * @param file location of the source (must not be null)
      * @param endLine what line within the source
      */
-	public SourcePosition(String file, int endLine) {
+	public SourcePosition(String file, int startLine, int endLine) {
 		if (file == null) { //otherwise equals() and getInstance() will fail
 			throw new NullPointerException();  
 		}
 		this.file = file;
-		this.startLine = 0;
+		this.startLine = startLine;
 		this.endLine = endLine;
 		this.startOffset = 0;
 		this.endOffset = 0;

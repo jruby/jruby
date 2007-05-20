@@ -371,3 +371,26 @@ end
 test_ok(9.class.include?(Precision))
 test_ok(9.class.include?(Kernel))
 test_equal(false, Precision.include?(Precision))
+
+class ModuleForTestingIfMethodsAreDefined
+  def a_public_method; end
+  protected
+  def a_protected_method; end
+  private
+  def a_private_method; end
+end
+test_ok(ModuleForTestingIfMethodsAreDefined.method_defined?(:a_public_method))
+test_ok(ModuleForTestingIfMethodsAreDefined.method_defined?(:a_protected_method))
+test_ok(! ModuleForTestingIfMethodsAreDefined.method_defined?(:a_private_method))
+
+test_ok(ModuleForTestingIfMethodsAreDefined.public_method_defined?(:a_public_method))
+test_ok(! ModuleForTestingIfMethodsAreDefined.public_method_defined?(:a_protected_method))
+test_ok(! ModuleForTestingIfMethodsAreDefined.public_method_defined?(:a_private_method))
+
+test_ok(! ModuleForTestingIfMethodsAreDefined.protected_method_defined?(:a_public_method))
+test_ok(ModuleForTestingIfMethodsAreDefined.protected_method_defined?(:a_protected_method))
+test_ok(! ModuleForTestingIfMethodsAreDefined.protected_method_defined?(:a_private_method))
+
+test_ok(! ModuleForTestingIfMethodsAreDefined.private_method_defined?(:a_public_method))
+test_ok(! ModuleForTestingIfMethodsAreDefined.private_method_defined?(:a_protected_method))
+test_ok(ModuleForTestingIfMethodsAreDefined.private_method_defined?(:a_private_method))

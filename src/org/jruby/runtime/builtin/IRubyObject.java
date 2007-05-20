@@ -378,9 +378,10 @@ public interface IRubyObject {
      * @param evalString The string containing the text to be evaluated
      * @param binding The binding object under which to perform the evaluation
      * @param file The filename to use when reporting errors during the evaluation
+     * @param lineNumber is the line number to pretend we are starting from
      * @return An IRubyObject result from the evaluation
      */
-    IRubyObject evalWithBinding(ThreadContext context, IRubyObject evalString, IRubyObject binding, String file);
+    IRubyObject evalWithBinding(ThreadContext context, IRubyObject evalString, IRubyObject binding, String file, int lineNumber);
     
     /**
      * Evaluate the given string.

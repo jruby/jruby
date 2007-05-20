@@ -874,7 +874,8 @@ public class RubyObject implements Cloneable, IRubyObject {
     /* (non-Javadoc)
      * @see org.jruby.runtime.builtin.IRubyObject#evalWithBinding(org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.builtin.IRubyObject, java.lang.String)
      */
-    public IRubyObject evalWithBinding(ThreadContext context, IRubyObject src, IRubyObject scope, String file) {
+    public IRubyObject evalWithBinding(ThreadContext context, IRubyObject src, IRubyObject scope, 
+            String file, int lineNumber) {
         // both of these are ensured by the (very few) callers
         assert !scope.isNil();
         assert file != null;
@@ -896,7 +897,8 @@ public class RubyObject implements Cloneable, IRubyObject {
             // Binding provided for scope, use it
             threadContext.preEvalWithBinding(blockOfBinding);
             IRubyObject newSelf = threadContext.getFrameSelf();
-            Node node = getRuntime().parse(src.toString(), file, blockOfBinding.getDynamicScope());
+            Node node = 
+                getRuntime().parse(src.toString(), file, blockOfBinding.getDynamicScope(), lineNumber);
 
             return EvaluationState.eval(getRuntime(), threadContext, node, newSelf, blockOfBinding);
         } catch (JumpException je) {
@@ -923,7 +925,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         // no binding, just eval in "current" frame (caller's frame)
         try {
-            Node node = getRuntime().parse(src.toString(), file, context.getCurrentScope());
+            Node node = getRuntime().parse(src.toString(), file, context.getCurrentScope(), 0);
             
             return EvaluationState.eval(getRuntime(), context, node, this, Block.NULL_BLOCK);
         } catch (JumpException je) {
