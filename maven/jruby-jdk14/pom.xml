@@ -4,14 +4,14 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>shared</artifactId>
-    <version>1.0RC2</version>
+    <version>1.0RC3-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-jdk14</artifactId>
   <packaging>jar</packaging>
-  <version>1.0RC2</version>
+  <version>1.0RC3-SNAPSHOT</version>
   <name>JRuby JDK 1.4</name>
 
   <dependencies>
