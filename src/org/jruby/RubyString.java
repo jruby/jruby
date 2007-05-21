@@ -1925,6 +1925,7 @@ public class RubyString extends RubyObject {
             }
             cp = value.begin + offset;
             if (offset > value.realSize) break;
+            mat.setPosition(offset);
             found = mat.find();
         }
         
