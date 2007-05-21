@@ -40,6 +40,7 @@ import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.JRubyClassLoader;
@@ -55,8 +56,16 @@ public class JavaSupport {
 
     private Map instanceCache = Collections.synchronizedMap(new WeakIdentityHashMap(100));
     
+    private RubyModule javaModule;
+    private RubyModule javaUtilitiesModule;
     private RubyClass javaObjectClass;
+    private RubyClass javaClassClass;
     private RubyClass javaArrayClass;
+    private RubyClass javaProxyClass;
+    private RubyModule javaInterfaceTemplate;
+    private RubyModule packageModuleTemplate;
+    private RubyClass arrayProxyClass;
+    private RubyClass concreteProxyClass;
     
     public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
@@ -159,19 +168,76 @@ public class JavaSupport {
     	instanceCache.put(object.getValue(), new WeakReference(object));
     }
 
-    // not synchronizing, no harm if javaObjectClass gets set twice...
+    // not synchronizing these methods, no harm if these values get set twice...
+    
+    public RubyModule getJavaModule() {
+        if (javaModule == null) {
+            javaModule = runtime.getModule("Java");
+        }
+        return javaModule;
+    }
+    
+    public RubyModule getJavaUtilitiesModule() {
+        if (javaUtilitiesModule == null) {
+            javaUtilitiesModule = runtime.getModule("JavaUtilities");
+        }
+        return javaUtilitiesModule;
+    }
+    
     public RubyClass getJavaObjectClass() {
         if (javaObjectClass == null) {
-            javaObjectClass = runtime.getModule("Java").getClass("JavaObject");
+            javaObjectClass = getJavaModule().getClass("JavaObject");
         }
         return javaObjectClass;
     }
 
     public RubyClass getJavaArrayClass() {
         if (javaArrayClass == null) {
-            javaArrayClass = runtime.getModule("Java").getClass("JavaArray");
+            javaArrayClass = getJavaModule().getClass("JavaArray");
         }
         return javaArrayClass;
+    }
+    
+    public RubyClass getJavaClassClass() {
+        if(javaClassClass == null) {
+            javaClassClass = getJavaModule().getClass("JavaClass");
+        }
+        return javaClassClass;
+    }
+    
+    public RubyModule getJavaInterfaceTemplate() {
+        if (javaInterfaceTemplate == null) {
+            javaInterfaceTemplate = runtime.getModule("JavaInterfaceTemplate");
+        }
+        return javaInterfaceTemplate;
+    }
+    
+    public RubyModule getPackageModuleTemplate() {
+        if (packageModuleTemplate == null) {
+            packageModuleTemplate = runtime.getModule("JavaPackageModuleTemplate");
+        }
+        return packageModuleTemplate;
+    }
+    
+    public RubyClass getJavaProxyClass() {
+        if (javaProxyClass == null) {
+            javaProxyClass = runtime.getClass("JavaProxy");
+        }
+        return javaProxyClass;
+    }
+    
+    public RubyClass getConcreteProxyClass() {
+        if (concreteProxyClass == null) {
+            concreteProxyClass = runtime.getClass("ConcreteJavaProxy");
+        }
+        return concreteProxyClass;
+    }
+    
+    public RubyClass getArrayProxyClass() {
+        if (arrayProxyClass == null) {
+            arrayProxyClass = runtime.getClass("ArrayJavaProxy");
+        }
+        return arrayProxyClass;
     }
 
 }

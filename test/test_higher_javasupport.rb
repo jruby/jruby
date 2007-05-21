@@ -598,5 +598,39 @@ class TestHigherJavasupport < Test::Unit::TestCase
      ci.addInterface2(C.new)
   	
   end
+  
+  class LCTestA < java::lang::Object
+    include org::jruby::javasupport::test::Interface1
+
+    def method1
+    end
+  end
+  LCTestA.new
+  
+  class LCTestB < LCTestA
+  	include org::jruby::javasupport::test::Interface2
+  	
+  	def method2
+  	end
+  end
+  LCTestB.new
+  
+  class java::lang::Object
+    def boo
+      'boo!'
+    end
+  end
+   
+  def test_lowercase_colon_package_syntax
+    assert_equal(java::lang::String, java.lang.String)
+    assert_equal('boo!', java.lang.String.new('xxx').boo)
+    ci = org::jruby::javasupport::test::ConsumeInterfaces.new
+    assert_equal('boo!', ci.boo)
+    assert_equal('boo!', LCTestA.new.boo)
+    assert_equal('boo!', LCTestB.new.boo)
+    ci.addInterface1(LCTestA.new)
+    ci.addInterface1(LCTestB.new)
+    ci.addInterface2(LCTestB.new)
+  end
 end
 

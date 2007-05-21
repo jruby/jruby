@@ -36,6 +36,7 @@
 package org.jruby;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.HashSet;
@@ -61,6 +62,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.collections.SinglyLinkedList;
 import org.jruby.exceptions.RaiseException;
@@ -97,6 +99,49 @@ public class RubyModule extends RubyObject {
     // when appropriate (e.g. when method is removed by source class or a new method is added
     // with same name by one of its subclasses).
     private Map methods = new HashMap();
+    
+    
+    // FIXME: I'm not sure what the serialization/marshalling implications
+    // might be of defining this here. We could keep a hash in JavaSupport
+    // (or elsewhere) instead, but then RubyModule might need a reference to 
+    // JavaSupport code, which I've tried to avoid...
+    private transient List classProviders;
+    
+    public void addClassProvider(ClassProvider provider) {
+        if (classProviders == null) {
+            synchronized(this) {
+                if (classProviders == null) {
+                    classProviders = Collections.synchronizedList(new ArrayList());
+                }
+            }
+        }
+        synchronized(classProviders) {
+            if (!classProviders.contains(provider)) {
+                classProviders.add(provider);
+            }
+        }
+    }
+
+    public void removeClassProvider(ClassProvider provider) {
+        if (classProviders != null) {
+            classProviders.remove(provider);
+        }
+    }
+
+    private RubyClass searchClassProviders(String name, RubyClass superClazz) {
+        if (classProviders != null) {
+            synchronized(classProviders) {
+                RubyClass clazz;
+                for (Iterator iter = classProviders.iterator(); iter.hasNext(); ) {
+                    if ((clazz = ((ClassProvider)iter.next())
+                            .defineClassUnder(this, name, superClazz)) != null) {
+                        return clazz;
+                    }
+                }
+            }
+        }
+        return null;
+    }
 
     protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, SinglyLinkedList parentCRef, String name) {
         super(runtime, metaClass);
@@ -873,9 +918,14 @@ public class RubyModule extends RubyObject {
         // so it uses the allocator of the specified superclass or default to
         // the Object allocator. It should NOT be used to define classes that require a native allocator.
         IRubyObject type = getInstanceVariable(name);
-        ObjectAllocator allocator = superClazz == null ? getRuntime().getObject().getAllocator() : superClazz.getAllocator();
         
         if (type == null) {
+            if (classProviders != null) {
+                if ((type = searchClassProviders(name, superClazz)) != null) {
+                    return (RubyClass)type;
+                }
+            }
+            ObjectAllocator allocator = superClazz == null ? getRuntime().getObject().getAllocator() : superClazz.getAllocator();
             return getRuntime().defineClassUnder(name, superClazz, allocator, cref);
         } 
 

@@ -463,7 +463,7 @@ public class JavaClass extends JavaObject {
         }
     }
     
-    private final RubyModule JAVA_UTILITIES = getRuntime().getModule("JavaUtilities");
+    private final RubyModule JAVA_UTILITIES = getRuntime().getJavaSupport().getJavaUtilitiesModule();
     
     private Map staticAssignedNames;
     private Map instanceAssignedNames;
@@ -481,7 +481,7 @@ public class JavaClass extends JavaObject {
     }
     
     private JavaClass(Ruby runtime, Class javaClass) {
-        super(runtime, (RubyClass) runtime.getModule("Java").getClass("JavaClass"), javaClass);
+        super(runtime, (RubyClass) runtime.getJavaSupport().getJavaClassClass(), javaClass);
         if (javaClass.isInterface()) {
             initializeInterface(javaClass);
         } else if (!(javaClass.isArray() || javaClass.isPrimitive())) {
@@ -902,10 +902,13 @@ public class JavaClass extends JavaObject {
         return result;
     }
     
-    public static synchronized JavaClass for_name(IRubyObject recv, IRubyObject name) {
-        String className = name.asSymbol();
-        Class klass = recv.getRuntime().getJavaSupport().loadJavaClass(className);
-        return JavaClass.get(recv.getRuntime(), klass);
+    public static synchronized JavaClass forName(Ruby runtime, String className) {
+        Class klass = runtime.getJavaSupport().loadJavaClass(className);
+        return JavaClass.get(runtime, klass);
+    }
+
+    public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
+        return forName(recv.getRuntime(), name.asSymbol());
     }
     
     // TODO: part of interim solution, can be removed soon
@@ -1017,7 +1020,7 @@ public class JavaClass extends JavaObject {
     
     private void define_instance_method_for_proxy(final RubyClass proxy, List names, 
             final RubyArray methods) {
-        final RubyModule javaUtilities = getRuntime().getModule("JavaUtilities");
+        final RubyModule javaUtilities = JAVA_UTILITIES;
         Callback method;
         if(methods.size()>1) {
             method = new Callback() {
