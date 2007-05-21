@@ -150,7 +150,8 @@ public class RubyProc extends RubyObject {
     public IRubyObject call(IRubyObject[] args, IRubyObject self, Block unusedBlock) {
         assert args != null;
         
-        ThreadContext context = getRuntime().getCurrentContext();
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
         
         try {
             if (block.isLambda) {
@@ -168,14 +169,14 @@ public class RubyProc extends RubyObject {
             if (je.getJumpType() == JumpException.JumpType.BreakJump) {
                 if (block.isLambda) return (IRubyObject) je.getValue();
                 
-                throw getRuntime().newLocalJumpError("unexpected return");
+                throw runtime.newLocalJumpError("break", (IRubyObject)je.getValue(), "break from proc-closure");
             } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 Object target = je.getTarget();
                 
                 if (target == this || block.isLambda) return (IRubyObject) je.getValue();
                 
                 if (target == null) {
-                    throw getRuntime().newLocalJumpError("unexpected return");
+                    throw runtime.newLocalJumpError("return", (IRubyObject)je.getValue(), "unexpected return");
                 }
                 throw je;
             } else {

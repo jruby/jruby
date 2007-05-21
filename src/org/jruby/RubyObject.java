@@ -903,7 +903,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             return EvaluationState.eval(getRuntime(), threadContext, node, newSelf, blockOfBinding);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-                throw getRuntime().newLocalJumpError("unexpected break");
+                throw getRuntime().newLocalJumpError("break", (IRubyObject)je.getValue(), "unexpected break");
             }
             throw je;
         } finally {
@@ -930,7 +930,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             return EvaluationState.eval(getRuntime(), context, node, this, Block.NULL_BLOCK);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-                throw getRuntime().newLocalJumpError("unexpected break");
+                throw getRuntime().newLocalJumpError("break", (IRubyObject)je.getValue(), "unexpected break");
             }
             throw je;
         } finally {

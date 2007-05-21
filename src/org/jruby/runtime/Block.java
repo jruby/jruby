@@ -61,7 +61,7 @@ public class Block {
         
         public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
                 RubyModule klass, boolean aValue) {
-            throw context.getRuntime().newLocalJumpError("yield called out of block");
+            throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
         }
         
         public Block cloneBlock() {

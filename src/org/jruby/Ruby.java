@@ -277,10 +277,10 @@ public final class Ruby {
             return EvaluationState.eval(this, tc, node, tc.getFrameSelf(), Block.NULL_BLOCK);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                throw newLocalJumpError("unexpected return");
+                throw newLocalJumpError("return", (IRubyObject)je.getValue(), "unexpected return");
                 //              return (IRubyObject)je.getSecondaryData();
             } else if(je.getJumpType() == JumpException.JumpType.BreakJump) {
-                throw newLocalJumpError("unexpected break");
+                throw newLocalJumpError("break", (IRubyObject)je.getValue(), "unexpected break");
             }
 
             throw je;
@@ -847,7 +847,7 @@ public final class Ruby {
             defineClass("EOFError", ioError, ioError.getAllocator());
         }
         if (profile.allowClass("LocalJumpError")) {
-            defineClass("LocalJumpError", standardError, standardError.getAllocator());
+            RubyLocalJumpError.createLocalJumpErrorClass(this, standardError);
         }
         if (profile.allowClass("ThreadError")) {
             defineClass("ThreadError", standardError, standardError.getAllocator());
@@ -1555,8 +1555,8 @@ public final class Ruby {
         return new RaiseException(new RubyNameError(this, this.getClass("NameError"), message, name), true);
     }
 
-    public RaiseException newLocalJumpError(String message) {
-        return newRaiseException(getClass("LocalJumpError"), message);
+    public RaiseException newLocalJumpError(String reason, IRubyObject exitValue, String message) {
+        return new RaiseException(new RubyLocalJumpError(this, getClass("LocalJumpError"), message, reason, exitValue), true);
     }
 
     public RaiseException newLoadError(String message) {

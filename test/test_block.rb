@@ -156,6 +156,7 @@ class TestBlock < Test::Unit::TestCase
     assert_equal(["C: b true", "D: c false", "C: a true"], $results)
   end
 
+  if defined? instance_exec
   def test_instance_exec_self
     o = Object.new
     assert_equal(o, o.instance_exec { self })
@@ -185,7 +186,8 @@ class TestBlock < Test::Unit::TestCase
     o = Object.new
     assert_raise(ArgumentError) { o.instance_exec(1) }
   end
-
+  end # if defined? instance_exec
+  
   # ensure proc-ified blocks can be yielded to when no block arg is specified in declaration
   class Holder
     def call_block
@@ -232,5 +234,25 @@ class TestBlock < Test::Unit::TestCase
     h = Hash.new
     bar(1, 2) { |h[:v], h[:u]| }
     puts h[:v], h[:u]
+  end
+
+  def block_arg_that_breaks_while(&block)
+    while true
+      block.call
+    end
+  end
+  
+  def block_that_breaks_while
+    while true
+      yield
+    end
+  end
+
+  def test_block_arg_that_breaks_while
+    assert_nothing_raised { block_arg_that_breaks_while { break }}
+  end
+  
+  def test_block_that_breaks_while
+    assert_nothing_raised { block_that_breaks_while { break }}
   end
 end

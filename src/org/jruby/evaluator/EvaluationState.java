@@ -40,6 +40,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyKernel;
+import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
@@ -1753,6 +1754,23 @@ public class EvaluationState {
                 try {
                     evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
                     break loop;
+                } catch (RaiseException re) {
+                    if (re.getException().isKindOf(runtime.getClass("LocalJumpError"))) {
+                        RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
+                        
+                        IRubyObject reason = jumpError.reason();
+                        
+                        // admittedly inefficient
+                        if (reason.asSymbol().equals("break")) {
+                            return jumpError.exitValue();
+                        } else if (reason.asSymbol().equals("next")) {
+                            break loop;
+                        } else if (reason.asSymbol().equals("redo")) {
+                            continue;
+                        }
+                    }
+                    
+                    throw re;
                 } catch (JumpException je) {
                     switch (je.getJumpType().getTypeId()) {
                     case JumpType.REDO:
