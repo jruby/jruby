@@ -386,3 +386,6 @@ in_stream.write(s)
 in_stream.rewind
 Marshal.load(in_stream)
 test_ok(in_stream.binmode_called)
+
+# thread isn't marshalable
+test_exception(TypeError) { Marshal.dump(Thread.new {}) }

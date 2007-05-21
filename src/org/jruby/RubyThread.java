@@ -52,6 +52,7 @@ import edu.emory.mathcs.backport.java.util.concurrent.ExecutionException;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeoutException;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectMarshal;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -63,8 +64,6 @@ import org.jruby.runtime.Arity;
  * <code>Symbol</code> (such as <code>:name</code>).
  * 
  * Note: For CVS history, see ThreadClass.java.
- *
- * @author Jason Voegele (jason@jvoegele.com)
  */
 public class RubyThread extends RubyObject {
     private ThreadLike threadImpl;
@@ -145,6 +144,8 @@ public class RubyThread extends RubyObject {
         runtime.getThreadService().setMainThread(rubyThread);
         
         threadClass.getMetaClass().defineFastMethod("main", callbackFactory.getFastSingletonMethod("main"));
+        
+        threadClass.setMarshal(ObjectMarshal.NOT_MARSHALABLE_MARSHAL);
         
         return threadClass;
     }
