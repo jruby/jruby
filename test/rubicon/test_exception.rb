@@ -74,4 +74,37 @@ class TestException < Test::Unit::TestCase
     # this is how set_backtrace is suppose to work
     assert_equal(Problem::STACK, e.backtrace)
   end
+  
+  # Test that $! and $@ are thread-local
+  def test_error_info_thread_local
+    exception_in_thread = nil
+    exception_setting_backtrace = nil
+    backtrace_in_thread = nil
+    
+    t = Thread.new {
+      Thread.stop
+      exception_in_thread = $!
+      begin
+        backtrace_in_thread = $@
+        $@ = ["foo"]
+      rescue ArgumentError => exception_setting_backtrace
+      end
+    }
+    
+    1 while t.status != "sleep" # wait for it to sleep
+    
+    begin
+      raise
+    rescue Exception => e
+      assert_equal($!, e)
+      t.run
+      t.join
+      $@ = ["bar"]
+      assert_equal(["bar"], $@)
+    end
+    
+    assert_equal(nil, exception_in_thread)
+    assert_equal(ArgumentError, exception_setting_backtrace.class)
+    assert_equal(nil, backtrace_in_thread)
+  end
 end

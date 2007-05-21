@@ -69,6 +69,9 @@ public class ThreadContext {
     
     private RubyThread thread;
     
+    // Error info is per-thread
+    private IRubyObject errorInfo;
+    
     //private UnsynchronizedStack parentStack;
     private RubyModule[] parentStack = new RubyModule[INITIAL_SIZE];
     private int parentIndex = -1;
@@ -106,6 +109,9 @@ public class ThreadContext {
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         
+        // init errorInfo to nil
+        errorInfo = runtime.getNil();
+        
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
         pushScope(new DynamicScope(new LocalStaticScope(null), null));
@@ -115,6 +121,15 @@ public class ThreadContext {
     
     public Ruby getRuntime() {
         return runtime;
+    }
+    
+    public IRubyObject getErrorInfo() {
+        return errorInfo;
+    }
+    
+    public IRubyObject setErrorInfo(IRubyObject errorInfo) {
+        this.errorInfo = errorInfo;
+        return errorInfo;
     }
     
     /**
