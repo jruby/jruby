@@ -12,7 +12,6 @@ import java.util.List;
 
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
-import javax.swing.SwingUtilities;
 import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
@@ -24,10 +23,12 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
 import org.jruby.Ruby;
+import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.ext.Readline;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
@@ -97,11 +98,7 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
             final MutableAttributeSet messageStyle = new SimpleAttributeSet();
             StyleConstants.setBackground(messageStyle, area.getForeground());
             StyleConstants.setForeground(messageStyle, area.getBackground());
-            SwingUtilities.invokeLater( new Runnable() {
-                public void run() {
-                    append(message, messageStyle);
-                }
-            });
+            append(message, messageStyle);
         }
     }
     
@@ -116,6 +113,12 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
             }
             public Arity getArity() { return Arity.twoArguments(); }
         });
+        
+        /* Redirect output to me */
+        RubyIO out = new RubyIO(runtime, this);
+        runtime.defineVariable(new GlobalVariable(runtime, "$stderr", out));
+        runtime.defineVariable(new GlobalVariable(runtime, "$stdout", out));
+        runtime.defineVariable(new GlobalVariable(runtime, "$>", out));
     }
     
     protected void completeAction(KeyEvent event) {
@@ -255,14 +258,10 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
     
     public String readLine(final String prompt)
     {
-        SwingUtilities.invokeLater( new Runnable() {
-            public void run() {
-                append(prompt.trim(), promptStyle);
-                append(" ", inputStyle); // hack to get right style for input
-                area.setCaretPosition(area.getDocument().getLength());
-                startPos = area.getDocument().getLength();
-            }
-        });
+        append(prompt.trim(), promptStyle);
+        append(" ", inputStyle); // hack to get right style for input
+        area.setCaretPosition(area.getDocument().getLength());
+        startPos = area.getDocument().getLength();
         
         Readline.getHistory().moveToEnd();
         
@@ -308,14 +307,8 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
     }
     
     public void writeLine(final String line) {
-        SwingUtilities.invokeLater( new Runnable() {
-            public void run() {
-                if (line.startsWith("=>"))
-                    append(line, resultStyle);
-                else
-                    append(line, outputStyle);
-            }
-        });
+        if (line.startsWith("=>")) append(line, resultStyle);
+        else append(line, outputStyle);
     }
     
     public void write(int b) throws IOException {
