@@ -122,10 +122,7 @@ public class RaiseException extends JumpException {
 
         runtime.setStackTraces(runtime.getStackTraces() + 1);
 
-        if (newException.callMethod(context, "backtrace").isNil() && context.getSourceFile() != null) {
-            IRubyObject backtrace = context.createBacktrace(0, nativeException);
-            newException.callMethod(context, "set_backtrace", backtrace);
-        }
+        newException.setBacktraceFrames(context.createBacktrace(0, nativeException));
 
         runtime.setStackTraces(runtime.getStackTraces() - 1);
     }

@@ -43,9 +43,11 @@ import java.util.Map;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -56,7 +58,8 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  */
 public class RubyException extends RubyObject {
 
-    private RubyArray backtrace;
+    private Frame[] backtraceFrames;
+    private IRubyObject backtrace;
     public IRubyObject message;
 	public static final int TRACE_HEAD = 8;
 	public static final int TRACE_TAIL = 4;
@@ -91,7 +94,7 @@ public class RubyException extends RubyObject {
             Map iVars = new HashMap(exc.getInstanceVariables());
             
             iVars.put("mesg", exc.message == null ? runtime.getNil() : exc.message);
-            iVars.put("bt", exc.backtrace == null ? runtime.getNil() : exc.backtrace);
+            iVars.put("bt", exc.getBacktrace());
             
             marshalStream.dumpInstanceVars(iVars);
         }
@@ -134,6 +137,17 @@ public class RubyException extends RubyObject {
     public static RubyException newException(Ruby runtime, RubyClass excptnClass, String msg) {
         return new RubyException(runtime, excptnClass, msg);
     }
+    
+    public void setBacktraceFrames(Frame[] backtraceFrames) {
+        this.backtraceFrames = backtraceFrames;
+    }
+    
+    public IRubyObject getBacktrace() {
+        if (backtrace == null) {
+            backtrace = backtraceFrames == null ? getRuntime().getNil() : ThreadContext.createBacktraceFromFrames(getRuntime(), backtraceFrames);
+        }
+        return backtrace;
+    }
 
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 0) {
@@ -143,7 +157,7 @@ public class RubyException extends RubyObject {
     }
 
     public IRubyObject backtrace() {
-        return backtrace == null ? getRuntime().getNil() : backtrace; 
+        return getBacktrace(); 
     }
 
     public IRubyObject set_backtrace(IRubyObject obj) {

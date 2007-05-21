@@ -560,7 +560,7 @@ public class ThreadContext {
         return ((RubyModule) peekCRef().getValue()).getConstant(name);
     }
     
-    private void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
+    private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
         StringBuffer sb = new StringBuffer(100);
         ISourcePosition position = frame.getPosition();
         
@@ -589,27 +589,47 @@ public class ThreadContext {
      * @param nativeException
      * @return an Array with the backtrace
      */
-    public IRubyObject createBacktrace(int level, boolean nativeException) {
+    public static IRubyObject createBacktraceFromFrames(Ruby runtime, Frame[] backtraceFrames) {
         RubyArray backtrace = runtime.newArray();
-        int traceSize = frameIndex - level;
+        int traceSize = backtraceFrames.length;
         
         if (traceSize <= 0) return backtrace;
-        
-        if (nativeException) {
-            // assert level == 0;
-            addBackTraceElement(backtrace, frameStack[frameIndex], null);
-        }
-        
-        for (int i = traceSize; i > 0; i--) {
-            Frame frame = frameStack[i];
-            
-            // We are in eval with binding break out early
-            if (frame.isBindingFrame()) break;
 
-            addBackTraceElement(backtrace, frame, (Frame) frameStack[i-1]);
+        for (int i = traceSize - 1; i > 0; i--) {
+            Frame frame = backtraceFrames[i];
+            // We are in eval with binding break out early
+            if (frame != null && frame.isBindingFrame()) break;
+
+            addBackTraceElement(backtrace, frame, backtraceFrames[i - 1]);
         }
         
         return backtrace;
+    }
+    
+    /**
+     * Create an Array with backtrace information.
+     * @param runtime
+     * @param level
+     * @param nativeException
+     * @return an Array with the backtrace
+     */
+    public Frame[] createBacktrace(int level, boolean nativeException) {
+        int traceSize = frameIndex - level + 1;
+        Frame[] traceFrames;
+        
+        if (traceSize <= 0) return null;
+        
+        if (nativeException) {
+            // assert level == 0;
+            traceFrames = new Frame[traceSize + 1];
+            traceFrames[traceSize] = frameStack[frameIndex];
+        } else {
+            traceFrames = new Frame[traceSize];
+        }
+        
+        System.arraycopy(frameStack, 0, traceFrames, 0, traceSize);
+        
+        return traceFrames;
     }
     
     public void preAdoptThread() {

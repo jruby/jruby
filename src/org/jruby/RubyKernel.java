@@ -757,7 +757,7 @@ public class RubyKernel {
             throw recv.getRuntime().newArgumentError("negative level(" + level + ')');
         }
         
-        return recv.getRuntime().getCurrentContext().createBacktrace(level, false);
+        return ThreadContext.createBacktraceFromFrames(recv.getRuntime(), recv.getRuntime().getCurrentContext().createBacktrace(level, false));
     }
 
     public static IRubyObject rbCatch(IRubyObject recv, IRubyObject tag, Block block) {
