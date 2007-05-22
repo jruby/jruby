@@ -19,6 +19,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
  * Copyright (C) 2006 Antti Karanta <antti.karanta@napa.fi>
+ * Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -730,7 +731,9 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyFixnum id() {
-        return newFixnum(value * 2 + 1);
+        if (value <= Long.MAX_VALUE / 2 && value >= Long.MIN_VALUE / 2)
+            return newFixnum(2 * value + 1);
+        return super.id();
     }
 
     public IRubyObject taint() {
