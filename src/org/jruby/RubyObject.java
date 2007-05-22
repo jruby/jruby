@@ -809,13 +809,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public IRubyObject evalUnder(RubyModule under, IRubyObject src, IRubyObject file, IRubyObject line) {
-        /*
-        if (ruby_safe_level >= 4) {
-        	Check_Type(src, T_STRING);
-        } else {
-        	Check_SafeStr(src);
-        	}
-        */
         return under.executeUnder(new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                 IRubyObject source = args[1];
@@ -824,7 +817,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 //IRubyObject lineNumber = args[3];
 
                 return args[0].evalSimple(source.getRuntime().getCurrentContext(),
-                                  source, ((RubyString) filename).toString());
+                                  source, filename.convertToString().toString());
             }
 
             public Arity getArity() {
