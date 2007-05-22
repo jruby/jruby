@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -156,7 +157,7 @@ public class LoadService {
        RubyString env_rubylib = runtime.newString("RUBYLIB");
        if (env.has_key(env_rubylib).isTrue()) {
            String rubylib = env.aref(env_rubylib).toString();
-           String[] paths = rubylib.split(":");
+           String[] paths = rubylib.split(File.pathSeparator);
            for (int i = 0; i < paths.length; i++) {
                addPath(paths[i]);
            }
