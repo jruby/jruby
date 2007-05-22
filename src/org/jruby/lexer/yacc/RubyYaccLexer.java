@@ -443,10 +443,10 @@ public class RubyYaccLexer {
 
         // FIXME: Consider making a better LexerSource.readLine
         while ((c = src.read()) != '\n') {
-            tokenBuffer.append(c);
             if (c == EOF) {
                 break;
             }
+            tokenBuffer.append(c);
         }
         src.unread(c);
         
