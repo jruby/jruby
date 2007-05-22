@@ -10,6 +10,7 @@ require 'irb/completion'
 
 import java.awt.Color
 import java.awt.Font
+import javax.swing.JFrame
 
 # Try to find preferred font family, use otherwise -- err --  otherwise
 def find_font(otherwise, style, size, *families)
@@ -27,7 +28,8 @@ text.foreground = Color.new(0xa4, 0x00, 0x00)
 
 pane = javax.swing.JScrollPane.new
 pane.viewport_view = text
-frame = javax.swing.JFrame.new('JRuby IRB Console (tab will autocomplete)')
+frame = JFrame.new('JRuby IRB Console (tab will autocomplete)')
+frame.default_close_operation = JFrame::EXIT_ON_CLOSE
 frame.set_size(700, 600)
 frame.content_pane.add(pane)
 tar = org.jruby.demo.TextAreaReadline.new(text, " Welcome to the JRuby IRB Console [#{JRUBY_VERSION}] \n\n")
