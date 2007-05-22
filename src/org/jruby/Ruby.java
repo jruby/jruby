@@ -289,21 +289,28 @@ public final class Ruby {
     
     public IRubyObject compileOrFallbackAndRun(Node node) {
         try {
+            // FIXME: DRY checking of this property
+            String enabledValue = System.getProperty("jruby.jit.enabled");
+            boolean jitEnabled = enabledValue == null ? true : Boolean.getBoolean("jruby.jit.enabled");
             // do the compile
             Script script = null;
-            try {
-                StandardASMCompiler compiler = new StandardASMCompiler(node);
-                NodeCompilerFactory.getCompiler(node).compile(node, compiler);
+            if (jitEnabled) {
+                try {
+                    StandardASMCompiler compiler = new StandardASMCompiler(node);
+                    NodeCompilerFactory.getCompiler(node).compile(node, compiler);
                 
-                Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
+                    Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
                 
-                script = (Script)scriptClass.newInstance();
-            } catch (Throwable t) { // The rest of these are all fallbacks
-                return eval(node);
+                    script = (Script)scriptClass.newInstance();
+                
+                    // FIXME: Pass something better for args and block here?
+                    return script.run(getCurrentContext(), getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                } catch (Throwable t) { // The rest of these are all fallbacks
+                }
             }
             
-            // FIXME: Pass something better for args and block here?
-            return script.run(getCurrentContext(), getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            // Either error from compilation or jit/aot is disabled
+            return eval(node);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 return (IRubyObject) je.getValue();
