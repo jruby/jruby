@@ -36,6 +36,8 @@
 package org.jruby;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -182,7 +184,8 @@ public class RubyFloat extends RubyNumeric {
                 "failed to convert " + number.getMetaClass() + " into Float");
     }
 
-    private final static DecimalFormat FORMAT = new DecimalFormat("##############0.0##############");
+    private final static DecimalFormat FORMAT = new DecimalFormat("##############0.0##############",
+            new DecimalFormatSymbols(Locale.ENGLISH));
 
     /** flo_to_s
      * 
