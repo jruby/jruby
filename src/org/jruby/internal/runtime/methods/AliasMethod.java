@@ -48,8 +48,9 @@ public class AliasMethod extends DynamicMethod {
      * This code used to try and optimize the case of when oldMethod is an aliasMethod.
      * This seems a little overkill.
      */
-    public AliasMethod(DynamicMethod oldMethod, String oldName) {
-        super(oldMethod.getImplementationClass(), oldMethod.getVisibility());
+
+    public AliasMethod(RubyModule implementationClass, DynamicMethod oldMethod, String oldName) {
+        super(implementationClass, oldMethod.getVisibility());
 
         this.oldName = oldName;
         this.oldMethod = oldMethod;
@@ -71,7 +72,7 @@ public class AliasMethod extends DynamicMethod {
     }
 
     public DynamicMethod dup() {
-        return new AliasMethod(oldMethod, oldName);
+        return new AliasMethod(implementationClass, oldMethod, oldName);
     }
 
     public Arity getArity(){

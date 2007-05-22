@@ -910,7 +910,7 @@ public class RubyModule extends RubyObject {
             }
         }
         getRuntime().getCacheMap().remove(name, searchMethod(name));
-        putMethod(name, new AliasMethod(method, oldName));
+        putMethod(name, new AliasMethod(this, method, oldName));
     }
 
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz) {
