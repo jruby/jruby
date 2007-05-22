@@ -93,7 +93,7 @@
   <target name="compile.tasks" depends="prepare"
     description="Builds the Ant tasks that we need later on in the build">
     <javac destdir="${jruby.classes.dir}" debug="true" srcdir="${src.dir}"
-           includes="org/jruby/util/ant/**/*.java" source="${javac.version}">
+           includes="org/jruby/util/ant/**/*.java" source="${javac.version}" deprecation="true">
       <classpath refid="build.classpath"/>
     </javac>
 
@@ -126,7 +126,7 @@
   </target>
 
   <target name="compile-jruby" depends="compile.tasks, check-for-optional-packages">
-    <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}">
+    <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" deprecation="true">
        <classpath refid="build.classpath"/>
        <src path="${src.dir}"/>
        <patternset refid="java.src.pattern"/>

@@ -427,7 +427,7 @@ public class LoadService {
                 JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(),name);
                 if(file.isFile() && file.isAbsolute()) {
                     try {
-                        return new LoadServiceResource(file.toURL(),name);
+                        return new LoadServiceResource(file.toURI().toURL(),name);
                     } catch (MalformedURLException e) {
                         throw runtime.newIOErrorFromException(e);
                     }
@@ -462,7 +462,7 @@ public class LoadService {
                 JRubyFile current = JRubyFile.create(JRubyFile.create(runtime.getCurrentDirectory(),entry).getAbsolutePath(), name);
                 if (current.isFile()) {
                     try {
-                        return new LoadServiceResource(current.toURL(), current.getPath());
+                        return new LoadServiceResource(current.toURI().toURL(), current.getPath());
                     } catch (MalformedURLException e) {
                         throw runtime.newIOErrorFromException(e);
                     }
