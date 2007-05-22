@@ -57,6 +57,7 @@ rubicon/test_true_class
 
 # Our own test/unit-based tests
 test_array
+test_autoload
 test_backquote
 test_block
 test_case

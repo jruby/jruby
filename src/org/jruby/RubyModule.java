@@ -919,7 +919,7 @@ public class RubyModule extends RubyObject {
         // the Object allocator. It should NOT be used to define classes that require a native allocator.
         IRubyObject type = getInstanceVariable(name);
         
-        if (type == null) {
+        if (type == null || (type instanceof RubyUndef)) {
             if (classProviders != null) {
                 if ((type = searchClassProviders(name, superClazz)) != null) {
                     return (RubyClass)type;
