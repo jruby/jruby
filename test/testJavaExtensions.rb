@@ -88,6 +88,7 @@ if defined? Java
     begin
       TestHelper.throwTestHelperException
     rescue NativeException => e
+      test_equal e.backtrace.size, e.backtrace.size
     end  
   end
   

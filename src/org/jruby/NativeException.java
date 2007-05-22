@@ -70,7 +70,7 @@ public class NativeException extends RubyException {
         IRubyObject rubyTrace = super.backtrace();
         if (rubyTrace.isNil())
             return rubyTrace;
-        RubyArray array = (RubyArray) rubyTrace;
+        RubyArray array = (RubyArray) rubyTrace.dup();
         StackTraceElement[] stackTrace = cause.getStackTrace();
         for (int i=stackTrace.length-1; i>=0; i--) {
             StackTraceElement element = stackTrace[i];
@@ -78,7 +78,7 @@ public class NativeException extends RubyException {
             RubyString string = runtime.newString(line);
             array.unshift(string);
         }
-        return rubyTrace;
+        return array;
     }
     
     public void printBacktrace(PrintStream errorStream) {
