@@ -203,3 +203,12 @@ if File.exist? "build.xml.link"
   File.delete("build.xml.link")
 end
 
+# Note: atime, mtime, ctime are all implemented using modification time
+test_no_exception {
+  File.mtime("build.xml")
+  File.atime("build.xml")
+  File.ctime("build.xml")
+  File.new("build.xml").mtime
+  File.new("build.xml").atime
+  File.new("build.xml").ctime
+}
