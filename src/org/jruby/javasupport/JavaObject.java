@@ -42,6 +42,7 @@ import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -99,6 +100,8 @@ public class JavaObject extends RubyObject {
 
         result.getMetaClass().undefineMethod("new");
         result.getMetaClass().undefineMethod("allocate");
+        
+        result.setMarshal(ObjectMarshal.NOT_MARSHALABLE_MARSHAL);
 
         return result;
     }

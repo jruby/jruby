@@ -632,5 +632,9 @@ class TestHigherJavasupport < Test::Unit::TestCase
     ci.addInterface1(LCTestB.new)
     ci.addInterface2(LCTestB.new)
   end
+  
+  def test_marsal_java_object_fails
+    assert_raises(TypeError) { Marshal.dump(java::lang::Object.new) }
+  end
 end
 
