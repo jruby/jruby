@@ -72,28 +72,7 @@ public final class DefaultMethod extends DynamicMethod {
     private SinglyLinkedList cref;
     private int callCount = 0;
     private Script jitCompiledScript;
-
-    private static final boolean JIT_ENABLED;
-    private static final boolean JIT_LOGGING;
-    private static final boolean JIT_LOGGING_VERBOSE;
-    private static final int JIT_THRESHOLD;
-      
-    static {
-        if (Ruby.isSecurityRestricted()) {
-            JIT_ENABLED = false;
-            JIT_LOGGING = false;
-            JIT_LOGGING_VERBOSE = false;
-            JIT_THRESHOLD = -1;
-        } else {
-            String enabledValue = System.getProperty("jruby.jit.enabled");
-            String threshold = System.getProperty("jruby.jit.threshold");
-           
-            JIT_ENABLED = enabledValue == null ? true : Boolean.getBoolean("jruby.jit.enabled");
-            JIT_LOGGING = Boolean.getBoolean("jruby.jit.logging");
-            JIT_LOGGING_VERBOSE = Boolean.getBoolean("jruby.jit.logging.verbose");
-            JIT_THRESHOLD = threshold == null ? 20 : Integer.parseInt(threshold); 
-        }
-    }
+    
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
             ArgsNode argsNode, Visibility visibility, SinglyLinkedList cref) {
         super(implementationClass, visibility);
@@ -123,7 +102,7 @@ public final class DefaultMethod extends DynamicMethod {
         
         Ruby runtime = context.getRuntime();
         
-        if (JIT_ENABLED) {
+        if (runtime.getInstanceConfig().isJitEnabled()) {
             runJIT(runtime, context, name);
         }
 
@@ -182,10 +161,10 @@ public final class DefaultMethod extends DynamicMethod {
             
             callCount++;
             
-            if (callCount >= JIT_THRESHOLD) {
+            if (callCount >= runtime.getInstanceConfig().getJitThreshold()) {
                 
                 String className = null;
-                if (JIT_LOGGING) {
+                if (runtime.getInstanceConfig().isJitLogging()) {
                     className = getImplementationClass().getBaseName();
                     if (className == null) {
                         className = "<anon class>";
@@ -244,9 +223,9 @@ public final class DefaultMethod extends DynamicMethod {
                     Class sourceClass = compiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
                     jitCompiledScript = (Script)sourceClass.newInstance();
                     
-                    if (JIT_LOGGING) System.err.println("compiled: " + className + "." + name);
+                    if (runtime.getInstanceConfig().isJitLogging()) System.err.println("compiled: " + className + "." + name);
                 } catch (Exception e) {
-                    if (JIT_LOGGING_VERBOSE) System.err.println("could not compile: " + className + "." + name + " because of: \"" + e.getMessage() + '"');
+                    if (runtime.getInstanceConfig().isJitLoggingVerbose()) System.err.println("could not compile: " + className + "." + name + " because of: \"" + e.getMessage() + '"');
                 } finally {
                     callCount = -1;
                 }

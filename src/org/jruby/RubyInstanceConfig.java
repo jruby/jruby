@@ -42,6 +42,11 @@ public class RubyInstanceConfig {
     private boolean objectSpaceEnabled = true;
     private String currentDirectory;
     private Map environment;
+
+    private final boolean jitEnabled;
+    private final boolean jitLogging;
+    private final boolean jitLoggingVerbose;
+    private final int jitThreshold;
     
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
@@ -64,6 +69,21 @@ public class RubyInstanceConfig {
                 objectSpaceEnabled = Boolean.getBoolean("jruby.objectspace.enabled");
             }
         }
+        
+        if (Ruby.isSecurityRestricted()) {
+            jitEnabled = false;
+            jitLogging = false;
+            jitLoggingVerbose = false;
+            jitThreshold = -1;
+        } else {
+            String enabledValue = System.getProperty("jruby.jit.enabled");
+            String threshold = System.getProperty("jruby.jit.threshold");
+           
+            jitEnabled = enabledValue == null ? true : Boolean.getBoolean("jruby.jit.enabled");
+            jitLogging = Boolean.getBoolean("jruby.jit.logging");
+            jitLoggingVerbose = Boolean.getBoolean("jruby.jit.logging.verbose");
+            jitThreshold = threshold == null ? 20 : Integer.parseInt(threshold); 
+        }
     }
 
     public LoadServiceCreator getLoadServiceCreator() {
@@ -80,6 +100,22 @@ public class RubyInstanceConfig {
 
     public void updateWithCommandline(CommandlineParser cmdline) {
         this.objectSpaceEnabled = cmdline.isObjectSpaceEnabled();
+    }
+
+    public boolean isJitEnabled() {
+        return jitEnabled;
+    }
+
+    public boolean isJitLogging() {
+        return jitLogging;
+    }
+
+    public boolean isJitLoggingVerbose() {
+        return jitLoggingVerbose;
+    }
+    
+    public int getJitThreshold() {
+        return jitThreshold;
     }
 
     public void setInput(InputStream newInput) {

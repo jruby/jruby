@@ -289,28 +289,25 @@ public final class Ruby {
     
     public IRubyObject compileOrFallbackAndRun(Node node) {
         try {
-            // FIXME: DRY checking of this property
-            String enabledValue = System.getProperty("jruby.jit.enabled");
-            boolean jitEnabled = enabledValue == null ? true : Boolean.getBoolean("jruby.jit.enabled");
-            // do the compile
+            // do the compile if JIT is enabled
+            if (config.isJitEnabled()) {
             Script script = null;
-            if (jitEnabled) {
                 try {
                     StandardASMCompiler compiler = new StandardASMCompiler(node);
                     NodeCompilerFactory.getCompiler(node).compile(node, compiler);
-                
+
                     Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
-                
+
                     script = (Script)scriptClass.newInstance();
-                
-                    // FIXME: Pass something better for args and block here?
-                    return script.run(getCurrentContext(), getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-                } catch (Throwable t) { // The rest of these are all fallbacks
+                } catch (Throwable t) {
+                    return eval(node);
                 }
-            }
             
-            // Either error from compilation or jit/aot is disabled
-            return eval(node);
+                // FIXME: Pass something better for args and block here?
+                return script.run(getCurrentContext(), getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            } else {
+                return eval(node);
+            }
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 return (IRubyObject) je.getValue();
