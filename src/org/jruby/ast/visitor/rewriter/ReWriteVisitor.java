@@ -114,7 +114,7 @@ public class ReWriteVisitor implements NodeVisitor {
 	protected void printNewlineAndIndentation() {
 		if (config.hasHereDocument()) config.fetchHereDocument().print();
 
-		print('\n');
+		print(config.getFormatHelper().getLineDelimiter());
 		config.getIndentor().printIndentation(config.getOutput());
 	}
 

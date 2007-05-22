@@ -103,4 +103,9 @@ public class DefaultFormatHelper implements FormatHelper {
 	public Indentor getIndentor() {
 		return indentor;
 	}
+
+	public String getLineDelimiter() {
+		return "\n";
+	}
+
 }

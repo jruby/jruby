@@ -3,9 +3,9 @@ package org.jruby.ast.visitor.rewriter;
 import org.jruby.ast.visitor.rewriter.utils.Indentor;
 
 public interface FormatHelper {
-	
+
 	public abstract Indentor getIndentor();
-	
+
 	public abstract String getListSeparator();
 
 	public abstract String beforeCallArguments();
@@ -37,4 +37,6 @@ public interface FormatHelper {
 	public abstract String beforeClosingIterBrackets();
 
 	public abstract String classBodyElementsSeparator();
+
+	public abstract String getLineDelimiter();
 }
