@@ -57,7 +57,7 @@ public class NormalizedFile extends File {
     }
 
     public String getAbsolutePath() {
-        return super.getAbsolutePath().replace(File.separatorChar, '/');
+        return new File(super.getPath()).getAbsolutePath().replace(File.separatorChar, '/');
     }
 
     public String getCanonicalPath() throws IOException {
