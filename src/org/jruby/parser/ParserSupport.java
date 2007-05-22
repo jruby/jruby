@@ -408,7 +408,7 @@ public class ParserSupport {
     }
 
     public Node arg_add(ISourcePosition position, Node node1, Node node2) {
-        if (node1 == null) return new ArrayNode(node2.getPosition(), node2);
+        if (node1 == null) return new ArrayNode(node2 == null ? position : node2.getPosition(), node2);
         if (node1 instanceof ArrayNode) return ((ArrayNode) node1).add(node2);
         
         return new ArgsPushNode(position, node1, node2);
