@@ -44,6 +44,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 
@@ -130,6 +131,8 @@ public class RubyKernel {
         module.defineModuleFunction("scan", callbackFactory.getSingletonMethod("scan", IRUBY_OBJECT));
         module.defineFastModuleFunction("select", callbackFactory.getFastOptSingletonMethod("select"));
         module.defineModuleFunction("set_trace_func", callbackFactory.getSingletonMethod("set_trace_func", IRUBY_OBJECT));
+        module.defineModuleFunction("trace_var", callbackFactory.getOptSingletonMethod("trace_var"));
+        module.defineModuleFunction("untrace_var", callbackFactory.getOptSingletonMethod("untrace_var"));
         module.defineFastModuleFunction("sleep", callbackFactory.getFastOptSingletonMethod("sleep"));
         module.defineFastModuleFunction("split", callbackFactory.getFastOptSingletonMethod("split"));
         module.defineFastModuleFunction("sprintf", callbackFactory.getFastOptSingletonMethod("sprintf"));
@@ -820,6 +823,60 @@ public class RubyKernel {
             recv.getRuntime().setTraceFunction((RubyProc) trace_func);
         }
         return trace_func;
+    }
+
+    public static IRubyObject trace_var(IRubyObject recv, IRubyObject[] args, Block block) {
+        if (args.length == 0) throw recv.getRuntime().newArgumentError(0, 1);
+        RubyProc proc = null;
+        String var = null;
+        
+        if (args.length > 1) {
+            var = args[0].toString();
+        }
+        
+        if (var.charAt(0) != '$') {
+            // ignore if it's not a global var
+            return recv.getRuntime().getNil();
+        }
+        
+        if (args.length == 1) {
+            proc = RubyProc.newProc(recv.getRuntime(), block, false);
+        }
+        if (args.length == 2) {
+            proc = (RubyProc)args[1].convertToType(recv.getRuntime().getClass("Proc"), 0, "to_proc", true);
+        }
+        
+        recv.getRuntime().getGlobalVariables().setTraceVar(var, proc);
+        
+        return recv.getRuntime().getNil();
+    }
+
+    public static IRubyObject untrace_var(IRubyObject recv, IRubyObject[] args, Block block) {
+        if (args.length == 0) throw recv.getRuntime().newArgumentError(0, 1);
+        String var = null;
+        
+        if (args.length >= 1) {
+            var = args[0].toString();
+        }
+        
+        if (var.charAt(0) != '$') {
+            // ignore if it's not a global var
+            return recv.getRuntime().getNil();
+        }
+        
+        if (args.length > 1) {
+            ArrayList success = new ArrayList();
+            for (int i = 1; i < args.length; i++) {
+                if (recv.getRuntime().getGlobalVariables().untraceVar(var, args[i])) {
+                    success.add(args[i]);
+                }
+            }
+            return RubyArray.newArray(recv.getRuntime(), success);
+        } else {
+            recv.getRuntime().getGlobalVariables().untraceVar(var);
+        }
+        
+        return recv.getRuntime().getNil();
     }
 
     public static IRubyObject singleton_method_added(IRubyObject recv, IRubyObject symbolId, Block block) {

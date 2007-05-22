@@ -90,6 +90,12 @@ public class RubyProc extends RubyObject {
     public static RubyProc newProc(Ruby runtime, boolean isLambda) {
         return new RubyProc(runtime, runtime.getClass("Proc"), isLambda);
     }
+    public static RubyProc newProc(Ruby runtime, Block block, boolean isLambda) {
+        RubyProc proc = new RubyProc(runtime, runtime.getClass("Proc"), isLambda);
+        proc.callInit(NULL_ARRAY, block);
+        
+        return proc;
+    }
     
     public IRubyObject initialize(IRubyObject[] args, Block procBlock) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 0);

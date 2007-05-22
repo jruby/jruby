@@ -143,7 +143,7 @@ externals/mri/ruby/test_super
 externals/mri/ruby/test_symbol
 #externals/mri/ruby/test_system
 externals/mri/ruby/test_time
-#externals/mri/ruby/test_trace
+externals/mri/ruby/test_trace
 # For some reason test_variable only fails during ant test
 #externals/mri/ruby/test_variable
 externals/mri/ruby/test_whileuntil
