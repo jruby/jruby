@@ -45,11 +45,17 @@ public class UntilNode extends Node {
 
     private final Node conditionNode;
     private final Node bodyNode;
+    private final boolean evaluateAtStart;
 
     public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode) {
+        this(position, conditionNode, bodyNode, true);
+    }
+
+    public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode, boolean evaluateAtStart) {
         super(position, NodeTypes.UNTILNODE);
         this.conditionNode = conditionNode;
         this.bodyNode = bodyNode;
+        this.evaluateAtStart = evaluateAtStart;
     }
 
     /**
@@ -79,5 +85,12 @@ public class UntilNode extends Node {
     public List childNodes() {
         return Node.createList(conditionNode, bodyNode);
     }
-
+    
+    /**
+     * Determine whether this is while or do while
+     * @return true if you are a while, false if do while
+     */
+    public boolean evaluateAtStart() {
+        return evaluateAtStart;
+    }
 }

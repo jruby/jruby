@@ -338,9 +338,9 @@ stmt          : kALIAS fitem {
               }
               | stmt kUNTIL_MOD expr_value {
                   if ($1 != null && $1 instanceof BeginNode) {
-                      $$ = new UntilNode(getPosition($1), support.getConditionNode($3), $<BeginNode>1.getBodyNode());
+                      $$ = new UntilNode(getPosition($1), support.getConditionNode($3), $<BeginNode>1.getBodyNode(), false);
                   } else {
-                      $$ = new UntilNode(getPosition($1), support.getConditionNode($3), $1);
+                      $$ = new UntilNode(getPosition($1), support.getConditionNode($3), $1, true);
                   }
               }
               | stmt kRESCUE_MOD stmt {

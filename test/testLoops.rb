@@ -61,3 +61,15 @@ end
 test_equal(":1a2a3a1b2b3b1c2c3c", l(C.new(["a", "b", "c"]), C.new(["1","2","3"])))
 
 
+a = [1, 2, 3, 4, 5]
+b = [1, 2, 3, 4, 5]
+
+1.times do
+  i = 0
+  begin
+    ch = a.shift
+    test_equal(b[i], ch)
+    i = i + 1
+  end until ch.nil?
+end
+

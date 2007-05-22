@@ -1684,8 +1684,10 @@ public class EvaluationState {
         UntilNode iVisited = (UntilNode) node;
    
         IRubyObject result = runtime.getNil();
+        boolean firstTest = iVisited.evaluateAtStart();
         
-        outerLoop: while (!(result = evalInternal(runtime,context, iVisited.getConditionNode(), self, aBlock)).isTrue()) {
+        outerLoop: while (!firstTest || !(result = evalInternal(runtime,context, iVisited.getConditionNode(), self, aBlock)).isTrue()) {
+            firstTest = true;
             loop: while (true) { // Used for the 'redo' command
                 try {
                     result = evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
