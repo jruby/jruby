@@ -225,7 +225,10 @@ public class ThreadContext {
     }
     
     public IRubyObject getLastline() {
-        return getCurrentScope().getLastLine();
+        IRubyObject value = getCurrentScope().getLastLine();
+        
+        // DynamicScope does not preinitialize these values since they are virtually never used.
+        return value == null ? runtime.getNil() : value;
     }
     
     public void setLastline(IRubyObject value) {
@@ -358,8 +361,7 @@ public class ThreadContext {
     public IRubyObject getBackref() {
         IRubyObject value = getCurrentScope().getBackRef();
         
-        // DynamicScope does not preinitialize these values since they are virtually
-        // never used.
+        // DynamicScope does not preinitialize these values since they are virtually never used.
         return value == null ? runtime.getNil() : value;
     }
     

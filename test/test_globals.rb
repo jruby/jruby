@@ -67,6 +67,7 @@ class TestGlobals < Test::Unit::TestCase
   end
   
   def test_locally_scoped_globals
+    assert_nothing_raised { print }
     assert_nothing_raised { $_.to_s }
     assert_nothing_raised { $~.to_s }
     $_ = 'one'
