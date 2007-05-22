@@ -379,7 +379,7 @@ public class JavaProxyClassFactory {
         org.objectweb.asm.commons.Method m = md.getMethod();
         Type[] ex = toType(md.getExceptions());
 
-        String field_name = "__mth$" + md.getName() + md.scrabmledSignature();
+        String field_name = "__mth$" + md.getName() + md.scrambledSignature();
 
         // create static private method field
         FieldVisitor fv = cw.visitField(Opcodes.ACC_PRIVATE
@@ -568,7 +568,7 @@ public class JavaProxyClassFactory {
                     || Modifier.isPublic(method.getModifiers());
         }
 
-        public String scrabmledSignature() {
+        public String scrambledSignature() {
             StringBuffer sb = new StringBuffer();
             Class[] parms = getParameterTypes();
             for (int i = 0; i < parms.length; i++) {
@@ -730,6 +730,7 @@ public class JavaProxyClassFactory {
 
     private static void addMethod(Map methods, Method method) {
         int acc = method.getModifiers();
+        
         if (Modifier.isStatic(acc) || Modifier.isPrivate(acc)) {
             return;
         }
