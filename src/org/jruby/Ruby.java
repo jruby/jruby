@@ -290,7 +290,7 @@ public final class Ruby {
     public IRubyObject compileOrFallbackAndRun(Node node) {
         try {
             // do the compile if JIT is enabled
-            if (config.isJitEnabled()) {
+            if (config.isJitEnabled() && getTraceFunction() == null) {
             Script script = null;
                 try {
                     StandardASMCompiler compiler = new StandardASMCompiler(node);
