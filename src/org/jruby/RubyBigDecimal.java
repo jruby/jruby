@@ -28,6 +28,7 @@
 package org.jruby;
 
 import java.math.BigDecimal;
+
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
@@ -453,11 +454,27 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public IRubyObject round(IRubyObject[] args) {
-        System.err.println("unimplemented: round");
-        // TODO: implement
-        return this;
+        int scale = args.length > 0 ? num2int(args[0]) : 0;
+        int mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(args[1]) : BigDecimal.ROUND_HALF_UP;
+        // JRUBY-914: Java 1.4 BigDecimal does not allow a negative scale, so we have to simulate it
+        if (scale < 0) {
+          // shift the decimal point just to the right of the digit to be rounded to (divide by 10**(abs(scale)))
+          // -1 -> 10's digit, -2 -> 100's digit, etc.
+          BigDecimal normalized = value.movePointRight(scale);
+          // ...round to that digit
+          BigDecimal rounded = normalized.setScale(0,mode);
+          // ...and shift the result back to the left (multiply by 10**(abs(scale)))
+          return new RubyBigDecimal(getRuntime(), rounded.movePointLeft(scale));
+        } else {
+          return new RubyBigDecimal(getRuntime(), value.setScale(scale, mode));
+        }
     }
 
+    //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are
+    private int javaRoundingModeFromRubyRoundingMode(IRubyObject arg) {
+      return num2int(arg);
+    }
+    
     public IRubyObject sign() {
         System.err.println("unimplemented: sign");
         // TODO: implement correctly
