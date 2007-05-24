@@ -58,13 +58,12 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.PreparsedScript;
 
 /**
  * <b>How require works in JRuby</b>
  * When requiring a name from Ruby, JRuby will first remove any file extension it knows about,
  * thereby making it possible to use this string to see if JRuby has already loaded
- * the name in question. If a .rb or .rb.ast.ser extension is specified, JRuby will only try
+ * the name in question. If a .rb extension is specified, JRuby will only try
  * those extensions when searching. If a .so, .o, .dll, or .jar extension is specified, JRuby
  * will only try .so or .jar when searching. Otherwise, JRuby goes through the known suffixes
  * (.rb, .rb.ast.ser, .so, and .jar) and tries to find a library with this name. The process for finding a library follows this order
@@ -122,10 +121,10 @@ import org.jruby.util.PreparsedScript;
 public class LoadService {
     protected static final String JRUBY_BUILTIN_SUFFIX = ".rb";
 
-    protected static final String[] sourceSuffixes = { ".rb", ".rb.ast.ser" };
+    protected static final String[] sourceSuffixes = { ".rb" };
     protected static final String[] extensionSuffixes = { ".so", ".jar" };
-    protected static final String[] allSuffixes = { ".rb", ".rb.ast.ser", ".so", ".jar" };
-    protected static final Pattern sourcePattern = Pattern.compile("\\.(?:rb|rb\\.ast\\.ser)$");
+    protected static final String[] allSuffixes = { ".rb", ".so", ".jar" };
+    protected static final Pattern sourcePattern = Pattern.compile("\\.(?:rb)$");
     protected static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|dll|jar)$");
 
     protected final RubyArray loadPath;
@@ -382,8 +381,6 @@ public class LoadService {
 
         if (file.endsWith(".jar")) {
             return new JarredScript(resource);
-        } else if (file.endsWith(".rb.ast.ser")) {
-        	return new PreparsedScript(resource);
         } else {
             return new ExternalScript(resource, file);
         }
@@ -397,8 +394,6 @@ public class LoadService {
 
         if (file.endsWith(".jar")) {
             return new JarredScript(resource);
-        } else if (file.endsWith(".rb.ast.ser")) {
-        	return new PreparsedScript(resource);
         } else {
             return new ExternalScript(resource, file);
         }

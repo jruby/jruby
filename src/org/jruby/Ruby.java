@@ -263,6 +263,10 @@ public final class Ruby {
         return newInstance(config);
     }
 
+    public IRubyObject evalScript(Reader reader, String name) {
+        return eval(parse(reader, name, getCurrentContext().getCurrentScope(), 0));
+    }
+    
     /**
      * Evaluates a script and returns a RubyObject.
      */

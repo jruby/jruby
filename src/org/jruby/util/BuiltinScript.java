@@ -30,18 +30,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 
-import org.ablaf.ast.IAstDecoder;
 import org.jruby.Ruby;
-import org.jruby.ast.Node;
-import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.runtime.load.Library;
 
 /**
- * Loading of pre-parsed, serialized, Ruby scripts that are built into JRuby.
+ * Loading of Ruby scripts that are built into JRuby.
  */
 public class BuiltinScript implements Library {
     private final String name;
@@ -51,21 +49,11 @@ public class BuiltinScript implements Library {
     }
 
     public void load(Ruby runtime) throws IOException {
-        runtime.loadNode("jruby builtin", getNode(runtime));
-    }
-
-    private Node getNode(Ruby runtime) throws IOException {
-        String resourceName = "/builtin/" + name + ".rb.ast.ser";
+        String resourceName = "/builtin/" + name + ".rb";
         InputStream in = getClass().getResourceAsStream(resourceName);
-        if (in == null) {
-            throw runtime.newIOError("Resource not found: " + resourceName);
-        }
-        in = new BufferedInputStream(in);
-        IAstDecoder decoder = RubyAstMarshal.getInstance().openDecoder(in);
-        try {
-        	return decoder.readNode();
-        } finally {
-        	decoder.close();
-        }
+
+        if (in == null) throw runtime.newIOError("Resource not found: " + resourceName);
+
+        runtime.evalScript(new BufferedReader(new InputStreamReader(in)), name);
     }
 }
