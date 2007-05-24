@@ -485,8 +485,16 @@ public class EvaluationState {
         // If reciever is self then we do the call the same way as vcall
         CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
    
-        receiver.callMethod(context, iVisited.getName(), args, callType);
+        RubyModule module = receiver.getMetaClass();
+        DynamicMethod method = module.searchMethod(iVisited.getName());
         
+        IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, iVisited.getName(), args, self, callType, Block.NULL_BLOCK);
+        if (mmResult != null) {
+            return mmResult;
+        }
+
+        method.call(context, receiver, module, iVisited.getName(), args, false, Block.NULL_BLOCK);
+
         return args[args.length - 1];
     }
 

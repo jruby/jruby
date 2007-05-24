@@ -20,3 +20,15 @@ test_equal(foo.bar, "foo")
 test_exception(NameError) {
   foo.foo
 }
+
+$a = false
+class A
+  class << self
+    protected
+    def a=(b); $a = true;end
+
+  end
+  self.a=:whatever
+end
+
+test_equal(true, $a)
