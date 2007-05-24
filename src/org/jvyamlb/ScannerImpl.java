@@ -87,35 +87,28 @@ public class ScannerImpl implements Scanner {
     static {
         Arrays.fill(ALL_TRUE,true);
         LINEBR['\n'] = true;
-        LINEBR['\u0085'] = true;
         NULL_BL_LINEBR['\0'] = true;
         NULL_BL_LINEBR[' '] = true;
         NULL_BL_LINEBR['\r'] = true;
         NULL_BL_LINEBR['\n'] = true;
-        NULL_BL_LINEBR['\u0085'] = true;
         NULL_BL_T_LINEBR['\0'] = true;
         NULL_BL_T_LINEBR[' '] = true;
         NULL_BL_T_LINEBR['\t'] = true;
         NULL_BL_T_LINEBR['\r'] = true;
         NULL_BL_T_LINEBR['\n'] = true;
-        NULL_BL_T_LINEBR['\u0085'] = true;
         NULL_OR_LINEBR['\0'] = true;
         NULL_OR_LINEBR['\r'] = true;
         NULL_OR_LINEBR['\n'] = true;
-        NULL_OR_LINEBR['\u0085'] = true;
         FULL_LINEBR['\r'] = true;
         FULL_LINEBR['\n'] = true;
-        FULL_LINEBR['\u0085'] = true;
         BLANK_OR_LINEBR[' '] = true;
         BLANK_OR_LINEBR['\r'] = true;
         BLANK_OR_LINEBR['\n'] = true;
-        BLANK_OR_LINEBR['\u0085'] = true;
         S4['\0'] = true;
         S4[' '] = true;
         S4['\t'] = true;
         S4['\r'] = true;
         S4['\n'] = true;
-        S4['\u0085'] = true;
         S4['['] = true;
         S4[']'] = true;
         S4['{'] = true;
@@ -172,7 +165,6 @@ public class ScannerImpl implements Scanner {
         SPACES_AND_STUFF['\t'] = true;
         SPACES_AND_STUFF['\r'] = true;
         SPACES_AND_STUFF['\n'] = true;
-        SPACES_AND_STUFF['\u0085'] = true;
         SPACES_AND_STUFF['\\'] = true;
         SPACES_AND_STUFF['\''] = true;
         SPACES_AND_STUFF['"'] = true;
@@ -183,7 +175,6 @@ public class ScannerImpl implements Scanner {
         NON_ALPHA_OR_NUM['\t'] = true;
         NON_ALPHA_OR_NUM['\r'] = true;
         NON_ALPHA_OR_NUM['\n'] = true;
-        NON_ALPHA_OR_NUM['\u0085'] = true;
         NON_ALPHA_OR_NUM['?'] = true;
         NON_ALPHA_OR_NUM[':'] = true;
         NON_ALPHA_OR_NUM[','] = true;
@@ -235,7 +226,6 @@ public class ScannerImpl implements Scanner {
         STUPID_CHAR['\t'] = false;
         STUPID_CHAR['\r'] = false;
         STUPID_CHAR['\n'] = false;
-        STUPID_CHAR['\u0085'] = false;
         STUPID_CHAR['-'] = false;
         STUPID_CHAR['?'] = false;
         STUPID_CHAR[':'] = false;
@@ -258,7 +248,6 @@ public class ScannerImpl implements Scanner {
         R_FLOWNONZERO['\t'] = true;
         R_FLOWNONZERO['\r'] = true;
         R_FLOWNONZERO['\n'] = true;
-        R_FLOWNONZERO['\u0085'] = true;
         R_FLOWNONZERO['['] = true;
         R_FLOWNONZERO[']'] = true;
         R_FLOWNONZERO['{'] = true;
@@ -376,7 +365,7 @@ public class ScannerImpl implements Scanner {
     private void forward() {
         ensure(2,true);
         final char ch1 = (char)((int)this.buffer.bytes[this.pointer++] & 0xFF);
-        if(ch1 == '\n' || ch1 == '\u0085' || (ch1 == '\r' && (((int)this.buffer.bytes[this.pointer] & 0xFF) != '\n'))) {
+        if(ch1 == '\n' || (ch1 == '\r' && (((int)this.buffer.bytes[this.pointer] & 0xFF) != '\n'))) {
             this.possibleSimpleKeys.clear();
             this.column = 0;
         } else {
