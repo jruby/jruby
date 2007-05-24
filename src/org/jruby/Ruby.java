@@ -289,6 +289,8 @@ public final class Ruby {
     
     public IRubyObject compileOrFallbackAndRun(Node node) {
         try {
+            ThreadContext tc = getCurrentContext();
+            
             // do the compile if JIT is enabled
             if (config.isJitEnabled() && getTraceFunction() == null) {
             Script script = null;
@@ -304,7 +306,7 @@ public final class Ruby {
                 }
             
                 // FIXME: Pass something better for args and block here?
-                return script.run(getCurrentContext(), getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                return script.run(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
             } else {
                 return eval(node);
             }
@@ -320,6 +322,8 @@ public final class Ruby {
 
     public IRubyObject compileAndRun(Node node) {
         try {
+            ThreadContext tc = getCurrentContext();
+            
             // do the compile
             StandardASMCompiler compiler = new StandardASMCompiler(node);
             NodeCompilerFactory.getCompiler(node).compile(node, compiler);
@@ -328,7 +332,7 @@ public final class Ruby {
 
             Script script = (Script)scriptClass.newInstance();
             // FIXME: Pass something better for args and block here?
-            return script.run(getCurrentContext(), getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            return script.run(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         } catch (NotCompilableException nce) {
             System.err.println("Error -- Not compileable: " + nce.getMessage());
             return null;

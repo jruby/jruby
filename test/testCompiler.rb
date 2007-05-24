@@ -202,6 +202,7 @@ test_exception {
   compile_and_run("1.times {|*x|}")
 }
 
+=begin
 class_string = <<EOS
 class CompiledClass1
   def foo
@@ -228,6 +229,7 @@ CompiledClass2.new.bar
 EOS
 
 test_equal("cm1", compile_and_run(module_string))
+=end
 
 # opasgn with anything other than || or && was broken
 class Holder

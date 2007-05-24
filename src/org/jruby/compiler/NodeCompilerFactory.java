@@ -89,7 +89,7 @@ public class NodeCompilerFactory {
             // safe; yield or block nodes that aren't should raise
             return new CallNodeCompiler();
         case NodeTypes.CLASSNODE:
-            // This is *probably* safe...all the logic is present for this to work, and I don't know of breakage
+            if (SAFE) throw new NotCompilableException("Can't compile class definitions safely: " + node);
             return new ClassNodeCompiler();
         case NodeTypes.CLASSVARNODE:
             return new ClassVarNodeCompiler();
@@ -167,7 +167,7 @@ public class NodeCompilerFactory {
             // safe
             return new Match3NodeCompiler();
         case NodeTypes.MODULENODE:
-            // should be safe, no known breakage, but not heavily tested
+            if (SAFE) throw new NotCompilableException("Can't compile module definitions safely: " + node);
             return new ModuleNodeCompiler();
         case NodeTypes.NEWLINENODE:
             // safe
