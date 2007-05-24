@@ -14,7 +14,7 @@ test_equal(0, t1 <=> t2)
 test_equal(false, t3 == t4)
 test_equal(false, t3 === t4)
 test_equal(false, t3.equal?(t4))
-test_equal(1, t3 <=> t4)
+test_equal(Time.now.dst? ? 1 : -1, t3 <=> t4)
 
 t = Time.at(0.5)
 test_equal(0, t.tv_sec)
