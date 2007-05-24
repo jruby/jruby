@@ -33,6 +33,9 @@ class Module
   # for the file in question, and failing that by adding a const_missing hook
   # to try that package when constants are missing.
   def import(package_name)
+    return super(package_name) if package_name.respond_to?(:java_class) || package_name.split(/\./).last =~ /^[A-Z]/
+
+    package_name = package_name._name if package_name.respond_to?(:_name)
     warn "importing full package name is *highly* experimental...proceed with caution"
     class_list = org.jruby.util.PackageSearch.findClassesInPackage(package_name)
     

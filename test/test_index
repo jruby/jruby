@@ -48,8 +48,6 @@ testInstantiatingInterfaces.rb
 testInteger.rb
 testIO.rb
 testJavaArraySupport.rb
-testJavaExtensions.rb
-testJavaProxy.rb
 testKernel.rb
 testLine.rb
 testLine_block_comment.rb
