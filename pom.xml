@@ -142,9 +142,6 @@
             <includes>
               <include>**/*.rb</include>
             </includes>
-            <excludes>
-              <exclude>builtin/**/*.rb</exclude>
-            </excludes>
           </resource>
         </resources>
         <testResources>

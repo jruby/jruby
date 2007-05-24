@@ -120,25 +120,6 @@
             </goals>
           </execution>
           <execution>
-            <id>serialize</id>
-            <phase>process-classes</phase>
-            <configuration>
-              <tasks>
-                <taskdef name="jruby-serialize" classname="org.jruby.util.ant.JRubySerialize">
-                  <classpath path="${project.build.outputDirectory}"/>
-                </taskdef>
-                <jruby-serialize destdir="${project.build.outputDirectory}">
-                  <fileset dir="${project.build.sourceDirectory}">
-                    <include name="builtin/**/*.rb"/>
-                  </fileset>
-                </jruby-serialize>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-          <execution>
             <id>jarjar</id>
             <phase>package</phase>
             <configuration>
@@ -153,7 +134,6 @@
                     <include name="**/*.class"/>
                     <include name="**/*.properties"/>
                     <include name="**/*.rb"/>
-                    <include name="**/*.rb.ast.ser"/>
                     <exclude name="org/jruby/util/ant/**/*.class"/>
                   </fileset>
                   <fileset dir="${project.basedir}/../../lib/ruby/1.8">

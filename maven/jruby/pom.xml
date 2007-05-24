@@ -60,25 +60,6 @@
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
           <execution>
-            <id>serialize</id>
-            <phase>process-classes</phase>
-            <configuration>
-              <tasks>
-                <taskdef name="jruby-serialize" classname="org.jruby.util.ant.JRubySerialize">
-                  <classpath path="${project.build.outputDirectory}"/>
-                </taskdef>
-                <jruby-serialize destdir="${project.build.outputDirectory}">
-                  <fileset dir="${project.build.sourceDirectory}">
-                    <include name="builtin/**/*.rb"/>
-                  </fileset>
-                </jruby-serialize>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-          <execution>
             <id>tests</id>
             <phase>test</phase>
             <configuration>
