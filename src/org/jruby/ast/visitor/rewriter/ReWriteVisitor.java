@@ -128,7 +128,8 @@ public class ReWriteVisitor implements NodeVisitor {
 			CommentNode n = (CommentNode) it.next();
 			if(getStartLine(n) < getStartLine(iVisited)) {
 				visitNode(n);
-				printNewlineAndIndentation();
+				print(n.getContent());
+                printNewlineAndIndentation();
 			}
 		}
 	}
@@ -141,6 +142,7 @@ public class ReWriteVisitor implements NodeVisitor {
 			if(getStartLine(n) >= getEndLine(iVisited)) {
 				print(' ');
 				visitNode(n);
+                print(n.getContent());
 				hasComment = true;
 			}
 		}
@@ -538,6 +540,7 @@ public class ReWriteVisitor implements NodeVisitor {
 			if(getStartLine(n) > getStartLine(iVisited) && getEndLine(n) < getEndLine(iVisited)) {
 				hadComment = true;
 				visitNode(n);
+                print(n.getContent());
 				printNewlineAndIndentation();
 			}
 		}
@@ -690,24 +693,26 @@ public class ReWriteVisitor implements NodeVisitor {
         
 	protected void printCommentsAtEnd(Node n) {
 		for (Iterator it = n.getComments().iterator(); it.hasNext(); ) {
-			Node comment = (Node) it.next();
+			CommentNode comment = (CommentNode) it.next();
             
 			if(getStartLine(n) == getStartLine(comment)) {
 				print(' ');
 				visitNode(comment);
+                print(comment.getContent());
 			}
 		}
 	}
 	
 	private void printDefNode(Node parent, String name, Node args, StaticScope scope, Node bodyNode) {
 		print(name);
-		printCommentsAtEnd(parent);
 		config.getLocalVariables().addLocalVariable(scope);
 
 		if (hasArguments(args)) {
-			print(config.getFormatHelper().beforeMethodArguments());
-			visitNode(args);
+		    print(config.getFormatHelper().beforeMethodArguments());
+            visitNode(args);
 		}
+        printCommentsAtEnd(parent);
+        
 		visitNode(bodyNode);
 		config.getIndentor().outdent();
 		printNewlineAndIndentation();
