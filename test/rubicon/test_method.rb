@@ -33,5 +33,14 @@ class TestMethod < Test::Unit::TestCase
     assert_instance_of(Proc, p)
     assert_equal(15, p.call(3))
   end
+  
+  def optarg_assigns_variable(a, b=(c=1; 0))
+    [a, b, c]
+  end
+  
+  def test_optarg_that_assigns_variable
+    assert_equal([2, 0, 1], optarg_assigns_variable(2))
+    assert_equal([2, 1, nil], optarg_assigns_variable(2, 1))
+  end
 
 end
