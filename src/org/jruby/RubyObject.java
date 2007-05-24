@@ -1237,21 +1237,39 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
 	public IRubyObject public_methods(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
+        if (args.length == 0) {
+            args = new IRubyObject[] { getRuntime().getTrue() };
+        }
+
         return getMetaClass().public_instance_methods(args);
 	}
 
     /** rb_obj_protected_methods
      *
      */
-    public IRubyObject protected_methods() {
-        return getMetaClass().protected_instance_methods(new IRubyObject[] { getRuntime().getTrue()});
+    public IRubyObject protected_methods(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
+        if (args.length == 0) {
+            args = new IRubyObject[] { getRuntime().getTrue() };
+        }
+
+        return getMetaClass().protected_instance_methods(args);
     }
 
     /** rb_obj_private_methods
      *
      */
-    public IRubyObject private_methods() {
-        return getMetaClass().private_instance_methods(new IRubyObject[] { getRuntime().getTrue()});
+    public IRubyObject private_methods(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
+        if (args.length == 0) {
+            args = new IRubyObject[] { getRuntime().getTrue() };
+        }
+
+        return getMetaClass().private_instance_methods(args);
     }
 
     /** rb_obj_singleton_methods

@@ -115,3 +115,29 @@ test_exception(ArgumentError) { Object.new(1) }
 class NoArgClass
 end
 test_exception(ArgumentError) { NoArgClass.new(1) }
+
+# JRUBY-980: public_methods, private_methods 
+# and protected_methods should take a boolean arg
+# to include or exclude inherited methods or not
+class MethodFixture
+  class << self
+    def method; end
+    public  
+      def method0; end
+    protected  
+      def method1; end
+  end
+  def method2; end
+  public
+    def method3; end
+  protected 
+    def method4; end
+  private
+    def method5; end
+end
+test_equal(2, MethodFixture.singleton_methods(false).length)
+m = MethodFixture.new
+test_equal(3 + Object.new.methods.length, m.methods.length)
+test_equal(2, m.public_methods(false).length)
+test_equal(1, m.protected_methods(false).length)
+test_equal(1, m.private_methods(false).length)
