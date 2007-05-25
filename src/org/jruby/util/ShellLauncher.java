@@ -242,6 +242,7 @@ public class ShellLauncher {
                             break;
                         }
                     }
+                    Thread.sleep(10);
                     if (onlyIfAvailable && in.available() == 0) {
                         continue;
                     }
@@ -249,7 +250,6 @@ public class ShellLauncher {
                         break;
                     }
                     out.write(buf, 0, numRead);
-                    Thread.sleep(10);
                 }
             } catch (Exception e) {
             }
