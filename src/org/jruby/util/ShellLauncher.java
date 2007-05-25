@@ -249,6 +249,7 @@ public class ShellLauncher {
                         break;
                     }
                     out.write(buf, 0, numRead);
+                    Thread.sleep(10);
                 }
             } catch (Exception e) {
             }
