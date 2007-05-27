@@ -38,6 +38,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.EventHook;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -65,14 +66,12 @@ public class FullFunctionCallbackMethod extends DynamicMethod {
         assert args != null;
         Ruby runtime = context.getRuntime();
         ISourcePosition position = null;
-        RubyBinding binding = null;
-        boolean isTrace = runtime.getTraceFunction() != null;
+        boolean isTrace = runtime.hasEventHooks();
         
         if (isTrace) {
             position = context.getPosition();
-            binding = RubyBinding.newBinding(runtime);
             
-            runtime.callTraceFunction(context, "c-call", position, binding, name, getImplementationClass());
+            runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
         }
         
         try {
@@ -86,7 +85,7 @@ public class FullFunctionCallbackMethod extends DynamicMethod {
             }
         } finally {
             if (isTrace) {
-                runtime.callTraceFunction(context, "c-return", position, binding, name, getImplementationClass());
+                runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
             }
         }
     }

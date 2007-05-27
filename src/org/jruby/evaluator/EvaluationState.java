@@ -148,6 +148,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.EventHook;
 import org.jruby.runtime.SharedScopeBlock;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -302,7 +303,7 @@ public class EvaluationState {
                 context.setPosition(iVisited.getPosition());
 
                 if (isTrace(runtime)) {
-                    callTraceFunction(runtime, context, "line", self);
+                    callTraceFunction(runtime, context, EventHook.RUBY_EVENT_LINE);
                 }
 
                 // TODO: do above but not below for additional newline nodes
@@ -618,7 +619,7 @@ public class EvaluationState {
 
                     context.setPosition(tag.getPosition());
                     if (isTrace(runtime)) {
-                        callTraceFunction(runtime, context, "line", self);
+                        callTraceFunction(runtime, context, EventHook.RUBY_EVENT_LINE);
                     }
 
                     // Ruby grammar has nested whens in a case body because of
@@ -1853,10 +1854,10 @@ public class EvaluationState {
         return array.getLength() == 1 ? array.first(IRubyObject.NULL_ARRAY) : array;
     }
 
-    private static void callTraceFunction(Ruby runtime, ThreadContext context, String event, IRubyObject zelf) {
+    private static void callTraceFunction(Ruby runtime, ThreadContext context, int event) {
         String name = context.getFrameName();
         RubyModule type = context.getFrameKlazz();
-        runtime.callTraceFunction(context, event, context.getPosition(), RubyBinding.newBinding(runtime), name, type);
+        runtime.callEventHooks(context, event, context.getPosition().getFile(), context.getPosition().getStartLine(), name, type);
     }
 
     /** Evaluates the body in a class or module definition statement.
@@ -1868,13 +1869,13 @@ public class EvaluationState {
 
         try {
             if (isTrace(runtime)) {
-                callTraceFunction(runtime, context, "class", type);
+                callTraceFunction(runtime, context, EventHook.RUBY_EVENT_CLASS);
             }
 
             return evalInternal(runtime,context, bodyNode, type, block);
         } finally {
             if (isTrace(runtime)) {
-                callTraceFunction(runtime, context, "end", null);
+                callTraceFunction(runtime, context, EventHook.RUBY_EVENT_END);
             }
             
             context.postClassEval();
@@ -2166,7 +2167,7 @@ public class EvaluationState {
      *
      */
     private static boolean isTrace(Ruby runtime) {
-        return runtime.getTraceFunction() != null;
+        return runtime.hasEventHooks();
     }
 
     private static IRubyObject[] setupArgs(Ruby runtime, ThreadContext context, Node node, IRubyObject self) {

@@ -54,6 +54,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.EventHook;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -119,18 +120,16 @@ public final class DefaultMethod extends DynamicMethod {
             context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), blockArg, 0);
         }
 
-        RubyBinding binding = null;
         try {
             prepareArguments(context, runtime, args);
             
             getArity().checkArity(runtime, args);
 
-            if (runtime.getTraceFunction() != null) {
-                binding = RubyBinding.newBinding(runtime);
-                traceCall(context, runtime, binding, name);
+            if (runtime.hasEventHooks()) {
+                traceCall(context, runtime, name);
             }
                     
-            if (jitCompiledScript != null && binding != null) {
+            if (jitCompiledScript != null && !runtime.hasEventHooks()) {
                 return jitCompiledScript.run(context, self, args, block);
             }
             
@@ -142,36 +141,28 @@ public final class DefaultMethod extends DynamicMethod {
             
        		throw je;
         } finally {
-            if (binding != null) {
-                traceReturn(context, runtime, binding, name);
+            if (runtime.hasEventHooks()) {
+                traceReturn(context, runtime, name);
             }
         }
     }
 
     private void runJIT(Ruby runtime, ThreadContext context, String name) {
         if (callCount >= 0) {
-            // we can only compile normal args, not block, opt, or rest
-            if (!(argsNode.getBlockArgNode() == null &&
-                    argsNode.getRestArg() == -1) ||
-                    // for some reason anonymous classes don't mix well with the compiler yet (JRUBY-831 and JRUBY-857)
-                    implementationClass.getName() == null) {
-                callCount = -1;
-                return;
+            String className = null;
+            if (runtime.getInstanceConfig().isJitLogging()) {
+                className = getImplementationClass().getBaseName();
+                if (className == null) {
+                    className = "<anon class>";
+                }
             }
             
-            callCount++;
-            
-            if (callCount >= runtime.getInstanceConfig().getJitThreshold()) {
-                
-                String className = null;
-                if (runtime.getInstanceConfig().isJitLogging()) {
-                    className = getImplementationClass().getBaseName();
-                    if (className == null) {
-                        className = "<anon class>";
-                    }
-                }
-                
-                try {
+            try {
+                NodeCompilerFactory.confirmNodeIsSafe(argsNode);
+
+                callCount++;
+
+                if (callCount >= runtime.getInstanceConfig().getJitThreshold()) {
                     // FIXME: Total duplication from DefnNodeCompiler...need to refactor this
                     final ArrayCallback evalOptionalValue = new ArrayCallback() {
                         public void nextValue(Compiler context, Object object, int index) {
@@ -224,11 +215,11 @@ public final class DefaultMethod extends DynamicMethod {
                     jitCompiledScript = (Script)sourceClass.newInstance();
                     
                     if (runtime.getInstanceConfig().isJitLogging()) System.err.println("compiled: " + className + "." + name);
-                } catch (Exception e) {
-                    if (runtime.getInstanceConfig().isJitLoggingVerbose()) System.err.println("could not compile: " + className + "." + name + " because of: \"" + e.getMessage() + '"');
-                } finally {
-                    callCount = -1;
                 }
+            } catch (Exception e) {
+                if (runtime.getInstanceConfig().isJitLoggingVerbose()) System.err.println("could not compile: " + className + "." + name + " because of: \"" + e.getMessage() + '"');
+            } finally {
+                callCount = -1;
             }
         }
     }
@@ -325,21 +316,21 @@ public final class DefaultMethod extends DynamicMethod {
         return args;
     }
 
-    private void traceReturn(ThreadContext context, Ruby runtime, RubyBinding binding, String name) {
-        if (runtime.getTraceFunction() == null) {
+    private void traceReturn(ThreadContext context, Ruby runtime, String name) {
+        if (!runtime.hasEventHooks()) {
             return;
         }
 
         ISourcePosition position = context.getPreviousFramePosition();
-        runtime.callTraceFunction(context, "return", position, binding, name, getImplementationClass());
+        runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
     }
     
-    private void traceCall(ThreadContext context, Ruby runtime, RubyBinding binding, String name) {
-        if (runtime.getTraceFunction() == null) return;
+    private void traceCall(ThreadContext context, Ruby runtime, String name) {
+        if (!runtime.hasEventHooks()) return;
         
         ISourcePosition position = body != null ? body.getPosition() : context.getPosition();
         
-        runtime.callTraceFunction(context, "call", position, binding, name, getImplementationClass());
+        runtime.callEventHooks(context, EventHook.RUBY_EVENT_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
     }
 
     public Arity getArity() {

@@ -41,6 +41,7 @@ import java.io.StringWriter;
 
 import org.jruby.*;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.EventHook;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -109,9 +110,14 @@ public class RaiseException extends JumpException {
             runtime.getGlobalVariables().set("$!", newException);
         }
 
-        if (runtime.getTraceFunction() != null) {
-            runtime.callTraceFunction(context, "return", context.getPosition(),
-                    RubyBinding.newBinding(runtime), context.getFrameName(), context.getFrameKlazz());
+        if (runtime.hasEventHooks()) {
+            runtime.callEventHooks(
+                    context,
+                    EventHook.RUBY_EVENT_RETURN,
+                    context.getPosition().getFile(),
+                    context.getPosition().getStartLine(),
+                    context.getFrameName(),
+                    context.getFrameKlazz());
         }
 
         this.exception = newException;

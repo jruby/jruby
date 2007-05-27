@@ -48,6 +48,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -90,6 +91,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.EventHook;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.MethodSelectorTable;
@@ -128,7 +130,7 @@ public final class Ruby {
     private long randomSeedSequence = 0;
     private Random random = new Random();
 
-    private RubyProc traceFunction;
+    private List eventHooks = new LinkedList();
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
     private final boolean objectSpaceEnabled;
@@ -296,7 +298,7 @@ public final class Ruby {
             ThreadContext tc = getCurrentContext();
             
             // do the compile if JIT is enabled
-            if (config.isJitEnabled() && getTraceFunction() == null) {
+            if (config.isJitEnabled() && !hasEventHooks()) {
             Script script = null;
                 try {
                     StandardASMCompiler compiler = new StandardASMCompiler(node);
@@ -1252,44 +1254,99 @@ public final class Ruby {
      * MRI: eval.c - call_trace_func
      *
      */
-    public void callTraceFunction(ThreadContext context, String event, ISourcePosition position,
-            RubyBinding binding, String name, IRubyObject type) {
-        if (traceFunction == null) return;
+//    public void callTraceFunction(ThreadContext context, String event, ISourcePosition position,
+//            RubyBinding binding, String name, IRubyObject type) {
+//        if (traceFunction == null) return;
+//
+//        if (!context.isWithinTrace()) {
+//            context.setWithinTrace(true);
+//
+//            ISourcePosition savePosition = context.getPosition();
+//            String file = position.getFile();
+//
+//            if (file == null) file = "(ruby)";
+//            if (type == null) type = getFalse();
+//
+//            context.preTrace();
+//            try {
+//                traceFunction.call(new IRubyObject[] {
+//                    newString(event), // event name
+//                    newString(file), // filename
+//                    newFixnum(position.getStartLine() + 1), // line numbers should be 1-based
+//                    name != null ? RubySymbol.newSymbol(this, name) : getNil(),
+//                    binding != null ? binding : getNil(),
+//                    type
+//                });
+//            } finally {
+//                context.postTrace();
+//                context.setPosition(savePosition);
+//                context.setWithinTrace(false);
+//            }
+//        }
+//    }
+    
+    public class CallTraceFuncHook implements EventHook {
+        private RubyProc traceFunc;
+        
+        public void setTraceFunc(RubyProc traceFunc) {
+            this.traceFunc = traceFunc;
+        }
+        
+        public void event(ThreadContext context, int event, String file, int line, String name, IRubyObject type) {
+            if (!context.isWithinTrace()) {
+                if (file == null) file = "(ruby)";
+                if (type == null) type = getFalse();
+                
+                RubyBinding binding = RubyBinding.newBinding(Ruby.this);
 
-        if (!context.isWithinTrace()) {
-            context.setWithinTrace(true);
-
-            ISourcePosition savePosition = context.getPosition();
-            String file = position.getFile();
-
-            if (file == null) file = "(ruby)";
-            if (type == null) type = getFalse();
-
-            context.preTrace();
-            try {
-                traceFunction.call(new IRubyObject[] {
-                    newString(event), // event name
-                    newString(file), // filename
-                    newFixnum(position.getStartLine() + 1), // line numbers should be 1-based
-                    name != null ? RubySymbol.newSymbol(this, name) : getNil(),
-                    binding != null ? binding : getNil(),
-                    type
-                });
-            } finally {
-                context.postTrace();
-                context.setPosition(savePosition);
-                context.setWithinTrace(false);
+                context.preTrace();
+                try {
+                    traceFunc.call(new IRubyObject[] {
+                        newString(EVENT_NAMES[event]), // event name
+                        newString(file), // filename
+                        newFixnum(line + 1), // line numbers should be 1-based
+                        name != null ? RubySymbol.newSymbol(Ruby.this, name) : getNil(),
+                        binding,
+                        type
+                    });
+                } finally {
+                    context.postTrace();
+                }
             }
         }
+    };
+    
+    private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
+    
+    public void addEventHook(EventHook hook) {
+        eventHooks.add(hook);
     }
-
-    public RubyProc getTraceFunction() {
-        return traceFunction;
+    
+    public void removeEventHook(EventHook hook) {
+        eventHooks.remove(hook);
     }
 
     public void setTraceFunction(RubyProc traceFunction) {
-        this.traceFunction = traceFunction;
+        removeEventHook(callTraceFuncHook);
+        
+        if (traceFunction == null) {
+            return;
+        }
+        
+        callTraceFuncHook.setTraceFunc(traceFunction);
+        addEventHook(callTraceFuncHook);
     }
+    
+    public void callEventHooks(ThreadContext context, int event, String file, int line, String name, IRubyObject type) {
+        for (int i = 0; i < eventHooks.size(); i++) {
+            ((EventHook)eventHooks.get(i)).event(context, event, file, line, name, type);
+        }
+    }
+    
+    public boolean hasEventHooks() {
+        return !eventHooks.isEmpty();
+    }
+    
     public GlobalVariables getGlobalVariables() {
         return globalVariables;
     }

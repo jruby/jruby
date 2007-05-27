@@ -44,6 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 import org.jruby.ast.executable.YARVMachine;
 import org.jruby.ast.executable.ISeqPosition;
+import org.jruby.runtime.EventHook;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -87,15 +88,13 @@ public class YARVMethod extends DynamicMethod {
     	assert args != null;
         
         Ruby runtime = context.getRuntime();
-        RubyBinding binding = null;
         
         try {
             prepareArguments(context, runtime, args);
             getArity().checkArity(runtime, args);
 
-            if (runtime.getTraceFunction() != null) {
-                binding = RubyBinding.newBindingForEval(runtime);
-                traceCall(context, runtime, binding, name);
+            if (runtime.hasEventHooks()) {
+                traceCall(context, runtime, name);
             }
 
             DynamicScope sc = new DynamicScope(staticScope,null);
@@ -111,8 +110,8 @@ public class YARVMethod extends DynamicMethod {
             
        		throw je;
         } finally {
-            if (binding != null) {
-                traceReturn(context, runtime, binding, name);
+            if (runtime.hasEventHooks()) {
+                traceReturn(context, runtime, name);
             }
         }
     }
@@ -174,23 +173,23 @@ public class YARVMethod extends DynamicMethod {
         return args;
     }
     
-    private void traceReturn(ThreadContext context, Ruby runtime, RubyBinding binding, String name) {
-        if (runtime.getTraceFunction() == null) {
+    private void traceReturn(ThreadContext context, Ruby runtime, String name) {
+        if (!runtime.hasEventHooks()) {
             return;
         }
         
         ISourcePosition position = context.getPreviousFramePosition();
-        runtime.callTraceFunction(context, "return", position, binding, name, getImplementationClass());
+        runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
     }
     
-    private void traceCall(ThreadContext context, Ruby runtime, RubyBinding binding, String name) {
-        if (runtime.getTraceFunction() == null) {
+    private void traceCall(ThreadContext context, Ruby runtime, String name) {
+        if (!runtime.hasEventHooks()) {
             return;
         }
         
         ISourcePosition position = context.getPosition();
         
-        runtime.callTraceFunction(context, "call", position, binding, name, getImplementationClass());
+        runtime.callEventHooks(context, EventHook.RUBY_EVENT_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
     }
     
     public Arity getArity() {

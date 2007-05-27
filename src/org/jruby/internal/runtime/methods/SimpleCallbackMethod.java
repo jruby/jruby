@@ -37,6 +37,7 @@ import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.EventHook;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -67,15 +68,14 @@ public class SimpleCallbackMethod extends DynamicMethod {
     	assert args != null;
         Ruby runtime = context.getRuntime();
         
-        if (runtime.getTraceFunction() != null) {
+        if (runtime.hasEventHooks()) {
             ISourcePosition position = context.getPosition();
             
-            RubyBinding binding = RubyBinding.newBinding(runtime);
-            runtime.callTraceFunction(context, "c-call", position, binding, name, getImplementationClass());
+            runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
             try {
                 return callback.execute(self, args, Block.NULL_BLOCK);
             } finally {
-                runtime.callTraceFunction(context, "c-return", position, binding, name, getImplementationClass());
+                runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
             }
         }
         return callback.execute(self, args, Block.NULL_BLOCK);

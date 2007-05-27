@@ -40,6 +40,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.exceptions.MainExitException;
+import org.jruby.runtime.EventHook;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -83,15 +84,15 @@ public abstract class SimpleInvocationMethod extends DynamicMethod implements Cl
         Ruby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
 
-        if(runtime.getTraceFunction() != null) {
+        if(runtime.hasEventHooks()) {
             ISourcePosition position = context.getPosition();
             RubyBinding binding = RubyBinding.newBinding(runtime);
 
-            runtime.callTraceFunction(context, "c-call", position, binding, name, getImplementationClass());
+            runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
             try {
                 return wrap(runtime,self,args);
             } finally {
-                runtime.callTraceFunction(context, "c-return", position, binding, name, getImplementationClass());
+                runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
             }
         }
         return wrap(runtime,self,args);

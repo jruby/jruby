@@ -250,7 +250,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
         // If tracing is on, don't do STI dispatch
-        if (context.getRuntime().getTraceFunction() != null) return callMethod(context, rubyclass, name, args, callType, block);
+        if (context.getRuntime().hasEventHooks()) return callMethod(context, rubyclass, name, args, callType, block);
         
         switch (getRuntime().getSelectorTable().table[rubyclass.index][methodIndex]) {
         case EQQ_SWITCHVALUE:

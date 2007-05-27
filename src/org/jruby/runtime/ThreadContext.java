@@ -800,11 +800,13 @@ public class ThreadContext {
     }
     
     public void preTrace() {
+        setWithinTrace(true);
         pushFrame();
     }
     
     public void postTrace() {
         popFrame();
+        setWithinTrace(false);
     }
     
     public void preForBlock(Block block, RubyModule klass) {
