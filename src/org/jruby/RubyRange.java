@@ -146,7 +146,6 @@ public class RubyRange extends RubyObject {
         result.defineMethod("step", callbackFactory.getOptMethod("step"));
         result.defineMethod("to_s", callbackFactory.getMethod("to_s"));
 
-        result.defineMethod("to_a", callbackFactory.getMethod("to_a"));
         result.defineMethod("include?", callbackFactory.getMethod("include_p", RubyKernel.IRUBY_OBJECT));
         // We override Enumerable#member? since ranges in 1.8.1 are continuous.
         result.defineAlias("member?", "include?");
@@ -449,25 +448,6 @@ public class RubyRange extends RubyObject {
         }
         
         return this;
-    }
-    
-    public RubyArray to_a(Block block) {
-        IRubyObject currentObject = begin;
-	    String compareMethod = isExclusive ? "<" : "<=";
-	    RubyArray array = getRuntime().newArray();
-        ThreadContext context = getRuntime().getCurrentContext();
-        
-	    while (currentObject.callMethod(context, compareMethod, end).isTrue()) {
-	        array.append(currentObject);
-	        
-			if (currentObject.equals(end)) {
-			    break;
-			}
-			
-			currentObject = currentObject.callMethod(context, "succ");
-	    }
-	    
-	    return array;
     }
 
     private boolean r_lt(IRubyObject a, IRubyObject b) {
