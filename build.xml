@@ -258,6 +258,32 @@
     </copy>
   </target>
 
+  <target name="install-gems">
+    <property name="jruby.home" value="${basedir}"/>
+    <java classname="org.jruby.Main" fork="true" failonerror="true">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${jruby.home}"/>
+      <arg value="--command"/>
+      <arg value="maybe_install_gems"/>
+      <arg value="rspec"/>
+      <arg value="rake"/>
+    </java>
+  </target>
+
+  <target name="spec" depends="install-gems">
+    <java classname="org.jruby.Main" fork="true" failonerror="true">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      <arg value="-S"/>
+      <arg value="spec"/>
+      <arg value="--format"/>
+      <arg value="errors"/>
+      <arg value="test/externals/rubinius/spec"/>
+    </java>
+  </target>
+
   <target name="emma" description="turns on EMMA instrumentation/reporting" >
     <available property="emma.present"
                classname="com.vladium.app.IAppVersion"
@@ -376,85 +402,129 @@
     <include name="**/*.java"/>
       </fileset>
       <doctitle><![CDATA[<h1>JRuby</h1>]]></doctitle>
-      <bottom><![CDATA[<i>Copyright &#169; 2002-2006 JRuby Team. All Rights Reserved.</i>]]></bottom>
+      <bottom><![CDATA[<i>Copyright &#169; 2002-2007 JRuby Team. All Rights Reserved.</i>]]></bottom>
     </javadoc>
   </target>
 
-  <!-- dist-bin and dist-src use a very common tarfileset... Can tarfileset be 
-       referenced? -->
+  <patternset id="dist.bin.files">
+    <include name="bin/*jruby*"/>
+    <include name="bin/*gem*"/>
+    <include name="bin/*jirb*"/>
+    <include name="bin/generate_yaml_index.rb"/>
+    <include name="bin/testrb"/>
+  </patternset>
+
+  <patternset id="dist.lib.files">
+    <include name="lib/ruby/1.8/**"/>
+    <include name="lib/ruby/site_ruby/1.8/**"/>
+    <include name="lib/ruby/gems/1.8/specifications/sources-0.0.1.gemspec"/>
+    <include name="lib/ruby/gems/1.8/cache/sources-0.0.1.gem"/>
+    <include name="lib/ruby/gems/1.8/gems/sources-0.0.1/**"/>
+  </patternset>
+
+  <patternset id="dist.files">
+    <include name="lib/*"/>
+    <include name="samples/**"/>
+    <include name="docs/**"/>
+    <include name="COPYING*"/>
+    <include name="README"/>
+    <exclude name="lib/ruby/**"/>
+  </patternset>
+
+  <patternset id="dist.src.files">
+    <patternset refid="dist.files"/>
+    <include name="src/**"/>
+    <include name="test/**"/>
+    <include name="build.xml"/>
+    <include name="build-config.xml"/>
+    <include name="nbproject/*"/>
+    <include name=".project"/>
+    <include name=".classpath"/>
+    <include name="default.build.properties"/>
+    <exclude name="lib/jruby.jar"/>
+  </patternset>
+
   <target name="dist-bin" depends="jar">
+    <mkdir dir="dist"/>
+    <copy todir="dist">
+      <fileset dir="${basedir}">
+        <patternset refid="dist.bin.files"/>
+        <patternset refid="dist.lib.files"/>
+      </fileset>
+    </copy>
+    <antcall target="install-gems">
+      <param name="jruby.home" value="dist"/>
+    </antcall>
     <tar destfile="jruby-bin-${version.jruby}.tar.gz" compression="gzip">
-      <tarfileset dir="." mode="755" prefix="jruby-${version.jruby}">
+      <tarfileset dir="dist" mode="755" prefix="jruby-${version.jruby}">
         <include name="bin/**"/>
       </tarfileset>
-      <tarfileset dir="." prefix="jruby-${version.jruby}">
+      <tarfileset dir="dist" prefix="jruby-${version.jruby}">
         <include name="lib/**"/>
-        <include name="samples/**"/>
-        <include name="docs/**"/>
-        <include name="COPYING*"/>
-        <include name="README"/>
-        <exclude name="lib/ant.jar"/>
+      </tarfileset>
+      <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
+        <patternset refid="dist.files"/>
       </tarfileset>
     </tar>
     <zip destfile="jruby-bin-${version.jruby}.zip">
-      <zipfileset dir="." filemode="755" prefix="jruby-${version.jruby}">
+      <zipfileset dir="dist" filemode="755" prefix="jruby-${version.jruby}">
         <include name="bin/**"/>
       </zipfileset>
-      <zipfileset dir="." prefix="jruby-${version.jruby}">
+      <zipfileset dir="dist" prefix="jruby-${version.jruby}">
         <include name="lib/**"/>
-        <include name="samples/**"/>
-        <include name="docs/**"/>
-        <include name="COPYING*"/>
-        <include name="README"/>
-        <exclude name="lib/ant.jar"/>
+      </zipfileset>
+      <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
+        <patternset refid="dist.files"/>
       </zipfileset>
     </zip>
   </target>
 
   <target name="dist-src" depends="jar">
+    <mkdir dir="dist"/>
+    <copy todir="dist">
+      <fileset dir="${basedir}">
+        <patternset refid="dist.bin.files"/>
+        <patternset refid="dist.lib.files"/>
+      </fileset>
+    </copy>
+    <antcall target="install-gems">
+      <param name="jruby.home" value="dist"/>
+    </antcall>
     <tar destfile="jruby-src-${version.jruby}.tar.gz" compression="gzip">
-      <tarfileset dir="." mode="755" prefix="jruby-${version.jruby}">
+      <tarfileset dir="dist" mode="755" prefix="jruby-${version.jruby}">
         <include name="bin/**"/>
       </tarfileset>
-      <tarfileset dir="." prefix="jruby-${version.jruby}">
+      <tarfileset dir="dist" prefix="jruby-${version.jruby}">
         <include name="lib/**"/>
-        <include name="samples/**"/>
-        <include name="docs/**"/>
-        <include name="src/**"/>
-        <include name="test/**"/>
-        <include name="build.xml"/>
-        <include name="build-config.xml"/>
-        <include name="COPYING*"/>
-        <include name="README"/>
-        <include name=".project"/>
-        <include name=".classpath"/>
-        <include name="default.build.properties"/>
-        <exclude name="lib/jruby.jar"/>
+      </tarfileset>
+      <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
+        <patternset refid="dist.src.files"/>
       </tarfileset>
     </tar>
     <zip destfile="jruby-src-${version.jruby}.zip">
-      <zipfileset dir="." filemode="755" prefix="jruby-${version.jruby}">
+      <zipfileset dir="dist" filemode="755" prefix="jruby-${version.jruby}">
         <include name="bin/**"/>
       </zipfileset>
-      <zipfileset dir="." prefix="jruby-${version.jruby}">
+      <zipfileset dir="dist" prefix="jruby-${version.jruby}">
         <include name="lib/**"/>
-        <include name="samples/**"/>
-        <include name="docs/**"/>
-        <include name="src/**"/>
-        <include name="test/**"/>
-        <include name="build.xml"/>
-        <include name="build-config.xml"/>
-        <include name="COPYING*"/>
-        <include name="README"/>
-        <include name=".project"/>
-        <include name=".classpath"/>
-        <include name="default.build.properties"/>
-        <exclude name="lib/jruby.jar"/>
+      </zipfileset>
+      <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
+        <patternset refid="dist.src.files"/>
       </zipfileset>
     </zip>
   </target>
 
   <target name="dist" depends="dist-bin,dist-src"/>
+
+  <target name="dist-clean">
+    <delete includeEmptyDirs="true">
+      <fileset dir=".">
+        <include name="jruby-*.tar.gz"/>
+        <include name="jruby-*.zip"/>
+      </fileset>
+      <fileset dir="dist" includes="**/*"/>
+    </delete>
+  </target>
 
   <target name="clean" depends="init" description="clean almost everything">
     <delete dir="${build.dir}"/>

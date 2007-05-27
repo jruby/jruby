@@ -113,6 +113,11 @@
                     <include name="lib/ruby/site_ruby/**/*"/>
                   </fileset>
                 </copy>
+                <copy todir="${project.build.outputDirectory}">
+                  <fileset dir="${project.basedir}/../../lib/ruby/1.8">
+                    <include name="**/*.rb"/>
+                  </fileset>
+                </copy>
               </tasks>
             </configuration>
             <goals>
@@ -126,6 +131,14 @@
               <tasks>
                 <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
                   classpath="${project.basedir}/../../lib/jarjar-0.7.jar"/>
+                <java classname="org.jruby.Main" fork="true">
+                  <classpath refid="maven.compile.classpath"/>
+                  <sysproperty key="jruby.home" value="${project.build.outputDirectory}/META-INF/jruby.home"/>
+                  <arg value="--command"/>
+                  <arg value="maybe_install_gems"/>
+                  <arg value="rspec"/>
+                  <arg value="rake"/>
+                </java>
                 <delete file="${project.build.directory}/${project.build.finalName}.jar"/>
                 <jarjar destfile="${project.build.directory}/${project.build.finalName}.jar">
                   <fileset dir="${project.build.outputDirectory}">
@@ -135,9 +148,6 @@
                     <include name="**/*.properties"/>
                     <include name="**/*.rb"/>
                     <exclude name="org/jruby/util/ant/**/*.class"/>
-                  </fileset>
-                  <fileset dir="${project.basedir}/../../lib/ruby/1.8">
-                    <include name="**/*.rb"/>
                   </fileset>
                   <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
                   <manifest>
