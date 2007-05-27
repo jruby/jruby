@@ -271,7 +271,7 @@
     </java>
   </target>
 
-  <target name="spec" depends="install-gems">
+  <target name="spec" depends="jar,install-gems">
     <java classname="org.jruby.Main" fork="true" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
@@ -279,7 +279,7 @@
       <arg value="-S"/>
       <arg value="spec"/>
       <arg value="--format"/>
-      <arg value="errors"/>
+      <arg value="e"/>
       <arg value="test/externals/rubinius/spec"/>
     </java>
   </target>
