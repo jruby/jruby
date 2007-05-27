@@ -53,3 +53,9 @@ context "A Proc instance" do
     a(&@prc).should == @prc.object_id
   end
 end
+
+describe Proc do
+  it "should support multiple arguments" do
+    Proc.new {|*x| x.reverse }.call(1,2,3,4,5).should == [5,4,3,2,1]
+  end
+end

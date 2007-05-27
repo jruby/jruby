@@ -77,4 +77,25 @@ context "For a Thread instance" do
     t = Thread.new { raise NotImplementedError.new("Just kidding") }
     should_raise(NotImplementedError) { t.join }
   end
+
+  specify "status should report its current state" do
+    v = nil
+    t = Thread.new {
+      v = Thread.current.status
+    }
+    t.join
+    v.should == 'run'
+    t.status.should == false
+  end
+
+  specify "inspect should show its status" do
+    x = nil
+    t = Thread.new { x = Thread.current.inspect; sleep 4 }
+    Thread.pass until t.status == false || t.status == 'sleep'
+    x.include?('run').should == true
+    t.inspect.include?('sleep').should == true
+    t.kill
+    Thread.pass while t.alive?
+    t.inspect.include?('dead').should == true
+  end
 end

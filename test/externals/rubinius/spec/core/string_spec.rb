@@ -1,4 +1,3 @@
-time = Time.now
 require File.dirname(__FILE__) + '/../spec_helper'
 
 # %, *, +, <<, <=>, ==, =~, [], []=, capitalize, capitalize!,
@@ -465,8 +464,7 @@ context "String instance method" do
   end
 
   specify "dump should return a string with all non-printing characters replaced with \\nnn notation" do
-    raise NotImplementedError.new("dump is broked")
-    ("\000".."A").to_a.to_s.dump.should == "\"\\000\\001\\002\\003\\004\\005\\006\\a\\b\\t\\n\\v\\f\\r\\016\\017\\020\\021\\022\\023\\024\\025\\026\\027\\030\\031\\032\\e\\034\\035\\036\\037 !\\\"\\\#$%&'()*+,-./0123456789\""
+    ("\000".."A").to_a.to_s.dump.should == "\"\\000\\001\\002\\003\\004\\005\\006\\a\\010\\t\\n\\v\\f\\r\\016\\017\\020\\021\\022\\023\\024\\025\\026\\027\\030\\031\\032\\e\\034\\035\\036\\037 !\\\"\\\#$%&'()*+,-./0123456789\""
   end
 
   specify "each should split self on the argument ($/ default) and pass each substring to block" do
@@ -1077,6 +1075,66 @@ context "String instance method" do
     "*+".upto("*3") { |s| a << s }
     a.should == ["*+", "*,", "*-", "*.", "*/", "*0", "*1", "*2", "*3"]
   end
+
+  specify "upto calls block with self if stop equals to self" do
+    a = []
+    "abc".upto("abc") { |s| a << s }
+    a.should == ["abc"]
+  end
+
+  # This is weird but MRI behaves like that
+  specify "upto calls block with self even if self is less than stop but stop length is less than self length" do
+    a = []
+    "25".upto("5") { |s| a << s }
+    a.should == ["25"]
+  end
+
+  specify "upto doesn't call block if stop is less than self and stop length is less than self length" do
+    a = []
+    "25".upto("1") { |s| a << s }
+    a.should == []
+  end
+
+  specify "upto doesn't call block if stop is less than self" do
+    a = []
+    "5".upto("2") { |s| a << s }
+    a.should == []
+  end
+
+  specify "upto stops if current value is longer than stop value" do
+    a = []
+    "0".upto("A") { |s| a << s }
+    a.should == ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+  end
+
+  specify "upto returns self" do
+    ("abc".upto("abd") {  }).should == "abc"
+    ("5".upto("2") {  }).should == "5"
+    ("25".upto("5") {  }).should == "25"
+  end
+
+  specify "upto converts stop to string with to_str if stop is not String" do
+    class A; def to_str; "abd"; end; end
+
+    a = []
+    "abc".upto(A.new) { |s| a << s }
+    a.should == ["abc", "abd"]
+  end
+
+  specify "upto raises TypeError if stop is not String or respond to to_str" do
+    should_raise(TypeError) { "abc".upto(123) { } }
+    should_raise(TypeError) { "abc".upto(:def) { } }
+    should_raise(TypeError) { "abc".upto(Object.new) { } }
+  end
+
+  specify "upto raises LocalJumpError if no block was given" do
+    should_raise(LocalJumpError) { "abc".upto("def") }
+  end
+
+  # MRI compatibility
+  specify "upto checks for TypeError before checking if block is given" do
+    should_raise(TypeError) { "abc".upto(123) }
+  end
 end
 
 context "String inherited instance method" do
@@ -1261,4 +1319,3 @@ describe "String instance method %" do
     ("%*x" % [10, 6]).should == "         6"
   end
 end
-puts Time.now - time

@@ -16,6 +16,38 @@ context "Module" do
     Object.const_defined?("C").should == true
     Object.const_defined?("Zargle").should == false
   end
+
+  specify "const_set should create a constant" do
+    Object.const_defined?("Cozzy").should == false
+    Object.const_set("Cozzy", 'a constant!')
+    Object.const_defined?("Cozzy").should == true
+    Cozzy.should == 'a constant!'
+
+    class Tenacious; end
+
+    Tenacious.const_defined?(:D).should == false
+    Tenacious.const_set(:D, 'The D')
+    Tenacious.const_defined?(:D).should == true
+    Tenacious::D.should == 'The D'
+  end
+
+  specify "const_set should fail on a bad constant name" do
+    should_raise(NameError) { Object.const_set("cozzy", true) }
+    should_raise(ArgumentError) { Object.const_set(2, true) }
+    should_raise(TypeError) { Object.const_set(Time.now, true) }
+  end
+
+  specify "const_get should return a constant's value" do
+    Object.const_get(:Object).should == Object
+    Object.const_set(:Cozzer, 'cozzer!')
+    Object.const_get(:Cozzer).should == 'cozzer!'
+  end
+
+  specify "const_get should fail on a bad constant name" do
+    should_raise(NameError) { Object.const_get("cozzy") }
+    should_raise(ArgumentError) { Object.const_get(2) }
+    should_raise(TypeError) { Object.const_get(Time.now) }
+  end
   
   specify "include should accept multiple arguments" do
     class E
@@ -84,6 +116,96 @@ context "Module#module_eval given a block" do
     (K.object_id == K.module_eval { self.object_id }).should == true
   end
 
+end
+
+context "Module.module_function with arguments" do
+  module M
+    def foo;  :foo  end
+    def bar;  :bar  end
+    def baz;  :baz  end
+    def quux; :quux end
+    def zool; :zool end
+    module_function :foo, :bar, :zool
+  end
+
+  specify "should allow calling module functions as instance functions" do
+    M.should_receive :method_missing, {:count => 2}
+    M.foo.should == :foo
+    M.bar.should == :bar
+    M.zool.should == :zool
+    M.baz
+    M.quux
+  end
+
+  module M
+    def foo;  :oof  end
+    def zool; :looz end
+  end
+
+  specify "should create the instance functions as clones" do
+    M.foo.should == :foo
+    M.zool.should == :zool
+  end
+
+  specify "should leave other methods as module methods" do
+     M.methods[:foo].activate(self, []).should == :oof
+     M.methods[:bar].activate(self, []).should == :bar
+     M.methods[:baz].activate(self, []).should == :baz
+     M.methods[:quux].activate(self, []).should == :quux
+     M.methods[:zool].activate(self, []).should == :zool
+  end
+end
+
+context "Module.module_function without arguments" do
+  module N
+    def baz;  :baz  end
+    def quux; :quux end
+
+    module_function
+    def foo;  :foo  end
+    def bar;  :bar  end
+    def zool; :zool end
+  end
+
+  specify "should allow calling module functions as instance functions" do
+    N.should_receive :method_missing, {:count => 2}
+    N.foo.should == :foo
+    N.bar.should == :bar
+    N.zool.should == :zool
+    N.baz
+    N.quux
+  end
+
+  module N
+    def foo;  :oof  end
+    def zool; :looz end
+  end
+
+  specify "should create the instance functions as clones" do
+    N.foo.should == :foo
+    N.zool.should == :zool
+  end
+
+  specify "should leave other methods as module methods" do
+     N.methods[:foo].activate(self, []).should == :oof
+     N.methods[:bar].activate(self, []).should == :bar
+     N.methods[:baz].activate(self, []).should == :baz
+     N.methods[:quux].activate(self, []).should == :quux
+     N.methods[:zool].activate(self, []).should == :zool
+  end
+
+  module N
+    def mri;  :mri end
+    module_function :mri
+    def odd;  :odd end
+  end
+
+  specify "should finish the default aliasing after passing an arg" do
+    N.should_receive :method_missing
+    N.mri.should == :mri
+    N.odd
+    N.methods[:odd].activate(self, []).should == :odd
+  end
 end
 
 context "Module.define_method" do

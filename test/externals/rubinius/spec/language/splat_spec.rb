@@ -26,9 +26,19 @@ end
 
 describe "Multiple assignment, array-style" do
   it "should have the proper return value" do
-    (x,y = 5,6,7).should == [5,6,7]
-    x.should == 5
-    y.should == 6
+    (a,b = 5,6,7).should == [5,6,7]
+    a.should == 5
+    b.should == 6
+
+    (c,d,*e = 99,8).should == [99,8]
+    c.should == 99
+    d.should == 8
+    e.should == []
+
+    (f,g,h = 99,8).should == [99,8]
+    f.should == 99
+    g.should == 8
+    h.should == nil
   end
 end
 
