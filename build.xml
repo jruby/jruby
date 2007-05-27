@@ -139,7 +139,8 @@
     <delete file="${build.dir}/__empty.rb" quiet="true"/>
   </target>
 
-  <target name="jar-jruby" depends="generate-method-classes">
+  <target name="jar-jruby" unless="jar-up-to-date">
+    <antcall target="generate-method-classes" inheritall="true"/>
     <jar destfile="${lib.dir}/jruby.jar" compress="true">
       <fileset dir="${jruby.classes.dir}">
         <exclude name="org/jruby/util/ant/**/*.class"/>
@@ -232,7 +233,11 @@
           </antcall>
     </target>
 
-  <target name="jar" depends="jar-jruby" description="Create the jruby.jar file">
+  <target name="jar" description="Create the jruby.jar file">
+    <uptodate targetfile="${lib.dir}/jruby.jar" property="jar-up-to-date">
+        <srcfiles dir="${src.dir}" includes="**/*.java"/>
+    </uptodate>
+    <antcall target="jar-jruby" inheritall="true"/>
   </target>
 
   <target name="jar.standalone" depends="generate-method-classes, jar"
