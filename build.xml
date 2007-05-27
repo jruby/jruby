@@ -265,7 +265,7 @@
 
   <target name="install-gems">
     <property name="jruby.home" value="${basedir}"/>
-    <java classname="org.jruby.Main" fork="true" failonerror="true">
+    <java classname="org.jruby.Main" fork="true" maxmemory="256M" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
@@ -278,7 +278,7 @@
   
   <target name="run-spec">
     <echo message="Running spec(s) located at: ${SPEC}"/>
-    <java classname="org.jruby.Main" fork="true" failonerror="true">
+    <java classname="org.jruby.Main" fork="true" maxmemory="256M" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
