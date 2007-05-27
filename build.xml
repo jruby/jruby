@@ -335,7 +335,8 @@
 
   <target name="test-compiled" depends="copy-test-files,run-junit-compiled"/>
   <target name="test-interpreted" depends="copy-test-files,run-junit-interpreted"/>
-  <target name="test-spec">
+  
+  <target name="test-spec" depends="install-gems">
     <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/core/false_spec.rb"/></antcall>
     <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/core/hash_spec.rb"/></antcall>
     <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/core/integer_spec.rb"/></antcall>
@@ -345,6 +346,16 @@
     <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/core/range_spec.rb"/></antcall>
     <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/core/symbol_spec.rb"/></antcall>
     <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/core/true_spec.rb"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/assignment_spec.rb"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/class_spec.rb"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/expression_spec.rb"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/literals/array_spec.rb"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/literals/execution_spec.rb"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/literals/hash_spec.rb"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/literals/numbers_spec.rb"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/literals/symbol_spec.rb"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/library"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/parser"/></antcall>
   </target>
   
   <target name="run-junit-interpreted" description="runs junit tests">
