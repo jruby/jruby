@@ -1314,6 +1314,10 @@ public final class Ruby {
                 }
             }
         }
+
+        public boolean isInterestedInEvent(int event) {
+            return true;
+        }
     };
     
     private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
@@ -1339,7 +1343,10 @@ public final class Ruby {
     
     public void callEventHooks(ThreadContext context, int event, String file, int line, String name, IRubyObject type) {
         for (int i = 0; i < eventHooks.size(); i++) {
-            ((EventHook)eventHooks.get(i)).event(context, event, file, line, name, type);
+            EventHook eventHook = (EventHook)eventHooks.get(i);
+            if (eventHook.isInterestedInEvent(event)) {
+                eventHook.event(context, event, file, line, name, type);
+            }
         }
     }
     

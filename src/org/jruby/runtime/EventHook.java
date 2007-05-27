@@ -25,18 +25,9 @@ public interface EventHook {
     public static final int RUBY_EVENT_C_RETURN = 6;
     public static final int RUBY_EVENT_RAISE = 7;
     
-    public static final int RUBY_EVENT_NONE_FLAG = 0;
-    public static final int RUBY_EVENT_LINE_FLAG = 1 << RUBY_EVENT_LINE;
-    public static final int RUBY_EVENT_CLASS_FLAG = 1 << RUBY_EVENT_CLASS;
-    public static final int RUBY_EVENT_END_FLAG = 1 << RUBY_EVENT_END;
-    public static final int RUBY_EVENT_CALL_FLAG = 1 << RUBY_EVENT_CALL;
-    public static final int RUBY_EVENT_RETURN_FLAG = 1 << RUBY_EVENT_RETURN;
-    public static final int RUBY_EVENT_C_CALL_FLAG = 1 << RUBY_EVENT_C_CALL;
-    public static final int RUBY_EVENT_C_RETURN_FLAG = 1 << RUBY_EVENT_C_RETURN;
-    public static final int RUBY_EVENT_RAISE_FLAG = 1 << RUBY_EVENT_RAISE;
-    public static final int RUBY_EVENT_ALL_FLAG = 0xff;
-    
     public static final String[] EVENT_NAMES = {"line", "class", "end", "call", "return", "c-call", "c-return", "raise"};
     
     public void event(ThreadContext context, int event, String file, int line, String name, IRubyObject type);
+    
+    public boolean isInterestedInEvent(int event);
 }
