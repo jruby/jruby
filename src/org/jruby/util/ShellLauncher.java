@@ -225,32 +225,25 @@ public class ShellLauncher {
     private static class StreamCopier extends Thread {
         private InputStream in;
         private OutputStream out;
-        private boolean onlyIfAvailable;
-        private boolean quit;
-        StreamCopier(InputStream in, OutputStream out, boolean avail) {
+        private boolean autoflush;
+        private volatile boolean quit;
+        StreamCopier(InputStream in, OutputStream out, boolean autoflush) {
             this.in = in;
             this.out = out;
-            this.onlyIfAvailable = avail;
+            this.autoflush = autoflush;
+            setDaemon(true);
         }
         public void run() {
             byte[] buf = new byte[128];
             int numRead;
             try {
-                while (true) {
-                    synchronized(this) {
-                        if (quit) {
-                            break;
-                        }
-                    }
-                    Thread.sleep(10);
-                    if (onlyIfAvailable && in.available() == 0) {
-                        continue;
-                    }
-                    if ((numRead = in.read(buf)) == -1) {
-                        break;
-                    }
+                while ((numRead = in.read(buf)) > 0 && !quit) {
                     out.write(buf, 0, numRead);
+                    if (autoflush) {
+                        out.flush();
+                    }
                 }
+                out.flush();
             } catch (Exception e) {
             }
         }
@@ -275,9 +268,13 @@ public class ShellLauncher {
         try { t2.join(); } catch (InterruptedException ie) {}
         t3.quit();
 
-        pOut.close();
-        pErr.close();
-        pIn.close();
+        try { err.flush(); } catch (IOException io) {}
+        try { out.flush(); } catch (IOException io) {}
+
+        try { pIn.close(); } catch (IOException io) {}
+        try { pOut.close(); } catch (IOException io) {}
+        try { pErr.close(); } catch (IOException io) {}
+
     }
 
     /**
