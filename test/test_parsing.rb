@@ -9,4 +9,8 @@ class TestParsing < Test::Unit::TestCase
     assert(nil == ())
     assert(().nil?)
   end
+  
+  def test_parse_literal_char
+    assert_equal(96, ?a-1)
+  end
 end

@@ -223,7 +223,7 @@ public class RubyYaccLexer {
         char c = src.read();
         src.unread(c);
 
-        return c != EOF && (Character.isLetterOrDigit(c) || c == '-');
+        return c != EOF && (Character.isLetterOrDigit(c) || c == '_');
     }
     
     private Object getInteger(String value, int radix) {
@@ -568,7 +568,7 @@ public class RubyYaccLexer {
     }
 
     // DEBUGGING HELP 
-    private int yylex() {
+    private int yylex() throws IOException {
         int token = yylex2();
         
         printToken(token);
