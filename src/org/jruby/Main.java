@@ -169,26 +169,6 @@ public class Main {
         final Ruby runtime = Ruby.newInstance(config);
         runtime.setKCode(commandline.getKCode());
 
-        // Add a shutdown hook that dumps the contents of the runtimeInformation map.
-        // This map can be used at development-time to log profiling information
-        // that must be updated as the execution runs.
-        Thread shutdownHook = null;
-        if (!Ruby.isSecurityRestricted()) {
-            shutdownHook = new Thread() {
-                public void run() {
-                    if (!runtime.getRuntimeInformation().isEmpty()) {
-                        System.err.println("Runtime information dump:");
-
-                        for (Iterator iter = runtime.getRuntimeInformation().keySet().iterator(); iter.hasNext();) {
-                            Object key = iter.next();
-                            System.err.println("[" + key + "]: " + runtime.getRuntimeInformation().get(key));
-                        }
-                    }
-                }
-            };
-            Runtime.getRuntime().addShutdownHook(shutdownHook);
-        }
-
         try {
             runInterpreter(runtime, reader, filename);
             return 0;
@@ -219,8 +199,16 @@ public class Main {
                 throw e;
             }
         } finally {
-            if (shutdownHook != null) {
-                Runtime.getRuntime().removeShutdownHook(shutdownHook);
+            // Dump the contents of the runtimeInformation map.
+            // This map can be used at development-time to log profiling information
+            // that must be updated as the execution runs.
+            if (!Ruby.isSecurityRestricted() && !runtime.getRuntimeInformation().isEmpty()) {
+                System.err.println("Runtime information dump:");
+
+                for (Iterator iter = runtime.getRuntimeInformation().keySet().iterator(); iter.hasNext();) {
+                    Object key = iter.next();
+                    System.err.println("[" + key + "]: " + runtime.getRuntimeInformation().get(key));
+                }
             }
         }
     }
