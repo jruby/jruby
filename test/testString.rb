@@ -370,6 +370,13 @@ test_equal(2, "\001\001\000".sum)
 test_equal(1408, "now is the time".sum)
 test_equal(128, "now is the time".sum(8))
 test_equal(128, "\x80".sum)
+test_equal(414, "asdf".sum)
+test_exception(ArgumentError) do
+    "hello".sum(5, 6)
+end
+test_equal(414, "asdf".sum(-1))
+test_equal(414, "asdf".sum(0))
+test_equal(0, "asdf".sum(1))
 
 def check_sum(str, bits=16)
   sum = 0
@@ -604,3 +611,4 @@ test_exception(TypeError) { "s" << -1 }
 test_exception(TypeError) { "s" << 256 }
 test_equal("s\001", "s" << 1)
 test_exception(NoMethodError) { +"s" }
+

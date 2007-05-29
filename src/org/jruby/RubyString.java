@@ -3267,9 +3267,16 @@ public class RubyString extends RubyObject {
     }
 
     public RubyInteger sum(IRubyObject[] args) {
+        if (args.length > 1) {
+            throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 1)");
+        }
+        
         long bitSize = 16;
-        if (args.length > 0) {
-            bitSize = ((RubyInteger) args[0].convertToInteger()).getLongValue();
+        if (args.length == 1) {
+            long bitSizeArg = ((RubyInteger) args[0].convertToInteger()).getLongValue();
+            if (bitSizeArg > 0) {
+                bitSize = bitSizeArg;
+            }
         }
 
         long result = 0;

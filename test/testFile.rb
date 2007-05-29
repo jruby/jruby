@@ -37,6 +37,15 @@ rescue Exception => e
     test_ok(false)
 end
 
+test_equal("/bin", File.expand_path("../../bin", "/tmp/x"))
+test_equal("/bin", File.expand_path("../../bin", "/tmp"))
+test_equal("/bin", File.expand_path("../../bin", "/"))
+test_equal("//foo", File.expand_path("../foo", "//bar"))
+test_equal("/bin", File.expand_path("../../../../../../../bin", "/"))
+test_equal(File.join(Dir.pwd, "x/y/z/a/b"), File.expand_path("a/b", "x/y/z"))
+test_equal(File.join(Dir.pwd, "bin"), File.expand_path("../../bin", "tmp/x"))
+test_equal("/bin", File.expand_path("./../foo/./.././../bin", "/a/b"))
+
 # Until windows and macos have code to get this info correctly we will 
 # not include
 #username = ENV['USER']
@@ -45,9 +54,13 @@ end
 #  test_equal(home, File.expand_path("~#{username}"))
 #  test_equal(home, File.expand_path("~"))
 #  test_equal(home, File.expand_path("~/"))
+#  test_equal(File.join(home, "foo/bar"), File.expand_path("foo/bar", "~/"))
+#  test_equal("/foo/bar", File.expand_path("/foo/bar", "~/"))
+#  test_equal(home, File.expand_path(".", "~"))
 #end
 
 # dirname
+
 test_equal(".", File.dirname(""))
 test_equal(".", File.dirname("."))
 test_equal(".", File.dirname(".."))
@@ -60,11 +73,20 @@ test_equal("/a", File.dirname("/a/b"))
 test_equal("/a", File.dirname("/a/b/"))
 test_equal("/", File.dirname("/"))
 
+# extname
+
 test_equal("", File.extname(""))
 test_equal("", File.extname("abc"))
 test_equal(".foo", File.extname("abc.foo"))
 test_equal(".foo", File.extname("abc.bar.foo"))
 test_equal("", File.extname("abc.bar/foo"))
+
+test_equal("", File.extname(".bashrc"))
+test_equal("", File.extname("."))
+test_equal("", File.extname("/."))
+test_equal("", File.extname(".."))
+test_equal("", File.extname(".foo."))
+test_equal("", File.extname("foo."))
 
 # expand_path
 
@@ -212,3 +234,4 @@ test_no_exception {
   File.new("build.xml").atime
   File.new("build.xml").ctime
 }
+

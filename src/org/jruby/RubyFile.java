@@ -585,68 +585,71 @@ public class RubyFile extends RubyIO {
         return recv.getRuntime().newString(name.substring(0, index)).infectBy(filename);
     }
     
+    /**
+     * Returns the extension name of the file. An empty string is returned if 
+     * the filename (not the entire path) starts or ends with a dot.
+     * @param recv
+     * @param arg Path to get extension name of
+     * @return Extension, including the dot, or an empty string
+     */
     public static IRubyObject extname(IRubyObject recv, IRubyObject arg) {
-        RubyString filename = RubyString.stringValue(arg);
+        IRubyObject baseFilename = basename(recv, new IRubyObject[] { arg });
+        String filename = RubyString.stringValue(baseFilename).toString();
+        String result = "";
         
-        String name = filename.toString();
-        
-        // trim off dir name, since it may have dots in it
-        //TODO deal with drive letters A: and UNC names
-        int index = name.lastIndexOf('/');
-        // XXX actually, only on windows...
-        if (index == -1) index = name.lastIndexOf('\\');
+        int dotIndex = filename.lastIndexOf(".");
+        if (dotIndex > 0  && dotIndex != (filename.length() - 1)) {
+            // Dot is not at beginning and not at end of filename. 
+            result = filename.substring(dotIndex);
+        }
 
-        name = name.substring(index + 1);
-        
-        int ix = name.lastIndexOf(".");
-        
-        return recv.getRuntime().newString(ix == -1 ? "" : name.substring(ix));
+        return recv.getRuntime().newString(result);
     }
     
+    /**
+     * Converts a pathname to an absolute pathname. Relative paths are 
+     * referenced from the current working directory of the process unless 
+     * a second argument is given, in which case it will be used as the 
+     * starting point. If the second argument is also relative, it will 
+     * first be converted to an absolute pathname.
+     * @param recv
+     * @param args 
+     * @return Resulting absolute path as a String
+     */
     public static IRubyObject expand_path(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         Arity.checkArgumentCount(runtime, args, 1, 2);
+        
         String relativePath = RubyString.stringValue(args[0]).toString();
-        int pathLength = relativePath.length();
+        String cwd = null;
         
-        if (pathLength >= 1 && relativePath.charAt(0) == '~') {
-            // Enebo : Should ~frogger\\foo work (it doesnt in linux ruby)?
-            int userEnd = relativePath.indexOf('/');
-            
-            if (userEnd == -1) {
-                if (pathLength == 1) {
-                    // Single '~' as whole path to expand
-                    relativePath = RubyDir.getHomeDirectoryPath(recv).toString();
-                } else {
-                    // No directory delimeter.  Rest of string is username
-                    userEnd = pathLength;
-                }
-            }
-            
-            if (userEnd == 1) {
-                // '~/...' as path to expand
-                relativePath = RubyDir.getHomeDirectoryPath(recv).toString() +
-                        relativePath.substring(1);
-            } else if (userEnd > 1){
-                // '~user/...' as path to expand
-                String user = relativePath.substring(1, userEnd);
-                IRubyObject dir = RubyDir.getHomeDirectoryPath(recv, user);
-                
-                if (dir.isNil()) {
-                    throw runtime.newArgumentError("user " + user + " does not exist");
-                }
-                
-                relativePath = "" + dir +
-                        (pathLength == userEnd ? "" : relativePath.substring(userEnd));
-            }
-        }
+        // Handle ~user paths 
+        relativePath = expandUserPath(recv, relativePath);
         
-        String cwd = runtime.getCurrentDirectory();
+        // If there's a second argument, it's the path to which the first 
+        // argument is relative.
         if (args.length == 2 && !args[1].isNil()) {
-            cwd = RubyString.stringValue(args[1]).toString();
+            
+            String cwdArg = RubyString.stringValue(args[1]).toString();
+            
+            // Handle ~user paths.
+            cwd = expandUserPath(recv, cwdArg);
+            
+            // If the path isn't absolute, then prepend the current working
+            // directory to the path.
+            if ( cwd.charAt(0) != '/' ) {
+                cwd = JRubyFile.create(runtime.getCurrentDirectory(), cwd)
+                    .getAbsolutePath();
+            }
+            
+        } else {
+            // If there's no second argument, simply use the working directory 
+            // of the runtime.
+            cwd = runtime.getCurrentDirectory();
         }
         
         // Something wrong we don't know the cwd...
+        // TODO: Is this behavior really desirable? /mov
         if (cwd == null) return runtime.getNil();
         
         /* The counting of slashes that follows is simply a way to adhere to 
@@ -659,42 +662,98 @@ public class RubyFile extends RubyIO {
          */ 
         
         // Find out which string to check.
-        String stringToCheck = null;
-        if (relativePath.length() > 0 && relativePath.charAt(0) == '/') {
-        	stringToCheck = relativePath;
-        } else if (cwd.length() > 0 && cwd.charAt(0) == '/') {
-        	stringToCheck = cwd;
-        }
-        
         String padSlashes = "";
-        if (stringToCheck != null) {
-            // Count number of extra slashes in the beginning of the string.
-            int slashCount = 0;
-            for (int i = 0; i < stringToCheck.length(); i++) {
-            	if (stringToCheck.charAt(i) == '/') {
-            		slashCount++;
-            	} else {
-            		break;
-            	}
-            }
-
-            // If there are N slashes, then we want N-1.
-            if (slashCount > 0) {
-            	slashCount--;
-            }
-            
-            // Prepare a string with the same number of redundant slashes so that 
-            // we easily can prepend it to the result.
-            byte[] slashes = new byte[slashCount];
-            for (int i = 0; i < slashCount; i++) {
-                slashes[i] = '/';
-            }
-            padSlashes = new String(slashes); 
+        if (relativePath.length() > 0 && relativePath.charAt(0) == '/') {
+            padSlashes = countSlashes(relativePath);
+        } else if (cwd.length() > 0 && cwd.charAt(0) == '/') {
+            padSlashes = countSlashes(cwd);
         }
         
         JRubyFile path = JRubyFile.create(cwd, relativePath);
+
+        return runtime.newString(padSlashes + canonicalize(path.getAbsolutePath()));
+    }
+    
+    /**
+     * This method checks a path, and if it starts with ~, then it expands 
+     * the path to the absolute path of the user's home directory. If the 
+     * string does not begin with ~, then the string is simply retuned 
+     * unaltered.
+     * @param recv
+     * @param path Path to check
+     * @return Expanded path
+     */
+    private static String expandUserPath( IRubyObject recv, String path ) {
         
-        return runtime.newString(canonicalize(padSlashes + path.getAbsolutePath()));
+        int pathLength = path.length();
+
+        if (pathLength >= 1 && path.charAt(0) == '~') {
+            // Enebo : Should ~frogger\\foo work (it doesnt in linux ruby)?
+            int userEnd = path.indexOf('/');
+            
+            if (userEnd == -1) {
+                if (pathLength == 1) {
+                    // Single '~' as whole path to expand
+                    path = RubyDir.getHomeDirectoryPath(recv).toString();
+                } else {
+                    // No directory delimeter.  Rest of string is username
+                    userEnd = pathLength;
+                }
+            }
+            
+            if (userEnd == 1) {
+                // '~/...' as path to expand
+                path = RubyDir.getHomeDirectoryPath(recv).toString() +
+                        path.substring(1);
+            } else if (userEnd > 1){
+                // '~user/...' as path to expand
+                String user = path.substring(1, userEnd);
+                IRubyObject dir = RubyDir.getHomeDirectoryPath(recv, user);
+                
+                if (dir.isNil()) {
+                    Ruby runtime = recv.getRuntime();
+                    throw runtime.newArgumentError("user " + user + " does not exist");
+                }
+                
+                path = "" + dir +
+                        (pathLength == userEnd ? "" : path.substring(userEnd));
+            }
+        }
+        return path;
+    }
+    
+    /**
+     * Returns a string consisting of <code>n-1</code> slashes, where 
+     * <code>n</code> is the number of slashes at the beginning of the input 
+     * string.
+     * @param stringToCheck
+     * @return
+     */
+    private static String countSlashes( String stringToCheck ) {
+        
+        // Count number of extra slashes in the beginning of the string.
+        int slashCount = 0;
+        for (int i = 0; i < stringToCheck.length(); i++) {
+            if (stringToCheck.charAt(i) == '/') {
+                slashCount++;
+            } else {
+                break;
+            }
+        }
+
+        // If there are N slashes, then we want N-1.
+        if (slashCount > 0) {
+            slashCount--;
+        }
+        
+        // Prepare a string with the same number of redundant slashes so that 
+        // we easily can prepend it to the result.
+        byte[] slashes = new byte[slashCount];
+        for (int i = 0; i < slashCount; i++) {
+            slashes[i] = '/';
+        }
+        return new String(slashes); 
+        
     }
 
     private static String canonicalize(String path) {
@@ -702,6 +761,7 @@ public class RubyFile extends RubyIO {
     }
 
     private static String canonicalize(String canonicalPath, String remaining) {
+
         if (remaining == null) return canonicalPath;
 
         String child;
@@ -716,12 +776,12 @@ public class RubyFile extends RubyIO {
 
         if (child.equals(".")) {
             // skip it
-            if (canonicalPath != null && (canonicalPath.length() == 0 || canonicalPath.endsWith("/"))) canonicalPath += "/";
+            if (canonicalPath != null && canonicalPath.length() == 0 ) canonicalPath += "/";
         } else if (child.equals("..")) {
             if (canonicalPath == null) throw new IllegalArgumentException("Cannot have .. at the start of an absolute path");
             int lastDir = canonicalPath.lastIndexOf('/');
             if (lastDir == -1) {
-                canonicalPath = null;
+                canonicalPath = "";
             } else {
                 canonicalPath = canonicalPath.substring(0, lastDir);
             }
