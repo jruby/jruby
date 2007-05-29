@@ -24,4 +24,13 @@ public class ShellLauncherTest extends TestCase {
         assertEquals(0, result);
         assertEquals("hi\n", baos.toString());
     }
+    
+    public void testCanLaunchShellsFromInternallForkedRubyProcess() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        RubyString cmd = RubyString.newString(runtime, 
+          "jruby -e \"system(%Q[ruby -e \"system 'echo hello' ; puts 'done'\"])\"");
+        int result = launcher.runAndWait(new IRubyObject[] {cmd}, baos);
+        assertEquals(0, result);
+        assertEquals("hello\ndone\n", baos.toString());
+    }
 }

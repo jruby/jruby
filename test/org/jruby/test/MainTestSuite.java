@@ -43,6 +43,7 @@ import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
 import org.jruby.runtime.callback.TestReflectionCallback;
 import org.jruby.util.ByteListTest;
+import org.jruby.util.ShellLauncherTest;
 
 /**
  *
@@ -78,6 +79,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestRaiseException.class);
         suite.addTest(VisitorTestSuite.suite());
         suite.addTestSuite(ByteListTest.class);
+        suite.addTestSuite(ShellLauncherTest.class);
         return suite;
     }
 }

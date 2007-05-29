@@ -225,29 +225,34 @@ public class ShellLauncher {
     private static class StreamCopier extends Thread {
         private InputStream in;
         private OutputStream out;
-        private boolean autoflush;
-        private volatile boolean quit;
-        StreamCopier(InputStream in, OutputStream out, boolean autoflush) {
+        private boolean onlyIfAvailable;
+        private boolean quit;
+        StreamCopier(InputStream in, OutputStream out, boolean avail) {
             this.in = in;
             this.out = out;
-            this.autoflush = autoflush;
-            setDaemon(true);
+            this.onlyIfAvailable = avail;
         }
         public void run() {
             byte[] buf = new byte[128];
             int numRead;
             try {
-                while ((numRead = in.read(buf)) > 0 && !quit) {
-                    out.write(buf, 0, numRead);
-                    if (autoflush) {
-                        out.flush();
+                while (true) {
+                    if (quit) {
+                        break;
                     }
+                    Thread.sleep(10);
+                    if (onlyIfAvailable && in.available() == 0) {
+                        continue;
+                    }
+                    if ((numRead = in.read(buf)) == -1) {
+                        break;
+                    }
+                    out.write(buf, 0, numRead);
                 }
-                out.flush();
             } catch (Exception e) {
             }
         }
-        public synchronized void quit() {
+        public void quit() {
             this.quit = true;
         }
     }
