@@ -110,7 +110,7 @@ class TestTime < RubiconTestCase
     min = 0.1
     max = min * 3.0 # some ruby impls will be SLOOOW
     t1 = Time.send(method)
-    sleep min
+    sleep min+0.05
     t2 = Time.send(method)
     delta = t2.to_f - t1.to_f
     assert(delta >= min, "time difference must be at least #{min}")
