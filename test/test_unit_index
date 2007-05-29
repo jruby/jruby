@@ -97,7 +97,7 @@ externals/bfts/test_nil_class
 externals/bfts/test_range
 externals/bfts/test_string
 externals/bfts/test_struct
-#externals/bfts/test_time
+externals/bfts/test_time
 externals/bfts/test_true_class
 
 # MRI's tests
