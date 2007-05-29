@@ -170,6 +170,10 @@ public class RubyTime extends RubyObject {
         this.usec = usec;
     }
     
+    protected long getUSec() {
+        return usec;
+    }
+    
     public void updateCal(Calendar calendar) {
         calendar.setTimeZone(cal.getTimeZone());
         calendar.setTimeInMillis(getTimeInMillis());
@@ -302,12 +306,17 @@ public class RubyTime extends RubyObject {
         if (other instanceof RubyTime) {
             throw getRuntime().newTypeError("time + time ?");
         }
-		time += ((RubyNumeric) other).getDoubleValue() * 1000;
+        long adjustment = (long) (((RubyNumeric) other).getDoubleValue() * 1000000);
+        int micro = (int) (adjustment % 1000);
+        adjustment = adjustment / 1000;
+        
+		time += adjustment;
 
 		RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
 		newTime.cal = Calendar.getInstance();
         newTime.cal.setTimeZone(cal.getTimeZone());
 		newTime.cal.setTime(new Date(time));
+        newTime.setUSec(micro);
 
 		return newTime;
     }
@@ -320,12 +329,17 @@ public class RubyTime extends RubyObject {
 
             return RubyFloat.newFloat(getRuntime(), time * 10e-4);
         }
-		time -= ((RubyNumeric) other).getDoubleValue() * 1000;
+        long adjustment = (long) (((RubyNumeric) other).getDoubleValue() * 1000000);
+        int micro = (int) (adjustment % 1000);
+        adjustment = adjustment / 1000;
+        
+        time -= adjustment;
 
 		RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
 		newTime.cal = Calendar.getInstance();
         newTime.cal.setTimeZone(cal.getTimeZone());
 		newTime.cal.setTime(new Date(time));
+        newTime.setUSec(micro);
 
 		return newTime;
     }
@@ -382,7 +396,11 @@ public class RubyTime extends RubyObject {
 
     public RubyString asctime() {
         simpleDateFormat.setCalendar(cal);
-        simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss yyyy");
+        if (cal.get(Calendar.DAY_OF_MONTH) < 10) {
+            simpleDateFormat.applyPattern("EEE MMM  d HH:mm:ss yyyy");
+        } else {
+            simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss yyyy");
+        }
         String result = simpleDateFormat.format(cal.getTime());
 
         return getRuntime().newString(result);
@@ -390,7 +408,7 @@ public class RubyTime extends RubyObject {
 
     public IRubyObject to_s() {
         simpleDateFormat.setCalendar(cal);
-        simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss Z yyyy");
+        simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss z yyyy");
         String result = simpleDateFormat.format(cal.getTime());
 
         return getRuntime().newString(result);
@@ -402,7 +420,9 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyFloat to_f() {
-        return RubyFloat.newFloat(getRuntime(), getTimeInMillis() / 1000 + microseconds() / 1000000.0);
+        long time = getTimeInMillis();
+        time = time * 1000 + usec;
+        return RubyFloat.newFloat(getRuntime(), time / 1000000.0);
     }
 
     public RubyInteger to_i() {
@@ -466,7 +486,7 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyString zone() {
-        return getRuntime().newString(cal.getTimeZone().getID());
+        return getRuntime().newString(cal.getTimeZone().getDisplayName(cal.get(Calendar.DST_OFFSET) != 0, TimeZone.SHORT));
     }
 
     public void setJavaCalendar(Calendar cal) {
@@ -542,7 +562,9 @@ public class RubyTime extends RubyObject {
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, cal);
 
         if (args[0] instanceof RubyTime) {
-            ((RubyTime) args[0]).updateCal(cal);
+            RubyTime other = (RubyTime) args[0];
+            other.updateCal(cal);
+            time.setUSec(other.getUSec());
         } else {
             long seconds = RubyNumeric.num2long(args[0]);
             long millisecs = 0;
