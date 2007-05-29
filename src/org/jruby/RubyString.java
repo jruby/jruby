@@ -3067,7 +3067,7 @@ public class RubyString extends RubyObject {
         final TR trrepl = new TR();
         
         boolean cflag = false;
-        boolean modify = false;        
+        boolean modify = false;
         
         trsrc.p = srcList.begin;
         trsrc.pend = srcList.begin + srcList.realSize;
@@ -3086,20 +3086,20 @@ public class RubyString extends RubyObject {
         trsrc.max = trrepl.max = 0;
         
         int c;
-        final byte[]trans = new byte[TRANS_SIZE];
+        final int[]trans = new int[TRANS_SIZE];
         if (cflag) {
             for (int i=0; i<TRANS_SIZE; i++) trans[i] = 1;
             while ((c = trnext(trsrc)) >= 0) trans[c & 0xff] = -1;
             while ((c = trnext(trrepl)) >= 0); 
             for (int i=0; i<TRANS_SIZE; i++) {
-                if (trans[i] >= 0) trans[i] = (byte)trrepl.now;
+                if (trans[i] >= 0) trans[i] = trrepl.now;
             }
         } else {
             for (int i=0; i<TRANS_SIZE; i++) trans[i] = -1;
             while ((c = trnext(trsrc)) >= 0) {
                 int r = trnext(trrepl);
                 if (r == -1) r = trrepl.now;
-                trans[c & 0xff] = (byte)r;
+                trans[c & 0xff] = r;
             }
         }
         
@@ -3165,12 +3165,12 @@ public class RubyString extends RubyObject {
                         t.max = buf[t.p++];
                     }
                 }
-                return t.now;
+                return t.now & 0xff;
             } else if (++t.now < t.max) {
-                return t.now;
+                return t.now & 0xff;
             } else {
                 t.gen = 0;
-                return t.max;
+                return t.max & 0xff;
             }
         }
     }    
