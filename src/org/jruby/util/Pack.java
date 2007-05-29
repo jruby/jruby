@@ -1561,7 +1561,7 @@ public class Pack {
                        }
 
                        IRubyObject from = (IRubyObject) list.eltInternal(idx++);
-                       lCurElemString = from == runtime.getNil() ? "" : from.convertToString().toString();
+                       lCurElemString = from == runtime.getNil() ? "" : from.asString().toString();
 
                        if (occurrences <= 1) {
                            occurrences = 72;
