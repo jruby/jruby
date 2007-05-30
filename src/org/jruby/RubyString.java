@@ -1796,9 +1796,20 @@ public class RubyString extends RubyObject {
             }
 
             if (repl.isTaint()) tainted = true;
-            
             int startZ = mat.start(0);
+            try {
+                startZ = str.substring(0, startZ).getBytes("UTF8").length;
+            } catch (UnsupportedEncodingException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
             int plen = mat.end(0) - startZ; 
+            try {
+                plen = mat.group(0).getBytes("UTF8").length;
+            } catch (UnsupportedEncodingException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
             ByteList replValue = ((RubyString)repl).value;
             
             if (replValue.realSize > plen) { // this might be smarter by being real bytes length aware
@@ -1977,25 +1988,40 @@ public class RubyString extends RubyObject {
         //FIXME may be a problem with pos when doing reverse searches
         int pos = !reverse ? 0 : value.length();
 
+        boolean offset = false;
         if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             pos = RubyNumeric.fix2int(args[1]);
+            offset = true;
         }
         if (pos < 0) {
             pos += value.length();
             if (pos < 0) return getRuntime().getNil();
         }
+        
         if (args[0] instanceof RubyRegexp) {
+            // save position we shouldn't look past
             int doNotLookPastIfReverse = pos;
 
             // RubyRegexp doesn't (yet?) support reverse searches, so we
             // find all matches and use the last one--very inefficient.
-            // XXX - find a better way
+            // FIXME: - find a better way
             pos = ((RubyRegexp) args[0]).search(toString(), this, reverse ? 0 : pos);
-
-            int dummy = pos;
-            while (reverse && dummy > -1 && dummy <= doNotLookPastIfReverse) {
-                pos = dummy;
-                dummy = ((RubyRegexp) args[0]).search(toString(), this, pos + 1);
+            
+            if (reverse) {
+                if (pos == -1) return getRuntime().getNil();
+                
+                int dummy = pos;
+                if (offset) {
+                    pos = doNotLookPastIfReverse;
+                    if (dummy > pos) {
+                        pos = -1;
+                        dummy = -1;
+                    }
+                }
+                while (reverse && dummy > -1 && dummy <= doNotLookPastIfReverse) {
+                    pos = dummy;
+                    dummy = ((RubyRegexp) args[0]).search(toString(), this, pos + 1);
+                }
             }
         } else if (args[0] instanceof RubyString) {
             ByteList sub = ((RubyString) args[0]).value;
@@ -2369,6 +2395,7 @@ public class RubyString extends RubyObject {
                 if (((RubyString)spat).value.get(0) == ' ') {
                     awkSplit = true;
                 } else {
+                    // FIXME: Shouldn't this be unicode-aware?
                     String stringPattern = RubyString.stringValue(spat).toString();
                     spat = RubyRegexp.newRegexp(runtime, RubyRegexp.escapeSpecialChars(stringPattern), 0, null);
                 }
@@ -2417,6 +2444,7 @@ public class RubyString extends RubyObject {
             boolean utf8 = false; 
             String str;
             
+            RubyRegexp rr =(RubyRegexp)spat;
             if (runtime.getKCode() == KCode.UTF8) {
                 // We're in UTF8 mode; try to convert the string to UTF8, but fall back on raw bytes if we can't decode
                 // TODO: all this decoder and charset stuff could be centralized...in KCode perhaps?
@@ -2431,11 +2459,12 @@ public class RubyString extends RubyObject {
                     // ignore, just use the unencoded string
                     str = toString();
                 }
-            } else {            
-                str = toString();
+            } else {
+                utf8 = rr.getCode() == KCode.UTF8; 
+                str = toString(utf8);
             }
 
-            Pattern pat = ((RubyRegexp)spat).getPattern();
+            Pattern pat = rr.getPattern();
             Matcher mat = pat.matcher(str);
             beg = 0;
             boolean lastNull = false;

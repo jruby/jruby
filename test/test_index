@@ -99,6 +99,7 @@ testSuper.rb
 testSymbol.rb
 testTime.rb
 testUnboundMethod.rb
+testUTF8Regex.rb
 testVariableAndMethod.rb
 testVisibility.rb
 testXML.rb

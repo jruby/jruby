@@ -65,6 +65,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -1225,23 +1226,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         invokeIRubyObject("getMetaClass", cg.sig(RubyClass.class));
     }
     
-    private void getCRef() {
-        loadThreadContext();
-        // FIXME: This doesn't seem *quite* right. If actually within a class...end, is self.getMetaClass the correct class? should be self, no?
-        invokeThreadContext("peekCRef", cg.sig(SinglyLinkedList.class));
-    }
-    
-    private void newTypeError(String error) {
-        loadRuntime();
-        getMethodAdapter().ldc(error);
-        invokeIRuby("newTypeError", cg.sig(RaiseException.class, cg.params(String.class)));
-    }
-    
-    private void getCurrentVisibility() {
-        loadThreadContext();
-        invokeThreadContext("getCurrentVisibility", cg.sig(Visibility.class));
-    }
-    
     private void println() {
         SkinnyMethodAdapter mv = getMethodAdapter();
         
@@ -1627,7 +1611,13 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         loadRuntime();
 
         // load string, for Regexp#source and Regexp#inspect
-        mv.ldc(value.toString());
+        String regexpString = null;
+        if ((options & ReOptions.RE_UNICODE) > 0) {
+            regexpString = value.toUtf8String();
+        } else {
+            regexpString = value.toString();
+        }
+        mv.ldc(regexpString);
 
         // in current method, load the field to see if we've created a Pattern yet
 
@@ -1642,7 +1632,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.visitFieldInsn(PUTSTATIC, classname, name_flags, cg.ci(Integer.TYPE));
         
         loadRuntime();
-        mv.ldc(value.toString());
+        mv.ldc(regexpString);
         mv.ldc(new Integer(options));
         invokeUtilityMethod("regexpLiteral",cg.sig(Pattern.class,cg.params(Ruby.class,String.class,Integer.TYPE)));
         mv.dup();

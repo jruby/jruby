@@ -72,7 +72,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	 * Warning: THIS IS NOT REALLY SUPPORTED BY JRUBY. 
 	 */
 
-    private String source;
+    private ByteList source;
     private Pattern pattern;
     private KCode code;
     private int flags;
@@ -177,16 +177,22 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return super.callMethod(context, rubyclass, name, args, callType, block);
         }
     }
+    
+    public void initialize(ByteList regex, int options) {
+        try {
+            source = regex;
+            pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
+            flags = REGEXP_TRANSLATOR.flagsFor(options, code.flags());
+        } catch(jregex.PatternSyntaxException e) {
+            //            System.err.println(regex);
+            //            e.printStackTrace();
+            throw getRuntime().newRegexpError(e.getMessage());
+        }
+    }
 
     public void initialize(String regex, int options) {
         try {
-            if(getCode() == KCode.UTF8) {
-                try {
-                    regex = new String(ByteList.plain(regex),"UTF8");
-                } catch(Exception e) {
-                }
-            }
-            source = regex;
+            source = ByteList.create(regex);
             pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
             flags = REGEXP_TRANSLATOR.flagsFor(options, code.flags());
         } catch(jregex.PatternSyntaxException e) {
@@ -223,10 +229,19 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     // Methods of the Regexp class (rb_reg_*):
 
     public static RubyRegexp newRegexp(RubyString str, int options, String lang) {
-        return newRegexp(str.getRuntime(), str.toString(), options, lang);
+        return newRegexp(str.getRuntime(), str.getByteList(), options, lang);
     }
     
     public static RubyRegexp newRegexp(Ruby runtime, String source, Pattern pattern, int flags, String lang) {
+        RubyRegexp re = new RubyRegexp(runtime);
+        re.code = KCode.create(runtime, lang);
+        re.source = ByteList.create(source);
+        re.pattern = pattern;
+        re.flags = flags;
+        return re;
+    }
+    
+    public static RubyRegexp newRegexp(Ruby runtime, ByteList source, Pattern pattern, int flags, String lang) {
         RubyRegexp re = new RubyRegexp(runtime);
         re.code = KCode.create(runtime, lang);
         re.source = source;
@@ -236,6 +251,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
     
     public static RubyRegexp newRegexp(Ruby runtime, String str, int options, String kcode) {
+        RubyRegexp re = new RubyRegexp(runtime);
+        re.code = KCode.create(runtime, kcode);
+        re.initialize(str, options);
+        return re;
+    }
+    
+    public static RubyRegexp newRegexp(Ruby runtime, ByteList str, int options, String kcode) {
         RubyRegexp re = new RubyRegexp(runtime);
         re.code = KCode.create(runtime, kcode);
         re.initialize(str, options);
@@ -253,10 +275,10 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
 
     public IRubyObject initialize(IRubyObject[] args) {
-        String pat =
+        ByteList pat =
             (args[0] instanceof RubyRegexp)
-                ? ((RubyRegexp) args[0]).source().toString()
-                : RubyString.stringValue(args[0]).toString();
+                ? ((RubyRegexp) args[0]).source().getByteList()
+                : RubyString.stringValue(args[0]).getByteList();
         int opts = 0;
         if (args.length > 1) {
             if (args[1] instanceof RubyFixnum) {
@@ -392,6 +414,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     	if (target instanceof RubySymbol || target instanceof RubyHash || target instanceof RubyArray) {
     		return getRuntime().getFalse();
     	}
+        // FIXME: make Unicode-aware
     	RubyString ss = RubyString.stringValue(target);
     	String string = ss.toString();
         if (string.length() == 0 && "^$".equals(pattern.toString())) {
@@ -552,6 +575,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         String t = target;
         if(utf8) {
             try {
+                byte[] bs = ByteList.plain(target);
+                String string = new String(bs, 0, startPos, "UTF8");
+                startPos = string.length();
                 t = new String(ByteList.plain(target),"UTF8");
             } catch(Exception e) {
             }
@@ -691,8 +717,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public IRubyObject inspect() {
-        final String regex = source;
-		final int length = regex.length();
+        final ByteList regex = source;
+        final int length = regex.length();
         StringBuffer sb = new StringBuffer(length + 2);
 
         sb.append('/');
@@ -827,7 +853,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubyRegexp result = newRegexp(input.getRuntime(), 
-                                      RubyString.byteListToString(input.unmarshalString()), input.unmarshalInt(), null);
+                                      input.unmarshalString(), input.unmarshalInt(), null);
         input.registerLinkTarget(result);
         return result;
     }

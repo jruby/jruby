@@ -33,6 +33,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.UnsupportedEncodingException;
+
 import jregex.Matcher;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
@@ -282,7 +284,9 @@ public abstract class RubyMatchData extends RubyObject {
             // JRUBY-97, but at the same time the testcase remained very slow
             // The additional minor optimizations to RubyString as part of the fix
             // dramatically improve the performance. 
-            return getRuntime().newString(matcher.group((int)n));
+    
+            return RubyString.newUnicodeString(getRuntime(), matcher.group((int)n));
+//            return getRuntime().newString(matcher.group((int)n));
         }
 
         public RubyString pre_match() {
@@ -318,6 +322,17 @@ public abstract class RubyMatchData extends RubyObject {
 
         public IRubyObject doClone() {
             return new JavaString(getRuntime(), original, matcher);
+        }
+        
+        public int matchStartPosition() {
+            int position = 0;
+            try {
+                position = matcher.prefix().getBytes("UTF8").length;
+            } catch (UnsupportedEncodingException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return position;
         }
     }
 
