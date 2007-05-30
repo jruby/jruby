@@ -246,7 +246,7 @@ public class IOHandlerNio extends IOHandler {
         checkReadable();
         setupBufferedIO();
 
-        if (!inBuffer.hasRemaining()) {
+        if (!inBuffer.hasRemaining() && length > 0) {
             if (fillInBuffer() < 0) {
                 throw new EOFException();
             }
