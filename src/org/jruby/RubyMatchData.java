@@ -263,7 +263,7 @@ public abstract class RubyMatchData extends RubyObject {
                 if (matcher.group(i) == null) {
                     arr.append(getRuntime().getNil());
                 } else {
-                    arr.append(RubyString.newString(getRuntime(), matcher.group(i)));
+                    arr.append(RubyString.newUnicodeString(getRuntime(), matcher.group(i)));
                 }
             }
         
@@ -290,14 +290,15 @@ public abstract class RubyMatchData extends RubyObject {
         }
 
         public RubyString pre_match() {
-            return getRuntime().newString(matcher.prefix());
+            return RubyString.newUnicodeString(getRuntime(), matcher.prefix());
         }
         public RubyString post_match() {
-            return getRuntime().newString(matcher.suffix());
+            return RubyString.newUnicodeString(getRuntime(), matcher.suffix());
         }
 
         public RubyString string() {
-            RubyString frozenString = getRuntime().newString(original);
+            RubyString frozenString = RubyString.newUnicodeString(getRuntime(), original);
+            System.out.println(frozenString);
             frozenString.freeze();
             return frozenString;
         }
@@ -309,7 +310,7 @@ public abstract class RubyMatchData extends RubyObject {
                 if (matcher.group(i) == null) {
                     arr.append(getRuntime().getNil());
                 } else {
-                    arr.append(RubyString.newString(getRuntime(), matcher.group(i)));
+                    arr.append(RubyString.newUnicodeString(getRuntime(), matcher.group(i)));
                 }
             }
         
@@ -317,7 +318,7 @@ public abstract class RubyMatchData extends RubyObject {
         }
 
         public IRubyObject to_s() {
-            return getRuntime().newString(matcher.group(0));
+            return RubyString.newUnicodeString(getRuntime(), matcher.group(0));
         }
 
         public IRubyObject doClone() {

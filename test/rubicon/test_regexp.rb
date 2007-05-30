@@ -115,4 +115,16 @@ class TestRegexp < Test::Unit::TestCase
     assert_raises(TypeError) { Regexp.quote(nil) }
   end
 
+  def test_unicode_match
+    "yés!héy!héllo" =~ /!([^!]*)/u
+    assert_equal("yés", $~.pre_match)
+    assert_equal("!héllo", $~.post_match)
+    assert_equal("héy", $~[1])
+    assert_equal("!héy", $~[0])
+    assert_equal("!héy", $~.to_s)
+    assert_equal(["héy"], $~.captures)
+    assert_equal(["!héy", "héy"], $~.to_a)
+    # couldn't get this to pass right...JRuby and MRI seem to handle it differently, and not like below
+    #assert_equal("y̩s!h̩y!h̩llo", $~.string)
+  end
 end
