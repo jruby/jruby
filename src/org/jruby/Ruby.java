@@ -794,6 +794,7 @@ public final class Ruby {
         RubyClass ioError = null;
         RubyClass scriptError = null;
         RubyClass nameError = null;
+        
         RubyClass rangeError = null;
         if (profile.allowClass("StandardError")) {
             standardError = defineClass("StandardError", exceptionClass, exceptionClass.getAllocator());
@@ -810,6 +811,9 @@ public final class Ruby {
         if (profile.allowClass("NameError")) {
             nameError = RubyNameError.createNameErrorClass(this, standardError);
         }
+        if (profile.allowClass("NoMethodError")) {
+            RubyNoMethodError.createNoMethodErrorClass(this, nameError);
+        }        
         if (profile.allowClass("RangeError")) {
             rangeError = defineClass("RangeError", standardError, standardError.getAllocator());
         }
@@ -842,9 +846,6 @@ public final class Ruby {
         }
         if (profile.allowClass("NotImplementedError")) {
             defineClass("NotImplementedError", scriptError, scriptError.getAllocator());
-        }
-        if (profile.allowClass("NoMethodError")) {
-            defineClass("NoMethodError", nameError, nameError.getAllocator());
         }
         if (profile.allowClass("SecurityError")) {
             defineClass("SecurityError", standardError, standardError.getAllocator());
@@ -1621,8 +1622,8 @@ public final class Ruby {
         return newRaiseException(getClass("Iconv").getClass("InvalidEncoding"), message);
     }
 
-    public RaiseException newNoMethodError(String message, String name) {
-        return new RaiseException(new RubyNameError(this, this.getClass("NoMethodError"), message, name), true);
+    public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
+        return new RaiseException(new RubyNoMethodError(this, this.getClass("NoMethodError"), message, name, args), true);
     }
 
     public RaiseException newNameError(String message, String name) {

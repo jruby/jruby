@@ -1277,9 +1277,10 @@ public class RubyModule extends RubyObject {
         for (Iterator iter = getMethods().entrySet().iterator(); iter.hasNext(); ) {
             Map.Entry entry = (Map.Entry) iter.next();
             DynamicMethod method = (DynamicMethod) entry.getValue();
-
             // Do not clone cached methods
-            if (method.getImplementationClass() == realType) {
+            // FIXME: MRI copies all methods here
+            if (method.getImplementationClass() == realType || method instanceof UndefinedMethod) {
+                
                 // A cloned method now belongs to a new class.  Set it.
                 // TODO: Make DynamicMethod immutable
                 DynamicMethod clonedMethod = method.dup();

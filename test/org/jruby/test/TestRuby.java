@@ -45,6 +45,8 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Unit test for the ruby class.
@@ -103,7 +105,7 @@ public class TestRuby extends TestRubyBase {
             setInput(System.in); setOutput(System.out); setError(new PrintStream(err)); setObjectSpaceEnabled(false);
         }};
         Ruby ruby = Ruby.newInstance(config);
-        RubyException exception = new RubyException(ruby, ruby.getClass("NameError"), "A message");
+        RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);
         RubyString[] lines = new RubyString[]{
             RubyString.newString(ruby, "Line 1"),
             RubyString.newString(ruby, "Line 2"),
@@ -120,7 +122,7 @@ public class TestRuby extends TestRubyBase {
             setInput(System.in); setOutput(System.out); setError(new PrintStream(err)); setObjectSpaceEnabled(false);
         }};
         Ruby ruby = Ruby.newInstance(config);
-        RubyException exception = new RubyException(ruby, ruby.getClass("NameError"), "A message");
+        RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);
         ruby.printError(exception);
         //        assertEquals(":[0,0]:[0,7]: A message (NameError)\n", err.toString());
     }

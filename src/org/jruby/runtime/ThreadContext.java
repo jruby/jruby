@@ -119,6 +119,8 @@ public class ThreadContext {
     
     CallType lastCallType;
     
+    Visibility lastVisibility;    
+    
     public Ruby getRuntime() {
         return runtime;
     }
@@ -139,22 +141,26 @@ public class ThreadContext {
     public void setLastCallStatus(CallType callType) {
         lastCallType = callType;
     }
-    
-    public Visibility getLastVisibility() {
-        return getPreviousFrame().getVisibility();
-    }
-    
+
     public CallType getLastCallType() {
         return lastCallType;
     }
-    
+
+    public void setLastVisibility(Visibility visibility) {
+        lastVisibility = visibility;
+    }
+
+    public Visibility getLastVisibility() {
+        return lastVisibility;
+    }
+
     public void printScope() {
         System.out.println("SCOPE STACK:");
         for (int i = 0; i <= scopeIndex; i++) {
             System.out.println(scopeStack[i]);
         }
     }
-    
+
     public DynamicScope getCurrentScope() {
         return scopeStack[scopeIndex];
     }

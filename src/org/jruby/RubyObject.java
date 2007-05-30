@@ -52,7 +52,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.util.IdUtil;
-import org.jruby.util.Sprintf;
 import org.jruby.util.collections.SinglyLinkedList;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -512,21 +511,14 @@ public class RubyObject implements Cloneable, IRubyObject {
     
     public static IRubyObject callMethodMissingIfNecessary(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name,
             IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
-        if (method.isUndefined() ||
-            !(name.equals("method_missing") ||
-              method.isCallableFrom(self, callType))) {
-
-            if (callType == CallType.SUPER) {
-                throw self.getRuntime().newNameError("super: no superclass method '" + name + "'", name);
-            }
-
-            // store call information so method_missing impl can use it
-            context.setLastCallStatus(callType);
+        if (method.isUndefined() || !(name.equals("method_missing") || method.isCallableFrom(self, callType))) {
+            // store call information so method_missing impl can use it            
+            context.setLastCallStatus(callType);            
+            context.setLastVisibility(method.getVisibility());
 
             if (name.equals("method_missing")) {
                 return RubyKernel.method_missing(self, args, block);
             }
-
 
             IRubyObject[] newArgs = new IRubyObject[args.length + 1];
             System.arraycopy(args, 0, newArgs, 1, args.length);
@@ -1186,6 +1178,8 @@ public class RubyObject implements Cloneable, IRubyObject {
                 getRuntime().unregisterInspecting(this);
             }
         }
+        
+        if (isNil()) return RubyNil.inspect(this);
         return callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
     }
 
@@ -1357,45 +1351,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 0);
     	return getRuntime().getNil();
-    }
-
-    public IRubyObject method_missing(IRubyObject[] args, Block block) {
-        if (args.length == 0) {
-            throw getRuntime().newArgumentError("no id given");
-        }
-
-        String name = args[0].asSymbol();
-        String description = null;
-        if("inspect".equals(name) || "to_s".equals(name)) {
-            description = anyToString().toString();
-        } else {
-            description = inspect().toString();
-        }
-        boolean noClass = description.length() > 0 && description.charAt(0) == '#';
-        Ruby runtime = getRuntime();
-        ThreadContext tc = runtime.getCurrentContext();
-        Visibility lastVis = tc.getLastVisibility();
-        if(null == lastVis) {
-            lastVis = Visibility.PUBLIC;
-        }
-        CallType lastCallType = tc.getLastCallType();
-        String format = lastVis.errorMessageFormat(lastCallType, name);
-        String msg = Sprintf.sprintf(runtime.newString(format), 
-                runtime.newArray(new IRubyObject[] { 
-                        runtime.newString(name),
-                        runtime.newString(description),
-                        runtime.newString(noClass ? "" : ":"), 
-                        runtime.newString(noClass ? "" : getType().getName()),
-                        runtime.newString(name),
-                        runtime.newString(description),
-                        runtime.newString(noClass ? "" : ":"), 
-                        runtime.newString(noClass ? "" : getType().getName())
-                })).toString();
-
-        if (lastCallType == CallType.VARIABLE) {
-        	throw getRuntime().newNameError(msg, name);
-        }
-        throw getRuntime().newNoMethodError(msg, name);
     }
 
     /**

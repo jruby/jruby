@@ -74,6 +74,8 @@ test_iconv
 test_nkf
 test_java_accessible_object
 test_java_extension
+test_method_missing
+test_methods
 #test_openssl
 test_pack
 test_primitive_to_java

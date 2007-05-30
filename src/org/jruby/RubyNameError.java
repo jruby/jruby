@@ -48,13 +48,11 @@ public class RubyNameError extends RubyException {
     public static RubyClass createNameErrorClass(Ruby runtime, RubyClass standardErrorClass) {
         RubyClass nameErrorClass = runtime.defineClass("NameError", standardErrorClass, NAMEERROR_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNameError.class);
-        
-        nameErrorClass.getMetaClass().defineFastMethod("new", 
-                callbackFactory.getFastOptSingletonMethod("newRubyNameError"));		
-        nameErrorClass.getMetaClass().defineFastMethod("exception", 
-				callbackFactory.getFastOptSingletonMethod("newRubyNameError"));		
+
+        nameErrorClass.getMetaClass().defineFastMethod("exception", callbackFactory.getFastOptSingletonMethod("newRubyNameError"));		
 
         nameErrorClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        nameErrorClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));        
         nameErrorClass.defineFastMethod("name", callbackFactory.getFastMethod("name"));
 
         return nameErrorClass;
@@ -73,10 +71,10 @@ public class RubyNameError extends RubyException {
         this.name = name == null ? runtime.getNil() : runtime.newString(name);
     }
     
-    public static RubyNameError newRubyNameError(IRubyObject recv, IRubyObject[] args) {
+    public static RubyException newRubyNameError(IRubyObject recv, IRubyObject[] args) {
         RubyClass klass = (RubyClass)recv;
         
-        RubyNameError newError = (RubyNameError) klass.allocate();
+        RubyException newError = (RubyException) klass.allocate();
         
         newError.callInit(args, Block.NULL_BLOCK);
         
@@ -89,6 +87,14 @@ public class RubyNameError extends RubyException {
             name = args[1];
         }
         return this;
+    }
+
+    public IRubyObject to_s() {
+        if (message.isNil()) return getRuntime().newString(message.getMetaClass().getName());
+        RubyString str = message.convertToString();
+        if (str != message) message = str;
+        if (isTaint()) message.setTaint(true);
+        return message;
     }
 
     public IRubyObject name() {

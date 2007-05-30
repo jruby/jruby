@@ -125,8 +125,8 @@ public class RubyException extends RubyObject {
         exceptionClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         exceptionClass.defineFastMethod("exception", callbackFactory.getFastOptMethod("exception"));
         exceptionClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        exceptionClass.defineFastMethod("to_str", callbackFactory.getFastMethod("to_s"));
-        exceptionClass.defineFastMethod("message", callbackFactory.getFastMethod("to_s"));
+        exceptionClass.defineFastMethod("to_str", callbackFactory.getFastMethod("to_str"));
+        exceptionClass.defineFastMethod("message", callbackFactory.getFastMethod("to_str"));
         exceptionClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
         exceptionClass.defineFastMethod("backtrace", callbackFactory.getFastMethod("backtrace"));		
         exceptionClass.defineFastMethod("set_backtrace", callbackFactory.getFastMethod("set_backtrace", RubyKernel.IRUBY_OBJECT));		
@@ -188,11 +188,13 @@ public class RubyException extends RubyObject {
     }
 
     public IRubyObject to_s() {
-        if (message.isNil()) {
-            return getRuntime().newString(getMetaClass().getName());
-        }
+        if (message.isNil()) return getRuntime().newString(getMetaClass().getName());
         message.setTaint(isTaint());
-        return (RubyString) message.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
+        return message;
+    }
+
+    public IRubyObject to_str() {
+        return message.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
     }
 
     /** inspects an object and return a kind of debug information

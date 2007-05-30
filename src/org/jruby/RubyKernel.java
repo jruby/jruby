@@ -255,39 +255,49 @@ public class RubyKernel {
 
     public static IRubyObject method_missing(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
-        if (args.length == 0) {
-            throw recv.getRuntime().newArgumentError("no id given");
-        }
 
-        String name = args[0].asSymbol();
-        String description = null;
-        if("inspect".equals(name) || "to_s".equals(name)) {
-            description = recv.anyToString().toString();
-        } else {
-            description = recv.inspect().toString();
-        }
-        boolean noClass = description.length() > 0 && description.charAt(0) == '#';
+        if (args.length == 0 || !(args[0] instanceof RubySymbol)) throw runtime.newArgumentError("no id given");
+
         ThreadContext tc = runtime.getCurrentContext();
         Visibility lastVis = tc.getLastVisibility();
-        if(null == lastVis) {
-            lastVis = Visibility.PUBLIC;
-        }
         CallType lastCallType = tc.getLastCallType();
-        String format = lastVis.errorMessageFormat(lastCallType, name);
-        // FIXME: Modify sprintf to accept Object[] as well...
-        String msg = Sprintf.sprintf(runtime.newString(format), 
-                runtime.newArray(new IRubyObject[] { 
-                        runtime.newString(name), 
-                        runtime.newString(description),
-                        runtime.newString(noClass ? "" : ":"), 
-                        runtime.newString(noClass ? "" : recv.getType().getName()),
-                        runtime.newString(name), 
-                        runtime.newString(description),
-                        runtime.newString(noClass ? "" : ":"), 
-                        runtime.newString(noClass ? "" : recv.getType().getName())
-                })).toString();
+
+        String format = null;
+
+        boolean noMethod = true; // NoMethodError
+
+        if (lastVis == Visibility.PRIVATE) {
+            format = "private method `%s' called for %s";
+        } else if (lastVis == Visibility.PROTECTED) {
+            format = "protected method `%s' called for %s";
+        } else if (lastCallType == CallType.VARIABLE) {
+            format = "undefined local variable or method `%s' for %s";
+            noMethod = false; // NameError
+        } else if (lastCallType == CallType.SUPER) {
+            format = "super: no superclass method `%s'";
+        }
+
+        if (format == null) format = "undefined method `%s' for %s";
+
+        IRubyObject[]exArgs = new IRubyObject[3];
+
+        RubyArray arr = runtime.newArray(args[0], runtime.newString(recv.inspect() + ":" + recv.getMetaClass().getRealClass().toString()));
+        RubyString msg = runtime.newString(Sprintf.sprintf(runtime.newString(format), arr).toString());
+
+        exArgs[0] = msg;
+        exArgs[1] = args[0];
+
+        RubyClass exc;
+        if (noMethod) {
+            IRubyObject[]NMEArgs = new IRubyObject[args.length - 1];
+            System.arraycopy(args, 1, NMEArgs, 0, NMEArgs.length);
+            exArgs[2] = runtime.newArrayNoCopy(NMEArgs);
+            exc = runtime.getClass("NoMethodError");
+        } else {
+            exc = runtime.getClass("NameError");
+        }
         
-        throw lastCallType == CallType.VARIABLE ? runtime.newNameError(msg, name) : runtime.newNoMethodError(msg, name);
+        throw new RaiseException((RubyException)exc.newInstance(exArgs, Block.NULL_BLOCK));
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
