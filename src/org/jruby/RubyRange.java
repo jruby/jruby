@@ -373,6 +373,8 @@ public class RubyRange extends RubyObject {
     public IRubyObject each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         
+        if (!begin.respondsTo("succ")) throw getRuntime().newTypeError("can't iterate from " + begin.getMetaClass().getName());
+
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             long endLong = ((RubyNumeric) end).getLongValue();
             long i = ((RubyNumeric) begin).getLongValue();
