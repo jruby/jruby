@@ -350,14 +350,13 @@ public class RubyRange extends RubyObject {
         return getRuntime().newFixnum(size);
     }
 
-    public IRubyObject equal(IRubyObject obj, Block block) {
-        if (!(obj instanceof RubyRange)) {
-            return getRuntime().getFalse();
-        }
-        RubyRange otherRange = (RubyRange) obj;
+    public IRubyObject equal(IRubyObject other, Block block) {
+        if (this == other) return getRuntime().getTrue();
+        if (!(other instanceof RubyRange)) return getRuntime().getFalse();
+        RubyRange otherRange = (RubyRange) other;
         boolean result =
-            begin.equals(otherRange.begin) &&
-            end.equals(otherRange.end) &&
+            begin.equal(otherRange.begin).isTrue() &&
+            end.equal(otherRange.end).isTrue() &&
             isExclusive == otherRange.isExclusive;
         return getRuntime().newBoolean(result);
     }
