@@ -286,7 +286,7 @@ public class RubyYAML {
     public static IRubyObject dump_stream(IRubyObject self, IRubyObject[] args) {
         ThreadContext context = self.getRuntime().getCurrentContext();
         IRubyObject stream = self.getRuntime().getModule("YAML").getClass("Stream").callMethod(context, "new");
-        for(int i=0,j=args.length;i<j;) {
+        for(int i=0,j=args.length;i<j;i++) {
             stream.callMethod(context,"add", args[i]);
         }
         return stream.callMethod(context, "emit");
