@@ -82,7 +82,7 @@ describe "The set of pre-defined global constants" do
     Object.const_defined?(:FALSE).should == true
   end
   
-  it "include NIL" do
+  it "includes NIL" do
     Object.const_defined?(:NIL).should == true
   end
   
@@ -124,10 +124,6 @@ describe "The set of pre-defined global constants" do
   
   it "includes RUBY_PLATFORM" do
     Object.const_defined?(:RUBY_PLATFORM).should == true
-  end
-  
-  it "includes RUBY_ENGINE" do
-    Object.const_defined?(:RUBY_ENGINE).should == true
   end
 end
 

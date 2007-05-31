@@ -58,6 +58,15 @@ describe "Struct class methods" do
   end
 end
 
+describe "Struct subclass" do
+  class Apple < Struct; end
+
+  it "new should create a constant in subclass' namespace" do
+    Apple.new('Computer', :size).should == Apple::Computer
+  end
+end
+
+
 describe "Struct anonymous class class methods" do
   # fake before(:all)
   Struct.new('Ruby', :version, :platform)

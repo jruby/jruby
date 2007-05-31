@@ -89,6 +89,13 @@ context "Float" do
     (2.71828 == 1.428).should == false
     (-4.2 == 4.2).should == false
   end
+
+  specify "== calls 'other == self' if coercion fails" do
+    class X; def ==(other); 2.0 == other; end; end
+
+    (1.0 == X.new).should == false
+    (2.0 == X.new).should == true
+  end
   
   specify "> should return true if self is greater than other" do
     (1.5 > 1).should == true

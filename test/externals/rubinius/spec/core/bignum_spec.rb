@@ -120,6 +120,13 @@ describe "Bignum instance method" do
     (a == 5.4).should == false
     (a == 121).should == false
   end
+
+  specify "== calls 'other == self' if coercion fails" do
+    class X; def ==(other); B.sbm(123) == other; end; end
+
+    (B.sbm(120) == X.new).should == false
+    (B.sbm(123) == X.new).should == true
+  end
   
   it "> should return true if self is greater than other" do
     a = B.sbm(732)

@@ -193,7 +193,7 @@ context 'Using Dir to modify the filesystem' do
 
   specify 'Dir.rmdir, .delete and .unlink will raise an exception trying to remove a nonempty directory' do
     %w|rmdir delete unlink|.each {|cmd|
-      should_raise { Dir.send cmd, 'subdir_one' }
+      should_raise(SystemCallError) { Dir.send cmd, 'subdir_one' }
     }
   end
 
@@ -469,7 +469,7 @@ context 'Creating Dir objects' do
     File.for_fd(peek).close
 
     Dir.open($mockdir) {|dir| File.for_fd peek; dir.class}.should == Dir  # Should be open here
-    should_raise { File.for_fd peek }                                     # And closed here
+    should_raise(SystemCallError) { File.for_fd peek }                    # And closed here
   end
 end
 
@@ -613,14 +613,14 @@ context dir_spec_object_text do
     File.for_fd(peek).close                   # Should be open here
 
     dir.close.should == nil
-    should_raise { File.for_fd(peek).close }  # And closed here
+    should_raise(SystemCallError) { File.for_fd(peek).close }  # And closed here
   end
 
   specify 'Further attempts to use a dir that has been #closed will result in an error' do
     @dir = Dir.open $mockdir
 
     %w|close each path pos read rewind tell|.each {|msg|
-      should_raise do
+      should_raise(IOError) do
         dir = Dir.open $mockdir
         dir.close
         dir.send msg

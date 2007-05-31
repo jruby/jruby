@@ -1,7 +1,9 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
 context "A Proc instance" do
-  @prc = lambda { "Software is the source, not the binaries" }
+  setup do
+    @prc = lambda { "Software is the source, not the binaries" }
+  end
 
   specify "created using &nil should be nil" do
     def a(&prc)

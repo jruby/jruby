@@ -147,12 +147,17 @@ context "Module.module_function with arguments" do
     M.zool.should == :zool
   end
 
+  class TestClass
+    include M
+  end
+  o = TestClass.new
+
   specify "should leave other methods as module methods" do
-     M.methods[:foo].activate(self, []).should == :oof
-     M.methods[:bar].activate(self, []).should == :bar
-     M.methods[:baz].activate(self, []).should == :baz
-     M.methods[:quux].activate(self, []).should == :quux
-     M.methods[:zool].activate(self, []).should == :zool
+    o.foo.should == :oof
+    o.bar.should == :bar
+    o.baz.should == :baz
+    o.quux.should == :quux
+    o.zool.should == :looz
   end
 end
 
@@ -186,12 +191,17 @@ context "Module.module_function without arguments" do
     N.zool.should == :zool
   end
 
+  class TestClass
+    include M
+  end
+  o = TestClass.new
+
   specify "should leave other methods as module methods" do
-     N.methods[:foo].activate(self, []).should == :oof
-     N.methods[:bar].activate(self, []).should == :bar
-     N.methods[:baz].activate(self, []).should == :baz
-     N.methods[:quux].activate(self, []).should == :quux
-     N.methods[:zool].activate(self, []).should == :zool
+    o.foo.should == :oof
+    o.bar.should == :bar
+    o.baz.should == :baz
+    o.quux.should == :quux
+    o.zool.should == :looz
   end
 
   module N
@@ -204,7 +214,8 @@ context "Module.module_function without arguments" do
     N.should_receive :method_missing
     N.mri.should == :mri
     N.odd
-    N.methods[:odd].activate(self, []).should == :odd
+    o.odd.should == :odd
+    o.mri.should == :mri
   end
 end
 

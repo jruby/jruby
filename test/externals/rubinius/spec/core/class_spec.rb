@@ -33,11 +33,27 @@ context 'Using Class.new to create a new class' do
 
     c.constants.should == ['YES']
     c.instance_variables.should == ['@civ']
-    c.instance_variables(true).should == [:@civ]
     c.class_variables.should == ['@@cv']
-    c.class_variables(true).should == [:@@cv]
     c.foo.should == :class_foo
     c.new.foo.should == :instance_foo
+  end
+
+  specify "The generated class can be instantiated" do
+    HasNoParents = Class.new
+    HasNoParents.new.class.should == HasNoParents
+  end
+  
+  specify "The generated class inherits its parent's methods" do
+    class Biped 
+      def self.legs; 2 end 
+      def has_legs?; true end
+    end
+
+    klass = Class.new(Biped)
+    klass.superclass.should == Biped
+
+    klass.legs.should == 2
+    klass.new.has_legs?.should == true
   end
 end
 

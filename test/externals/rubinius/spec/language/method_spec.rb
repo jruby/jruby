@@ -34,8 +34,8 @@ describe 'Defining methods with *' do
   end
 end
 
-describe "Terror from the ancient world" do
-  it "should let you define a singleton method on an lvar" do
+describe "Defining a singleton method" do
+  it "should work on an lvar" do
     a = "hi"
     def a.foo
       5
@@ -43,7 +43,7 @@ describe "Terror from the ancient world" do
     a.foo.should == 5
   end
 
-  it "should let you define a singleton method on an ivar" do
+  it "should work on an ivar" do
     @a = "hi"
     def @a.foo
       6
@@ -51,7 +51,7 @@ describe "Terror from the ancient world" do
     @a.foo.should == 6
   end
 
-  it "should let you define a singleton method on a gvar" do
+  it "should work on a gvar" do
     $__a__ = "hi"
     def $__a__.foo
       7
@@ -59,14 +59,15 @@ describe "Terror from the ancient world" do
     $__a__.foo.should == 7
   end
 
-  it "should let you define a singleton method on a cvar" do
+  it "should work on a cvar" do
     @@a = "hi"
     def @@a.foo
       8
     end
     @@a.foo.should == 8
   end
-
+end
+describe "Defining a method with complex default args" do
   it "should let you define a method inside a default argument" do
     def foo(x = (def foo; "hello"; end;1));x;end
     foo(42).should == 42
@@ -86,4 +87,60 @@ describe "Terror from the ancient world" do
     foo
     $foo_self.should == self
   end
+
+  it "should support method calls on other arguments as defaults" do
+    def foo(obj, width=obj.length)
+      width
+    end
+    foo('abcde').should == 5
+  end
+
+  it "should support procs as defaults" do
+    def foo(output = 'a', prc = lambda {|n| output * n})
+      prc.call(5)
+    end
+    foo.should == 'aaaaa' 
+  end
 end
+
+describe "Defining a singleton method with complex default args" do
+  it "should let you define a method inside a default argument" do
+    $__a = "hi"
+    def $__a.foo(x = (def $__a.foo; "hello"; end;1));x;end
+    $__a.foo(42).should == 42
+    $__a.foo.should == 1
+    $__a.foo.should == 'hello'
+  end
+
+  it "should let you use an fcall as a default argument" do
+    a = "hi"
+    def a.foo(x = caller())
+      x
+    end
+    a.foo.shift.class.should == String
+  end
+
+  it "should evaluate default arguments in the proper scope" do
+    a = "hi"
+    def a.foo(x = ($foo_self = self; nil)); 5 ;end
+    a.foo
+    $foo_self.should == a
+  end
+
+  it "should support method calls on other arguments as defaults" do
+    a = 'hi'
+    def a.foo(obj, width=obj.length)
+      width
+    end
+    a.foo('abcde').should == 5
+  end
+  
+  it "should support procs as defaults" do
+    a = 'hi'
+    def a.foo(output = 'a', prc = lambda {|n| output * n})
+      prc.call(5)
+    end
+    a.foo.should == 'aaaaa' 
+  end
+end
+

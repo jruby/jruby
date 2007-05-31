@@ -156,6 +156,13 @@ context "Fixnum instance method" do
     (2 == 0xffffffff).should == false
   end
 
+  specify "== calls 'other == self' if coercion fails" do
+    class X; def ==(other); 2 == other; end; end
+
+    (1 == X.new).should == false
+    (2 == X.new).should == true
+  end
+  
   specify "> should return true if self is greater than other" do
     (-500 > -600).should == true
     (13 > 2).should == true

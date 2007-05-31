@@ -105,8 +105,7 @@ context "Array instance methods" do
   specify "== should be false if any element is not == to the corresponding element in the other the array" do
     ([ "a", "c" ] == [ "a", "c", 7 ]).should == false
   end
-  
-  
+
   specify "assoc should return the first contained array the first element of which is obj" do
     s1 = [ "colors", "red", "blue", "green" ] 
     s2 = [ "letters", "a", "b", "c" ] 
@@ -373,7 +372,7 @@ context "Array instance methods" do
   end
 
   specify 'indexes and indices can be given ranges which are returned as nested arrays (DEPRECATED)' do
-    warn "DEPRECATED but #values_at does not use the same interface!"
+    warn " (but #values_at does not use the same interface!)"
 
     array = [1, 2, 3, 4, 5]
 
@@ -465,11 +464,6 @@ context "Array instance methods" do
   
   specify "nitems should return the number of non-nil elements" do
     [1, nil, 2, 3, nil, nil, 4].nitems.should == 4
-  end
-  
-  # FIX: fill in a proper spec
-  specify "pack should return a binary representation of the elements according to template" do
-    true.should == false
   end
   
   specify "partition should return two arrays" do
@@ -592,13 +586,26 @@ context "Array instance methods" do
     a.should == [1, 6, 7]
   end
 
-  specify "sort should return a new array from sorting elements using first their class and then <=>" do
-#    foo = Class.new { def <=>(obj); 4 <=> obj; end}.new
-    class D; def <=>(obj); 4 <=> obj; end; end
-    ass = D.new
+  
+  class D 
+    def <=>(obj) 
+      return 4 <=> obj unless obj.class == D
+      0
+    end
+  end
+
+  specify "sort should return a new array from sorting elements using <=> on the pivot" do
+    d = D.new
 
     [1, 1, 5, -5, 2, -10, 14, 6].sort.should == [-10, -5, 1, 1, 2, 5, 6, 14]
-    should_raise {[1, 1, 5, -5, 2, -10, 14, 6, ass].sort.should == [-10, -5, 1, 1, 2, ass, 5, 6, 14]}
+    [d, 1].sort.should == [1, d]
+  end
+
+  it 'will raise an ArgumentError if the comparison cannot be completed' do
+    d = D.new
+
+    # Fails essentially because of d.<=>(e) whereas d.<=>(1) would work
+    should_raise(ArgumentError) { [1, d].sort.should == [1, d] }
   end
   
   specify "sort may take a block which is used to determine the order of objects a and b described as -1, 0 or +1" do
@@ -627,11 +634,11 @@ context "Array instance methods" do
   
   specify "to_a called on a subclass of Array should return an instance of Array" do
     class E < Array; end
+    E.new.to_a.class.should == Array
     
     e = E.new
     e << 1
-    p e, e[0..-1]
-#    should_raise { F.new.to_a.class.should == Array }
+    e.to_a.should == [1]
   end
   
   specify "to_ary returns self" do
@@ -655,7 +662,7 @@ context "Array instance methods" do
     class G; def to_a(); [1, 2]; end; end
     class H; def to_ary(); [1, 2]; end; end
 
-    should_raise { [G.new, [:a, :b]].transpose } 
+    should_raise(TypeError) { [G.new, [:a, :b]].transpose } 
     [H.new, [:a, :b]].transpose.should == [[1, :a], [2, :b]]
   end
 
@@ -813,7 +820,7 @@ describe 'Array substringing using #[] and #slice' do
       [1, 2, 3, 4, 5].send(cmd, -2..-3).should == []
     end
 
-  end                         # slice, [] each
+  end                      
 end
 
 describe 'Array splicing using #[]=' do
@@ -986,6 +993,435 @@ describe 'Array splicing using #[]=' do
     a.should == [1, 2, 3, 8, 4, 5]
   end
 
+end
+
+describe 'Array packing' do
+  specify "pack('A') returns space padded string" do
+    ['abcde'].pack('A7').should == 'abcde  '
+  end
+
+  specify "pack('A') cuts string if its size greater than directive count" do
+    ['abcde'].pack('A3').should == 'abc'
+  end
+
+  specify "pack('A') consider count = 1 if count omited" do
+    ['abcde'].pack('A').should == 'a'
+  end
+
+  specify "pack('A') returns empty string if count = 0" do
+    ['abcde'].pack('A0').should == ''
+  end
+
+  specify "pack('A') returns the whole argument string with star parameter" do
+    ['abcdef'].pack('A*').should == 'abcdef'
+  end
+
+  specify "pack('A') raises TypeError if array item is not String" do
+    should_raise(TypeError) { [123].pack('A5') }
+    should_raise(TypeError) { [:hello].pack('A5') }
+    should_raise(TypeError) { [Object.new].pack('A5') }
+  end
+
+  specify "pack('a') returns null padded string" do
+    ['abcdef'].pack('a7').should == "abcdef\x0"
+  end
+
+  specify "pack('a') cuts string if its size greater than directive count" do
+    ['abcde'].pack('a3').should == 'abc'
+  end
+
+  specify "pack('a') consider count = 1 if count omited" do
+    ['abcde'].pack('a').should == 'a'
+  end
+
+  specify "pack('a') returns empty string if count = 0" do
+    ['abcde'].pack('a0').should == ''
+  end
+
+  specify "pack('a') returns the whole argument string with star parameter" do
+    ['abcdef'].pack('a*').should == 'abcdef'
+  end
+
+  specify "pack('a') raises TypeError if array item is not String" do
+    should_raise(TypeError) { [123].pack('a5') }
+    should_raise(TypeError) { [:hello].pack('a5') }
+    should_raise(TypeError) { [Object.new].pack('a5') }
+  end
+
+  specify "pack('C') returns string with char of appropriate number" do
+    [49].pack('C').should == '1'
+  end
+
+  specify "pack('C') reduces value to fit in byte" do
+    [257].pack('C').should == "\001"
+  end
+
+  specify "pack('C') converts negative values to positive" do
+    [-1].pack('C').should == [255].pack('C')
+    [-257].pack('C').should == [255].pack('C')
+  end
+
+  specify "pack('C') converts float to integer and returns char with that number" do
+    [5.0].pack('C').should == [5].pack('C')
+  end
+
+  specify "pack('C') calls to_i on symbol and returns char with that number" do
+    [:hello].pack('C').should == [:hello.to_i].pack('C')
+  end
+
+  specify "pack('C') raises TypeErorr if value is string" do
+    should_raise(TypeError) { ["hello"].pack('C') }
+  end
+
+  specify "pack('C') processes count number of array elements if count given" do
+    [1, 2, 3].pack('C3').should == "\001\002\003"
+  end
+
+  specify "pack('C') returns empty string if count = 0" do
+    [1, 2, 3].pack('C0').should == ''
+  end
+
+  specify "pack('C') with star parameter processes all remaining array items" do
+    [1, 2, 3, 4, 5].pack('C*').should == "\001\002\003\004\005"
+  end
+
+  specify "pack('C') raises ArgumentError if count is greater than array elements left" do
+    should_raise(ArgumentError) { [1, 2].pack('C3') }
+  end
+
+  specify "pack('c') returns string with char of appropriate number" do
+    [49].pack('c').should == '1'
+  end
+
+  specify "pack('c') reduces value to fit in byte" do
+    [257].pack('c').should == "\001"
+  end
+
+  specify "pack('c') converts negative values to positive" do
+    [-1].pack('c').should == [255].pack('C')
+    [-257].pack('c').should == [255].pack('C')
+  end
+
+  specify "pack('c') converts float to integer and returns char with that number" do
+    [5.0].pack('c').should == [5].pack('c')
+  end
+
+  specify "pack('c') calls to_i on symbol and returns char with that number" do
+    [:hello].pack('c').should == [:hello.to_i].pack('c')
+  end
+
+  specify "pack('c') raises TypeErorr if value is string" do
+    should_raise(TypeError) { ["hello"].pack('c') }
+  end
+
+  specify "pack('c') processes count number of array elements if count given" do
+    [1, 2, 3].pack('c3').should == "\001\002\003"
+  end
+
+  specify "pack('c') returns empty string if count = 0" do
+    [1, 2, 3].pack('c0').should == ''
+  end
+
+  specify "pack('c') with star parameter processes all remaining array items" do
+    [1, 2, 3, 4, 5].pack('c*').should == "\001\002\003\004\005"
+  end
+
+  specify "pack('c') raises ArgumentError if count is greater than array elements left" do
+    should_raise(ArgumentError) { [1, 2].pack('c3') }
+  end
+
+  specify "pack('M') enocdes string with Qouted Printable encoding" do
+    ["ABCDEF"].pack('M').should == "ABCDEF=\n"
+  end
+
+  specify "pack('M') doesn't encode new line chars" do
+    ["\nA"].pack('M').should == "\nA=\n"
+  end
+
+  specify "pack('M') always appends soft line break at the end of encoded string" do
+    ["ABC"].pack('M')[-2, 2].should == "=\n"
+  end
+
+  specify "pack('M') appends soft line break after each 72 chars + 1 encoded char in encoded string" do
+    s = ["A"*150].pack('M')
+    s[73, 2].should == "=\n"
+    s[148, 2].should == "=\n"
+
+    s = ["A"*72+"\001"].pack('M')
+    s[75, 2].should == "=\n"
+  end
+
+  specify "pack('M') doesn't quote chars 32..60 and 62..126)" do
+    32.upto(60) do |i|
+      [i.chr].pack('M').should == i.chr+"=\n"
+    end
+
+    62.upto(126) do |i|
+      [i.chr].pack('M').should == i.chr+"=\n"
+    end
+  end
+
+  specify "pack('M') quotes chars by adding equal sign and char's hex value" do
+    ["\001"].pack('M').should == "=01=\n"
+  end
+
+  specify "pack('M') quotes equal sign" do
+    ["="].pack('M').should == "=3D=\n"
+  end
+
+  specify "pack('M') doesn't quote \\t char" do
+    ["\t"].pack('M').should == "\t=\n"
+  end
+
+  specify "pack('M') returns empty string if source string is empty" do
+    [""].pack('M').should == ""
+  end
+
+  specify "pack('M') calls to_s on object to convert to string" do
+    class X; def to_s; "unnamed object"; end; end
+
+    [123].pack('M').should == "123=\n"
+    [:hello].pack('M').should == "hello=\n"
+    [X.new].pack('M').should == "unnamed object=\n"
+  end
+
+  specify "pack('M') ignores count parameter" do
+    ["ABC", "DEF", "GHI"].pack('M0').should == ["ABC"].pack('M')
+    ["ABC", "DEF", "GHI"].pack('M3').should == ["ABC"].pack('M')
+  end
+
+  specify "pack('M') ignores star parameter" do
+    ["ABC", "DEF", "GHI"].pack('M*').should == ["ABC"].pack('M')
+  end
+
+  specify "pack('m') encodes string with Base64 encoding" do
+    ["ABCDEF"].pack('m').should == "QUJDREVG\n"
+  end
+
+  specify "pack('m') converts series of 3-char sequences into four 4-char sequences" do
+    ["ABCDEFGHI"].pack('m').size.should == 4+4+4+1
+  end
+
+  specify "pack('m') fills chars with non-significant bits with '=' sign" do
+    ["A"].pack('m').should == "QQ==\n"
+  end
+
+  specify "pack('m') appends newline at the end of result string" do
+    ["A"].pack('m')[-1, 1].should == "\n"
+  end
+
+  specify "pack('m') appends newline after each 60 chars in result string" do
+    s = ["ABC"*31].pack('m')
+    s[60, 1].should == "\n"
+    s[121, 1].should == "\n"
+  end
+
+  specify "pack('m') encodes 6-bit char less than 26 with capital letters" do
+    [( 0*4).chr].pack('m').should == "AA==\n"
+    [( 1*4).chr].pack('m').should == "BA==\n"
+
+    [(25*4).chr].pack('m').should == "ZA==\n"
+  end
+
+  specify "pack('m') encodes 6-bit char from 26 to 51 with lowercase letters" do
+    [(26*4).chr].pack('m').should == "aA==\n"
+    [(27*4).chr].pack('m').should == "bA==\n"
+
+    [(51*4).chr].pack('m').should == "zA==\n"
+  end
+
+  specify "pack('m') encodes 6-bit char 62 with '+'" do
+    [(62*4).chr].pack('m').should == "+A==\n"
+  end
+
+  specify "pack('m') encodes 6-bit char 63 with '/'" do
+    [(63*4).chr].pack('m').should == "/A==\n"
+  end
+
+  specify "pack('m') returns empty string if source string is empty" do
+    [""].pack('m').should == ""
+  end
+
+  specify "pack('m') raises TypeError if corresponding array item is not string" do
+    should_raise(TypeError) { [123].pack('m') }
+    should_raise(TypeError) { [:hello].pack('m') }
+    should_raise(TypeError) { [Object.new].pack('m') }
+  end
+
+  specify "pack('m') ignores count parameter" do
+    ["ABC", "DEF", "GHI"].pack('m0').should == ["ABC"].pack('m')
+    ["ABC", "DEF", "GHI"].pack('m3').should == ["ABC"].pack('m')
+  end
+
+  specify "pack('m') ignores star parameter" do
+    ["ABC", "DEF", "GHI"].pack('m*').should == ["ABC"].pack('m')
+  end
+
+  specify "pack('u') encodes string with UU-encoding" do
+    ["ABCDEF"].pack('u').should == "&04)#1$5&\n"
+  end
+
+  specify "pack('u') converts series of 3-char sequences into four 4-char sequences" do
+    ["ABCDEFGHI"].pack('u').size.should == 4+4+4+1+1
+  end
+
+  specify "pack('u') appends zero-chars to source string if string length is not multiple of 3" do
+    ["A"].pack('u').should == "!00``\n"
+  end
+
+  specify "pack('u') appends newline at the end of result string" do
+    ["A"].pack('u')[-1, 1].should == "\n"
+  end
+
+  specify "pack('u') splits source string into lines with no more than 45 chars" do
+    s = ["A"*91].pack('u')
+    s[61, 1].should == "\n"
+    s[123, 1].should == "\n"
+  end
+
+  specify "pack('u') prepends encoded line length to each line" do
+    s = ["A"*50].pack('u')
+    s[ 0].should == 45+32
+    s[62].should ==  5+32
+  end
+
+  specify "pack('u') encodes 6-bit char with another char starting from char 32" do
+    [( 1*4).chr].pack('u').should == "!!```\n"
+    [(16*4).chr].pack('u').should == "!0```\n"
+    [(25*4).chr].pack('u').should == "!9```\n"
+    [(63*4).chr].pack('u').should == "!_```\n"
+  end
+
+  specify "pack('u') replaces spaces in encoded string with grave accent (`) char" do
+    [( 0*4).chr].pack('u').should == "!````\n"
+  end
+
+  specify "pack('u') returns empty string if source string is empty" do
+    [""].pack('u').should == ""
+  end
+
+  specify "pack('u') raises TypeError if corresponding array item is not string" do
+    should_raise(TypeError) { [123].pack('u') }
+    should_raise(TypeError) { [:hello].pack('u') }
+    should_raise(TypeError) { [Object.new].pack('u') }
+  end
+
+  specify "pack('u') ignores count parameter" do
+    ["ABC", "DEF", "GHI"].pack('u0').should == ["ABC"].pack('u')
+    ["ABC", "DEF", "GHI"].pack('u3').should == ["ABC"].pack('u')
+  end
+
+  specify "pack('u') ignores star parameter" do
+    ["ABC", "DEF", "GHI"].pack('u*').should == ["ABC"].pack('u')
+  end
+
+  specify "pack('X') decreases result string by one char" do
+    ['abcdef'].pack('A4X').should == 'abc'
+  end
+
+  specify "pack('X') with count decreases result string by count chars" do
+    ['abcdef'].pack('A6X4').should == 'ab'
+  end
+
+  specify "pack('X') with zero count doesnt change result string" do
+    ['abcdef'].pack('A6X0').should == 'abcdef'
+  end
+
+  specify "pack('X') treats start parameter as zero count" do
+    ['abcdef'].pack('A6X*').should == 'abcdef'
+  end
+
+  specify "pack('X') raises ArgumentError if count greater than already generated string length" do
+    should_raise(ArgumentError) { ['abcdef'].pack('A6X7') }
+  end
+
+  specify "pack('X') raises ArgumentError if it is first directive" do
+    should_raise(ArgumentError) { [].pack('X') }
+  end
+
+  specify "pack('x') returns zero-char string" do
+    [].pack('x').should == "\000"
+  end
+
+  specify "pack('x') with count returns string of count zero chars" do
+    [].pack('x5').should == "\000\000\000\000\000"
+  end
+
+  specify "pack('x') with count = 0 returns empty string" do
+    [].pack('x0').should == ""
+  end
+
+  specify "pack('x') with star parameter behaves like with count = 0" do
+    [].pack('x*').should == ""
+  end
+
+  specify "pack('Z') returns null padded string" do
+    ['abcdef'].pack('Z7').should == "abcdef\000"
+  end
+
+  specify "pack('Z') cuts string if its size greater than directive count" do
+    ['abcde'].pack('Z3').should == 'abc'
+  end
+
+  specify "pack('Z') consider count = 1 if count omited" do
+    ['abcde'].pack('Z').should == 'a'
+  end
+
+  specify "pack('Z') returns empty string if count = 0" do
+    ['abcde'].pack('Z0').should == ''
+  end
+
+  specify "pack('Z') returns the whole argument string plus null char with star parameter" do
+    ['abcdef'].pack('Z*').should == "abcdef\000"
+  end
+
+  specify "pack('Z') raises TypeError if array item is not String" do
+    should_raise(TypeError) { [123].pack('Z5') }
+    should_raise(TypeError) { [:hello].pack('Z5') }
+    should_raise(TypeError) { [Object.new].pack('Z5') }
+  end
+
+#      Directive    Meaning
+#      ---------------------------------------------------------------
+#          @     |  Moves to absolute position
+#          B     |  Bit string (descending bit order)
+#          b     |  Bit string (ascending bit order)
+#          D, d  |  Double-precision float, native format
+#          E     |  Double-precision float, little-endian byte order
+#          e     |  Single-precision float, little-endian byte order
+#          F, f  |  Single-precision float, native format
+#          G     |  Double-precision float, network (big-endian) byte order
+#          g     |  Single-precision float, network (big-endian) byte order
+#          H     |  Hex string (high nibble first)
+#          h     |  Hex string (low nibble first)
+#          I     |  Unsigned integer
+#          i     |  Integer
+#          L     |  Unsigned long
+#          l     |  Long
+#          N     |  Long, network (big-endian) byte order
+#          n     |  Short, network (big-endian) byte-order
+#          P     |  Pointer to a structure (fixed-length string)
+#          p     |  Pointer to a null-terminated string
+#          Q, q  |  64-bit number
+#          S     |  Unsigned short
+#          s     |  Short
+#          U     |  UTF-8
+#          V     |  Long, little-endian byte order
+#          v     |  Short, little-endian byte order
+#          w     |  BER-compressed integer\fnm
+
+end
+
+describe 'Empty Array' do
+end
+
+describe 'Array with one item' do
+end
+
+describe 'Array with multiple items' do
+end
+
+describe 'Array with multiple similar items' do
 end
 
 # Redundant, should be in Object --rue

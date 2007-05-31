@@ -7,9 +7,13 @@ require File.dirname(__FILE__) + '/../spec_helper'
 #  backtrace, exception, inspect, message, set_backtrace, to_s,
 #  to_str, to_yaml
 
+def check_ancestor(cls1, cls2)
+  cls1.ancestors.include?(cls2).should == true
+end
+
 context "Exception class method" do
   specify "new should create a new instance of Exception" do
-    Exception.new.class.ancestors.should_include Exception
+    check_ancestor(Exception.new.class, Exception)
   end
   
   specify "new with message should set the message of the Exception" do
@@ -17,7 +21,7 @@ context "Exception class method" do
   end
   
   specify "exception should be a synonym for new" do
-    Exception.exception.class.ancestors.should_include Exception
+    check_ancestor(Exception.exception.class, Exception)
   end
   
   specify "exception should return 'Exception' for message when no message given" do
@@ -45,63 +49,64 @@ end
 
 context "In the Exception class hierarchy" do
   specify "Exception should exist" do
-    Exception.new.class.ancestors.should_include Exception
+#    defined?(Exception).should == "constant"
+    Exception
   end
   
   specify "NoMemoryError should subclass Exception" do
-    NoMemoryError.new.class.ancestors.should_include Exception
+    check_ancestor(NoMemoryError, Exception)
   end
 
   specify "ScriptError should subclass Exception" do
-    ScriptError.new.class.ancestors.should_include Exception
+    check_ancestor(ScriptError, Exception)
   end
   
   specify "LoadError should subclass ScriptError" do
-    LoadError.new.class.ancestors.should_include ScriptError
+    check_ancestor(LoadError, ScriptError)
   end
 
   specify "NotImplementedError should subclass ScriptError" do
-    NotImplementedError.new.class.ancestors.should_include ScriptError
+    check_ancestor(NotImplementedError, ScriptError)
   end
 
   specify "SyntaxError should subclass ScriptError" do
-    SyntaxError.new.class.ancestors.should_include ScriptError
+    check_ancestor(SyntaxError, ScriptError)
   end
 
   specify "SignalException should subclass Exception" do
-    SignalException.new.class.ancestors.should_include Exception
+    check_ancestor(SignalException, Exception)
   end
   
   specify "Interrupt should subclass SignalException" do
-    Interrupt.new.class.ancestors.should_include SignalException
+    check_ancestor(Interrupt, SignalException)
   end
 
   specify "StandardError should subclass Exception" do
-    StandardError.new.class.ancestors.should_include Exception
+    check_ancestor(StandardError, Exception)
   end
   
   specify "ArgumentError should subclass StandardError" do
-    ArgumentError.new.class.ancestors.should_include StandardError
+    check_ancestor(ArgumentError, StandardError)
   end
 
   specify "IOError should subclass StandardError" do
-    IOError.new.class.ancestors.should_include StandardError
+    check_ancestor(IOError, StandardError)
   end
 
   specify "EOFError should subclass IOError" do
-    EOFError.new.class.ancestors.should_include IOError
+    check_ancestor(EOFError, IOError)
   end
   
   specify "IndexError should subclass StandardError" do
-    IndexError.new.class.ancestors.should_include StandardError
+    check_ancestor(IndexError, StandardError)
   end
 
   specify "LocalJumpError should subclass StandardError" do
-    LocalJumpError.new.class.ancestors.should_include StandardError
+    check_ancestor(LocalJumpError, StandardError)
   end
 
   specify "NameError should subclass StandardError" do
-    NameError.new.class.ancestors.should_include StandardError
+    check_ancestor(NameError, StandardError)
   end
   
   specify "NameError.new should take optional name argument" do
@@ -109,7 +114,7 @@ context "In the Exception class hierarchy" do
   end
   
   specify "NoMethodError should subclass NameError" do
-    NoMethodError.new.class.ancestors.should_include NameError
+    check_ancestor(NoMethodError, NameError)
   end
   
   specify "NoMethodError.new should allow passing method args" do
@@ -117,27 +122,27 @@ context "In the Exception class hierarchy" do
   end
 
   specify "RangeError should subclass StandardError" do
-    RangeError.new.class.ancestors.should_include StandardError
+    check_ancestor(RangeError, StandardError)
   end
   
   specify "FloatDomainError should subclass RangeError" do
-    FloatDomainError.new.class.ancestors.should_include RangeError
+    check_ancestor(FloatDomainError, RangeError)
   end
 
   specify "RegexpError should subclass StandardError" do
-    RegexpError.new.class.ancestors.should_include StandardError
+    check_ancestor(RegexpError, StandardError)
   end
 
   specify "RuntimeError should subclass StandardError" do
-    RuntimeError.new.class.ancestors.should_include StandardError
+    check_ancestor(RuntimeError, StandardError)
   end
 
   specify "SecurityError should subclass StandardError" do
-    SecurityError.new.class.ancestors.should_include StandardError
+    check_ancestor(SecurityError, StandardError)
   end
 
   specify "SystemCallError should subclass StandardError" do
-    SystemCallError.new("").class.ancestors.should_include StandardError
+    check_ancestor(SystemCallError.new("").class, StandardError)
   end
   
   specify "SystemCallError.new requires at least one argumentt" do
@@ -145,7 +150,7 @@ context "In the Exception class hierarchy" do
   end
   
   specify "SystemCallError.new should take optional errno argument" do
-    SystemCallError.new("message",1).class.ancestors.should_include SystemCallError
+    check_ancestor(SystemCallError.new("message",1).class, SystemCallError)
   end
   
   context "SystemCallError instance methods" do
@@ -159,22 +164,23 @@ context "In the Exception class hierarchy" do
   end
 
   specify "ThreadError should subclass StandardError" do
-    ThreadError.new.class.ancestors.should_include StandardError
+    check_ancestor(ThreadError, StandardError)
   end
 
   specify "TypeError should subclass StandardError" do
-    TypeError.new.class.ancestors.should_include StandardError
+    check_ancestor(TypeError, StandardError)
   end
 
   specify "ZeroDivisionError should subclass StandardError" do
-    ZeroDivisionError.new.class.ancestors.should_include StandardError
+    check_ancestor(ZeroDivisionError, StandardError)
   end
 
   specify "SystemExit should subclass Exception" do
-    SystemExit.new.class.ancestors.should_include Exception
+    check_ancestor(SystemExit, Exception)
   end
 
   specify "SystemStackError should subclass Exception" do
-    SystemStackError.new.class.ancestors.should_include Exception
+    check_ancestor(SystemStackError, Exception)
   end
 end
+

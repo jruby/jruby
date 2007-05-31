@@ -47,7 +47,7 @@ context 'Using the literal form to create Symbols' do
   end
 
   specify 'The string may not be empty' do
-    should_raise(Exception) { eval ":''" }
+    should_raise(SyntaxError) { eval ":''" }
   end
 
   specify '%s general-delimited expression creates Symbols like a single-quoted String' do

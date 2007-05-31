@@ -132,9 +132,18 @@ context "Kernel.fail()" do
     should_raise(RuntimeError) { fail }
   end
 
+  specify "should accept an Object with an exception method returning an Exception" do
+    class Boring
+      def self.exception(msg)
+        StandardError.new msg
+      end
+    end
+    should_raise(StandardError) { fail Boring, "..." }
+  end
+
   specify "should instantiate specified exception class" do
     class LittleBunnyFooFoo < RuntimeError; end
-    should_raise(LittleBunnyFooFoo) { fail LittleBunnyFooFoo.new }
+    should_raise(LittleBunnyFooFoo) { fail LittleBunnyFooFoo }
   end
 
   specify "should use specified message" do
@@ -189,7 +198,34 @@ context "Kernel.warn()" do
   end
 end
 
+
 describe "A class with the Functions mixin" do
+  specify "loop calls block until it is terminated by a break" do
+    i = 0
+    loop do
+      i += 1
+      break if i == 10
+    end
+
+    i.should == 10
+  end
+
+  specify "loop returns value passed to break" do
+    loop do
+      break 123
+    end.should == 123
+  end
+
+  specify "loop returns nil if no value passed to break" do
+    loop do
+      break
+    end.should == nil
+  end
+
+  specify "loop raises LocalJumpError if no block given" do
+    should_raise(LocalJumpError) { loop }
+  end
+
   it "srand should return the previous seed value" do
     srand(10)
     srand(20).should == 10
@@ -233,6 +269,21 @@ describe "A class with the Functions mixin" do
     1000.times do
       (rand(100) < 100).should == true
     end
+  end
+
+  it "caller returns current execution stack" do
+    def a(skip)
+      caller(skip)
+    end
+    def b(skip)
+      a(skip)
+    end
+    def c(skip)
+      b(skip)
+    end
+    c(0)[0].should == "./spec/core/kernel_spec.rb:279:in `a'"
+    c(0)[1].should == "./spec/core/kernel_spec.rb:282:in `b'"
+    c(0)[2].should == "./spec/core/kernel_spec.rb:285:in `c'"
   end
 end
 
