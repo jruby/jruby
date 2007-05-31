@@ -103,6 +103,8 @@ import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.ByteList;
+import org.jruby.util.IOInputStream;
+import org.jruby.util.IOOutputStream;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
@@ -1041,20 +1043,22 @@ public final class Ruby {
     }
 
     public PrintStream getErrorStream() {
-        java.io.OutputStream os = ((RubyIO) getGlobalVariables().get("$stderr")).getOutStream();
+        // FIXME: We can't guarantee this will always be a RubyIO...so the old code here is not safe
+        /*java.io.OutputStream os = ((RubyIO) getGlobalVariables().get("$stderr")).getOutStream();
         if(null != os) {
             return new PrintStream(os);
         } else {
             return new PrintStream(new org.jruby.util.SwallowingOutputStream());
-        }
+        }*/
+        return new PrintStream(new IOOutputStream(getGlobalVariables().get("$stderr")));
     }
 
     public InputStream getInputStream() {
-        return ((RubyIO) getGlobalVariables().get("$stdin")).getInStream();
+        return new IOInputStream(getGlobalVariables().get("$stdin"));
     }
 
     public PrintStream getOutputStream() {
-        return new PrintStream(((RubyIO) getGlobalVariables().get("$stdout")).getOutStream());
+        return new PrintStream(new IOOutputStream(getGlobalVariables().get("$stdout")));
     }
 
     public RubyModule getClassFromPath(String path) {

@@ -137,3 +137,33 @@ test_ok(File.delete(@file, @file2, @file3))
 test_equal(nil, select(nil, nil, nil, 0))
 test_exception(ArgumentError) { select(nil, nil, nil, -1) }
 
+class FakeStream
+  attr_accessor :data
+  def initialize(stream, passthrough = false)
+    @stream = stream
+    @passthrough = passthrough
+  end
+  def write(content)
+    @data = content
+    @stream.write(content) if @passthrough
+  end
+end
+
+old_stderr = $stderr
+old_stdout = $stdout
+old_stdin = $stdin
+
+begin
+  test_no_exception {
+    $stderr = FakeStream.new($stderr)
+    $stdout = FakeStream.new($stdout)
+    
+    system("ruby -e '$stdout.write(42); $stderr.write(24)'")
+    
+    test_equal("42", $stdout.data)
+    test_equal("24", $stderr.data)
+  }
+ensure
+  $stderr = old_stderr
+  $stdout = old_stdout
+end
