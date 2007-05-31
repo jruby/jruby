@@ -3,6 +3,7 @@ set _MEM=-Xmx256m
 set _STK=-Xss1024k
 set _VM_OPTS=
 set _RUBY_OPTS=
+set _DFLT_VM_OPTS=-Xverify:none -da -Dfile.encoding=ISO_8859_1
 
 :vmoptsLoop
 set _ARG=%1
@@ -31,7 +32,8 @@ shift
 goto vmoptsLoop
 
 :vmoptsDone
-set _VM_OPTS=%_VM_OPTS% %_MEM% %_STK% -Xverify:none -da
+set _VM_OPTS=%_VM_OPTS% %_MEM% %_STK% %_DFLT_VM_OPTS%
+set _DFLT_VM_OPTS=
 set _MEM=
 set _STK=
 set _ARG=
