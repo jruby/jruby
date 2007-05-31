@@ -140,9 +140,13 @@ public class RubyFile extends RubyIO {
         fileClass.defineConstant("SEPARATOR", separator);
         fileClass.defineConstant("Separator", separator);
         
-        RubyString altSeparator = runtime.newString(File.separatorChar == '/' ? "\\" : "/");
-        altSeparator.freeze();
-        fileClass.defineConstant("ALT_SEPARATOR", altSeparator);
+        if (File.separatorChar == '\\') {
+            RubyString altSeparator = runtime.newString("\\");
+            altSeparator.freeze();
+            fileClass.defineConstant("ALT_SEPARATOR", altSeparator);
+        } else {
+            fileClass.defineConstant("ALT_SEPARATOR", runtime.getNil());
+        }
         
         RubyString pathSeparator = runtime.newString(File.pathSeparator);
         pathSeparator.freeze();

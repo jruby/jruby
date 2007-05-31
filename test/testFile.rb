@@ -235,3 +235,10 @@ test_no_exception {
   File.new("build.xml").ctime
 }
 
+# FIXME: Not sure how I feel about pulling in Java here
+include Java
+if java::lang::System.get_property("file.separator") == '/'
+  test_equal(nil, File::ALT_SEPARATOR)
+else
+  test_equal("\\", File::ALT_SEPARATOR)
+end
