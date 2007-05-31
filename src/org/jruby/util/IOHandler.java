@@ -205,6 +205,24 @@ public abstract class IOHandler {
     public abstract void seek(long offset, int type) throws IOException, PipeException, InvalidValueException;
     public abstract void truncate(long newLength) throws IOException, PipeException;
     
+    /**
+     * Implement IO#ready? as per io/wait in MRI.
+     * returns non-nil if input available without blocking, or nil.
+     */
+    public abstract int ready() throws IOException;
+
+    /**
+     * Implement IO#wait as per io/wait in MRI.
+     * waits until input available or timed out and returns self, or nil when EOF reached.
+     *
+     * The default implementation loops while ready returns 0.
+     */
+    public void waitUntilReady() throws IOException, InterruptedException {
+        while (ready() == 0) {
+            Thread.sleep(10);
+        }
+    }
+
     public boolean hasPendingBuffered() {
         return false;
     }

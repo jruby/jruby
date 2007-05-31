@@ -509,4 +509,12 @@ public class IOHandlerNio extends IOHandler {
     public boolean hasPendingBuffered() {
         return ungotc >= 0 || (bufferedIO && inBuffer.remaining() > 0);
     }
+
+    public int ready() throws IOException {
+        if (bufferedIO) {
+            return inBuffer.remaining();
+        } else {
+            return ungotc;
+        }
+    }
 }

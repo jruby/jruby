@@ -221,4 +221,8 @@ public abstract class IOHandlerJavaIO extends IOHandler {
 
     public abstract InputStream getInputStream();
     public abstract OutputStream getOutputStream();
+    
+    public int ready() throws IOException {
+        return getInputStream().available();
+    }
 }

@@ -125,4 +125,8 @@ public class IOHandlerNull extends IOHandler {
 
     public void truncate(long newLength) throws IOException, PipeException {
     }
+    
+    public int ready() {
+        return 0;
+    }
 }

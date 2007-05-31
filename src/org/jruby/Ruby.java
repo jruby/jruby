@@ -82,6 +82,7 @@ import org.jruby.libraries.EnumeratorLibrary;
 import org.jruby.libraries.BigDecimalLibrary;
 import org.jruby.libraries.DigestLibrary;
 import org.jruby.libraries.ThreadLibrary;
+import org.jruby.libraries.IOWaitLibrary;
 import org.jruby.ext.socket.RubySocket;
 import org.jruby.ext.Generator;
 import org.jruby.ext.Readline;
@@ -664,6 +665,11 @@ public final class Ruby {
             }
         }
 
+        final Library NO_OP_LIBRARY = new Library() {
+                public void load(Ruby runtime) throws IOException {
+                }
+            };
+
         registerBuiltin("jruby.rb", new JRubyLibrary());
         registerBuiltin("iconv.rb", new IConvLibrary());
         registerBuiltin("nkf.rb", new NKFLibrary());
@@ -689,10 +695,8 @@ public final class Ruby {
         registerBuiltin("digest/sha1.rb", new DigestLibrary.SHA1());
         registerBuiltin("digest/sha2.rb", new DigestLibrary.SHA2());
         registerBuiltin("bigdecimal.rb", new BigDecimalLibrary());
-        registerBuiltin("etc.so", new Library() {
-                public void load(Ruby runtime) throws IOException {
-                    //TODO: implement this
-                }});
+        registerBuiltin("io/wait.so", new IOWaitLibrary());
+        registerBuiltin("etc.so", NO_OP_LIBRARY);
     }
 
     private void registerBuiltin(String nm, Library lib) {
