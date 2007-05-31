@@ -426,7 +426,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
     
     public void truncate(long newLength) throws IOException {
         invalidateBuffer();
-        channel.truncate(newLength);
+        file.setLength(newLength);
     }
     
     public FileChannel getFileChannel() {
