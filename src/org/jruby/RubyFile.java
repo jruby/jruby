@@ -68,11 +68,11 @@ import org.jruby.util.IOHandler.InvalidValueException;
  * @author jpetersen
  **/
 public class RubyFile extends RubyIO {
-	public static final int LOCK_SH = 1;
-	public static final int LOCK_EX = 2;
-	public static final int LOCK_NB = 4;
-	public static final int LOCK_UN = 8;
-    
+    public static final int LOCK_SH = 1;
+    public static final int LOCK_EX = 2;
+    public static final int LOCK_NB = 4;
+    public static final int LOCK_UN = 8;
+
     private static final int FNM_NOESCAPE = 1;
     private static final int FNM_PATHNAME = 2;
     private static final int FNM_DOTMATCH = 4;
@@ -81,45 +81,45 @@ public class RubyFile extends RubyIO {
     protected String path;
     private FileLock currentLock;
     
-	public RubyFile(Ruby runtime, RubyClass type) {
-	    super(runtime, type);
-	}
-
-	public RubyFile(Ruby runtime, String path) {
-		this(runtime, path, open(runtime, path));
+    public RubyFile(Ruby runtime, RubyClass type) {
+        super(runtime, type);
     }
-
-	// use static function because constructor call must be first statement in above constructor 
-	private static InputStream open(Ruby runtime, String path) {
-		try {
-			return new FileInputStream(path);
-		} catch (FileNotFoundException e) {
+    
+    public RubyFile(Ruby runtime, String path) {
+        this(runtime, path, open(runtime, path));
+    }
+    
+    // use static function because constructor call must be first statement in above constructor
+    private static InputStream open(Ruby runtime, String path) {
+        try {
+            return new FileInputStream(path);
+        } catch (FileNotFoundException e) {
             throw runtime.newIOError(e.getMessage());
         }
-	}
+    }
     
-	// XXX This constructor is a hack to implement the __END__ syntax.
-	//     Converting a reader back into an InputStream doesn't generally work.
-	public RubyFile(Ruby runtime, String path, final Reader reader) {
-		this(runtime, path, new InputStream() {
-			public int read() throws IOException {
-				return reader.read();
-			}
-		});
-	}
-	
-	private RubyFile(Ruby runtime, String path, InputStream in) {
+    // XXX This constructor is a hack to implement the __END__ syntax.
+    //     Converting a reader back into an InputStream doesn't generally work.
+    public RubyFile(Ruby runtime, String path, final Reader reader) {
+        this(runtime, path, new InputStream() {
+            public int read() throws IOException {
+                return reader.read();
+            }
+        });
+    }
+    
+    private RubyFile(Ruby runtime, String path, InputStream in) {
         super(runtime, runtime.getClass("File"));
         this.path = path;
-		try {
+        try {
             this.handler = new IOHandlerUnseekable(runtime, in, null);
         } catch (IOException e) {
-            throw runtime.newIOError(e.getMessage());  
+            throw runtime.newIOError(e.getMessage());
         }
         this.modes = handler.getModes();
         registerIOHandler(handler);
-	}
-    
+    }
+
     private static ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyFile instance = new RubyFile(runtime, klass);
@@ -158,6 +158,7 @@ public class RubyFile extends RubyIO {
         fileClass.setConstant("BINARY", runtime.newFixnum(IOModes.BINARY));
         fileClass.setConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
         fileClass.setConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
+        fileClass.setConstant("FNM_SYSCASE", runtime.newFixnum(FNM_CASEFOLD));
         fileClass.setConstant("FNM_DOTMATCH", runtime.newFixnum(FNM_DOTMATCH));
         fileClass.setConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
         

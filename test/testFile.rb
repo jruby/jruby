@@ -242,3 +242,5 @@ if java::lang::System.get_property("file.separator") == '/'
 else
   test_equal("\\", File::ALT_SEPARATOR)
 end
+
+test_equal(File::FNM_CASEFOLD, File::FNM_SYSCASE)
