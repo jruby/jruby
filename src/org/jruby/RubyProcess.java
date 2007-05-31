@@ -122,7 +122,6 @@ public class RubyProcess {
         private static final long EXIT_SUCCESS = 0L;
         public RubyStatus(Ruby runtime, RubyClass metaClass, long status) {
             super(runtime, metaClass);
-            
             this.status = status;
         }
         
@@ -136,8 +135,6 @@ public class RubyProcess {
         
         public IRubyObject rightshift_op(IRubyObject other, Block block) {
             long shiftValue = other.convertToInteger().getLongValue();
-            
-            
             return getRuntime().newFixnum(status >> shiftValue);
         }
         
@@ -146,11 +143,11 @@ public class RubyProcess {
         }
 
         public IRubyObject to_i(Block unusedBlock) {
-            return exitstatus(null);
+            return getRuntime().newFixnum(shiftedValue());
         }
         
         public IRubyObject to_s(Block unusedBlock) {
-            return getRuntime().newString(String.valueOf(status));
+            return getRuntime().newString(String.valueOf(shiftedValue()));
         }
         
         public IRubyObject inspect(Block unusedBlock) {
@@ -159,6 +156,10 @@ public class RubyProcess {
         
         public IRubyObject success_p(Block unusedBlock) {
             return getRuntime().newBoolean(status == EXIT_SUCCESS);
+        }
+        
+        private long shiftedValue() {
+            return status << 8;
         }
     }
     
