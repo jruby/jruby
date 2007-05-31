@@ -159,6 +159,7 @@ if $cygwin; then
 fi
 
 exec "$JAVA_CMD" $JAVA_OPTS -classpath "$CP"	\
+  "-Dfile.encoding=raw" \
   "-Djruby.base=$JRUBY_BASE" "-Djruby.home=$JRUBY_HOME"				\
   "-Djruby.lib=$JRUBY_BASE/lib" -Djruby.script=jruby				\
   "-Djruby.shell=$JRUBY_SHELL"  						\

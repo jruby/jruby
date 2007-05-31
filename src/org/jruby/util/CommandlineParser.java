@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -232,7 +233,11 @@ public class CommandlineParser {
     }
 
     public String inlineScript() {
-        return inlineScript.toString();
+        try {
+            return new String(inlineScript.toString().getBytes(), "ISO-8859-1");
+        } catch (UnsupportedEncodingException e) {
+            return inlineScript.toString();
+        }
     }
 
     public List requiredLibraries() {
@@ -260,6 +265,7 @@ public class CommandlineParser {
                     File file = new File(getScriptFileName());
                     return new BufferedReader(new InputStreamReader(new FileInputStream(file), KCode.NONE.decoder()));
                 }
+                
                 return new StringReader(inlineScript());
             } else if (isSourceFromStdin()) {
                 return new InputStreamReader(System.in, KCode.NONE.decoder());
