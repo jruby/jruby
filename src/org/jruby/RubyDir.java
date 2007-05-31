@@ -111,6 +111,14 @@ public class RubyDir extends RubyObject {
 
         return dirClass;
     }
+    
+    private final void checkDir() {
+        if (!isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: operation on untainted Dir");
+     
+        testFrozen("");
+        
+        if (!isOpen) throw getRuntime().newIOError("closed directory");
+    }    
 
     /**
      * Creates a new <code>Dir</code>.  This method takes a snapshot of the
@@ -331,6 +339,8 @@ public class RubyDir extends RubyObject {
      */
     public IRubyObject close() {
         // Make sure any read()s after close fail.
+        checkDir();
+        
         isOpen = false;
 
         return getRuntime().getNil();
@@ -340,6 +350,8 @@ public class RubyDir extends RubyObject {
      * Executes the block once for each entry in the directory.
      */
     public IRubyObject each(Block block) {
+        checkDir();
+        
         String[] contents = snapshot;
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i=0; i<contents.length; i++) {
@@ -352,6 +364,7 @@ public class RubyDir extends RubyObject {
      * Returns the current position in the directory.
      */
     public RubyInteger tell() {
+        checkDir();
         return getRuntime().newFixnum(pos);
     }
 
@@ -360,6 +373,8 @@ public class RubyDir extends RubyObject {
      * returned by <code>tell</code> or 0.
      */
     public IRubyObject seek(IRubyObject newPos) {
+        checkDir();
+        
         setPos(newPos);
         return this;
     }
@@ -370,18 +385,14 @@ public class RubyDir extends RubyObject {
     }
 
     public IRubyObject path() {
-        if (!isOpen) {
-            throw getRuntime().newIOError("closed directory");
-        }
+        checkDir();
         
-        return path;
+        return path.strDup();
     }
 
     /** Returns the next entry from this directory. */
     public IRubyObject read() {
-	if (!isOpen) {
-	    throw getRuntime().newIOError("Directory already closed");
-	}
+        checkDir();
 
         if (pos >= snapshot.length) {
             return getRuntime().getNil();
@@ -394,7 +405,8 @@ public class RubyDir extends RubyObject {
     /** Moves position in this directory to the first entry. */
     public IRubyObject rewind() {
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: can't close");
-        
+        checkDir();
+
         pos = 0;
         return this;
     }
