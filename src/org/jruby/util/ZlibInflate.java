@@ -89,7 +89,7 @@ public class ZlibInflate {
         byte[] outp = new byte[1024];
         ByteList buf = collected;
         collected = new ByteList(BASE_SIZE);
-        flater.setInput(buf.bytes,0,buf.realSize);
+        flater.setInput(buf.bytes, buf.begin, buf.realSize);
         int resultLength = -1;
         while (!flater.finished() && resultLength != 0) {
             resultLength = flater.inflate(outp);

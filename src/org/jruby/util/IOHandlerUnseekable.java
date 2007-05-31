@@ -294,7 +294,7 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
         int read = 0;
         int n;
         while(read < length) {
-            n = input.read(buf.bytes,off+read,length-read);
+            n = input.read(buf.bytes, buf.begin + off + read, length - read);
             if(n == -1) {
                 if(read == 0) {
                     throw new java.io.EOFException();

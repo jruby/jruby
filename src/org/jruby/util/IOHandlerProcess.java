@@ -211,7 +211,7 @@ public class IOHandlerProcess extends IOHandlerJavaIO {
             return 0;
         }
         
-        output.write(buf.bytes,0,buf.realSize);
+        output.write(buf.bytes, buf.begin, buf.realSize);
 
         // Should syswrite sync?
         if (isSync) {

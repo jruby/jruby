@@ -819,7 +819,7 @@ public class RubyFile extends RubyIO {
         
         ByteList pattern = args[0].convertToString().getByteList();
         ByteList path = args[1].convertToString().getByteList();
-        if (org.jruby.util.Dir.fnmatch(pattern.bytes, 0, pattern.realSize , path.bytes, 0, path.realSize, flags) == 0) {
+        if (org.jruby.util.Dir.fnmatch(pattern.bytes, pattern.begin, pattern.realSize , path.bytes, path.begin, path.realSize, flags) == 0) {
             return runtime.getTrue();
         }
         return runtime.getFalse();

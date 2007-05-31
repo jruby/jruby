@@ -66,14 +66,14 @@ public abstract class IOHandlerJavaIO extends IOHandler {
         ByteList buffer = new ByteList();
 
         LineLoop : while (true) {
-            while (c != separator.bytes[0] && c != -1) {
+            while (c != separator.bytes[separator.begin] && c != -1) {
                 buffer.append(c);
                 c = (byte)read();
             }
             for (int i = 0; i < separator.realSize; i++) {
                 if (c == -1) {
                     break LineLoop;
-                } else if (c != separator.bytes[i]) {
+                } else if (c != separator.bytes[separator.begin + i]) {
                     continue LineLoop;
                 }
                 buffer.append(c);
@@ -85,7 +85,7 @@ public abstract class IOHandlerJavaIO extends IOHandler {
         }
 
         if (separatorString == PARAGRAPH_DELIMETER) {
-            while (c == separator.bytes[0]) {
+            while (c == separator.bytes[separator.begin]) {
                 c = (byte)read();
             }
             ungetc(c);

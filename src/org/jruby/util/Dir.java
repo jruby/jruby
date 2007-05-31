@@ -317,7 +317,7 @@ public class Dir {
                 buf.append(str,s,lbrace-s);
                 buf.append(str, t, p-t);
                 buf.append(str, rbrace+1, slen-(rbrace+1));
-                status = push_braces(cwd, ary, buf.bytes, 0, buf.realSize, flags);
+                status = push_braces(cwd, ary, buf.bytes, buf.begin, buf.realSize, flags);
                 if(status != 0) {
                     break;
                 }
@@ -495,7 +495,7 @@ public class Dir {
                             buf.length(0);
                             buf.append(base);
                             buf.append(_path, p + (base.length > 0 ? m : m + 1), plen - (p + (base.length > 0 ? m : m + 1)));
-                            status = glob_helper(cwd, buf.bytes, 0, buf.realSize, n, flags, func, arg);
+                            status = glob_helper(cwd, buf.bytes, buf.begin, buf.realSize, n, flags, func, arg);
                             if(status != 0) {
                                 break finalize;
                             }
@@ -516,16 +516,16 @@ public class Dir {
                             buf.append( BASE(base) ? SLASH : EMPTY );
                             buf.append(dirp[i].getBytes());
                             if(buf.bytes[0] == '/' || (DOSISH && 2<buf.realSize && buf.bytes[1] == ':' && isdirsep(buf.bytes[2]))) {
-                                st = new File(new String(buf.bytes,0,buf.realSize));
+                                st = new File(new String(buf.bytes, buf.begin, buf.realSize));
                             } else {
-                                st = new File(cwd, new String(buf.bytes,0,buf.realSize));
+                                st = new File(cwd, new String(buf.bytes, buf.begin, buf.realSize));
                             }
                             if(st.isDirectory()) {
                                 int t = buf.realSize;
                                 buf.append(SLASH);
                                 buf.append(DOUBLE_STAR);
                                 buf.append(_path, p+m, plen-(p+m));
-                                status = glob_helper(cwd, buf.bytes, 0, buf.realSize, t, flags, func, arg);
+                                status = glob_helper(cwd, buf.bytes, buf.begin, buf.realSize, t, flags, func, arg);
                                 if(status != 0) {
                                     break;
                                 }

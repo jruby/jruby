@@ -169,7 +169,7 @@ public class RubyDir extends RubyObject {
             cwd2 = cwd;
         }
 
-        List l = Dir.push_glob(cwd2, pt.bytes, 0, pt.realSize, flags);
+        List l = Dir.push_glob(cwd2, pt.bytes, pt.begin, pt.realSize, flags);
         
         if(block.isGiven()) {
             ThreadContext context = recv.getRuntime().getCurrentContext();
