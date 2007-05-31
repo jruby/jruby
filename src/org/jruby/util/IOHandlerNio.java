@@ -144,7 +144,7 @@ public class IOHandlerNio extends IOHandler {
         outBuffer.flip();
         flushOutBuffer();
     
-        ByteBuffer buffer = ByteBuffer.wrap(string.bytes,0,string.realSize);
+        ByteBuffer buffer = ByteBuffer.wrap(string.bytes, string.begin, string.realSize);
         while (buffer.hasRemaining()) {
         if (((WritableByteChannel) channel).write(buffer) < 0) {
             // does this ever happen??
@@ -233,7 +233,7 @@ public class IOHandlerNio extends IOHandler {
         search_loop:
         for (int i = haystack.position(); i + (needle.realSize - 1) < haystack.limit(); i++) {
             for (int j = 0; j < needle.realSize; j++) {
-                if (haystack.get(i + j) != needle.bytes[j]) {
+                if (haystack.get(i + j) != needle.bytes[needle.begin + j]) {
                     continue search_loop;
                 }
             }
@@ -281,7 +281,7 @@ public class IOHandlerNio extends IOHandler {
     public int write(ByteList string) throws IOException, BadDescriptorException {
         checkWritable();
 
-        ByteBuffer buffer = ByteBuffer.wrap(string.bytes,0,string.realSize);
+        ByteBuffer buffer = ByteBuffer.wrap(string.bytes, string.begin, string.realSize);
         do {
             /* append data */
             while (buffer.hasRemaining() && outBuffer.hasRemaining()) {
