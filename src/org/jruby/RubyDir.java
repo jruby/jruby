@@ -393,8 +393,10 @@ public class RubyDir extends RubyObject {
 
     /** Moves position in this directory to the first entry. */
     public IRubyObject rewind() {
+        if (!isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: can't close");
+        
         pos = 0;
-        return getRuntime().newFixnum(pos);
+        return this;
     }
 
 // ----- Helper Methods --------------------------------------------------------
