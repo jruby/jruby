@@ -9,7 +9,7 @@ module JRuby
   # extract META-INF/jruby.home/**/* to somewhere.
   class Extract
     def initialize(dir = nil)
-      unless need_extract?
+      if need_extract?
         @this_archive = __FILE__ =~ /file:([^!]*)!.*/ && $1
         raise "error: can't locate enclosed archive from #{__FILE__}" if @this_archive.nil?
         @this_archive = java.net.URLDecoder.decode(@this_archive, "utf-8")
