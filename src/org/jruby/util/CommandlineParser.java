@@ -175,9 +175,7 @@ public class CommandlineParser {
                     kcode = KCode.create(null, eArg);
                     break;
                 case 'S':
-                    scriptFileName = System.getProperty("jruby.home") + "/bin/" + grabValue("provide a value for -S");
-                    hasInlineScript = true;
-                    endOfArguments = true; // remaining args are for testrb
+                    runBinScript();
                     break FOR;
                 case '-' :
                     if (argument.equals("--version")) {
@@ -191,13 +189,9 @@ public class CommandlineParser {
                         main.printUsage();
                         shouldRunInterpreter = false;
                         break;
-                    } else if (argument.equals("--command")) {
-                        requiredLibraries.add("jruby/commands");
+                    } else if (argument.equals("--command") || argument.equals("--bin")) {
                         characterIndex = argument.length();
-                        inlineScript.append("JRuby::Commands." + grabValue("provide a command to execute"));
-                        inlineScript.append("\n");
-                        hasInlineScript = true;
-                        endOfArguments = true;
+                        runBinScript();
                         break;
                     } else {
                         if (argument.equals("--")) {
@@ -205,12 +199,20 @@ public class CommandlineParser {
                             // Usage: ruby [switches] [--] [programfile] [arguments])
                             endOfArguments = true;
                             break;
-                        }                    	
+                        }
                     }
                 default :
                     throw new MainExitException(1, "unknown option " + argument.charAt(characterIndex));
             }
         }
+    }
+
+    private void runBinScript() {
+        requiredLibraries.add("jruby/commands");
+        inlineScript.append("JRuby::Commands." + grabValue("provide a bin script to execute"));
+        inlineScript.append("\n");
+        hasInlineScript = true;
+        endOfArguments = true;
     }
 
     private String grabValue(String errorMessage) {

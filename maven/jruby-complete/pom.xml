@@ -131,15 +131,25 @@
               <tasks>
                 <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
                   classpath="${project.basedir}/../../lib/jarjar-0.7.jar"/>
-                <java classname="org.jruby.Main" fork="true">
+                <java classname="org.jruby.Main" fork="true" maxmemory="256m" failonerror="true">
                   <classpath refid="maven.compile.classpath"/>
                   <sysproperty key="jruby.home" value="${project.build.outputDirectory}/META-INF/jruby.home"/>
                   <arg value="--command"/>
-                  <arg value="maybe_install_gems"/>
+                  <arg value="gem"/>
+                  <arg value="install"/>
                   <arg value="rspec"/>
                   <arg value="rake"/>
+                  <arg value="--no-ri"/>
+                  <arg value="--no-rdoc"/>
                 </java>
-                <delete file="${project.build.directory}/${project.build.finalName}.jar"/>
+                <delete>
+                  <fileset dir="${project.build.outputDirectory}">
+                    <include name="META-INF/jruby.home/lib/ruby/gems/1.8/source_cache"/>
+                    <include name="META-INF/maven/**"/>
+                  </fileset>
+                  <fileset dir="${project.build.directory}"
+                    includes="${project.build.finalName}.jar"/>
+                </delete>
                 <jarjar destfile="${project.build.directory}/${project.build.finalName}.jar">
                   <fileset dir="${project.build.outputDirectory}">
                     <include name="META-INF/jruby.home/**/*"/>

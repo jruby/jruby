@@ -10,7 +10,7 @@ module JRuby
             meth = File.basename(f)
             define_method meth do
               require 'jruby/extract'
-              JRuby::Extract.new.extract unless File.directory?(Config::CONFIG['rubylibdir'])
+              JRuby::Extract.new.extract
               load f
             end
           end
@@ -19,7 +19,7 @@ module JRuby
         # allow use of 'gem' and 'jirb' without prior extraction
         def gem
           require 'jruby/extract'
-          JRuby::Extract.new.extract unless File.directory?(Config::CONFIG['rubylibdir'])
+          JRuby::Extract.new.extract
           require 'rubygems'
           Gem.manage_gems
           Gem::GemRunner.new.run(ARGV)
@@ -28,12 +28,12 @@ module JRuby
         def jirb
           require 'irb'
           IRB.start(__FILE__)
-        end  
+        end
       end
 
       def maybe_install_gems
         require 'jruby/extract'
-        JRuby::Extract.new.extract unless File.directory?(Config::CONFIG['rubylibdir'])
+        JRuby::Extract.new.extract
         require 'rubygems'
         ARGV.delete_if do |g|
           begin

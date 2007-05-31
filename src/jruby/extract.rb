@@ -9,14 +9,21 @@ module JRuby
   # extract META-INF/jruby.home/**/* to somewhere.
   class Extract
     def initialize(dir = nil)
-      @this_archive = __FILE__ =~ /file:([^!]*)!.*/ && $1
-      raise "error: can't locate enclosed archive from #{__FILE__}" if @this_archive.nil?
-      @this_archive = java.net.URLDecoder.decode(@this_archive, "utf-8")
-      @zip = ZipFile.new(@this_archive)
-      @destination = dir || Config::CONFIG['prefix']
+      unless need_extract?
+        @this_archive = __FILE__ =~ /file:([^!]*)!.*/ && $1
+        raise "error: can't locate enclosed archive from #{__FILE__}" if @this_archive.nil?
+        @this_archive = java.net.URLDecoder.decode(@this_archive, "utf-8")
+        @zip = ZipFile.new(@this_archive)
+        @destination = dir || Config::CONFIG['prefix']
+      end
+    end
+
+    def need_extract?
+      !File.directory?(Config::CONFIG['rubylibdir'])
     end
 
     def entries
+      return [] unless @zip
       enum = @zip.entries
       def enum.each
         while hasMoreElements
@@ -35,8 +42,10 @@ module JRuby
           write_entry entry, "lib/ruby/1.8/#{entry.name}"
         end
       end
-      puts "copying #{@this_archive} to #{@destination}/lib"
-      FileUtils.cp(@this_archive, "#{@destination}/lib")
+      if @this_archive
+        puts "copying #{@this_archive} to #{@destination}/lib"
+        FileUtils.cp(@this_archive, "#{@destination}/lib")
+      end
     end
     
     def write_entry(entry, name)
