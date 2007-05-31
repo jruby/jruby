@@ -1817,8 +1817,12 @@ public class RubyString extends RubyObject {
             } else {
                 modify();
             }
-            if (replValue.realSize != plen) {
-                System.arraycopy(value.bytes, value.begin + startZ + plen, value.bytes, value.begin + startZ + replValue.realSize, value.realSize - startZ - plen);
+            if (replValue.realSize != plen && (value.realSize - startZ - plen) > 0) {
+                int valueOldStart = value.begin + startZ + plen;
+                int valueNewStart = value.begin + startZ + replValue.realSize;
+                int valueLength = value.realSize - startZ - plen;
+                
+                System.arraycopy(value.bytes, valueOldStart, value.bytes, valueNewStart, valueLength);
             }
             System.arraycopy(replValue.bytes, replValue.begin, value.bytes, value.begin + startZ, replValue.realSize);
             value.realSize += replValue.realSize - plen;
