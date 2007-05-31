@@ -1990,9 +1990,10 @@ if dosish
 #  test_ok(File.expand_path("/dir", "//machine/share/sub") == "//machine/share/dir")
 #  test_ok(File.expand_path("/", "z:/sub") == "z:/")
 #  test_ok(File.expand_path("/dir", "z:/sub") == "z:/dir")
-end
+else
 test_ok(File.expand_path(".", "//") == "//")
 test_ok(File.expand_path("sub", "//") == "//sub")
+end
 
 test_check "gc"
 begin

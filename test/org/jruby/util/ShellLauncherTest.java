@@ -31,6 +31,8 @@ public class ShellLauncherTest extends TestCase {
           "jruby -e \"system(%Q[ruby -e \"system 'echo hello' ; puts 'done'\"])\"");
         int result = launcher.runAndWait(new IRubyObject[] {cmd}, baos);
         assertEquals(0, result);
-        assertEquals("hello\ndone\n", baos.toString());
+        String msg = baos.toString();
+        msg = msg.replaceAll("\r", "");
+        assertEquals("hello\ndone\n", msg);
     }
 }
