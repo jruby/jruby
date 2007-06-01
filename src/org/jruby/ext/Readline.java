@@ -104,7 +104,6 @@ public class Readline {
         if (currentCompletor == null)
             currentCompletor = new RubyFileNameCompletor();
         readline.addCompletor(currentCompletor);
-        history = readline.getHistory();
         readline.setHistory(history);
     }
     
