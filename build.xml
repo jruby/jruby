@@ -371,6 +371,7 @@
     <antcall target="run-spec-compiled"><param name="SPEC" value="test/externals/rubinius/spec/language/expressions/if_spec.rb"/></antcall>
     <antcall target="run-spec-compiled"><param name="SPEC" value="test/externals/rubinius/spec/language/expressions/unless_spec.rb"/></antcall>
     <antcall target="run-spec-compiled"><param name="SPEC" value="test/externals/rubinius/spec/language/keywords/break_spec.rb"/></antcall>
+    <antcall target="run-spec-compiled"><param name="SPEC" value="test/externals/rubinius/spec/language/keywords/defined_spec.rb"/></antcall>
     <antcall target="run-spec-compiled"><param name="SPEC" value="test/externals/rubinius/spec/language/literals/array_spec.rb"/></antcall>
     <antcall target="run-spec-compiled"><param name="SPEC" value="test/externals/rubinius/spec/language/literals/execution_spec.rb"/></antcall>
     <antcall target="run-spec-compiled"><param name="SPEC" value="test/externals/rubinius/spec/language/literals/hash_spec.rb"/></antcall>
@@ -398,6 +399,7 @@
     <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/expressions/if_spec.rb"/></antcall>
     <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/expressions/unless_spec.rb"/></antcall>
     <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/keywords/break_spec.rb"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/keywords/defined_spec.rb"/></antcall>
     <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/literals/array_spec.rb"/></antcall>
     <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/literals/execution_spec.rb"/></antcall>
     <antcall target="run-spec"><param name="SPEC" value="test/externals/rubinius/spec/language/literals/hash_spec.rb"/></antcall>

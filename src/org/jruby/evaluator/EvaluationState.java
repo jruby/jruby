@@ -2029,8 +2029,8 @@ public class EvaluationState {
             } else if (!context.getRubyClass().isSingleton() && context.getRubyClass().isClassVarDefined(iVisited.getName())) {
                 return "class_variable";
             } 
-              
-            RubyModule module = (RubyModule) context.getRubyClass().getInstanceVariable("__attached__");
+            
+            RubyModule module = (RubyModule) self.getInstanceVariable("__attached__");
             if (module != null && module.isClassVarDefined(iVisited.getName())) return "class_variable"; 
 
             return null;
