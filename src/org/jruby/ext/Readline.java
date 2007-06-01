@@ -36,6 +36,7 @@ import java.util.Collections;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyArray;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
@@ -77,9 +78,20 @@ public class Readline {
         mReadline.module_function(new IRubyObject[]{runtime.newSymbol("completion_proc=")});
         IRubyObject hist = runtime.getObject().callMethod(runtime.getCurrentContext(), "new");
         mReadline.setConstant("HISTORY",hist);
+        hist.getSingletonClass().includeModule(runtime.getModule("Enumerable"));
         hist.getSingletonClass().defineMethod("push",readlinecb.getFastOptSingletonMethod("s_push"));
         hist.getSingletonClass().defineMethod("pop",readlinecb.getFastSingletonMethod("s_pop"));
         hist.getSingletonClass().defineMethod("to_a",readlinecb.getFastSingletonMethod("s_hist_to_a"));
+        hist.getSingletonClass().defineMethod("to_s", readlinecb.getFastSingletonMethod("s_hist_to_s"));
+        hist.getSingletonClass().defineMethod("[]", readlinecb.getFastSingletonMethod("s_hist_get", IRubyObject.class));
+        hist.getSingletonClass().defineMethod("[]=", readlinecb.getFastSingletonMethod("s_hist_set", IRubyObject.class, IRubyObject.class));
+        hist.getSingletonClass().defineMethod("<<", readlinecb.getFastOptSingletonMethod("s_push"));
+        hist.getSingletonClass().defineMethod("shift", readlinecb.getFastSingletonMethod("s_hist_shift"));
+        hist.getSingletonClass().defineMethod("each", readlinecb.getSingletonMethod("s_hist_each"));
+        hist.getSingletonClass().defineMethod("length", readlinecb.getFastSingletonMethod("s_hist_length"));
+        hist.getSingletonClass().defineMethod("size", readlinecb.getFastSingletonMethod("s_hist_length"));
+        hist.getSingletonClass().defineMethod("empty?", readlinecb.getFastSingletonMethod("s_hist_empty_p"));
+        hist.getSingletonClass().defineMethod("delete_at", readlinecb.getFastSingletonMethod("s_hist_delete_at", IRubyObject.class));
     }
     
     // We lazily initialise this in case Readline.readline has been overriden in ruby (s_readline)
@@ -139,6 +151,42 @@ public class Readline {
 			histList.append(recv.getRuntime().newString((String) i.next()));
 		}
 		return histList;
+	}
+	
+	public static IRubyObject s_hist_to_s(IRubyObject recv) {
+	    return recv.getRuntime().newString("HISTORY");
+	}
+	
+	public static IRubyObject s_hist_get(IRubyObject recv, IRubyObject index) {
+	    int i = (int) index.convertToInteger().getLongValue();
+	    return recv.getRuntime().newString((String) history.getHistoryList().get(i));
+	}
+	
+	public static IRubyObject s_hist_set(IRubyObject recv, IRubyObject index, IRubyObject val) {
+	    throw recv.getRuntime().newNotImplementedError("the []=() function is unimplemented on this machine");
+	}
+	
+	public static IRubyObject s_hist_shift(IRubyObject recv) {
+	    throw recv.getRuntime().newNotImplementedError("the shift function is unimplemented on this machine");
+	}
+	
+	public static IRubyObject s_hist_length(IRubyObject recv) {
+	    return recv.getRuntime().newFixnum(history.size());
+	}
+	
+	public static IRubyObject s_hist_empty_p(IRubyObject recv) {
+        return recv.getRuntime().newBoolean(history.size() == 0);
+    }
+	
+	public static IRubyObject s_hist_delete_at(IRubyObject recv, IRubyObject index) {
+	    throw recv.getRuntime().newNotImplementedError("the delete_at function is unimplemented on this machine");
+	}
+	
+	public static IRubyObject s_hist_each(IRubyObject recv, Block block) {
+	    for (Iterator i = history.getHistoryList().iterator(); i.hasNext();) {
+	        block.yield(recv.getRuntime().getCurrentContext(), recv.getRuntime().newString((String) i.next()));
+	    }
+	    return recv;
 	}
 	
     public static IRubyObject s_set_completion_append_character(IRubyObject recv, IRubyObject achar) throws Exception {

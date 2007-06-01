@@ -60,12 +60,13 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "ruby_version", versionParts[0] + '.' + versionParts[1]);
         setConfig(configHash, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
 
-        setConfig(configHash, "bindir", new NormalizedFile(runtime.getJRubyHome(), "bin").getAbsolutePath());
+        String normalizedHome = new NormalizedFile(runtime.getJRubyHome()).getAbsolutePath();
+        setConfig(configHash, "bindir", new NormalizedFile(normalizedHome, "bin").getAbsolutePath());
         setConfig(configHash, "RUBY_INSTALL_NAME", jruby_script());
         setConfig(configHash, "ruby_install_name", jruby_script());
         setConfig(configHash, "SHELL", jruby_shell());
-        setConfig(configHash, "prefix", new NormalizedFile(runtime.getJRubyHome()).getAbsolutePath());
-        setConfig(configHash, "exec_prefix", new NormalizedFile(runtime.getJRubyHome()).getAbsolutePath());
+        setConfig(configHash, "prefix", normalizedHome);
+        setConfig(configHash, "exec_prefix", normalizedHome);
 
         setConfig(configHash, "host_os", System.getProperty("os.name"));
         setConfig(configHash, "host_vendor", System.getProperty("java.vendor"));
@@ -92,7 +93,7 @@ public class RbConfigLibrary implements Library {
         
         String libdir = System.getProperty("jruby.lib");
         if (libdir == null) {
-            libdir = new NormalizedFile(runtime.getJRubyHome(), "lib").getAbsolutePath();
+            libdir = new NormalizedFile(normalizedHome, "lib").getAbsolutePath();
         } else {
             try {
             // Our shell scripts pass in non-canonicalized paths, but even if we didn't
@@ -111,9 +112,9 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "sitearchdir",    new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getAbsolutePath());
         setConfig(configHash, "archdir",    new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getAbsolutePath());
         setConfig(configHash, "configure_args", "");
-        setConfig(configHash, "datadir", new NormalizedFile(runtime.getJRubyHome(), "share").getAbsolutePath());
-        setConfig(configHash, "mandir", new NormalizedFile(runtime.getJRubyHome(), "man").getAbsolutePath());
-        setConfig(configHash, "sysconfdir", new NormalizedFile(runtime.getJRubyHome(), "etc").getAbsolutePath());
+        setConfig(configHash, "datadir", new NormalizedFile(normalizedHome, "share").getAbsolutePath());
+        setConfig(configHash, "mandir", new NormalizedFile(normalizedHome, "man").getAbsolutePath());
+        setConfig(configHash, "sysconfdir", new NormalizedFile(normalizedHome, "etc").getAbsolutePath());
         setConfig(configHash, "DLEXT", "jar");
 
         if (isWindows()) {

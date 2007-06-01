@@ -10,7 +10,7 @@ module JRuby
   class Extract
     def initialize(dir = nil)
       @this_archive = __FILE__ =~ /file:([^!]*)!.*/ && $1
-      if need_extract? && @this_archive
+      if need_extract?
         raise "error: can't locate enclosed archive from #{__FILE__}" if @this_archive.nil?
         @this_archive = java.net.URLDecoder.decode(@this_archive, "utf-8")
         @zip = ZipFile.new(@this_archive)
@@ -23,7 +23,6 @@ module JRuby
     end
 
     def entries
-      return [] unless @zip
       enum = @zip.entries
       def enum.each
         while hasMoreElements
@@ -34,6 +33,7 @@ module JRuby
     end
 
     def extract
+      return nil unless need_extract?
       entries.each do |entry|
         if entry.name =~ %r"^META-INF/jruby.home/"
           path = write_entry entry, entry.name.sub(%r{META-INF/jruby.home/},'')
@@ -42,10 +42,8 @@ module JRuby
           write_entry entry, "lib/ruby/1.8/#{entry.name}"
         end
       end
-      if @this_archive
-        puts "copying #{@this_archive} to #{@destination}/lib"
-        FileUtils.cp(@this_archive, "#{@destination}/lib")
-      end
+      puts "copying #{@this_archive} to #{@destination}/lib"
+      FileUtils.cp(@this_archive, "#{@destination}/lib")
     end
     
     def write_entry(entry, name)

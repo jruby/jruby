@@ -1814,6 +1814,9 @@ public final class Ruby {
 
     // We require the home directory to be absolute
     private String verifyHome(String home) {
+        if (home.equals(".")) {
+            home = System.getProperty("user.dir");
+        }
         NormalizedFile f = new NormalizedFile(home);
         if (!f.isAbsolute()) {
             home = f.getAbsolutePath();
