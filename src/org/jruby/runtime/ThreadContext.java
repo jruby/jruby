@@ -119,7 +119,9 @@ public class ThreadContext {
     
     CallType lastCallType;
     
-    Visibility lastVisibility;    
+    Visibility lastVisibility;
+    
+    IRubyObject lastExitStatus;
     
     public Ruby getRuntime() {
         return runtime;
@@ -152,6 +154,14 @@ public class ThreadContext {
 
     public Visibility getLastVisibility() {
         return lastVisibility;
+    }
+    
+    public IRubyObject getLastExitStatus() {
+        return lastExitStatus;
+    }
+    
+    public void setLastExitStatus(IRubyObject lastExitStatus) {
+        this.lastExitStatus = lastExitStatus;
     }
 
     public void printScope() {

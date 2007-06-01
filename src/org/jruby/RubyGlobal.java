@@ -119,8 +119,10 @@ public class RubyGlobal {
 
         runtime.defineVariable(new LineNumberGlobalVariable(runtime, "$.", RubyFixnum.one(runtime)));
         runtime.defineVariable(new LastlineGlobalVariable(runtime, "$_"));
+        runtime.defineVariable(new LastExitStatusVariable(runtime, "$?"));
 
         runtime.defineVariable(new ErrorInfoGlobalVariable(runtime, "$!", runtime.getNil()));
+        runtime.defineVariable(new GlobalVariable(runtime, "$=", runtime.getFalse()));
 
         runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"));
 
@@ -153,6 +155,7 @@ public class RubyGlobal {
         runtime.defineVariable(new PreMatchGlobalVariable(runtime, "$`"));
         runtime.defineVariable(new PostMatchGlobalVariable(runtime, "$'"));
         runtime.defineVariable(new LastMatchGlobalVariable(runtime, "$+"));
+        runtime.defineVariable(new LastMatchInfoGlobalVariable(runtime, "$~"));
 
         // after defn of $stderr as the call may produce warnings
         defineGlobalEnvConstants(runtime);
@@ -195,6 +198,22 @@ public class RubyGlobal {
         
     }
 
+    private static class LastExitStatusVariable extends GlobalVariable {
+        public LastExitStatusVariable(Ruby runtime, String name) {
+            super(runtime, name, runtime.getNil());
+        }
+        
+        public IRubyObject get() {
+            return runtime.getCurrentContext().getLastExitStatus();
+        }
+        
+        public IRubyObject set(IRubyObject lastExitStatus) {
+            runtime.getCurrentContext().setLastExitStatus(lastExitStatus);
+            
+            return lastExitStatus;
+        }
+    }
+
     private static class MatchMatchGlobalVariable extends GlobalVariable {
         public MatchMatchGlobalVariable(Ruby runtime, String name) {
             super(runtime, name, runtime.getNil());
@@ -235,6 +254,15 @@ public class RubyGlobal {
         }
     }
 
+    private static class LastMatchInfoGlobalVariable extends GlobalVariable {
+        public LastMatchInfoGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name, runtime.getNil());
+        }
+        
+        public IRubyObject get() {
+            return runtime.getCurrentContext().getBackref();
+        }
+    }
 
     // Accessor methods.
 

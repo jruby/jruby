@@ -12,7 +12,6 @@ package org.jruby.compiler;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.DefnNode;
 import org.jruby.ast.ListNode;
-import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.runtime.Arity;
 

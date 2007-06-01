@@ -14,6 +14,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
+import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -197,8 +198,12 @@ public class CompilerHelpers {
     }
 
     public static Pattern regexpLiteral(Ruby runtime, String ptr, int options) {
+        IRubyObject noCaseGlobal = runtime.getGlobalVariables().get("$=");
+
+        int extraOptions = noCaseGlobal.isTrue() ? ReOptions.RE_OPTION_IGNORECASE : 0;
+
         try {
-            return TRANS.translate(ptr, options, 0);
+            return TRANS.translate(ptr, options | extraOptions, 0);
         } catch(jregex.PatternSyntaxException e) {
             throw runtime.newRegexpError(e.getMessage());
         }

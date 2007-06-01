@@ -86,9 +86,12 @@ class TestGlobals < Test::Unit::TestCase
     alias $POSTMATCH $'
     alias $PREMATCH $`
     alias $MATCH $&
+    alias $LAST_MATCH_INFO $~
 
     /^is/ =~ "isFubared"
 
+    assert_not_nil($LAST_MATCH_INFO)
+    assert_equal($~, $LAST_MATCH_INFO)
 	assert_equal "Fubared", $'
     assert_equal $', $POSTMATCH
     assert_equal "", $`
@@ -96,4 +99,15 @@ class TestGlobals < Test::Unit::TestCase
     assert_equal "is", $&
     assert_equal $&, $MATCH
   end
+  
+  def test_english_ignore_case
+      alias $IGNORECASE $=
+      assert_not_nil($IGNORECASE)
+      assert_equal($=, $IGNORECASE)
+      assert_nil("fOo" =~ /foo/)
+      assert("fOo" =~ /foo/i)
+      $= = true
+      assert("fOo" =~ /foo/)
+      $= = false
+   end
 end

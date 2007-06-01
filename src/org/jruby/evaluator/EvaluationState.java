@@ -34,7 +34,6 @@ import org.jruby.Ruby;
 import org.jruby.MetaClass;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
-import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyFloat;
@@ -144,6 +143,7 @@ import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -905,7 +905,7 @@ public class EvaluationState {
         } else if((opts & 64) != 0) { // param s
             lang = "u";
         }
-
+        
         try {
             return RubyRegexp.newRegexp(runtime, string.toString(), iVisited.getOptions(), lang);
         } catch(jregex.PatternSyntaxException e) {
@@ -1495,8 +1495,14 @@ public class EvaluationState {
         } else if((opts & 64) != 0) { // param s
             lang = "u";
         }
+        
+        IRubyObject noCaseGlobal = runtime.getGlobalVariables().get("$=");
+        
+        int extraOptions = noCaseGlobal.isTrue() ? ReOptions.RE_OPTION_IGNORECASE : 0;
+
         try {
-            return RubyRegexp.newRegexp(runtime, iVisited.getValue(), iVisited.getPattern(), iVisited.getFlags(), lang);
+            return RubyRegexp.newRegexp(runtime, iVisited.getValue(), 
+                    iVisited.getPattern(extraOptions), iVisited.getFlags(extraOptions), lang);
         } catch(jregex.PatternSyntaxException e) {
             throw runtime.newRegexpError(e.getMessage());
         }

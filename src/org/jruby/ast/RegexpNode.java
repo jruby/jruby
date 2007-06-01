@@ -81,17 +81,17 @@ public class RegexpNode extends Node implements ILiteralNode {
         return value;
     }
     
-    public int getFlags() {
+    public int getFlags(int extra_options) {
         if (pattern == null) {
-            flags = RegexpTranslator.translateFlags(options);
+            flags = RegexpTranslator.translateFlags(options | extra_options);
             pattern = translator.translate(value, options, flags);
         }
         return flags;
     }
 
-    public Pattern getPattern() {
+    public Pattern getPattern(int extra_options) {
         if (pattern == null) {
-            flags = RegexpTranslator.translateFlags(options);
+            flags = RegexpTranslator.translateFlags(options | extra_options);
             pattern = translator.translate(value, options, flags);
         }
         return pattern;
