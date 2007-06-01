@@ -439,6 +439,9 @@ public class RubyFile extends RubyIO {
     
     public IRubyObject truncate(IRubyObject arg) {
     	RubyFixnum newLength = (RubyFixnum) arg.convertToType(getRuntime().getFixnum(), MethodIndex.TO_INT, "to_int", true);
+        if (newLength.getLongValue() < 0) {
+            throw getRuntime().newErrnoEINVALError("invalid argument: " + path);
+        }
         try {
             handler.truncate(newLength.getLongValue());
         } catch (IOHandler.PipeException e) {
@@ -1003,6 +1006,11 @@ public class RubyFile extends RubyIO {
         Ruby runtime = recv.getRuntime();
         RubyString filename = RubyString.stringValue(arg1);
         RubyFixnum newLength = (RubyFixnum) arg2.convertToType(runtime.getFixnum(), MethodIndex.TO_INT, "to_int", true);
+        
+        if (newLength.getLongValue() < 0) {
+            throw runtime.newErrnoEINVALError("invalid argument: " + filename);
+        }
+        
         IRubyObject[] args = new IRubyObject[] { filename, runtime.newString("w+") };
         RubyFile file = (RubyFile) open(recv, args, false, null);
         file.truncate(newLength);

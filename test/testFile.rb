@@ -244,3 +244,11 @@ else
 end
 
 test_equal(File::FNM_CASEFOLD, File::FNM_SYSCASE)
+
+# JRUBY-1025: negative int passed to truncate should raise EINVAL
+test_exception(Errno::EINVAL) {
+  File.open("/tmp/truncate_test_file", 'w').truncate(-1)
+}
+test_exception(Errno::EINVAL) {
+  File.truncate("/tmp/truncate_test_file", -1)
+}
