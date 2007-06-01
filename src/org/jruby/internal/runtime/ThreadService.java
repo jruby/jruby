@@ -72,15 +72,23 @@ public class ThreadService {
     }
 
     public ThreadContext getCurrentContext() {
-        WeakReference wr = (WeakReference) localContext.get();
+        WeakReference wr = null;
+        ThreadContext context = null;
         
-        if (wr == null) {
-            wr = adoptCurrentThread();
-        } else if(wr.get() == null) {
-            wr = adoptCurrentThread();
+        while (context == null) {
+            // loop until a context is available, to clean up weakrefs that might get collected
+            if ((wr = (WeakReference)localContext.get()) == null) {
+                wr = adoptCurrentThread();
+                context = (ThreadContext)wr.get();
+            } else {
+                context = (ThreadContext)wr.get();
+            }
+            if (context == null) {
+                localContext.set(null);
+            }
         }
 
-        return (ThreadContext)wr.get();
+        return context;
     }
     
     private WeakReference adoptCurrentThread() {
