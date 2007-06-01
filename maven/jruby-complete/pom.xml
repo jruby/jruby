@@ -111,6 +111,8 @@
                     <include name="lib/ruby/gems/1.8/gems/sources*/**/*"/>
                     <include name="lib/ruby/gems/1.8/specifications/sources*.gemspec"/>
                     <include name="lib/ruby/site_ruby/**/*"/>
+                    <!-- this is only temporary; will be deleted from final jar -->
+                    <include name="lib/ruby/1.8/**"/>
                   </fileset>
                 </copy>
                 <copy todir="${project.build.outputDirectory}">
@@ -131,8 +133,7 @@
               <tasks>
                 <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
                   classpath="${project.basedir}/../../lib/jarjar-0.7.jar"/>
-                <java classname="org.jruby.Main" fork="true" maxmemory="256m" failonerror="true">
-                  <classpath refid="maven.compile.classpath"/>
+                <java jar="${project.build.directory}/${project.build.finalName}.jar" fork="true" maxmemory="256m" failonerror="true">
                   <sysproperty key="jruby.home" value="${project.build.outputDirectory}/META-INF/jruby.home"/>
                   <arg value="--command"/>
                   <arg value="gem"/>
@@ -145,6 +146,9 @@
                 <delete>
                   <fileset dir="${project.build.outputDirectory}">
                     <include name="META-INF/jruby.home/lib/ruby/gems/1.8/source_cache"/>
+                    <!-- delete after gems installed, as mentioned above; -->
+                    <!-- main ruby libs go in root of jarfile -->
+                    <include name="META-INF/jruby.home/lib/ruby/1.8/**"/>
                     <include name="META-INF/maven/**"/>
                   </fileset>
                   <fileset dir="${project.build.directory}"
@@ -153,7 +157,6 @@
                 <jarjar destfile="${project.build.directory}/${project.build.finalName}.jar">
                   <fileset dir="${project.build.outputDirectory}">
                     <include name="META-INF/jruby.home/**/*"/>
-                    <include name="META-INF/**/*"/>
                     <include name="**/*.class"/>
                     <include name="**/*.properties"/>
                     <include name="**/*.rb"/>
