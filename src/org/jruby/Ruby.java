@@ -177,6 +177,8 @@ public final class Ruby {
     private JavaSupport javaSupport;
     private static JRubyClassLoader jrubyClassLoader;
 
+    private static boolean securityRestricted = false;
+
     private Parser parser = new Parser(this);
 
     private LoadService loadService;
@@ -1844,6 +1846,10 @@ public final class Ruby {
     }
 
     public static boolean isSecurityRestricted() {
-        return (System.getSecurityManager() != null);
+        return securityRestricted;
+    }
+    
+    public static void setSecurityRestricted(boolean restricted) {
+        securityRestricted = restricted;
     }
 }

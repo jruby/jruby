@@ -418,18 +418,19 @@ public class LoadService {
         }
 
         // check current directory; if file exists, retrieve URL and return resource
-        if (!Ruby.isSecurityRestricted()) {
-            try {
-                JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(),name);
-                if(file.isFile() && file.isAbsolute()) {
-                    try {
-                        return new LoadServiceResource(file.toURI().toURL(),name);
-                    } catch (MalformedURLException e) {
-                        throw runtime.newIOErrorFromException(e);
-                    }
+        try {
+            JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), name);
+            if (file.isFile() && file.isAbsolute()) {
+                try {
+                    return new LoadServiceResource(file.toURI().toURL(), name);
+                } catch (MalformedURLException e) {
+                    throw runtime.newIOErrorFromException(e);
                 }
-            } catch (IllegalArgumentException illArgEx) { }
+            }
+        } catch (IllegalArgumentException illArgEx) {
+        } catch (SecurityException secEx) {
         }
+        
 
         for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
             String entry = pathIter.next().toString();
@@ -454,7 +455,7 @@ public class LoadService {
                 }
             } 
 
-            if (!Ruby.isSecurityRestricted()) {
+            try {
                 JRubyFile current = JRubyFile.create(JRubyFile.create(runtime.getCurrentDirectory(),entry).getAbsolutePath(), name);
                 if (current.isFile()) {
                     try {
@@ -463,7 +464,7 @@ public class LoadService {
                         throw runtime.newIOErrorFromException(e);
                     }
                 }
-            }
+            } catch (SecurityException secEx) { }
         }
 
         return null;

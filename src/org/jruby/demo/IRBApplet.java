@@ -53,6 +53,9 @@ public class IRBApplet extends Applet {
             setError(new PrintStream(tar));
             setObjectSpaceEnabled(false);
         }};
+        
+        Ruby.setSecurityRestricted(true); // We are in a very limited context. Tighten that belt...
+        
         final Ruby runtime = Ruby.newInstance(config);
         
         runtime.defineGlobalConstant("ARGV", runtime.newArrayNoCopy(new IRubyObject[] {
