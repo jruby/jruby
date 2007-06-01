@@ -36,10 +36,12 @@ rubicon/test_floats
 rubicon/test_hash
 rubicon/test_if_unless
 rubicon/test_integer
+rubicon/test_loop_stuff
 rubicon/test_marshal
 rubicon/test_match_data
 rubicon/test_math
 rubicon/test_method
+rubicon/test_methods
 rubicon/test_module
 rubicon/test_module_private
 rubicon/test_nil_class
@@ -47,9 +49,12 @@ rubicon/test_numeric
 rubicon/test_object
 rubicon/test_object_space
 rubicon/test_pack
+#rubicon/test_predefined_variables
 rubicon/test_proc
 rubicon/test_regexp
+rubicon/test_range
 rubicon/test_string
+rubicon/test_strings
 rubicon/test_struct
 rubicon/test_symbol
 rubicon/test_thread_group
