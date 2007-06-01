@@ -25,6 +25,10 @@ class Object
   rescue Object => ex
     exc.should === ex
   end
+
+  def should_include(*other)
+    should Spec::Matchers::Include.new(*other)
+  end
 end
   
 # Example courtesy of nicksieger, many thanks!
@@ -32,16 +36,16 @@ class Spec::Runner::Context
   def before_context_eval
     @context_eval_module.include ExceptionHelper
 
-#    case ENV['SPEC_TARGET']
-#    when /mri/
-#      require 'mri_target'
-#      @context_eval_module.include MRITarget
-#    when /jruby/
+    case ENV['SPEC_TARGET']
+    when /mri/
+      require 'mri_target'
+      @context_eval_module.include MRITarget
+    when /jruby/
       require 'jruby_target'
       @context_eval_module.include JRubyTarget
-#    else
-#      require 'rubinius_target'
-#      @context_eval_module.include RubiniusTarget
-#    end
+    else
+      require 'rubinius_target'
+      @context_eval_module.include RubiniusTarget
+    end
   end
 end
