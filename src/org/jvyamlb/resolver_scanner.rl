@@ -59,8 +59,8 @@ public class ResolverScanner {
        int act;
        int have = 0;
        int nread = 0;
-       int p=0;
-       int pe = list.realSize;
+       int p=list.begin;
+       int pe = p+list.realSize;
        int tokstart = -1;
        int tokend = -1;
 

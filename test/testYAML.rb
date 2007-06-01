@@ -101,3 +101,8 @@ astr = "abcde"
 shared = astr[2..-1]
 test_equal('cde', YAML.load(shared))
 test_equal("--- cde\n", shared.to_yaml)
+
+# JRUBY-1026
+a = "one0.1"
+b = a[3..-1]
+test_equal("--- !str 0.1\n", YAML.dump(b))
