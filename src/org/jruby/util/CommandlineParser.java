@@ -234,7 +234,7 @@ public class CommandlineParser {
 
     public String inlineScript() {
         try {
-            return new String(inlineScript.toString().getBytes(), "ISO-8859-1");
+            return new String(inlineScript.toString().getBytes("UTF-8"), "ISO-8859-1");
         } catch (UnsupportedEncodingException e) {
             return inlineScript.toString();
         }
