@@ -129,6 +129,7 @@ public class TestUnitTestSuite extends TestCase {
             ArrayList loadPath = new ArrayList();
             
             loadPath.add("test/externals/bfts");
+            loadPath.add("test/externals/ruby_test/lib");
             
             runtime.getLoadService().init(loadPath);
             runtime.defineGlobalConstant("ARGV", runtime.newArray());
