@@ -1,72 +1,10 @@
-#= open-uri.rb
-#
-#open-uri.rb is easy-to-use wrapper for net/http, net/https and net/ftp.
-#
-#== Example
-#
-#It is possible to open http/https/ftp URL as usual a file:
-#
-#  open("http://www.ruby-lang.org/") {|f|
-#    f.each_line {|line| p line}
-#  }
-#
-#The opened file has several methods for meta information as follows since
-#it is extended by OpenURI::Meta.
-#
-#  open("http://www.ruby-lang.org/en") {|f|
-#    f.each_line {|line| p line}
-#    p f.base_uri         # <URI::HTTP:0x40e6ef2 URL:http://www.ruby-lang.org/en/>
-#    p f.content_type     # "text/html"
-#    p f.charset          # "iso-8859-1"
-#    p f.content_encoding # []
-#    p f.last_modified    # Thu Dec 05 02:45:02 UTC 2002
-#  }
-#
-#Additional header fields can be specified by an optional hash argument.
-#
-#  open("http://www.ruby-lang.org/en/",
-#    "User-Agent" => "Ruby/#{RUBY_VERSION}",
-#    "From" => "foo@bar.invalid",
-#    "Referer" => "http://www.ruby-lang.org/") {|f|
-#    ...
-#  }
-#
-#The environment variables such as http_proxy, https_proxy and ftp_proxy
-#are in effect by default.  :proxy => nil disables proxy.
-#
-#  open("http://www.ruby-lang.org/en/raa.html",
-#    :proxy => nil) {|f|
-#    ...
-#  }
-#
-#URI objects can be opened in similar way.
-#
-#  uri = URI.parse("http://www.ruby-lang.org/en/")
-#  uri.open {|f|
-#    ...
-#  }
-#
-#URI objects can be read directly.
-#The returned string is also extended by OpenURI::Meta.
-#
-#  str = uri.read
-#  p str.base_uri
-#
-#Author:: Tanaka Akira <akr@m17n.org>
-#--
-# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
-# All rights reserved.
-# See LICENSE.txt for permissions.
-#++
-
-
 require 'uri'
 require 'stringio'
 require 'time'
 
 module Kernel
   private
-  alias open_uri_original_open open # :nodoc:
+  alias rubygems_open_uri_original_open open # :nodoc:
 
   # makes possible to open various resources including URIs.
   # If the first argument respond to `open' method,
@@ -91,11 +29,64 @@ module Kernel
           (uri = URI.parse(name)).respond_to?(:open)
       uri.open(*rest, &block)
     else
-      open_uri_original_open(name, *rest, &block)
+      rubygems_open_uri_original_open(name, *rest, &block)
     end
   end
   module_function :open
 end
+
+# OpenURI is an easy-to-use wrapper for net/http, net/https and net/ftp.
+#
+#== Example
+#
+# It is possible to open http/https/ftp URL as usual like opening a file:
+#
+#   open("http://www.ruby-lang.org/") {|f|
+#     f.each_line {|line| p line}
+#   }
+#
+# The opened file has several methods for meta information as follows since
+# it is extended by OpenURI::Meta.
+#
+#   open("http://www.ruby-lang.org/en") {|f|
+#     f.each_line {|line| p line}
+#     p f.base_uri         # <URI::HTTP:0x40e6ef2 URL:http://www.ruby-lang.org/en/>
+#     p f.content_type     # "text/html"
+#     p f.charset          # "iso-8859-1"
+#     p f.content_encoding # []
+#     p f.last_modified    # Thu Dec 05 02:45:02 UTC 2002
+#   }
+#
+# Additional header fields can be specified by an optional hash argument.
+#
+#   open("http://www.ruby-lang.org/en/",
+#     "User-Agent" => "Ruby/#{RUBY_VERSION}",
+#     "From" => "foo@bar.invalid",
+#     "Referer" => "http://www.ruby-lang.org/") {|f|
+#     # ...
+#   }
+#
+# The environment variables such as http_proxy, https_proxy and ftp_proxy
+# are in effect by default.  :proxy => nil disables proxy.
+#
+#   open("http://www.ruby-lang.org/en/raa.html", :proxy => nil) {|f|
+#     # ...
+#   }
+#
+# URI objects can be opened in a similar way.
+#
+#   uri = URI.parse("http://www.ruby-lang.org/en/")
+#   uri.open {|f|
+#     # ...
+#   }
+#
+# URI objects can be read directly. The returned string is also extended by
+# OpenURI::Meta.
+#
+#   str = uri.read
+#   p str.base_uri
+#
+# Author:: Tanaka Akira <akr@m17n.org>
 
 module OpenURI
   Options = {
@@ -105,6 +96,8 @@ module OpenURI
     :content_length_proc => true,
     :http_basic_authentication => true,
     :read_timeout => true,
+    :ssl_ca_cert => nil,
+    :ssl_verify_mode => nil,
   }
 
   def OpenURI.check_options(options) # :nodoc:
@@ -275,8 +268,17 @@ module OpenURI
     if target.class == URI::HTTPS
       require 'net/https'
       http.use_ssl = true
-      http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+      http.verify_mode = options[:ssl_verify_mode] || OpenSSL::SSL::VERIFY_PEER
       store = OpenSSL::X509::Store.new
+      if options[:ssl_ca_cert]
+        if File.directory? options[:ssl_ca_cert]
+          store.add_path options[:ssl_ca_cert]
+        else
+          store.add_file options[:ssl_ca_cert]
+        end
+      else
+        store.set_default_paths
+      end
       store.set_default_paths
       http.cert_store = store
     end
@@ -501,20 +503,20 @@ module OpenURI
     #
     # [:proxy]
     #  Synopsis:
-    # :proxy => "http://proxy.foo.com:8000/"
-    # :proxy => URI.parse("http://proxy.foo.com:8000/")
-    # :proxy => true
-    # :proxy => false
-    # :proxy => nil
-    #
-    #    If :proxy option is specified, the value should be String, URI,
-    #    boolean or nil.
-    #    When String or URI is given, it is treated as proxy URI.
-    #    When true is given or the option itself is not specified,
+    #    :proxy => "http://proxy.foo.com:8000/"
+    #    :proxy => URI.parse("http://proxy.foo.com:8000/")
+    #    :proxy => true
+    #    :proxy => false
+    #    :proxy => nil
+    #   
+    #  If :proxy option is specified, the value should be String, URI,
+    #  boolean or nil.
+    #  When String or URI is given, it is treated as proxy URI.
+    #  When true is given or the option itself is not specified,
     #  environment variable `scheme_proxy' is examined.
     #  `scheme' is replaced by `http', `https' or `ftp'.
-    #    When false or nil is given, the environment variables are ignored and
-    #    connection will be made to a server directly.
+    #  When false or nil is given, the environment variables are ignored and
+    #  connection will be made to a server directly.
     #
     # [:proxy_http_basic_authentication]
     #  Synopsis:
@@ -542,45 +544,45 @@ module OpenURI
     #
     # [:content_length_proc]
     #  Synopsis:
-    # :content_length_proc => lambda {|content_length| ... }
-    #
-    #   If :content_length_proc option is specified, the option value procedure
-    #   is called before actual transfer is started.
-    #   It takes one argument which is expected content length in bytes.
-    #
-    #   If two or more transfer is done by HTTP redirection, the procedure
-    #   is called only one for a last transfer.
-    #
-    #   When expected content length is unknown, the procedure is called with
-    #   nil.
-    #   It is happen when HTTP response has no Content-Length header.
+    #    :content_length_proc => lambda {|content_length| ... }
+    # 
+    #  If :content_length_proc option is specified, the option value procedure
+    #  is called before actual transfer is started.
+    #  It takes one argument which is expected content length in bytes.
+    # 
+    #  If two or more transfer is done by HTTP redirection, the procedure
+    #  is called only one for a last transfer.
+    # 
+    #  When expected content length is unknown, the procedure is called with
+    #  nil.
+    #  It is happen when HTTP response has no Content-Length header.
     #
     # [:progress_proc]
     #  Synopsis:
-    # :progress_proc => lambda {|size| ...}
+    #    :progress_proc => lambda {|size| ...}
     #
-    #   If :progress_proc option is specified, the proc is called with one
-    #   argument each time when `open' gets content fragment from network.
-    #   The argument `size' `size' is a accumulated transfered size in bytes.
+    #  If :progress_proc option is specified, the proc is called with one
+    #  argument each time when `open' gets content fragment from network.
+    #  The argument `size' `size' is a accumulated transfered size in bytes.
     #
-    #   If two or more transfer is done by HTTP redirection, the procedure
-    #   is called only one for a last transfer.
+    #  If two or more transfer is done by HTTP redirection, the procedure
+    #  is called only one for a last transfer.
     #
-    #   :progress_proc and :content_length_proc are intended to be used for
-    #   progress bar.
-    #   For example, it can be implemented as follows using Ruby/ProgressBar.
+    #  :progress_proc and :content_length_proc are intended to be used for
+    #  progress bar.
+    #  For example, it can be implemented as follows using Ruby/ProgressBar.
     #
-    #     pbar = nil
-    #     open("http://...",
-    #       :content_length_proc => lambda {|t|
-    #         if t && 0 < t
-    #           pbar = ProgressBar.new("...", t)
-    #           pbar.file_transfer_mode
-    #         end
-    #       },
-    #       :progress_proc => lambda {|s|
-    #         pbar.set s if pbar
-    #       }) {|f| ... }
+    #    pbar = nil
+    #    open("http://...",
+    #      :content_length_proc => lambda {|t|
+    #        if t && 0 < t
+    #          pbar = ProgressBar.new("...", t)
+    #          pbar.file_transfer_mode
+    #        end
+    #      },
+    #      :progress_proc => lambda {|s|
+    #        pbar.set s if pbar
+    #      }) {|f| ... }
     #
     # [:read_timeout]
     #  Synopsis:
@@ -588,6 +590,19 @@ module OpenURI
     #    :read_timeout=>10      (10 second)
     #
     #  :read_timeout option specifies a timeout of read for http connections.
+    #
+    # [:ssl_ca_cert]
+    #  Synopsis:
+    #    :ssl_ca_cert=>filename
+    #
+    #  :ssl_ca_cert is used to specify CA certificate for SSL.
+    #  If it is given, default certificates are not used.
+    #
+    # [:ssl_verify_mode]
+    #  Synopsis:
+    #    :ssl_verify_mode=>mode
+    #
+    #  :ssl_verify_mode is used to specify openssl verify mode.
     #
     # OpenURI::OpenRead#open returns an IO like object if block is not given.
     # Otherwise it yields the IO object and return the value of the block.
@@ -695,14 +710,14 @@ module URI
     end
 
     include OpenURI::OpenRead
-      end
+  end
 
   class FTP
     def buffer_open(buf, proxy, options) # :nodoc:
       if proxy
         OpenURI.open_http(buf, self, proxy, options)
         return
-            end
+      end
       require 'net/ftp'
 
       directories = self.path.split(%r{/}, -1)
@@ -712,19 +727,19 @@ module URI
       }
       unless filename = directories.pop
         raise ArgumentError, "no filename: #{self.inspect}"
-          end
+      end
       directories.each {|d|
         if /[\r\n]/ =~ d
           raise ArgumentError, "invalid directory: #{d.inspect}"
-            end
-          }
+        end
+      }
       if /[\r\n]/ =~ filename
         raise ArgumentError, "invalid filename: #{filename.inspect}"
-    end
+      end
       typecode = self.typecode
       if typecode && /\A[aid]\z/ !~ typecode
         raise ArgumentError, "invalid typecode: #{typecode.inspect}"
-  end
+      end
 
       # The access sequence is defined by RFC 1738
       ftp = Net::FTP.open(self.host)

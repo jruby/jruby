@@ -22,9 +22,15 @@ class Gem::SourceInfoCacheEntry
 
   def refresh(source_uri)
     remote_size = Gem::RemoteFetcher.fetcher.fetch_size source_uri + '/yaml'
-    return if @size == remote_size
-    @source_index.update source_uri 
+    return if @size == remote_size # HACK bad check, local cache not YAML
+    @source_index.update source_uri
     @size = remote_size
+  end
+
+  def ==(other) # :nodoc:
+    self.class === other and
+    @size == other.size and
+    @source_index == other.source_index
   end
 
 end

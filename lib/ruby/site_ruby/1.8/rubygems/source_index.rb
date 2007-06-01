@@ -6,9 +6,9 @@
 
 require 'rubygems/user_interaction'
 require 'rubygems/remote_fetcher'
+require 'rubygems/digest/sha2'
 
 require 'forwardable'
-require 'digest/sha2'
 require 'time'
 
 module Gem
@@ -63,7 +63,7 @@ module Gem
       #   List of directory paths (all ending in "../specifications").
       #
       def installed_spec_directories
-        Gem.path.collect { |dir| File.join(dir, "specifications") }
+        Gem.path.collect { |dir| File.join(dir, "specifications") }        
       end
 
       # Factory method to construct a source index instance for a
@@ -174,12 +174,12 @@ module Gem
     # The signature for the source index.  Changes in the signature
     # indicate a change in the index.
     def index_signature
-      Digest::SHA256.new(@gems.keys.sort.join(',')).to_s
+      Gem::SHA256.new.hexdigest(@gems.keys.sort.join(',')).to_s
     end
 
     # The signature for the given gem specification.
     def gem_signature(gem_full_name)
-      Digest::SHA256.new(@gems[gem_full_name].to_yaml).to_s
+      Gem::SHA256.new.hexdigest(@gems[gem_full_name].to_yaml).to_s
     end
 
     def_delegators :@gems, :size, :length
@@ -226,7 +226,6 @@ module Gem
     def outdated
       remotes = Gem::SourceInfoCache.search(//)
       outdateds = []
-
       latest_specs.each do |_, local|
         name = local.name
         remote = remotes.select  { |spec| spec.name == name }.
@@ -234,7 +233,6 @@ module Gem
                          last
         outdateds << name if remote and local.version < remote.version
       end
-
       outdateds
     end
 
@@ -260,6 +258,10 @@ module Gem
       self
     end
     
+    def ==(other) # :nodoc:
+      self.class === other and @gems == other.gems 
+    end
+
     protected
 
     attr_reader :gems

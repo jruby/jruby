@@ -113,7 +113,7 @@ module Gem
       require 'rubygems/installer'
       require 'rubygems/validator'
       require 'rubygems/doc_manager'
-      require 'rubygems/cmd_manager'
+      require 'rubygems/command_manager'
       require 'rubygems/gem_runner'
       require 'rubygems/config_file'
     end
@@ -253,28 +253,31 @@ module Gem
       if spec.loaded?
         return false unless autorequire
         result = spec.autorequire ? require(spec.autorequire) : false
-        return result || false 
+        return result || false
       end
 
       spec.loaded = true
       @loaded_specs[spec.name] = spec
-      
+
       # Load dependent gems first
       spec.dependencies.each do |dep_gem|
         activate(dep_gem, autorequire)
       end
-      
-      # add bin dir to require_path
-      if(spec.bindir) then
-        spec.require_paths << spec.bindir
+
+      # bin directory must come before library directories
+      spec.require_paths.unshift spec.bindir if spec.bindir
+
+      require_paths = spec.require_paths.map do |path|
+        File.join spec.full_gem_path, path
       end
-      
-      # Now add the require_paths to the LOAD_PATH
-      spec.require_paths.each do |path|
-        $:.unshift File.join(spec.full_gem_path, path)
-      end
-      
-      if autorequire && spec.autorequire then
+
+      sitelibdir = Config::CONFIG['sitelibdir']
+
+      # gem directories must come after -I and ENV['RUBYLIB']
+      $:.insert($:.index(sitelibdir), *require_paths)
+
+      # Now autorequire
+      if autorequire && spec.autorequire then # DEPRECATED
         Array(spec.autorequire).each do |a_lib|
           require a_lib
         end
@@ -282,7 +285,7 @@ module Gem
 
       return true
     end
-    
+
     # Report a load error during activation.  The message of load
     # error depends on whether it was a version mismatch or if there
     # are not gems of any version by the requested name.

@@ -84,7 +84,7 @@ module Gem
         end
       end
 
-      raise Gem::FilePermissionError.new(install_dir) unless File.writable?(install_dir)
+      raise Gem::FilePermissionError.new(Pathname.new(install_dir).expand_path) unless File.writable?(install_dir)
 
       # Build spec dir.
       @directory = File.join(install_dir, "gems", format.spec.full_name).untaint
@@ -347,10 +347,9 @@ Results logged to #{File.join(Dir.pwd, 'gem_make.out')}
     # file:: [IO] The IO that contains the file data
     #
     def extract_files(directory, format)
-      unless File.expand_path(directory) == directory then
-        raise ArgumentError, "install directory %p not absolute" % directory
-      end
-
+      directory = expand_and_validate(directory)
+      raise ArgumentError, "format required to extract from" if format.nil?
+      
       format.file_entries.each do |entry, file_data|
         path = entry['path'].untaint
         if path =~ /\A\// then # for extra sanity
@@ -368,6 +367,15 @@ Results logged to #{File.join(Dir.pwd, 'gem_make.out')}
           out.write file_data
         end
       end
+    end
+    
+    private
+    def expand_and_validate(directory)
+      directory = Pathname.new(directory).expand_path
+      unless directory.absolute?      
+        raise ArgumentError, "install directory %p not absolute" % directory
+      end
+      directory.to_str
     end
   end  # class Installer
 
