@@ -2030,8 +2030,11 @@ public class EvaluationState {
                 return "class_variable";
             } 
             
-            RubyModule module = (RubyModule) self.getInstanceVariable("__attached__");
-            if (module != null && module.isClassVarDefined(iVisited.getName())) return "class_variable"; 
+            IRubyObject attached =  context.getRubyClass().getInstanceVariable("__attached__");
+            if (attached instanceof RubyModule) {
+                RubyModule module = (RubyModule)attached;
+                if (module.isClassVarDefined(iVisited.getName())) return "class_variable"; 
+            }
 
             return null;
         }
