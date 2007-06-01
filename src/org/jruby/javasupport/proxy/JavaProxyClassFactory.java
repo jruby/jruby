@@ -647,7 +647,7 @@ public class JavaProxyClassFactory {
         }
 
         public boolean generateProxyMethod() {
-            return !isFinal() && hasPublicDecl;
+            return !isFinal() && !isPrivate();
         }
 
         public void add(Method method) {
@@ -666,6 +666,15 @@ public class JavaProxyClassFactory {
 
             int mod = mostSpecificMethod.getModifiers();
             return Modifier.isFinal(mod);
+        }
+
+        boolean isPrivate() {
+            if (mostSpecificMethod.getDeclaringClass().isInterface()) {
+                return false;
+            }
+
+            int mod = mostSpecificMethod.getModifiers();
+            return Modifier.isPrivate(mod);
         }
 
         boolean isImplemented() {

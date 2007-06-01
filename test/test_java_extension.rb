@@ -3,6 +3,7 @@ require 'test/unit'
 
 class TestJavaExtension < Test::Unit::TestCase
   import org.jruby.test.Worker
+  import org.jruby.test.Abstract
 
   class TestParent < org.jruby.test.Parent
     attr_accessor :result
@@ -181,4 +182,20 @@ class TestJavaExtension < Test::Unit::TestCase
     executor.execute(Runnable.impl {ran = true})
     assert ran
   end
+
+  class ExtendedClass < org.jruby.test.Abstract
+    def protected_method
+      "Ruby overrides java!"
+    end
+  end
+
+  def test_overriding_protected_method
+    a = ExtendedClass.new
+    begin
+      assert_equal "Ruby overrides java!", a.call_protected
+    rescue Exception => e
+      flunk "Exception raised: #{$!}"
+    end
+  end
 end
+
