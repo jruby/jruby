@@ -1,0 +1,33 @@
+== Writing Tests
+
+1. There are actually *3* core test suites:
+
+   a) org.jruby.test.MainTestSuite, a suite of pure-java tests;
+
+   b) org.jruby.test.ScriptTestSuite, which runs a suite of files named
+   one-per-line in test/test_index (these are the so-called "minirunit" tests
+   which use an antiquated testing framework);
+
+   c) org.jruby.test.TestUnitTestSuite, which runs a suite of files named
+   one-per-line in test/test_unit_index (note: some are currently commented).
+
+2. If you'd like to contribute new tests, we'd prefer you write them in
+Test::Unit and add to the test/test_unit_index file.
+
+3. Naming conventions: testCamelCased.rb files are currently for
+minirunit-based tests; test_under_scored.rb for Test::Unit tests.
+
+4. We're also interested in running tests for other ruby software suites; if
+you want to grab your favorite ruby software and run its own tests under JRuby
+and report to the mailing list at dev@jruby.codehaus.org, that would be great.
+
+5. Please file any and all patches in JIRA:
+http://jira.codehaus.org/browse/JRUBY
+
+== Running Tests
+
+Using ant, type
+
+  ant test
+
+The three test suites should be run in order.

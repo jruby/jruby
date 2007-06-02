@@ -1,0 +1,27 @@
+= A list of bugs and other things discovered as a result of this test suite.
+
+== Bugs
+* Dir.chdir and '/'. See ruby-core: 8914.
+* String#slice! documentation. See ruby-core: 9754.
+* String#upto infinite loop bug. See ruby-core: 9864.
+* Process::GID#eid= and Process::UID#eid= aliases. See ruby-core: 11022.
+
+== Quirks, Inconsistencies and Other Stuff
+* Math.atanh(1), and similar edge cases, raise different errors on different
+  platforms (ERANGE vs EDOM). On MS Windows, no error is raised and Infinity
+  is returned instead. See ruby-core: 10174.
+* Some methods raise ArgumentError when they probably ought to return
+  TypeError. Ruby is inconsistent on this, even within the same method. For
+  example, ['test'].pack('C') raises a TypeError, while ['test'].pack('D')
+  raises an ArgumentError. Many of these can be traced to the Integer() and
+  Float() kernel methods.
+* Some methods, such as File.join, allow you pass no arguments when they
+  probably ought to check for 0 arguments and raise an ArgumentError. At the
+  moment they're just no-ops.
+* The chsize() function in MS VC++ 6.0 has a bug where it does not raise an
+  error if you pass a negative value for the size argument. This affects the
+  File.truncate method, i.e. it's a no-op instead of raising an error. MS
+  VC++ 8.0 fixes this bug.
+* Problems with File and File::Stat caused by an underlying bug in the
+  Solaris stat() function, where the st_size member wasn't set properly.
+  See ruby-core: 9926.

@@ -1,0 +1,6 @@
+#!/usr/bin/env jruby
+
+require 'rubygems/server'
+
+Gem::Server.run ARGV
+

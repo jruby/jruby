@@ -1,0 +1,16 @@
+Index: fileutils.rb
+===================================================================
+RCS file: /cvsroot/jruby/jruby/lib/ruby/1.8/Attic/fileutils.rb,v
+retrieving revision 1.1.2.1
+diff -u -r1.1.2.1 fileutils.rb
+--- fileutils.rb	10 Jun 2006 18:18:13 -0000	1.1.2.1
++++ fileutils.rb	10 Jun 2006 18:30:46 -0000
+@@ -1029,7 +1029,7 @@
+     private
+ 
+     def fu_windows?
+-      /mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM
++      /mswin|mingw|bccwin|wince|emx|java/ =~ RUBY_PLATFORM
+     end
+ 
+     def fu_copy_stream0(src, dest, blksize)   #:nodoc:

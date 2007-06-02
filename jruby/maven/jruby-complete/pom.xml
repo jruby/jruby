@@ -1,0 +1,227 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <groupId>org.jruby</groupId>
+    <artifactId>shared</artifactId>
+    <version>1.0RC3</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.jruby</groupId>
+  <artifactId>jruby-complete</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0RC3</version>
+  <name>JRuby Complete</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>backport-util-concurrent</groupId>
+      <artifactId>backport-util-concurrent</artifactId>
+      <version>3.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>jline</groupId>
+      <artifactId>jline</artifactId>
+      <version>0.9.91</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>asm</groupId>
+      <artifactId>asm</artifactId>
+      <version>2.2.3</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>asm</groupId>
+      <artifactId>asm-commons</artifactId>
+      <version>2.2.3</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <sourceDirectory>${project.basedir}/../../src</sourceDirectory>
+    <testSourceDirectory>${project.basedir}/../../test</testSourceDirectory>
+    <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>asm</groupId>
+                  <artifactId>asm</artifactId>
+                  <version>2.2.3</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>asm</groupId>
+                  <artifactId>asm-commons</artifactId>
+                  <version>2.2.3</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>backport-util-concurrent</groupId>
+                  <artifactId>backport-util-concurrent</artifactId>
+                  <version>3.0</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>jline</groupId>
+                  <artifactId>jline</artifactId>
+                  <version>0.9.91</version>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <includes>
+            <!-- <include>org/jruby/test/MainTestSuite.java</include> -->
+            <!-- <include>org/jruby/test/ScriptTestSuite.java</include>  -->
+            <!-- <include>org/jruby/test/TestUnitTestSuite.java</include> -->
+          </includes>
+          <excludes>
+            <exclude>**/*.java</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>unjar-deps</id>
+            <phase>process-resources</phase>
+            <configuration>
+              <tasks>
+                <delete file="${project.build.outputDirectory}/META-INF/MANIFEST.MF"/>
+                <mkdir dir="${project.build.outputDirectory}/META-INF/jruby.home"/>
+                <copy todir="${project.build.outputDirectory}/META-INF/jruby.home">
+                  <fileset dir="${project.basedir}/../..">
+                    <include name="bin/*"/>
+                    <include name="lib/ruby/gems/1.8/cache/sources*.gem"/>
+                    <include name="lib/ruby/gems/1.8/gems/sources*/**/*"/>
+                    <include name="lib/ruby/gems/1.8/specifications/sources*.gemspec"/>
+                    <include name="lib/ruby/site_ruby/**/*"/>
+                    <!-- this is only temporary; will be deleted from final jar -->
+                    <include name="lib/ruby/1.8/**"/>
+                  </fileset>
+                </copy>
+                <copy todir="${project.build.outputDirectory}">
+                  <fileset dir="${project.basedir}/../../lib/ruby/1.8">
+                    <include name="**/*.rb"/>
+                  </fileset>
+                </copy>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>jarjar</id>
+            <phase>package</phase>
+            <configuration>
+              <tasks>
+                <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
+                  classpath="${project.basedir}/../../lib/jarjar-0.7.jar"/>
+                <java jar="${project.build.directory}/${project.build.finalName}.jar" fork="true" maxmemory="256m" failonerror="true">
+                  <sysproperty key="jruby.home" value="${project.build.outputDirectory}/META-INF/jruby.home"/>
+                  <arg value="--command"/>
+                  <arg value="gem"/>
+                  <arg value="install"/>
+                  <arg value="rspec"/>
+                  <arg value="rake"/>
+                  <arg value="--no-ri"/>
+                  <arg value="--no-rdoc"/>
+                </java>
+                <delete>
+                  <fileset dir="${project.build.outputDirectory}">
+                    <include name="META-INF/jruby.home/lib/ruby/gems/1.8/source_cache"/>
+                    <!-- delete after gems installed, as mentioned above; -->
+                    <!-- main ruby libs go in root of jarfile -->
+                    <include name="META-INF/jruby.home/lib/ruby/1.8/**"/>
+                    <include name="META-INF/maven/**"/>
+                  </fileset>
+                  <fileset dir="${project.build.directory}"
+                    includes="${project.build.finalName}.jar"/>
+                </delete>
+                <jarjar destfile="${project.build.directory}/${project.build.finalName}.jar">
+                  <fileset dir="${project.build.outputDirectory}">
+                    <include name="META-INF/jruby.home/**/*"/>
+                    <include name="**/*.class"/>
+                    <include name="**/*.properties"/>
+                    <include name="**/*.rb"/>
+                    <exclude name="org/jruby/util/ant/**/*.class"/>
+                  </fileset>
+                  <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+                  <manifest>
+                    <attribute name="Built-By" value="${user.name}"/>
+                    <attribute name="Main-Class" value="${jruby.main.class}"/>
+                  </manifest>
+                </jarjar>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>tests</id>
+            <phase>test</phase>
+            <configuration>
+              <tasks>
+                <mkdir dir="${project.build.directory}/surefire-reports"/>
+                <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
+                  classpathref="maven.plugin.classpath"/>
+                <junit fork="yes" forkMode="once" haltonfailure="true" dir="${project.build.testOutputDirectory}" maxmemory="384M">
+                  <classpath>
+                    <path refid="maven.test.classpath"/>
+                    <path refid="maven.plugin.classpath"/>
+                    <pathelement location="${project.basedir}/../../test/requireTest.jar"/>
+                  </classpath>
+                  <formatter type="plain"/>
+                  <formatter type="xml"/>
+                  <formatter type="brief" usefile="false"/>
+                  <sysproperty key="java.awt.headless" value="true"/>
+                  <sysproperty key="basedir" value="${basedir}"/>
+                  <sysproperty key="jruby.home" value="${basedir}/../.."/>
+                  <sysproperty key="jruby.base" value="${basedir}/../.."/>
+                  <sysproperty key="jruby.lib" value="${basedir}/../../lib"/>
+                  <test name="org.jruby.test.MainTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
+                  <test name="org.jruby.test.ScriptTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
+                  <test name="org.jruby.test.TestUnitTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
+                  <test name="org.jvyamlb.YAMLLoadTest" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
+                  <test name="org.jvyamlb.YAMLDumpTest" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
+                </junit>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>ant</groupId>
+            <artifactId>ant-junit</artifactId>
+            <version>1.6.5</version>
+          </dependency>
+          <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
+</project>

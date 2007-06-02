@@ -1,0 +1,905 @@
+##!ArgsNode 
+def test argument
+end
+
+# comment
+def test arg1 # only one argument
+end #comment
+# comment
+def test arg1, arg2 = 5 # args
+end
+# comment
+def test arg1, *args
+end
+# comment
+def run_tests pattern = "test/test*.rb", log_enabled = false
+end
+# comment
+def initialize *args, &block
+end
+def test arg1, # comm
+arg2 # comm
+end
+
+# args
+def format_message *args
+  @format_proc ? @format_proc.call(*args) : super(*args)
+end
+
+##!AliasNode 
+# comment
+alias new_name old_name
+
+##!AndNode 
+true and true
+true && true
+
+##!ArgsCatNode 
+[angle, *args]
+
+##!ArrayNode    
+[1, 2, 3, "test", 100]
+
+[[1, 3, 5, 9, 11, #kommentar
+2]]
+
+SEGMENTS = [[1, 3, #komm
+5, 9, 11, 13], #kommentar
+[2, 5, 11], #kommentar
+[1, 5, 7, 9, 13], #kommentar
+[1, 5, 7, 11, 13], #kommentar
+[3, 5, 7, 11], #kommentar
+[1, 3, 7, 11, 13], #kommentar
+[1, 3, 7, 9, 11, 13], #kommentar
+[1, 3, 5, 11], #kommentar
+[1, 3, 5, 7, 9, 11, 13], #kommentar
+[1, 3, 5, 7, 11, 13]]
+
+
+##!BackRefNode 
+"Hund, Katze und Maus".split /, | und /
+puts $&
+puts $+
+puts $`
+puts $'
+
+##!BeginNode 
+begin
+  puts "loop"
+rescue Exception => e
+  puts e
+else
+  puts "else"
+end
+
+begin
+  load fn
+rescue Exception => ex
+  puts "Error in #{fn}: #{ex.message}"
+  puts ex.backtrace
+  assert false
+end
+
+begin
+  do_something_illegal
+rescue
+ensure
+  print "ensure"
+end
+
+begin
+  do_something_illegal
+rescue Exception > e
+ensure
+  print "ensure"
+end
+
+##!MethodCallOnBlock
+def test_6_slottype_proc
+  bus = FreeBASE::DataBus.new
+  slot = bus["slot"]
+  slot.set_proc {|param| assert_equals(4, param)}
+  slot.call 4
+  slot.invoke 4
+  slot.proc.call 4
+  assert_exception(RuntimeError) {slot.stack}
+end
+
+##!BignumNode 
+123456789012345678901234567890
+-123456789012345678901234567890
+
+##!BlockArgNode 
+def test arg1, &arg
+end
+def test &arg
+end
+def test &arg
+  arg.call
+end
+
+##!BlockPassNode 
+def quiet &block
+  with_verbose(false, &block)
+end
+
+##!BlockPassNode 
+def method_missing methID, args, &block
+  @gc.__send__([methID], args, &block)
+end
+
+##!BlockPassNode 
+def test_multi_invocations
+  runs = []
+  p = proc {|t| runs << t.name}
+  task({:t1 => [:t2, :t3]}, &p)
+  task({:t2 => [:t3]}, &p)
+  task(:t3, &p)
+  Task[:t1].invoke
+  assert_equal(["t1", "t2", "t3"], runs.sort)
+end
+
+##!BlockPassNode 
+def aufruf &block
+  aufruf(&block)
+end
+
+##!BlockPassNode 
+def traverse &b
+  inject({}) do |h, k, v|
+    v = (Hash === v ? v.traverse(&b) : v)
+    nk, nv = b[k, v]
+    h[nk] = nv
+    h
+  end
+end
+
+##!BlockCalled
+p = proc {puts "aa"}
+p.call
+
+##!BlockPassNode 
+def key_auto
+  leet = lambda {|hsh, key| hsh[key] = new(&leet)}
+  new(*args, &leet).order_by {|k, v| k}
+end
+
+##!BreakNode 
+while true
+  break
+end
+
+##!ConstDeclNode 
+CONST = -5
+CONST = 5
+
+##!ClassVarAsgnNode 
+class Test
+  @@classvar = 50
+  def initialize
+    @@classvar = 10
+  end
+end
+
+##!ClassVarDeclNode 
+@@classvar = 5
+@@classvar = 5.to_s
+@@classvar = []
+
+##!ClassVarNode 
+@@classvar
+
+##!CallNode 
+
+
+##!CallNode 
+@test.call
+@test.call "argument"
+@test.call(5).call
+@test.call(5, 6)
+@test.call(5, 5.to_s)
+@test.call(5, 5.to(@i))
+@test.call @t.call(5.call(5.call))
+2 * 3
+task({:t1 => [:t2, :t3]}, p)
+
+def test_task &p
+  task({:t1 => [:t2, :t3]}, &p)
+end
+
+class Object
+  def superior klass = self.class.superclass, *args, &blk
+    if self.class.ancestors.include? klass
+    else
+      raise ArgumentError
+    end
+    called = /\`([^\']+)\'/.match(caller(1).first)[1].to_sym
+    klass.instance_method(called).bind(self).call *args, &blk
+  end
+end
+
+test a.ew.+(b, 2)
+test(5, a.ew.+(b, 2))
+
+class TCHash < Test::Unit::TestCase
+  def test_has_keys?
+    assert ({:a => 1, :b => 2, :c => 3}).has_keys?(:a, :b)
+    assert !({:a => 1, :b => 2, :c => 3}).has_keys?(:a, :b, :d)
+  end
+end
+
+return (('_' * i) + self.to_s + ('_' * i)).to_sym
+
+function(Math.sqrt((@jm + @km * @km).to_f), 2)
+
+k << ((' ' * Integer(rand * 10)) + '|' + i.to_s)
+a << (i.to_s)
+
+##!CaseNode 
+case var
+when 1
+  puts "one"
+when 2
+  puts "two"
+end
+
+##!ClassNode
+#cc
+#cc
+class Test < A::B #cc
+#cc
+#cc
+end #cc
+
+class Test < SuperClass
+end
+
+class A::Test #k
+end
+
+class ::Test #k
+end
+
+##!Colon2Node 
+class MyWidget < Qt::Widget
+end
+
+##!Colon3Node 
+::GLOBAL_SCOPE_VAR
+
+##!ConstNode 
+5
+
+##!DAsgnNode 
+[1, 2].each_with_index do |var, index|
+  puts var
+end
+
+ivars.each do |ivar|
+  ivalue = instance_variable_get ivar
+  cvalue = case 
+  when NilClass === ivalue, Symbol === ivalue
+    ivalue
+  when ivalue.respond_to?(:deep_copy)
+    ivalue.deep_copy h
+  when ivalue.respond_to?(:dup)
+    ivalue.dup
+  else
+    ivalue
+  end
+end
+
+##!DRegxNode 
+"Hund, Katze und Maus".split /, | #{"u" + "n" + "d"} /
+"abundbc".split /, | #{"u" + "n" + "d"} /
+
+##!DStrNode 
+"#{5.to_s}"
+"#{5.to_s} and #{6.to_s}"
+
+##!DSymbolNode 
+:"sym#{5}"
+:"symbol"
+
+##!DXStrNode 
+%x{echo #{puts "555"}}
+%x{echo #{puts "5".to_s}}
+
+##!DefinedNode 
+defined? abcd
+
+##!DefnNode
+
+# this method prints 5
+def initialize # no parameters
+  puts 5
+#that's it
+end # we are done
+
+def filter filename, backup = nil, &filter
+end
+
+def onCmdPrev sender, sel, ptr
+  self.searchMode |= SEARCH_BACKWARD
+  onCmdNext(sender, sel, ptr)
+#finished
+end
+
+##!DefsNode 
+class MyClass
+  def MyClass.method
+  end
+  def MyClass.method argument
+  end
+  def MyClass.method argument1, arg2
+  end
+  def MyClass.method argument1, &arg2
+  end
+end
+
+##!DotNode 
+for i in 0..100
+  puts i
+end
+
+if !a 0..self.length - 1
+else
+  index(a)..index(z)
+end
+
+
+##!EnsureNode 
+def test
+  illegal
+rescue Exception
+  return 1
+ensure
+  save_file
+end
+
+##!FCallNode 
+puts 5
+p []
+fib_up_to(1000) {|f| print f}
+
+##!FalseNode 
+false
+
+##!FixnumNode 
+5000
+-10000
+
+##!FlipNode 
+while line = gets
+  if line =~ /start/ .. line =~ /end/
+    puts line
+  end
+end
+
+while line = gets
+  if line =~ /start/ ... line =~ /end/
+    puts line
+  end
+end
+
+##!FloatNode 
+0.5
+5.0
+10.01
+
+##!ForNode 
+for i in 0..100
+  puts i
+end
+for i in 0...100
+  puts i
+end
+for i in 0..[1, 2].length
+  puts i
+end
+for i in Range.new(0, 2)
+  puts i
+end
+
+##!GlobalAsgnNode 
+$TEST = 5
+old_verbose, $VERBOSE = $VERBOSE, nil
+
+##!GlobalVarNode 
+$test
+
+##!HashNode 
+{}
+{"key" => 6, 5 => 7}
+{1 => 1}
+
+set_options :name => "mirko"
+
+##!InstAsgnNode 
+@instvar = 5
+
+@instvar = "test"
+
+##!IfNode 
+if true
+  true
+else
+  false
+end
+
+#komm
+if false
+  false
+elsif false
+  true
+elsif true
+  true
+end
+
+if false
+  false
+elsif false
+  true
+else
+  true
+end
+
+if destdir = ENV["DESTDIR"]
+end
+
+if @properties["caret.line.back"]
+  set_caret_line_visible true
+  set_caret_line_back @properties["caret.line.back"]
+else
+  set_caret_line_visible false
+end
+
+if ans = @heritage.call(anc)
+end
+
+##!IfNode 
+if (a = @prompt.match(/(\d+)[>*]/))
+end
+##=
+if (a = @prompt.match /(\d+)[>*]/)
+end
+
+##!Short IfNode
+cost = song.duration > 180 ? 0.35 : 0.25
+
+def File.dir? path
+  File.directory?((path[-1, 1] == '/') ? path : path + '/')
+end
+
+module Kernel
+  def __DIR__
+    /^(.+)?:\d+/ =~ caller[0] ? File.dirname($1) : nil
+  end
+end
+
+n > 0 ? (s[0...n] = replacement) : (s[n..-1] = replacement)
+
+name = (directory.instance_of?(String)) ? path.to_s : path.basename.to_s
+
+##!IterNode 
+
+[1, 2].each do |i|
+  puts i
+end
+
+def compose other
+  proc {|a| self.call other.call(a)}
+end
+
+##!IterNode on single line
+[1, 2].each {|a| puts a}
+
+##!LocalAsgnNode 
+i = 1
+
+class Test
+  def on_exit &block
+    @exit_proc = block
+  end
+end
+
+##!MultipleAsgnNode 
+a, b = 1, 2
+a, b = [1, 2], 3
+slot["/FirstName"].data, slot["/MiddleName"].data, slot["/LastName"].data = slot["/FullName"].data.split
+array[i], @array[j] = @array[j], @array[i]
+
+##!Match2Node 
+if /^\s*$/ =~ line
+end
+
+##!Match2Node 
+next if (/CVS$/ =~ File.dirname(f))
+##=
+if (/CVS$/ =~ File.dirname(f))
+  next
+end
+
+##!Match2Node 
+next if /CVS$/ =~ File.dirname(f)
+##=
+if /CVS$/ =~ File.dirname(f)
+  next
+end
+
+##!Match3Node 
+date = "12/25/01"
+date =~ /(\d+)(\/|:)(\d+)(\/|:)(\d+)/
+
+##!MatchNode 
+if /pattern/
+  print "x"
+end
+
+##!ModuleNode 
+module NameSpace
+  class Test
+  end
+end
+
+##!NextNode 
+while true
+  next
+end
+
+##!NilNode 
+nil
+
+##!NotNode 
+if !true
+  false
+end
+
+unit = !instance_methods.include?('end_match')
+
+##!NotNode 
+return if not true
+##=
+if not true
+  return
+end
+
+
+##!NotNode
+BUILD_HTMLDOC = get_config('disable-htmldoc') != 'yes'
+##=
+BUILD_HTMLDOC = !get_config('disable-htmldoc') == 'yes'
+
+##!NthRefNode 
+"12:50am" =~ /(\d\d):(\d\d)(..)/
+"Hour is #$1, minute #$2"
+
+##!OpElementAsgnNode 
+a[4] += 5
+a[3] &&= true
+
+##!OpAsgnNode
+##!(a.scene += 1)
+
+
+##!OpAsgnAndNode
+a &&= 5
+
+##!OpAsgnOrNode 
+a ||= 5
+
+module Kernel
+  def method! s
+    (@__methods__ ||= {})[s] ||= method s
+  end
+end
+
+##!OptNNode 
+
+##!OrNode 
+if true || false
+  puts 1
+end
+
+true or false
+
+##!OrNode 
+system(cmd) || fail("Command Failed: [#{cmd}]")
+
+##!PostExeNode 
+
+##!RedoNode 
+while true
+  redo
+end
+
+##!RegexpNode 
+/^\\s*[a-z]/
+/^\\s*[a-z]/
+//i
+//x
+//m
+//ixm
+%r(([^/\\])\.[^./\\]*$)
+/.*\/.*/
+line.gsub!(/\[\/#{val}\]/, ANSINAME2CODE["reset"])
+/#{val}/ix
+%r(#{val})ix
+
+##!RescueNode 
+def test
+  illegal
+rescue ProtocolError => e
+  puts e
+rescue Exception
+  return 1
+else
+  puts "else"
+end
+
+def test
+  illegal
+rescue ProtocolError => e
+  var = "test"
+  var2 = "test2"
+  puts e
+end
+
+def test
+  illegal
+rescue Exception
+  return 1
+else
+  puts "else"
+end
+
+def test
+  illegal
+rescue Exception
+  puts "exception caught!"
+  return
+end
+
+##!Rescue nil
+task :clobber_package do
+  rm_r package_dir rescue nil
+end
+##=
+task(:clobber_package) do 
+  rm_r package_dir rescue nil
+end
+
+##!RetryNode 
+for i in 1..100
+  print "Now at #{i}. Restart? "
+  if gets =~ /^y/i
+    retry
+  end
+end
+
+##!ReturnNode 
+return
+return 5
+
+return [text.delete(CURSOR_MARKER), text.index(CURSOR_MARKER) || 0, !@template.index(SELECTION_MARKER).nil?]
+
+return !(cmp_prop("default_interpreter", @il.getItemText(@il.getCurrentItem)) and cmp_prop("cmd_line_options", @clo.text))
+
+##!ReturnNode with If
+return lines ? lines : nil
+##=
+return lines ? lines : nil
+
+##!SClassNode 
+class << s
+  def test
+  end
+end
+
+##!SelfNode 
+self
+
+##!SplatNode 
+a, b, c = *[1, 2, 3]
+
+class Array
+  def / len
+    inject([]) do |ary, x|
+      if [*ary.last].nitems % len == 0
+        ary << []
+      end
+    end
+  end
+end
+
+def []= *args
+  if Array === args.at(0)
+    idx, vals = args.at(0), args.at(1)
+    idx.each_with_index {|a, i| store(a, vals.at(i))}
+    return values_at(*idx)
+  else
+    return store(*args)
+  end
+end
+
+if [*ary.last].nitems % len == 0
+  ary << []
+end
+
+##!StrNode 
+"this is a string with \nnewline"
+"this is a string with \""
+text.gsub!(/[}]/) {|b| "\\" + b}
+assert_equal("te_____st", File.sanitize('This/te#$#@!st'))
+text['\'']
+assert_equal('#$%', :'#$%'.to_str)
+
+##!SuperNode 
+class Test
+  def initialize arg
+    super(arg1, 4)
+  end
+  def super_2 a, b
+    super
+  end
+  def super_2 a, b
+    super()
+  end
+end
+
+##!SValueNode 
+def test
+  return *[cc, *result]
+end
+
+##!SymbolNode 
+:symbol
+
+##!TrueNode 
+true
+
+##!UndefNode 
+undef method
+
+##!UntilNode 
+until i > 10
+  i = i + 1
+end
+
+##!VAliasNode 
+alias $NEWTEST $TEST
+
+##!VCallNode 
+test
+
+##!WhenNode 
+case var
+when 1
+  puts "one"
+when 2
+  puts "two"
+end
+
+case input_line
+when "debug"
+  dump_debug_info
+  dump_symbols
+when /p\s+(\w+)/
+  dump_variable $1
+when "quit", "exit"
+  exit
+else
+  print "Illegal command: #{input_line}"
+end
+
+
+##!WhileNode 
+begin
+  puts 1
+end while false
+while true
+  puts 1
+end
+
+def fib_up_to max
+  i1, i2 = 1, 1
+  while i1 <= max
+    yield i1
+    i1, i2 = i2, i1 + i2
+  end
+end
+
+while (line = str.slice! /.{#{max_size}}/)
+  all.push line
+end
+
+##!XStrNode 
+`echo backtickz`
+
+##!YieldNode 
+def test &block
+  yield
+end
+def test &block
+  yield 5
+end
+
+def block_test
+  yield("aaa", "bbb", "ccc")
+end
+
+block_test {|a, b, c| puts(a, b, c)}
+
+text.each_line do |ln|
+  new_text = new_text + yield(ln)
+end
+
+yield(var, eval(var))
+
+##!ZArrayNode 
+[]
+
+##!ZSuperNode 
+super
+
+##!Negative Number in Call
+elements = []
+elements[0] = today.year - 1
+
+##!HereDocument indented
+
+assert_equal(<<-EOF.strip, html)
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN
+http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head profile=""><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><style type="text/css" >@import "reaptest.css";</style></head><body><ol class="xoxo"><li>test</li></ol></body></html>
+EOF
+
+module Kernel
+  def cache m = nil
+    if m
+      (Module === self ? self : (class << self; self; end)).module_eval <<-EOF
+        alias_method '__#{m}__', '#{m}'
+        def #{m}(*__a__,&__b__)
+          c = cache['#{m}']
+          k = [__a__,__b__]
+          if c.has_key? k
+            c[k]
+          else
+            c[k] = __#{m}__(*__a__,&__b__)
+          end
+        end
+    EOF
+    end
+    @cache ||= Hash.new {|h, k| h[k] = {}}
+  end
+end
+
+##!HereDocument - cattr_reader
+
+def cattr_reader *syms
+  syms.flatten.each do |sym|
+    class_eval(<<-EOF, "huhu", 10)
+      def self.#{sym}
+        @@#{sym}
+      end
+      def #{sym}
+        @@#{sym}
+      end
+  EOF
+  end
+  return syms
+end
+
+##!HereDocument
+
+class Test
+  def add_directory directory, otherNode, append = true
+    item = nil
+    begin
+      @plugin["/system/ui/fox/FXApp"].data.beginWaitCursor
+      path = directory
+      path = Pathname.new directory unless directory.instance_of? Pathname
+      name = (directory.instance_of?(String)) ? path.to_s : path.basename.to_s
+    end
+  end
+end

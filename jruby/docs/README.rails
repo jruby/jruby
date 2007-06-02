@@ -1,0 +1,40 @@
+This document will give some information, but the most up to date information 
+can be found on this page:
+http://www.headius.com/jrubywiki/index.php/JRuby_on_Rails
+
+To get started:
+
+1. Install Rails gem:
+ % gem install --no-rdoc --no-ri -y rails
+2. Install ActiveRecord-JDBC gem:
+ % gem install --no-rdoc --no-ri ActiveRecord-JDBC
+2. Generate your Rails application using JRuby
+ % jruby ${JRUBY_HOME}/bin/rails my_app
+3. Start Rails: 
+ % jruby scripts/server
+
+To get JDBC running you will need to do add one code snippet:
+     if RUBY_PLATFORM =~ /java/
+       require 'rubygems'
+       RAILS_CONNECTION_ADAPTERS = %w(jdbc)
+     end
+
+right above the line:
+    "Rails::Initializer.run do |config|"
+    
+In time, it sounds like Rails will change in some way to make this unneccesary.
+
+To configure using the JDBC driver here is an example config.  It should give
+an idea of how you need to edit config/database.yaml:
+  adapter: jdbc
+  driver: com.mysql.jdbc.Driver
+  url: jdbc:mysql://localhost:3306/cookbook
+  username: root
+  password: yeahpwhere
+
+Note! Make sure jdbc driver is in your Java CLASSPATH:
+a. Unix sh setting
+  export CLASSPATH=/my_path_to/driver.jar
+b. Dos setting
+  set CLASSPATH=c:\foo\bar\driver.java
+
