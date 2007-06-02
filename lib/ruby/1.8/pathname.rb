@@ -496,7 +496,10 @@ class Pathname
     while r = chop_basename(path)
       path, basename = r
     end
-    path == ''
+    # enebo: mild hack for windows drive letters.  Any kook trying
+    # to create a relative path that starts like 'c:/' will be in trouble
+    # so it is not the best solution...
+    path == '' && @path !~ /\A[a-zA-Z]:/
   end
 
   #

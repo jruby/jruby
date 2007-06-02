@@ -1807,7 +1807,16 @@ public final class Ruby {
         if (jrubyHome == null) {
             jrubyHome = verifyHome(System.getProperty("jruby.home", System.getProperty("user.home") + "/.jruby"));
         }
-        return jrubyHome;
+        
+        try {
+            // This comment also in rbConfigLibrary
+            // Our shell scripts pass in non-canonicalized paths, but even if we didn't
+            // anyone who did would become unhappy because Ruby apps expect no relative
+            // operators in the pathname (rubygems, for example).
+            return new NormalizedFile(jrubyHome).getCanonicalPath();
+        } catch (IOException e) {}
+        
+        return new NormalizedFile(jrubyHome).getAbsolutePath();
     }
     
     public void setJRubyHome(String home) {
