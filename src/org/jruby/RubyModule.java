@@ -224,7 +224,7 @@ public class RubyModule extends RubyObject {
         moduleClass.defineFastPrivateMethod("remove_class_variable", callbackFactory.getFastMethod("remove_class_variable", IRubyObject.class));
         moduleClass.defineFastPrivateMethod("remove_const", callbackFactory.getFastMethod("remove_const", IRubyObject.class));
         moduleClass.defineFastPrivateMethod("remove_method", callbackFactory.getFastOptMethod("remove_method"));
-        moduleClass.defineFastPrivateMethod("undef_method", callbackFactory.getFastMethod("undef_method", IRubyObject.class));
+        moduleClass.defineFastPrivateMethod("undef_method", callbackFactory.getFastOptMethod("undef_method"));
         
         moduleMetaClass.defineMethod("nesting", callbackFactory.getSingletonMethod("nesting"));
 
@@ -1901,8 +1901,10 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    public RubyModule undef_method(IRubyObject name) {
-        undef(name.asSymbol());
+    public RubyModule undef_method(IRubyObject[] args) {
+        for (int i=0; i<args.length; i++) {
+            undef(args[i].asSymbol());
+        }
         return this;
     }
 
