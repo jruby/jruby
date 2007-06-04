@@ -1597,7 +1597,7 @@ public class EvaluationState {
         // since serialization cannot serialize an eval (which is the only thing
         // which is capable of having a non-empty dynamic scope).
         if (scope == null) {
-            scope = new DynamicScope(iVisited.getStaticScope(), null);
+            scope = new DynamicScope(iVisited.getStaticScope());
         }
         
         // Each root node has a top-level scope that we need to push

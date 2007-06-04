@@ -687,7 +687,7 @@ public class ThreadContext {
         pushRubyClass(type);
         pushFrameCopy();
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
-        pushScope(new DynamicScope(staticScope, getCurrentScope()));
+        pushScope(new DynamicScope(staticScope, null));
     }
     
     public void postClassEval() {
@@ -725,7 +725,7 @@ public class ThreadContext {
         RubyModule implementationClass = (RubyModule)cref.getValue();
         setCRef(cref);
         pushCallFrame(noSuper ? null : clazz, name, self, args, req, block, jumpTarget);
-        pushScope(new DynamicScope(staticScope, getCurrentScope()));
+        pushScope(new DynamicScope(staticScope));
         pushRubyClass(implementationClass);
     }
     
