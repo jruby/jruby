@@ -1388,7 +1388,7 @@ public final class Ruby {
         return proc;
     }
     
-    public void addFinalizer(RubyObject.Finalizer finalizer) {
+    public void addFinalizer(Finalizable finalizer) {
         synchronized (this) {
             if (finalizers == null) {
                 finalizers = new WeakHashMap();
@@ -1400,7 +1400,7 @@ public final class Ruby {
         }
     }
     
-    public void removeFinalizer(RubyObject.Finalizer finalizer) {
+    public void removeFinalizer(Finalizable finalizer) {
         if (finalizers != null) {
             synchronized (finalizers) {
                 finalizers.remove(finalizer);
@@ -1425,7 +1425,7 @@ public final class Ruby {
         if (finalizers != null) {
             synchronized (finalizers) {
                 for (Iterator finalIter = finalizers.keySet().iterator(); finalIter.hasNext();) {
-                    ((RubyObject.Finalizer)finalIter.next()).finalize();
+                    ((Finalizable) finalIter.next()).finalize();
                     finalIter.remove();
                 }
             }

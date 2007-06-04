@@ -88,7 +88,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     
     private Finalizer finalizer;
     
-    public class Finalizer {
+    public class Finalizer implements Finalizable {
         private long id;
         private List finalizers;
         private AtomicBoolean finalized;

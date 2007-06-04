@@ -42,6 +42,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
 
@@ -50,7 +51,7 @@ import org.jruby.RubyIO;
  * 
  * @author Thomas E Enebo (enebo@acm.org)
  */
-public class IOHandlerSeekable extends IOHandlerJavaIO {
+public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
     private final static int BUFSIZE = 1024;
     
     protected RandomAccessFile file;
@@ -100,6 +101,9 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         // We give a fileno last so that we do not consume these when
         // we have a problem opening a file.
         fileno = RubyIO.getNewFileno();
+        
+        // Ensure we clean up after ourselves ... eventually
+        runtime.addFinalizer(this);
     }
 
     private void reopen() throws IOException {
@@ -163,6 +167,16 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
      * @see org.jruby.util.IOHandler#close()
      */
     public void close() throws IOException, BadDescriptorException {
+        close(false); // not closing from finalise
+    }
+    
+    /**
+     * Internal close, to safely work for finalizing.
+     * @param finalizing true if this is in a finalizing context
+     * @throws IOException 
+     * @throws BadDescriptorException
+     */
+    private void close(boolean finalizing) throws IOException, BadDescriptorException {
         if (!isOpen()) {
             throw new BadDescriptorException();
         }
@@ -171,6 +185,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         flushWrite();
         channel.close();
         file.close();
+        if (!finalizing) getRuntime().removeFinalizer(this);
     }
 
     /**
@@ -446,6 +461,17 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
             buffer.flip();
             // if the read buffer is ahead, back up
             if (posOverrun != 0) channel.position(channel.position() - posOverrun);
+        }
+    }
+    
+    /**
+     * Ensure close (especially flush) when we're finished with
+     */
+    public void finalize() {
+        try {
+            if (isOpen) close(true); // close without removing from finalizers
+        } catch (Exception e) { // What else could we do?
+            e.printStackTrace();
         }
     }
 }
