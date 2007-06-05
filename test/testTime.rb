@@ -3,18 +3,20 @@ test_check "Test Time:"
 
 t1 = Time.at(981173106)
 t2 = Time.utc(2001, 2, 3, 4, 5, 6)
+# Sat Feb 03 13:05:06 UTC 2001
 t3 = Time.at(981205506)
 t4 = Time.local(2001, 2, 3, 4, 5, 6)
+utc_offset_hours = t4.utc_offset.to_f / 3600
 
 test_equal(true, t1 == t2)
 test_equal(true, t1 === t2)
 test_equal(false, t1.equal?(t2))
 test_equal(0, t1 <=> t2)
 
-test_equal(false, t3 == t4)
-test_equal(false, t3 === t4)
+test_equal(utc_offset_hours == -9.0, t3 == t4)
+test_equal(utc_offset_hours == -9.0, t3 === t4)
 test_equal(false, t3.equal?(t4))
-test_equal(Time.now.dst? ? 1 : -1, t3 <=> t4)
+test_equal(utc_offset_hours <=> -9.0, t3 <=> t4)
 
 t = Time.at(0.5)
 test_equal(0, t.tv_sec)
