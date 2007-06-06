@@ -648,7 +648,6 @@ public final class Ruby {
         getObject().defineConstant("TOPLEVEL_BINDING", newBinding());
 
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
-        loadService.require("jsignal");
     }
 
     private void initLibraries() {

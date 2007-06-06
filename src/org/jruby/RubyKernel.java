@@ -809,6 +809,11 @@ public class RubyKernel {
         //No catch active for this throw
         throw runtime.newNameError(message, tag);
     }
+
+    public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block block) {
+        recv.getRuntime().getLoadService().require("jsignal");
+        return recv.callMethod(recv.getRuntime().getCurrentContext(), "trap", args, CallType.NORMAL, block);
+    }
     
     public static IRubyObject warn(IRubyObject recv, IRubyObject message) {
         Ruby runtime = recv.getRuntime();
