@@ -273,6 +273,7 @@
       <arg value="maybe_install_gems"/>
       <arg value="rspec"/>
       <arg value="rake"/>
+      <arg value="--env-shebang"/>
     </java>
   </target>
   

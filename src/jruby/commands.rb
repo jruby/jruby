@@ -45,7 +45,7 @@ module JRuby
             false
           end
         end
-        unless ARGV.empty?
+        unless ARGV.reject{|a| a =~ /^-/}.empty?
           ARGV.unshift "install"
           ARGV << "-y"
           self.gem

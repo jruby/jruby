@@ -4,14 +4,14 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>shared</artifactId>
-    <version>1.0RC3</version>
+    <version>1.0</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-complete</artifactId>
   <packaging>jar</packaging>
-  <version>1.0RC3</version>
+  <version>1.0</version>
   <name>JRuby Complete</name>
 
   <dependencies>
@@ -142,6 +142,7 @@
                   <arg value="rake"/>
                   <arg value="--no-ri"/>
                   <arg value="--no-rdoc"/>
+                  <arg value="--env-shebang"/>
                 </java>
                 <delete>
                   <fileset dir="${project.build.outputDirectory}">
