@@ -1,8 +1,10 @@
-require "java"
+include Java
+
+import java.io.FileReader
+import java.io.BufferedReader
 
 filename = "./samples/java2.rb"
-fr = java.io.FileReader.new filename
-br = java.io.BufferedReader.new fr
+br = BufferedReader.new(FileReader.new(filename))
 
 s = br.readLine
 

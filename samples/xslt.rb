@@ -17,10 +17,10 @@ class XSLTOptions
       opts.separator "Specific options:"
       
       opts.on("-p", "--parameters name=value,name1=value1", Array) do |n|
-	n.collect do |v| 
-	  name, value = v.split(/\s*=\s*/)
-	  options.parameters[name] = value
-	end
+        n.collect do |v| 
+          name, value = v.split(/\s*=\s*/)
+          options.parameters[name] = value
+        end
       end
     end  
     opts.parse!(args)
