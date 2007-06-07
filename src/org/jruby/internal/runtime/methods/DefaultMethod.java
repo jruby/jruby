@@ -35,7 +35,6 @@ package org.jruby.internal.runtime.methods;
 import java.util.ArrayList;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBinding;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.ast.ArgsNode;
@@ -158,11 +157,10 @@ public final class DefaultMethod extends DynamicMethod {
             }
             
             try {
-                NodeCompilerFactory.confirmNodeIsSafe(argsNode);
-
                 callCount++;
 
                 if (callCount >= runtime.getInstanceConfig().getJitThreshold()) {
+                    NodeCompilerFactory.confirmNodeIsSafe(argsNode);
                     // FIXME: Total duplication from DefnNodeCompiler...need to refactor this
                     final ArrayCallback evalOptionalValue = new ArrayCallback() {
                         public void nextValue(Compiler context, Object object, int index) {
@@ -215,10 +213,10 @@ public final class DefaultMethod extends DynamicMethod {
                     jitCompiledScript = (Script)sourceClass.newInstance();
                     
                     if (runtime.getInstanceConfig().isJitLogging()) System.err.println("compiled: " + className + "." + name);
+                    callCount = -1;
                 }
             } catch (Exception e) {
                 if (runtime.getInstanceConfig().isJitLoggingVerbose()) System.err.println("could not compile: " + className + "." + name + " because of: \"" + e.getMessage() + '"');
-            } finally {
                 callCount = -1;
             }
         }
