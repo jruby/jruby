@@ -52,7 +52,8 @@ public class MethodIndex {
     public static final int SHIFT = 32;
     public static final int EQL_P = 33;
     public static final int TO_HASH = 34;
-    public static final int MAX_METHODS = 35;
+    public static final int INSPECT = 35;
+    public static final int MAX_METHODS = 36;
     
     public static final String[] NAMES = new String[MAX_METHODS];
     public static final Map NUMBERS = new HashMap();
@@ -93,6 +94,7 @@ public class MethodIndex {
         NAMES[SHIFT] = "shift";
         NAMES[EQL_P] = "eql?";
         NAMES[TO_HASH] = "to_hash";
+        NAMES[INSPECT] = "inspect";
         
         for (int i = 0; i < MAX_METHODS; i++) {
             NUMBERS.put(NAMES[i], new Integer(i));

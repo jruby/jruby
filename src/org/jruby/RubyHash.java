@@ -150,6 +150,7 @@ public class RubyHash extends RubyObject implements Map {
     public static final byte LENGTH_SWITCHVALUE = 9;
     public static final byte TO_HASH_SWITCHVALUE = 10;
     public static final byte EQL_P_SWITCHVALUE = 11;
+    public static final byte INSPECT_SWITCHVALUE = 12;
 
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
@@ -190,6 +191,9 @@ public class RubyHash extends RubyObject implements Map {
         case EQL_P_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return obj_equal(args[0]);
+        case INSPECT_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return inspect();
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);

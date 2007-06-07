@@ -39,6 +39,8 @@ public class MethodSelectorTable {
         table[ClassIndex.FIXNUM][MethodIndex.OP_GT] = RubyFixnum.OP_GT_SWITCHVALUE;
         table[ClassIndex.FIXNUM][MethodIndex.OP_TIMES] = RubyFixnum.OP_TIMES_SWITCHVALUE;
         table[ClassIndex.FIXNUM][MethodIndex.OP_LE] = RubyFixnum.OP_LE_SWITCHVALUE;
+        table[ClassIndex.FIXNUM][MethodIndex.OP_SPACESHIP] = RubyFixnum.OP_SPACESHIP_SWITCHVALUE;
+        table[ClassIndex.FIXNUM][MethodIndex.INSPECT] = RubyFixnum.INSPECT_SWITCHVALUE;
         
         // Bignum
         table[ClassIndex.BIGNUM] = new byte[MethodIndex.MAX_METHODS];
@@ -49,6 +51,8 @@ public class MethodSelectorTable {
         table[ClassIndex.BIGNUM][MethodIndex.TO_I] = RubyBignum.TO_I_SWITCHVALUE;
         table[ClassIndex.BIGNUM][MethodIndex.HASH] = RubyBignum.HASH_SWITCHVALUE;
         table[ClassIndex.BIGNUM][MethodIndex.EQUALEQUAL] = RubyBignum.EQUALEQUAL_SWITCHVALUE;
+        table[ClassIndex.BIGNUM][MethodIndex.OP_SPACESHIP] = RubyBignum.OP_SPACESHIP_SWITCHVALUE;
+        table[ClassIndex.BIGNUM][MethodIndex.INSPECT] = RubyBignum.INSPECT_SWITCHVALUE;
         
         // Array
         table[ClassIndex.ARRAY] = new byte[MethodIndex.MAX_METHODS];
@@ -70,6 +74,8 @@ public class MethodSelectorTable {
         table[ClassIndex.ARRAY][MethodIndex.LENGTH] = RubyArray.LENGTH_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.LAST] = RubyArray.LAST_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.SHIFT] = RubyArray.SHIFT_SWITCHVALUE;
+        table[ClassIndex.ARRAY][MethodIndex.OP_SPACESHIP] = RubyArray.OP_SPACESHIP_SWITCHVALUE;
+        table[ClassIndex.ARRAY][MethodIndex.INSPECT] = RubyArray.INSPECT_SWITCHVALUE;
         
         // String
         table[ClassIndex.STRING] = new byte[MethodIndex.MAX_METHODS];
@@ -93,6 +99,8 @@ public class MethodSelectorTable {
         table[ClassIndex.STRING][MethodIndex.LENGTH] = RubyString.LENGTH_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.OP_MATCH] = RubyString.MATCH_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.OP_EQQ] = RubyString.EQQ_SWITCHVALUE;
+        table[ClassIndex.STRING][MethodIndex.OP_SPACESHIP] = RubyString.OP_SPACESHIP_SWITCHVALUE;
+        table[ClassIndex.STRING][MethodIndex.INSPECT] = RubyString.INSPECT_SWITCHVALUE;
 
         // Symbol
         table[ClassIndex.SYMBOL] = new byte[MethodIndex.MAX_METHODS];
@@ -102,6 +110,7 @@ public class MethodSelectorTable {
         table[ClassIndex.SYMBOL][MethodIndex.TO_I] = RubySymbol.TO_I_SWITCHVALUE;
         table[ClassIndex.SYMBOL][MethodIndex.TO_SYM] = RubySymbol.TO_SYM_SWITCHVALUE;
         table[ClassIndex.SYMBOL][MethodIndex.HASH] = RubySymbol.HASH_SWITCHVALUE;
+        table[ClassIndex.SYMBOL][MethodIndex.INSPECT] = RubySymbol.INSPECT_SWITCHVALUE;
 
         // Regexp
         table[ClassIndex.REGEXP] = new byte[MethodIndex.MAX_METHODS];
@@ -111,6 +120,7 @@ public class MethodSelectorTable {
         table[ClassIndex.REGEXP][MethodIndex.HASH] = RubyRegexp.HASH_SWITCHVALUE;
         table[ClassIndex.REGEXP][MethodIndex.OP_MATCH] = RubyRegexp.MATCH_SWITCHVALUE;
         table[ClassIndex.REGEXP][MethodIndex.OP_EQQ] = RubyRegexp.EQQ_SWITCHVALUE;
+        table[ClassIndex.REGEXP][MethodIndex.INSPECT] = RubyRegexp.INSPECT_SWITCHVALUE;
 
         // Hash
         table[ClassIndex.HASH] = new byte[MethodIndex.MAX_METHODS];
@@ -125,13 +135,16 @@ public class MethodSelectorTable {
         table[ClassIndex.HASH][MethodIndex.LENGTH] = RubyHash.LENGTH_SWITCHVALUE;
         table[ClassIndex.HASH][MethodIndex.TO_HASH] = RubyHash.TO_HASH_SWITCHVALUE;
         table[ClassIndex.HASH][MethodIndex.EQL_P] = RubyHash.EQL_P_SWITCHVALUE;
+        table[ClassIndex.HASH][MethodIndex.INSPECT] = RubyHash.INSPECT_SWITCHVALUE;
 
         // Module
         table[ClassIndex.MODULE] = new byte[MethodIndex.MAX_METHODS];
         table[ClassIndex.MODULE][MethodIndex.OP_EQQ] = RubyModule.EQQ_SWITCHVALUE;
+        table[ClassIndex.MODULE][MethodIndex.INSPECT] = RubyModule.INSPECT_SWITCHVALUE;
 
         // Class
         table[ClassIndex.CLASS] = new byte[MethodIndex.MAX_METHODS];
         table[ClassIndex.CLASS][MethodIndex.OP_EQQ] = RubyClass.EQQ_SWITCHVALUE;
+        table[ClassIndex.CLASS][MethodIndex.INSPECT] = RubyClass.INSPECT_SWITCHVALUE;
     }
 }
