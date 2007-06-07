@@ -10,14 +10,17 @@ module Kernel
       end
     end
     def trap(sig, &block)
-      raise TypeError, "integer signal numbers not supported" unless sig.kind_of?(String)
-      sig = sig.sub(/^SIG(.+)/,'\1')
-      signal = Java::sun.misc.Signal
-      signal.handle(signal.new(sig), RubySignalHandler.new(block))
+      if sig.kind_of?(String)
+        sig = sig.sub(/^SIG(.+)/,'\1')
+        signal = Java::sun.misc.Signal
+        signal.handle(signal.new(sig), RubySignalHandler.new(block))
+      else
+        warn "integer signal numbers not supported"
+      end
     end
   rescue NameError
     def trap(sig, &block)
-      raise "trap not supported by this VM"
+      warn "trap not supported by this VM"
     end
   end
 end
