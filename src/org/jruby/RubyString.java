@@ -1801,18 +1801,24 @@ public class RubyString extends RubyObject {
 
             if (repl.isTaint()) tainted = true;
             int startZ = mat.start(0);
-            try {
-                startZ = str.substring(0, startZ).getBytes("UTF8").length;
-            } catch (UnsupportedEncodingException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            if(utf8) {
+                try {
+                    startZ = str.substring(0, startZ).getBytes("UTF8").length;
+                } catch (UnsupportedEncodingException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
+
             int plen = mat.end(0) - startZ; 
-            try {
-                plen = mat.group(0).getBytes("UTF8").length;
-            } catch (UnsupportedEncodingException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            int plen_real = plen; 
+            if(utf8) {
+                try {
+                    plen = mat.group(0).getBytes("UTF8").length;
+                } catch (UnsupportedEncodingException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
             ByteList replValue = ((RubyString)repl).value;
             
