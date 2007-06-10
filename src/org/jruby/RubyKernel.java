@@ -257,10 +257,11 @@ public class RubyKernel {
         Ruby runtime = recv.getRuntime();
 
         if (args.length == 0 || !(args[0] instanceof RubySymbol)) throw runtime.newArgumentError("no id given");
-
-        ThreadContext tc = runtime.getCurrentContext();
-        Visibility lastVis = tc.getLastVisibility();
-        CallType lastCallType = tc.getLastCallType();
+        
+        String name = args[0].asSymbol();
+        ThreadContext context = runtime.getCurrentContext();
+        Visibility lastVis = context.getLastVisibility();
+        CallType lastCallType = context.getLastCallType();
 
         String format = null;
 
@@ -279,10 +280,40 @@ public class RubyKernel {
 
         if (format == null) format = "undefined method `%s' for %s";
 
-        IRubyObject[]exArgs = new IRubyObject[3];
+        String description = null;
+        
+        if (recv.isNil()) {
+            description = "nil";
+        } else if (recv instanceof RubyBoolean && recv.isTrue()) {
+            description = "true";
+        } else if (recv instanceof RubyBoolean && !recv.isTrue()) {
+            description = "false";
+        } else {
+            if (name.equals("inspect") || name.equals("to_s")) {
+                description = recv.anyToString().toString();
+            } else {
+                IRubyObject d;
+                try {
+                    d = recv.callMethod(context, "inspect");
+                    if (d.getMetaClass() == recv.getMetaClass() || (d instanceof RubyString && ((RubyString)d).length().getLongValue() > 65)) {
+                        d = recv.anyToString();
+                    }
+                } catch (RaiseException re) {
+                    d = recv.anyToString();
+                }
+                description = d.toString();
+            }
+        }
+        if (description.length() == 0 || (description.length() > 0 && description.charAt(0) != '#')) {
+            description = description + ":" + recv.getMetaClass().getRealClass().getName();            
+        }
+        
+        IRubyObject[]exArgs = new IRubyObject[noMethod ? 3 : 2];
 
-        RubyArray arr = runtime.newArray(args[0], runtime.newString(recv.inspect() + ":" + recv.getMetaClass().getRealClass().toString()));
+        RubyArray arr = runtime.newArray(args[0], runtime.newString(description));
         RubyString msg = runtime.newString(Sprintf.sprintf(runtime.newString(format), arr).toString());
+        
+        if (recv.isTaint()) msg.setTaint(true);
 
         exArgs[0] = msg;
         exArgs[1] = args[0];
