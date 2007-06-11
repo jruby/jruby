@@ -298,7 +298,7 @@ public class RubyKernel {
                     if (d.getMetaClass() == recv.getMetaClass() || (d instanceof RubyString && ((RubyString)d).length().getLongValue() > 65)) {
                         d = recv.anyToString();
                     }
-                } catch (RaiseException re) {
+                } catch (JumpException je) {
                     d = recv.anyToString();
                 }
                 description = d.toString();
