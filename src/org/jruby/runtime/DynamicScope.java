@@ -44,8 +44,13 @@ public class DynamicScope {
     public DynamicScope(StaticScope staticScope) {
         this.staticScope = staticScope;
         
-        int size = staticScope.getNumberOfVariables();
-        if (size > 0) variableValues = new IRubyObject[size];
+    }
+
+    private void lazy() {
+        if(variableValues == null) {
+            int size = staticScope.getNumberOfVariables();
+            variableValues = new IRubyObject[size];
+        }
     }
     
     public DynamicScope cloneScope() {
@@ -62,6 +67,7 @@ public class DynamicScope {
     }
 
     public IRubyObject[] getValues() {
+        lazy();
         return variableValues;
     }
     
@@ -79,6 +85,7 @@ public class DynamicScope {
         if (depth > 0) {
             return parent.getValue(offset, depth - 1);
         }
+        lazy();
         assert variableValues != null : "No variables in getValue for Off: " + offset + ", Dep: " + depth;
         assert offset < variableValues.length : "Index to big for getValue Off: " + offset + ", Dep: " + depth + ", O: " + this;
         // &foo are not getting set from somewhere...I want the following assert to be true though
@@ -101,6 +108,7 @@ public class DynamicScope {
         } else {
             assert offset < variableValues.length : "Setting " + offset + " to " + value + ", O: " + this; 
 
+            lazy();
             variableValues[offset] = value;
         }
     }
@@ -117,10 +125,12 @@ public class DynamicScope {
      * @param size is the number of values to assign as ordinary parm values
      */
     public void setArgValues(IRubyObject[] values, int size) {
+        lazy();
         System.arraycopy(values, 0, variableValues, 2, size);
     }
     
     public void setBlockArgValues(IRubyObject[] blockArgValues, int size) {
+        lazy();
         System.arraycopy(blockArgValues, 0, variableValues, 0, size);
     }
 
@@ -128,6 +138,7 @@ public class DynamicScope {
      * Copy variable values back for ZSuper call.
      */
     public void getArgValues(IRubyObject[] args, int size) {
+        lazy();
         if(variableValues != null && args != null && variableValues.length>=(size+2)) {
             System.arraycopy(variableValues, 2, args, 0, size);
         }
@@ -142,6 +153,7 @@ public class DynamicScope {
      *
      */
     public void growIfNeeded() {
+        lazy();
         int dynamicSize = variableValues == null ? 0: variableValues.length;
         
         if (staticScope.getNumberOfVariables() > dynamicSize) {
@@ -160,24 +172,28 @@ public class DynamicScope {
     // fairly cheap, but you never know...
     
     public void setLastLine(IRubyObject value) {
+        lazy();
         int location = staticScope.isDefined("$_");
         
         setValue(location & 0xffff, value, location >> 16);
     }
     
     public IRubyObject getLastLine() {
+        lazy();
         int location = staticScope.isDefined("$_");
 
         return getValue(location & 0xffff, location >> 16);
     }
 
     public void setBackRef(IRubyObject value) {
+        lazy();
         int location = staticScope.isDefined("$~");
         
         setValue(location & 0xffff, value, location >> 16);
     }
     
     public IRubyObject getBackRef() {
+        lazy();
         int location = staticScope.isDefined("$~");
         
         return getValue(location & 0xffff, location >> 16); 
@@ -216,6 +232,7 @@ public class DynamicScope {
 
     // Helper function to give a good view of current dynamic scope with captured scopes
     private String toString(StringBuffer buf, String indent) {
+        lazy();
         buf.append(indent).append("Static Type[" + hashCode() + "]: " + 
                 (staticScope instanceof BlockStaticScope ? "block" : "local")+" [");
         int size = staticScope.getNumberOfVariables();
