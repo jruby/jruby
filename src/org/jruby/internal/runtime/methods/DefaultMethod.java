@@ -316,17 +316,11 @@ public final class DefaultMethod extends DynamicMethod {
     }
 
     private void traceReturn(ThreadContext context, Ruby runtime, String name) {
-        if (!runtime.hasEventHooks()) {
-            return;
-        }
-
         ISourcePosition position = context.getPreviousFramePosition();
         runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
     }
     
     private void traceCall(ThreadContext context, Ruby runtime, String name) {
-        if (!runtime.hasEventHooks()) return;
-        
         ISourcePosition position = body != null ? body.getPosition() : context.getPosition();
         
         runtime.callEventHooks(context, EventHook.RUBY_EVENT_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
