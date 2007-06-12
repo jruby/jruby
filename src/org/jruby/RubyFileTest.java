@@ -80,7 +80,7 @@ public class RubyFileTest {
         return filename.getRuntime().newBoolean(newFile(filename).canRead());
     }
 
-    public static RubyBoolean executable_p(IRubyObject recv, IRubyObject filename) {
+    public static IRubyObject executable_p(IRubyObject recv, IRubyObject filename) {
         recv.getRuntime().getWarnings().warn("executable? does not work on JRuby and will return a dummy value");
         return exist_p(recv, filename);
     }
