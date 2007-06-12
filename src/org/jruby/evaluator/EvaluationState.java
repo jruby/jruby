@@ -573,7 +573,7 @@ public class EvaluationState {
             try {
                 DynamicMethod method = module.searchMethod(iVisited.getName());
 
-                IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, iVisited.getName(), args, self, CallType.NORMAL, block);
+                IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, iVisited.getName(), iVisited.index, args, self, CallType.NORMAL, block);
                 if (mmResult != null) {
                     return mmResult;
                 }
@@ -1748,7 +1748,7 @@ public class EvaluationState {
         } else {
             DynamicMethod method = module.searchMethod(iVisited.getName());
 
-            IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, self, method, iVisited.getName(), IRubyObject.NULL_ARRAY, self, CallType.VARIABLE, Block.NULL_BLOCK);
+            IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, self, method, iVisited.getName(), iVisited.index, IRubyObject.NULL_ARRAY, self, CallType.VARIABLE, Block.NULL_BLOCK);
             if (mmResult != null) {
                 return mmResult;
             }

@@ -509,9 +509,31 @@ public class RubyObject implements Cloneable, IRubyObject {
         return method.call(context, this, rubyclass, name, args, false, block);
     }
     
-    public static IRubyObject callMethodMissingIfNecessary(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name,
+    public static IRubyObject callMethodMissingIfNecessary(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, int methodIndex,
             IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
-        if (method.isUndefined() || !(name.equals("method_missing") || method.isCallableFrom(self, callType))) {
+        if (method.isUndefined() || (methodIndex != MethodIndex.METHOD_MISSING  && !method.isCallableFrom(self, callType))) {
+            // store call information so method_missing impl can use it            
+            context.setLastCallStatus(callType);            
+            context.setLastVisibility(method.getVisibility());
+
+            if (methodIndex == MethodIndex.METHOD_MISSING) {
+                return RubyKernel.method_missing(self, args, block);
+            }
+
+            IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+            System.arraycopy(args, 0, newArgs, 1, args.length);
+            newArgs[0] = RubySymbol.newSymbol(self.getRuntime(), name);
+
+            return receiver.callMethod(context, "method_missing", newArgs, block);
+        }
+        
+        // kludgy.
+        return null;
+    }
+
+    public static IRubyObject callMethodMissingIfNecessary(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
+            IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
+        if (method.isUndefined() || (!name.equals("method_missing")  && !method.isCallableFrom(self, callType))) {
             // store call information so method_missing impl can use it            
             context.setLastCallStatus(callType);            
             context.setLastVisibility(method.getVisibility());
