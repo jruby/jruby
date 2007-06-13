@@ -296,43 +296,6 @@ class Bitset implements UnicodeConstants{
       sb.append(')');
       return sb.toString();
    }
-   
-   /*
-   public static void main(String[] args){
-      //System.out.print("blocks(Lu)=");
-      //System.out.println(CharacterClass.stringValue2(Block.toBitset2(categoryBits[Lu])));
-      //System.out.println("[1][0].get('a')="+categoryBits[1][0].get('a'));
-      //System.out.println("[1][0].get('A')="+categoryBits[1][0].get('A'));
-      //System.out.println("[1][0].get(65)="+categoryBits[1][0].get(65));
-      //System.out.println(""+categoryBits[1][0].get('A'));
-      Bitset b1=new Bitset();
-      //b1.setCategory(Lu);
-      //b1.enableLargeMode();
-      b1.setRange('a','z');
-      b1.setRange('à','ÿ');
-      
-      Bitset b2=new Bitset();
-      //b2.setCategory(Ll);
-      //b2.enableLargeMode();
-      b2.setRange('A','Z');
-      b2.setRange('À','ß');
-      
-      Bitset b=new Bitset();
-      //bs.setRange('a','z');
-      //bs.setRange('A','Z');
-      b.add(b1);
-      b.add(b2,true);
-      
-      System.out.println("b1="+b1);
-      System.out.println("b2="+b2);
-      System.out.println("b=b1+^b2="+b);
-      
-      b.subtract(b1,true);
-      
-      System.out.println("(b1+^b2)-^b1="+b);
-      
-   }
-   */
 }
 
 class Block implements UnicodeConstants{
