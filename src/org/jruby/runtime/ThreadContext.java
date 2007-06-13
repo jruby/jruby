@@ -288,7 +288,7 @@ public class ThreadContext {
                                IRubyObject self, IRubyObject[] args, int req, Block block, Object jumpTarget) {
         pushFrame(new Frame(clazz, self, name, args, req, block, getPosition(), jumpTarget));        
     }
-    
+
     private void pushFrame() {
         pushFrame(new Frame(getPosition()));
     }

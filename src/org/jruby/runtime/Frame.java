@@ -114,7 +114,7 @@ public final class Frame {
     public Frame(RubyModule klazz, IRubyObject self, String name,
                  IRubyObject[] args, int requiredArgCount, Block block, ISourcePosition position, Object jumpTarget) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
-        
+
         this.self = self;
         this.args = args;
         this.requiredArgCount = requiredArgCount;

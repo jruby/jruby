@@ -333,3 +333,22 @@ end
 test_equal "123foobar", $__val
 BARZSuper.new.cc "one","two"
 test_equal "intervention", $__val
+
+class Foo111
+  def bar(*args)
+    $__val = args
+  end
+end
+
+class Bar111 < Foo111
+  def bar(*args)
+    args[0] = "barbar"
+    super
+  end
+end
+
+#This is a bug, we should support this:
+=begin
+Bar111.new.bar "one", "two", "three"
+test_equal "barbar", $__val[0]
+=end
