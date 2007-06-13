@@ -492,9 +492,8 @@ public class EvaluationState {
 
         DynamicMethod method = module.searchMethod(name);
 
-        IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, name, args, self, callType, Block.NULL_BLOCK);
-        if (mmResult != null) {
-            return mmResult;
+        if (method.isUndefined() || (!method.isCallableFrom(self, callType))) {
+            return RubyObject.callMethodMissing(context, receiver, method, name, args, self, callType, Block.NULL_BLOCK);
         }
 
         method.call(context, receiver, module, name, args, false, Block.NULL_BLOCK);
@@ -565,9 +564,8 @@ public class EvaluationState {
             } else {
                 DynamicMethod method = module.searchMethod(name);
       
-                IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, name, args, self, CallType.NORMAL, Block.NULL_BLOCK);
-                if (mmResult != null) {
-                    return mmResult;
+                if (method.isUndefined() || (!method.isCallableFrom(self, CallType.NORMAL))) {
+                    return RubyObject.callMethodMissing(context, receiver, method, name, args, self, CallType.NORMAL, Block.NULL_BLOCK);
                 }
 
                 return method.call(context, receiver, module, name, args, false, Block.NULL_BLOCK);
@@ -578,9 +576,8 @@ public class EvaluationState {
             try {
                 DynamicMethod method = module.searchMethod(name);
 
-                IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, name, index, args, self, CallType.NORMAL, block);
-                if (mmResult != null) {
-                    return mmResult;
+                if (method.isUndefined() || (index != MethodIndex.METHOD_MISSING && !method.isCallableFrom(self, CallType.NORMAL))) {
+                    return RubyObject.callMethodMissing(context, receiver, method, name, index, args, self, CallType.NORMAL, block);
                 }
 
                 return method.call(context, receiver, module, name, args, false, block);
@@ -1022,10 +1019,8 @@ public class EvaluationState {
                 return self.callMethod(context, module, iVisited.index, name, args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
             } else {
                 DynamicMethod method = module.searchMethod(name);
-
-                IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, self, method, name, args, self, CallType.FUNCTIONAL, Block.NULL_BLOCK);
-                if (mmResult != null) {
-                    return mmResult;
+                if (method.isUndefined() || (!method.isCallableFrom(self, CallType.FUNCTIONAL))) {
+                    return RubyObject.callMethodMissing(context, self, method, name, args, self, CallType.FUNCTIONAL, Block.NULL_BLOCK);
                 }
 
                 return method.call(context, self, module, name, args, false, Block.NULL_BLOCK);
@@ -1758,10 +1753,9 @@ public class EvaluationState {
                     IRubyObject.NULL_ARRAY, CallType.VARIABLE, Block.NULL_BLOCK);
         } else {
             DynamicMethod method = module.searchMethod(name);
-
-            IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, self, method, name, index, IRubyObject.NULL_ARRAY, self, CallType.VARIABLE, Block.NULL_BLOCK);
-            if (mmResult != null) {
-                return mmResult;
+            
+            if (method.isUndefined() || (index != MethodIndex.METHOD_MISSING  && !method.isCallableFrom(self, CallType.VARIABLE))) {
+                return RubyObject.callMethodMissing(context, self, method, name, index, IRubyObject.NULL_ARRAY, self, CallType.VARIABLE, Block.NULL_BLOCK);
             }
 
             return method.call(context, self, module, name, IRubyObject.NULL_ARRAY, false, Block.NULL_BLOCK);

@@ -501,14 +501,30 @@ public class RubyObject implements Cloneable, IRubyObject {
         RubyModule rubyclass = getMetaClass();
         method = rubyclass.searchMethod(name);
         
-        IRubyObject mmResult = callMethodMissingIfNecessary(context, this, method, name, args, self, callType, block);
-        if (mmResult != null) {
-            return mmResult;
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(self, callType))) {
+            return callMethodMissing(context, this, method, name, args, self, callType, block);
         }
 
         return method.call(context, this, rubyclass, name, args, false, block);
     }
     
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, int methodIndex,
+                                                IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
+        // store call information so method_missing impl can use it            
+        context.setLastCallStatus(callType);            
+        context.setLastVisibility(method.getVisibility());
+
+        if (methodIndex == MethodIndex.METHOD_MISSING) {
+            return RubyKernel.method_missing(self, args, block);
+        }
+
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 1, args.length);
+        newArgs[0] = RubySymbol.newSymbol(self.getRuntime(), name);
+
+        return receiver.callMethod(context, "method_missing", newArgs, block);
+    }
+
     public static IRubyObject callMethodMissingIfNecessary(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, int methodIndex,
             IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
         if (method.isUndefined() || (methodIndex != MethodIndex.METHOD_MISSING  && !method.isCallableFrom(self, callType))) {
@@ -529,6 +545,23 @@ public class RubyObject implements Cloneable, IRubyObject {
         
         // kludgy.
         return null;
+    }
+
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
+                                                IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
+        // store call information so method_missing impl can use it            
+        context.setLastCallStatus(callType);            
+        context.setLastVisibility(method.getVisibility());
+
+        if (name.equals("method_missing")) {
+            return RubyKernel.method_missing(self, args, block);
+        }
+
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 1, args.length);
+        newArgs[0] = RubySymbol.newSymbol(self.getRuntime(), name);
+
+        return receiver.callMethod(context, "method_missing", newArgs, block);
     }
 
     public static IRubyObject callMethodMissingIfNecessary(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
@@ -578,9 +611,9 @@ public class RubyObject implements Cloneable, IRubyObject {
         DynamicMethod method = null;
         method = rubyclass.searchMethod(name);
         
-        IRubyObject mmResult = callMethodMissingIfNecessary(context, this, method, name, args, context.getFrameSelf(), callType, block);
-        if (mmResult != null) {
-            return mmResult;
+
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+            return callMethodMissing(context, this, method, name, args, context.getFrameSelf(), callType, block);
         }
 
         return method.call(context, this, rubyclass, name, args, false, block);
