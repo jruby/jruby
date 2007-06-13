@@ -487,14 +487,17 @@ public class EvaluationState {
         CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
    
         RubyModule module = receiver.getMetaClass();
-        DynamicMethod method = module.searchMethod(iVisited.getName());
         
-        IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, iVisited.getName(), args, self, callType, Block.NULL_BLOCK);
+        String name = iVisited.getName();
+
+        DynamicMethod method = module.searchMethod(name);
+
+        IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, name, args, self, callType, Block.NULL_BLOCK);
         if (mmResult != null) {
             return mmResult;
         }
 
-        method.call(context, receiver, module, iVisited.getName(), args, false, Block.NULL_BLOCK);
+        method.call(context, receiver, module, name, args, false, Block.NULL_BLOCK);
 
         return args[args.length - 1];
     }
@@ -552,33 +555,35 @@ public class EvaluationState {
 
         Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
         RubyModule module = receiver.getMetaClass();
-        
+        String name = iVisited.getName();
+        int index = iVisited.index;
+
         // No block provided lets look at fast path for STI dispatch.
         if (!block.isGiven()) {
-            if (iVisited.index != 0) {
-                return receiver.callMethod(context, module, iVisited.index, iVisited.getName(), args, CallType.NORMAL, Block.NULL_BLOCK);
+            if (index != 0) {
+                return receiver.callMethod(context, module, index, name, args, CallType.NORMAL, Block.NULL_BLOCK);
             } else {
-                DynamicMethod method = module.searchMethod(iVisited.getName());
+                DynamicMethod method = module.searchMethod(name);
       
-                IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, iVisited.getName(), args, self, CallType.NORMAL, Block.NULL_BLOCK);
+                IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, name, args, self, CallType.NORMAL, Block.NULL_BLOCK);
                 if (mmResult != null) {
                     return mmResult;
                 }
 
-                return method.call(context, receiver, module, iVisited.getName(), args, false, Block.NULL_BLOCK);
+                return method.call(context, receiver, module, name, args, false, Block.NULL_BLOCK);
             }
         }
             
         while (true) {
             try {
-                DynamicMethod method = module.searchMethod(iVisited.getName());
+                DynamicMethod method = module.searchMethod(name);
 
-                IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, iVisited.getName(), iVisited.index, args, self, CallType.NORMAL, block);
+                IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, name, index, args, self, CallType.NORMAL, block);
                 if (mmResult != null) {
                     return mmResult;
                 }
 
-                return method.call(context, receiver, module, iVisited.getName(), args, false, block);
+                return method.call(context, receiver, module, name, args, false, block);
             } catch (JumpException je) {
                 switch (je.getJumpType().getTypeId()) {
                 case JumpType.RETRY:
@@ -1007,27 +1012,30 @@ public class EvaluationState {
         IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
         Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
         
+        String name = iVisited.getName();
+        int index = iVisited.index;
+
         // No block provided lets look at fast path for STI dispatch.
         if (!block.isGiven()) {
             RubyModule module = self.getMetaClass();
-            if (module.index != 0 && iVisited.index != 0) {
-                return self.callMethod(context, module, iVisited.index, iVisited.getName(), args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+            if (module.index != 0 && index != 0) {
+                return self.callMethod(context, module, iVisited.index, name, args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
             } else {
-                DynamicMethod method = module.searchMethod(iVisited.getName());
+                DynamicMethod method = module.searchMethod(name);
 
-                IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, self, method, iVisited.getName(), args, self, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+                IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, self, method, name, args, self, CallType.FUNCTIONAL, Block.NULL_BLOCK);
                 if (mmResult != null) {
                     return mmResult;
                 }
 
-                return method.call(context, self, module, iVisited.getName(), args, false, Block.NULL_BLOCK);
+                return method.call(context, self, module, name, args, false, Block.NULL_BLOCK);
             }
         }
 
         while (true) {
             try {
                 RubyModule module = self.getMetaClass();
-                IRubyObject result = self.callMethod(context, module, iVisited.getName(), args,
+                IRubyObject result = self.callMethod(context, module, name, args,
                                                      CallType.FUNCTIONAL, block);
                 if (result == null) {
                     result = runtime.getNil();
@@ -1742,18 +1750,21 @@ public class EvaluationState {
     private static IRubyObject vcallNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self) {
         VCallNode iVisited = (VCallNode) node;
         RubyModule module = self.getMetaClass();
-        if (module.index != 0 && iVisited.index != 0) {
-            return self.callMethod(context, module, iVisited.index, iVisited.getName(), 
+        String name = iVisited.getName();
+        int index = iVisited.index;
+
+        if (module.index != 0 && index != 0) {
+            return self.callMethod(context, module, index, name, 
                     IRubyObject.NULL_ARRAY, CallType.VARIABLE, Block.NULL_BLOCK);
         } else {
-            DynamicMethod method = module.searchMethod(iVisited.getName());
+            DynamicMethod method = module.searchMethod(name);
 
-            IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, self, method, iVisited.getName(), iVisited.index, IRubyObject.NULL_ARRAY, self, CallType.VARIABLE, Block.NULL_BLOCK);
+            IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, self, method, name, index, IRubyObject.NULL_ARRAY, self, CallType.VARIABLE, Block.NULL_BLOCK);
             if (mmResult != null) {
                 return mmResult;
             }
 
-            return method.call(context, self, module, iVisited.getName(), IRubyObject.NULL_ARRAY, false, Block.NULL_BLOCK);
+            return method.call(context, self, module, name, IRubyObject.NULL_ARRAY, false, Block.NULL_BLOCK);
         }
     }
 
