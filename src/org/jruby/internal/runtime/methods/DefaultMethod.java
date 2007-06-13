@@ -73,7 +73,10 @@ public final class DefaultMethod extends DynamicMethod {
     private SinglyLinkedList cref;
     private int callCount = 0;
     private Script jitCompiledScript;
-    
+    private int expectedArgsCount;
+    private int restArg;
+    private boolean hasOptArgs;
+
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
             ArgsNode argsNode, Visibility visibility, SinglyLinkedList cref) {
         super(implementationClass, visibility);
@@ -81,6 +84,9 @@ public final class DefaultMethod extends DynamicMethod {
         this.staticScope = staticScope;
         this.argsNode = argsNode;
 		this.cref = cref;
+        this.expectedArgsCount = argsNode.getArgsCount();
+        this.restArg = argsNode.getRestArg();
+        this.hasOptArgs = argsNode.getOptArgs() != null;
 		
 		assert argsNode != null;
     }
@@ -175,9 +181,6 @@ public final class DefaultMethod extends DynamicMethod {
                     
                     ClosureCallback args = new ClosureCallback() {
                         public void compile(Compiler context) {
-                            int expectedArgsCount = argsNode.getArgsCount();
-                            int restArg = argsNode.getRestArg();
-                            boolean hasOptArgs = argsNode.getOptArgs() != null;
                             Arity arity = argsNode.getArity();
                             
                             if (hasOptArgs) {
@@ -224,11 +227,6 @@ public final class DefaultMethod extends DynamicMethod {
     }
 
     private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject[] args) {
-        int expectedArgsCount = argsNode.getArgsCount();
-
-        int restArg = argsNode.getRestArg();
-        boolean hasOptArgs = argsNode.getOptArgs() != null;
-
         if (expectedArgsCount > args.length) {
             throw runtime.newArgumentError("Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
         }
@@ -240,13 +238,14 @@ public final class DefaultMethod extends DynamicMethod {
 
         // optArgs and restArgs require more work, so isolate them and ArrayList creation here
         if (hasOptArgs || restArg != -1) {
-            args = prepareOptOrRestArgs(context, runtime, args, expectedArgsCount, restArg, hasOptArgs);
+            args = prepareOptOrRestArgs(context, runtime, args);
         }
         
         context.setFrameArgs(args);
     }
 
-    private IRubyObject[] prepareOptOrRestArgs(ThreadContext context, Ruby runtime, IRubyObject[] args, int expectedArgsCount, int restArg, boolean hasOptArgs) {
+    private IRubyObject[] prepareOptOrRestArgs(ThreadContext context, Ruby runtime, IRubyObject[] args) {
+        int localExpectedArgsCount = expectedArgsCount;
         if (restArg == -1 && hasOptArgs) {
             int opt = expectedArgsCount + argsNode.getOptArgs().size();
 
@@ -274,7 +273,7 @@ public final class DefaultMethod extends DynamicMethod {
             for (int i = expectedArgsCount; i < args.length && j < optArgs.size(); i++, j++) {
                 // in-frame EvalState should already have receiver set as self, continue to use it
                 AssignmentVisitor.assign(runtime, context, context.getFrameSelf(), optArgs.get(j), args[i], Block.NULL_BLOCK, true);
-                expectedArgsCount++;
+                localExpectedArgsCount++;
             }
    
             // assign the default values, adding to the end of allArgs
@@ -295,14 +294,14 @@ public final class DefaultMethod extends DynamicMethod {
         // named restarg ==> >=0
         // anonymous restarg ==> -2
         if (restArg != -1) {
-            for (int i = expectedArgsCount; i < args.length; i++) {
+            for (int i = localExpectedArgsCount; i < args.length; i++) {
                 allArgs.add(args[i]);
             }
 
             // only set in scope if named
             if (restArg >= 0) {
-                RubyArray array = runtime.newArray(args.length - expectedArgsCount);
-                for (int i = expectedArgsCount; i < args.length; i++) {
+                RubyArray array = runtime.newArray(args.length - localExpectedArgsCount);
+                for (int i = localExpectedArgsCount; i < args.length; i++) {
                     array.append(args[i]);
                 }
 
