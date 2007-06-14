@@ -9,7 +9,7 @@ module Kernel
   begin
     def trap(sig, &block)
       sig = SIGNALS[sig] if sig.kind_of?(Fixnum)
-      sig = sig.sub(/^SIG(.+)/,'\1')
+      sig = sig.to_s.sub(/^SIG(.+)/,'\1')
       signal_class = Java::sun.misc.Signal
       signal_class.send :attr_accessor, :prev_handler
       signal_object = signal_class.new(sig)
