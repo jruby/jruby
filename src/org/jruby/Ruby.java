@@ -1077,14 +1077,32 @@ public final class Ruby {
     }
 
     public RubyModule getClassFromPath(String path) {
+        RubyModule c = getObject();
         if (path.length() == 0 || path.charAt(0) == '#') {
             throw newTypeError("can't retrieve anonymous class " + path);
         }
-        IRubyObject type = evalScript(path);
-        if (!(type instanceof RubyModule)) {
-            throw newTypeError("class path " + path + " does not point class");
+        int pbeg = 0, p = 0;
+        for(int l=path.length(); p<l; ) {
+            while(p<l && path.charAt(p) != ':') {
+                p++;
+            }
+            String str = path.substring(pbeg, p);
+
+            if(p<l && path.charAt(p) == ':') {
+                if(p+1 < l && path.charAt(p+1) != ':') {
+                    throw newTypeError("undefined class/module " + path.substring(pbeg,p));
+                }
+                p += 2;
+                pbeg = p;
+            }
+
+            IRubyObject cc = c.getConstant(str);
+            if(!(cc instanceof RubyModule)) {
+                throw newTypeError("" + str + " does not refer to class/module");
+            }
+            c = (RubyModule)cc;
         }
-        return (RubyModule) type;
+        return c;
     }
 
     /** Prints an error with backtrace to the error stream.
