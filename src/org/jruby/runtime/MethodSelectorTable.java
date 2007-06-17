@@ -126,6 +126,7 @@ public class MethodSelectorTable {
         table[ClassIndex.HASH] = new byte[MethodIndex.MAX_METHODS];
         table[ClassIndex.HASH][MethodIndex.AREF] = RubyHash.AREF_SWITCHVALUE;
         table[ClassIndex.HASH][MethodIndex.ASET] = RubyHash.ASET_SWITCHVALUE;
+        table[ClassIndex.HASH][MethodIndex.DEFAULT] = RubyHash.DEFAULT_SWITCHVALUE;
         table[ClassIndex.HASH][MethodIndex.NIL_P] = RubyHash.NIL_P_SWITCHVALUE;
         table[ClassIndex.HASH][MethodIndex.EQUALEQUAL] = RubyHash.EQUALEQUAL_SWITCHVALUE;
         table[ClassIndex.HASH][MethodIndex.EMPTY_P] = RubyHash.EMPTY_P_SWITCHVALUE;
