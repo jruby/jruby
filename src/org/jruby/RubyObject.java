@@ -696,7 +696,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @see org.jruby.runtime.builtin.IRubyObject#convertToTypeWithCheck(java.lang.String, java.lang.String)
      */
     public IRubyObject convertToTypeWithCheck(RubyClass targetType, int convertMethodIndex, String convertMethod) {
-        return convertToType(targetType, convertMethodIndex, convertMethod, false, true, false);
+        return convertToType(targetType, convertMethodIndex, convertMethod, false, true, true);
     }
 
     /*

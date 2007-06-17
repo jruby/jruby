@@ -2037,19 +2037,21 @@ public class RubyString extends RubyObject {
                     dummy = ((RubyRegexp) args[0]).search(toString(), this, pos + 1);
                 }
             }
-        } else if (args[0] instanceof RubyString) {
-            ByteList sub = ((RubyString) args[0]).value;
-            
+        } else if (args[0] instanceof RubyFixnum) {
+            char c = (char) ((RubyFixnum) args[0]).getLongValue();
+            pos = reverse ? value.lastIndexOf(c, pos) : value.indexOf(c, pos);
+        } else {
+            IRubyObject tmp = args[0].checkStringType();
+
+            if (tmp.isNil()) throw getRuntime().newTypeError("type mismatch: " + args[0].getMetaClass().getName() + " given");
+
+            ByteList sub = ((RubyString) tmp).value;
+
             if (sub.length() > value.length()) return getRuntime().getNil();
             // the empty string is always found at the beginning of a string (or at the end when rindex)
             if (sub.realSize == 0) return reverse ? getRuntime().newFixnum(value.length()) : getRuntime().newFixnum(0);
 
             pos = reverse ? value.lastIndexOf(sub, pos) : value.indexOf(sub, pos);
-        } else if (args[0] instanceof RubyFixnum) {
-            char c = (char) ((RubyFixnum) args[0]).getLongValue();
-            pos = reverse ? value.lastIndexOf(c, pos) : value.indexOf(c, pos);
-        } else {
-            throw getRuntime().newArgumentError("wrong type of argument");
         }
 
         return pos == -1 ? getRuntime().getNil() : getRuntime().newFixnum(pos);
