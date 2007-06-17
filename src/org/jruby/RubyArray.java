@@ -58,6 +58,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
 /**
@@ -1334,9 +1335,13 @@ public class RubyArray extends RubyObject implements List {
             len += tmp.isNil() ? 10 : ((RubyString) tmp).getByteList().length();
         }
 
-        if (!sep.isNil()) len += sep.convertToString().getByteList().length() * (realLength - 1);
+        RubyString strSep = null;
+        if (!sep.isNil()) {
+            sep = strSep = sep.convertToString();
+            len += strSep.getByteList().length() * (realLength - 1);
+        }
 
-        StringBuffer buf = new StringBuffer((int) len);
+        ByteList buf = new ByteList((int)len);
         Ruby runtime = getRuntime();
         for (int i = begin; i < begin + realLength; i++) {
             IRubyObject tmp = values[i];
@@ -1352,15 +1357,15 @@ public class RubyArray extends RubyObject implements List {
                 tmp = RubyString.objAsString(tmp);
             }
 
-            if (i > begin && !sep.isNil()) buf.append(sep.toString());
+            if (i > begin && !sep.isNil()) buf.append(strSep.getByteList());
 
-            buf.append(((RubyString) tmp).toString());
+            buf.append(tmp.asString().getByteList());
             taint |= tmp.isTaint();
         }
 
-        RubyString result = RubyString.newString(runtime, buf.toString());
-        
-        if (taint) result.setTaint(taint);
+        RubyString result = runtime.newString(buf); 
+
+        if (taint) result.setTaint(true);
 
         return result;
     }

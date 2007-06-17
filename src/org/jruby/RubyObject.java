@@ -710,7 +710,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @see org.jruby.runtime.builtin.IRubyObject#convertToType(java.lang.String, java.lang.String, boolean)
      */
     public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, boolean raise) {
-        return convertToType(targetType, convertMethodIndex, MethodIndex.NAMES[convertMethodIndex], raise, false, false);
+        return convertToType(targetType, convertMethodIndex, MethodIndex.NAMES[convertMethodIndex], raise, true, false);
     }
     
     public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, String convertMethod, boolean raiseOnMissingMethod, boolean raiseOnWrongTypeResult, boolean allowNilThrough) {
@@ -731,7 +731,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (allowNilThrough && value.isNil()) {
             return value;
         }
-        
+
         if (raiseOnWrongTypeResult && !value.isKindOf(targetType)) {
             throw getRuntime().newTypeError(getMetaClass().getName() + "#" + convertMethod +
                     " should return " + targetType);
