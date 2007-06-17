@@ -35,8 +35,6 @@
 package org.jruby;
 
 import java.math.BigInteger;
-import java.util.List;
-
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -498,8 +496,8 @@ public class RubyNumeric extends RubyObject {
      */
     public IRubyObject uminus() {
         RubyFixnum zero = RubyFixnum.zero(getRuntime());
-        List list = zero.doCoerce(this, true);
-        return ((RubyObject) list.get(0)).callMethod(getRuntime().getCurrentContext(), MethodIndex.OP_MINUS, "-", (RubyObject) list.get(1));
+        RubyArray ary = zero.doCoerce(this, true);
+        return ary.eltInternal(0).callMethod(getRuntime().getCurrentContext(), MethodIndex.OP_MINUS, "-", ary.eltInternal(1));
     }
     
     /** num_cmp
