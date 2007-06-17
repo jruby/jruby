@@ -658,7 +658,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public static String trueFalseNil(IRubyObject v) {
-        return trueFalseNil(v.getMetaClass().getName());
+        return trueFalseNil(v.getMetaClass().getRealClass().getName());
     }
 
     public static String trueFalseNil(String v) {

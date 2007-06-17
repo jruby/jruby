@@ -417,14 +417,25 @@ public class RubyKernel {
     }
     
     public static IRubyObject new_integer(IRubyObject recv, IRubyObject object) {
-        ThreadContext context = recv.getRuntime().getCurrentContext();
-        
-        if(object instanceof RubyString) {
+        if (object instanceof RubyFloat) {
+            double val = ((RubyFloat)object).getDoubleValue(); 
+            if (val <= (double) RubyFixnum.MAX && val >= (double) RubyFixnum.MIN) {
+                IRubyObject tmp = ((RubyObject)object).convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_INT, "to_int", false);
+                if (tmp.isNil()) return ((RubyObject)object).convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_I, "to_i", true);
+                return tmp;
+            }
+            return RubyNumeric.dbl2num(recv.getRuntime(),((RubyFloat)object).getDoubleValue());            
+        } else if (object instanceof RubyFixnum || object instanceof RubyBignum) {
+            return object;
+        } else if (object instanceof RubyString) {
             return RubyNumeric.str2inum(recv.getRuntime(),(RubyString)object,0,true);
-                    }
-        return object.callMethod(context,MethodIndex.TO_I, "to_i");
+        }
+        
+        IRubyObject tmp = ((RubyObject)object).convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_INT, "to_int", false);
+        if (tmp.isNil()) return ((RubyObject)object).convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_I, "to_i", true);
+        return tmp;
     }
-    
+
     public static IRubyObject new_string(IRubyObject recv, IRubyObject object) {
         return object.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
     }
