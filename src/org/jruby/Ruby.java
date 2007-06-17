@@ -839,7 +839,7 @@ public final class Ruby {
             rangeError = defineClass("RangeError", standardError, standardError.getAllocator());
         }
         if (profile.allowClass("SystemExit")) {
-            defineClass("SystemExit", exceptionClass, exceptionClass.getAllocator());
+            RubySystemExit.createSystemExitClass(this, exceptionClass);
         }
         if (profile.allowClass("Fatal")) {
             defineClass("Fatal", exceptionClass, exceptionClass.getAllocator());
@@ -1689,10 +1689,9 @@ public final class Ruby {
     }
 
     public RaiseException newSystemExit(int status) {
-        RaiseException re = newRaiseException(getClass("SystemExit"), "");
-        re.getException().setInstanceVariable("status", newFixnum(status));
-
-        return re;
+        RubyClass exc = getClass("SystemExit");
+        IRubyObject[]exArgs = new IRubyObject[]{newFixnum(status), newString("exit")};
+        return new RaiseException((RubyException)exc.newInstance(exArgs, Block.NULL_BLOCK));
     }
 
     public RaiseException newIOError(String message) {
