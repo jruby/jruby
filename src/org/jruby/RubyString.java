@@ -2696,7 +2696,7 @@ public class RubyString extends RubyObject {
         
         if (jflag != 'r') {
             p += value.realSize;
-            pend = value.begin + width;
+            pend = res.begin + width;
             if (flen <= 1) {
                 while (p < pend) pbuf[p++] = fbuf[f];
             } else {

@@ -210,6 +210,9 @@ test_equal("hi123412341", "hi".ljust(11, "1234"))
 # zero width padding
 test_exception(ArgumentError)  { "hello".ljust(11, "") }
 
+# using a substring
+test_equal("ho  ", "hiho"[2..3].ljust(4))
+
 test_equal("hello", "hello".rjust(4))
 test_equal("      hello", "hello".rjust(11))
 
