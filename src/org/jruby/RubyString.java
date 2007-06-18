@@ -938,8 +938,8 @@ public class RubyString extends RubyObject {
         boolean modify = false;
         while (s < send) {
             char c = (char)(buf[s] & 0xff);
-            if (Character.isLetter(c) && Character.isLowerCase(c)) { 
-                buf[s] = (byte)Character.toUpperCase(c);
+            if (c >= 'a' && c<= 'z') {
+                buf[s] = (byte)(c-32);
                 modify = true;
             }
             s++;
@@ -973,8 +973,8 @@ public class RubyString extends RubyObject {
         boolean modify = false;
         while (s < send) {
             char c = (char)(buf[s] & 0xff);
-            if (Character.isLetter(c) && Character.isUpperCase(c)) {
-                buf[s] = (byte)Character.toLowerCase(c);
+            if (c >= 'A' && c <= 'Z') {
+                buf[s] = (byte)(c+32);
                 modify = true;
             }
             s++;
@@ -2843,16 +2843,26 @@ public class RubyString extends RubyObject {
         return str;
     }
 
+    private final static boolean[] WHITESPACE = new boolean[256];
+    static {
+        WHITESPACE[((byte)' ')+128] = true;
+        WHITESPACE[((byte)'\t')+128] = true;
+        WHITESPACE[((byte)'\n')+128] = true;
+        WHITESPACE[((byte)'\r')+128] = true;
+        WHITESPACE[((byte)'\f')+128] = true;
+    }
+
+
     /** rb_str_lstrip_bang
      */
     public IRubyObject lstrip_bang() {
-        if (value.length() == 0) return getRuntime().getNil();
+        if (value.realSize == 0) return getRuntime().getNil();
         
         int i=0;
-        while (i < value.length() && Character.isWhitespace(value.charAt(i))) i++;
+        while (i < value.realSize && WHITESPACE[value.bytes[value.begin+i]+128]) i++;
         
         if (i > 0) {
-            view(i, value.length() - i);
+            view(i, value.realSize - i);
             return this;
         }
         
@@ -2871,12 +2881,12 @@ public class RubyString extends RubyObject {
     /** rb_str_rstrip_bang
      */ 
     public IRubyObject rstrip_bang() {
-        if (value.length() == 0) return getRuntime().getNil();
-        int i=value.length() - 1;
+        if (value.realSize == 0) return getRuntime().getNil();
+        int i=value.realSize - 1;
         
-        while (i >= 0 && Character.isWhitespace(value.charAt(i))) i--;
+        while (i >= 0 && WHITESPACE[value.bytes[value.begin+i]+128]) i--;
         
-        if (i < value.length() - 1) {
+        if (i < value.realSize - 1) {
             view(0, i + 1);
             return this;
         }
