@@ -1118,9 +1118,15 @@ public class RubyIO extends RubyObject {
                 callerBuffer = (RubyString) args[1];
             }
 
-            ByteList buf = readEntireStream ? handler.getsEntireStream() : 
-                handler.read(RubyNumeric.fix2int(args[0]));
-            
+            ByteList buf;
+            if (readEntireStream) {
+                buf = handler.getsEntireStream();
+            } else {
+                long len = RubyNumeric.num2long(args[0]);
+                if (len < 0) throw getRuntime().newArgumentError("negative length " + len + " given");
+                buf = handler.read((int)len);
+            }
+
             if (buf == null) throw new EOFException();
 
             // If we get here then no EOFException was thrown in the handler.  We
