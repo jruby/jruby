@@ -815,6 +815,7 @@ public final class Ruby {
         RubyClass ioError = null;
         RubyClass scriptError = null;
         RubyClass nameError = null;
+        RubyClass signalException = null;
         
         RubyClass rangeError = null;
         if (profile.allowClass("StandardError")) {
@@ -844,11 +845,11 @@ public final class Ruby {
         if (profile.allowClass("Fatal")) {
             defineClass("Fatal", exceptionClass, exceptionClass.getAllocator());
         }
-        if (profile.allowClass("Interrupt")) {
-            defineClass("Interrupt", exceptionClass, exceptionClass.getAllocator());
-        }
         if (profile.allowClass("SignalException")) {
-            defineClass("SignalException", exceptionClass, exceptionClass.getAllocator());
+            signalException = defineClass("SignalException", exceptionClass, exceptionClass.getAllocator());
+        }
+        if (profile.allowClass("Interrupt")) {
+            defineClass("Interrupt", signalException, signalException.getAllocator());
         }
         if (profile.allowClass("TypeError")) {
             defineClass("TypeError", standardError, standardError.getAllocator());
