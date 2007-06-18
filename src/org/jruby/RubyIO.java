@@ -1080,8 +1080,11 @@ public class RubyIO extends RubyObject {
     }
 
     public IRubyObject sysread(IRubyObject number) {
+        int len = (int)RubyNumeric.num2long(number);
+        if (len < 0) throw getRuntime().newArgumentError("Negative size");
+
         try {
-            ByteList buf = handler.sysread(RubyNumeric.fix2int(number));
+            ByteList buf = handler.sysread(len);
         
             return RubyString.newString(getRuntime(), buf);
         } catch (IOHandler.BadDescriptorException e) {
