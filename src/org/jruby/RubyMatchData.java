@@ -47,7 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public abstract class RubyMatchData extends RubyObject {
     public static RubyClass createMatchDataClass(Ruby runtime) {
-        // TODO: Is NOT_ALLOCATABLE_ALLOCATOR ok here, since you can't actually instanriate MatchData directly?
+        // TODO: Is NOT_ALLOCATABLE_ALLOCATOR ok here, since you can't actually instantiate MatchData directly?
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
 
@@ -57,9 +57,9 @@ public abstract class RubyMatchData extends RubyObject {
         matchDataClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
         matchDataClass.defineFastMethod("size", callbackFactory.getFastMethod("size"));
         matchDataClass.defineFastMethod("length", callbackFactory.getFastMethod("size"));
-        matchDataClass.defineFastMethod("offset", callbackFactory.getFastMethod("offset", RubyFixnum.class));
-        matchDataClass.defineFastMethod("begin", callbackFactory.getFastMethod("begin", RubyFixnum.class));
-        matchDataClass.defineFastMethod("end", callbackFactory.getFastMethod("end", RubyFixnum.class));
+        matchDataClass.defineFastMethod("offset", callbackFactory.getFastMethod("offset", RubyKernel.IRUBY_OBJECT));
+        matchDataClass.defineFastMethod("begin", callbackFactory.getFastMethod("begin", RubyKernel.IRUBY_OBJECT));
+        matchDataClass.defineFastMethod("end", callbackFactory.getFastMethod("end", RubyKernel.IRUBY_OBJECT));
         matchDataClass.defineFastMethod("to_a", callbackFactory.getFastMethod("to_a"));
         matchDataClass.defineFastMethod("[]", callbackFactory.getFastOptMethod("aref"));
         matchDataClass.defineFastMethod("pre_match", callbackFactory.getFastMethod("pre_match"));
@@ -131,10 +131,6 @@ public abstract class RubyMatchData extends RubyObject {
     public int matchEndPosition() {
         return matcher.end();
     }
-
-    private boolean outOfBounds(RubyFixnum index) {
-        return outOfBounds(index.getLongValue());
-    }
     
     // version to work with Java primitives for efficiency
     private boolean outOfBounds(long n) {
@@ -181,9 +177,12 @@ public abstract class RubyMatchData extends RubyObject {
     /** match_begin
      *
      */
-    public IRubyObject begin(RubyFixnum index) {
-        long lIndex = index.getLongValue();
-        long answer = begin((int)lIndex);
+    public IRubyObject begin(IRubyObject index) {
+        int idx  = RubyNumeric.num2int(index);
+        
+        if (idx < 0 || idx >= getSize()) throw getRuntime().newIndexError("index " + idx + " out of matches");
+        
+        int answer = begin(idx);
         
         return answer == -1 ? getRuntime().getNil() : getRuntime().newFixnum(answer);
     }
@@ -195,9 +194,12 @@ public abstract class RubyMatchData extends RubyObject {
     /** match_end
      *
      */
-    public IRubyObject end(RubyFixnum index) {
-        int lIndex = RubyNumeric.fix2int(index);
-        long answer = end(lIndex);
+    public IRubyObject end(IRubyObject index) {
+        int idx  = RubyNumeric.num2int(index);
+        
+        if (idx < 0 || idx >= getSize()) throw getRuntime().newIndexError("index " + idx + " out of matches");
+        
+        int answer = end(idx);
 
         return answer == -1 ? getRuntime().getNil() : getRuntime().newFixnum(answer);
     }
@@ -220,11 +222,15 @@ public abstract class RubyMatchData extends RubyObject {
     /** match_offset
      *
      */
-    public IRubyObject offset(RubyFixnum index) {
-        if (outOfBounds(index)) {
-            return getRuntime().getNil();
-        }
-        return getRuntime().newArrayNoCopy(new IRubyObject[] { begin(index), end(index)});
+    public IRubyObject offset(IRubyObject index) {
+        int idx = RubyNumeric.num2int(index);
+        
+        if (idx < 0 || idx >= getSize()) throw getRuntime().newIndexError("index " + idx + " out of matches");
+        
+        int beg = begin(idx);
+        if (beg < 0) return getRuntime().newArrayNoCopy(new IRubyObject[]{getRuntime().getNil(), getRuntime().getNil()});
+        
+        return getRuntime().newArrayNoCopy(new IRubyObject[] { getRuntime().newFixnum(beg), getRuntime().newFixnum(end(idx))});
     }
 
     /** match_pre_match
