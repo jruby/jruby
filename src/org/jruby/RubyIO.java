@@ -324,7 +324,7 @@ public class RubyIO extends RubyObject {
         ioClass.defineFastMethod("seek", callbackFactory.getFastOptMethod("seek"));
         ioClass.defineFastMethod("sync", callbackFactory.getFastMethod("sync"));
         ioClass.defineFastMethod("sync=", callbackFactory.getFastMethod("sync_set", IRubyObject.class));
-        ioClass.defineFastMethod("sysread", callbackFactory.getFastMethod("sysread", IRubyObject.class));
+        ioClass.defineFastMethod("sysread", callbackFactory.getFastOptMethod("sysread"));
         ioClass.defineFastMethod("syswrite", callbackFactory.getFastMethod("syswrite", IRubyObject.class));
         ioClass.defineAlias("tell", "pos");
         ioClass.defineAlias("to_i", "fileno");
@@ -1079,14 +1079,28 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    public IRubyObject sysread(IRubyObject number) {
-        int len = (int)RubyNumeric.num2long(number);
+    public IRubyObject sysread(IRubyObject[] args) {
+        Arity.scanArgs(getRuntime(), args, 1, 1);
+
+        int len = (int)RubyNumeric.num2long(args[0]);
         if (len < 0) throw getRuntime().newArgumentError("Negative size");
 
         try {
-            ByteList buf = handler.sysread(len);
-        
-            return RubyString.newString(getRuntime(), buf);
+            RubyString str;
+            if (args.length == 1 || args[1].isNil()) {
+                if (len == 0) return RubyString.newString(getRuntime(), "");
+                str = RubyString.newString(getRuntime(), handler.sysread(len));
+            } else {
+                str = args[1].convertToString();
+                if (len == 0) {
+                    str.setValue(new ByteList());
+                    return str;
+                }
+                str.setValue(handler.sysread(len)); // should preserve same instance
+            }
+            str.setTaint(true);
+            return str;
+            
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {
