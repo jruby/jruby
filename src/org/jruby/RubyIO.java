@@ -494,10 +494,12 @@ public class RubyIO extends RubyObject {
     public IRubyObject internalGets(IRubyObject[] args) {
         checkReadable();
 
-        IRubyObject sepVal = getRuntime().getGlobalVariables().get("$/");
+        IRubyObject sepVal;
 
         if (args.length > 0) {
             sepVal = args[0];
+        } else {
+            sepVal = getRuntime().getGlobalVariables().get("$/");
         }
 
         
@@ -1208,7 +1210,17 @@ public class RubyIO extends RubyObject {
      * <p>Invoke a block for each line.</p>
      */
     public RubyIO each_line(IRubyObject[] args, Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        IRubyObject rs;
+        
+        if (args.length == 0) {
+            rs = getRuntime().getGlobalVariables().get("$/");
+        } else {
+            Arity.checkArgumentCount(getRuntime(), args, 1, 1);
+            rs = args[0];
+            if (!rs.isNil()) rs = rs.convertToString();
+        }
+        
+        ThreadContext context = getRuntime().getCurrentContext();        
         for (IRubyObject line = internalGets(args); !line.isNil(); 
         	line = internalGets(args)) {
             block.yield(context, line);
