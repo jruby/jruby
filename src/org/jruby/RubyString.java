@@ -2844,7 +2844,6 @@ public class RubyString extends RubyObject {
     }
 
     /** rb_str_lstrip_bang
-     * FIXME support buffer shared
      */
     public IRubyObject lstrip_bang() {
         if (value.length() == 0) return getRuntime().getNil();
@@ -2870,7 +2869,6 @@ public class RubyString extends RubyObject {
     }
 
     /** rb_str_rstrip_bang
-     * FIXME support buffer shared
      */ 
     public IRubyObject rstrip_bang() {
         if (value.length() == 0) return getRuntime().getNil();
@@ -2881,10 +2879,10 @@ public class RubyString extends RubyObject {
         if (i < value.length() - 1) {
             view(0, i + 1);
             return this;
-            }
-
-            return getRuntime().getNil();
         }
+
+        return getRuntime().getNil();
+    }
 
     /** rb_str_strip
      *
@@ -2896,33 +2894,16 @@ public class RubyString extends RubyObject {
         }
 
     /** rb_str_strip_bang
-     *  FIXME support buffer shared
      */
     public IRubyObject strip_bang() {
-        if (value.length() == 0) return getRuntime().getNil();
-        
-        int left = 0;
-        while (left < value.length() && Character.isWhitespace(value.charAt(left))) left++;
-        
-        int right = value.length() - 1;
-        while (right > left && Character.isWhitespace(value.charAt(right))) right--;
-        
-        if (left == 0 && right == value.length() - 1) {
-            return getRuntime().getNil();
+        IRubyObject l = lstrip_bang();
+        IRubyObject r = rstrip_bang();
+
+        if(l.isNil() && r.isNil()) {
+            return l;
         }
-        
-        if (left <= right) {
-            view(left, right - left + 1);
         return this;
     }
-        
-        if (left > right) {
-            view(new ByteList());
-            return this;            
-        }        
-        
-        return getRuntime().getNil();
-        }
 
     /** rb_str_count
      *
