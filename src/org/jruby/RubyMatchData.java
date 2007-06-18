@@ -159,7 +159,11 @@ public abstract class RubyMatchData extends RubyObject {
             return subseq(beg, len);
         }
         if (args[0] instanceof RubyFixnum) {
-            return group(RubyNumeric.fix2int(args[0]));
+            int idx = RubyNumeric.fix2int(args[0]);
+            if (idx < 0) {
+                idx += getSize();
+            }
+            return group(idx);
         }
         if (args[0] instanceof RubyBignum) {
             throw getRuntime().newIndexError("index too big");
