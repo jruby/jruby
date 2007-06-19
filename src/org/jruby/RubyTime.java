@@ -170,7 +170,7 @@ public class RubyTime extends RubyObject {
         this.usec = usec;
     }
     
-    protected long getUSec() {
+    public long getUSec() {
         return usec;
     }
     
@@ -491,6 +491,10 @@ public class RubyTime extends RubyObject {
 
     public void setJavaCalendar(Calendar cal) {
         this.cal = cal;
+    }
+
+    public Calendar getJavaCalendar() {
+        return this.cal;
     }
 
     public Date getJavaDate() {
