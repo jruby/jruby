@@ -146,7 +146,7 @@ public class RubyKernel {
         module.defineFastModuleFunction("test", callbackFactory.getFastOptSingletonMethod("test"));
         module.defineModuleFunction("throw", callbackFactory.getOptSingletonMethod("rbThrow"));
         // TODO: Implement Kernel#trace_var
-        module.defineModuleFunction("trap", callbackFactory.getOptSingletonMethod("trap"));
+        module.definePublicModuleFunction("trap", callbackFactory.getOptSingletonMethod("trap"));
         // TODO: Implement Kernel#untrace_var
         module.defineFastModuleFunction("warn", callbackFactory.getFastSingletonMethod("warn", IRUBY_OBJECT));
         
@@ -854,7 +854,7 @@ public class RubyKernel {
 
     public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block block) {
         recv.getRuntime().getLoadService().require("jsignal");
-        return recv.callMethod(recv.getRuntime().getCurrentContext(), "trap", args, CallType.NORMAL, block);
+        return recv.callMethod(recv.getRuntime().getCurrentContext(), "trap", args, CallType.FUNCTIONAL, block);
     }
     
     public static IRubyObject warn(IRubyObject recv, IRubyObject message) {
