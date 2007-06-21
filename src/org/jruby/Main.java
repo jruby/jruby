@@ -176,9 +176,9 @@ public class Main {
             if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
                 RubyException raisedException = ((RaiseException)je).getException();
                 if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
-                    RubyFixnum status = (RubyFixnum)raisedException.getInstanceVariable("status");
+                    IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
 
-                    if (status != null) {
+                    if (status != null && !status.isNil()) {
                         return RubyNumeric.fix2int(status);
                     } else {
                         return 0;
