@@ -2038,11 +2038,16 @@ public class EvaluationState {
 
             return null;
         }
+        case NodeTypes.COLON3NODE:
         case NodeTypes.COLON2NODE: {
-            Colon2Node iVisited = (Colon2Node) node;
-            
+            Colon3Node iVisited = (Colon3Node) node;
+
             try {
-                IRubyObject left = EvaluationState.eval(runtime, context, iVisited.getLeftNode(), self, aBlock);
+                IRubyObject left = runtime.getObject();
+                if (iVisited instanceof Colon2Node) {
+                    left = EvaluationState.eval(runtime, context, ((Colon2Node) iVisited).getLeftNode(), self, aBlock);
+                }
+
                 if (left instanceof RubyModule &&
                         ((RubyModule) left).getConstantAt(iVisited.getName()) != null) {
                     return "constant";
