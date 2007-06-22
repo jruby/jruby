@@ -60,6 +60,23 @@
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
           <execution>
+            <id>generate-method-classes</id>
+            <phase>process-classes</phase>
+            <goals><goal>run</goal></goals>
+            <configuration>
+              <tasks>
+                <touch file="${project.build.directory}/__empty.rb"/>
+                <java classname="org.jruby.Main" fork="true">
+                  <classpath refid="maven.compile.classpath"/>
+                  <sysproperty key="jruby.dump_invocations" value="${project.build.outputDirectory}"/>
+                  <arg value="-rjava"/>
+                  <arg value="${project.build.directory}/__empty.rb"/>
+                </java>
+                <delete file="${project.build.directory}/__empty.rb" quiet="true"/>
+              </tasks>
+            </configuration>
+          </execution>
+          <execution>
             <id>tests</id>
             <phase>test</phase>
             <configuration>
