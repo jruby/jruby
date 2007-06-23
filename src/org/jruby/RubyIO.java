@@ -1080,7 +1080,7 @@ public class RubyIO extends RubyObject {
     }
 
     public IRubyObject sysread(IRubyObject[] args) {
-        Arity.scanArgs(getRuntime(), args, 1, 1);
+        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
 
         int len = (int)RubyNumeric.num2long(args[0]);
         if (len < 0) throw getRuntime().newArgumentError("Negative size");
@@ -1129,12 +1129,7 @@ public class RubyIO extends RubyObject {
             if (atEOF && handler.isEOF()) throw new EOFException();
 
             if (argCount == 2) {
-                // rdocs say the second arg must be a String if present,
-                // it can't just walk and quack like one
-                if (!(args[1] instanceof RubyString)) {
-                    getRuntime().newTypeError(args[1], getRuntime().getString());
-                }
-                callerBuffer = (RubyString) args[1];
+                callerBuffer = args[1].convertToString(); 
             }
 
             ByteList buf;
