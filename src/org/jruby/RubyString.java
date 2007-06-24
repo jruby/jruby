@@ -2000,16 +2000,26 @@ public class RubyString extends RubyObject {
      */
     private IRubyObject index(IRubyObject[] args, boolean reverse) {
         //FIXME may be a problem with pos when doing reverse searches
-        int pos = !reverse ? 0 : value.length();
-
+        int pos;
         boolean offset = false;
+        
         if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             pos = RubyNumeric.fix2int(args[1]);
-            offset = true;
-        }
-        if (pos < 0) {
-            pos += value.length();
-            if (pos < 0) return getRuntime().getNil();
+            if (pos > value.length()) {
+                if (reverse) {
+                    pos = value.length();
+                } else {
+                    return getRuntime().getNil();
+                }
+            } else {
+                if (pos < 0) {
+                    pos += value.length();
+                    if (pos < 0) return getRuntime().getNil();
+                }                 
+            }
+            offset = true;           
+        } else {
+            pos = !reverse ? 0 : value.length();
         }
         
         if (args[0] instanceof RubyRegexp) {
@@ -2049,7 +2059,7 @@ public class RubyString extends RubyObject {
 
             if (sub.length() > value.length()) return getRuntime().getNil();
             // the empty string is always found at the beginning of a string (or at the end when rindex)
-            if (sub.realSize == 0) return reverse ? getRuntime().newFixnum(value.length()) : getRuntime().newFixnum(0);
+            if (sub.realSize == 0) return getRuntime().newFixnum(pos);
 
             pos = reverse ? value.lastIndexOf(sub, pos) : value.indexOf(sub, pos);
         }
