@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -28,7 +29,6 @@
 package org.jruby.common;
 
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * A Warnings implementation which silently ignores everything.
@@ -39,9 +39,7 @@ public class NullWarnings implements IRubyWarnings {
         return false;
     }
 
-    public void warn(SourcePosition position, String message) {}
     public void warn(String message) {}
-    public void warning(SourcePosition position, String message) {}
     public void warning(String message) {}
     public void warn(ISourcePosition position, String message) {}
     public void warning(ISourcePosition position, String message) {}

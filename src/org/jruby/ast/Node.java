@@ -44,7 +44,7 @@ import org.jruby.evaluator.InstructionBundle;
 import org.jruby.evaluator.InstructionContext;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.IDESourcePosition;
 
 /**
  *
@@ -158,12 +158,13 @@ public abstract class Node implements ISourcePositionHolder, InstructionContext,
         int startLine = position.getStartLine();
         int endLine = position.getEndLine();
         
-        ISourcePosition commentIncludingPos = new SourcePosition(fileName, startLine, endLine, startOffset, endOffset);
+        // Since this is only used for IDEs this is safe code, but there is an obvious abstraction issue here.
+        ISourcePosition commentIncludingPos = new IDESourcePosition(fileName, startLine, endLine, startOffset, endOffset);
         
         Iterator commentItr = comments.iterator();
         while(commentItr.hasNext()) {
             ISourcePosition commentPos = ((CommentNode)commentItr.next()).getPosition();
-            commentIncludingPos = SourcePosition.combinePosition(commentIncludingPos, commentPos);
+            commentIncludingPos = IDESourcePosition.combinePosition(commentIncludingPos, commentPos);
         }       
 
         return commentIncludingPos;

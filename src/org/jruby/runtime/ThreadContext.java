@@ -41,7 +41,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SourcePositionFactory;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -91,7 +90,15 @@ public class ThreadContext {
     private String[] catchStack = new String[INITIAL_SIZE];
     private int catchIndex = -1;
     
-    private ISourcePosition sourcePosition = new SourcePositionFactory(null, 0).getDummyPosition();
+    private ISourcePosition sourcePosition = new ISourcePosition() {
+        public void adjustStartOffset(int relativeValue) {}
+        public int getEndLine() { return 0; }
+        public int getEndOffset() { return 0; }
+        public String getFile() { return ""; }
+        public int getStartLine() { return 0; }
+        public int getStartOffset() { return 0; }
+        public ISourcePosition union(ISourcePosition position) { return this; }
+    };
     
     public JumpException prepareJumpException(JumpException.JumpType jumpType, Object target, Object value) {
         JumpException controlException = new JumpException();
@@ -604,7 +611,7 @@ public class ThreadContext {
             return;
         }
         
-        sb.append(position.getFile()).append(':').append(position.getEndLine());
+        sb.append(position.getFile()).append(':').append(position.getEndLine() + 1);
         
         if (previousFrame != null && previousFrame.getName() != null) {
             sb.append(":in `").append(previousFrame.getName()).append('\'');

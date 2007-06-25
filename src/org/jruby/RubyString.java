@@ -1810,9 +1810,9 @@ public class RubyString extends RubyObject {
                 }
             }
 
-            int plen = mat.end(0) - startZ; 
-            int plen_real = plen; 
-            if(utf8) {
+            int plen = mat.end(0) - startZ;
+
+            if (utf8) {
                 try {
                     plen = mat.group(0).getBytes("UTF8").length;
                 } catch (UnsupportedEncodingException e) {

@@ -681,15 +681,6 @@ public class RubyModule extends RubyObject {
         return getRuntime().newBoolean(false);
     }
 
-    private void addCachedMethod(String name, DynamicMethod method) {
-        // Included modules modify the original 'included' modules class.  Since multiple
-        // classes can include the same module, we cannot cache in the original included module.
-        if (!isIncluded()) {
-            putMethod(name, method);
-            getRuntime().getCacheMap().add(method, this);
-        }
-    }
-
     // TODO: Consider a better way of synchronizing 
     public void addMethod(String name, DynamicMethod method) {
         if (this == getRuntime().getObject()) {

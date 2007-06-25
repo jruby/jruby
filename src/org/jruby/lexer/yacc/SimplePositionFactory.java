@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ * **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -11,9 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2007 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -27,18 +26,31 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.ablaf.ast;
+package org.jruby.lexer.yacc;
 
-import java.io.IOException;
+public class SimplePositionFactory implements ISourcePositionFactory {
+    private LexerSource source;
+    private ISourcePosition lastPosition;
 
-import org.jruby.ast.Node;
+    public SimplePositionFactory(LexerSource source, int line) {
+        this.source = source;
+        lastPosition = new SimpleSourcePosition(source.getFilename(), line);
+    }
 
+    public ISourcePosition getPosition(ISourcePosition startPosition, boolean inclusive) {
+        if (startPosition != null) {
+            lastPosition = startPosition;
+            
+            return lastPosition;
+        }
 
-/**
- * 
- * @author jpetersen
- */
-public interface IAstDecoder {
-    Node readNode() throws IOException;
-    void close() throws IOException;
+        if (lastPosition.getStartLine() == source.getLine()) {
+            return lastPosition;
+        }
+        
+        lastPosition = new SimpleSourcePosition(source.getFilename(), source.getLine());
+
+        return lastPosition;
+    }
+
 }

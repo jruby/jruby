@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -96,7 +97,7 @@ import org.jruby.ast.types.ILiteralNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.IDESourcePosition;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.runtime.DynamicScope;
@@ -283,27 +284,16 @@ public class ParserSupport {
             second = ((NewlineNode) second).getNextNode();
         }
         
-        if(second == null) {
-        	return first.getPosition();
-        }
-        
-        if(first == null){
-            return second.getPosition();
-        }
+        if (second == null)	return first.getPosition();
+        if (first == null) return second.getPosition();
         
         return first.getPosition().union(second.getPosition());
     }
     
     public ISourcePosition union(ISourcePosition first, ISourcePosition second) {
-		assert first.getFile().equals(second.getFile());
+		if (first.getStartOffset() < second.getStartOffset()) return first.union(second); 
 
-		if (first.getStartOffset() < second.getStartOffset()) {
-			return new SourcePosition(first.getFile(), first.getStartLine(),
-					second.getEndLine(), first.getStartOffset(), second.getEndOffset());
-		} else {
-			return new SourcePosition(first.getFile(), second.getStartLine(),
-					first.getEndLine(), second.getStartOffset(), first.getEndOffset());
-		}
+		return second.union(first);
 	}
     
     public Node addRootNode(Node topOfAST, ISourcePosition position) {
@@ -312,8 +302,6 @@ public class ParserSupport {
         RootNode root = new RootNode(topOfAST != null ? topOfAST.getPosition() : position, result.getScope(),
                 appendToBlock(result.getAST(), topOfAST));
 
-        // FIXME: Should add begin and end nodes
-        
         return root;
 
     }
@@ -418,9 +406,8 @@ public class ParserSupport {
 	 * @fixme position
 	 **/
     public Node node_assign(Node lhs, Node rhs) {
-        if (lhs == null) {
-            return null;
-        }
+        if (lhs == null) return null;
+
         Node newNode = lhs;
 
         checkExpression(rhs);
@@ -903,7 +890,7 @@ public class ParserSupport {
     }
     
     public ISourcePosition createEmptyArgsNodePosition(ISourcePosition pos) {
-        return new SourcePosition(pos.getFile(), pos.getStartLine(), pos.getEndLine(), pos.getEndOffset() - 1, pos.getEndOffset() - 1);
+        return new IDESourcePosition(pos.getFile(), pos.getStartLine(), pos.getEndLine(), pos.getEndOffset() - 1, pos.getEndOffset() - 1);
     }
     
     public Node unwrapNewlineNode(Node node) {
@@ -923,7 +910,7 @@ public class ParserSupport {
             return null;
         }
         String name = getCurrentScope().getLocalScope().getVariables()[index];
-        ISourcePosition position = new SourcePosition(token.getPosition().getFile(), token.getPosition().getStartLine(), token.getPosition().getEndLine(), token.getPosition().getStartOffset(), token.getPosition().getEndOffset() + name.length());
+        ISourcePosition position = new IDESourcePosition(token.getPosition().getFile(), token.getPosition().getStartLine(), token.getPosition().getEndLine(), token.getPosition().getStartOffset(), token.getPosition().getEndOffset() + name.length());
         return new ArgumentNode(position, name);
     }
 }

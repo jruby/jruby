@@ -89,20 +89,20 @@ public class LexerSource {
      * @param sourceName is the file we are reading
      * @param reader is what represents the contents of file sourceName
      * @param line starting line number for source (used by eval)
+     * @param extraPositionInformation will gives us extra information that an IDE may want
      */
-    public LexerSource(String sourceName, Reader reader, int line) {
+    public LexerSource(String sourceName, Reader reader, int line, 
+            boolean extraPositionInformation) {
         this.sourceName = sourceName;
         this.reader = reader;
-        this.positionFactory = new SourcePositionFactory(this, line);
+        if (extraPositionInformation) {
+            positionFactory = new IDESourcePositionFactory(this, line);
+        } else {
+            positionFactory = new SimplePositionFactory(this, line);
+        }
         this.line = line;
     }
     
-    public LexerSource(String sourceName, Reader reader, ISourcePositionFactory factory) {
-        this.sourceName = sourceName;
-        this.reader = reader;
-        this.positionFactory = factory;
-    }
-
     /**
      * Read next character from this source
      * 
@@ -282,8 +282,9 @@ public class LexerSource {
      * @param content the data of the source
      * @return the new source
      */
-    public static LexerSource getSource(String name, Reader content, int line) {
-        return new LexerSource(name, content, line);
+    public static LexerSource getSource(String name, Reader content, int line, 
+            boolean extraPositionInformation) {
+        return new LexerSource(name, content, line, extraPositionInformation);
     }
 
     public String readLine() throws IOException {

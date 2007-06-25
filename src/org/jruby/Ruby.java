@@ -1038,6 +1038,11 @@ public final class Ruby {
         return parser.parse(file, content, scope, lineNumber);
     }
 
+    public Node parse(String content, String file, DynamicScope scope, int lineNumber, 
+            boolean extraPositionInformation) {
+        return parser.parse(file, content, scope, lineNumber, extraPositionInformation);
+    }
+
     public ThreadService getThreadService() {
         return threadService;
     }
