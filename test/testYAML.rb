@@ -106,3 +106,13 @@ test_equal("--- cde\n", shared.to_yaml)
 a = "one0.1"
 b = a[3..-1]
 test_equal("--- !str 0.1\n", YAML.dump(b))
+
+# JRUBY-1169
+class HashWithIndifferentAccess < Hash
+end
+
+hash = HashWithIndifferentAccess.new
+hash['kind'] = 'human'
+need_to_be_serialized = {:first => 'something', :second_params => hash}
+a = {:x => need_to_be_serialized.to_yaml}
+test_equal need_to_be_serialized, YAML.load(YAML.load(a.to_yaml)[:x])

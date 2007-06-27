@@ -750,6 +750,11 @@ public class EmitterImpl implements Emitter {
             if((ev.getStyle() == 0 || ev.getStyle() == '\'') && (analysis.allowSingleQuoted && !(simpleKeyContext && analysis.multiline))) {
                 return '\'';
             }
+
+            if(analysis.multiline) {
+                return '|';
+            }
+
             return '"';
         }
 
@@ -860,6 +865,7 @@ public class EmitterImpl implements Emitter {
                     start = ending+1;
                 }
             }
+
             if((0 < ending && ending < (text.length()-1)) && (ch == ' ' || start >= ending) && (env.column+(ending-start)) > env.bestWidth && split) {
                 if(start < ending) {
                     data = (ByteList)text.subSequence(start,ending);
@@ -877,9 +883,9 @@ public class EmitterImpl implements Emitter {
                 env.whitespace = false;
                 env.indentation = false;
                 if(text.charAt(start) == ' ') {
-                    data = ByteList.create("\\");
-                    env.column += data.length();
-                    stream.write(data.bytes,0,data.realSize);
+                  data = ByteList.create("\\");
+                  env.column += data.length();
+                  stream.write(data.bytes,0,data.realSize);
                 }
             }
             ending += 1;
