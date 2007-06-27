@@ -69,6 +69,8 @@ public class RubyStringScanner extends RubyObject {
 		scannerClass.defineFastMethod("string=", callbackFactory.getFastMethod("set_string", RubyString.class));
 		scannerClass.defineFastMethod("terminate", callbackFactory.getFastMethod("terminate"));
 		scannerClass.defineFastMethod("unscan", callbackFactory.getFastMethod("unscan"));
+		scannerClass.defineFastMethod("unscan", callbackFactory.getFastMethod("unscan"));
+		scannerClass.defineFastMethod("must_C_version", callbackFactory.getFastMethod("mustCversion"));
 		
 		return scannerClass;
 	}
@@ -275,5 +277,9 @@ public class RubyStringScanner extends RubyObject {
 	public IRubyObject unscan() {
 		scanner.unscan();
 		return this;
+	}
+
+	public IRubyObject mustCversion() {
+	    return this;
 	}
 }
