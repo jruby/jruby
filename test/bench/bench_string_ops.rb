@@ -1,6 +1,5 @@
 require 'benchmark'
 
-
 class BenchByteList
 # These match the strings used in TestByteList.java,
 # though the tests here are different.
