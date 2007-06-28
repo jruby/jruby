@@ -68,6 +68,7 @@ import org.jruby.ast.DotNode;
 import org.jruby.ast.EnsureNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FCallNode;
+import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalVarNode;
@@ -718,12 +719,15 @@ arg           : lhs '=' arg {
               | arg tDOT2 arg {
 		  support.checkExpression($1);
 		  support.checkExpression($3);
-                  $$ = new DotNode(support.union($1, $3), $1, $3, false);
+    
+                  boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
+                  $$ = new DotNode(support.union($1, $3), $1, $3, false, isLiteral);
               }
               | arg tDOT3 arg {
 		  support.checkExpression($1);
 		  support.checkExpression($3);
-                  $$ = new DotNode(support.union($1, $3), $1, $3, true);
+                  boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
+                  $$ = new DotNode(support.union($1, $3), $1, $3, true, isLiteral);
               }
               | arg tPLUS arg {
                   $$ = support.getOperatorCallNode($1, "+", $3, getPosition(null));

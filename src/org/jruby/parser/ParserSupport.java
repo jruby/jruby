@@ -459,6 +459,18 @@ public class ParserSupport {
             }
         } while (true);                    
     }
+    
+    public void warnUnlessEOption(Node node, String message) {
+        if (!configuration.isInlineSource()) {
+            warnings.warn(node.getPosition(), message);
+        }
+    }
+
+    public void warningUnlessEOption(Node node, String message) {
+        if (!configuration.isInlineSource()) {
+            warnings.warning(node.getPosition(), message);
+        }
+    }
 
     /**
      * Does this node represent an expression?
@@ -622,13 +634,15 @@ public class ParserSupport {
             ISourcePosition position = node.getPosition();
 
             return new Match2Node(position, node, new GlobalVarNode(position, "$_"));
-        } else if (node instanceof DotNode) {
+        } else if (node instanceof DotNode && !((DotNode) node).isLiteral()) {
             int slot = currentScope.getLocalScope().addVariable("");
             return new FlipNode(node.getPosition(),
                     getFlipConditionNode(((DotNode) node).getBeginNode()),
                     getFlipConditionNode(((DotNode) node).getEndNode()),
                     ((DotNode) node).isExclusive(), slot);
         } else if (node instanceof RegexpNode) {
+            warningUnlessEOption(node, "regex literal in condition");
+            
             return new MatchNode(node.getPosition(), node);
         } else if (node instanceof StrNode) {
             ISourcePosition position = node.getPosition();
@@ -649,12 +663,16 @@ public class ParserSupport {
         return cond0(node);
     }
 
+    /* MRI: range_op */
     private Node getFlipConditionNode(Node node) {
+        if (!configuration.isInlineSource()) return node;
+        
         node = getConditionNode(node);
 
         if (node instanceof NewlineNode) return ((NewlineNode) node).getNextNode();
         
         if (node instanceof FixnumNode) {
+            warnUnlessEOption(node, "integer literal in conditional range");
             return getOperatorCallNode(node, "==", new GlobalVarNode(node.getPosition(), "$."));
         } 
 

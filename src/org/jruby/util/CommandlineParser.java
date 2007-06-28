@@ -255,6 +255,10 @@ public class CommandlineParser {
     private boolean isSourceFromStdin() {
         return getScriptFileName() == null;
     }
+    
+    public boolean isInlineScript() {
+        return hasInlineScript;
+    }
 
     public Reader getScriptSource() {
         try {

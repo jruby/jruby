@@ -11,3 +11,20 @@ else
   test_ok(false)
 end
 
+a = false
+a = true if 1..2
+test_ok(a)
+
+a = false
+a = true if 1...2
+test_ok(a)
+
+a = false
+a = true if 1.1..2.1
+test_ok(a)
+
+a = false
+a = true if 1.1...2.1
+test_ok(a)
+
+

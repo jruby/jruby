@@ -64,7 +64,7 @@ public class SourceRewriterMain {
 			return;
 		}
 
-		Node rootNode = parser.parse(new RubyParserConfiguration(), lexerSource).getAST();
+		Node rootNode = parser.parse(new RubyParserConfiguration(false), lexerSource).getAST();
 		if (rootNode == null) {
 			System.err.println("Source File seems to be empty.");
 			return;

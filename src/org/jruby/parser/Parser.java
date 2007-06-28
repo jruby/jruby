@@ -54,20 +54,21 @@ public class Parser {
 
     public Node parse(String file, String content, DynamicScope blockScope, int lineNumber, 
             boolean extraPositionInformation) {
-        return parse(file, new StringReader(content), blockScope, lineNumber, extraPositionInformation);
+        return parse(file, new StringReader(content), blockScope, lineNumber, 
+                extraPositionInformation, false);
     }
     
     public Node parse(String file, String content, DynamicScope blockScope, int lineNumber) {
-        return parse(file, new StringReader(content), blockScope, lineNumber, false);
+        return parse(file, new StringReader(content), blockScope, lineNumber, false, false);
     }
     
     public Node parse(String file, Reader content, DynamicScope blockScope, int lineNumber) {
-        return parse(file, content, blockScope, lineNumber, false);
+        return parse(file, content, blockScope, lineNumber, false, false);
     }
 
     public Node parse(String file, Reader content, DynamicScope blockScope, int lineNumber, 
-            boolean extraPositionInformation) {
-        RubyParserConfiguration configuration = new RubyParserConfiguration(); 
+            boolean extraPositionInformation, boolean eOptionParse) {
+        RubyParserConfiguration configuration = new RubyParserConfiguration(eOptionParse); 
         SinglyLinkedList cref = runtime.getObject().getCRef();
         ThreadContext tc = runtime.getCurrentContext();
 

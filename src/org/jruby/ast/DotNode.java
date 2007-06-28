@@ -47,12 +47,15 @@ public class DotNode extends Node {
     private final Node beginNode;
     private final Node endNode;
     private final boolean exclusive;
+    private final boolean isLiteral;
 
-    public DotNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive) {
+    public DotNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, 
+            boolean isLiteral) {
         super(position, NodeTypes.DOTNODE);
         this.beginNode = beginNode;
         this.endNode = endNode;
         this.exclusive = exclusive;
+        this.isLiteral = isLiteral;
     }
 
     /**
@@ -85,6 +88,17 @@ public class DotNode extends Node {
      */
     public boolean isExclusive() {
         return exclusive;
+    }
+    
+    /**
+     * Is this a literal node.  MRI has a literal node type and we currently don't.
+     * We provide this attribute so we can detect that this should be a literal to
+     * match MRI semantics of literal DOT nodes.
+     * 
+     * @return true is literal
+     */
+    public boolean isLiteral() {
+        return isLiteral;
     }
     
     public List childNodes() {

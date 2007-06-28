@@ -1064,33 +1064,32 @@ public class EvaluationState {
 
     private static IRubyObject flipNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         FlipNode iVisited = (FlipNode) node;
-        IRubyObject result = runtime.getNil();
+        IRubyObject result = context.getCurrentScope().getValue(iVisited.getIndex(), iVisited.getDepth());
    
         if (iVisited.isExclusive()) {
-            if (!context.getCurrentScope().getValue(iVisited.getIndex(), iVisited.getDepth()).isTrue()) {
-                result = evalInternal(runtime,context, iVisited.getBeginNode(), self, aBlock).isTrue() ? runtime.getFalse()
-                        : runtime.getTrue();
+            if (result == null || !result.isTrue()) {
+                result = evalInternal(runtime, context, iVisited.getBeginNode(), self, aBlock).isTrue() ? runtime.getTrue() : runtime.getFalse();
                 context.getCurrentScope().setValue(iVisited.getIndex(), result, iVisited.getDepth());
                 return result;
             } else {
-                if (evalInternal(runtime,context, iVisited.getEndNode(), self, aBlock).isTrue()) {
+                if (evalInternal(runtime, context, iVisited.getEndNode(), self, aBlock).isTrue()) {
                     context.getCurrentScope().setValue(iVisited.getIndex(), runtime.getFalse(), iVisited.getDepth());
                 }
+                
                 return runtime.getTrue();
             }
         } else {
-            if (!context.getCurrentScope().getValue(iVisited.getIndex(), iVisited.getDepth()).isTrue()) {
-                if (evalInternal(runtime,context, iVisited.getBeginNode(), self, aBlock).isTrue()) {
-                    context.getCurrentScope().setValue(
-                            iVisited.getIndex(),
-                            evalInternal(runtime,context, iVisited.getEndNode(), self, aBlock).isTrue() ? runtime.getFalse()
-                                    : runtime.getTrue(), iVisited.getDepth());
+            if (result == null || !result.isTrue()) {
+                if (evalInternal(runtime, context, iVisited.getBeginNode(), self, aBlock).isTrue()) {
+                    context.getCurrentScope().setValue(iVisited.getIndex(),
+                            evalInternal(runtime, context, iVisited.getEndNode(), self, aBlock).isTrue() ? 
+                                    runtime.getFalse() : runtime.getTrue(), iVisited.getDepth());
                     return runtime.getTrue();
-                } else {
-                    return runtime.getFalse();
-                }
+                } 
+
+                return runtime.getFalse();
             } else {
-                if (evalInternal(runtime,context, iVisited.getEndNode(), self, aBlock).isTrue()) {
+                if (evalInternal(runtime, context, iVisited.getEndNode(), self, aBlock).isTrue()) {
                     context.getCurrentScope().setValue(iVisited.getIndex(), runtime.getFalse(), iVisited.getDepth());
                 }
                 return runtime.getTrue();

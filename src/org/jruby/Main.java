@@ -236,7 +236,7 @@ public class Main {
 
     private Node getParsedScript(Ruby runtime, Reader reader, String filename) {
         // current scope is top-level scope (what we set TOPLEVEL_BINDING to).
-        Node result = runtime.parse(reader, filename, runtime.getCurrentContext().getCurrentScope(), 0);
+        Node result = runtime.parse(reader, filename, runtime.getCurrentContext().getCurrentScope(), 0, commandline.isInlineScript());
         if (commandline.isAssumePrinting()) {
             result = new ParserSupport().appendPrintToBlock(result);
         }

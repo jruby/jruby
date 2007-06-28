@@ -34,6 +34,11 @@ import org.jruby.runtime.DynamicScope;
 public class RubyParserConfiguration {
     private DynamicScope existingScope = null;
     private boolean asBlock = false;
+    private boolean inlineSource = false;
+    
+    public RubyParserConfiguration(boolean inlineSource) {
+        this.inlineSource = inlineSource;
+    }
 
     /**
      * If we are performing an eval we should pass existing scope in.
@@ -52,14 +57,21 @@ public class RubyParserConfiguration {
      * @return correct top scope for source to be parsed
      */
     public DynamicScope getScope() {
-        if (asBlock) {
-            return existingScope;
-        } 
+        if (asBlock) return existingScope;
         
         // FIXME: We should really not be creating the dynamic scope for the root
         // of the AST before parsing.  This makes us end up needing to readjust
         // this dynamic scope coming out of parse (and for local static scopes it
         // will always happen because of $~ and $_).
         return new DynamicScope(new LocalStaticScope(null), existingScope);
+    }
+    
+    /**
+     * Are we parsing source provided as part of the '-e' option to Ruby.
+     * 
+     * @return true if source is from -e option
+     */
+    public boolean isInlineSource() {
+        return inlineSource;
     }
 }

@@ -272,7 +272,7 @@ public final class Ruby {
     }
 
     public IRubyObject evalScript(Reader reader, String name) {
-        return eval(parse(reader, name, getCurrentContext().getCurrentScope(), 0));
+        return eval(parse(reader, name, getCurrentContext().getCurrentScope(), 0, false));
     }
     
     /**
@@ -1030,8 +1030,8 @@ public final class Ruby {
         globalVariables.defineReadonly(name, new ValueAccessor(value));
     }
 
-    public Node parse(Reader content, String file, DynamicScope scope, int lineNumber) {
-        return parser.parse(file, content, scope, lineNumber);
+    public Node parse(Reader content, String file, DynamicScope scope, int lineNumber, boolean isInlineScript) {
+        return parser.parse(file, content, scope, lineNumber, false, isInlineScript);
     }
 
     public Node parse(String content, String file, DynamicScope scope, int lineNumber) {
@@ -1218,7 +1218,7 @@ public final class Ruby {
 
             context.preNodeEval(objectClass, self);
 
-            Node node = parse(source, scriptName, null, 0);
+            Node node = parse(source, scriptName, null, 0, false);
             EvaluationState.eval(this, context, node, self, Block.NULL_BLOCK);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
