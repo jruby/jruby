@@ -108,17 +108,17 @@ public class RubyModule extends RubyObject {
     // JavaSupport code, which I've tried to avoid...
     private transient List classProviders;
     
-    public void addClassProvider(ClassProvider provider) {
+    // synchronized method per JRUBY-1173 (unsafe Double-Checked Locking)
+    public synchronized void addClassProvider(ClassProvider provider) {
         if (classProviders == null) {
-            synchronized(this) {
-                if (classProviders == null) {
-                    classProviders = Collections.synchronizedList(new ArrayList());
+            List cp = Collections.synchronizedList(new ArrayList());
+            cp.add(provider);
+            classProviders = cp;
+        } else {
+            synchronized(classProviders) {
+                if (!classProviders.contains(provider)) {
+                    classProviders.add(provider);
                 }
-            }
-        }
-        synchronized(classProviders) {
-            if (!classProviders.contains(provider)) {
-                classProviders.add(provider);
             }
         }
     }
