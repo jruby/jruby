@@ -251,7 +251,7 @@ public interface Compiler {
      * Given an aggregated set of objects (likely created through a call to createObjectArray)
      * create a Ruby array object.
      */
-    public void createNewArray();
+    public void createNewArray(boolean lightweight);
 
     /**
      * Create an empty Ruby array

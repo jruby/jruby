@@ -35,6 +35,6 @@ public class ArrayNodeCompiler implements NodeCompiler {
         };
         
         context.createObjectArray(arrayNode.childNodes().toArray(), callback);
-        context.createNewArray();
+        context.createNewArray(arrayNode.isLightweight());
     }
 }

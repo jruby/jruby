@@ -828,14 +828,19 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         invokeIRuby("newSymbol", cg.sig(RubySymbol.class, cg.params(String.class)));
     }
     
-    public void createNewArray() {
+    public void createNewArray(boolean lightweight) {
         SkinnyMethodAdapter mv = getMethodAdapter();
         
         loadRuntime();
         // put under object array already present
         mv.swap();
         
-        invokeIRuby("newArrayNoCopy", cg.sig(RubyArray.class, cg.params(IRubyObject[].class)));
+        if (lightweight) {
+            invokeIRuby("newArrayNoCopyLight", cg.sig(RubyArray.class, cg.params(IRubyObject[].class)));
+        } else {
+            invokeIRuby("newArrayNoCopy", cg.sig(RubyArray.class, cg.params(IRubyObject[].class)));
+        }
+            
     }
     
     public void createEmptyArray() {
