@@ -59,9 +59,10 @@ public class Block {
             return false;
         }
         
-        public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
+        public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, 
                 RubyModule klass, boolean aValue) {
-            throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
+            // FIXME: with args as IRubyObject[], no obvious second param here...
+            throw context.getRuntime().newLocalJumpError("noreason", self, "yield called out of block");
         }
         
         public Block cloneBlock() {
@@ -171,7 +172,7 @@ public class Block {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
+        return yield(context, args, null, null, true);
     }
     
     protected void pre(ThreadContext context, RubyModule klass) {
@@ -183,7 +184,7 @@ public class Block {
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return yield(context, value, null, null, false);
+        return yield(context, new IRubyObject[] {value}, null, null, false);
     }
 
     /**
@@ -196,8 +197,8 @@ public class Block {
      * @param aValue Should value be arrayified or not?
      * @return
      */
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean aValue) {
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, 
+            RubyModule klass, boolean useArrayWithoutConversion) {
         if (klass == null) {
             self = this.self;
             frame.setSelf(self);
@@ -207,10 +208,10 @@ public class Block {
 
         try {
             if (iterNode.getVarNode() != null) {
-                if (aValue) {
-                    setupBlockArgs(context, iterNode.getVarNode(), value, self);
+                if (useArrayWithoutConversion) {
+                    setupBlockArgs(context, iterNode.getVarNode(), RubyArray.newArrayNoCopyLight(context.getRuntime(), args), self);
                 } else {
-                    setupBlockArg(context, iterNode.getVarNode(), value, self);
+                    setupBlockArg(context, iterNode.getVarNode(), args[0], self);
                 }
             }
             

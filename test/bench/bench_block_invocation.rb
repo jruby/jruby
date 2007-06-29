@@ -1,7 +1,5 @@
 require 'benchmark'
 
-puts "100k loops yielding a fixnum 10 times to a block that just retrieves dvar"
-
 def foocall(arg)
   arg
 end
@@ -68,73 +66,92 @@ end
 
 TIMES = 5
 
+puts "1m loops yielding a fixnum 10 times to a block that just retrieves dvar"
+def test1
 TIMES.times {
   puts Benchmark.measure {
     a = 5; 
     i = 0;
-    while i < 100000
+    while i < 1000000
       foo {|j| j}
       i += 1;
     end
   }
 }
+end
+test1
 
-puts "100k loops yielding two fixnums 10 times to block accessing one"
+puts "1m loops yielding two fixnums 10 times to block accessing one"
+def test2
 TIMES.times {
   puts Benchmark.measure {
     a = 5; 
     i = 0;
-    while i < 100000
+    while i < 1000000
       foo2 {|j,k| k}
       i += 1;
     end
   }
 }
+end
+test2
 
-puts "100k loops yielding three fixnums 10 times to block accessing one"
+puts "1m loops yielding three fixnums 10 times to block accessing one"
+def test3
 TIMES.times {
   puts Benchmark.measure {
     a = 5; 
     i = 0;
-    while i < 100000
+    while i < 1000000
       foo2_5 {|j,k,l| k}
       i += 1;
     end
   }
 }
+end
+test3
 
-puts "100k loops yielding three fixnums 10 times to block splatting and accessing them"
+puts "1m loops yielding three fixnums 10 times to block splatting and accessing them"
+def test4
 TIMES.times {
   puts Benchmark.measure {
     a = 5; 
     i = 0;
-    while i < 100000
+    while i < 1000000
       foo2_5 {|*j| j}
       i += 1;
     end
   }
 }
+end
+test4
 
-puts "100k loops yielding a fixnums 10 times to block with just a fixnum (no vars)"
+puts "1m loops yielding a fixnums 10 times to block with just a fixnum (no vars)"
+def test5
 TIMES.times {
   puts Benchmark.measure {
     a = 5; 
     i = 0;
-    while i < 100000
+    while i < 1000000
       foo3 {1}
       i += 1;
     end
   }
 }
+end
+test5
 
-puts "100k loops calling a method with a fixnum that just returns it"
+puts "1m loops calling a method with a fixnum that just returns it"
+def test6
 TIMES.times {
   puts Benchmark.measure {
     a = 5; 
     i = 0;
-    while i < 100000
+    while i < 1000000
       foo4
       i += 1;
     end
   }
 }
+end
+test6

@@ -945,7 +945,7 @@ public class RubyHash extends RubyObject implements Map {
             for (int i = 0; i < ltable.length; i++) {
                 for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     // rb_assoc_new equivalent
-                    block.yield(context, RubyArray.newArray(runtime, entry.key, entry.value), null, null, false);
+                    block.yield(context, new IRubyObject[] {RubyArray.newArray(runtime, entry.key, entry.value)}, null, null, false);
 	}
             }
         } finally {postIter();}
@@ -966,7 +966,7 @@ public class RubyHash extends RubyObject implements Map {
             for (int i = 0; i < ltable.length; i++) {
                 for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     // rb_yield_values(2,...) equivalent
-                    block.yield(context, RubyArray.newArray(runtime, entry.key, entry.value), null, null, true);                    
+                    block.yield(context, new IRubyObject[] {entry.key, entry.value}, null, null, true);                    
         }
     }
         } finally {postIter();}
@@ -1210,7 +1210,7 @@ public class RubyHash extends RubyObject implements Map {
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {            
                 for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
-                    if (block.yield(context, RubyArray.newArray(runtime, entry.key, entry.value), null, null, true).isTrue())
+                    if (block.yield(context, new IRubyObject[] {entry.key, entry.value}, null, null, true).isTrue())
                         delete(entry.key, block);
                 }
             }

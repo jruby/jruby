@@ -31,6 +31,6 @@ public class YieldNodeCompiler implements NodeCompiler {
             NodeCompilerFactory.getCompiler(yieldNode.getArgsNode()).compile(yieldNode.getArgsNode(), context);
         }
         
-        context.yield(yieldNode.getArgsNode() != null);
+        context.yield(yieldNode.getArgsNode() != null, yieldNode.getCheckState());
     }
 }

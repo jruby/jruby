@@ -2194,7 +2194,7 @@ public class RubyArray extends RubyObject implements List {
             ThreadContext context = getRuntime().getCurrentContext();
             IRubyObject obj1 = (IRubyObject) o1;
             IRubyObject obj2 = (IRubyObject) o2;
-            IRubyObject ret = block.yield(context, getRuntime().newArray(obj1, obj2), null, null, true);
+            IRubyObject ret = block.yield(context, new IRubyObject[] {obj1, obj2}, null, null, true);
             int n = RubyComparable.cmpint(ret, obj1, obj2);
             //TODO: ary_sort_check should be done here
             return n;

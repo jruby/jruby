@@ -122,7 +122,7 @@ public interface Compiler {
      * If arguments have been prepared for the block, specify true. Otherwise the default
      * empty args will be used.
      */
-    public void yield(boolean hasArgs);
+    public void yield(boolean hasArgs, boolean unwrap);
     
     /**
      * Assigns the value on top of the stack to a local variable at the specified index, consuming
