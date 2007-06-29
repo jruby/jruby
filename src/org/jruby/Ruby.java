@@ -313,7 +313,13 @@ public final class Ruby {
                     Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
 
                     script = (Script)scriptClass.newInstance();
+                    if (config.isJitLogging()) {
+                        System.err.println("compiled: " + node.getPosition().getFile());
+                    }
                 } catch (Throwable t) {
+                    if (config.isJitLoggingVerbose()) {
+                        System.err.println("coult not compile: " + node.getPosition().getFile() + " because of: \"" + t.getMessage() + "\"");
+                    }
                     return eval(node);
                 }
             
