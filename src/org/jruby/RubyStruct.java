@@ -182,23 +182,28 @@ public class RubyStruct extends RubyObject {
      */
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         String name = null;
+        boolean nilName = false;
         Ruby runtime = recv.getRuntime();
         Arity.checkArgumentCount(runtime, args, 1, -1);
 
-        if (args.length > 0 && args[0] instanceof RubyString) {
-            name = args[0].toString();
+        if (args.length > 0) {
+            if (args[0] instanceof RubyString) {
+                name = args[0].toString();
+            } else if (args[0].isNil()) {
+                nilName = true;
+            }
         }
 
         RubyArray member = runtime.newArray();
 
-        for (int i = name == null ? 0 : 1; i < args.length; i++) {
+        for (int i = (name == null && !nilName) ? 0 : 1; i < args.length; i++) {
             member.append(RubySymbol.newSymbol(runtime, args[i].asSymbol()));
         }
 
         RubyClass newStruct;
         RubyClass superClass = (RubyClass)recv;
 
-        if (name == null) {
+        if (name == null || nilName) {
             newStruct = new RubyClass(superClass, STRUCT_INSTANCE_ALLOCATOR);
         } else {
             if (!IdUtil.isConstant(name)) {
@@ -224,7 +229,7 @@ public class RubyStruct extends RubyObject {
         newStruct.getSingletonClass().defineMethod("members", callbackFactory.getSingletonMethod("members"));
 
         // define access methods.
-        for (int i = name == null ? 0 : 1; i < args.length; i++) {
+        for (int i = (name == null && !nilName) ? 0 : 1; i < args.length; i++) {
             String memberName = args[i].asSymbol();
             newStruct.defineMethod(memberName, callbackFactory.getMethod("get"));
             newStruct.defineMethod(memberName + "=", callbackFactory.getMethod("set", RubyKernel.IRUBY_OBJECT));
