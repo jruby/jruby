@@ -127,6 +127,14 @@ class TestAssignment < Test::Unit::TestCase
     cc &&=44
     assert_equal(44, cc)
   end
+  
+  class X; def to_ary; [1, 2, 3, 4]; end; end
+  
+  def test_absurd_multiple_assignment
+    a, (b, c, *d), (e, f), *g = 0, X.new, [5, 6], 7, 8
+    
+    assert_equal([0, 1, 2, [3, 4], 5, 6, [7, 8]], [a,b,c,d,e,f,g])
+  end
 
 end
 

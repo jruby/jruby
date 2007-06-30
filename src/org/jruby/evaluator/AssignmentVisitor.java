@@ -46,6 +46,7 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeTypes;
 import org.jruby.ast.StarNode;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -225,7 +226,7 @@ public class AssignmentVisitor {
         IRubyObject result;
         MultipleAsgnNode iVisited = (MultipleAsgnNode)node;
         if (!(value instanceof RubyArray)) {
-            value = RubyArray.newArrayNoCopyLight(runtime, new IRubyObject[] {value});
+            value = ArgsUtil.convertToRubyArray(runtime, value, iVisited.getHeadNode() != null);
         }
         result = multiAssign(runtime, context, self, iVisited, (RubyArray) value, check);
         return result;
