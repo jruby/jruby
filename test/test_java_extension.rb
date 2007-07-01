@@ -228,6 +228,12 @@ class TestJavaExtension < Test::Unit::TestCase
     assert_equal 2, ran
   end
 
+  def test_ruby_block_with_args_as_interface
+    file = java.io.File.new(".")
+    listing = file.list {|file,str| !!(str =~ /\./) }
+    assert listing.size >= 0
+  end
+
   class ExtendedClass < org.jruby.test.Abstract
     def protected_method
       "Ruby overrides java!"

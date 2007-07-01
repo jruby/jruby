@@ -506,7 +506,11 @@ public class Java {
         int alen = ((RubyArray)args).getLength();
         IRubyObject[] aargs = ((RubyArray)args).toJavaArrayMaybeUnsafe();
         for(int i=0;i<alen;i++) {
-            arg_types.add(((JavaClass)((JavaObject)aargs[i]).java_class()).getValue());
+            if (aargs[i] instanceof JavaObject) {
+                arg_types.add(((JavaClass)((JavaObject)aargs[i]).java_class()).getValue());
+            } else {
+                arg_types.add(aargs[i].getClass());
+            }
         }
 
         Map ms = (Map)matchCache.get(methods);
@@ -576,7 +580,11 @@ public class Java {
         int aend = start+len;
 
         for(int i=start;i<aend;i++) {
-            arg_types.add(((JavaClass)((JavaObject)args[i]).java_class()).getValue());
+            if (args[i] instanceof JavaObject) {
+                arg_types.add(((JavaClass)((JavaObject)args[i]).java_class()).getValue());
+            } else {
+                arg_types.add(args[i].getClass());
+            }
         }
 
         Map ms = (Map)matchCache.get(methods);
