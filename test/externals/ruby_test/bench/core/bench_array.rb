@@ -369,9 +369,19 @@ Benchmark.bm(35) do |x|
       MAX.times{ array.sort }
    }
 
+   x.report("Array#sort{ block }"){
+      array = [2,3,1,4]
+      MAX.times{ array.sort{ |a,b| a <=> b } }
+   }
+
    x.report("Array#sort!"){
       array = [2,3,1,4]
       MAX.times{ array.sort! }
+   }
+
+   x.report("Array#sort!{ block }"){
+      array = [2,3,1,4]
+      MAX.times{ array.sort!{ |a,b| a <=> b } }
    }
 
    x.report("Array#to_a"){
@@ -391,7 +401,7 @@ Benchmark.bm(35) do |x|
 
    x.report("Array#transpose"){
       array = [ [1,2], [3,4], [5,6] ]
-     MAX.times{ array.transpose }
+      MAX.times{ array.transpose }
    }
 
    x.report("Array#uniq"){
