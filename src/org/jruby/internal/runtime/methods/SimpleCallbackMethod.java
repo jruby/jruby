@@ -73,12 +73,12 @@ public class SimpleCallbackMethod extends DynamicMethod {
             
             runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
             try {
-                return callback.execute(self, args, Block.NULL_BLOCK);
+                return callback.execute(self, args, block);
             } finally {
                 runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
             }
         }
-        return callback.execute(self, args, Block.NULL_BLOCK);
+        return callback.execute(self, args, block);
     }
 
     public Callback getCallback() {

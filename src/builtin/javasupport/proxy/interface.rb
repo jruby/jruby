@@ -141,7 +141,7 @@ public
               end
 
               def java_interfaces
-                @java_interfaces              
+                @java_interfaces
               end
               private :java_interfaces
 
@@ -149,13 +149,22 @@ public
 
             def __jcreate!(*ignored_args)
               interfaces = self.class.send(:java_interfaces)
+              __jcreate_proxy!(interfaces, *ignored_args)
+            end
+
+            def __jcreate_meta!(*ignored_args)
+              interfaces = (class << self; self; end).send(:java_interfaces)
+              __jcreate_proxy!(interfaces, *ignored_args)
+            end
+
+            def __jcreate_proxy!(interfaces, *ignored_args)
               interfaces.freeze unless interfaces.frozen?
               self.java_object = Java.new_proxy_instance(*interfaces) do |proxy2, method, *args|
                 args.collect! { |arg| Java.java_to_ruby(arg) }
                 Java.ruby_to_java(self.__send__(method.name, *args))
               end
             end
-            private :__jcreate!
+            private :__jcreate!, :__jcreate_meta!, :__jcreate_proxy!
 
             include ::JavaProxyMethods
 
@@ -218,9 +227,11 @@ public
     super
   end #append_features
   
-  def extended(clazz)
-    puts "Hmmm, we really don't understand what you're going for here. But good luck with that."
-  end
+  def extended(obj)
+     metaclass = class << obj; self; end
+     interface_class = self
+     metaclass.instance_eval { include interface_class }
+   end
 
   # array creation/identity
   def [](*args)

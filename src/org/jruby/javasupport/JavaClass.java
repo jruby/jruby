@@ -63,6 +63,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -414,16 +415,29 @@ public class JavaClass extends JavaObject {
             }
             // TODO: ok to convert args in place, rather than new array?
             int len = args.length;
+            if (block.isGiven()) { // convert block to argument
+                len += 1;
+                IRubyObject[] newArgs = new IRubyObject[args.length+1];
+                System.arraycopy(args, 0, newArgs, 0, args.length);
+                newArgs[args.length] = RubyProc.newProc(self.getRuntime(), block, true);
+                args = newArgs;
+            }
             IRubyObject[] convertedArgs = new IRubyObject[len+1];
             convertedArgs[0] = self.getInstanceVariable("@java_object");
-            for (int i = len; --i >= 0; ) {
+            int i = len;
+            if (block.isGiven()) {
+                convertedArgs[len] = args[len - 1];
+                i -= 1;
+            }
+            for (; --i >= 0; ) {
                 convertedArgs[i+1] = Java.ruby_to_java(self,args[i],Block.NULL_BLOCK);
             }
+
             if (javaMethods == null) {
-                return Java.java_to_ruby(self,javaMethod.invoke(convertedArgs),Block.NULL_BLOCK); 
+                return Java.java_to_ruby(self,javaMethod.invoke(convertedArgs),Block.NULL_BLOCK);
             } else {
                 int argsTypeHash = 0;
-                for (int i = len; --i >= 0; ) {
+                for (i = len; --i >= 0; ) {
                     argsTypeHash += 3*args[i].getMetaClass().id;
                 }
                 IRubyObject match = (IRubyObject)matchingMethods.get(argsTypeHash);

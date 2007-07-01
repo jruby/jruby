@@ -41,8 +41,12 @@ import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
+import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
+import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -291,6 +295,31 @@ public class JavaUtil {
                 return new Float(number.floatValue());
             }
         }
+        if (isDuckTypeConvertable(argument.getClass(), parameterType)) {
+            RubyObject rubyObject = (RubyObject) argument;
+            if (!rubyObject.respondsTo("java_object")) {
+                Ruby runtime = rubyObject.getRuntime();
+                IRubyObject javaUtilities = runtime.getModule("JavaUtilities");
+                IRubyObject javaInterfaceModule = Java.get_interface_module(javaUtilities, JavaClass.get(runtime, parameterType));
+                if (!rubyObject.isKindOf((RubyModule) javaInterfaceModule)) {
+                    rubyObject.extend(new IRubyObject[] {javaInterfaceModule});
+                }
+                if (rubyObject instanceof RubyProc) {
+                    // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
+                    // no matter what method is called on the interface
+                    rubyObject.instance_eval(new IRubyObject[] {
+                        runtime.newString("extend Proc::CatchAll")}, Block.NULL_BLOCK);
+                }
+                JavaObject jo = (JavaObject) rubyObject.instance_eval(new IRubyObject[] {
+                    runtime.newString("send :__jcreate_meta!")}, Block.NULL_BLOCK);
+                return jo.getValue();
+            }
+        }
         return argument;
+    }
+    
+    public static boolean isDuckTypeConvertable(Class providedArgumentType, Class parameterType) {
+        return parameterType.isInterface() && !parameterType.isAssignableFrom(providedArgumentType) 
+            && RubyObject.class.isAssignableFrom(providedArgumentType);
     }
 }

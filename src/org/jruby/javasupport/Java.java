@@ -545,10 +545,9 @@ public class Java {
 
                     boolean match = true;
                     for(int j=0; j<types.size(); j++) {
-                        if(!(
-                             JavaClass.assignable((Class)types.get(j),(Class)arg_types.get(j)) &&
-                             (i > 0 || primitive_match(types.get(j),arg_types.get(j)))
-                             )) {
+                        if(!(JavaClass.assignable((Class)types.get(j),(Class)arg_types.get(j)) &&
+                             (i > 0 || primitive_match(types.get(j),arg_types.get(j))))
+                           && !JavaUtil.isDuckTypeConvertable((Class)arg_types.get(j), (Class)types.get(j))) {
                             match = false;
                             break;
                         }
@@ -645,7 +644,8 @@ public class Java {
             // Compatible (by inheritance)
             if(len == types.length) {
                 for(int j=0,m=len; j<m; j++) {
-                    if(!JavaClass.assignable(types[j],(Class)arg_types.get(j))) {
+                    if(!JavaClass.assignable(types[j],(Class)arg_types.get(j)) 
+                        && !JavaUtil.isDuckTypeConvertable((Class)arg_types.get(j), types[j])) {
                         continue mfor;
                     }
                 }

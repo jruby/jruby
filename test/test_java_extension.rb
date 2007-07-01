@@ -178,9 +178,54 @@ class TestJavaExtension < Test::Unit::TestCase
   
   def test_java_interface_impl_with_block
     ran = false
-    executor = SimpleExecutor.new
-    executor.execute(Runnable.impl {ran = true})
+    SimpleExecutor::WrappedByMethodCall.new.execute(Runnable.impl {ran = true})
     assert ran
+  end
+
+  def test_ruby_object_duck_typed_as_java_interface_when_passed_to_method
+    runnable = Object.new
+    def runnable.run; @ran ||= true; end
+    def runnable.ran; @ran; end
+    SimpleExecutor::WrappedByMethodCall.new.execute(runnable)
+    assert runnable.ran
+  end
+
+  def test_ruby_object_duck_typed_as_java_interface_when_passed_to_ctor
+    runnable = Object.new
+    def runnable.run; @ran ||= true; end
+    def runnable.ran; @ran; end
+    SimpleExecutor::WrappedByConstructor.new(runnable).execute
+    assert runnable.ran
+  end
+
+  def test_ruby_proc_passed_to_ctor_as_last_argument
+    ran = false
+    SimpleExecutor::WrappedByConstructor.new(proc {ran = true}).execute
+    assert ran
+  end
+
+  def test_ruby_proc_duck_typed_as_runnable
+    ran = false
+    SimpleExecutor::WrappedByMethodCall.new.execute(proc {ran = true})
+    assert ran
+  end
+
+  def test_ruby_proc_duck_typed_as_runnable_last_argument
+    ran = 0
+    SimpleExecutor::MultipleArguments.new.execute(2, proc {ran += 1})
+    assert_equal 2, ran
+  end
+
+  def test_ruby_block_duck_typed_as_runnable
+    ran = false
+    SimpleExecutor::WrappedByMethodCall.new.execute { ran = true }
+    assert ran
+  end
+
+  def test_ruby_block_duck_typed_as_runnable_last_argument
+    ran = 0
+    SimpleExecutor::MultipleArguments.new.execute(2) {ran += 1}
+    assert_equal 2, ran
   end
 
   class ExtendedClass < org.jruby.test.Abstract
