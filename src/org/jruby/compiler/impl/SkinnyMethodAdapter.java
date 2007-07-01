@@ -31,6 +31,10 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         mv.visitVarInsn(ALOAD, arg0);
     }
     
+    public void iload(int arg0) {
+        mv.visitVarInsn(ILOAD, arg0);
+    }
+    
     public void astore(int arg0) {
         mv.visitVarInsn(ASTORE, arg0);
     }
@@ -84,12 +88,24 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         mv.visitFieldInsn(PUTSTATIC, arg1, arg2, arg3);
     }
     
+    public void getfield(String arg1, String arg2, String arg3) {
+        mv.visitFieldInsn(GETFIELD, arg1, arg2, arg3);
+    }
+    
+    public void putfield(String arg1, String arg2, String arg3) {
+        mv.visitFieldInsn(PUTFIELD, arg1, arg2, arg3);
+    }
+    
     public void voidreturn() {
         mv.visitInsn(RETURN);
     }
     
     public void anewarray(String arg0) {
         mv.visitTypeInsn(ANEWARRAY, arg0);
+    }
+    
+    public void newarray(int arg0) {
+        mv.visitIntInsn(NEWARRAY, arg0);
     }
     
     public void iconst_0() {
@@ -130,6 +146,18 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     
     public void arraystore() {
         mv.visitInsn(AASTORE);
+    }
+    
+    public void iarrayload() {
+        mv.visitInsn(IALOAD);
+    }
+    
+    public void barrayload() {
+        mv.visitInsn(BALOAD);
+    }
+    
+    public void barraystore() {
+        mv.visitInsn(BASTORE);
     }
     
     public void dup_x2() {
@@ -179,6 +207,10 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     
     public void if_acmpne(Label arg0) {
         mv.visitJumpInsn(IF_ACMPNE, arg0);
+    }
+    
+    public void if_icmpgt(Label arg0) {
+        mv.visitJumpInsn(IF_ICMPGT, arg0);
     }
     
     public void checkcast(String arg0) {

@@ -97,7 +97,7 @@ public class CacheMap {
                 module.removeCachedMethod(name);
                 
                 if (module.index != 0) {
-                    runtime.getSelectorTable().table[module.index][MethodIndex.getIndex(name)] = 0;
+                    module.dispatcher.clearIndex(MethodIndex.getIndex(name));
                 }
             }
         }

@@ -36,6 +36,7 @@
 package org.jruby;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -55,6 +56,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -83,6 +85,8 @@ public class RubyModule extends RubyObject {
     private RubyClass superClass;
 
     public int index;
+    
+    public Dispatcher dispatcher = Dispatcher.DEFAULT_DISPATCHER;
 
     public final int id;
 
@@ -228,6 +232,8 @@ public class RubyModule extends RubyObject {
         moduleClass.defineFastPrivateMethod("undef_method", callbackFactory.getFastOptMethod("undef_method"));
         
         moduleMetaClass.defineMethod("nesting", callbackFactory.getSingletonMethod("nesting"));
+        
+        moduleClass.dispatcher = callbackFactory.createDispatcher(moduleClass);
 
         callbackFactory = runtime.callbackFactory(RubyKernel.class);
         moduleClass.defineFastMethod("autoload", callbackFactory.getFastSingletonMethod("autoload", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
@@ -244,27 +250,6 @@ public class RubyModule extends RubyObject {
     
     public int getNativeTypeIndex() {
         return ClassIndex.MODULE;
-    }
-
-    public static final byte EQQ_SWITCHVALUE = 1;
-    public static final byte INSPECT_SWITCHVALUE = 2;
-
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
-            IRubyObject[] args, CallType callType, Block block) {
-        // If tracing is on, don't do STI dispatch
-        if (context.getRuntime().hasEventHooks()) return callMethod(context, rubyclass, name, args, callType, block);
-        
-        switch (getRuntime().getSelectorTable().table[rubyclass.index][methodIndex]) {
-        case EQQ_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return op_eqq(args[0]);
-        case INSPECT_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return inspect();
-        case 0:
-        default:
-            return super.callMethod(context, rubyclass, name, args, callType, block);
-        }
     }
 
     /** Getter for property superClass.
@@ -296,7 +281,7 @@ public class RubyModule extends RubyObject {
     
     public void putMethod(Object name, DynamicMethod method) {
         // FIXME: kinda hacky...flush STI here
-        getRuntime().getSelectorTable().table[index][MethodIndex.getIndex((String)name)] = 0;
+        dispatcher.clearIndex(MethodIndex.getIndex((String)name));
         getMethods().put(name, method);
     }
 

@@ -57,6 +57,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -203,6 +204,8 @@ public class RubyKernel {
         module.defineFastPublicModuleFunction("untaint", objectCallbackFactory.getFastMethod("untaint"));
 
         runtime.setRespondToMethod(module.searchMethod("respond_to?"));
+        
+        runtime.getObject().dispatcher = objectCallbackFactory.createDispatcher(runtime.getObject());
 
         return module;
     }

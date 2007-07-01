@@ -338,6 +338,8 @@ public class RubyIO extends RubyObject {
         ioClass.setConstant("SEEK_SET", runtime.newFixnum(IOHandler.SEEK_SET));
         ioClass.setConstant("SEEK_CUR", runtime.newFixnum(IOHandler.SEEK_CUR));
         ioClass.setConstant("SEEK_END", runtime.newFixnum(IOHandler.SEEK_END));
+        
+        ioClass.dispatcher = callbackFactory.createDispatcher(ioClass);
 
         return ioClass;
     }    

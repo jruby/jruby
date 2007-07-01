@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyKernel;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -39,6 +40,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlockCallback;
+import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
@@ -520,6 +522,10 @@ public class DumpingInvocationCallbackFactory extends CallbackFactory implements
         }
     }
 
+    public Callback getFastMethod(String rubyName, String method) {
+        return getFastMethod(method);
+    }
+
     public Callback getFastMethod(String method) {
         String mname = type.getName() + "Invoker" + method + "0";
         String mnamePath = typePath + "Invoker" + method + "0";
@@ -542,6 +548,10 @@ public class DumpingInvocationCallbackFactory extends CallbackFactory implements
         } catch(Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
+    }
+
+    public Callback getFastMethod(String rubyName, String method, Class arg1) {
+        return getFastMethod(method, arg1);
     }
 
     public Callback getFastMethod(String method, Class arg1) {
@@ -570,6 +580,10 @@ public class DumpingInvocationCallbackFactory extends CallbackFactory implements
         } catch(Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
+    }
+
+    public Callback getFastMethod(String rubyName, String method, Class arg1, Class arg2) {
+        return getFastMethod(method, arg1, arg2);
     }
 
     public Callback getFastMethod(String method, Class arg1, Class arg2) {
@@ -602,6 +616,10 @@ public class DumpingInvocationCallbackFactory extends CallbackFactory implements
         } catch(Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
+    }
+
+    public Callback getFastMethod(String rubyName, String method, Class arg1, Class arg2, Class arg3) {
+        return getFastMethod(method, arg1, arg2, arg2);
     }
 
     public Callback getFastMethod(String method, Class arg1, Class arg2, Class arg3) {
@@ -760,6 +778,10 @@ public class DumpingInvocationCallbackFactory extends CallbackFactory implements
         }
     }
 
+    public Callback getFastOptMethod(String rubyName, String method) {
+        return getFastOptMethod(method);
+    }
+
     public Callback getFastOptMethod(String method) {
         String mname = type.getName() + "Invoker" + method + "xx1";
         String mnamePath = typePath + "Invoker" + method + "xx1";
@@ -812,5 +834,9 @@ public class DumpingInvocationCallbackFactory extends CallbackFactory implements
         } catch(Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
+    }
+    
+    public Dispatcher createDispatcher(RubyClass metaClass) {
+        return Dispatcher.DEFAULT_DISPATCHER;
     }
 } //DumpingInvocationCallbackFactory

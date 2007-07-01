@@ -38,6 +38,7 @@ import java.math.BigInteger;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -83,6 +84,8 @@ public class RubyNumeric extends RubyObject {
         numeric.defineFastMethod("round", callbackFactory.getFastMethod("round"));
         numeric.defineFastMethod("truncate", callbackFactory.getFastMethod("truncate"));
         numeric.defineMethod("step", callbackFactory.getOptMethod("step"));
+        
+        numeric.dispatcher = callbackFactory.createDispatcher(numeric);
 
         return numeric;
     }
@@ -516,9 +519,9 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject eql_p(IRubyObject other) {
         if (getMetaClass() != other.getMetaClass()) {
             return getRuntime().getFalse();
-                }
+        }
         return super.equal(other);
-            }
+    }
             
     /** num_quo
      *
@@ -705,7 +708,7 @@ public class RubyNumeric extends RubyObject {
             } else {
                 cmp = MethodIndex.OP_LT;
             }
-            cmpString = MethodIndex.NAMES[cmp];
+            cmpString = (String)MethodIndex.NAMES.get(cmp);
 
             while (true) {
                 if (i.callMethod(context, cmp, cmpString, to).isTrue()) {

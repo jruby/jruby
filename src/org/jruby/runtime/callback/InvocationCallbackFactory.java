@@ -27,15 +27,32 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyKernel;
+import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlockCallback;
+import org.jruby.runtime.Dispatcher;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
@@ -48,6 +65,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     private final JRubyClassLoader classLoader;
     private final String typePath;
     private final Ruby runtime;
+    private final Map fastMethods = new HashMap();
 
     private final static String SUPER_CLASS = cg.p(InvocationCallback.class);
     private final static String FAST_SUPER_CLASS = cg.p(FastInvocationCallback.class);
@@ -84,6 +102,47 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, SUPER_CLASS, "<init>", "()V");
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(1, 1);
+        mv.visitEnd();
+        return cw;
+    }
+
+    private ClassWriter createCtorDispatcher(String namePath, Map switchMap) throws Exception {
+        ClassWriter cw = new ClassWriter(true);
+        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, cg.p(Dispatcher.class), null);
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", cg.sig(Void.TYPE, cg.params(Ruby.class)), null, null));
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKESPECIAL, cg.p(Dispatcher.class), "<init>", "()V");
+        
+        
+        // create our array
+        mv.aload(0);
+        mv.ldc(new Integer(MethodIndex.NAMES.size()));
+        mv.newarray(mv.T_BYTE);
+        mv.putfield(cg.p(Dispatcher.class), "switchTable", cg.ci(byte[].class));
+        
+        // for each switch value, set it into the table
+        mv.aload(0);
+        mv.getfield(cg.p(Dispatcher.class), "switchTable", cg.ci(byte[].class));
+        
+        for (Iterator switchIter = switchMap.keySet().iterator(); switchIter.hasNext();) {
+            Integer switchValue = (Integer)switchIter.next();
+            mv.dup();
+            
+            // method index
+            mv.ldc(new Integer(MethodIndex.getIndex((String)switchMap.get(switchValue))));
+            // switch value is one-based, add one
+            mv.ldc(switchValue);
+            
+            // store
+            mv.barraystore();
+        }
+        
+        // clear the extra table on stack
+        mv.pop();
+        
         mv.visitInsn(RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
@@ -152,6 +211,16 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return mv;
     }
 
+    private MethodVisitor startDispatcher(ClassWriter cw) {
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "callMethod", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, Integer.TYPE, String.class,
+                IRubyObject[].class, CallType.class, Block.class)), null, null);
+        ;
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitTypeInsn(CHECKCAST, typePath);
+        return mv;
+    }
+
     private MethodVisitor startCallSFast(ClassWriter cw) {
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", FAST_CALL_SIG, null, null);
         ;
@@ -194,6 +263,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.noArguments());
+                ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -226,6 +296,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.singleArgument());
+                ic.setArgumentTypes(new Class[] {arg1});
+                ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -262,6 +334,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.twoArguments());
+                ic.setArgumentTypes(new Class[] {arg1, arg2});
+                ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -303,6 +377,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.fixed(3));
+                ic.setArgumentTypes(new Class[] {arg1, arg2, arg3});
+                ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -332,6 +408,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.noArguments());
+                ic.setJavaName(method);
+                ic.setSingleton(true);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -365,6 +443,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.singleArgument());
+                ic.setArgumentTypes(new Class[] {arg1});
+                ic.setJavaName(method);
+                ic.setSingleton(true);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -402,6 +483,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.twoArguments());
+                ic.setArgumentTypes(new Class[] {arg1, arg2});
+                ic.setJavaName(method);
+                ic.setSingleton(true);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -443,6 +527,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.fixed(3));
+                ic.setArgumentTypes(new Class[] {arg1, arg2, arg3});
+                ic.setJavaName(method);
+                ic.setSingleton(true);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -510,6 +597,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.optional());
+                ic.setArgumentTypes(InvocationCallback.OPTIONAL_ARGS);
+                ic.setJavaName(method);
+                ic.setSingleton(true);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -542,6 +632,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.optional());
+                ic.setArgumentTypes(InvocationCallback.OPTIONAL_ARGS);
+                ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -568,6 +660,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.noArguments());
+                ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -599,6 +692,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.singleArgument());
+                ic.setArgumentTypes(new Class[] {arg1});
+                ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -634,6 +729,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.twoArguments());
+                ic.setArgumentTypes(new Class[] {arg1, arg2});
+                ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -673,6 +770,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.fixed(3));
+                ic.setArgumentTypes(new Class[] {arg1, arg2, arg3});
+                ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -700,6 +799,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.noArguments());
+                ic.setJavaName(method);
+                ic.setSingleton(true);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -732,6 +833,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.singleArgument());
+                ic.setArgumentTypes(new Class[] {arg1});
+                ic.setJavaName(method);
+                ic.setSingleton(true);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -768,6 +872,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.twoArguments());
+                ic.setArgumentTypes(new Class[] {arg1, arg2});
+                ic.setJavaName(method);
+                ic.setSingleton(true);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -808,6 +915,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.fixed(3));
+                ic.setArgumentTypes(new Class[] {arg1, arg2, arg3});
+                ic.setJavaName(method);
+                ic.setSingleton(true);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -838,6 +948,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.optional());
+                ic.setArgumentTypes(InvocationCallback.OPTIONAL_ARGS);
+                ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
@@ -869,10 +981,240 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.optional());
+                ic.setArgumentTypes(InvocationCallback.OPTIONAL_ARGS);
+                ic.setJavaName(method);
+                ic.setSingleton(true);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
             } catch (Exception e) {
+                throw new IllegalArgumentException(e.getMessage());
+            }
+        }
+    }
+    
+    public Dispatcher createDispatcher(RubyClass metaClass) {
+        String className = type.getName() + "Dispatcher_for_" + metaClass.getBaseName();
+        String classPath = typePath + "Dispatcher_for_" + metaClass.getBaseName();
+        
+        synchronized (runtime.getJRubyClassLoader()) {
+            Class c = tryClass(className);
+            try {
+                if (c == null) {
+                    // build a map of all methods from the module and all its parents
+                    Map allMethods = new HashMap();
+                    RubyModule current = metaClass;
+                    
+                    while (current != null) {
+                        for (Iterator methodIter = current.getMethods().entrySet().iterator(); methodIter.hasNext();) {
+                            Map.Entry entry = (Map.Entry)methodIter.next();
+                            
+                            if (allMethods.containsKey(entry.getKey())) continue;
+                            
+                            DynamicMethod dynamicMethod = (DynamicMethod)entry.getValue();
+                            if (!(dynamicMethod instanceof SimpleCallbackMethod)) {
+                                // method is not a simple/fast method, don't add to our big switch
+                                // FIXME: eventually, we'll probably want to add it to the switch for fast non-hash dispatching
+                                continue;
+                            } else {
+                                // TODO: skip singleton methods for now; we'll figure out fast dispatching for them in a future patch
+                                SimpleCallbackMethod simpleMethod = (SimpleCallbackMethod)dynamicMethod;
+                                InvocationCallback callback = (InvocationCallback)simpleMethod.getCallback();
+                                if (callback.isSingleton()) continue;
+                            }
+                            
+                            allMethods.put(entry.getKey(), entry.getValue());
+                        }
+                        current = current.getSuperClass();
+                        while (current != null && current.isIncluded()) current = current.getSuperClass();
+                    }
+                    
+                    // switches are 1-based, so add one
+                    Label[] labels = new Label[allMethods.size()];
+                    Label defaultLabel = new Label();
+
+                    int switchValue = 0;
+                    Map switchMap = new HashMap();
+                    
+                    // NOTE: We sort the list of keys here to ensure they're encountered in the same order from run to run
+                    // This will aid AOT compilation, since a given revision of JRuby should always generate the same
+                    // sequence of method indices, and code compiled for that revision should continue to work.
+                    // FIXME: This will not aid compiling once and running across JRuby versions, since method indices
+                    // could be generated in a different order on a different revision (adds, removes, etc over time)
+                    List methodKeys = new ArrayList(allMethods.keySet());
+                    Collections.sort(methodKeys);
+                    for (Iterator methodIter = methodKeys.iterator(); methodIter.hasNext();) {
+                        String indexKey = (String)methodIter.next();
+                        switchValue++;
+                        
+                        switchMap.put(new Integer(switchValue), indexKey);
+                        // switches are one-based, so subtract one
+                        labels[switchValue - 1] = new Label();
+                    }
+
+                    ClassWriter cw = createCtorDispatcher(classPath, switchMap);
+                    SkinnyMethodAdapter mv = new SkinnyMethodAdapter(startDispatcher(cw));
+                    
+                    // invoke directly
+
+                    // receiver is already loaded by startDispatcher
+                    
+                    // if no switch values, go straight to default
+                    if (switchValue == 0) {
+                        mv.go_to(defaultLabel);
+                    } else {
+                        // store runtime
+                        mv.aload(1);
+                        mv.invokevirtual(cg.p(ThreadContext.class), "getRuntime", cg.sig(Ruby.class));
+                        mv.astore(9);
+                        
+                        // load switch value
+                        mv.aload(0);
+                        mv.getfield(cg.p(Dispatcher.class), "switchTable", cg.ci(byte[].class));
+                        
+                        // ensure size isn't too large
+                        mv.dup();
+                        mv.arraylength();
+                        mv.iload(4);
+                        Label ok = new Label();
+                        mv.if_icmpgt(ok);
+                        
+                        // size is too large, remove extra table and go to default
+                        mv.pop();
+                        mv.go_to(defaultLabel);
+                        
+                        // size is ok, retrieve from table and switch on the result
+                        mv.label(ok);
+                        mv.iload(4);
+                        mv.barrayload();
+                        
+                        // perform switch
+                        mv.tableswitch(1, switchValue, defaultLabel, labels);
+                        
+                        for (int i = 0; i < labels.length; i++) {
+                            String rubyName = (String)switchMap.get(new Integer(i + 1));
+                            DynamicMethod dynamicMethod = (DynamicMethod)allMethods.get(rubyName);
+                            
+                            mv.label(labels[i]);
+    
+                            // based on the check above, it's a fast method, we can fast dispatch
+                            SimpleCallbackMethod simpleMethod = (SimpleCallbackMethod)dynamicMethod;
+                            InvocationCallback invocationCallback = (InvocationCallback)simpleMethod.getCallback();
+                            String method = invocationCallback.getJavaName();
+                            Arity arity = simpleMethod.getArity();
+                            Class[] descriptor = invocationCallback.getArgumentTypes();
+                            String ret = null;
+                            String callSig = null;
+                            
+                            switch (arity.getValue()) {
+                            case 3:
+                                // check arity
+                                mv.getstatic(cg.p(Arity.class), "THREE_ARGUMENTS", cg.ci(Arity.class));
+                                mv.aload(9);
+                                mv.aload(6);
+                                mv.invokevirtual(cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
+                                
+                                // check cast for params
+                                mv.aload(6);
+                                mv.iconst_0();
+                                mv.arrayload();
+                                mv.checkcast(cg.p((Class)descriptor[0]));
+                                mv.aload(6);
+                                mv.iconst_1();
+                                mv.arrayload();
+                                mv.checkcast(cg.p((Class)descriptor[1]));
+                                mv.aload(6);
+                                mv.iconst_2();
+                                mv.arrayload();
+                                mv.checkcast(cg.p((Class)descriptor[2]));
+                                ret = getReturnName(method, new Class[] {(Class)descriptor[0],(Class)descriptor[1],(Class)descriptor[2]});
+                                callSig = "(" + cg.ci((Class)descriptor[0]) + cg.ci((Class)descriptor[1]) + cg.ci((Class)descriptor[2]) + ")L"
+                                        + ret + ";";
+                                break;
+                            case 2:
+                                // check arity
+                                mv.getstatic(cg.p(Arity.class), "TWO_ARGUMENTS", cg.ci(Arity.class));
+                                mv.aload(9);
+                                mv.aload(6);
+                                mv.invokevirtual(cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
+                                
+                                // check cast for params
+                                mv.aload(6);
+                                mv.iconst_0();
+                                mv.arrayload();
+                                mv.checkcast(cg.p((Class)descriptor[0]));
+                                mv.aload(6);
+                                mv.iconst_1();
+                                mv.arrayload();
+                                mv.checkcast(cg.p((Class)descriptor[1]));
+                                ret = getReturnName(method, new Class[] {(Class)descriptor[0],(Class)descriptor[1]});
+                                callSig = "(" + cg.ci((Class)descriptor[0]) + cg.ci((Class)descriptor[1]) + ")L"
+                                        + ret + ";";
+                                break;
+                            case 1:
+                                // check arity
+                                mv.getstatic(cg.p(Arity.class), "ONE_ARGUMENT", cg.ci(Arity.class));
+                                mv.aload(9);
+                                mv.aload(6);
+                                mv.invokevirtual(cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
+                                
+                                // check cast for params
+                                mv.aload(6);
+                                mv.iconst_0();
+                                mv.arrayload();
+                                mv.checkcast(cg.p((Class)descriptor[0]));
+                                ret = getReturnName(method, new Class[] {(Class)descriptor[0]});
+                                callSig = "(" + cg.ci((Class)descriptor[0]) + ")L"
+                                        + ret + ";";
+                                break;
+                            case 0:
+                                // check arity
+                                mv.getstatic(cg.p(Arity.class), "NO_ARGUMENTS", cg.ci(Arity.class));
+                                mv.aload(9);
+                                mv.aload(6);
+                                mv.invokevirtual(cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
+    
+                                ret = getReturnName(method, new Class[0]);
+                                callSig = "()L"
+                                        + ret + ";";
+                                break;
+                            case -1:
+                                mv.aload(6);
+                                ret = getReturnName(method, new Class[] {IRubyObject[].class});
+                                callSig = "(" + cg.ci(IRubyObject[].class) + ")L"
+                                + ret + ";";
+                                break;
+                            default:
+                                mv.go_to(defaultLabel);
+                                continue;
+                            }
+    
+                            mv.invokevirtual(typePath, method, callSig);
+                            mv.areturn();
+                        }
+                    }
+                    
+                    // done with cases, handle default case
+                    mv.label(defaultLabel);
+                    mv.aload(1);
+                    mv.aload(3);
+                    mv.aload(5);
+                    mv.aload(6);
+                    mv.aload(7);
+                    mv.aload(8);
+                    mv.invokevirtual(cg.p(RubyObject.class), "callMethod",
+                            cg.sig(IRubyObject.class, cg.params(ThreadContext.class, RubyModule.class, String.class, IRubyObject[].class, CallType.class, Block.class)));
+
+                    mv.areturn();
+                    mv.visitMaxs(1, 1);
+                    c = endCall(cw, mv, className);
+                }
+                Dispatcher dispatcher = (Dispatcher)c.getConstructor(new Class[] {Ruby.class}).newInstance(new Object[] {runtime});
+                return dispatcher;
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (Exception e) {
+                e.printStackTrace();
                 throw new IllegalArgumentException(e.getMessage());
             }
         }

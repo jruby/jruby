@@ -114,6 +114,8 @@ public class RubyFloat extends RubyNumeric {
         floatc.defineFastMethod("nan?", callbackFactory.getFastMethod("nan_p"));
         floatc.defineFastMethod("infinite?", callbackFactory.getFastMethod("infinite_p"));
         floatc.defineFastMethod("finite?", callbackFactory.getFastMethod("finite_p"));
+        
+        floatc.dispatcher = callbackFactory.createDispatcher(floatc);
 
         return floatc;
     }

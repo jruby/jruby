@@ -133,6 +133,8 @@ public class RubyBigDecimal extends RubyNumeric {
         result.defineFastMethod("zero?", callbackFactory.getFastMethod("zero_p"));
 
         result.setClassVar("VpPrecLimit", RubyFixnum.zero(runtime));
+        
+        result.dispatcher = callbackFactory.createDispatcher(result);
 
         return result;
     }

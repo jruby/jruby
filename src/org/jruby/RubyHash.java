@@ -125,9 +125,11 @@ public class RubyHash extends RubyObject implements Map {
         hashc.defineFastMethod("has_value?", callbackFactory.getFastMethod("has_value", RubyKernel.IRUBY_OBJECT));
         hashc.defineFastMethod("key?", callbackFactory.getFastMethod("has_key", RubyKernel.IRUBY_OBJECT));
         hashc.defineFastMethod("value?", callbackFactory.getFastMethod("has_value", RubyKernel.IRUBY_OBJECT));
+        
+        hashc.dispatcher = callbackFactory.createDispatcher(hashc);
 
         return hashc;
-        }
+    }
 
     private final static ObjectAllocator HASH_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -137,74 +139,7 @@ public class RubyHash extends RubyObject implements Map {
 
     public int getNativeTypeIndex() {
         return ClassIndex.HASH;
-    }    
-
-
-    public static final byte AREF_SWITCHVALUE = 1;
-    public static final byte ASET_SWITCHVALUE = 2;
-    public static final byte DEFAULT_SWITCHVALUE = 3;
-    public static final byte NIL_P_SWITCHVALUE = 4;
-    public static final byte EQUALEQUAL_SWITCHVALUE = 5;
-    public static final byte EMPTY_P_SWITCHVALUE = 6;
-    public static final byte TO_S_SWITCHVALUE = 7;
-    public static final byte TO_A_SWITCHVALUE = 8;
-    public static final byte HASH_SWITCHVALUE = 9;
-    public static final byte LENGTH_SWITCHVALUE = 10;
-    public static final byte TO_HASH_SWITCHVALUE = 11;
-    public static final byte EQL_P_SWITCHVALUE = 12;
-    public static final byte INSPECT_SWITCHVALUE = 13;
-
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
-            IRubyObject[] args, CallType callType, Block block) {
-        // If tracing is on, don't do STI dispatch
-        if (context.getRuntime().hasEventHooks()) return super.callMethod(context, rubyclass, name, args, callType, block);
-        
-        switch (getRuntime().getSelectorTable().table[rubyclass.index][methodIndex]) {
-        case AREF_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return aref(args[0]);
-        case ASET_SWITCHVALUE:
-            if (args.length != 2) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 2 + ")");
-            return aset(args[0],args[1]);
-        case DEFAULT_SWITCHVALUE:
-            return default_value_get(args);
-        case NIL_P_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return nil_p();
-        case EQUALEQUAL_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return equal(args[0]);
-        case EMPTY_P_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return empty_p();
-        case TO_S_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return to_s();
-        case TO_A_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return to_a();
-        case HASH_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return hash();
-        case LENGTH_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return rb_size();
-        case TO_HASH_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return to_hash();
-        case EQL_P_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return obj_equal(args[0]);
-        case INSPECT_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return inspect();
-        case 0:
-        default:
-            return super.callMethod(context, rubyclass, name, args, callType, block);
-        }
     }
-
-
 
     /** rb_hash_s_create
      * 

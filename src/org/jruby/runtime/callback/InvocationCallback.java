@@ -40,7 +40,16 @@ import org.jruby.exceptions.MainExitException;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public abstract class InvocationCallback implements Callback {
+    public static final Class[] EMPTY_ARGS = new Class[0];
+    public static final Class[] OPTIONAL_ARGS = new Class[] {IRubyObject[].class};
     private Arity arity;
+    private Class[] argumentTypes;
+    private String javaName;
+    private boolean isSingleton;
+    
+    public InvocationCallback() {
+        this.argumentTypes = EMPTY_ARGS;
+    }
 
     public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs, Block block) {
         Ruby runtime = recv.getRuntime();
@@ -69,5 +78,29 @@ public abstract class InvocationCallback implements Callback {
 
     public Arity getArity() {
         return arity;
+    }
+    
+    public void setArgumentTypes(Class[] argumentTypes) {
+        this.argumentTypes = argumentTypes;
+    }
+    
+    public Class[] getArgumentTypes() {
+        return argumentTypes;   
+    }
+    
+    public void setJavaName(String javaName) {
+        this.javaName = javaName;
+    }
+    
+    public String getJavaName() {
+        return javaName;
+    }
+    
+    public void setSingleton(boolean isSingleton) {
+        this.isSingleton = isSingleton;
+    }
+    
+    public boolean isSingleton() {
+        return isSingleton;
     }
 }// InvocationCallback

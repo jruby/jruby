@@ -28,9 +28,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
+import org.jruby.RubyClass;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlockCallback;
+import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReflectionCallbackFactory extends CallbackFactory {
@@ -48,12 +50,20 @@ public class ReflectionCallbackFactory extends CallbackFactory {
     public Callback getFastMethod(String method) {
         return new ReflectionCallback(type, method, NULL_CLASS_ARRAY, false, false, Arity.noArguments(), true);
     }
+    
+    public Callback getFastMethod(String rubyName, String method) {
+        return new ReflectionCallback(type, method, NULL_CLASS_ARRAY, false, false, Arity.noArguments(), true);
+    }
 
     public Callback getMethod(String method, Class arg1) {
         return new ReflectionCallback(type, method, new Class[] { arg1 }, false, false, Arity.singleArgument(), false);
     }
 
     public Callback getFastMethod(String method, Class arg1) {
+        return new ReflectionCallback(type, method, new Class[] { arg1 }, false, false, Arity.singleArgument(), true);
+    }
+
+    public Callback getFastMethod(String rubyName, String method, Class arg1) {
         return new ReflectionCallback(type, method, new Class[] { arg1 }, false, false, Arity.singleArgument(), true);
     }
 
@@ -65,11 +75,19 @@ public class ReflectionCallbackFactory extends CallbackFactory {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2 }, false, false, Arity.fixed(2), true);
     }
 
+    public Callback getFastMethod(String rubyName, String method, Class arg1, Class arg2) {
+        return new ReflectionCallback(type, method, new Class[] { arg1, arg2 }, false, false, Arity.fixed(2), true);
+    }
+
     public Callback getMethod(String method, Class arg1, Class arg2, Class arg3) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2, arg3 }, false, false, Arity.fixed(3), false);
     }
 
     public Callback getFastMethod(String method, Class arg1, Class arg2, Class arg3) {
+        return new ReflectionCallback(type, method, new Class[] { arg1, arg2, arg3 }, false, false, Arity.fixed(3), true);
+    }
+
+    public Callback getFastMethod(String rubyName, String method, Class arg1, Class arg2, Class arg3) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2, arg3 }, false, false, Arity.fixed(3), true);
     }
 
@@ -133,5 +151,13 @@ public class ReflectionCallbackFactory extends CallbackFactory {
 
     public Callback getFastOptMethod(String method) {
         return new ReflectionCallback(type, method, new Class[] { IRubyObject[].class }, true, false, Arity.optional(), true);
+    }
+
+    public Callback getFastOptMethod(String rubyName, String method) {
+        return new ReflectionCallback(type, method, new Class[] { IRubyObject[].class }, true, false, Arity.optional(), true);
+    }
+    
+    public Dispatcher createDispatcher(RubyClass metaClass) {
+        return Dispatcher.DEFAULT_DISPATCHER;
     }
 }

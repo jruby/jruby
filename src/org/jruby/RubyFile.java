@@ -255,6 +255,8 @@ public class RubyFile extends RubyIO {
         
         RubyFileStat.createFileStatClass(runtime);
         
+        fileClass.dispatcher = callbackFactory.createDispatcher(fileClass);
+        
         return fileClass;
     }
     

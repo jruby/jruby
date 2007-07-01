@@ -95,7 +95,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.EventHook;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
-import org.jruby.runtime.MethodSelectorTable;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
@@ -122,7 +121,6 @@ public final class Ruby {
     private MethodCache methodCache = new MethodCache();
     private ThreadService threadService = new ThreadService(this);
     private Hashtable runtimeInformation;
-    private final MethodSelectorTable selectorTable = new MethodSelectorTable();
 
     private int stackTraces = 0;
 
@@ -602,10 +600,6 @@ public final class Ruby {
         return runtimeInformation == null ? runtimeInformation = new Hashtable() : runtimeInformation;
     }
 
-    public MethodSelectorTable getSelectorTable() {
-        return selectorTable;
-    }
-
     /** rb_define_global_const
      *
      */
@@ -647,9 +641,6 @@ public final class Ruby {
 
         verbose = falseObject;
         debug = falseObject;
-        
-        // init selector table, now that classes are done adding methods
-        selectorTable.init();
 
         initLibraries();
 

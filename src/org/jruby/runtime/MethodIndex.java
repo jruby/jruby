@@ -9,7 +9,9 @@
 
 package org.jruby.runtime;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,113 +19,52 @@ import java.util.Map;
  * @author headius
  */
 public class MethodIndex {
-    public static final int NO_INDEX = 0;
-    public static final int OP_PLUS = 1;
-    public static final int OP_MINUS = 2;
-    public static final int OP_LT = 3;
-    public static final int AREF = 4;
-    public static final int ASET = 5;
-    public static final int POP = 6;
-    public static final int PUSH = 7;
-    public static final int NIL_P = 8;
-    public static final int EQUALEQUAL = 9;
-    public static final int UNSHIFT = 10;
-    public static final int OP_GE = 11;
-    public static final int OP_LSHIFT = 12;
-    public static final int EMPTY_P = 13;
-    public static final int TO_S = 14;
-    public static final int TO_I = 15;
-    public static final int AT = 16;
-    public static final int TO_STR = 17;
-    public static final int TO_ARY = 18;
-    public static final int TO_INT = 19;
-    public static final int TO_F = 20;
-    public static final int TO_SYM = 21;
-    public static final int TO_A = 22;
-    public static final int HASH = 23;
-    public static final int OP_GT = 24;
-    public static final int OP_TIMES = 25;
-    public static final int OP_LE = 26;
-    public static final int OP_SPACESHIP = 27;
-    public static final int LENGTH = 28;
-    public static final int OP_MATCH = 29;
-    public static final int OP_EQQ = 30;
-    public static final int LAST = 31;
-    public static final int SHIFT = 32;
-    public static final int EQL_P = 33;
-    public static final int TO_HASH = 34;
-    public static final int INSPECT = 35;
-    public static final int METHOD_MISSING = 36;
-    public static final int DEFAULT = 37;
-    public static final int MAX_METHODS = 38;
-    
-    public static final String[] NAMES = new String[MAX_METHODS];
+    public static final List NAMES = new ArrayList();
     public static final Map NUMBERS = new HashMap();
     
-    static {
-        NAMES[NO_INDEX] = "";
-        NAMES[OP_PLUS] = "+";
-        NAMES[OP_MINUS] = "-";
-        NAMES[OP_LT] = "<";
-        NAMES[AREF] = "[]";
-        NAMES[ASET] = "[]=";
-        NAMES[POP] = "pop";
-        NAMES[PUSH] = "push";
-        NAMES[NIL_P] = "nil?";
-        NAMES[EQUALEQUAL] = "==";
-        NAMES[UNSHIFT] = "unshift";
-        NAMES[OP_GE] = ">=";
-        NAMES[OP_LSHIFT] = "<<";
-        NAMES[EMPTY_P] = "empty?";
-        NAMES[TO_S] = "to_s";
-        NAMES[TO_I] = "to_i";
-        NAMES[AT] = "at";
-        NAMES[TO_STR] = "to_str";
-        NAMES[TO_ARY] = "to_ary";
-        NAMES[TO_INT] = "to_int";
-        NAMES[TO_F] = "to_f";
-        NAMES[TO_SYM] = "to_sym";
-        NAMES[TO_A] = "to_a";
-        NAMES[HASH] = "hash";
-        NAMES[OP_GT] = ">";
-        NAMES[OP_TIMES] = "*";
-        NAMES[OP_LE] = "<=";
-        NAMES[OP_SPACESHIP] = "<=>";
-        NAMES[LENGTH] = "length";
-        NAMES[OP_MATCH] = "=~";
-        NAMES[OP_EQQ] = "===";
-        NAMES[LAST] = "last";
-        NAMES[SHIFT] = "shift";
-        NAMES[EQL_P] = "eql?";
-        NAMES[TO_HASH] = "to_hash";
-        NAMES[INSPECT] = "inspect";
-        NAMES[METHOD_MISSING] = "method_missing";
-        NAMES[DEFAULT] = "default";
-        
-        for (int i = 0; i < MAX_METHODS; i++) {
-            NUMBERS.put(NAMES[i], new Integer(i));
-        }
-    }
+    // ensure zero is devoted to no method name
+    public static final int NO_INDEX = getIndex("");
     
+    // predefine a few other methods we invoke directly elsewhere
+    public static final int OP_PLUS = getIndex("+");
+    public static final int OP_MINUS = getIndex("-");
+    public static final int OP_LT = getIndex("<");
+    public static final int AREF = getIndex("[]");
+    public static final int ASET = getIndex("[]=");
+    public static final int EQUALEQUAL = getIndex("==");
+    public static final int OP_LSHIFT = getIndex("<<");
+    public static final int EMPTY_P = getIndex("empty?");
+    public static final int TO_S = getIndex("to_s");
+    public static final int TO_I = getIndex("to_i");
+    public static final int TO_STR = getIndex("to_str");
+    public static final int TO_ARY = getIndex("to_ary");
+    public static final int TO_INT = getIndex("to_int");
+    public static final int TO_F = getIndex("to_f");
+    public static final int TO_A = getIndex("to_a");
+    public static final int HASH = getIndex("hash");
+    public static final int OP_GT = getIndex(">");
+    public static final int OP_TIMES = getIndex("*");
+    public static final int OP_LE = getIndex("<=");
+    public static final int OP_SPACESHIP = getIndex("<=>");
+    public static final int OP_EQQ = getIndex("===");
+    public static final int EQL_P = getIndex("eql?");
+    public static final int TO_HASH = getIndex("to_hash");
+    public static final int METHOD_MISSING = getIndex("method_missing");
+    public static final int DEFAULT = getIndex("default");
+
     /** Creates a new instance of MethodIndex */
     public MethodIndex() {
     }
     
     public static int getIndex(String methodName) {
-        // fast lookup for the length 1 messages
-        switch (methodName.length()) {
-        case 1:
-            switch (methodName.charAt(0)) {
-            case '+': return OP_PLUS;
-            case '-': return OP_MINUS;
-            case '<': return OP_LT;
-            case '>': return OP_GT;
-            case '*': return OP_TIMES;
-            default: return NO_INDEX;
-            }
-        default:
-            if (NUMBERS.containsKey(methodName)) return ((Integer)NUMBERS.get(methodName)).intValue();
-            return NO_INDEX;
+        Integer index = (Integer)NUMBERS.get(methodName);
+        
+        if (index == null) {
+            index = new Integer(NAMES.size());
+            NUMBERS.put(methodName, index);
+            NAMES.add(methodName);
         }
+        
+        return index.intValue();
     }
 }

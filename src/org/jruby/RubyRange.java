@@ -155,6 +155,8 @@ public class RubyRange extends RubyObject {
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
         result.getMetaClass().defineMethod("new", classCB.getOptMethod("newInstance"));
         
+        result.dispatcher = callbackFactory.createDispatcher(result);
+        
         return result;
     }
 
@@ -340,7 +342,7 @@ public class RubyRange extends RubyObject {
             IRubyObject currentObject = begin;
 	    int compareMethod = isExclusive ? MethodIndex.OP_LT : MethodIndex.OP_LE;
 
-	    while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES[compareMethod], end).isTrue()) {
+	    while (currentObject.callMethod(context, compareMethod, (String)MethodIndex.NAMES.get(compareMethod), end).isTrue()) {
 		size++;
 		if (currentObject.equals(end)) {
 		    break;
@@ -435,12 +437,12 @@ public class RubyRange extends RubyObject {
         ThreadContext context = getRuntime().getCurrentContext();
         if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
             RubyFixnum stepNum = getRuntime().newFixnum(stepSize);
-            while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES[compareMethod], end).isTrue()) {
+            while (currentObject.callMethod(context, compareMethod, (String)MethodIndex.NAMES.get(compareMethod), end).isTrue()) {
                 block.yield(context, currentObject);
                 currentObject = currentObject.callMethod(context, MethodIndex.OP_PLUS, "+", stepNum);
             }
         } else {
-            while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES[compareMethod], end).isTrue()) {
+            while (currentObject.callMethod(context, compareMethod, (String)MethodIndex.NAMES.get(compareMethod), end).isTrue()) {
                 block.yield(context, currentObject);
                 
                 for (int i = 0; i < stepSize; i++) {

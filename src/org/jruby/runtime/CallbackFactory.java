@@ -32,6 +32,7 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callback.ReflectionCallbackFactory;
 import org.jruby.runtime.callback.InvocationCallbackFactory;
@@ -136,6 +137,8 @@ public abstract class CallbackFactory {
     **/
     public abstract Callback getOptMethod(String method);
     public abstract Callback getFastOptMethod(String method);
+    
+    public abstract Dispatcher createDispatcher(RubyClass metaClass);
 
     private static boolean reflection = false;
     private static boolean dumping = false;

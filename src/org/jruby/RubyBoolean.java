@@ -92,6 +92,8 @@ public class RubyBoolean extends RubyObject {
         falseClass.defineFastMethod("to_s", fact.getFastMethod("false_to_s"));
         falseClass.getMetaClass().undefineMethod("new");
         
+        falseClass.dispatcher = fact.createDispatcher(falseClass);
+        
         return falseClass;
     }
     
@@ -108,6 +110,8 @@ public class RubyBoolean extends RubyObject {
         trueClass.defineFastMethod("id", fact.getFastMethod("true_id"));
         trueClass.defineFastMethod("to_s", fact.getFastMethod("true_to_s"));
         trueClass.getMetaClass().undefineMethod("new");
+        
+        trueClass.dispatcher = fact.createDispatcher(trueClass);
         
         return trueClass;
     }

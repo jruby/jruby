@@ -555,7 +555,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
-        return callMethod(context, rubyclass, name, args, callType, block);
+        return rubyclass.dispatcher.callMethod(context, this, rubyclass, methodIndex, name, args, callType, block);
     }
     
     /**
@@ -710,7 +710,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @see org.jruby.runtime.builtin.IRubyObject#convertToType(java.lang.String, java.lang.String, boolean)
      */
     public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, boolean raise) {
-        return convertToType(targetType, convertMethodIndex, MethodIndex.NAMES[convertMethodIndex], raise, true, false);
+        return convertToType(targetType, convertMethodIndex, (String)MethodIndex.NAMES.get(convertMethodIndex), raise, true, false);
     }
     
     public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, String convertMethod, boolean raiseOnMissingMethod, boolean raiseOnWrongTypeResult, boolean allowNilThrough) {

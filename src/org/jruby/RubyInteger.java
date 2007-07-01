@@ -35,6 +35,7 @@ package org.jruby;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -72,6 +73,8 @@ public abstract class RubyInteger extends RubyNumeric {
 
         integer.getMetaClass().defineFastMethod("induced_from", callbackFactory.getFastSingletonMethod("induced_from",
                 RubyKernel.IRUBY_OBJECT));
+        
+        integer.dispatcher = callbackFactory.createDispatcher(integer);
         return integer;
     }
 

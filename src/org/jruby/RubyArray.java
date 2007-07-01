@@ -157,6 +157,8 @@ public class RubyArray extends RubyObject implements List {
         arrayc.defineFastMethod("nitems", callbackFactory.getFastMethod("nitems"));
 
         arrayc.defineFastMethod("pack", callbackFactory.getFastMethod("pack", RubyKernel.IRUBY_OBJECT));
+        
+        arrayc.dispatcher = callbackFactory.createDispatcher(arrayc);
 
         return arrayc;
     }
@@ -166,98 +168,6 @@ public class RubyArray extends RubyObject implements List {
             return new RubyArray(runtime, klass);
         }
     };
-    
-    public static final byte OP_PLUS_SWITCHVALUE = 1;
-    public static final byte AREF_SWITCHVALUE = 2;
-    public static final byte ASET_SWITCHVALUE = 3;
-    public static final byte POP_SWITCHVALUE = 4;
-    public static final byte PUSH_SWITCHVALUE = 5;
-    public static final byte NIL_P_SWITCHVALUE = 6;
-    public static final byte EQUALEQUAL_SWITCHVALUE = 7;
-    public static final byte UNSHIFT_SWITCHVALUE = 8;
-    public static final byte OP_LSHIFT_SWITCHVALUE = 9;
-    public static final byte EMPTY_P_SWITCHVALUE = 10;
-    public static final byte TO_S_SWITCHVALUE = 11;
-    public static final byte AT_SWITCHVALUE = 12;
-    public static final byte TO_ARY_SWITCHVALUE = 13;
-    public static final byte TO_A_SWITCHVALUE = 14;
-    public static final byte HASH_SWITCHVALUE = 15;
-    public static final byte OP_TIMES_SWITCHVALUE = 16;
-    public static final byte OP_SPACESHIP_SWITCHVALUE = 17;
-    public static final byte LENGTH_SWITCHVALUE = 18;
-    public static final byte LAST_SWITCHVALUE = 19;
-    public static final byte SHIFT_SWITCHVALUE = 20;
-    public static final byte INSPECT_SWITCHVALUE = 21;
-
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex,
-            String name, IRubyObject[] args, CallType callType, Block block) {
-        // If tracing is on, don't do STI dispatch
-        if (context.getRuntime().hasEventHooks()) return super.callMethod(context, rubyclass, name, args, callType, block);
-        
-        switch (getRuntime().getSelectorTable().table[rubyclass.index][methodIndex]) {
-        case OP_PLUS_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return op_plus(args[0]);
-        case AREF_SWITCHVALUE:
-            return aref(args);
-        case ASET_SWITCHVALUE:
-            return aset(args);
-        case POP_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return pop();
-        case PUSH_SWITCHVALUE:
-            return push_m(args);
-        case NIL_P_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return nil_p();
-        case EQUALEQUAL_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return op_equal(args[0]);
-        case UNSHIFT_SWITCHVALUE:
-            return unshift_m(args);
-        case OP_LSHIFT_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return append(args[0]);
-        case EMPTY_P_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return empty_p();
-        case TO_S_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return to_s();
-        case AT_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return at(args[0]);
-        case TO_ARY_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return to_ary();
-        case TO_A_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return to_a();
-        case HASH_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return hash();
-        case OP_TIMES_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return op_times(args[0]);
-        case OP_SPACESHIP_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return op_cmp(args[0]);
-        case LENGTH_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return length();
-        case LAST_SWITCHVALUE:
-            return last(args);
-        case SHIFT_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return shift();
-        case INSPECT_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return inspect();
-        case 0:
-        default:
-            return super.callMethod(context, rubyclass, name, args, callType, block);
-        }
-    }
 
     public int getNativeTypeIndex() {
         return ClassIndex.ARRAY;

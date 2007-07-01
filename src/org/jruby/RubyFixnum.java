@@ -101,6 +101,8 @@ public class RubyFixnum extends RubyInteger {
         fixnum.defineFastMethod("to_f", callbackFactory.getFastMethod("to_f"));
         fixnum.defineFastMethod("size", callbackFactory.getFastMethod("size"));
         fixnum.defineFastMethod("zero?", callbackFactory.getFastMethod("zero_p"));
+        
+        fixnum.dispatcher = callbackFactory.createDispatcher(fixnum);
 
         return fixnum;
     }    
@@ -112,20 +114,6 @@ public class RubyFixnum extends RubyInteger {
     public static final long MIN = -1 * MAX - 1;
     public static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1; // 0x3fff_ffff
     public static final long MIN_MARSHAL_FIXNUM = - (1L << 30);   // -0x4000_0000
-
-    public static final byte OP_PLUS_SWITCHVALUE = 1;
-    public static final byte OP_MINUS_SWITCHVALUE = 2;
-    public static final byte OP_LT_SWITCHVALUE = 3;
-    public static final byte TO_S_SWITCHVALUE = 4;
-    public static final byte TO_I_SWITCHVALUE = 5;
-    public static final byte TO_INT_SWITCHVALUE = 6;
-    public static final byte HASH_SWITCHVALUE = 7;
-    public static final byte OP_GT_SWITCHVALUE = 8;
-    public static final byte OP_TIMES_SWITCHVALUE = 9;
-    public static final byte EQUALEQUAL_SWITCHVALUE = 10;
-    public static final byte OP_LE_SWITCHVALUE = 11;
-    public static final byte OP_SPACESHIP_SWITCHVALUE = 12;
-    public static final byte INSPECT_SWITCHVALUE = 13;
 
     public RubyFixnum(Ruby runtime) {
         this(runtime, 0);
@@ -141,49 +129,7 @@ public class RubyFixnum extends RubyInteger {
         // If tracing is on, don't do STI dispatch
         if (context.getRuntime().hasEventHooks()) return super.callMethod(context, rubyclass, name, args, callType, block);
         
-        switch (getRuntime().getSelectorTable().table[rubyclass.index][methodIndex]) {
-        case OP_PLUS_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return plus(args[0]);
-        case OP_MINUS_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return minus(args[0]);
-        case OP_LT_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return lt(args[0]);
-        case TO_S_SWITCHVALUE:
-            return to_s(args);
-        case TO_I_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return to_i();
-        case TO_INT_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return to_int();
-        case HASH_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return hash();
-        case OP_GT_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return gt(args[0]);
-        case OP_TIMES_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return mul(args[0]);
-        case EQUALEQUAL_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return equal(args[0]);
-        case OP_LE_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return le(args[0]);
-        case OP_SPACESHIP_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return cmp(args[0]);
-        case INSPECT_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return inspect();
-        case 0:
-        default:
-            return super.callMethod(context, rubyclass, name, args, callType, block);
-        }
+        return rubyclass.dispatcher.callMethod(context, this, rubyclass, methodIndex, name, args, callType, block);
     }
     
     public int getNativeTypeIndex() {

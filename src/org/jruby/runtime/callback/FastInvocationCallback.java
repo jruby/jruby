@@ -39,7 +39,7 @@ import org.jruby.exceptions.MainExitException;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-public abstract class FastInvocationCallback implements Callback {
+public abstract class FastInvocationCallback extends InvocationCallback {
     private Arity arity;
 
     public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs, Block block) {

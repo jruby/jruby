@@ -68,6 +68,8 @@ public abstract class RubyMatchData extends RubyObject {
         matchDataClass.defineFastMethod("string", callbackFactory.getFastMethod("string"));
 
         matchDataClass.getMetaClass().undefineMethod("new");
+        
+        matchDataClass.dispatcher = callbackFactory.createDispatcher(matchDataClass);
 
         return matchDataClass;
     }

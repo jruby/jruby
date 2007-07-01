@@ -82,6 +82,8 @@ public class RubyNil extends RubyObject {
         
         nilClass.getMetaClass().undefineMethod("new");
         
+        nilClass.dispatcher = callbackFactory.createDispatcher(nilClass);
+        
         return nilClass;
     }
     
