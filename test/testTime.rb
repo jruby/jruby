@@ -98,3 +98,6 @@ test_no_exception {MyTime.new(10)}
 
 tt = Time.new
 test_equal tt.strftime("%Y-%m-%d"),tt.strftime("%F")
+
+test_equal "12:00AM", Time.utc(2007,01,01,0,0).strftime("%I:%M%p")
+test_equal "12:00PM", Time.utc(2007,01,01,12,0).strftime("%I:%M%p")
