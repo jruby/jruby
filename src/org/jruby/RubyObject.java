@@ -897,6 +897,8 @@ public class RubyObject implements Cloneable, IRubyObject {
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.BreakJump) {
                 throw getRuntime().newLocalJumpError("break", (IRubyObject)je.getValue(), "unexpected break");
+            } else if(je.getJumpType() == JumpException.JumpType.RedoJump) {
+                throw getRuntime().newLocalJumpError("redo", (IRubyObject)je.getValue(), "unexpected redo");
             }
             throw je;
         } finally {

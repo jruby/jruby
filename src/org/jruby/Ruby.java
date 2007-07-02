@@ -292,6 +292,8 @@ public final class Ruby {
                 //              return (IRubyObject)je.getSecondaryData();
             } else if(je.getJumpType() == JumpException.JumpType.BreakJump) {
                 throw newLocalJumpError("break", (IRubyObject)je.getValue(), "unexpected break");
+            } else if(je.getJumpType() == JumpException.JumpType.RedoJump) {
+                throw newLocalJumpError("redo", (IRubyObject)je.getValue(), "unexpected redo");
             }
 
             throw je;

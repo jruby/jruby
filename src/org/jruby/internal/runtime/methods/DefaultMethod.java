@@ -143,6 +143,8 @@ public final class DefaultMethod extends DynamicMethod {
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
 	                return (IRubyObject) je.getValue();
+            } else if(je.getJumpType() == JumpException.JumpType.RedoJump) {
+                throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
         	}
             
        		throw je;

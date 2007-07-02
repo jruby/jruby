@@ -374,6 +374,7 @@ test/externals/rubinius/spec/language/expressions/unless_spec.rb
 test/externals/rubinius/spec/language/expressions/while_spec.rb
 test/externals/rubinius/spec/language/keywords/break_spec.rb
 test/externals/rubinius/spec/language/keywords/defined_spec.rb
+test/externals/rubinius/spec/language/keywords/redo_spec.rb
 test/externals/rubinius/spec/language/literals
 test/externals/rubinius/spec/library
 test/externals/rubinius/spec/parser"/></antcall>
@@ -402,6 +403,7 @@ test/externals/rubinius/spec/language/expressions/unless_spec.rb
 test/externals/rubinius/spec/language/expressions/while_spec.rb
 test/externals/rubinius/spec/language/keywords/break_spec.rb
 test/externals/rubinius/spec/language/keywords/defined_spec.rb
+test/externals/rubinius/spec/language/keywords/redo_spec.rb
 test/externals/rubinius/spec/language/literals
 test/externals/rubinius/spec/library
 test/externals/rubinius/spec/parser"/></antcall>
