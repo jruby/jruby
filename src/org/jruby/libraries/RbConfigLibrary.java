@@ -72,7 +72,12 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "host_vendor", System.getProperty("java.vendor"));
         setConfig(configHash, "host_cpu", System.getProperty("os.arch"));
         
-        setConfig(configHash, "target_os", System.getProperty("os.name"));
+        String target_os = System.getProperty("os.name");
+        if (target_os.compareTo("Mac OS X") == 0) {
+            target_os = "darwin";
+        }
+        setConfig(configHash, "target_os", target_os);
+        
         setConfig(configHash, "target_cpu", System.getProperty("os.arch"));
         
         String jrubyJarFile = "jruby.jar";

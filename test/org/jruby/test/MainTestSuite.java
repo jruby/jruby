@@ -80,6 +80,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(VisitorTestSuite.suite());
         suite.addTestSuite(ByteListTest.class);
         suite.addTestSuite(ShellLauncherTest.class);
+        suite.addTestSuite(TestRbConfigLibrary.class);
         return suite;
     }
 }
