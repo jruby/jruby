@@ -98,7 +98,7 @@ public class Parser {
         } catch (SyntaxException e) {
             StringBuffer buffer = new StringBuffer(100);
             buffer.append(e.getPosition().getFile()).append(':');
-            buffer.append(e.getPosition().getEndLine()).append(": ");
+            buffer.append(e.getPosition().getEndLine() + 1).append(": ");
             buffer.append(e.getMessage());
             throw runtime.newSyntaxError(buffer.toString());
         } finally {

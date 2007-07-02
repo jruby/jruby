@@ -50,7 +50,7 @@ public class RubyWarnings implements IRubyWarnings {
     	
         StringBuffer buffer = new StringBuffer(100);
 
-        buffer.append(position.getFile()).append(':').append(position.getEndLine()).append(' ');
+        buffer.append(position.getFile()).append(':').append(position.getEndLine() + 1).append(' ');
         buffer.append("warning: ").append(message).append('\n');
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
         errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));

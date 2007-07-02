@@ -81,6 +81,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(ByteListTest.class);
         suite.addTestSuite(ShellLauncherTest.class);
         suite.addTestSuite(TestRbConfigLibrary.class);
+        suite.addTestSuite(TestParser.class);        
         return suite;
     }
 }
