@@ -273,7 +273,6 @@ public class NodeCompilerFactory {
             
             // Also do not compile anything with a block argument or "rest" argument
             if (argsNode.getBlockArgNode() != null) throw new NotCompilableException("Can't compile def with block arg at: " + node.getPosition());
-            if (argsNode.getRestArg() != -1) throw new NotCompilableException("Can't compile def with rest arg at: " + node.getPosition());
             break;
         }
     }

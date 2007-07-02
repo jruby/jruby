@@ -183,23 +183,32 @@ public final class DefaultMethod extends DynamicMethod {
                         public void compile(Compiler context) {
                             Arity arity = argsNode.getArity();
                             
+                            context.lineNumber(argsNode.getPosition());
+                            int required = expectedArgsCount;
+                            
                             if (hasOptArgs) {
                                 if (restArg > -1) {
-                                    callCount = -1;
-                                    return;
-                                } else {
-                                    int opt = expectedArgsCount + argsNode.getOptArgs().size();
-                                    context.processRequiredArgs(arity, opt);
+                                    int opt = argsNode.getOptArgs().size();
+                                    context.processRequiredArgs(arity, required, opt, restArg);
                                     
                                     ListNode optArgs = argsNode.getOptArgs();
-                                    context.assignOptionalArgs(optArgs, expectedArgsCount, optArgs.size(), evalOptionalValue);
+                                    context.assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
+                                    
+                                    context.processRestArg(required + opt, restArg);
+                                } else {
+                                    int opt = argsNode.getOptArgs().size();
+                                    context.processRequiredArgs(arity, required, opt, restArg);
+                                    
+                                    ListNode optArgs = argsNode.getOptArgs();
+                                    context.assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
                                 }
                             } else {
                                 if (restArg > -1) {
-                                    callCount = -1;
-                                    return;
+                                    context.processRequiredArgs(arity, required, 0, restArg);
+                                    
+                                    context.processRestArg(required, restArg);
                                 } else {
-                                    context.processRequiredArgs(arity, expectedArgsCount);
+                                    context.processRequiredArgs(arity, required, 0, restArg);
                                 }
                             }
                         }

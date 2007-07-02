@@ -1305,36 +1305,58 @@ public class StandardASMCompiler implements Compiler, Opcodes {
                 cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Visibility.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE)));
     }
     
-    public void processRequiredArgs(Arity arity, int totalArgs) {
+    public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg) {
         SkinnyMethodAdapter newMethod = getMethodAdapter();
         
         // check arity
-        newMethod.ldc(new Integer(arity.getValue()));
-        newMethod.invokestatic(cg.p(Arity.class), "createArity", cg.sig(Arity.class, cg.params(Integer.TYPE)));
         loadRuntime();
         newMethod.aload(ARGS_INDEX);
-        newMethod.invokevirtual(cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
-        
-        // optional has different checks for size
-        if (!arity.isFixed()) {
-            loadRuntime();
-            newMethod.aload(ARGS_INDEX);
-            newMethod.arraylength();
-            newMethod.ldc(new Integer(totalArgs));
-            invokeUtilityMethod("raiseArgumentError", cg.sig(Void.TYPE, cg.params(Ruby.class, Integer.TYPE, Integer.TYPE)));
-        }
+        newMethod.arraylength();
+        newMethod.ldc(new Integer(requiredArgs));
+        newMethod.ldc(new Integer(optArgs));
+        newMethod.ldc(new Integer(restArg));
+        invokeUtilityMethod("raiseArgumentError", cg.sig(Void.TYPE, cg.params(Ruby.class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE)));
         
         // arraycopy all arguments into local vars array
         Label noArgs = new Label();
+        
+        // check if args is null
         newMethod.aload(ARGS_INDEX);
         newMethod.ifnull(noArgs);
+        
+        // check if args length is zero
         newMethod.aload(ARGS_INDEX);
         newMethod.arraylength();
         newMethod.ifeq(noArgs);
+        
+        if (requiredArgs + optArgs == 0 && restArg == 0) {
+            // only restarg, just jump to noArgs and it will be processed separately
+            newMethod.go_to(noArgs);
+        }
+
+        // load dynamic scope and args array
         newMethod.aload(LOCAL_VARS_INDEX);
         newMethod.aload(ARGS_INDEX);
-        newMethod.dup();
+
+        // test whether total args count or actual args given is lower, for copying to dynamic scope
+        Label useArgsLength = new Label();
+        Label setArgValues = new Label();
+        newMethod.aload(ARGS_INDEX);
         newMethod.arraylength();
+        newMethod.ldc(new Integer(requiredArgs + optArgs));
+        newMethod.if_icmplt(useArgsLength);
+        
+        // total args is lower, use that
+        newMethod.ldc(new Integer(requiredArgs + optArgs));
+        newMethod.go_to(setArgValues);
+
+        // args length is lower, use that
+        newMethod.label(useArgsLength);
+        newMethod.aload(ARGS_INDEX);
+        newMethod.arraylength();
+        
+        // do the dew
+        newMethod.label(setArgValues);
         newMethod.invokevirtual(cg.p(DynamicScope.class), "setArgValues", cg.sig(Void.TYPE, cg.params(IRubyObject[].class, Integer.TYPE)));
         newMethod.label(noArgs);
         
@@ -1368,6 +1390,35 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         }
         
         newMethod.label(defaultLabel);
+    }
+    
+    public void processRestArg(int startIndex, int restArg) {
+        SkinnyMethodAdapter method = getMethodAdapter();
+
+        method.aload(SCOPE_INDEX);
+        method.ldc(new Integer(restArg));
+        
+        method.aload(ARGS_INDEX);
+        method.arraylength();
+        method.ldc(new Integer(startIndex));
+        
+        Label emptyArray = new Label();
+        Label store = new Label();
+        method.if_icmple(emptyArray);
+        
+        loadRuntime();
+        method.aload(ARGS_INDEX);
+        method.ldc(new Integer(startIndex));
+        method.invokestatic(cg.p(RubyArray.class), "newArrayNoCopy", cg.sig(RubyArray.class, cg.params(Ruby.class, IRubyObject[].class, int.class)));
+        method.go_to(store);
+        
+        method.label(emptyArray);
+        loadRuntime();
+        method.lconst_0();
+        method.invokestatic(cg.p(RubyArray.class), "newArray", cg.sig(RubyArray.class, cg.params(Ruby.class, long.class)));
+        
+        method.label(store);
+        method.arraystore();
     }
     
     public void loadFalse() {

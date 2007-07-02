@@ -56,26 +56,36 @@ public class DefnNodeCompiler implements NodeCompiler {
         
         ClosureCallback args = new ClosureCallback() {
             public void compile(Compiler context) {
-                int expectedArgsCount = argsNode.getArgsCount();
+                int required = argsNode.getArgsCount();
                 int restArg = argsNode.getRestArg();
                 boolean hasOptArgs = argsNode.getOptArgs() != null;
                 Arity arity = argsNode.getArity();
                 
+                context.lineNumber(argsNode.getPosition());
+                
                 if (hasOptArgs) {
                     if (restArg > -1) {
-                        throw new NotCompilableException("Can't compile def with rest arg at: " + defnNode.getPosition());
-                    } else {
-                        int opt = expectedArgsCount + argsNode.getOptArgs().size();
-                        context.processRequiredArgs(arity, opt);
+                        int opt = argsNode.getOptArgs().size();
+                        context.processRequiredArgs(arity, required, opt, restArg);
                         
                         ListNode optArgs = argsNode.getOptArgs();
-                        context.assignOptionalArgs(optArgs, expectedArgsCount, optArgs.size(), evalOptionalValue);
+                        context.assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
+                        
+                        context.processRestArg(required + opt, restArg);
+                    } else {
+                        int opt = argsNode.getOptArgs().size();
+                        context.processRequiredArgs(arity, required, opt, restArg);
+                        
+                        ListNode optArgs = argsNode.getOptArgs();
+                        context.assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
                     }
                 } else {
                     if (restArg > -1) {
-                        throw new NotCompilableException("Can't compile def with rest arg at: " + defnNode.getPosition());
+                        context.processRequiredArgs(arity, required, 0, restArg);
+                        
+                        context.processRestArg(required, restArg);
                     } else {
-                        context.processRequiredArgs(arity, expectedArgsCount);
+                        context.processRequiredArgs(arity, required, 0, restArg);
                     }
                 }
             }

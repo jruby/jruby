@@ -350,7 +350,9 @@ public interface Compiler {
      */
     public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args);
     
-    public void processRequiredArgs(Arity arity, int totalArgs);
+    public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg);
+    
+    public void processRestArg(int startIndex, int restArg);
     
     /**
      * Define an alias for a new name to an existing oldName'd method.

@@ -242,6 +242,10 @@ public class RubyArray extends RubyObject implements List {
         return new RubyArray(runtime, args);
     }
     
+    public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject[] args, int begin) {
+        return new RubyArray(runtime, args, begin);
+    }
+    
     public static RubyArray newArrayNoCopyLight(Ruby runtime, IRubyObject[] args) {
         RubyArray arr = new RubyArray(runtime, false);
         arr.values = args;
@@ -272,6 +276,17 @@ public class RubyArray extends RubyObject implements List {
         super(runtime, runtime.getArray());
         values = vals;
         realLength = vals.length;
+    }
+
+    /* 
+     * plain internal array assignment
+     */
+    private RubyArray(Ruby runtime, IRubyObject[] vals, int begin) {
+        super(runtime, runtime.getArray());
+        this.values = vals;
+        this.begin = begin;
+        this.realLength = vals.length - begin;
+        this.shared = true;
     }
     
     /* rb_ary_new2
@@ -1185,9 +1200,9 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         if (shared) {
-        for (int i = begin; i < begin + realLength; i++) {
-            block.yield(context, values[i]);
-        }
+            for (int i = begin; i < begin + realLength; i++) {
+                block.yield(context, values[i]);
+            }
         } else {
             for (int i = 0; i < realLength; i++) {
                 block.yield(context, values[i]);
