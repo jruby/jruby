@@ -353,6 +353,7 @@
   
   <target name="test-spec-compiled" depends="install-gems">
     <antcall target="run-spec-compiled"><param name="SPEC" value="
+test/externals/rubinius/spec/core/enumerable_spec.rb
 test/externals/rubinius/spec/core/false_spec.rb
 test/externals/rubinius/spec/core/hash_spec.rb
 test/externals/rubinius/spec/core/integer_spec.rb
@@ -386,6 +387,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   
   <target name="test-spec-interpreted" depends="install-gems">
     <antcall target="run-spec"><param name="SPEC" value="
+test/externals/rubinius/spec/core/enumerable_spec.rb
 test/externals/rubinius/spec/core/false_spec.rb
 test/externals/rubinius/spec/core/hash_spec.rb
 test/externals/rubinius/spec/core/integer_spec.rb

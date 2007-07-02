@@ -530,7 +530,7 @@ public class RubyEnumerable {
         final ThreadContext context = runtime.getCurrentContext();
 
         for (int i = 0; i < args.length; i++) {
-            args[i] = args[i].convertToArray();
+            args[i] = args[i].convertToTypeWithCheck(runtime.getArray(), MethodIndex.TO_A, "to_a");
         }
         
         final int aLen = args.length + 1;
