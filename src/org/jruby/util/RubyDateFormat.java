@@ -164,6 +164,13 @@ public class RubyDateFormat extends DateFormat {
                     case 'e':
                         compiledPattern.add(new Token(FORMAT_DAY_S));
                         break;
+                    case 'F':
+                        compiledPattern.add(new Token(FORMAT_YEAR_LONG));
+                        compiledPattern.add(new Token(FORMAT_STRING, "-"));
+                        compiledPattern.add(new Token(FORMAT_MONTH));
+                        compiledPattern.add(new Token(FORMAT_STRING, "-"));
+                        compiledPattern.add(new Token(FORMAT_DAY));
+                        break;
                     case 'H':
                         compiledPattern.add(new Token(FORMAT_HOUR));
                         break;

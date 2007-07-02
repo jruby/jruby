@@ -94,4 +94,7 @@ stest.each {|flag,val|
 # Time initialize and allocation should be handled correctly
 # This test case used to raise an argument exception on the second line
 class MyTime < Time; def initialize(v, *args) super(*args); @v = v; end end
-MyTime.new(10)
+test_no_exception {MyTime.new(10)}
+
+tt = Time.new
+test_equal tt.strftime("%Y-%m-%d"),tt.strftime("%F")
