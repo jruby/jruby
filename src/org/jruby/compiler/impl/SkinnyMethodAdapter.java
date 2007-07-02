@@ -120,6 +120,10 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         mv.visitInsn(ICONST_2);
     }
     
+    public void iconst_3() {
+        mv.visitInsn(ICONST_3);
+    }
+    
     public void isub() {
         mv.visitInsn(ISUB);
     }
@@ -211,6 +215,14 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     
     public void if_icmpgt(Label arg0) {
         mv.visitJumpInsn(IF_ICMPGT, arg0);
+    }
+    
+    public void if_icmpne(Label arg0) {
+        mv.visitJumpInsn(IF_ICMPNE, arg0);
+    }
+    
+    public void if_icmpeq(Label arg0) {
+        mv.visitJumpInsn(IF_ICMPEQ, arg0);
     }
     
     public void checkcast(String arg0) {

@@ -44,6 +44,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
 import org.jruby.runtime.Arity;
@@ -62,14 +63,12 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     private final static CodegenUtils cg = CodegenUtils.cg;
 
     private final Class type;
-    private final JRubyClassLoader classLoader;
+    protected final JRubyClassLoader classLoader;
     private final String typePath;
-    private final Ruby runtime;
-    private final Map fastMethods = new HashMap();
+    protected final Ruby runtime;
 
     private final static String SUPER_CLASS = cg.p(InvocationCallback.class);
     private final static String FAST_SUPER_CLASS = cg.p(FastInvocationCallback.class);
-    private final static String BLOCK_ID = cg.ci(Block.class);
     private final static String CALL_SIG = cg.sig(RubyKernel.IRUBY_OBJECT, cg.params(Object.class,
             Object[].class, Block.class));
     private final static String FAST_CALL_SIG = cg.sig(RubyKernel.IRUBY_OBJECT, cg.params(
@@ -77,7 +76,10 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     private final static String BLOCK_CALL_SIG = cg.sig(RubyKernel.IRUBY_OBJECT, cg.params(
             ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject[].class));
     private final static String IRUB = cg.p(RubyKernel.IRUBY_OBJECT);
-    private final static String IRUB_ID = cg.ci(RubyKernel.IRUBY_OBJECT);
+    
+    private static final int DISPATCHER_ARGS_INDEX = 6;
+
+    private static final int METHOD_ARGS_INDEX = 2;
 
     public InvocationCallbackFactory(Ruby runtime, Class type, JRubyClassLoader classLoader) {
         this.type = type;
@@ -86,13 +88,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         this.runtime = runtime;
     }
 
-    private String getReturnName(String method, Class[] args) throws Exception {
-        String t = type.getMethod(method, args).getReturnType().getName().replace('.', '/');
-        if ("void".equalsIgnoreCase(t)) {
-            throw new IllegalArgumentException("Method " + method
-                    + " has a void return type. This is not allowed in JRuby.");
-        }
-        return t;
+    private Class getReturnClass(String method, Class[] args) throws Exception {
+        return type.getMethod(method, args).getReturnType();
     }
 
     private ClassWriter createCtor(String namePath) throws Exception {
@@ -120,7 +117,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         // create our array
         mv.aload(0);
         mv.ldc(new Integer(MethodIndex.NAMES.size()));
-        mv.newarray(mv.T_BYTE);
+        mv.newarray(T_BYTE);
         mv.putfield(cg.p(Dispatcher.class), "switchTable", cg.ci(byte[].class));
         
         // for each switch value, set it into the table
@@ -198,7 +195,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         ;
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 1);
-        mv.visitTypeInsn(CHECKCAST, IRUB);
+        checkCast(mv, IRubyObject.class);
         return mv;
     }
 
@@ -237,7 +234,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return mv;
     }
 
-    private Class endCall(ClassWriter cw, MethodVisitor mv, String name) {
+    protected Class endCall(ClassWriter cw, MethodVisitor mv, String name) {
         mv.visitEnd();
         cw.visitEnd();
         byte[] code = cw.toByteArray();
@@ -245,18 +242,19 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getMethod(String method) {
-        String mname = type.getName() + "Invoker" + method + "0";
-        String mnamePath = typePath + "Invoker" + method + "0";
+        String mname = type.getName() + "Invoker$" + method + "_0";
+        String mnamePath = typePath + "Invoker$" + method + "_0";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { Block.class });
+                    Class[] signature = new Class[] { Block.class };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtor(mnamePath);
                     MethodVisitor mv = startCall(cw);
+                    
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "(" + BLOCK_ID + ")L" + ret
-                            + ";");
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(1, 3);
                     c = endCall(cw, mv, mname);
@@ -274,29 +272,29 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getMethod(String method, Class arg1) {
-        String mname = type.getName() + "Invoker" + method + "1";
-        String mnamePath = typePath + "Invoker" + method + "1";
+        String mname = type.getName() + "Invoker$" + method + "_1";
+        String mnamePath = typePath + "Invoker$" + method + "_1";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
+                Class[] descriptor = new Class[] {arg1};
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { arg1, Block.class });
+                    Class[] signature = new Class[] { arg1, Block.class };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtor(mnamePath);
                     MethodVisitor mv = startCall(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
+                    
+                    loadArguments(mv, METHOD_ARGS_INDEX, 1, descriptor);
+
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "(" + cg.ci(arg1)
-                            + BLOCK_ID + ")L" + ret + ";");
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(3, 3);
                     c = endCall(cw, mv, mname);
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.singleArgument());
-                ic.setArgumentTypes(new Class[] {arg1});
+                ic.setArgumentTypes(descriptor);
                 ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
@@ -308,33 +306,29 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getMethod(String method, Class arg1, Class arg2) {
-        String mname = type.getName() + "Invoker" + method + "2";
-        String mnamePath = typePath + "Invoker" + method + "2";
+        String mname = type.getName() + "Invoker$" + method + "_2";
+        String mnamePath = typePath + "Invoker$" + method + "_2";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
+                Class[] descriptor = new Class[] { arg1, arg2 };
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { arg1, arg2, Block.class });
+                    Class[] signature = new Class[] { arg1, arg2, Block.class };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtor(mnamePath);
                     MethodVisitor mv = startCall(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_1);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
+                    
+                    loadArguments(mv, METHOD_ARGS_INDEX, 2, descriptor);
+
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "(" + cg.ci(arg1)
-                            + cg.ci(arg2) + BLOCK_ID + ")L" + ret + ";");
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(4, 3);
                     c = endCall(cw, mv, mname);
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.twoArguments());
-                ic.setArgumentTypes(new Class[] {arg1, arg2});
+                ic.setArgumentTypes(descriptor);
                 ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
@@ -344,40 +338,32 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             }
         }
     }
-
+    
     public Callback getMethod(String method, Class arg1, Class arg2, Class arg3) {
-        String mname = type.getName() + "Invoker" + method + "3";
-        String mnamePath = typePath + "Invoker" + method + "3";
+        String mname = type.getName() + "Invoker$" + method + "_3";
+        String mnamePath = typePath + "Invoker$" + method + "_3";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
+                Class[] descriptor = new Class[] { arg1, arg2, arg3 }; 
                 if (c == null) {
-                    String ret = getReturnName(method,
-                            new Class[] { arg1, arg2, arg3, Block.class });
+                    Class[] signature = new Class[] { arg1, arg2, arg3, Block.class }; 
+                    Class ret = getReturnClass(method,
+                            descriptor);
                     ClassWriter cw = createCtor(mnamePath);
                     MethodVisitor mv = startCall(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_1);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_2);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg3));
+                    
+                    loadArguments(mv, METHOD_ARGS_INDEX, 3, descriptor);
+                    
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "(" + cg.ci(arg1)
-                            + cg.ci(arg2) + cg.ci(arg3) + BLOCK_ID + ")L" + ret + ";");
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(5, 3);
                     c = endCall(cw, mv, mname);
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.fixed(3));
-                ic.setArgumentTypes(new Class[] {arg1, arg2, arg3});
+                ic.setArgumentTypes(descriptor);
                 ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
@@ -389,19 +375,18 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getSingletonMethod(String method) {
-        String mname = type.getName() + "InvokerS" + method + "0";
-        String mnamePath = typePath + "InvokerS" + method + "0";
+        String mname = type.getName() + "Invoker$" + method + "S0";
+        String mnamePath = typePath + "Invoker$" + method + "S0";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { RubyKernel.IRUBY_OBJECT,
-                            Block.class });
+                    Class[] signature = new Class[] { RubyKernel.IRUBY_OBJECT, Block.class };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtor(mnamePath);
                     MethodVisitor mv = startCallS(cw);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + BLOCK_ID
-                            + ")L" + ret + ";");
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(1, 3);
                     c = endCall(cw, mv, mname);
@@ -420,30 +405,29 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getSingletonMethod(String method, Class arg1) {
-        String mname = type.getName() + "InvokerS" + method + "1";
-        String mnamePath = typePath + "InvokerS" + method + "1";
+        String mname = type.getName() + "Invoker$" + method + "_S1";
+        String mnamePath = typePath + "Invoker$" + method + "_S1";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
+                Class[] descriptor = new Class[] {arg1};
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { RubyKernel.IRUBY_OBJECT, arg1,
-                            Block.class });
+                    Class[] signature = new Class[] { RubyKernel.IRUBY_OBJECT, arg1, Block.class };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtor(mnamePath);
                     MethodVisitor mv = startCallS(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
+                    
+                    loadArguments(mv, METHOD_ARGS_INDEX, 1, descriptor);
+
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + cg.ci(arg1)
-                            + BLOCK_ID + ")L" + ret + ";");
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(3, 3);
                     c = endCall(cw, mv, mname);
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.singleArgument());
-                ic.setArgumentTypes(new Class[] {arg1});
+                ic.setArgumentTypes(descriptor);
                 ic.setJavaName(method);
                 ic.setSingleton(true);
                 return ic;
@@ -456,34 +440,28 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getSingletonMethod(String method, Class arg1, Class arg2) {
-        String mname = type.getName() + "InvokerS" + method + "2";
-        String mnamePath = typePath + "InvokerS" + method + "2";
+        String mname = type.getName() + "Invoker$" + method + "_S2";
+        String mnamePath = typePath + "Invoker$" + method + "_S2";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
+                Class[] descriptor = new Class[] {arg1, arg2};
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { RubyKernel.IRUBY_OBJECT, arg1,
-                            arg2, Block.class });
+                    Class[] signature = new Class[] { RubyKernel.IRUBY_OBJECT, arg1, arg2, Block.class };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtor(mnamePath);
                     MethodVisitor mv = startCallS(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_1);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
+                    
+                    loadArguments(mv, METHOD_ARGS_INDEX, 2, descriptor);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + cg.ci(arg1)
-                            + cg.ci(arg2) + BLOCK_ID + ")L" + ret + ";");
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(4, 4);
                     c = endCall(cw, mv, mname);
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.twoArguments());
-                ic.setArgumentTypes(new Class[] {arg1, arg2});
+                ic.setArgumentTypes(descriptor);
                 ic.setJavaName(method);
                 ic.setSingleton(true);
                 return ic;
@@ -496,38 +474,28 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getSingletonMethod(String method, Class arg1, Class arg2, Class arg3) {
-        String mname = type.getName() + "InvokerS" + method + "3";
-        String mnamePath = typePath + "InvokerS" + method + "3";
+        String mname = type.getName() + "Invoker$" + method + "_S3";
+        String mnamePath = typePath + "Invoker$" + method + "_S3";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
+                Class[] descriptor = new Class[] {arg1, arg2, arg3};
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { RubyKernel.IRUBY_OBJECT, arg1,
-                            arg2, arg3, Block.class });
+                    Class[] signature = new Class[] { RubyKernel.IRUBY_OBJECT, arg1, arg2, arg3, Block.class };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtor(mnamePath);
                     MethodVisitor mv = startCallS(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_1);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_2);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg3));
+                    
+                    loadArguments(mv, METHOD_ARGS_INDEX, 3, descriptor);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + cg.ci(arg1)
-                            + cg.ci(arg2) + cg.ci(arg3) + BLOCK_ID + ")L" + ret + ";");
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(5, 3);
                     c = endCall(cw, mv, mname);
                 }
                 InvocationCallback ic = (InvocationCallback) c.newInstance();
                 ic.setArity(Arity.fixed(3));
-                ic.setArgumentTypes(new Class[] {arg1, arg2, arg3});
+                ic.setArgumentTypes(descriptor);
                 ic.setJavaName(method);
                 ic.setSingleton(true);
                 return ic;
@@ -575,22 +543,21 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getOptSingletonMethod(String method) {
-        String mname = type.getName() + "InvokerS" + method + "xx1";
-        String mnamePath = typePath + "InvokerS" + method + "xx1";
+        String mname = type.getName() + "Invoker$" + method + "_Sopt";
+        String mnamePath = typePath + "Invoker$" + method + "_Sopt";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { RubyKernel.IRUBY_OBJECT,
-                            IRubyObject[].class, Block.class });
+                    Class[] signature = new Class[] { RubyKernel.IRUBY_OBJECT, IRubyObject[].class, Block.class };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtor(mnamePath);
                     MethodVisitor mv = startCallS(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitTypeInsn(CHECKCAST, "[" + IRUB_ID);
-                    mv.visitTypeInsn(CHECKCAST, "[" + IRUB_ID);
+                    
+                    mv.visitVarInsn(ALOAD, METHOD_ARGS_INDEX);
+                    checkCast(mv, IRubyObject[].class);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + "["
-                            + IRUB_ID + BLOCK_ID + ")L" + ret + ";");
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(2, 3);
                     c = endCall(cw, mv, mname);
@@ -610,22 +577,21 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getOptMethod(String method) {
-        String mname = type.getName() + "Invoker" + method + "xx1";
-        String mnamePath = typePath + "Invoker" + method + "xx1";
+        String mname = type.getName() + "Invoker$" + method + "_opt";
+        String mnamePath = typePath + "Invoker$" + method + "_opt";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { IRubyObject[].class,
-                            Block.class });
+                    Class[] signature = new Class[] { IRubyObject[].class, Block.class };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtor(mnamePath);
                     MethodVisitor mv = startCall(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitTypeInsn(CHECKCAST, "[" + IRUB_ID);
-                    mv.visitTypeInsn(CHECKCAST, "[" + IRUB_ID);
+                    
+                    mv.visitVarInsn(ALOAD, METHOD_ARGS_INDEX);
+                    checkCast(mv, IRubyObject[].class);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "([" + IRUB_ID + BLOCK_ID
-                            + ")L" + ret + ";");
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(2, 3);
                     c = endCall(cw, mv, mname);
@@ -644,16 +610,17 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastMethod(String method) {
-        String mname = type.getName() + "Invoker" + method + "0";
-        String mnamePath = typePath + "Invoker" + method + "0";
+        String mname = type.getName() + "Invoker$" + method + "_F0";
+        String mnamePath = typePath + "Invoker$" + method + "_F0";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
                 if (c == null) {
-                    String ret = getReturnName(method, null);
+                    Class ret = getReturnClass(method, new Class[0]);
                     ClassWriter cw = createCtorFast(mnamePath);
                     MethodVisitor mv = startCallFast(cw);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "()L" + ret + ";");
+
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(1, 3);
                     c = endCall(cw, mv, mname);
@@ -671,28 +638,28 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastMethod(String method, Class arg1) {
-        String mname = type.getName() + "Invoker" + method + "1";
-        String mnamePath = typePath + "Invoker" + method + "1";
+        String mname = type.getName() + "Invoker$" + method + "_F1";
+        String mnamePath = typePath + "Invoker$" + method + "_F1";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
+                Class[] descriptor = new Class[] { arg1 };
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { arg1 });
+                    Class[] signature = descriptor;
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtorFast(mnamePath);
                     MethodVisitor mv = startCallFast(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "(" + cg.ci(arg1) + ")L"
-                            + ret + ";");
+                    
+                    loadArguments(mv, METHOD_ARGS_INDEX, 1, descriptor);
+
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(3, 3);
                     c = endCall(cw, mv, mname);
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.singleArgument());
-                ic.setArgumentTypes(new Class[] {arg1});
+                ic.setArgumentTypes(descriptor);
                 ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
@@ -704,32 +671,28 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastMethod(String method, Class arg1, Class arg2) {
-        String mname = type.getName() + "Invoker" + method + "2";
-        String mnamePath = typePath + "Invoker" + method + "2";
+        String mname = type.getName() + "Invoker$" + method + "_F2";
+        String mnamePath = typePath + "Invoker$" + method + "_F2";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
+                Class[] descriptor = new Class[] { arg1, arg2 };
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { arg1, arg2 });
+                    Class[] signature = descriptor;
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtorFast(mnamePath);
                     MethodVisitor mv = startCallFast(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_1);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "(" + cg.ci(arg1)
-                            + cg.ci(arg2) + ")L" + ret + ";");
+                    
+                    loadArguments(mv, METHOD_ARGS_INDEX, 2, descriptor);
+
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(4, 3);
                     c = endCall(cw, mv, mname);
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.twoArguments());
-                ic.setArgumentTypes(new Class[] {arg1, arg2});
+                ic.setArgumentTypes(descriptor);
                 ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
@@ -741,36 +704,28 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastMethod(String method, Class arg1, Class arg2, Class arg3) {
-        String mname = type.getName() + "Invoker" + method + "3";
-        String mnamePath = typePath + "Invoker" + method + "3";
+        String mname = type.getName() + "Invoker$" + method + "_F3";
+        String mnamePath = typePath + "Invoker$" + method + "_F3";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
+                Class[] descriptor = new Class[] { arg1, arg2, arg3 };
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { arg1, arg2, arg3 });
+                    Class[] signature = descriptor;
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtorFast(mnamePath);
                     MethodVisitor mv = startCallFast(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_1);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_2);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg3));
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "(" + cg.ci(arg1)
-                            + cg.ci(arg2) + cg.ci(arg3) + ")L" + ret + ";");
+                    
+                    loadArguments(mv, METHOD_ARGS_INDEX, 3, descriptor);
+
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(5, 3);
                     c = endCall(cw, mv, mname);
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.fixed(3));
-                ic.setArgumentTypes(new Class[] {arg1, arg2, arg3});
+                ic.setArgumentTypes(descriptor);
                 ic.setJavaName(method);
                 return ic;
             } catch (IllegalArgumentException e) {
@@ -782,17 +737,18 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastSingletonMethod(String method) {
-        String mname = type.getName() + "InvokerS" + method + "0";
-        String mnamePath = typePath + "InvokerS" + method + "0";
+        String mname = type.getName() + "Invoker$" + method + "_FS0";
+        String mnamePath = typePath + "Invoker$" + method + "_FS0";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { RubyKernel.IRUBY_OBJECT });
+                    Class[] signature = new Class[] { RubyKernel.IRUBY_OBJECT };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtorFast(mnamePath);
                     MethodVisitor mv = startCallSFast(cw);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + ")L" + ret
-                            + ";");
+
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(1, 3);
                     c = endCall(cw, mv, mname);
@@ -811,29 +767,28 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastSingletonMethod(String method, Class arg1) {
-        String mname = type.getName() + "InvokerS" + method + "1";
-        String mnamePath = typePath + "InvokerS" + method + "1";
+        String mname = type.getName() + "Invoker$" + method + "_FS1";
+        String mnamePath = typePath + "Invoker$" + method + "_FS1";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
+                Class[] descriptor = new Class[] {arg1};
                 if (c == null) {
-                    String ret = getReturnName(method,
-                            new Class[] { RubyKernel.IRUBY_OBJECT, arg1 });
+                    Class[] signature = new Class[] { RubyKernel.IRUBY_OBJECT, arg1 };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtorFast(mnamePath);
                     MethodVisitor mv = startCallSFast(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + cg.ci(arg1)
-                            + ")L" + ret + ";");
+                    
+                    loadArguments(mv, METHOD_ARGS_INDEX, 1, descriptor);
+
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(3, 3);
                     c = endCall(cw, mv, mname);
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.singleArgument());
-                ic.setArgumentTypes(new Class[] {arg1});
+                ic.setArgumentTypes(descriptor);
                 ic.setJavaName(method);
                 ic.setSingleton(true);
                 return ic;
@@ -846,33 +801,28 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastSingletonMethod(String method, Class arg1, Class arg2) {
-        String mname = type.getName() + "InvokerS" + method + "2";
-        String mnamePath = typePath + "InvokerS" + method + "2";
+        String mname = type.getName() + "Invoker$" + method + "_FS2";
+        String mnamePath = typePath + "Invoker$" + method + "_FS2";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
+                Class[] descriptor = new Class[] {arg1, arg2};
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { RubyKernel.IRUBY_OBJECT, arg1,
-                            arg2 });
+                    Class[] signature = new Class[] { RubyKernel.IRUBY_OBJECT, arg1, arg2 };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtorFast(mnamePath);
                     MethodVisitor mv = startCallSFast(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_1);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + cg.ci(arg1)
-                            + cg.ci(arg2) + ")L" + ret + ";");
+                    
+                    loadArguments(mv, METHOD_ARGS_INDEX, 2, descriptor);
+
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(4, 4);
                     c = endCall(cw, mv, mname);
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.twoArguments());
-                ic.setArgumentTypes(new Class[] {arg1, arg2});
+                ic.setArgumentTypes(descriptor);
                 ic.setJavaName(method);
                 ic.setSingleton(true);
                 return ic;
@@ -885,37 +835,28 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastSingletonMethod(String method, Class arg1, Class arg2, Class arg3) {
-        String mname = type.getName() + "InvokerS" + method + "3";
-        String mnamePath = typePath + "InvokerS" + method + "3";
+        String mname = type.getName() + "Invoker$" + method + "_FS3";
+        String mnamePath = typePath + "Invoker$" + method + "_FS3";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
+                Class[] descriptor = new Class[] {arg1, arg2, arg3};
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { RubyKernel.IRUBY_OBJECT, arg1,
-                            arg2, arg3 });
+                    Class[] signature = new Class[] { RubyKernel.IRUBY_OBJECT, arg1, arg2, arg3 };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtorFast(mnamePath);
                     MethodVisitor mv = startCallSFast(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_1);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitInsn(ICONST_2);
-                    mv.visitInsn(AALOAD);
-                    mv.visitTypeInsn(CHECKCAST, cg.p(arg3));
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + cg.ci(arg1)
-                            + cg.ci(arg2) + cg.ci(arg3) + ")L" + ret + ";");
+                    
+                    loadArguments(mv, METHOD_ARGS_INDEX, 3, descriptor);
+
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(5, 3);
                     c = endCall(cw, mv, mname);
                 }
                 FastInvocationCallback ic = (FastInvocationCallback) c.newInstance();
                 ic.setArity(Arity.fixed(3));
-                ic.setArgumentTypes(new Class[] {arg1, arg2, arg3});
+                ic.setArgumentTypes(descriptor);
                 ic.setJavaName(method);
                 ic.setSingleton(true);
                 return ic;
@@ -928,20 +869,20 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastOptMethod(String method) {
-        String mname = type.getName() + "Invoker" + method + "xx1";
-        String mnamePath = typePath + "Invoker" + method + "xx1";
+        String mname = type.getName() + "Invoker$" + method + "_Fopt";
+        String mnamePath = typePath + "Invoker$" + method + "_Fopt";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { IRubyObject[].class });
+                    Class[] signature = new Class[] { IRubyObject[].class };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtorFast(mnamePath);
                     MethodVisitor mv = startCallFast(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitTypeInsn(CHECKCAST, "[" + IRUB_ID);
-                    mv.visitTypeInsn(CHECKCAST, "[" + IRUB_ID);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "([" + IRUB_ID + ")L" + ret
-                            + ";");
+                    
+                    mv.visitVarInsn(ALOAD, METHOD_ARGS_INDEX);
+                    checkCast(mv, IRubyObject[].class);
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(2, 3);
                     c = endCall(cw, mv, mname);
@@ -960,21 +901,20 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastOptSingletonMethod(String method) {
-        String mname = type.getName() + "InvokerS" + method + "xx1";
-        String mnamePath = typePath + "InvokerS" + method + "xx1";
+        String mname = type.getName() + "Invoker$" + method + "_FSopt";
+        String mnamePath = typePath + "Invoker$" + method + "_FSopt";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
                 if (c == null) {
-                    String ret = getReturnName(method, new Class[] { RubyKernel.IRUBY_OBJECT,
-                            IRubyObject[].class });
+                    Class[] signature = new Class[] { RubyKernel.IRUBY_OBJECT, IRubyObject[].class };
+                    Class ret = getReturnClass(method, signature);
                     ClassWriter cw = createCtorFast(mnamePath);
                     MethodVisitor mv = startCallSFast(cw);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitTypeInsn(CHECKCAST, "[" + IRUB_ID);
-                    mv.visitTypeInsn(CHECKCAST, "[" + IRUB_ID);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + "["
-                            + IRUB_ID + ")L" + ret + ";");
+                    
+                    mv.visitVarInsn(ALOAD, METHOD_ARGS_INDEX);
+                    checkCast(mv, IRubyObject[].class);
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(2, 3);
                     c = endCall(cw, mv, mname);
@@ -992,6 +932,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             }
         }
     }
+    
     
     public Dispatcher createDispatcher(RubyClass metaClass) {
         String className = type.getName() + "Dispatcher_for_" + metaClass.getBaseName();
@@ -1103,91 +1044,33 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                             String method = invocationCallback.getJavaName();
                             Arity arity = simpleMethod.getArity();
                             Class[] descriptor = invocationCallback.getArgumentTypes();
-                            String ret = null;
-                            String callSig = null;
+                            
+                            // arity check
+                            checkArity(mv, arity);
                             
                             switch (arity.getValue()) {
                             case 3:
-                                // check arity
-                                mv.getstatic(cg.p(Arity.class), "THREE_ARGUMENTS", cg.ci(Arity.class));
-                                mv.aload(9);
-                                mv.aload(6);
-                                mv.invokevirtual(cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
-                                
-                                // check cast for params
-                                mv.aload(6);
-                                mv.iconst_0();
-                                mv.arrayload();
-                                mv.checkcast(cg.p((Class)descriptor[0]));
-                                mv.aload(6);
-                                mv.iconst_1();
-                                mv.arrayload();
-                                mv.checkcast(cg.p((Class)descriptor[1]));
-                                mv.aload(6);
-                                mv.iconst_2();
-                                mv.arrayload();
-                                mv.checkcast(cg.p((Class)descriptor[2]));
-                                ret = getReturnName(method, new Class[] {(Class)descriptor[0],(Class)descriptor[1],(Class)descriptor[2]});
-                                callSig = "(" + cg.ci((Class)descriptor[0]) + cg.ci((Class)descriptor[1]) + cg.ci((Class)descriptor[2]) + ")L"
-                                        + ret + ";";
+                                loadArguments(mv, DISPATCHER_ARGS_INDEX, 3, descriptor);
                                 break;
                             case 2:
-                                // check arity
-                                mv.getstatic(cg.p(Arity.class), "TWO_ARGUMENTS", cg.ci(Arity.class));
-                                mv.aload(9);
-                                mv.aload(6);
-                                mv.invokevirtual(cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
-                                
-                                // check cast for params
-                                mv.aload(6);
-                                mv.iconst_0();
-                                mv.arrayload();
-                                mv.checkcast(cg.p((Class)descriptor[0]));
-                                mv.aload(6);
-                                mv.iconst_1();
-                                mv.arrayload();
-                                mv.checkcast(cg.p((Class)descriptor[1]));
-                                ret = getReturnName(method, new Class[] {(Class)descriptor[0],(Class)descriptor[1]});
-                                callSig = "(" + cg.ci((Class)descriptor[0]) + cg.ci((Class)descriptor[1]) + ")L"
-                                        + ret + ";";
+                                loadArguments(mv, DISPATCHER_ARGS_INDEX, 2, descriptor);
                                 break;
                             case 1:
-                                // check arity
-                                mv.getstatic(cg.p(Arity.class), "ONE_ARGUMENT", cg.ci(Arity.class));
-                                mv.aload(9);
-                                mv.aload(6);
-                                mv.invokevirtual(cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
-                                
-                                // check cast for params
-                                mv.aload(6);
-                                mv.iconst_0();
-                                mv.arrayload();
-                                mv.checkcast(cg.p((Class)descriptor[0]));
-                                ret = getReturnName(method, new Class[] {(Class)descriptor[0]});
-                                callSig = "(" + cg.ci((Class)descriptor[0]) + ")L"
-                                        + ret + ";";
+                                loadArguments(mv, DISPATCHER_ARGS_INDEX, 1, descriptor);
                                 break;
                             case 0:
-                                // check arity
-                                mv.getstatic(cg.p(Arity.class), "NO_ARGUMENTS", cg.ci(Arity.class));
-                                mv.aload(9);
-                                mv.aload(6);
-                                mv.invokevirtual(cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
-    
-                                ret = getReturnName(method, new Class[0]);
-                                callSig = "()L"
-                                        + ret + ";";
                                 break;
                             case -1:
-                                mv.aload(6);
-                                ret = getReturnName(method, new Class[] {IRubyObject[].class});
-                                callSig = "(" + cg.ci(IRubyObject[].class) + ")L"
-                                + ret + ";";
+                                mv.aload(DISPATCHER_ARGS_INDEX);
+                                checkCast(mv, IRubyObject[].class);
                                 break;
                             default:
                                 mv.go_to(defaultLabel);
                                 continue;
                             }
+                            
+                            Class ret = getReturnClass(method, descriptor);
+                            String callSig = cg.sig(ret, descriptor);
     
                             mv.invokevirtual(typePath, method, callSig);
                             mv.areturn();
@@ -1199,7 +1082,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     mv.aload(1);
                     mv.aload(3);
                     mv.aload(5);
-                    mv.aload(6);
+                    mv.aload(DISPATCHER_ARGS_INDEX);
                     mv.aload(7);
                     mv.aload(8);
                     mv.invokevirtual(cg.p(RubyObject.class), "callMethod",
@@ -1217,6 +1100,63 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 e.printStackTrace();
                 throw new IllegalArgumentException(e.getMessage());
             }
+        }
+    }
+    
+    private void loadArguments(MethodVisitor mv, int argsIndex, int count, Class[] types) {
+        for (int i = 0; i < count; i++) {
+            loadArgument(mv, argsIndex, i, types[i]);
+        }
+    }
+    
+    private void loadArgument(MethodVisitor mv, int argsIndex, int argIndex, Class type1) {
+        mv.visitVarInsn(ALOAD, argsIndex);
+        mv.visitLdcInsn(new Integer(argIndex));
+        mv.visitInsn(AALOAD);
+        checkCast(mv, type1);
+    }
+
+    private void checkCast(MethodVisitor mv, Class clazz) {
+        mv.visitTypeInsn(CHECKCAST, cg.p(clazz));
+    }
+
+    private void checkArity(SkinnyMethodAdapter mv, Arity arity) {
+        if (arity.getValue() >= 0) {
+            Label arityOk = new Label();
+            // check arity
+            mv.aload(6);
+            mv.arraylength();
+            
+            // load arity for check
+            switch (arity.getValue()) {
+            case 3: mv.iconst_3(); break;
+            case 2: mv.iconst_2(); break;
+            case 1: mv.iconst_1(); break;
+            case 0: mv.iconst_0(); break;
+            default: mv.ldc(new Integer(arity.getValue()));
+            }
+   
+            mv.if_icmpeq(arityOk);
+            
+            // throw
+            mv.aload(9);
+            mv.aload(6);
+            mv.arraylength();
+
+            // load arity for error
+            switch (arity.getValue()) {
+            case 3: mv.iconst_3(); break;
+            case 2: mv.iconst_2(); break;
+            case 1: mv.iconst_1(); break;
+            case 0: mv.iconst_0(); break;
+            default: mv.ldc(new Integer(arity.getValue()));
+            }
+
+            mv.invokevirtual(cg.p(Ruby.class), "newArgumentError", cg.sig(RaiseException.class, cg.params(int.class, int.class)));
+            mv.athrow();
+
+            // arity ok, continue
+            mv.label(arityOk);
         }
     }
 } //InvocationCallbackFactory

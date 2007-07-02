@@ -249,7 +249,7 @@ public class ThreadLibrary implements Library {
             return RubyNumeric.int2fix(getRuntime(), entries.size());
         }
 
-        public int num_waiting() { return 0; }
+        public RubyNumeric num_waiting() { return getRuntime().newFixnum(0); }
 
         public synchronized IRubyObject pop(IRubyObject[] args) {
             boolean should_block = true;

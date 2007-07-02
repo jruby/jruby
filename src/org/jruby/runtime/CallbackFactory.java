@@ -162,7 +162,7 @@ public abstract class CallbackFactory {
         if(reflection) {
             return new ReflectionCallbackFactory(type);
         } else if(dumping) {
-            return new DumpingInvocationCallbackFactory(runtime, type, dumpingPath);
+            return new DumpingInvocationCallbackFactory(runtime, type, runtime.getJRubyClassLoader(), dumpingPath);
         } else {
             return new InvocationCallbackFactory(runtime, type, runtime.getJRubyClassLoader());
         }
@@ -172,7 +172,7 @@ public abstract class CallbackFactory {
         if(reflection) {
             return new ReflectionCallbackFactory(type);
         } else if(dumping) {
-            return new DumpingInvocationCallbackFactory(runtime, type, dumpingPath);
+            return new DumpingInvocationCallbackFactory(runtime, type, (JRubyClassLoader)classLoader, dumpingPath);
         } else {
             // FIXME: No, I don't like it.
             return new InvocationCallbackFactory(runtime, type, (JRubyClassLoader)classLoader);
