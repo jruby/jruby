@@ -234,7 +234,7 @@ public class Block {
             
         } catch (JumpException je) {
             // A 'next' is like a local return from the block, ending this call or yield.
-        	if (je.getJumpType() == JumpException.JumpType.NextJump) return (IRubyObject) je.getValue();
+        	if (je.getJumpType() == JumpException.JumpType.NextJump) return isLambda ? context.getRuntime().getNil() : (IRubyObject)je.getValue();
 
             throw je;
         } finally {
