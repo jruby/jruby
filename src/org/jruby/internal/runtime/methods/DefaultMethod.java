@@ -113,33 +113,33 @@ public final class DefaultMethod extends DynamicMethod {
             runJIT(runtime, context, name);
         }
 
-        if (argsNode.getBlockArgNode() != null && block.isGiven()) {
-            RubyProc blockArg;
-            
-            if (block.getProcObject() != null) {
-                blockArg = (RubyProc) block.getProcObject();
-            } else {
-                blockArg = runtime.newProc(false, block);
-                blockArg.getBlock().isLambda = block.isLambda;
-            }
-            // We pass depth zero since we know this only applies to newly created local scope
-            context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), blockArg, 0);
-        }
-
         try {
-            prepareArguments(context, runtime, args);
-            
-            getArity().checkArity(runtime, args);
-
-            if (runtime.hasEventHooks()) {
-                traceCall(context, runtime, name);
-            }
-                    
             if (jitCompiledScript != null && !runtime.hasEventHooks()) {
                 return jitCompiledScript.run(context, self, args, block);
+            } else {
+                if (argsNode.getBlockArgNode() != null && block.isGiven()) {
+                    RubyProc blockArg;
+                    
+                    if (block.getProcObject() != null) {
+                        blockArg = (RubyProc) block.getProcObject();
+                    } else {
+                        blockArg = runtime.newProc(false, block);
+                        blockArg.getBlock().isLambda = block.isLambda;
+                    }
+                    // We pass depth zero since we know this only applies to newly created local scope
+                    context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), blockArg, 0);
+                }
+                
+                getArity().checkArity(runtime, args);
+                
+                prepareArguments(context, runtime, args);
+                
+                if (runtime.hasEventHooks()) {
+                    traceCall(context, runtime, name);
+                }
+                
+                return EvaluationState.eval(runtime, context, body, self, block);
             }
-            
-            return EvaluationState.eval(runtime, context, body, self, block);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
 	                return (IRubyObject) je.getValue();

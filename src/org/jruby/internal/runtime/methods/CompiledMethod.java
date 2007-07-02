@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
@@ -62,6 +63,8 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        Ruby runtime = context.getRuntime();
+        
         try {
             context.preDefMethodInternalCall(klazz, name, self, args, arity.required(), block, noSuper, cref, staticScope, this);
             // tracing doesn't really work (or make sense yet?) for AOT compiled code
@@ -79,7 +82,9 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
             return call(context, self, args, block);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
-                    return (IRubyObject) je.getValue();
+                return (IRubyObject) je.getValue();
+            } else if(je.getJumpType() == JumpException.JumpType.RedoJump) {
+                throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
             }
             
             throw je;
