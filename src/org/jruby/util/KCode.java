@@ -35,16 +35,18 @@ import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class KCode {
-    public static final KCode NIL = new KCode(null);
-    public static final KCode NONE = new KCode("NONE");
-    public static final KCode UTF8 = new KCode("UTF8");
-    public static final KCode SJIS = new KCode("SJIS");
-    public static final KCode EUC = new KCode("EUC");
+    public static final KCode NIL = new KCode(null, 0);
+    public static final KCode NONE = new KCode("NONE", 0);
+    public static final KCode UTF8 = new KCode("UTF8", 64);
+    public static final KCode SJIS = new KCode("SJIS", 48);
+    public static final KCode EUC = new KCode("EUC", 32);
 
     private String kcode;
+    private int code;
 
-    private KCode(String kcode) {
+    private KCode(String kcode, int code) {
         this.kcode = kcode;
+        this.code = code;
     }
 
     public static KCode create(Ruby runtime, String lang) {
@@ -94,6 +96,10 @@ public class KCode {
         }
         
         return Charset.forName("ISO-8859-1").newEncoder();
+    }
+
+    public int bits() {
+        return code;
     }
 
     public int flags() {

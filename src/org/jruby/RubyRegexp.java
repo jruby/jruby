@@ -76,6 +76,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     private Pattern pattern;
     private KCode code;
     private int flags;
+    private int options;
 
     KCode getCode() {
         return code;
@@ -123,6 +124,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineFastMethod("source", callbackFactory.getFastMethod("source"));
         regexpClass.defineFastMethod("casefold?", callbackFactory.getFastMethod("casefold"));
         regexpClass.defineFastMethod("kcode", callbackFactory.getFastMethod("kcode"));
+        regexpClass.defineFastMethod("options", callbackFactory.getFastMethod("options"));
         regexpClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
         regexpClass.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
 
@@ -147,6 +149,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             source = regex;
             pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
             flags = REGEXP_TRANSLATOR.flagsFor(options, code.flags());
+            this.options = options;
         } catch(jregex.PatternSyntaxException e) {
             //            System.err.println(regex);
             //            e.printStackTrace();
@@ -159,6 +162,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             source = ByteList.create(regex);
             pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
             flags = REGEXP_TRANSLATOR.flagsFor(options, code.flags());
+            this.options = options;
         } catch(jregex.PatternSyntaxException e) {
             //            System.err.println(regex);
             //            e.printStackTrace();
@@ -417,6 +421,21 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         } else {
             return getRuntime().newString(code.kcode(getRuntime()).toString().toLowerCase());
         }
+    }
+
+    private static final int MASK = REFlags.IGNORE_CASE | REFlags.DOTALL | REFlags.IGNORE_SPACES;
+
+    public IRubyObject options() {
+        if((flags & REFlags.IGNORE_CASE) != 0) {
+            this.options |= 1;
+        }
+        if((flags & REFlags.IGNORE_SPACES) != 0) {
+            this.options |= 2;
+        }
+        if((flags & REFlags.DOTALL) != 0) {
+            this.options |= 4;
+        }
+         return getRuntime().newFixnum(options + code.bits());
     }
 
     /** rb_reg_casefold_p
@@ -843,6 +862,6 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	}
 
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(this.pattern.toString().hashCode());
+        return getRuntime().newFixnum(this.pattern.toString().hashCode() + flags);
     }
 }

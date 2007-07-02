@@ -39,13 +39,13 @@ public class RegexpNodeCompiler implements NodeCompiler {
         
         RegexpNode reNode = (RegexpNode)node;
         
-        String lang = null;
         int opts = reNode.getOptions();
-        if((opts & 16) != 0) { // param n
-            lang = "n";
-        } else if((opts & 48) != 0) { // param s
+        String lang = ((opts & 16) == 16) ? "n" : null;
+        if((opts & 48) == 48) { // param s
             lang = "s";
-        } else if((opts & 64) != 0) { // param s
+        } else if((opts & 32) == 32) { // param e
+            lang = "e";
+        } else if((opts & 64) != 0) { // param u
             lang = "u";
         }
 
