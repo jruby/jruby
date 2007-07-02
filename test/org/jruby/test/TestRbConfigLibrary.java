@@ -14,7 +14,7 @@ public class TestRbConfigLibrary extends TestRubyBase {
             "require 'rbconfig'\n" +
             "p Config::CONFIG['target_os']";
         if (System.getProperty("os.name").compareTo("Mac OS X") == 0) {
-            assertTrue(eval(script).contains("darwin"));
+            assertTrue(eval(script).indexOf("darwin") >= 0);
         }
     }
     
