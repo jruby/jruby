@@ -182,9 +182,10 @@ public class RubyHash extends RubyObject implements Map {
     private int threshold;
 
     private int iterLevel = 0;
-    private boolean deleted = false;
 
-    private boolean procDefault = false;
+    private static final int DELETED_HASH_F = 1 << 9;    
+    private static final int PROCDEFAULT_HASH_F = 1 << 10;
+
     private IRubyObject ifNone;
 
     private RubyHash(Ruby runtime, RubyClass klass, RubyHashEntry[]newTable, int newSize) {
@@ -533,7 +534,7 @@ public class RubyHash extends RubyObject implements Map {
         switch (status) {
         case ST_DELETE:
             internalDeleteSafe(entry.key);
-            deleted = true;
+            flags |= DELETED_HASH_F;
         case ST_CONTINUE:
             break;
         case ST_STOP:
@@ -585,9 +586,9 @@ public class RubyHash extends RubyObject implements Map {
 
     private final void postIter() {
         iterLevel--;
-        if (deleted) {
+        if ((flags & DELETED_HASH_F) != 0) {
             internalCleanupSafe();
-            deleted = false;
+            flags &= ~DELETED_HASH_F;
         }
     }
 
@@ -616,7 +617,7 @@ public class RubyHash extends RubyObject implements Map {
         if (block.isGiven()) {
             if (args.length > 0) throw getRuntime().newArgumentError("wrong number of arguments");
             ifNone = getRuntime().newProc(false, block);
-            procDefault = true;
+            flags |= PROCDEFAULT_HASH_F;
         } else {
             Arity.checkArgumentCount(getRuntime(), args, 0, 1);
             if (args.length == 1) ifNone = args[0];
@@ -630,7 +631,7 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject default_value_get(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
-        if (procDefault) {
+        if ((flags & PROCDEFAULT_HASH_F) != 0) {
             if (args.length == 0) return getRuntime().getNil();
             return ifNone.callMethod(getRuntime().getCurrentContext(), "call", new IRubyObject[]{this, args[0]});
         }
@@ -644,7 +645,7 @@ public class RubyHash extends RubyObject implements Map {
         modify();
 
         ifNone = defaultValue;
-        procDefault = false;
+        flags &= ~PROCDEFAULT_HASH_F;
 
         return ifNone;
     }
@@ -653,7 +654,7 @@ public class RubyHash extends RubyObject implements Map {
      * 
      */    
     public IRubyObject default_proc() {
-        return procDefault ? ifNone : getRuntime().getNil();
+        return (flags & PROCDEFAULT_HASH_F) != 0 ? ifNone : getRuntime().getNil();
     }
 
     /** rb_hash_modify
@@ -1049,7 +1050,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (EQUAL_CHECK_DEFAULT_VALUE) {
             if (!ifNone.equalInternal(context, otherHash.ifNone).isTrue() &&
-               procDefault != otherHash.procDefault) return runtime.getFalse();
+               (flags & PROCDEFAULT_HASH_F) != (otherHash.flags & PROCDEFAULT_HASH_F)) return runtime.getFalse();
             }
 
         try {            
@@ -1080,13 +1081,13 @@ public class RubyHash extends RubyObject implements Map {
                 for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     RubyArray result = RubyArray.newArray(getRuntime(), entry.key, entry.value);
                     internalDeleteSafe(entry.key);
-                    deleted = true;
+                    flags |= DELETED_HASH_F;
                     return result;
     }
             }
         } finally {postIter();}          
 
-        if (procDefault) return ifNone.callMethod(getRuntime().getCurrentContext(), "call", new IRubyObject[]{this, getRuntime().getNil()});
+        if ((flags & PROCDEFAULT_HASH_F) != 0) return ifNone.callMethod(getRuntime().getCurrentContext(), "call", new IRubyObject[]{this, getRuntime().getNil()});
         return ifNone;
     }
 
@@ -1099,7 +1100,7 @@ public class RubyHash extends RubyObject implements Map {
         RubyHashEntry entry;
         if (iterLevel > 0) {
             if ((entry = internalDeleteSafe(key)) != null) {
-                deleted = true;
+                flags |= DELETED_HASH_F;
                 return entry.value;                
             }
         } else if ((entry = internalDelete(key)) != null) return entry.value;
@@ -1180,7 +1181,7 @@ public class RubyHash extends RubyObject implements Map {
         if (size > 0) { 
             alloc();
             size = 0;
-            deleted = false;
+            flags &= ~DELETED_HASH_F;
 	}
 
 		return this;
@@ -1270,7 +1271,12 @@ public class RubyHash extends RubyObject implements Map {
         } finally {otherHash.postIter();}
 
         ifNone = otherHash.ifNone;
-        procDefault = otherHash.procDefault;
+
+        if ((otherHash.flags & PROCDEFAULT_HASH_F) != 0) {
+            flags |= PROCDEFAULT_HASH_F;
+        } else {
+            flags &= ~PROCDEFAULT_HASH_F;
+        }
 
         return this;
     }
@@ -1287,7 +1293,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public boolean hasDefaultProc() {
-        return procDefault;
+        return (flags & PROCDEFAULT_HASH_F) != 0;
     }
 
     public IRubyObject getIfNone(){
@@ -1373,7 +1379,7 @@ public class RubyHash extends RubyObject implements Map {
         RubyHashEntry entry;
         if (iterLevel > 0) {
             entry = internalDeleteSafe(rubyKey);
-            deleted = true;
+            flags |= DELETED_HASH_F;
         } else {
             entry = internalDelete(rubyKey);
 	}
@@ -1425,7 +1431,7 @@ public class RubyHash extends RubyObject implements Map {
         public void remove() {
             if (current == null) throw new IllegalStateException();
             internalDeleteSafe(current.key);
-            deleted = true;
+            flags |= DELETED_HASH_F;
         }
         
     }

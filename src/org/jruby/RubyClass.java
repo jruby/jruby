@@ -100,6 +100,10 @@ public class RubyClass extends RubyModule {
         infectBy(superClass);
     }
 
+    protected RubyClass(Ruby runtime, RubyClass superClass, ObjectAllocator allocator, boolean useObjectSpace) {
+        this(runtime, null, superClass, allocator, null, null, useObjectSpace);
+    }
+    
     protected RubyClass(Ruby runtime, RubyClass superClass, ObjectAllocator allocator) {
         this(runtime, null, superClass, allocator, null, null);
     }
@@ -109,7 +113,11 @@ public class RubyClass extends RubyModule {
     }
     
     protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name) {
-        super(runtime, metaClass, superClass, parentCRef, name);
+        this (runtime, metaClass, superClass, allocator, parentCRef, name, runtime.isObjectSpaceEnabled());
+    }
+    
+    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name, boolean useObjectSpace) {
+        super(runtime, metaClass, superClass, parentCRef, name, useObjectSpace);
         this.allocator = allocator;
         this.runtime = runtime;
         

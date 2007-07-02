@@ -107,7 +107,7 @@ public class RubyFixnum extends RubyInteger {
         return fixnum;
     }    
     
-    private long value;
+    private final long value;
     private static final int BIT_SIZE = 64;
     private static final long SIGN_BIT = (1L << (BIT_SIZE - 1));
     public static final long MAX = (1L<<(BIT_SIZE - 1)) - 1;
@@ -120,7 +120,7 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyFixnum(Ruby runtime, long value) {
-        super(runtime, runtime.getFixnum());
+        super(runtime, runtime.getFixnum(), false);
         this.value = value;
     }
     

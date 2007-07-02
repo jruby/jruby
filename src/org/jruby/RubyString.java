@@ -70,12 +70,14 @@ public class RubyString extends RubyObject {
     // Default record seperator
     private static final String DEFAULT_RS = "\n";
 
-    private static final int SHARE_LEVEL_NONE = 0;      // nothing shared, string is independant
-    private static final int SHARE_LEVEL_BYTELIST = 1;  // string doesnt have it's own ByteList (values)
-    private static final int SHARE_LEVEL_BUFFER = 2;    // string has it's own ByteList, but it's pointing to a shared buffer (byte[]) 
+    // nothing shared, string is independent 
+    private static final int SHARED_BUFFER_STR_F = 1 << 9;
+    // string doesn't have it's own ByteList (values)
+    private static final int SHARED_BYTELIST_STR_F = 1 << 10;
+    // string has it's own ByteList, but it's pointing to a shared buffer (byte[])  
+    private static final int SHARED_STR_F = SHARED_BUFFER_STR_F | SHARED_BYTELIST_STR_F;  
 
     private ByteList value;
-    private int shareLevel = 0;
 
     private static ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -264,9 +266,9 @@ public class RubyString extends RubyObject {
     }
 
     private final RubyString strDup(RubyClass clazz) {
-        shareLevel = SHARE_LEVEL_BYTELIST;
+        flags |= SHARED_BYTELIST_STR_F;
         RubyString dup = new RubyString(getRuntime(), clazz, value);
-        dup.shareLevel = SHARE_LEVEL_BYTELIST;
+        dup.flags |= SHARED_BYTELIST_STR_F;
 
         dup.infectBy(this);
         return dup;
@@ -275,9 +277,9 @@ public class RubyString extends RubyObject {
     public final RubyString makeShared(int index, int len) {
         if (len == 0) return newEmptyString(getRuntime(), getMetaClass());
         
-        if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
+        if ((flags & SHARED_STR_F) == 0) flags |= SHARED_BUFFER_STR_F;
         RubyString shared = new RubyString(getRuntime(), getMetaClass(), value.makeShared(index, len));
-        shared.shareLevel = SHARE_LEVEL_BUFFER;
+        shared.flags |= SHARED_BUFFER_STR_F;
 
         shared.infectBy(this);
         return shared;
@@ -307,27 +309,28 @@ public class RubyString extends RubyObject {
     public final void modify() {
         modifyCheck();
 
-        if(shareLevel != SHARE_LEVEL_NONE){
-            if(shareLevel == SHARE_LEVEL_BYTELIST) {            
+        if ((flags & SHARED_STR_F) != 0) {
+            if ((flags & SHARED_BYTELIST_STR_F) != 0) {
                 value = value.dup();
-            } else if(shareLevel == SHARE_LEVEL_BUFFER) {
+            } else if ((flags & SHARED_BUFFER_STR_F) != 0) {
                 value.unshare();
             }
-            shareLevel = SHARE_LEVEL_NONE;
+            flags &= ~SHARED_STR_F;
         }
+
         value.invalidate();
     }
     
     public final void modify(int length) {
         modifyCheck();
 
-        if(shareLevel != SHARE_LEVEL_NONE){
-            if(shareLevel == SHARE_LEVEL_BYTELIST) {            
+        if ((flags & SHARED_STR_F) != 0) {
+            if ((flags & SHARED_BYTELIST_STR_F) != 0) {
                 value = value.dup(length);
-            } else if(shareLevel == SHARE_LEVEL_BUFFER) {
+            } else if ((flags & SHARED_BUFFER_STR_F) != 0) {
                 value.unshare(length);
             }
-            shareLevel = SHARE_LEVEL_NONE;
+            flags &= ~SHARED_STR_F;
         } else {
             value = value.dup(length);
         }
@@ -338,14 +341,14 @@ public class RubyString extends RubyObject {
         modifyCheck();
 
         value = bytes;
-        shareLevel = SHARE_LEVEL_NONE;
+        flags &= ~SHARED_STR_F; 
     }
 
     private final void view(byte[]bytes) {
         modifyCheck();        
 
         value.replace(bytes);
-        shareLevel = SHARE_LEVEL_NONE;
+        flags &= ~SHARED_STR_F;
 
         value.invalidate();        
     }
@@ -353,19 +356,20 @@ public class RubyString extends RubyObject {
     private final void view(int index, int len) {
         modifyCheck();
 
-        if (shareLevel != SHARE_LEVEL_NONE) {
-            if (shareLevel == SHARE_LEVEL_BYTELIST) {
+        if ((flags & SHARED_STR_F) != 0) {
+            if ((flags & SHARED_BYTELIST_STR_F) != 0) {
                 // if len == 0 then shared empty
                 value = value.makeShared(index, len);
-                shareLevel = SHARE_LEVEL_BUFFER; 
-            } else if (shareLevel == SHARE_LEVEL_BUFFER) {
+                flags &= ~SHARED_BYTELIST_STR_F;
+                flags |= SHARED_BUFFER_STR_F; 
+            } else if ((flags & SHARED_BUFFER_STR_F) != 0) { 
                 value.view(index, len);
             }
         } else {        
             value.view(index, len);
             // FIXME this below is temporary, but its much safer for COW (it prevents not shared Strings with begin != 0)
             // this allows now e.g.: ByteList#set not to be begin aware
-            shareLevel = SHARE_LEVEL_BUFFER;
+            flags |= SHARED_BUFFER_STR_F;
         }
 
         value.invalidate();
@@ -560,7 +564,7 @@ public class RubyString extends RubyObject {
     
     private static RubyString newEmptyString(Ruby runtime, RubyClass metaClass) {
         RubyString empty = new RubyString(runtime, metaClass, ByteList.EMPTY_BYTELIST);
-        empty.shareLevel = SHARE_LEVEL_BYTELIST;
+        empty.flags |= SHARED_BYTELIST_STR_F;
         return empty;
     }
 
@@ -585,15 +589,15 @@ public class RubyString extends RubyObject {
     }
 
     public static RubyString newStringShared(Ruby runtime, RubyString orig) {
-        orig.shareLevel = SHARE_LEVEL_BYTELIST;
+        orig.flags |= SHARED_BYTELIST_STR_F;
         RubyString str = new RubyString(runtime, orig.value);
-        str.shareLevel = SHARE_LEVEL_BYTELIST;
+        str.flags |= SHARED_BYTELIST_STR_F;
         return str;
     }       
     
     public static RubyString newStringShared(Ruby runtime, ByteList bytes) {
         RubyString str = new RubyString(runtime, bytes);
-        str.shareLevel = SHARE_LEVEL_BYTELIST;
+        str.flags |= SHARED_BYTELIST_STR_F;
         return str;
     }    
 
@@ -642,8 +646,8 @@ public class RubyString extends RubyObject {
          
         RubyString otherStr =  stringValue(other);
 
-        shareLevel = SHARE_LEVEL_BYTELIST;
-        otherStr.shareLevel = SHARE_LEVEL_BYTELIST;
+        flags |= SHARED_BYTELIST_STR_F;
+        otherStr.flags |= SHARED_BYTELIST_STR_F;
         
         value = otherStr.value;
 

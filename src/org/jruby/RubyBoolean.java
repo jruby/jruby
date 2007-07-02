@@ -45,15 +45,16 @@ public class RubyBoolean extends RubyObject {
     private final Ruby runtime;
     
     public RubyBoolean(Ruby runtime, boolean value) {
-        super(runtime,
-                (value ? runtime.getClass("TrueClass") : runtime.getClass("FalseClass")), // Don't initialize with class
+        super(runtime, (value ? runtime.getClass("TrueClass") : runtime.getClass("FalseClass")), // Don't initialize with class
                 false); // Don't put in object space
-        this.isTrue = value;
+
+        if (!value) flags = FALSE_F;
+        
         this.runtime = runtime;
     }
     
     public int getNativeTypeIndex() {
-        return isTrue ? ClassIndex.TRUE : ClassIndex.FALSE;
+        return (flags & FALSE_F) == 0 ? ClassIndex.TRUE : ClassIndex.FALSE;
     }
     
     public Ruby getRuntime() {
@@ -75,7 +76,7 @@ public class RubyBoolean extends RubyObject {
 //    }
     
     public RubyFixnum id() {
-        return getRuntime().newFixnum(isTrue ? 2 : 0);
+        return getRuntime().newFixnum((flags & FALSE_F) == 0 ? 2 : 0);
     }
     
     public static RubyClass createFalseClass(Ruby runtime) {

@@ -149,7 +149,11 @@ public class RubyModule extends RubyObject {
     }
 
     protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, SinglyLinkedList parentCRef, String name) {
-        super(runtime, metaClass);
+        this(runtime, metaClass, superClass, parentCRef, name, runtime.isObjectSpaceEnabled());
+    }
+
+    protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, SinglyLinkedList parentCRef, String name, boolean useObjectSpace) {
+        super(runtime, metaClass, useObjectSpace);
 
         this.superClass = superClass;
 

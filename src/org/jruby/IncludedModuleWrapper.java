@@ -48,9 +48,8 @@ public final class IncludedModuleWrapper extends RubyClass {
     private RubyModule delegate;
 
     public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule delegate) {
-        super(runtime, superClass, null);
+        super(runtime, superClass, null, false);
         // FIXME: The null makes me nervous, but it makes sense that an included wrapper would never have an allocator
-
         this.delegate = delegate;
         this.metaClass = delegate.metaClass;
     }

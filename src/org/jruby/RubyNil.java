@@ -45,9 +45,9 @@ public class RubyNil extends RubyObject {
     private final Ruby runtime;
     
     public RubyNil(Ruby runtime) {
-        super(runtime, runtime.getNilClass());
+        super(runtime, runtime.getNilClass(), false);
         this.runtime = runtime;
-        this.isTrue = false;
+        flags |= NIL_F | FALSE_F;
     }
     
     public Ruby getRuntime() {
@@ -171,10 +171,6 @@ public class RubyNil extends RubyObject {
     
     public static RubyFixnum id(IRubyObject recv) {
         return recv.getRuntime().newFixnum(4);
-    }
-    
-    public boolean isNil() {
-        return true;
     }
     
     public IRubyObject freeze() {

@@ -81,10 +81,24 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     private transient Object dataStruct;
 
-    // The two properties frozen and taint
-    private boolean frozen;
-    private boolean taint;
-    protected boolean isTrue = true;
+    protected int flags; // zeroed by jvm
+    public static final int ALL_F = -1;
+    public static final int FALSE_F = 1 << 0;
+    public static final int NIL_F = 1 << 1;
+    public static final int FROZEN_F = 1 << 2;
+    public static final int TAINTED_F = 1 << 3;
+    
+    public final void setFlag(int flag, boolean set) {
+        if (set) {
+            flags |= flag;
+        } else {
+            flags &= ~flag;
+        }
+    }
+    
+    public final boolean getFlag(int flag) { 
+        return (flags & flag) != 0;
+    }
     
     private Finalizer finalizer;
     
@@ -126,19 +140,15 @@ public class RubyObject implements Cloneable, IRubyObject {
         this(runtime, metaClass, runtime.isObjectSpaceEnabled());
     }
 
-    public RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
+    protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         this.metaClass = metaClass;
-        this.frozen = false;
-        this.taint = false;
 
         // Do not store any immediate objects into objectspace.
-        if (useObjectSpace && !isImmediate()) {
-            runtime.getObjectSpace().add(this);
-        }
+        if (useObjectSpace) runtime.getObjectSpace().add(this);
 
         // FIXME are there objects who shouldn't be tainted?
         // (mri: OBJSETUP)
-        taint |= runtime.getSafeLevel() >= 3;
+        if (runtime.getSafeLevel() >= 3) flags |= TAINTED_F;
     }
     
     public static RubyClass createObjectClass(Ruby runtime, RubyClass objectClass) {
@@ -291,7 +301,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @return Returns a boolean
      */
     public boolean isFrozen() {
-        return frozen;
+        return (flags & FROZEN_F) != 0;
     }
 
     /**
@@ -299,7 +309,11 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @param frozen The frozen to set
      */
     public void setFrozen(boolean frozen) {
-        this.frozen = frozen;
+        if (frozen) {
+            flags |= FROZEN_F;
+        } else {
+            flags &= ~FROZEN_F;
+    }
     }
 
     /** rb_frozen_class_p
@@ -320,7 +334,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @return Returns a boolean
      */
     public boolean isTaint() {
-        return taint;
+        return (flags & TAINTED_F) != 0; 
     }
 
     /**
@@ -328,19 +342,23 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @param taint The taint to set
      */
     public void setTaint(boolean taint) {
-        this.taint = taint;
+        if (taint) {
+            flags |= TAINTED_F;
+        } else {
+            flags &= ~TAINTED_F;
+    }
     }
 
-    public boolean isNil() {
-        return false;
+    public final boolean isNil() {
+        return (flags & NIL_F) != 0;
     }
 
     public final boolean isTrue() {
-        return isTrue;
+        return (flags & FALSE_F) == 0;
     }
 
     public final boolean isFalse() {
-        return !isTrue;
+        return (flags & FALSE_F) != 0;
     }
 
     public boolean respondsTo(String name) {
