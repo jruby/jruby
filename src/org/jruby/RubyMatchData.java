@@ -66,6 +66,8 @@ public abstract class RubyMatchData extends RubyObject {
         matchDataClass.defineFastMethod("post_match", callbackFactory.getFastMethod("post_match"));
         matchDataClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
         matchDataClass.defineFastMethod("string", callbackFactory.getFastMethod("string"));
+        matchDataClass.defineFastMethod("values_at", callbackFactory.getFastOptMethod("values_at"));
+        matchDataClass.defineMethod("select", callbackFactory.getMethod("select"));
 
         matchDataClass.getMetaClass().undefineMethod("new");
         
@@ -219,6 +221,14 @@ public abstract class RubyMatchData extends RubyObject {
      */
     public RubyFixnum size() {
         return getRuntime().newFixnum(getSize());
+    }
+
+    public IRubyObject values_at(IRubyObject[] args) {
+        return to_a().values_at(args);
+    }
+
+    public IRubyObject select(org.jruby.runtime.Block block) {
+        return block.yield(getRuntime().getCurrentContext(), to_a());
     }
 
     /** match_offset
