@@ -1763,10 +1763,10 @@ public class EvaluationState {
     private static IRubyObject whileNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         WhileNode iVisited = (WhileNode) node;
    
-        IRubyObject result = runtime.getNil();
+        IRubyObject result = null;
         boolean firstTest = iVisited.evaluateAtStart();
         
-        outerLoop: while (!firstTest || (result = evalInternal(runtime,context, iVisited.getConditionNode(), self, aBlock)).isTrue()) {
+        outerLoop: while (!firstTest || evalInternal(runtime,context, iVisited.getConditionNode(), self, aBlock).isTrue()) {
             firstTest = true;
             loop: while (true) { // Used for the 'redo' command
                 try {
@@ -1803,6 +1803,7 @@ public class EvaluationState {
                             throw je;
                         }
                         
+                        result = (IRubyObject) je.getValue();
                         break outerLoop;
                     default:
                         throw je;
@@ -1810,7 +1811,9 @@ public class EvaluationState {
                 }
             }
         }
-        
+        if (result == null) {
+            result = runtime.getNil();
+        }
         return pollAndReturn(context, result);
     }
 

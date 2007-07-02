@@ -73,3 +73,6 @@ b = [1, 2, 3, 4, 5]
   end until ch.nil?
 end
 
+test_equal(nil, while false; end)
+
+test_equal(:foo, while true; break :foo; end)
