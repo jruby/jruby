@@ -112,3 +112,8 @@ strscan = StringScanner.new('AA')
 strscan.getch
 test_equal 1, strscan.skip_until(/A/)
 
+
+### JRUBY-1176: still problems with setPosition, moving to setOffset instead
+s = StringScanner.new " a"
+s.skip(/\s/)
+test_equal 'a', s.scan_until(/\Aa/)
