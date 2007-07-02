@@ -371,6 +371,7 @@ test/externals/rubinius/spec/language/variables_spec.rb
 test/externals/rubinius/spec/language/expressions/for_spec.rb
 test/externals/rubinius/spec/language/expressions/if_spec.rb
 test/externals/rubinius/spec/language/expressions/unless_spec.rb
+test/externals/rubinius/spec/language/expressions/until_spec.rb
 test/externals/rubinius/spec/language/expressions/while_spec.rb
 test/externals/rubinius/spec/language/keywords/break_spec.rb
 test/externals/rubinius/spec/language/keywords/defined_spec.rb
@@ -401,6 +402,7 @@ test/externals/rubinius/spec/language/variables_spec.rb
 test/externals/rubinius/spec/language/expressions/for_spec.rb
 test/externals/rubinius/spec/language/expressions/if_spec.rb
 test/externals/rubinius/spec/language/expressions/unless_spec.rb
+test/externals/rubinius/spec/language/expressions/until_spec.rb
 test/externals/rubinius/spec/language/expressions/while_spec.rb
 test/externals/rubinius/spec/language/keywords/break_spec.rb
 test/externals/rubinius/spec/language/keywords/defined_spec.rb
