@@ -50,9 +50,7 @@ public abstract class DynamicMethod {
         this.visibility = visibility;
         this.implementationClass = implementationClass;
         if (implementationClass != null) {
-            boolean implIsClass = implementationClass.isClass();
-            boolean implIsKernel = implementationClass == implementationClass.getRuntime().getKernel();
-            needsImplementer = !(implIsClass || implIsKernel);
+            needsImplementer = !implementationClass.isClass();
         }
     }
 
