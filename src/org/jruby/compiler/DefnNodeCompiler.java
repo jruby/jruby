@@ -63,6 +63,10 @@ public class DefnNodeCompiler implements NodeCompiler {
                 
                 context.lineNumber(argsNode.getPosition());
                 
+                if (argsNode.getBlockArgNode() != null) {
+                    context.processBlockArgument(argsNode.getBlockArgNode().getCount());
+                }
+                
                 if (hasOptArgs) {
                     if (restArg > -1) {
                         int opt = argsNode.getOptArgs().size();

@@ -50,6 +50,7 @@ import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
+import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -117,17 +118,8 @@ public final class DefaultMethod extends DynamicMethod {
             if (jitCompiledScript != null && !runtime.hasEventHooks()) {
                 return jitCompiledScript.run(context, self, args, block);
             } else {
-                if (argsNode.getBlockArgNode() != null && block.isGiven()) {
-                    RubyProc blockArg;
-                    
-                    if (block.getProcObject() != null) {
-                        blockArg = (RubyProc) block.getProcObject();
-                    } else {
-                        blockArg = runtime.newProc(false, block);
-                        blockArg.getBlock().isLambda = block.isLambda;
-                    }
-                    // We pass depth zero since we know this only applies to newly created local scope
-                    context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), blockArg, 0);
+                if (argsNode.getBlockArgNode() != null) {
+                    CompilerHelpers.processBlockArgument(runtime, context, block, argsNode.getBlockArgNode().getCount());
                 }
                 
                 getArity().checkArity(runtime, args);
@@ -187,6 +179,10 @@ public final class DefaultMethod extends DynamicMethod {
                             
                             context.lineNumber(argsNode.getPosition());
                             int required = expectedArgsCount;
+                            
+                            if (argsNode.getBlockArgNode() != null) {
+                                context.processBlockArgument(argsNode.getBlockArgNode().getCount());
+                            }
                             
                             if (hasOptArgs) {
                                 if (restArg > -1) {

@@ -553,6 +553,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         getMethodAdapter().aload(VISIBILITY_INDEX);
     }
     
+    public void loadBlock() {
+        getMethodAdapter().aload(CLOSURE_INDEX);
+    }
+    
     public void loadNil() {
         loadRuntime();
         invokeIRuby("getNil", cg.sig(IRubyObject.class));
@@ -1419,6 +1423,15 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         
         method.label(store);
         method.arraystore();
+    }
+    
+    public void processBlockArgument(int index) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        loadRuntime();
+        loadThreadContext();
+        loadBlock();
+        mv.ldc(new Integer(index));
+        invokeUtilityMethod("processBlockArgument", cg.sig(void.class, cg.params(Ruby.class, ThreadContext.class, Block.class, int.class)));
     }
     
     public void loadFalse() {

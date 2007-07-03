@@ -354,6 +354,8 @@ public interface Compiler {
     
     public void processRestArg(int startIndex, int restArg);
     
+    public void processBlockArgument(int index);
+    
     /**
      * Define an alias for a new name to an existing oldName'd method.
      * 

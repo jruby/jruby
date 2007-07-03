@@ -8,6 +8,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyProc;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -248,5 +249,20 @@ public class CompilerHelpers {
                 }
             }
         }
+    }
+    
+    public static void processBlockArgument(Ruby runtime, ThreadContext context, Block block, int index) {
+        if (!block.isGiven()) return;
+        
+        RubyProc blockArg;
+        
+        if (block.getProcObject() != null) {
+            blockArg = (RubyProc) block.getProcObject();
+        } else {
+            blockArg = runtime.newProc(false, block);
+            blockArg.getBlock().isLambda = block.isLambda;
+        }
+        // We pass depth zero since we know this only applies to newly created local scope
+        context.getCurrentScope().setValue(index, blockArg, 0);
     }
 }
