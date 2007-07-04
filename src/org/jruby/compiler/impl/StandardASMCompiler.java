@@ -1686,8 +1686,17 @@ public class StandardASMCompiler implements Compiler, Opcodes {
 
     public void createNewRegexp(final ByteList value, final int options, final String lang) {
         SkinnyMethodAdapter mv = getMethodAdapter();
+        String regname = getNewConstant(cg.ci(RubyRegexp.class),"literal_reg_");
         String name = getNewConstant(cg.ci(Pattern.class),"literal_re_");
         String name_flags = getNewConstant(cg.ci(Integer.TYPE),"literal_re_flags_");
+
+
+        // in current method, load the field to see if we've created a Pattern yet
+
+        mv.visitFieldInsn(GETSTATIC, classname, name, cg.ci(Pattern.class));
+
+        Label alreadyCreated = new Label();
+        mv.ifnonnull(alreadyCreated);
 
         loadRuntime();
 
@@ -1700,14 +1709,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         }
         mv.ldc(regexpString);
 
-        // in current method, load the field to see if we've created a Pattern yet
-
-        mv.visitFieldInsn(GETSTATIC, classname, name, cg.ci(Pattern.class));
-        mv.dup();
-
-        Label alreadyCreated = new Label();
-        mv.ifnonnull(alreadyCreated);
-        mv.pop();
         mv.ldc(new Integer(options));
         invokeUtilityMethod("regexpLiteralFlags",cg.sig(Integer.TYPE,cg.params(Integer.TYPE)));
         mv.visitFieldInsn(PUTSTATIC, classname, name_flags, cg.ci(Integer.TYPE));
@@ -1720,8 +1721,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
 
         mv.visitFieldInsn(PUTSTATIC, classname, name, cg.ci(Pattern.class));
 
-        mv.label(alreadyCreated);
-        
         mv.visitFieldInsn(GETSTATIC, classname, name_flags, cg.ci(Integer.TYPE));
         if(null == lang) {
             mv.aconst_null();
@@ -1730,6 +1729,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         }
 
         mv.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, String.class, Pattern.class, Integer.TYPE, String.class)));
+
+        mv.visitFieldInsn(PUTSTATIC, classname, regname, cg.ci(RubyRegexp.class));
+        mv.label(alreadyCreated);
+        mv.visitFieldInsn(GETSTATIC, classname, regname, cg.ci(RubyRegexp.class));
     }
     
     public void defineClass(String name, StaticScope staticScope, ClosureCallback superCallback, ClosureCallback pathCallback, ClosureCallback bodyCallback) {

@@ -138,3 +138,14 @@ test_equal("[:alpha:]", %r{[:alpha:]}.source)
 
 # Why anyone would do this I have no idea, but it matches MRI
 test_equal(/x/, +/x/)
+
+
+def m(it = false)
+  a = /a/
+  a.instance_variable_set :@set, true if it
+  a
+end
+
+test_equal nil, m().instance_variable_get(:@set)
+test_equal true, m(true).instance_variable_get(:@set)
+test_equal true, m().instance_variable_get(:@set)

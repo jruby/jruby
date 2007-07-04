@@ -1487,26 +1487,29 @@ public class EvaluationState {
 
     private static IRubyObject regexpNode(Ruby runtime, Node node) {
         RegexpNode iVisited = (RegexpNode) node;
-        int opts = iVisited.getOptions();
-        String lang = ((opts & 16) == 16) ? "n" : null;
-        if((opts & 48) == 48) { // param s
-            lang = "s";
-        } else if((opts & 32) == 32) { // param e
-            lang = "e";
-        } else if((opts & 64) != 0) { // param u
-            lang = "u";
-        }
+        if(iVisited.literal == null) {
+            int opts = iVisited.getOptions();
+            String lang = ((opts & 16) == 16) ? "n" : null;
+            if((opts & 48) == 48) { // param s
+                lang = "s";
+            } else if((opts & 32) == 32) { // param e
+                lang = "e";
+            } else if((opts & 64) != 0) { // param u
+                lang = "u";
+            }
         
-        IRubyObject noCaseGlobal = runtime.getGlobalVariables().get("$=");
+            IRubyObject noCaseGlobal = runtime.getGlobalVariables().get("$=");
         
-        int extraOptions = noCaseGlobal.isTrue() ? ReOptions.RE_OPTION_IGNORECASE : 0;
+            int extraOptions = noCaseGlobal.isTrue() ? ReOptions.RE_OPTION_IGNORECASE : 0;
 
-        try {
-            return RubyRegexp.newRegexp(runtime, iVisited.getValue(), 
-                    iVisited.getPattern(extraOptions), iVisited.getFlags(extraOptions), lang);
-        } catch(jregex.PatternSyntaxException e) {
-            throw runtime.newRegexpError(e.getMessage());
+            try {
+                iVisited.literal = RubyRegexp.newRegexp(runtime, iVisited.getValue(), 
+                                                        iVisited.getPattern(extraOptions), iVisited.getFlags(extraOptions), lang);
+            } catch(jregex.PatternSyntaxException e) {
+                throw runtime.newRegexpError(e.getMessage());
+            }
         }
+        return iVisited.literal;
     }
 
     private static IRubyObject rescueNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
