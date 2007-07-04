@@ -49,9 +49,7 @@ public class CompilerHelpers {
     public static IRubyObject def(ThreadContext context, Visibility visibility, IRubyObject self, Class compiledClass, String name, String javaName, String[] scopeNames, int arity) {
         Ruby runtime = context.getRuntime();
         
-        // FIXME: This is what the old def did, but doesn't work in the compiler for top-level methods. Hmm.
         RubyModule containingClass = context.getRubyClass();
-        //RubyModule containingClass = self.getMetaClass();
         
         if (containingClass == null) {
             throw runtime.newTypeError("No class to add method.");
@@ -67,7 +65,7 @@ public class CompilerHelpers {
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method;
         
-        if (name == "initialize" || visibility.isModuleFunction() || context.isTopLevel()) {
+        if (name == "initialize" || visibility.isModuleFunction()) {
             method = factory.getCompiledMethod(containingClass, compiledClass, javaName, 
                     Arity.createArity(arity), Visibility.PRIVATE, cref, scope);
         } else {

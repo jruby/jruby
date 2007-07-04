@@ -204,6 +204,7 @@ public class Block {
             frame.setSelf(self);
         }
         
+        Visibility oldVis = frame.getVisibility();
         pre(context, klass);
 
         try {
@@ -238,6 +239,7 @@ public class Block {
 
             throw je;
         } finally {
+            frame.setVisibility(oldVis);
             post(context);
         }
     }

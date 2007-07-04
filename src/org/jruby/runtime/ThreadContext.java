@@ -507,10 +507,6 @@ public class ThreadContext {
         return parentModule.getNonIncludedClass();
     }
     
-    public boolean isTopLevel() {
-        return parentIndex == 0;
-    }
-    
     public boolean getConstantDefined(String name) {
         IRubyObject result = null;
         IRubyObject undef = runtime.getUndef();
@@ -810,6 +806,8 @@ public class ThreadContext {
     public void preNodeEval(RubyModule rubyClass, IRubyObject self) {
         pushRubyClass(rubyClass);
         pushCallFrame(null, null, self, IRubyObject.NULL_ARRAY, 0, Block.NULL_BLOCK, null);
+        // set visibility to private, since toplevel of scripts always started out private
+        setCurrentVisibility(Visibility.PRIVATE);
         setCRef(rubyClass.getCRef());
     }
     

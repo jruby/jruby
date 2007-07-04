@@ -40,6 +40,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -236,6 +237,8 @@ public class RubyStruct extends RubyObject {
         }
         
         if (block.isGiven()) {
+            // Struct bodies should be public by default, so set block visibility to public. JRUBY-1185.
+            block.setVisibility(Visibility.PUBLIC);
             block.yield(runtime.getCurrentContext(), null, newStruct, newStruct, false);
         }
 

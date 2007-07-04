@@ -804,7 +804,7 @@ public class EvaluationState {
         }
    
         Visibility visibility = context.getCurrentVisibility();
-        if (name == "initialize" || visibility.isModuleFunction() || context.isTopLevel()) {
+        if (name == "initialize" || visibility.isModuleFunction()) {
             visibility = Visibility.PRIVATE;
         }
         

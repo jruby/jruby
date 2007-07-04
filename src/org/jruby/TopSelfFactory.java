@@ -67,7 +67,9 @@ public final class TopSelfFactory {
             }
         });
         
-        topSelf.getSingletonClass().defineMethod("include", new Callback() {
+        // The following three methods must be defined fast, since they expect to modify the current frame
+        // (i.e. they expect no frame will be allocated for them). JRUBY-1185.
+        topSelf.getSingletonClass().defineFastPrivateMethod("include", new Callback() {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
@@ -84,7 +86,7 @@ public final class TopSelfFactory {
             }
         });
         
-        topSelf.getSingletonClass().defineMethod("public", new Callback() {
+        topSelf.getSingletonClass().defineFastPrivateMethod("public", new Callback() {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
@@ -100,7 +102,7 @@ public final class TopSelfFactory {
             }
         });
         
-        topSelf.getSingletonClass().defineMethod("private", new Callback() {
+        topSelf.getSingletonClass().defineFastPrivateMethod("private", new Callback() {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */

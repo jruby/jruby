@@ -1493,7 +1493,11 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (block.isGiven()) block.yield(getRuntime().getCurrentContext(), null, this, this, false);
+        if (block.isGiven()) {
+            // class and module bodies default to public, so make the block's visibility public. JRUBY-1185.
+            block.setVisibility(Visibility.PUBLIC);
+            block.yield(getRuntime().getCurrentContext(), null, this, this, false);
+        }
         
         return getRuntime().getNil();
     }

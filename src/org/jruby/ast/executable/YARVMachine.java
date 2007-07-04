@@ -331,7 +331,7 @@ public class YARVMachine {
                 }
     
                 Visibility visibility = context.getCurrentVisibility();
-                if (mname == "initialize" || visibility.isModuleFunction() || context.isTopLevel()) {
+                if (mname == "initialize" || visibility.isModuleFunction()) {
                     visibility = Visibility.PRIVATE;
                 }
                 
