@@ -42,7 +42,7 @@ public class CompiledBlock extends Block {
 
     public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope, CompiledBlockCallback callback) {
         this(self,
-                context.getCurrentFrame(),
+             context.getCurrentFrame().duplicate(),
                 context.peekCRef(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),

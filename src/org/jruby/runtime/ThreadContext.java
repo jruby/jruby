@@ -122,6 +122,10 @@ public class ThreadContext {
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
         pushScope(new DynamicScope(new LocalStaticScope(null), null));
+            
+        for (int i = 0; i < frameStack.length; i++) {
+            frameStack[i] = new Frame();
+        }
     }
     
     CallType lastCallType;
@@ -192,6 +196,10 @@ public class ThreadContext {
             Frame[] newFrameStack = new Frame[newSize];
             
             System.arraycopy(frameStack, 0, newFrameStack, 0, frameStack.length);
+            
+            for (int i = frameStack.length; i < newSize; i++) {
+                newFrameStack[i] = new Frame();
+            }
             
             frameStack = newFrameStack;
         }
@@ -288,16 +296,9 @@ public class ThreadContext {
     
     //////////////////// FRAME MANAGEMENT ////////////////////////
     private void pushFrameCopy() {
-        pushFrame(getCurrentFrame().duplicate());
-    }
-    
-    private void pushCallFrame(RubyModule clazz, String name, 
-                               IRubyObject self, IRubyObject[] args, int req, Block block, Object jumpTarget) {
-        pushFrame(new Frame(clazz, self, name, args, req, block, getPosition(), jumpTarget));        
-    }
-
-    private void pushFrame() {
-        pushFrame(new Frame(getPosition()));
+        Frame currentFrame = getCurrentFrame();
+        frameStack[++frameIndex].updateFrame(currentFrame);
+        expandFramesIfNecessary();
     }
     
     private void pushFrame(Frame frame) {
@@ -305,20 +306,44 @@ public class ThreadContext {
         expandFramesIfNecessary();
     }
     
+    private void pushCallFrame(RubyModule clazz, String name, 
+                               IRubyObject self, IRubyObject[] args, int req, Block block, Object jumpTarget) {
+        pushFrame(clazz, name, self, args, req, block, jumpTarget);        
+    }
+    
+    private void pushFrame(RubyModule clazz, String name, 
+                               IRubyObject self, IRubyObject[] args, int req, Block block, Object jumpTarget) {
+        frameStack[++frameIndex].updateFrame(clazz, self, name, args, req, block, getPosition(), jumpTarget);
+        expandFramesIfNecessary();
+    }
+    
+    private void pushFrame() {
+        frameStack[++frameIndex].updateFrame(getPosition());
+        expandFramesIfNecessary();
+    }
+    
     private void popFrame() {
         Frame frame = (Frame)frameStack[frameIndex];
-        frameStack[frameIndex--] = null;
-        
+        //frameStack[frameIndex--] = null;
+        frameIndex--;
+        setPosition(frame.getPosition());
+    }
+
+    private void popFrameReal() {
+        Frame frame = (Frame)frameStack[frameIndex];
+        //frameStack[frameIndex--] = null;
+        frameStack[frameIndex] = new Frame();
+        frameIndex--;
         setPosition(frame.getPosition());
     }
     
     public Frame getCurrentFrame() {
-        return (Frame)frameStack[frameIndex];
+        return frameStack[frameIndex];
     }
     
     public Frame getPreviousFrame() {
         int size = frameIndex + 1;
-        return size <= 1 ? null : (Frame) frameStack[size - 2];
+        return size <= 1 ? null : frameStack[size - 2];
     }
     
     public int getFrameCount() {
@@ -852,7 +877,7 @@ public class ThreadContext {
         Frame frame = block.getFrame();
         
         frame.setIsBindingFrame(true);
-        pushFrame(block.getFrame());
+        pushFrame(frame);
         setCRef(block.getCRef());
         getCurrentFrame().setVisibility(block.getVisibility());
         pushRubyClass(block.getKlass());
@@ -860,14 +885,14 @@ public class ThreadContext {
     
     public void postEvalWithBinding(Block block) {
         block.getFrame().setIsBindingFrame(false);
-        popFrame();
+        popFrameReal();
         unsetCRef();
         popRubyClass();
     }
     
     public void postYield() {
         popScope();
-        popFrame();
+        popFrameReal();
         unsetCRef();
         popRubyClass();
     }

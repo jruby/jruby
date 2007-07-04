@@ -79,7 +79,7 @@ public class MethodBlock extends Block{
 
     public static MethodBlock createMethodBlock(ThreadContext context, DynamicScope dynamicScope, Callback callback, RubyMethod method, IRubyObject self) {
         return new MethodBlock(self,
-                         context.getCurrentFrame(),
+                               context.getCurrentFrame().duplicate(),
                          context.peekCRef(),
                          context.getCurrentFrame().getVisibility(),
                          context.getRubyClass(),

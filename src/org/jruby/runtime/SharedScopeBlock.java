@@ -48,7 +48,7 @@ public class SharedScopeBlock extends Block {
     
     public static Block createSharedScopeBlock(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
         return new SharedScopeBlock(iterNode, self,
-                context.getCurrentFrame(),
+                                    context.getCurrentFrame().duplicate(),
                 context.peekCRef(),
                 context.getCurrentFrame().getVisibility(),
                 context.getRubyClass(),

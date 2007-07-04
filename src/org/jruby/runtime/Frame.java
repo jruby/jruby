@@ -80,7 +80,7 @@ public final class Frame {
      * and also for block_given?.  Both of those methods needs access to the block of the 
      * previous frame to work.
      */ 
-    private final Block block;
+    private Block block;
     
     /**
      * Does this delimit a frame where an eval with binding occurred.  Used for stack traces.
@@ -101,17 +101,40 @@ public final class Frame {
     public void setJumpTarget(Object jumpTarget) {
         this.jumpTarget = jumpTarget;
     }
-
+    
+    public Frame() {
+    }
     /**
      * The location in source where this block/method invocation is happening
      */
-    private final ISourcePosition position;
+    private ISourcePosition position;
 
-    public Frame(ISourcePosition position) {
-        this(null, null, null, IRubyObject.NULL_ARRAY, 0, Block.NULL_BLOCK, position, null); 
+    public void updateFrame(ISourcePosition position) {
+        updateFrame(null, null, null, IRubyObject.NULL_ARRAY, 0, Block.NULL_BLOCK, position, null); 
     }
 
-    public Frame(RubyModule klazz, IRubyObject self, String name,
+    public void updateFrame(Frame frame) {
+        assert frame.block != null : "Block uses null object pattern.  It should NEVER be null";
+        
+        if (frame.args.length != 0) {
+            args = new IRubyObject[frame.args.length];
+            System.arraycopy(frame.args, 0, args, 0, frame.args.length);
+        } else {
+        	args = frame.args;
+        }
+
+        this.self = frame.self;
+        this.requiredArgCount = frame.requiredArgCount;
+        this.name = frame.name;
+        this.klazz = frame.klazz;
+        this.position = frame.position;
+        this.block = frame.block;
+        this.jumpTarget = frame.jumpTarget;
+        this.visibility = frame.visibility;
+        this.isBindingFrame = frame.isBindingFrame;
+    }
+
+    public void updateFrame(RubyModule klazz, IRubyObject self, String name,
                  IRubyObject[] args, int requiredArgCount, Block block, ISourcePosition position, Object jumpTarget) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
 
@@ -123,6 +146,16 @@ public final class Frame {
         this.position = position;
         this.block = block;
         this.jumpTarget = jumpTarget;
+        this.visibility = Visibility.PUBLIC;
+        this.isBindingFrame = false;
+    }
+    
+    public Frame duplicate() {
+        Frame newFrame = new Frame();
+        
+        newFrame.updateFrame(this);
+        
+        return newFrame;
     }
 
     /** Getter for property args.
@@ -248,18 +281,6 @@ public final class Frame {
      */
     public Block getBlock() {
         return block;
-    }
-
-    public Frame duplicate() {
-        IRubyObject[] newArgs;
-        if (args.length != 0) {
-            newArgs = new IRubyObject[args.length];
-            System.arraycopy(args, 0, newArgs, 0, args.length);
-        } else {
-        	newArgs = args;
-        }
-
-        return new Frame(klazz, self, name, newArgs, requiredArgCount, block, position, jumpTarget);
     }
 
     /* (non-Javadoc)

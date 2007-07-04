@@ -167,7 +167,7 @@ public class Block {
         } 
         
         // FIXME: Ruby also saves wrapper, which we do not
-        return new Block(null, frame.getSelf(), frame, context.peekCRef(), frame.getVisibility(), 
+        return new Block(null, frame.getSelf(), frame.duplicate(), context.peekCRef(), frame.getVisibility(), 
                 context.getBindingRubyClass(), extraScope);
     }
 
