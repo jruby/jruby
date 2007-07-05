@@ -64,7 +64,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     }
 
     protected static RuntimeException sockerr(IRubyObject recv, String msg) {
-        return new RaiseException(recv.getRuntime(), recv.getRuntime().getClass("SocketError"), null, true);
+        return new RaiseException(recv.getRuntime(), recv.getRuntime().getClass("SocketError"), msg, true);
     }
 
     private IRubyObject addrFor(InetSocketAddress addr) {

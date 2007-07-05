@@ -58,6 +58,7 @@ public class RubySocket extends RubyBasicSocket {
             RubyIPSocket.createIPSocket(runtime);
             RubyTCPSocket.createTCPSocket(runtime);
             RubyTCPServer.createTCPServer(runtime);
+            RubyUDPSocket.createUDPSocket(runtime);
         }
     }
 
