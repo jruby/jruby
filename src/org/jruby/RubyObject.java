@@ -87,7 +87,18 @@ public class RubyObject implements Cloneable, IRubyObject {
     public static final int NIL_F = 1 << 1;
     public static final int FROZEN_F = 1 << 2;
     public static final int TAINTED_F = 1 << 3;
+
+    public static final int FL_USHIFT = 4;
     
+    public static final int USER0_F = (1<<(FL_USHIFT+0));
+    public static final int USER1_F = (1<<(FL_USHIFT+1));
+    public static final int USER2_F = (1<<(FL_USHIFT+2));
+    public static final int USER3_F = (1<<(FL_USHIFT+3));
+    public static final int USER4_F = (1<<(FL_USHIFT+4));
+    public static final int USER5_F = (1<<(FL_USHIFT+5));
+    public static final int USER6_F = (1<<(FL_USHIFT+6));
+    public static final int USER7_F = (1<<(FL_USHIFT+7));
+
     public final void setFlag(int flag, boolean set) {
         if (set) {
             flags |= flag;

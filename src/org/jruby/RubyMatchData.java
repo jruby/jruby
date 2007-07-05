@@ -76,11 +76,21 @@ public abstract class RubyMatchData extends RubyObject {
         return matchDataClass;
     }
 
-    protected Matcher matcher;
+    Matcher matcher;
 
     public RubyMatchData(Ruby runtime, Matcher matcher) {
         super(runtime, runtime.getClass("MatchData"));
         this.matcher = matcher;
+    }
+
+    public final static int MATCH_BUSY = USER2_F;
+
+    public void use() { 
+        this.flags |= MATCH_BUSY; 
+    }
+
+    public final boolean used() {
+        return (this.flags & MATCH_BUSY) == MATCH_BUSY;
     }
     
     public abstract IRubyObject captures();
@@ -272,7 +282,7 @@ public abstract class RubyMatchData extends RubyObject {
     public abstract IRubyObject doClone();
 
     public static final class JavaString extends RubyMatchData {
-        private String original;
+        String original;
         public JavaString(Ruby runtime, String original, Matcher matcher) {
             super(runtime, matcher);
             this.original = original;
@@ -360,14 +370,19 @@ public abstract class RubyMatchData extends RubyObject {
     }
 
     public static final class RString extends RubyMatchData {
-        private RubyString original;
+        RubyString original;
         private int len;
         private int[] start;
         private int[] end;
 
         public RString(Ruby runtime, RubyString original, Matcher matcher) {
             super(runtime, matcher);
-            this.original = (RubyString)(original.strDup()).freeze();
+            this.original = original;
+            set();
+        }
+        
+        public final void set() {
+            this.original = (RubyString)(this.original.strDup()).freeze();
             invalidateRegs();
         }
 

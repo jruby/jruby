@@ -403,8 +403,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
         IRubyObject result = match(target);
         
-        return result.isNil() ? result : 
-            getRuntime().getCurrentContext().getBackref().rbClone(Block.NULL_BLOCK);
+        if(result.isNil()) {
+            return result;
+        }
+
+        result = getRuntime().getCurrentContext().getBackref();
+        ((RubyMatchData)result).use();
+
+        return result;
     }
 
     /** rb_reg_source
@@ -474,21 +480,33 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public static IRubyObject last_match(IRubyObject match) {
-        return match.isNil() ? match : ((RubyMatchData) match).group(0);
+        if(match.isNil()) {
+            return match;
+        }
+        ((RubyMatchData)match).use();
+        return ((RubyMatchData) match).group(0);
     }
 
     /** rb_reg_match_pre
      *
      */
     public static IRubyObject match_pre(IRubyObject match) {
-        return match.isNil() ? match : ((RubyMatchData) match).pre_match();
+        if(match.isNil()) {
+            return match;
+        }
+        ((RubyMatchData)match).use();
+        return ((RubyMatchData) match).pre_match();
     }
 
     /** rb_reg_match_post
      *
      */
     public static IRubyObject match_post(IRubyObject match) {
-        return match.isNil() ? match : ((RubyMatchData) match).post_match();
+        if(match.isNil()) {
+            return match;
+        }
+        ((RubyMatchData)match).use();
+        return ((RubyMatchData) match).post_match();
     }
 
     /** rb_reg_match_last
@@ -499,6 +517,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return match;
         }
         RubyMatchData md = (RubyMatchData) match;
+        md.use();
         for (long i = md.getSize() - 1; i > 0; i--) {
             if (!md.group(i).isNil()) {
                 return md.group(i);
@@ -542,13 +561,23 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return -1;
         }
         
-        RubyMatchData match = (utf) ? 
-            ((RubyMatchData)new RubyMatchData.JavaString(getRuntime(), target, matcher))
-            :
-            ((RubyMatchData)new RubyMatchData.RString(getRuntime(), rtarget, matcher));
-
-        
-        getRuntime().getCurrentContext().setBackref(match);
+        IRubyObject _match = getRuntime().getCurrentContext().getBackref();
+        RubyMatchData match;
+        if(!_match.isNil() && !((match = (RubyMatchData)_match).used()) && (utf ^ (match instanceof RubyMatchData.RString))) {
+            match.matcher = matcher;
+            if(utf) {
+                ((RubyMatchData.JavaString)match).original = target;
+            } else {
+                ((RubyMatchData.RString)match).original = rtarget;
+                ((RubyMatchData.RString)match).set();
+            }
+        } else {
+            match = (utf) ? 
+                ((RubyMatchData)new RubyMatchData.JavaString(getRuntime(), target, matcher))
+                :
+                ((RubyMatchData)new RubyMatchData.RString(getRuntime(), rtarget, matcher));
+            getRuntime().getCurrentContext().setBackref(match);
+        }
         
         return match.matchStartPosition();
     }
@@ -571,11 +600,23 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         aMatcher.setPosition(startPos);
 
         if (aMatcher.find()) {
-            return (utf8) ? 
-                ((RubyMatchData)new RubyMatchData.JavaString(getRuntime(), target, aMatcher))
-                :
-                ((RubyMatchData)new RubyMatchData.RString(getRuntime(), rtarget, aMatcher));
-
+            IRubyObject _match = getRuntime().getCurrentContext().getBackref();
+            RubyMatchData match;
+            if(!_match.isNil() && !((match = (RubyMatchData)_match).used()) && (utf8 ^ (match instanceof RubyMatchData.RString))) {
+                match.matcher = aMatcher;
+                if(utf8) {
+                    ((RubyMatchData.JavaString)match).original = target;
+                } else {
+                    ((RubyMatchData.RString)match).original = rtarget;
+                    ((RubyMatchData.RString)match).set();
+                }
+                return match;
+            } else {
+                return (utf8) ? 
+                    ((RubyMatchData)new RubyMatchData.JavaString(getRuntime(), target, aMatcher))
+                    :
+                    ((RubyMatchData)new RubyMatchData.RString(getRuntime(), rtarget, aMatcher));
+            }
         }
         return getRuntime().getNil();
     }
