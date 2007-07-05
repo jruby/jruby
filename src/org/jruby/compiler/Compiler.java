@@ -535,4 +535,13 @@ public interface Compiler {
     public void pollThreadEvents();
 
     public void branchIfModule(BranchCallback moduleCallback, BranchCallback notModuleCallback);
+
+    /**
+     * Push the current back reference
+     */
+    public void backref();
+    /**
+     * Call a static helper method on RubyRegexp with the current backref 
+     */
+    public void backrefMethod(String methodName);
 }

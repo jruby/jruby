@@ -1882,4 +1882,15 @@ public class StandardASMCompiler implements Compiler, Opcodes {
 
         mv.label(afterJmp);
     }
+
+    public void backref() {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        invokeThreadContext("getBackref", cg.sig(IRubyObject.class, cg.params()));
+     }
+
+    public void backrefMethod(String methodName) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        invokeThreadContext("getBackref", cg.sig(IRubyObject.class, cg.params()));
+        mv.invokestatic(cg.p(RubyRegexp.class), methodName, cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
+     }
 }

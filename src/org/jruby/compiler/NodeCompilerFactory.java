@@ -64,6 +64,10 @@ public class NodeCompilerFactory {
         case NodeTypes.ATTRASSIGNNODE:
             // safe, I think :)
             return new AttrAssignNodeCompiler();
+            // Doesn't work for some reason...
+            //        case NodeTypes.BACKREFNODE:
+            //        // safe
+            //         return new BackRefNodeCompiler();
         case NodeTypes.BEGINNODE:
             // safe
             return new BeginNodeCompiler();
