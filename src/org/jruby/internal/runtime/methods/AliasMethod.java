@@ -67,4 +67,8 @@ public class AliasMethod extends DynamicMethod {
     public Arity getArity(){
         return oldMethod.getArity();
     }
+    
+    public DynamicMethod getRealMethod() {
+        return oldMethod.getRealMethod();
+    }
 }
