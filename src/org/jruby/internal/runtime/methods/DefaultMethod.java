@@ -50,6 +50,7 @@ import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.JumpException.RedoJump;
 import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -132,14 +133,13 @@ public final class DefaultMethod extends DynamicMethod {
                 
                 return EvaluationState.eval(runtime, context, body, self, block);
             }
-        } catch (JumpException je) {
-        	if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
-	                return (IRubyObject) je.getValue();
-            } else if(je.getJumpType() == JumpException.JumpType.RedoJump) {
-                throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
-        	}
-            
-       		throw je;
+        } catch (JumpException.ReturnJump rj) {
+        	if (rj.getTarget() == this) {
+                return (IRubyObject) rj.getValue();
+            }
+            throw rj;
+        } catch (JumpException.RedoJump rj) {
+            throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
         } finally {
             if (runtime.hasEventHooks()) {
                 traceReturn(context, runtime, name);

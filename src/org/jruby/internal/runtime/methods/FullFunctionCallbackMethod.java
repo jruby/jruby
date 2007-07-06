@@ -76,13 +76,10 @@ public class FullFunctionCallbackMethod extends DynamicMethod {
         
         try {
             return callback.execute(self, args, block);
-        } catch (JumpException je) {
-            switch (je.getJumpType().getTypeId()) {
-            case JumpException.JumpType.RETURN:
-                if (je.getTarget() == this) return (IRubyObject)je.getValue();
-            default:
-                throw je;
-            }
+        } catch (JumpException.ReturnJump rj) {
+            if (rj.getTarget() == this) return (IRubyObject)rj.getValue();
+
+            throw rj;
         } finally {
             if (isTrace) {
                 runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());

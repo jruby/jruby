@@ -823,12 +823,10 @@ public class RubyKernel {
         try {
             context.pushCatch(tag.asSymbol());
             return block.yield(context, tag);
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.ThrowJump &&
-                je.getTarget().equals(tag.asSymbol())) {
-                    return (IRubyObject) je.getValue();
-            }
-            throw je;
+        } catch (JumpException.ThrowJump tj) {
+            if (tj.getTarget().equals(tag.asSymbol())) return (IRubyObject) tj.getValue();
+            
+            throw tj;
         } finally {
             context.popCatch();
         }
@@ -847,7 +845,7 @@ public class RubyKernel {
         for (int i = catches.length - 1 ; i >= 0 ; i--) {
             if (tag.equals(catches[i])) {
                 //Catch active, throw for catch to handle
-                throw context.prepareJumpException(JumpException.JumpType.ThrowJump, tag, args.length > 1 ? args[1] : runtime.getNil());
+                throw new JumpException.ThrowJump(tag, args.length > 1 ? args[1] : runtime.getNil());
             }
         }
 
@@ -958,20 +956,18 @@ public class RubyKernel {
                 block.yield(context, recv.getRuntime().getNil());
                 
                 context.pollThreadEvents();
-            } catch (JumpException je) {
+            } catch (JumpException.BreakJump bj) {
                 // JRUBY-530, specifically the Kernel#loop case:
                 // Kernel#loop always takes a block.  But what we're looking
                 // for here is breaking an iteration where the block is one 
                 // used inside loop's block, not loop's block itself.  Set the 
                 // appropriate flag on the JumpException if this is the case
                 // (the FCALLNODE case in EvaluationState will deal with it)
-                if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-                    if (je.getTarget() != null && je.getTarget() != block) {
-                        je.setBreakInKernelLoop(true);
-                    }
+                if (bj.getTarget() != null && bj.getTarget() != block) {
+                    bj.setBreakInKernelLoop(true);
                 }
                  
-                throw je;
+                throw bj;
             }
         }
     }

@@ -173,26 +173,22 @@ public class Main {
         try {
             runInterpreter(runtime, reader, filename);
             return 0;
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
-                RubyException raisedException = ((RaiseException)je).getException();
-                if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
-                    IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
+        } catch (RaiseException rj) {
+            RubyException raisedException = rj.getException();
+            if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
+                IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
 
-                    if (status != null && !status.isNil()) {
-                        return RubyNumeric.fix2int(status);
-                    } else {
-                        return 0;
-                    }
+                if (status != null && !status.isNil()) {
+                    return RubyNumeric.fix2int(status);
                 } else {
-                    runtime.printError(raisedException);
-                    return 1;
+                    return 0;
                 }
-            } else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
-                return 1;
             } else {
-                throw je;
+                runtime.printError(raisedException);
+                return 1;
             }
+        } catch (JumpException.ThrowJump tj) {
+            return 1;
         } catch(MainExitException e) {
             if(e.isAborted()) {
                 return e.getStatus();

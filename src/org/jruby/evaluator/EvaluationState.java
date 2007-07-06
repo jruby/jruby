@@ -138,7 +138,6 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.JumpException.JumpType;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
@@ -541,7 +540,7 @@ public class EvaluationState {
    
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
-        throw context.prepareJumpException(JumpException.JumpType.BreakJump, null, result);
+        throw new JumpException.BreakJump(null, result);
     }
 
     private static IRubyObject callNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -581,15 +580,10 @@ public class EvaluationState {
                 }
 
                 return method.call(context, receiver, module, name, args, false, block);
-            } catch (JumpException je) {
-                switch (je.getJumpType().getTypeId()) {
-                case JumpType.RETRY:
-                    // allow loop to retry
-                case JumpType.BREAK:
-                    return (IRubyObject) je.getValue();
-                default:
-                    throw je;
-                }
+            } catch (JumpException.RetryJump rj) {
+                // allow loop to retry
+            } catch (JumpException.BreakJump bj) {
+                return (IRubyObject) bj.getValue();
             }
         }
     }
@@ -1036,24 +1030,18 @@ public class EvaluationState {
                 }
                     
                 return result; 
-            } catch (JumpException je) {
-                switch (je.getJumpType().getTypeId()) {
-                case JumpType.RETRY:
-                    // allow loop to retry
-                    break;
-                case JumpType.BREAK:
-                    // JRUBY-530, Kernel#loop case:
-                    if (je.isBreakInKernelLoop()) {
-                        // consume and rethrow or just keep rethrowing?
-                        if (block == je.getTarget()) je.setBreakInKernelLoop(false);
-                            
-                        throw je;
-                    }
-                        
-                    return (IRubyObject) je.getValue();
-                default:
-                    throw je;
+            } catch (JumpException.RetryJump rj) {
+                // allow loop to retry
+            } catch (JumpException.BreakJump bj) {
+                // JRUBY-530, Kernel#loop case:
+                if (bj.isBreakInKernelLoop()) {
+                    // consume and rethrow or just keep rethrowing?
+                    if (block == bj.getTarget()) bj.setBreakInKernelLoop(false);
+
+                    throw bj;
                 }
+
+                return (IRubyObject) bj.getValue();
             }
         }
     }
@@ -1120,23 +1108,12 @@ public class EvaluationState {
                     }
    
                     return recv.callMethod(context, "each", IRubyObject.NULL_ARRAY, CallType.NORMAL, block);
-                } catch (JumpException je) {
-                    switch (je.getJumpType().getTypeId()) {
-                    case JumpType.RETRY:
-                        // do nothing, allow loop to retry
-                        break;
-                    default:
-                        throw je;
-                    }
+                } catch (JumpException.RetryJump rj) {
+                    // do nothing, allow loop to retry
                 }
             }
-        } catch (JumpException je) {
-            switch (je.getJumpType().getTypeId()) {
-            case JumpType.BREAK:
-                return (IRubyObject) je.getValue();
-            default:
-                throw je;
-            }
+        } catch (JumpException.BreakJump bj) {
+            return (IRubyObject) bj.getValue();
         }
     }
 
@@ -1331,7 +1308,7 @@ public class EvaluationState {
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
         // now used as an interpreter event
-        throw context.prepareJumpException(JumpException.JumpType.NextJump, iVisited, result);
+        throw new JumpException.NextJump(iVisited, result);
     }
 
     private static IRubyObject nilNode(Ruby runtime, ThreadContext context) {
@@ -1432,21 +1409,16 @@ public class EvaluationState {
                 try {
                     result = evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
                     break;
-                } catch (JumpException je) {
-                    switch (je.getJumpType().getTypeId()) {
-                    case JumpType.REDO:
-                        // do nothing, this iteration restarts
-                        break;
-                    case JumpType.NEXT:
-                        // recheck condition
-                        break loop;
-                    case JumpType.BREAK:
-                        // end loop
-                        result = (IRubyObject) je.getValue();
-                        break outerLoop;
-                    default:
-                        throw je;
-                    }
+                } catch (JumpException.RedoJump rj) {
+                    // do nothing, this iteration restarts
+                    break;
+                } catch (JumpException.NextJump nj) {
+                    // recheck condition
+                    break loop;
+                } catch (JumpException.BreakJump bj) {
+                    // end loop
+                    result = (IRubyObject) bj.getValue();
+                    break outerLoop;
                 }
             }
         }
@@ -1482,7 +1454,7 @@ public class EvaluationState {
         context.pollThreadEvents();
    
         // now used as an interpreter event
-        throw context.prepareJumpException(JumpException.JumpType.RedoJump, null, node);
+        throw new JumpException.RedoJump(null, node);
     }
 
     private static IRubyObject regexpNode(Ruby runtime, Node node) {
@@ -1552,17 +1524,14 @@ public class EvaluationState {
                     if (isRescueHandled(runtime, context, raisedException, exceptionNodesList, self)) {
                         try {
                             return evalInternal(runtime,context, rescueNode, self, aBlock);
+                        } catch (JumpException.RetryJump rj) {
+                            // should be handled in the finally block below
+                            //state.runtime.getGlobalVariables().set("$!", state.runtime.getNil());
+                            //state.threadContext.setRaisedException(null);
+                            continue RescuedBlock;
                         } catch (JumpException je) {
-                            if (je.getJumpType() == JumpException.JumpType.RetryJump) {
-                                // should be handled in the finally block below
-                                //state.runtime.getGlobalVariables().set("$!", state.runtime.getNil());
-                                //state.threadContext.setRaisedException(null);
-                                continue RescuedBlock;
-                                
-                            } else {
-                                anotherExceptionRaised = true;
-                                throw je;
-                            }
+                            anotherExceptionRaised = true;
+                            throw je;
                         }
                     }
                     
@@ -1582,7 +1551,7 @@ public class EvaluationState {
     private static IRubyObject retryNode(ThreadContext context) {
         context.pollThreadEvents();
    
-        throw context.prepareJumpException(JumpException.JumpType.RetryJump, null, null);
+        throw new JumpException.RetryJump(null, null);
     }
     
     private static IRubyObject returnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1590,7 +1559,7 @@ public class EvaluationState {
    
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
-        throw context.prepareJumpException(JumpException.JumpType.ReturnJump, context.getFrameJumpTarget(), result);
+        throw new JumpException.ReturnJump(context.getFrameJumpTarget(), result);
     }
 
     private static IRubyObject rootNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1709,26 +1678,21 @@ public class EvaluationState {
                 try {
                     evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
                     break loop;
-                } catch (JumpException je) {
-                    switch (je.getJumpType().getTypeId()) {
-                    case JumpType.REDO:
-                        continue;
-                    case JumpType.NEXT:
-                        break loop;
-                    case JumpType.BREAK:
-                        // JRUBY-530 until case
-                        if (je.getTarget() == aBlock) {
-                             je.setTarget(null);
-                             
-                             throw je;
-                        }
-                        
-                        result = (IRubyObject) je.getValue();
-                        
-                        break outerLoop;
-                    default:
-                        throw je;
+                } catch (JumpException.RedoJump rj) {
+                    continue;
+                } catch (JumpException.NextJump nj) {
+                    break loop;
+                } catch (JumpException.BreakJump bj) {
+                    // JRUBY-530 until case
+                    if (bj.getTarget() == aBlock) {
+                         bj.setTarget(null);
+
+                         throw bj;
                     }
+
+                    result = (IRubyObject) bj.getValue();
+
+                    break outerLoop;
                 }
             }
         }
@@ -1795,25 +1759,20 @@ public class EvaluationState {
                     }
                     
                     throw re;
-                } catch (JumpException je) {
-                    switch (je.getJumpType().getTypeId()) {
-                    case JumpType.REDO:
-                        continue;
-                    case JumpType.NEXT:
-                        break loop;
-                    case JumpType.BREAK:
-                        // JRUBY-530, while case
-                        if (je.getTarget() == aBlock) {
-                            je.setTarget(null);
-                            
-                            throw je;
-                        }
-                        
-                        result = (IRubyObject) je.getValue();
-                        break outerLoop;
-                    default:
-                        throw je;
+                } catch (JumpException.RedoJump rj) {
+                    continue;
+                } catch (JumpException.NextJump nj) {
+                    break loop;
+                } catch (JumpException.BreakJump bj) {
+                    // JRUBY-530, while case
+                    if (bj.getTarget() == aBlock) {
+                        bj.setTarget(null);
+
+                        throw bj;
                     }
+
+                    result = (IRubyObject) bj.getValue();
+                    break outerLoop;
                 }
             }
         }

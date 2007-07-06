@@ -80,14 +80,13 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
 //                }
 //            }
             return call(context, self, args, block);
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
-                return (IRubyObject) je.getValue();
-            } else if(je.getJumpType() == JumpException.JumpType.RedoJump) {
-                throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
+        } catch (JumpException.ReturnJump rj) {
+            if (rj.getTarget() == this) {
+                return (IRubyObject) rj.getValue();
             }
-            
-            throw je;
+            throw rj;
+        } catch (JumpException.RedoJump rj) {
+            throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
         } finally {
             context.postDefMethodInternalCall();
         }

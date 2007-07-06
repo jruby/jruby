@@ -171,23 +171,19 @@ public class RubyProc extends RubyObject {
             if (newBlock.isLambda) newBlock.getFrame().setJumpTarget(this);
             
             return newBlock.call(context, args);
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-                if (block.isLambda) return (IRubyObject) je.getValue();
+        } catch (JumpException.BreakJump bj) {
+                if (block.isLambda) return (IRubyObject) bj.getValue();
                 
-                throw runtime.newLocalJumpError("break", (IRubyObject)je.getValue(), "break from proc-closure");
-            } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                Object target = je.getTarget();
-                
-                if (target == this || block.isLambda) return (IRubyObject) je.getValue();
-                
-                if (target == null) {
-                    throw runtime.newLocalJumpError("return", (IRubyObject)je.getValue(), "unexpected return");
-                }
-                throw je;
-            } else {
-                throw je;
+                throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "break from proc-closure");
+        } catch (JumpException.ReturnJump rj) {
+            Object target = rj.getTarget();
+
+            if (target == this || block.isLambda) return (IRubyObject) rj.getValue();
+
+            if (target == null) {
+                throw runtime.newLocalJumpError("return", (IRubyObject)rj.getValue(), "unexpected return");
             }
+            throw rj;
         } 
     }
 

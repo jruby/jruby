@@ -40,41 +40,33 @@ package org.jruby.exceptions;
 public class JumpException extends RuntimeException {
     private static final long serialVersionUID = -228162532535826617L;
     
-    public static final class JumpType {
-        public static final int BREAK = 0;
-        public static final int NEXT = 1;
-        public static final int REDO = 2;
-        public static final int RETRY = 3;
-        public static final int RETURN = 4;
-        public static final int THROW = 5;
-        public static final int RAISE = 6;
-        public static final int SPECIAL = 7;
-        
-        public static final JumpType BreakJump = new JumpType(BREAK);
-        public static final JumpType NextJump = new JumpType(NEXT);
-        public static final JumpType RedoJump = new JumpType(REDO);
-        public static final JumpType RetryJump = new JumpType(RETRY);
-        public static final JumpType ReturnJump = new JumpType(RETURN);
-        public static final JumpType ThrowJump = new JumpType(THROW);
-        public static final JumpType RaiseJump = new JumpType(RAISE);
-        public static final JumpType SpecialJump = new JumpType(SPECIAL);
-        
-        private final int typeId;
-        private JumpType(int typeId) {
-            this.typeId = typeId;
+    public static class FlowControlException extends JumpException {
+        protected Object target;
+        private Object value;
+        // FIXME: Remove inKernelLoop from this and come up with something more general
+        // Hack to detect a break in Kernel#loop
+        private boolean inKernelLoop = false;
+
+        public FlowControlException() {}
+        public FlowControlException(Object target, Object value) {
+            this.target = target;
+            this.value = value;
         }
-        public int getTypeId() {
-            return typeId;
-        }
+        public Object getTarget() { return target; }
+        public void setTarget(Object target) { this.target = target; }
+        public Object getValue() { return value; }
+        public void setValue(Object value) { this.value = value; }
+        public void setBreakInKernelLoop(boolean inKernelLoop) { this.inKernelLoop = inKernelLoop; }
+        public boolean isBreakInKernelLoop() { return inKernelLoop; }
     }
     
-    private JumpType jumpType;
-    private Object target;
-    private Object value;
-    
-    // FIXME: Remove inKernelLoop from this and come up with something more general
-    // Hack to detect a break in Kernel#loop
-    private boolean inKernelLoop = false;
+    public static class BreakJump extends FlowControlException { public BreakJump(Object t, Object v) { super(t, v); }}
+    public static class NextJump extends FlowControlException { public NextJump(Object t, Object v) { super(t, v); }}
+    public static class RetryJump extends FlowControlException { public RetryJump(Object t, Object v) { super(t, v); }}
+    public static class ThrowJump extends FlowControlException { public ThrowJump(Object t, Object v) { super(t, v); }}
+    public static class RedoJump extends FlowControlException { public RedoJump(Object t, Object v) { super(t, v); }}
+    public static class SpecialJump extends FlowControlException {}
+    public static class ReturnJump extends FlowControlException { public ReturnJump(Object t, Object v) { super(t, v); }}
     
     /**
      * Constructor for flow-control-only JumpExceptions.
@@ -84,24 +76,14 @@ public class JumpException extends RuntimeException {
     
     /**
      * Constructor for JumpException.
-     */
-    public JumpException(JumpType jumpType) {
-        super();
-        this.jumpType = jumpType;
-    }
-    
-    /**
-     * Constructor for JumpException.
      * @param msg
      */
-    public JumpException(String msg, JumpType jumpType) {
+    public JumpException(String msg) {
         super(msg);
-        this.jumpType = jumpType;
     }
     
-    public JumpException(String msg, Throwable cause, JumpType jumpType) {
+    public JumpException(String msg, Throwable cause) {
         super(msg, cause);
-        this.jumpType = jumpType;
     }
     
     /** This method don't do anything for performance reasons.
@@ -114,58 +96,5 @@ public class JumpException extends RuntimeException {
     
     protected Throwable originalFillInStackTrace() {
         return super.fillInStackTrace();
-    }
-    
-    public JumpType getJumpType() {
-        return jumpType;
-    }
-    
-    public void setJumpType(JumpType jumpType) {
-        // this is like clearing out the exception, so we flush other fields here as well
-        this.jumpType = jumpType;
-        this.target = null;
-        this.value = null;
-        this.inKernelLoop = false;
-    }
-    
-    /**
-     * @return Returns the target.
-     */
-    public Object getTarget() {
-        return target;
-    }
-    
-    /**
-     * @param target The target (destination) of the jump.
-     */
-    public void setTarget(Object target) {
-        this.target = target;
-    }
-    
-    /**
-     * Get the value that will returned when the jump reaches its destination
-     *
-     * @return Returns the return value.
-     */
-    public Object getValue() {
-        return value;
-    }
-    
-    /**
-     * Set the value that will be returned when the jump reaches its destination
-     *
-     * @param value the value to be returned.
-     */
-    public void setValue(Object value) {
-        this.value = value;
-    }
-    
-    
-    public void setBreakInKernelLoop(boolean inKernelLoop) {
-        this.inKernelLoop = inKernelLoop;
-    }
-    
-    public boolean isBreakInKernelLoop() {
-        return inKernelLoop;
     }
 }

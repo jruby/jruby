@@ -876,12 +876,8 @@ public class RubyObject implements Cloneable, IRubyObject {
                     }
                     return block.yield(context, args, selfInYield, context.getRubyClass(), aValue);
                     //TODO: Should next and return also catch here?
-                } catch (JumpException je) {
-                	if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-                		return (IRubyObject) je.getValue();
-                	} 
-
-                    throw je;
+                } catch (JumpException.BreakJump bj) {
+                        return (IRubyObject) bj.getValue();
                 } finally {
                     block.setVisibility(savedVisibility);
                 }
@@ -923,13 +919,10 @@ public class RubyObject implements Cloneable, IRubyObject {
                 getRuntime().parse(src.toString(), file, blockOfBinding.getDynamicScope(), lineNumber);
 
             return EvaluationState.eval(getRuntime(), threadContext, node, newSelf, blockOfBinding);
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-                throw getRuntime().newLocalJumpError("break", (IRubyObject)je.getValue(), "unexpected break");
-            } else if(je.getJumpType() == JumpException.JumpType.RedoJump) {
-                throw getRuntime().newLocalJumpError("redo", (IRubyObject)je.getValue(), "unexpected redo");
-            }
-            throw je;
+        } catch (JumpException.BreakJump bj) {
+            throw getRuntime().newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
+        } catch (JumpException.RedoJump rj) {
+            throw getRuntime().newLocalJumpError("redo", (IRubyObject)rj.getValue(), "unexpected redo");
         } finally {
             threadContext.postEvalWithBinding(blockOfBinding);
 
@@ -952,11 +945,8 @@ public class RubyObject implements Cloneable, IRubyObject {
             Node node = getRuntime().parse(src.toString(), file, context.getCurrentScope(), 0);
             
             return EvaluationState.eval(getRuntime(), context, node, this, Block.NULL_BLOCK);
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-                throw getRuntime().newLocalJumpError("break", (IRubyObject)je.getValue(), "unexpected break");
-            }
-            throw je;
+        } catch (JumpException.BreakJump bj) {
+            throw getRuntime().newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
         } finally {
             // restore position
             context.setPosition(savedPosition);

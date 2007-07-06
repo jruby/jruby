@@ -30,7 +30,6 @@ package org.jruby.internal.runtime.methods;
 import java.util.ArrayList;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBinding;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -103,12 +102,11 @@ public class YARVMethod extends DynamicMethod {
             }
 
             return YARVMachine.INSTANCE.exec(context, self, sc, iseq.body);
-        } catch (JumpException je) {
-        	if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
-	                return (IRubyObject) je.getValue();
-        	}
+        } catch (JumpException.ReturnJump rj) {
+        	if (rj.getTarget() == this) return (IRubyObject) rj.getValue();
+
             
-       		throw je;
+       		throw rj;
         } finally {
             if (runtime.hasEventHooks()) {
                 traceReturn(context, runtime, name);

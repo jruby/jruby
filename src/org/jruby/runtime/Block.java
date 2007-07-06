@@ -220,24 +220,19 @@ public class Block {
             while (true) {
                 try {
                     return EvaluationState.eval(context.getRuntime(), context, iterNode.getBodyNode(), self, NULL_BLOCK);
-                } catch (JumpException je) {
-                    if (je.getJumpType() == JumpException.JumpType.RedoJump) {
-                        context.pollThreadEvents();
-                        // do nothing, allow loop to redo
-                    } else {
-                        if (je.getJumpType() == JumpException.JumpType.BreakJump && je.getTarget() == null) {
-                            je.setTarget(this);                            
-                        }                        
-                        throw je;
-                    }
+                } catch (JumpException.RedoJump rj) {
+                    context.pollThreadEvents();
+                    // do nothing, allow loop to redo
+                } catch (JumpException.BreakJump bj) {
+                    if (bj.getTarget() == null) {
+                        bj.setTarget(this);                            
+                    }                        
+                    throw bj;
                 }
             }
-            
-        } catch (JumpException je) {
+        } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-        	if (je.getJumpType() == JumpException.JumpType.NextJump) return isLambda ? context.getRuntime().getNil() : (IRubyObject)je.getValue();
-
-            throw je;
+            return isLambda ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
         } finally {
             frame.setVisibility(oldVis);
             post(context);

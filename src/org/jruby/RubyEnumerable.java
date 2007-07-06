@@ -216,15 +216,13 @@ public class RubyEnumerable {
                     IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
                     if (block.yield(context, arg).isTrue()) {
                         result[0] = arg;
-                        throw new JumpException(JumpException.JumpType.SpecialJump);
+                        throw new JumpException.SpecialJump();
                     }
                     return runtime.getNil();
                 }
             });
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.SpecialJump) return result[0];
-            
-            throw je;
+        } catch (JumpException.SpecialJump sj) {
+            return result[0];
         }
 
         return ifnone != null ? ifnone.callMethod(context, "call") : runtime.getNil();
@@ -365,16 +363,14 @@ public class RubyEnumerable {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
                     if (arg.equalInternal(context, larg).isTrue()) {
-                        throw new JumpException(JumpException.JumpType.SpecialJump);
+                        throw new JumpException.SpecialJump();
                     }
                     
                     return runtime.getNil();
                 }
             });
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.SpecialJump) return runtime.getTrue();
-
-            throw je;
+        } catch (JumpException.SpecialJump sj) {
+            return runtime.getTrue();
         }
         
         return runtime.getFalse();
@@ -460,7 +456,7 @@ public class RubyEnumerable {
                         IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
                         
                         if (!block.yield(context, arg).isTrue()) {
-                            throw new JumpException(JumpException.JumpType.SpecialJump);
+                            throw new JumpException.SpecialJump();
                         }
                         
                         return runtime.getNil();
@@ -472,17 +468,15 @@ public class RubyEnumerable {
                         IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
                         
                         if (!arg.isTrue()) {
-                            throw new JumpException(JumpException.JumpType.SpecialJump);
+                            throw new JumpException.SpecialJump();
                         }
                         
                         return runtime.getNil();
                     }
                 });
             }
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.SpecialJump) return runtime.getFalse();
-            
-            throw je;
+        } catch (JumpException.SpecialJump sj) {
+            return runtime.getFalse();
         }
 
         return runtime.getTrue();
@@ -498,7 +492,7 @@ public class RubyEnumerable {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                         IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
                         if (block.yield(context, arg).isTrue()) {
-                            throw new JumpException(JumpException.JumpType.SpecialJump);
+                            throw new JumpException.SpecialJump();
                         }
                         
                         return runtime.getNil();
@@ -509,17 +503,15 @@ public class RubyEnumerable {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                         IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
                         if (arg.isTrue()) {
-                            throw new JumpException(JumpException.JumpType.SpecialJump);
+                            throw new JumpException.SpecialJump();
                         }
                         
                         return runtime.getNil();
                     }
                 });
             }
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.SpecialJump) return runtime.getTrue();
-            
-            throw je;
+        } catch (JumpException.SpecialJump sj) {
+            return runtime.getTrue();
         }
 
         return runtime.getFalse();

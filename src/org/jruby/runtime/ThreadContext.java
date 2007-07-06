@@ -100,16 +100,6 @@ public class ThreadContext {
         public ISourcePosition union(ISourcePosition position) { return this; }
     };
     
-    public JumpException prepareJumpException(JumpException.JumpType jumpType, Object target, Object value) {
-        JumpException controlException = new JumpException();
-        
-        controlException.setJumpType(jumpType);
-        controlException.setTarget(target);
-        controlException.setValue(value);
-        
-        return controlException;
-    }
-    
     /**
      * Constructor for Context.
      */

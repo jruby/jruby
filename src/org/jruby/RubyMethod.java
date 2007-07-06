@@ -137,16 +137,12 @@ public class RubyMethod extends RubyObject {
                 // FIXME: We should not be regenerating this over and over
                 return f.getSingletonMethod("mproc").execute(getRuntime().getNil(), 
                         IRubyObject.NULL_ARRAY, block);
-            } catch (JumpException je) {
-                if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-                    return (IRubyObject) je.getValue();
-                } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                    return (IRubyObject) je.getValue();
-                } else if (je.getJumpType() == JumpException.JumpType.RetryJump) {
+            } catch (JumpException.BreakJump bj) {
+                    return (IRubyObject) bj.getValue();
+            } catch (JumpException.ReturnJump rj) {
+                    return (IRubyObject) rj.getValue();
+            } catch (JumpException.RetryJump rj) {
                     // Execute iterateMethod again.
-                } else {
-                    throw je;
-                }
             }
         }
     }

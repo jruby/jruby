@@ -287,17 +287,12 @@ public final class Ruby {
             ThreadContext tc = getCurrentContext();
 
             return EvaluationState.eval(this, tc, node, tc.getFrameSelf(), Block.NULL_BLOCK);
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                throw newLocalJumpError("return", (IRubyObject)je.getValue(), "unexpected return");
-                //              return (IRubyObject)je.getSecondaryData();
-            } else if(je.getJumpType() == JumpException.JumpType.BreakJump) {
-                throw newLocalJumpError("break", (IRubyObject)je.getValue(), "unexpected break");
-            } else if(je.getJumpType() == JumpException.JumpType.RedoJump) {
-                throw newLocalJumpError("redo", (IRubyObject)je.getValue(), "unexpected redo");
-            }
-
-            throw je;
+        } catch (JumpException.ReturnJump rj) {
+            throw newLocalJumpError("return", (IRubyObject)rj.getValue(), "unexpected return");
+        } catch (JumpException.BreakJump bj) {
+            throw newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
+        } catch (JumpException.RedoJump rj) {
+            throw newLocalJumpError("redo", (IRubyObject)rj.getValue(), "unexpected redo");
         }
     }
     
@@ -330,12 +325,8 @@ public final class Ruby {
             } else {
                 return eval(node);
             }
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                return (IRubyObject) je.getValue();
-            } else {
-                throw je;
-            }
+        } catch (JumpException.ReturnJump rj) {
+            return (IRubyObject) rj.getValue();
         }
         
     }
@@ -356,12 +347,8 @@ public final class Ruby {
         } catch (NotCompilableException nce) {
             System.err.println("Error -- Not compileable: " + nce.getMessage());
             return null;
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                return (IRubyObject) je.getValue();
-            } else {
-                throw je;
-            }
+        } catch (JumpException.ReturnJump rj) {
+            return (IRubyObject) rj.getValue();
         } catch (ClassNotFoundException e) {
             System.err.println("Error -- Not compileable: " + e.getMessage());
             return null;
@@ -386,12 +373,8 @@ public final class Ruby {
         } catch (NotCompilableException nce) {
             System.err.println("Error -- Not compileable: " + nce.getMessage());
             return null;
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                return (IRubyObject) je.getValue();
-            } 
-                
-            throw je;
+        } catch (JumpException.ReturnJump rj) {
+            return (IRubyObject) rj.getValue();
         }
     }
 
@@ -1221,12 +1204,8 @@ public final class Ruby {
 
             Node node = parse(source, scriptName, null, 0, false);
             EvaluationState.eval(this, context, node, self, Block.NULL_BLOCK);
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                // Make sure this does not bubble out to java caller.
-            } else {
-                throw je;
-            }
+        } catch (JumpException.ReturnJump rj) {
+            return;
         } finally {
             context.postNodeEval();
         }
@@ -1242,12 +1221,8 @@ public final class Ruby {
             context.preNodeEval(objectClass, self);
 
             script.run(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                // Make sure this does not bubble out to java caller.
-            } else {
-                throw je;
-            }
+        } catch (JumpException.ReturnJump rj) {
+            return;
         } finally {
             context.postNodeEval();
         }
@@ -1263,12 +1238,8 @@ public final class Ruby {
             context.preNodeEval(objectClass, self);
 
             EvaluationState.eval(this, context, node, self, Block.NULL_BLOCK);
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                // Make sure this does not bubble out to java caller.
-            } else {
-                throw je;
-            }
+        } catch (JumpException.ReturnJump rj) {
+            return;
         } finally {
             context.postNodeEval();
         }

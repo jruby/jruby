@@ -56,7 +56,7 @@ public class RaiseException extends JumpException {
     }
 
     public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, boolean nativeException) {
-        super(msg, JumpType.RaiseJump);
+        super(msg);
         if (msg == null) {
             msg = "No message available";
         }
@@ -64,7 +64,7 @@ public class RaiseException extends JumpException {
     }
 
     public RaiseException(RubyException exception, boolean isNativeException) {
-        super(JumpType.RaiseJump);
+        super();
         setException(exception, isNativeException);
     }
 
@@ -86,7 +86,7 @@ public class RaiseException extends JumpException {
     }
 
     public RaiseException(Throwable cause, NativeException nativeException) {
-        super(buildMessage(cause), cause, JumpType.RaiseJump);
+        super(buildMessage(cause), cause);
         setException(nativeException, false);
     }
 

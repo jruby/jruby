@@ -1013,13 +1013,13 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         // FIXME: handle next/continue, break, etc
         SkinnyMethodAdapter mv = getMethodAdapter();
         
-        Label tryBegin = new Label();
-        Label tryEnd = new Label();
-        Label tryCatch = new Label();
+        //Label tryBegin = new Label();
+        //Label tryEnd = new Label();
+        //Label tryCatch = new Label();
         
-        mv.trycatch(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
+        //mv.trycatch(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
         
-        mv.label(tryBegin);
+        //mv.label(tryBegin);
         {
             Label endJmp = new Label();
             if (checkFirst) {
@@ -1052,47 +1052,47 @@ public class StandardASMCompiler implements Compiler, Opcodes {
             }
         }
         
-        mv.label(tryEnd);
+        //mv.label(tryEnd);
         
         // no physical break, terminate loop and skip catch block
-        Label normalBreak = new Label();
-        mv.go_to(normalBreak);
-        
-        mv.label(tryCatch);
-        {
-            mv.dup();
-            mv.invokevirtual(cg.p(JumpException.class), "getJumpType", cg.sig(JumpException.JumpType.class));
-            mv.invokevirtual(cg.p(JumpException.JumpType.class), "getTypeId", cg.sig(Integer.TYPE));
-
-            Label tryDefault = new Label();
-            Label breakLabel = new Label();
-
-            mv.lookupswitch(tryDefault, new int[] {JumpException.JumpType.BREAK}, new Label[] {breakLabel});
-
-            // default is to just re-throw unhandled exception
-            mv.label(tryDefault);
-            mv.athrow();
-
-            // break just terminates the loop normally, unless it's a block break...
-            mv.label(breakLabel);
-            
-            // JRUBY-530 behavior
-            mv.dup();
-            mv.invokevirtual(cg.p(JumpException.class), "getTarget", cg.sig(Object.class));
-            loadClosure();
-            Label notBlockBreak = new Label();
-            mv.if_acmpne(notBlockBreak);
-            mv.dup();
-            mv.aconst_null();
-            mv.invokevirtual(cg.p(JumpException.class), "setTarget", cg.sig(Void.TYPE, cg.params(Object.class)));
-            mv.athrow();
-
-            mv.label(notBlockBreak);
-            // target is not == closure, normal loop exit, pop remaining exception object
-            mv.pop();
-        }
-        
-        mv.label(normalBreak);
+//        Label normalBreak = new Label();
+//        mv.go_to(normalBreak);
+//        
+//        mv.label(tryCatch);
+//        {
+//            mv.dup();
+//            mv.invokevirtual(cg.p(JumpException.class), "getJumpType", cg.sig(JumpException.JumpType.class));
+//            mv.invokevirtual(cg.p(JumpException.JumpType.class), "getTypeId", cg.sig(Integer.TYPE));
+//
+//            Label tryDefault = new Label();
+//            Label breakLabel = new Label();
+//
+//            mv.lookupswitch(tryDefault, new int[] {JumpException.JumpType.BREAK}, new Label[] {breakLabel});
+//
+//            // default is to just re-throw unhandled exception
+//            mv.label(tryDefault);
+//            mv.athrow();
+//
+//            // break just terminates the loop normally, unless it's a block break...
+//            mv.label(breakLabel);
+//            
+//            // JRUBY-530 behavior
+//            mv.dup();
+//            mv.invokevirtual(cg.p(JumpException.class), "getTarget", cg.sig(Object.class));
+//            loadClosure();
+//            Label notBlockBreak = new Label();
+//            mv.if_acmpne(notBlockBreak);
+//            mv.dup();
+//            mv.aconst_null();
+//            mv.invokevirtual(cg.p(JumpException.class), "setTarget", cg.sig(Void.TYPE, cg.params(Object.class)));
+//            mv.athrow();
+//
+//            mv.label(notBlockBreak);
+//            // target is not == closure, normal loop exit, pop remaining exception object
+//            mv.pop();
+//        }
+//        
+//        mv.label(normalBreak);
         loadNil();
     }
     
@@ -1608,17 +1608,18 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     public void issueBreakEvent() {
         SkinnyMethodAdapter mv = getMethodAdapter();
         
-        mv.newobj(cg.p(JumpException.class));
-        mv.dup();
-        mv.getstatic(cg.p(JumpException.JumpType.class), "BreakJump", cg.ci(JumpException.JumpType.class));
-        mv.invokespecial(cg.p(JumpException.class), "<init>", cg.sig(Void.TYPE, cg.params(JumpException.JumpType.class)));
-        
-        // set result into jump exception
-        mv.dup_x1();
-        mv.swap();
-        mv.invokevirtual(cg.p(JumpException.class), "setValue", cg.sig(Void.TYPE, cg.params(Object.class)));
-        
-        mv.athrow();
+        // needs to be rewritten for new jump exceptions
+//        mv.newobj(cg.p(JumpException.BreakJump.class));
+//        mv.dup();
+//        mv.dup_x2();
+//        mv.invokespecial(cg.p(JumpException.class), "<init>", cg.sig(Void.TYPE, cg.params(JumpException.JumpType.class)));
+//        
+//        // set result into jump exception
+//        mv.dup_x1();
+//        mv.swap();
+//        mv.invokevirtual(cg.p(JumpException.class), "setValue", cg.sig(Void.TYPE, cg.params(Object.class)));
+//        
+//        mv.athrow();
     }
 
     public void asString() {

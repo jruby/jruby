@@ -166,17 +166,17 @@ public class JRubyEngine extends BSFEngineImpl {
      * @param exception An Exception thrown by JRuby
      */
     private static void printException(Ruby runtime, Exception exception) {
-    	if (exception instanceof JumpException) {
-	    	JumpException je = (JumpException)exception;
-	    	if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
-	            runtime.printError(((RaiseException)je).getException());
-	    	} else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
-	            runtime.getErrorStream().println("internal error: throw jump caught");
-	    	} else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-	            runtime.getErrorStream().println("break without block.");
-	        } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-	            runtime.getErrorStream().println("return without block.");
-	        }
+    	if (exception instanceof RaiseException) {
+            JumpException je = (JumpException)exception;
+            if (je instanceof RaiseException) {
+                runtime.printError(((RaiseException)je).getException());
+            } else if (je instanceof JumpException.ThrowJump) {
+                runtime.getErrorStream().println("internal error: throw jump caught");
+            } else if (je instanceof JumpException.BreakJump) {
+                runtime.getErrorStream().println("break without block.");
+            } else if (je instanceof JumpException.ReturnJump) {
+                runtime.getErrorStream().println("return without block.");
+            }
     	}
     }
 

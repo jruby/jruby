@@ -152,18 +152,19 @@ public class CompilerHelpers {
 
         return rubyClass.getClassVar(name);
     }
-    
-    public static IRubyObject handleJumpException(JumpException je, Block block) {
-        // JRUBY-530, Kernel#loop case:
-        if (je.isBreakInKernelLoop()) {
-            // consume and rethrow or just keep rethrowing?
-            if (block == je.getTarget()) je.setBreakInKernelLoop(false);
-
-            throw je;
-        }
-
-        return (IRubyObject) je.getValue();
-    }
+   
+    // needs to be rewritten to support new jump exceptions
+//    public static IRubyObject handleJumpException(JumpException je, Block block) {
+//        // JRUBY-530, Kernel#loop case:
+//        if (je.isBreakInKernelLoop()) {
+//            // consume and rethrow or just keep rethrowing?
+//            if (block == je.getTarget()) je.setBreakInKernelLoop(false);
+//
+//            throw je;
+//        }
+//
+//        return (IRubyObject) je.getValue();
+//    }
     
     public static IRubyObject nullToNil(IRubyObject value, Ruby runtime) {
         return value != null ? value : runtime.getNil();

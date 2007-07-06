@@ -50,9 +50,9 @@ public class RubyContinuation {
         recv.getRuntime().getWarnings().warn("Continuation.call: Continuations are not implemented in JRuby and will not work");
         ThreadContext context = recv.getRuntime().getCurrentContext();
         if(args.length == 1) {
-            throw context.prepareJumpException(JumpException.JumpType.BreakJump, recv.dataGetStruct(), args[0]);
+            throw new JumpException.BreakJump(recv.dataGetStruct(), args[0]);
         } else {
-            throw context.prepareJumpException(JumpException.JumpType.BreakJump, recv.dataGetStruct(), recv.getRuntime().newArray(args));
+            throw new JumpException.BreakJump(recv.dataGetStruct(), recv.getRuntime().newArray(args));
         }
     }
 }// RubyContinuation
