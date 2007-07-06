@@ -54,36 +54,34 @@ public class FullFunctionCallbackMethod extends DynamicMethod {
         this.callback = callback;
     }
 
-    public void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preReflectedMethodInternalCall(implementationClass, clazz, self, name, args, getArity().required(), noSuper, block, this);
-    }
-    
-    public void postMethod(ThreadContext context) {
-        context.postReflectedMethodInternalCall();
-    }
-    
-    public IRubyObject internalCall(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        assert args != null;
-        Ruby runtime = context.getRuntime();
-        ISourcePosition position = null;
-        boolean isTrace = runtime.hasEventHooks();
-        
-        if (isTrace) {
-            position = context.getPosition();
-            
-            runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
-        }
-        
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
         try {
-            return callback.execute(self, args, block);
-        } catch (JumpException.ReturnJump rj) {
-            if (rj.getTarget() == this) return (IRubyObject)rj.getValue();
+            context.preReflectedMethodInternalCall(implementationClass, clazz, self, name, args, getArity().required(), noSuper, block, this);
+            
+            assert args != null;
+            Ruby runtime = context.getRuntime();
+            ISourcePosition position = null;
+            boolean isTrace = runtime.hasEventHooks();
 
-            throw rj;
-        } finally {
             if (isTrace) {
-                runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
+                position = context.getPosition();
+
+                runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
             }
+
+            try {
+                return callback.execute(self, args, block);
+            } catch (JumpException.ReturnJump rj) {
+                if (rj.getTarget() == this) return (IRubyObject)rj.getValue();
+
+                throw rj;
+            } finally {
+                if (isTrace) {
+                    runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
+                }
+            }
+        } finally {
+            context.postReflectedMethodInternalCall();
         }
     }
     

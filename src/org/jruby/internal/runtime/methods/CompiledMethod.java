@@ -42,28 +42,31 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
     private Arity arity;
     private SinglyLinkedList cref;
     private StaticScope staticScope;
+//    private boolean needsImplementer;
     
     public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope staticScope) {
     	super(implementationClass, visibility);
         this.arity = arity;
         this.cref = cref;
         this.staticScope = staticScope;
-    }
-
-    public void preMethod(ThreadContext context, RubyModule clazz,
-            IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-    }
-    
-    public void postMethod(ThreadContext context) {
-    }
-    
-    public IRubyObject internalCall(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        assert false;
-        return null;
+        
+        // CompiledMethod will eventually need this logic, since it will eventually compile module methods with super in them
+//        if (implementationClass != null) {
+//            needsImplementer = !implementationClass.isClass();
+//        }
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
         Ruby runtime = context.getRuntime();
+        
+//        RubyModule implementer = null;
+//        if (needsImplementer) {
+//            // modules are included with a shim class; we must find that shim to handle super() appropriately
+//            implementer = klazz.findImplementer(getImplementationClass());
+//        } else {
+//            // classes are directly in the hierarchy, so no special logic is necessary for implementer
+//            implementer = getImplementationClass();
+//        }
         
         try {
             context.preDefMethodInternalCall(klazz, name, self, args, arity.required(), block, noSuper, cref, staticScope, this);

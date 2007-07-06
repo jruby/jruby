@@ -53,17 +53,6 @@ public class SimpleCallbackMethod extends DynamicMethod {
         this.callback = callback;
     }
 
-    public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-    }
-    
-    public void postMethod(ThreadContext context) {
-    }
-
-    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        assert false;
-        return null;
-    }
-
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
     	assert args != null;
         Ruby runtime = context.getRuntime();

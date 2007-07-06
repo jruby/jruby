@@ -44,14 +44,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class DynamicMethod {
     protected RubyModule implementationClass;
     protected Visibility visibility;
-    private boolean needsImplementer;
     
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
         this.visibility = visibility;
         this.implementationClass = implementationClass;
-        if (implementationClass != null) {
-            needsImplementer = !implementationClass.isClass();
-        }
     }
 
     /**
@@ -59,30 +55,8 @@ public abstract class DynamicMethod {
      * @param context is the thread-specific information that this method is being invoked on
      * @param receiver 
      */
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, 
-            String name, IRubyObject[] args, boolean noSuper, Block block) {
-        // FIXME: this potentially should go in overridden call impls too, but so far it hasn't appeared to be necessary
-        RubyModule implementer = null;
-        if (needsImplementer) {
-            // modules are included with a shim class; we must find that shim to handle super() appropriately
-            implementer = clazz.findImplementer(getImplementationClass());
-        } else {
-            // classes are directly in the hierarchy, so no special logic is necessary for implementer
-            implementer = getImplementationClass();
-        }
-        
-        preMethod(context, implementer, self, name, args, noSuper, block);
-
-        try {
-            return internalCall(context, implementer, self, name, args, noSuper, block);
-        } finally {
-            postMethod(context);
-        }
-    }
-    
-    protected abstract void postMethod(ThreadContext context);
-    protected abstract IRubyObject internalCall(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block);
-    protected abstract void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block);
+    public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, 
+            String name, IRubyObject[] args, boolean noSuper, Block block);
     public abstract DynamicMethod dup();
 
     public boolean isCallableFrom(IRubyObject caller, CallType callType) {

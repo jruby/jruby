@@ -73,20 +73,13 @@ public class YARVMethod extends DynamicMethod {
             this.arity = Arity.required(iseq.args_argc);
         }
     }
-    
-    public void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, 
-            IRubyObject[] args, boolean noSuper, Block block) {
-        context.preDefMethodInternalCall(clazz, name, self, args, arity.required(), block, noSuper, cref, staticScope, this);
-    }
-    
-    public void postMethod(ThreadContext context) {
-        context.postDefMethodInternalCall();
-    }
 
-    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
     	assert args != null;
         
         Ruby runtime = context.getRuntime();
+        
+        context.preDefMethodInternalCall(klazz, name, self, args, arity.required(), block, noSuper, cref, staticScope, this);
         
         try {
             prepareArguments(context, runtime, args);
@@ -111,6 +104,7 @@ public class YARVMethod extends DynamicMethod {
             if (runtime.hasEventHooks()) {
                 traceReturn(context, runtime, name);
             }
+            context.postDefMethodInternalCall();
         }
     }
 

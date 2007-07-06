@@ -52,20 +52,18 @@ public class MethodMethod extends DynamicMethod {
         super(implementationClass, visibility);
         this.method = method;
     }
-    
-    public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preMethodCall(implementationClass, klazz, self, name, args, 0, block, noSuper, this);
-    }
-    
-    public void postMethod(ThreadContext context) {
-        context.postMethodCall();
-    }
 
     /**
      * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        return method.bind(self, block).call(args, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preMethodCall(implementationClass, klazz, self, name, args, 0, block, noSuper, this);
+        
+        try {
+            return method.bind(self, block).call(args, block);
+        } finally {
+        context.postMethodCall();
+        }
     }
     
     public DynamicMethod dup() {

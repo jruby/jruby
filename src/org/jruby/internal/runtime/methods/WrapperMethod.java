@@ -28,7 +28,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -50,23 +49,9 @@ public class WrapperMethod extends DynamicMethod {
         super(implementationClass, visibility);
         this.method = method;
     }
-
-    public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-    }
-    
-    public void postMethod(ThreadContext context) {
-    }
     
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
         return method.call(context, self, klazz, name, args, noSuper, block);
-    }
-
-    /**
-     * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
-     */
-    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        assert false;
-        return null;
     }
     
     public DynamicMethod dup() {

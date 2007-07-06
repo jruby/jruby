@@ -48,24 +48,10 @@ public class UndefinedMethod extends DynamicMethod {
     private UndefinedMethod(Visibility visibility) {
         super(null, visibility);
     }
-    
-    public void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        // do nothing
-    }
-    
-    public void postMethod(ThreadContext context) {
-        // do nothing
-    }
 
-    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * If UndefinedMethod gets invoked, don't do the usual method scoping/framing. It should never be invoked.
-     */
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper) {
-        return internalCall(context, klazz, self, name, args, noSuper, Block.NULL_BLOCK);
     }
 
     public boolean isUndefined() {

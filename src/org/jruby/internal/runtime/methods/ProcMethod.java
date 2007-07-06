@@ -57,18 +57,22 @@ public class ProcMethod extends DynamicMethod {
     
     // ENEBO: I doubt this is right...it should be proc.block?
     public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preMethodCall(implementationClass, klazz, self, name, args, getArity().required(), block, noSuper, this);
     }
     
     public void postMethod(ThreadContext context) {
-        context.postMethodCall();
     }
 
     /**
      * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        return proc.call(args, self, Block.NULL_BLOCK);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preMethodCall(implementationClass, klazz, self, name, args, getArity().required(), block, noSuper, this);
+        
+        try {
+            return proc.call(args, self, Block.NULL_BLOCK);
+        } finally {
+            context.postMethodCall();
+        }
     }
     
     public DynamicMethod dup() {

@@ -50,7 +50,6 @@ import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.JumpException.RedoJump;
 import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -78,6 +77,7 @@ public final class DefaultMethod extends DynamicMethod {
     private int expectedArgsCount;
     private int restArg;
     private boolean hasOptArgs;
+    private boolean needsImplementer;
 
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
             ArgsNode argsNode, Visibility visibility, SinglyLinkedList cref) {
@@ -85,65 +85,74 @@ public final class DefaultMethod extends DynamicMethod {
         this.body = body;
         this.staticScope = staticScope;
         this.argsNode = argsNode;
-		this.cref = cref;
+        this.cref = cref;
         this.expectedArgsCount = argsNode.getArgsCount();
         this.restArg = argsNode.getRestArg();
         this.hasOptArgs = argsNode.getOptArgs() != null;
-		
-		assert argsNode != null;
-    }
-    
-    public void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, 
-            IRubyObject[] args, boolean noSuper, Block block) {
-        context.preDefMethodInternalCall(clazz, name, self, args, getArity().required(), block, noSuper, cref, staticScope, this);
-    }
-    
-    public void postMethod(ThreadContext context) {
-        context.postDefMethodInternalCall();
+
+        assert argsNode != null;
+        
+        if (implementationClass != null) {
+            needsImplementer = !implementationClass.isClass();
+        }
     }
 
     /**
      * @see AbstractCallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject internalCall(ThreadContext context, RubyModule clazz, 
-            IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
         assert args != null;
         
-        Ruby runtime = context.getRuntime();
-        
-        if (runtime.getInstanceConfig().isJitEnabled()) {
-            runJIT(runtime, context, name);
+        RubyModule implementer = null;
+        if (needsImplementer) {
+            // modules are included with a shim class; we must find that shim to handle super() appropriately
+            implementer = clazz.findImplementer(getImplementationClass());
+        } else {
+            // classes are directly in the hierarchy, so no special logic is necessary for implementer
+            implementer = getImplementationClass();
         }
-
+        
+        context.preDefMethodInternalCall(implementer, name, self, args, getArity().required(), block, noSuper, cref, staticScope, this);
+        
         try {
-            if (jitCompiledScript != null && !runtime.hasEventHooks()) {
-                return jitCompiledScript.run(context, self, args, block);
-            } else {
-                if (argsNode.getBlockArgNode() != null) {
-                    CompilerHelpers.processBlockArgument(runtime, context, block, argsNode.getBlockArgNode().getCount());
+            Ruby runtime = context.getRuntime();
+
+            if (runtime.getInstanceConfig().isJitEnabled()) {
+                runJIT(runtime, context, name);
+            }
+
+            try {
+                if (jitCompiledScript != null && !runtime.hasEventHooks()) {
+                    return jitCompiledScript.run(context, self, args, block);
+                } else {
+                    if (argsNode.getBlockArgNode() != null) {
+                        CompilerHelpers.processBlockArgument(runtime, context, block, argsNode.getBlockArgNode().getCount());
+                    }
+
+                    getArity().checkArity(runtime, args);
+
+                    prepareArguments(context, runtime, args);
+
+                    if (runtime.hasEventHooks()) {
+                        traceCall(context, runtime, name);
+                    }
+
+                    return EvaluationState.eval(runtime, context, body, self, block);
                 }
-                
-                getArity().checkArity(runtime, args);
-                
-                prepareArguments(context, runtime, args);
-                
+            } catch (JumpException.ReturnJump rj) {
+                    if (rj.getTarget() == this) {
+                    return (IRubyObject) rj.getValue();
+                }
+                throw rj;
+            } catch (JumpException.RedoJump rj) {
+                throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
+            } finally {
                 if (runtime.hasEventHooks()) {
-                    traceCall(context, runtime, name);
+                    traceReturn(context, runtime, name);
                 }
-                
-                return EvaluationState.eval(runtime, context, body, self, block);
             }
-        } catch (JumpException.ReturnJump rj) {
-        	if (rj.getTarget() == this) {
-                return (IRubyObject) rj.getValue();
-            }
-            throw rj;
-        } catch (JumpException.RedoJump rj) {
-            throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
         } finally {
-            if (runtime.hasEventHooks()) {
-                traceReturn(context, runtime, name);
-            }
+            context.postDefMethodInternalCall();
         }
     }
 
