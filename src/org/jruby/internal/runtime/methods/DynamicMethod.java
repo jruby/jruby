@@ -60,9 +60,11 @@ public abstract class DynamicMethod {
     public abstract DynamicMethod dup();
 
     public boolean isCallableFrom(IRubyObject caller, CallType callType) {
-        if (getVisibility().isPrivate() && (callType == CallType.NORMAL)) {
+        if (visibility.isPublic()) {
+            return true;
+        } else if (visibility.isPrivate() && (callType == CallType.NORMAL)) {
             return false;
-        } else if (getVisibility().isProtected()) {
+        } else if (visibility.isProtected()) {
             RubyModule defined = getImplementationClass();
             while (defined.isIncluded()) {
                 defined = defined.getMetaClass();
