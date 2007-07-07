@@ -467,45 +467,47 @@ public class RubyObject implements Cloneable, IRubyObject {
         return callMethod(context, superClass, context.getFrameName(), args, CallType.SUPER, block);
     }    
 
-    /**
-     *
-     */
+    public IRubyObject callMethod(ThreadContext context, String name) {
+        return callMethod(context, getMetaClass(), name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
+    }
+    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg) {
+        return callMethod(context, getMetaClass(), name, new IRubyObject[] { arg }, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+    }
+    public IRubyObject callMethod(ThreadContext context, String name, Block block) {
+        return callMethod(context, getMetaClass(), name, IRubyObject.NULL_ARRAY, null, block);
+    }
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args) {
         return callMethod(context, getMetaClass(), name, args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
-
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block) {
         return callMethod(context, getMetaClass(), name, args, CallType.FUNCTIONAL, block);
     }
-    
-    /**
-     *
-     */
-    public IRubyObject callMethod(ThreadContext context, String name,
-            IRubyObject[] args, CallType callType) {
+    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType) {
         return callMethod(context, getMetaClass(), name, args, callType, Block.NULL_BLOCK);
     }
-    
-    public IRubyObject callMethod(ThreadContext context, String name,
-            IRubyObject[] args, CallType callType, Block block) {
+    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType, Block block) {
         return callMethod(context, getMetaClass(), name, args, callType, block);
     }
-
-    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name,
-                                  IRubyObject arg) {
+    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name) {
+        return callMethod(context, getMetaClass(), methodIndex, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
+    }
+    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) {
         return callMethod(context,getMetaClass(),methodIndex,name,new IRubyObject[]{arg},CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
-
-    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name,
-                                  IRubyObject[] args) {
+    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args) {
         return callMethod(context,getMetaClass(),methodIndex,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
-
-    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name,
-                                  IRubyObject[] args, CallType callType) {
+    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args, CallType callType) {
         return callMethod(context,getMetaClass(),methodIndex,name,args,callType, Block.NULL_BLOCK);
     }
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name, IRubyObject[] args, CallType callType) {
+        return callMethod(context, rubyclass, methodIndex, name, args, callType, Block.NULL_BLOCK);
+    }
     
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block) {
+        return rubyclass.dispatcher.callMethod(context, this, rubyclass, methodIndex, name, args, callType, block);
+    }
+
     /**
      * Used by the compiler to ease calling indexed methods, also to handle visibility.
      * NOTE: THIS IS NOT THE SAME AS THE SWITCHVALUE VERSIONS.
@@ -570,22 +572,6 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         return receiver.callMethod(context, "method_missing", newArgs, block);
     }
-
-    /**
-     *
-     */
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
-            IRubyObject[] args, CallType callType) {
-        return callMethod(context, rubyclass, methodIndex, name, args, callType, Block.NULL_BLOCK);
-    }
-
-    /**
-     *
-     */
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
-            IRubyObject[] args, CallType callType, Block block) {
-        return rubyclass.dispatcher.callMethod(context, this, rubyclass, methodIndex, name, args, callType, block);
-    }
     
     /**
      *
@@ -604,25 +590,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         return method.call(context, this, rubyclass, name, args, false, block);
     }
 
-    public IRubyObject callMethod(ThreadContext context, String name) {
-        return callMethod(context, getMetaClass(), name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
-    }
-
-    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name) {
-        return callMethod(context, getMetaClass(), methodIndex, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
-    }
-
-    public IRubyObject callMethod(ThreadContext context, String name, Block block) {
-        return callMethod(context, getMetaClass(), name, IRubyObject.NULL_ARRAY, null, block);
-    }
-
-    /**
-     * rb_funcall
-     *
-     */
-    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg) {
-        return callMethod(context, name, new IRubyObject[] { arg });
-    }
 
     public IRubyObject instance_variable_get(IRubyObject var) {
     	String varName = var.asSymbol();

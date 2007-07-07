@@ -122,155 +122,24 @@ public interface IRubyObject {
      */
     Map getInstanceVariablesSnapshot();
     
-    /**
-     *
-     * @param context
-     * @param rubyclass
-     * @param name
-     * @param args
-     * @param callType
-     * @param block
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name, IRubyObject[] args, CallType callType, Block block);
-    /**
-     *
-     * @param context
-     * @param rubyclass
-     * @param methodIndex
-     * @param name
-     * @param args
-     * @param callType
-     * @param block
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block);
-    /**
-     *
-     * @param context
-     * @param methodIndex
-     * @param name
-     * @param arg
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg);
-    /**
-     *
-     * @param context
-     * @param methodIndex
-     * @param name
-     * @param args
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args);
-    /**
-     *
-     * @param context
-     * @param methodIndex
-     * @param name
-     * @param args
-     * @param callType
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args, CallType callType);
-    /**
-     *
-     * @param context
-     * @param name
-     * @param args
-     * @param callType
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType);
-    /**
-     *
-     * @param context
-     * @param name
-     * @param args
-     * @param callType
-     * @param block
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType, Block block);
-    // Used by the compiler, to allow visibility checks
-    /**
-     *
-     * @param context
-     * @param name
-     * @param args
-     * @param caller
-     * @param callType
-     * @param block
-     * @return
-     */
-    IRubyObject compilerCallMethod(ThreadContext context, String name, IRubyObject[] args, IRubyObject caller, CallType callType, Block block);
-    /**
-     *
-     * @param context
-     * @param methodIndex
-     * @param name
-     * @param args
-     * @param caller
-     * @param callType
-     * @param block
-     * @return
-     */
-    IRubyObject compilerCallMethodWithIndex(ThreadContext context, int methodIndex, String name, IRubyObject[] args, IRubyObject caller, CallType callType, Block block);
-    /**
-     *
-     * @param context
-     * @param args
-     * @param block
-     * @return
-     */
-    IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block);
-    /**
-     *
-     * @param context
-     * @param string
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, String string);
-    /**
-     *
-     * @param context
-     * @param string
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, int methodIndex, String string);
-    /**
-     *
-     * @param context
-     * @param string
-     * @param aBlock
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, String string, Block aBlock);
-    /**
-     *
-     * @param context
-     * @param string
-     * @param arg
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, String string, IRubyObject arg);
-    /**
-     *
-     * @param context
-     * @param method
-     * @param rubyArgs
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, String method, IRubyObject[] rubyArgs);
-    /**
-     *
-     * @param context
-     * @param method
-     * @param rubyArgs
-     * @param block
-     * @return
-     */
-    IRubyObject callMethod(ThreadContext context, String method, IRubyObject[] rubyArgs, Block block);
+    public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block);
+
+    public IRubyObject callMethod(ThreadContext context, String name);
+    public IRubyObject callMethod(ThreadContext context, String name, Block block);
+    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg);
+    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args);
+    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block);
+    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType);
+    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType, Block block);
+    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name);
+    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg);
+    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args);
+    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args, CallType callType);
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name, IRubyObject[] args, CallType callType, Block block);
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block);
+    public IRubyObject compilerCallMethodWithIndex(ThreadContext context, int methodIndex, String name, IRubyObject[] args, IRubyObject self, CallType callType, Block block);
+    public IRubyObject compilerCallMethod(ThreadContext context, String name,
+            IRubyObject[] args, IRubyObject self, CallType callType, Block block);
     
     /**
      * RubyMethod isNil.
