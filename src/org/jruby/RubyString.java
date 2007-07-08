@@ -2045,6 +2045,7 @@ public class RubyString extends RubyObject {
         if (found == -1) throw getRuntime().newIndexError("regexp not matched");
 
         RubyMatchData match = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
+        match.use();
 
         if (nth >= match.getSize()) {
             throw getRuntime().newIndexError("index " + nth + " out of regexp");
@@ -3178,7 +3179,8 @@ public class RubyString extends RubyObject {
 
         if (pat.search(toString, this, start) != -1) {
             RubyMatchData md = (RubyMatchData) tc.getBackref();
-            
+            md.use();
+
             block.yield(tc, md.group(0));
             start = md.end(0);
             while (md.find()) {

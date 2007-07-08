@@ -310,7 +310,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public static IRubyObject last_match_s(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
-            return recv.getRuntime().getCurrentContext().getBackref();
+            IRubyObject ret = recv.getRuntime().getCurrentContext().getBackref();
+            if(ret instanceof RubyMatchData) {
+                ((RubyMatchData)ret).use();
+            }
+            return ret;
         }
         
         // FIXME: 

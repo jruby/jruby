@@ -40,6 +40,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyKernel;
 import org.jruby.RubyLocalJumpError;
+import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
@@ -505,6 +506,9 @@ public class EvaluationState {
         IRubyObject backref = context.getBackref();
         switch (iVisited.getType()) {
         case '~':
+            if(backref instanceof RubyMatchData) {
+                ((RubyMatchData)backref).use();
+            }
             return backref;
         case '&':
             return RubyRegexp.last_match(backref);

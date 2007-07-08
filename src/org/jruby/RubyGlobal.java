@@ -260,7 +260,11 @@ public class RubyGlobal {
         }
         
         public IRubyObject get() {
-            return runtime.getCurrentContext().getBackref();
+            IRubyObject ret = runtime.getCurrentContext().getBackref();
+            if(ret instanceof RubyMatchData) {
+                ((RubyMatchData)ret).use();
+            }
+            return ret;
         }
     }
 
