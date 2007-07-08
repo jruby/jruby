@@ -159,6 +159,36 @@ externals/mri/ruby/test_trace
 #externals/mri/ruby/test_variable
 externals/mri/ruby/test_whileuntil
 
+# These tests run fine in isolation, but when running with ant test they fail.
+# FIXME: investigate and turn on
+# externals/mri/testunit/test_assertions
+# externals/mri/testunit/test_error
+# externals/mri/testunit/test_failure
+# externals/mri/testunit/test_testcase
+# externals/mri/testunit/test_testresult
+# externals/mri/testunit/test_testsuite
+# externals/mri/testunit/collector/test_dir
+# externals/mri/testunit/collector/test_objectspace
+# externals/mri/testunit/runit/test_assert
+# externals/mri/testunit/runit/test_testcase
+# externals/mri/testunit/runit/test_testresult
+# externals/mri/testunit/runit/test_testsuite
+# externals/mri/testunit/util/collector/test_dir
+# externals/mri/testunit/util/collector/test_objectspace
+# externals/mri/testunit/util/runit/test_assert
+# externals/mri/testunit/util/runit/test_testcase
+# externals/mri/testunit/util/runit/test_testresult
+# externals/mri/testunit/util/runit/test_testsuite
+# externals/mri/testunit/util/test_assertions
+# externals/mri/testunit/util/test_backtracefilter
+# externals/mri/testunit/util/test_error
+# externals/mri/testunit/util/test_failure
+# externals/mri/testunit/util/test_observable
+# externals/mri/testunit/util/test_procwrapper
+# externals/mri/testunit/util/test_testcase
+# externals/mri/testunit/util/test_testresult
+# externals/mri/testunit/util/test_testsuite
+
 # The ruby_test tests, from the shards project by Daniel Berger
 # FIXME: Some of these depend on ptools and/or pathname
 externals/ruby_test/test/core/Array/class/tc_aset
