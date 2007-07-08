@@ -473,7 +473,7 @@ public class Java {
         return packageModule;
     }
     
-    private static final Pattern CAMEL_CASE_PACKAGE_SPLITTER = Pattern.compile("([a-z])([A-Z])");        
+    private static final Pattern CAMEL_CASE_PACKAGE_SPLITTER = Pattern.compile("([a-z][0-9]*)([A-Z])");
 
     public static IRubyObject get_package_module(IRubyObject recv, IRubyObject symObject) {
         String sym = symObject.asSymbol();
