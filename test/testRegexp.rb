@@ -149,3 +149,6 @@ end
 test_equal nil, m().instance_variable_get(:@set)
 test_equal true, m(true).instance_variable_get(:@set)
 test_equal true, m().instance_variable_get(:@set)
+
+# JRUBY-1046: Support \G correctly:
+test_equal ["aa1 ", "aa2 "], "aa1 aa2 ba3 ".scan(/\Ga+\d\s*/)
