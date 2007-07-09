@@ -39,12 +39,11 @@ import org.jruby.RubyClass;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyThread;
-import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * @author jpetersen
@@ -78,9 +77,6 @@ public class ThreadContext {
     //private UnsynchronizedStack frameStack;
     private Frame[] frameStack = new Frame[INITIAL_SIZE];
     private int frameIndex = -1;
-    //private UnsynchronizedStack crefStack;
-    private SinglyLinkedList[] crefStack = new SinglyLinkedList[INITIAL_SIZE];
-    private int crefIndex = -1;
     
     // List of active dynamic scopes.  Each of these may have captured other dynamic scopes
     // to implement closures.
@@ -115,7 +111,7 @@ public class ThreadContext {
             
         for (int i = 0; i < frameStack.length; i++) {
             frameStack[i] = new Frame();
-        }
+    }
     }
     
     CallType lastCallType;
@@ -206,17 +202,6 @@ public class ThreadContext {
         }
     }
     
-    private void expandCrefsIfNecessary() {
-        if (crefIndex + 1 == crefStack.length) {
-            int newSize = crefStack.length * 2;
-            SinglyLinkedList[] newCrefStack = new SinglyLinkedList[newSize];
-            
-            System.arraycopy(crefStack, 0, newCrefStack, 0, crefStack.length);
-            
-            crefStack = newCrefStack;
-        }
-    }
-    
     public void pushScope(DynamicScope scope) {
         scopeStack[++scopeIndex] = scope;
         expandScopesIfNecessary();
@@ -300,7 +285,7 @@ public class ThreadContext {
                                IRubyObject self, IRubyObject[] args, int req, Block block, Object jumpTarget) {
         pushFrame(clazz, name, self, args, req, block, jumpTarget);        
     }
-    
+
     private void pushFrame(RubyModule clazz, String name, 
                                IRubyObject self, IRubyObject[] args, int req, Block block, Object jumpTarget) {
         frameStack[++frameIndex].updateFrame(clazz, self, name, args, req, block, getPosition(), jumpTarget);
@@ -318,7 +303,7 @@ public class ThreadContext {
         frameIndex--;
         setPosition(frame.getPosition());
     }
-
+        
     private void popFrameReal() {
         Frame frame = (Frame)frameStack[frameIndex];
         //frameStack[frameIndex--] = null;
@@ -426,45 +411,6 @@ public class ThreadContext {
         getThread().pollThreadEvents();
     }
     
-    public SinglyLinkedList peekCRef() {
-        return (SinglyLinkedList)crefStack[crefIndex];
-    }
-    
-    public void setCRef(SinglyLinkedList newCRef) {
-        crefStack[++crefIndex] = newCRef;
-        expandCrefsIfNecessary();
-    }
-    
-    public void unsetCRef() {
-        crefStack[crefIndex--] = null;
-    }
-    
-    public SinglyLinkedList pushCRef(RubyModule newModule) {
-        if (crefIndex == -1) {
-            crefStack[++crefIndex] = new SinglyLinkedList(newModule, null);
-        } else {
-            crefStack[crefIndex] = new SinglyLinkedList(newModule, (SinglyLinkedList)crefStack[crefIndex]);
-        }
-        
-        return (SinglyLinkedList)peekCRef();
-    }
-    
-    public RubyModule popCRef() {
-        assert !(crefIndex == -1) : "Tried to pop from empty CRef stack";
-        
-        RubyModule module = (RubyModule)peekCRef().getValue();
-        
-        SinglyLinkedList next = ((SinglyLinkedList)crefStack[crefIndex--]).getNext();
-        
-        if (next != null) {
-            crefStack[++crefIndex] = next;
-        } else {
-            crefStack[crefIndex+1] = null;
-        }
-        
-        return module;
-    }
-    
     public void pushRubyClass(RubyModule currentModule) {
         assert currentModule != null : "Can't push null RubyClass";
         
@@ -502,8 +448,8 @@ public class ThreadContext {
         IRubyObject undef = runtime.getUndef();
         
         // flipped from while to do to search current class first
-        for (SinglyLinkedList cbase = peekCRef(); cbase != null; cbase = cbase.getNext()) {
-            RubyModule module = (RubyModule) cbase.getValue();
+        for (StaticScope scope = getCurrentScope().getStaticScope(); scope != null; scope = scope.getPreviousCRefScope()) {
+            RubyModule module = scope.getModule();
             result = module.getInstanceVariable(name);
             if (result == undef) {
                 module.removeInstanceVariable(name);
@@ -519,15 +465,14 @@ public class ThreadContext {
      * Used by the evaluator and the compiler to look up a constant by name
      */
     public IRubyObject getConstant(String name) {
-        //RubyModule self = state.threadContext.getRubyClass();
-        SinglyLinkedList cbase = peekCRef();
+        StaticScope scope = getCurrentScope().getStaticScope();
         RubyClass object = runtime.getObject();
         IRubyObject result = null;
         IRubyObject undef = runtime.getUndef();
         
         // flipped from while to do to search current class first
         do {
-            RubyModule klass = (RubyModule) cbase.getValue();
+            RubyModule klass = scope.getModule();
             
             // Not sure how this can happen
             //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
@@ -539,10 +484,10 @@ public class ThreadContext {
             } else if (result != null) {
                 return result;
             }
-            cbase = cbase.getNext();
-        } while (cbase != null && cbase.getValue() != object);
+            scope = scope.getPreviousCRefScope();
+        } while (scope != null && scope.getModule() != object);
         
-        return ((RubyModule) peekCRef().getValue()).getConstant(name);
+        return getCurrentScope().getStaticScope().getModule().getConstant(name);
     }
     
     /**
@@ -550,15 +495,13 @@ public class ThreadContext {
      * This is for a null const decl
      */
     public IRubyObject setConstantInCurrent(String name, IRubyObject result) {
-        RubyModule module;
+        RubyModule module = getCurrentScope().getStaticScope().getModule();
 
-        // FIXME: why do we check RubyClass and then use CRef?
-        if (getRubyClass() == null) {
+        if (module == null) {
             // TODO: wire into new exception handling mechanism
             throw runtime.newTypeError("no class/module to define constant");
         }
-        module = (RubyModule) peekCRef().getValue();
-   
+
         setConstantInModule(name, module, result);
    
         return result;
@@ -569,7 +512,7 @@ public class ThreadContext {
      * This is for a Colon2 const decl
      */
     public IRubyObject setConstantInModule(String name, RubyModule module, IRubyObject result) {
-        ((RubyModule) module).setConstant(name, result);
+        module.setConstant(name, result);
    
         return result;
     }
@@ -582,33 +525,6 @@ public class ThreadContext {
         setConstantInModule(name, runtime.getObject(), result);
    
         return result;
-    }
-    
-    public IRubyObject getConstant(String name, RubyModule module) {
-        //RubyModule self = state.threadContext.getRubyClass();
-        SinglyLinkedList cbase = module.getCRef();
-        IRubyObject result = null;
-        IRubyObject undef = runtime.getUndef();
-        
-        // flipped from while to do to search current class first
-        redo: do {
-            RubyModule klass = (RubyModule) cbase.getValue();
-            
-            // Not sure how this can happen
-            //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
-            result = klass.getInstanceVariable(name);
-            if (result == undef) {
-                klass.removeInstanceVariable(name);
-                if (runtime.getLoadService().autoload(klass.getName() + "::" + name) == null) break;
-                continue redo;
-            } else if (result != null) {
-                return result;
-            }
-            cbase = cbase.getNext();
-        } while (cbase != null);
-        
-        //System.out.println("CREF is " + state.threadContext.getCRef().getValue());
-        return ((RubyModule) peekCRef().getValue()).getConstant(name);
     }
     
     private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
@@ -686,22 +602,18 @@ public class ThreadContext {
     public void preAdoptThread() {
         pushFrame();
         pushRubyClass(runtime.getObject());
-        pushCRef(runtime.getObject());
         getCurrentFrame().setSelf(runtime.getTopSelf());
     }
     
     public void preCompiledClass(RubyModule type) {
-        pushCRef(type);
         pushRubyClass(type);
     }
     
     public void postCompiledClass() {
-        popCRef();
         popRubyClass();
     }
     
     public void preClassEval(StaticScope staticScope, RubyModule type) {
-        pushCRef(type);
         pushRubyClass(type);
         pushFrameCopy();
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
@@ -709,7 +621,6 @@ public class ThreadContext {
     }
     
     public void postClassEval() {
-        popCRef();
         popScope();
         popRubyClass();
         popFrame();
@@ -728,7 +639,7 @@ public class ThreadContext {
 
     public void preMethodCall(RubyModule implementationClass, RubyModule clazz, 
                               IRubyObject self, String name, IRubyObject[] args, int req, Block block, boolean noSuper, Object jumpTarget) {
-        pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
+        pushRubyClass(implementationClass);
         pushCallFrame(noSuper ? null : clazz, name, self, args, req, block, jumpTarget);
     }
     
@@ -739,9 +650,8 @@ public class ThreadContext {
     
     public void preDefMethodInternalCall(RubyModule clazz, String name, 
                                          IRubyObject self, IRubyObject[] args, int req, Block block, boolean noSuper, 
-            SinglyLinkedList cref, StaticScope staticScope, Object jumpTarget) {
-        RubyModule implementationClass = (RubyModule)cref.getValue();
-        setCRef(cref);
+            StaticScope staticScope, Object jumpTarget) {
+        RubyModule implementationClass = getCurrentScope().getStaticScope().getModule();
         pushCallFrame(noSuper ? null : clazz, name, self, args, req, block, jumpTarget);
         pushScope(new DynamicScope(staticScope));
         pushRubyClass(implementationClass);
@@ -751,17 +661,6 @@ public class ThreadContext {
         popRubyClass();
         popScope();
         popFrame();
-        unsetCRef();
-    }
-    
-    public void preCompiledMethod(RubyModule implementationClass, SinglyLinkedList cref) {
-        pushRubyClass(implementationClass);
-        setCRef(cref);
-    }
-    
-    public void postCompiledMethod() {
-        popRubyClass();
-        unsetCRef();
     }
     
     // NEW! Push a scope into the frame, since this is now required to use it
@@ -770,7 +669,7 @@ public class ThreadContext {
             RubyModule implementationClass, RubyModule klazz, IRubyObject self, 
             String name, IRubyObject[] args, int req, boolean noSuper, 
             Block block, Object jumpTarget) {
-        pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
+        pushRubyClass(implementationClass);
         pushCallFrame(noSuper ? null : klazz, name, self, args, req, block, jumpTarget);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
@@ -787,7 +686,6 @@ public class ThreadContext {
     
     public void preInitBuiltinClasses(RubyClass objectClass, IRubyObject topSelf) {
         pushRubyClass(objectClass);
-        setCRef(objectClass.getCRef());
         
         Frame frame = getCurrentFrame();
         frame.setSelf(topSelf);
@@ -798,13 +696,11 @@ public class ThreadContext {
         pushCallFrame(null, null, self, IRubyObject.NULL_ARRAY, 0, Block.NULL_BLOCK, null);
         // set visibility to private, since toplevel of scripts always started out private
         setCurrentVisibility(Visibility.PRIVATE);
-        setCRef(rubyClass.getCRef());
     }
     
     public void postNodeEval() {
         popFrame();
         popRubyClass();
-        unsetCRef();
     }
     
     // XXX: Again, screwy evaling under previous frame's scope
@@ -812,15 +708,18 @@ public class ThreadContext {
         Frame frame = getCurrentFrame();
         
         pushRubyClass(executeUnderClass);
-        pushCRef(executeUnderClass);
+        DynamicScope scope = getCurrentScope();
+        StaticScope sScope = new BlockStaticScope(scope.getStaticScope());
+        sScope.setModule(executeUnderClass);
+        pushScope(new DynamicScope(sScope, scope));
         pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), frame.getArgs(), frame.getRequiredArgCount(), block, frame.getJumpTarget());
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     
     public void postExecuteUnder() {
         popFrame();
+        popScope();
         popRubyClass();
-        popCRef();
     }
     
     public void preMproc() {
@@ -847,7 +746,6 @@ public class ThreadContext {
     
     public void preForBlock(Block block, RubyModule klass) {
         pushFrame(block.getFrame());
-        setCRef(block.getCRef());
         getCurrentFrame().setVisibility(block.getVisibility());
         pushScope(block.getDynamicScope());
         pushRubyClass((klass != null) ? klass : block.getKlass());
@@ -855,7 +753,6 @@ public class ThreadContext {
     
     public void preYieldSpecificBlock(Block block, RubyModule klass) {
         pushFrame(block.getFrame());
-        setCRef(block.getCRef());
         getCurrentFrame().setVisibility(block.getVisibility());
         pushScope(block.getDynamicScope().cloneScope());
         pushRubyClass((klass != null) ? klass : block.getKlass());
@@ -866,7 +763,6 @@ public class ThreadContext {
         
         frame.setIsBindingFrame(true);
         pushFrame(frame);
-        setCRef(block.getCRef());
         getCurrentFrame().setVisibility(block.getVisibility());
         pushRubyClass(block.getKlass());
     }
@@ -874,14 +770,12 @@ public class ThreadContext {
     public void postEvalWithBinding(Block block) {
         block.getFrame().setIsBindingFrame(false);
         popFrameReal();
-        unsetCRef();
         popRubyClass();
     }
     
     public void postYield() {
         popScope();
         popFrameReal();
-        unsetCRef();
         popRubyClass();
     }
     

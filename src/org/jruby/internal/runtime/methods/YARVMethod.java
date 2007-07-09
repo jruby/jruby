@@ -40,7 +40,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.SinglyLinkedList;
 import org.jruby.ast.executable.YARVMachine;
 import org.jruby.ast.executable.ISeqPosition;
 import org.jruby.runtime.EventHook;
@@ -50,16 +49,14 @@ import org.jruby.runtime.EventHook;
  * @version $Revision: 1.2 $
  */
 public class YARVMethod extends DynamicMethod {
-    private SinglyLinkedList cref;
     private YARVMachine.InstructionSequence iseq;
     private StaticScope staticScope;
     private Arity arity;
 
-    public YARVMethod(RubyModule implementationClass, YARVMachine.InstructionSequence iseq, StaticScope staticScope, Visibility visibility, SinglyLinkedList cref) {
+    public YARVMethod(RubyModule implementationClass, YARVMachine.InstructionSequence iseq, StaticScope staticScope, Visibility visibility) {
         super(implementationClass, visibility);
         this.staticScope = staticScope;
         this.iseq = iseq;
-		this.cref = cref;
 
         boolean opts = iseq.args_arg_opts > 0 || iseq.args_rest > 0;
         boolean req = iseq.args_argc > 0;
@@ -79,7 +76,7 @@ public class YARVMethod extends DynamicMethod {
         
         Ruby runtime = context.getRuntime();
         
-        context.preDefMethodInternalCall(klazz, name, self, args, arity.required(), block, noSuper, cref, staticScope, this);
+        context.preDefMethodInternalCall(klazz, name, self, args, arity.required(), block, noSuper, staticScope, this);
         
         try {
             prepareArguments(context, runtime, args);
@@ -189,6 +186,6 @@ public class YARVMethod extends DynamicMethod {
     }
     
     public DynamicMethod dup() {
-        return new YARVMethod(getImplementationClass(), iseq, staticScope, getVisibility(), cref);
+        return new YARVMethod(getImplementationClass(), iseq, staticScope, getVisibility());
     }	
 }// YARVMethod

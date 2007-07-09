@@ -36,7 +36,6 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Visibility;
-import org.jruby.util.collections.SinglyLinkedList;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -49,7 +48,7 @@ public class DumpingInvocationMethodFactory extends MethodFactory implements Opc
     private final static String IRUB_ID = "Lorg/jruby/runtime/builtin/IRubyObject;";
     private final static String BLOCK_ID = "Lorg/jruby/runtime/Block;";
     private final static String COMPILED_CALL_SIG = "(Lorg/jruby/runtime/ThreadContext;" + IRUB_ID + "[" + IRUB_ID + BLOCK_ID + ")" + IRUB_ID;
-    private final static String COMPILED_SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ci(SinglyLinkedList.class) + ")V";
+    private final static String COMPILED_SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ")V";
 
     private String dumpPath;
     
@@ -113,7 +112,7 @@ public class DumpingInvocationMethodFactory extends MethodFactory implements Opc
         return runtime.getJRubyClassLoader().defineClass(name, code);
     }
 
-    private DynamicMethod getCompleteMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref, String sup) {
+    private DynamicMethod getCompleteMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, String sup) {
         String typePath = p(type);
         String mname = type.getName() + "Invoker" + method + arity;
         String mnamePath = typePath + "Invoker" + method + arity;
@@ -138,14 +137,14 @@ public class DumpingInvocationMethodFactory extends MethodFactory implements Opc
                 c = endCall(implementationClass.getRuntime(), cw,mv,mname);
             }
             
-            return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class, SinglyLinkedList.class}).newInstance(new Object[]{implementationClass,arity,visibility,cref});
+            return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class}).newInstance(new Object[]{implementationClass,arity,visibility});
         } catch(Exception e) {
             e.printStackTrace();
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
 
-    public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope scope) {
-        return getCompleteMethod(implementationClass,type,method,arity,visibility,cref,COMPILED_SUPER_CLASS);
+    public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, StaticScope scope) {
+        return getCompleteMethod(implementationClass,type,method,arity,visibility,COMPILED_SUPER_CLASS);
     }
 }// DumpingInvocationMethodFactory

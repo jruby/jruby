@@ -36,18 +36,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Block;
-import org.jruby.util.collections.SinglyLinkedList;
 
 public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
     private Arity arity;
-    private SinglyLinkedList cref;
     private StaticScope staticScope;
 //    private boolean needsImplementer;
     
-    public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope staticScope) {
+    public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope) {
     	super(implementationClass, visibility);
         this.arity = arity;
-        this.cref = cref;
         this.staticScope = staticScope;
         
         // CompiledMethod will eventually need this logic, since it will eventually compile module methods with super in them
@@ -69,7 +66,7 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
 //        }
         
         try {
-            context.preDefMethodInternalCall(klazz, name, self, args, arity.required(), block, noSuper, cref, staticScope, this);
+            context.preDefMethodInternalCall(klazz, name, self, args, arity.required(), block, noSuper, staticScope, this);
             // tracing doesn't really work (or make sense yet?) for AOT compiled code
 //            if(runtime.getTraceFunction() != null) {
 //                ISourcePosition position = context.getPosition();

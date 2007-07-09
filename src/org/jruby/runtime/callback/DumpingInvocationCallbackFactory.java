@@ -27,35 +27,21 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
-import java.io.File;
-import java.io.FileOutputStream;
-
 import org.jruby.Ruby;
 import org.jruby.util.JRubyClassLoader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 
 public class DumpingInvocationCallbackFactory extends InvocationCallbackFactory {
-    private String dumpPath;
-    
-    public DumpingInvocationCallbackFactory(Ruby runtime, Class type, JRubyClassLoader classLoader, String path) {
+    public DumpingInvocationCallbackFactory(Ruby runtime, Class type, JRubyClassLoader classLoader) {
         super(runtime, type, classLoader);
-        this.dumpPath = path;
     }
 
     protected Class endCall(ClassWriter cw, MethodVisitor mv, String name) {
         mv.visitEnd();
         cw.visitEnd();
         byte[] code = cw.toByteArray();
-//        String cname = name.replace('.','/');
-//        File f = new File(dumpPath,cname+".class");
-//        f.getParentFile().mkdirs();
-//        try {
-//            FileOutputStream fos = new FileOutputStream(f);
-//            fos.write(code);
-//            fos.close();
-//        } catch(Exception e) {
-//        }
+
         return classLoader.defineClass(name, code);
     }
 } //DumpingInvocationCallbackFactory

@@ -28,9 +28,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * A Block implemented using a Java-based BlockCallback implementation
@@ -43,16 +41,14 @@ public class CompiledBlock extends Block {
     public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope, CompiledBlockCallback callback) {
         this(self,
              context.getCurrentFrame().duplicate(),
-                context.peekCRef(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
                 dynamicScope, arity, callback);
     }
 
-    private CompiledBlock(IRubyObject self, Frame frame,
-        SinglyLinkedList cref, Visibility visibility, RubyModule klass,
+    private CompiledBlock(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
         DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback) {
-        super(null, self, frame, cref, visibility, klass, dynamicScope);
+        super(null, self, frame, visibility, klass, dynamicScope);
         this.arity = arity;
         this.callback = callback;
     }
@@ -91,7 +87,7 @@ public class CompiledBlock extends Block {
     }
 
     public Block cloneBlock() {
-        return new CompiledBlock(self, frame.duplicate(), cref, visibility, klass, 
+        return new CompiledBlock(self, frame.duplicate(), visibility, klass, 
                 dynamicScope.cloneScope(), arity, callback);
     }
 

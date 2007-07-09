@@ -39,8 +39,6 @@ import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -69,8 +67,6 @@ public class Parser {
     public Node parse(String file, Reader content, DynamicScope blockScope, int lineNumber, 
             boolean extraPositionInformation, boolean eOptionParse) {
         RubyParserConfiguration configuration = new RubyParserConfiguration(eOptionParse); 
-        SinglyLinkedList cref = runtime.getObject().getCRef();
-        ThreadContext tc = runtime.getCurrentContext();
 
         // We only need to pass in current scope if we are evaluating as a block (which
         // is only done for evals).  We need to pass this in so that we can appropriately scope
@@ -84,7 +80,6 @@ public class Parser {
         try {
             parser = RubyParserPool.getInstance().borrowParser();
             parser.setWarnings(runtime.getWarnings());
-            tc.setCRef(cref);
             LexerSource lexerSource = 
                 LexerSource.getSource(file, content, lineNumber, extraPositionInformation);
             result = parser.parse(configuration, lexerSource);
@@ -103,7 +98,6 @@ public class Parser {
             throw runtime.newSyntaxError(buffer.toString());
         } finally {
             RubyParserPool.getInstance().returnParser(parser);
-            tc.unsetCRef();
         }
         
         // If variables were added then we may need to grow the dynamic scope to match the static

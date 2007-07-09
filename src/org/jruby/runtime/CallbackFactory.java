@@ -142,7 +142,6 @@ public abstract class CallbackFactory {
 
     private static boolean reflection = false;
     private static boolean dumping = false;
-    private static String dumpingPath = null;
 
     static {
        if (Ruby.isSecurityRestricted())
@@ -153,7 +152,6 @@ public abstract class CallbackFactory {
            }
            if(System.getProperty("jruby.dump_invocations") != null) {
                dumping = true;
-               dumpingPath = System.getProperty("jruby.dump_invocations").toString();
            }
        }
     }
@@ -162,7 +160,7 @@ public abstract class CallbackFactory {
         if(reflection) {
             return new ReflectionCallbackFactory(type);
         } else if(dumping) {
-            return new DumpingInvocationCallbackFactory(runtime, type, runtime.getJRubyClassLoader(), dumpingPath);
+            return new DumpingInvocationCallbackFactory(runtime, type, runtime.getJRubyClassLoader());
         } else {
             return new InvocationCallbackFactory(runtime, type, runtime.getJRubyClassLoader());
         }
@@ -172,7 +170,7 @@ public abstract class CallbackFactory {
         if(reflection) {
             return new ReflectionCallbackFactory(type);
         } else if(dumping) {
-            return new DumpingInvocationCallbackFactory(runtime, type, (JRubyClassLoader)classLoader, dumpingPath);
+            return new DumpingInvocationCallbackFactory(runtime, type, (JRubyClassLoader)classLoader);
         } else {
             // FIXME: No, I don't like it.
             return new InvocationCallbackFactory(runtime, type, (JRubyClassLoader)classLoader);

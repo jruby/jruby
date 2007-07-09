@@ -56,6 +56,7 @@ import java.util.Random;
 import java.util.Stack;
 import java.util.WeakHashMap;
 import org.jruby.ast.Node;
+import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.YARVCompiledRunner;
 import org.jruby.common.RubyWarnings;
@@ -88,6 +89,7 @@ import org.jruby.ext.socket.RubySocket;
 import org.jruby.ext.Generator;
 import org.jruby.ext.Readline;
 import org.jruby.parser.Parser;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
@@ -98,7 +100,6 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
@@ -110,7 +111,6 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.MethodCache;
 import org.jruby.util.NormalizedFile;
-import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * The jruby runtime.
@@ -118,7 +118,7 @@ import org.jruby.util.collections.SinglyLinkedList;
 public final class Ruby {
     private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "yaml/syck", "jsignal" };
 
-    private CacheMap cacheMap = new CacheMap(this);
+    private CacheMap cacheMap = new CacheMap();
     private MethodCache methodCache = new MethodCache();
     private ThreadService threadService = new ThreadService(this);
     private Hashtable runtimeInformation;
@@ -321,7 +321,22 @@ public final class Ruby {
                 }
             
                 // FIXME: Pass something better for args and block here?
-                return script.run(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                try {
+                    DynamicScope scope = new DynamicScope(((RootNode)node).getStaticScope());
+
+                    StaticScope staticScope = scope.getStaticScope();
+
+                    if (staticScope.getModule() == null) {
+                        staticScope.setModule(getObject());
+                    }
+                    
+                    // Each root node has a top-level scope that we need to push
+                    getCurrentContext().preRootNode(scope);
+                    
+                    return script.run(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                } finally {
+                    getCurrentContext().postRootNode();
+                }
             } else {
                 return eval(node);
             }
@@ -471,26 +486,27 @@ public final class Ruby {
      *
      */
     public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator) {
-        return defineClassUnder(name, superClass, allocator, objectClass.getCRef());
+        return defineClassUnder(name, superClass, allocator, objectClass);
     }
 
-    public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+    public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, 
+            RubyModule parent) {
         if (superClass == null) superClass = objectClass;
 
-        return superClass.newSubClass(name, allocator, parentCRef, true);
+        return superClass.newSubClass(name, allocator, parent, true);
     }
 
     /** rb_define_module / rb_define_module_id
      *
      */
     public RubyModule defineModule(String name) {
-        return defineModuleUnder(name, objectClass.getCRef());
+        return defineModuleUnder(name, objectClass);
     }
 
-    public RubyModule defineModuleUnder(String name, SinglyLinkedList parentCRef) {
-        RubyModule newModule = RubyModule.newModule(this, name, parentCRef);
+    public RubyModule defineModuleUnder(String name, RubyModule parent) {
+        RubyModule newModule = RubyModule.newModule(this, name, parent);
 
-        ((RubyModule)parentCRef.getValue()).setConstant(name, newModule);
+        parent.setConstant(name, newModule);
 
         return newModule;
     }
@@ -715,7 +731,7 @@ public final class Ruby {
 
         objectClass = objectMetaClass;
         objectClass.setConstant("Object", objectClass);
-        RubyClass moduleClass = RubyClass.createBootstrapMetaClass(this, "Module", objectClass, RubyModule.MODULE_ALLOCATOR, objectClass.getCRef());
+        RubyClass moduleClass = RubyClass.createBootstrapMetaClass(this, "Module", objectClass, RubyModule.MODULE_ALLOCATOR, objectClass);
         objectClass.setConstant("Module", moduleClass);
         RubyClass classClass = RubyClass.newClassClass(this, moduleClass);
         objectClass.setConstant("Class", classClass);
@@ -725,9 +741,9 @@ public final class Ruby {
         objectClass.setMetaClass(classClass);
 
         // I don't think the containment is correct here (parent cref)
-        RubyClass metaClass = objectClass.makeMetaClass(classClass, objectMetaClass.getCRef());
-        metaClass = moduleClass.makeMetaClass(metaClass, objectMetaClass.getCRef());
-        metaClass = classClass.makeMetaClass(metaClass, objectMetaClass.getCRef());
+        RubyClass metaClass = objectClass.makeMetaClass(classClass, objectMetaClass);
+        metaClass = moduleClass.makeMetaClass(metaClass, objectMetaClass);
+        metaClass = classClass.makeMetaClass(metaClass, objectMetaClass);
 
         RubyModule.createModuleClass(this, moduleClass);
 

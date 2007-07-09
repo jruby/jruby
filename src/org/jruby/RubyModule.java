@@ -36,7 +36,6 @@
 package org.jruby;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -52,10 +51,10 @@ import org.jruby.internal.runtime.methods.MethodMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -67,7 +66,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.MethodCache;
-import org.jruby.util.collections.SinglyLinkedList;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
@@ -91,10 +89,7 @@ public class RubyModule extends RubyObject {
     public final int id;
 
     // Containing class...The parent of Object is null. Object should always be last in chain.
-    //public RubyModule parentModule;
-
-    // CRef...to eventually replace parentModule
-    public SinglyLinkedList cref;
+    public RubyModule parent;
 
     // ClassId is the name of the class/module sans where it is located.
     // If it is null, then it an anonymous class.
@@ -148,11 +143,11 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
-    protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, SinglyLinkedList parentCRef, String name) {
-        this(runtime, metaClass, superClass, parentCRef, name, runtime.isObjectSpaceEnabled());
+    protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parent, String name) {
+        this(runtime, metaClass, superClass, parent, name, runtime.isObjectSpaceEnabled());
     }
 
-    protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, SinglyLinkedList parentCRef, String name, boolean useObjectSpace) {
+    protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parent, String name, boolean useObjectSpace) {
         super(runtime, metaClass, useObjectSpace);
 
         this.superClass = superClass;
@@ -160,12 +155,12 @@ public class RubyModule extends RubyObject {
         setBaseName(name);
 
         // If no parent is passed in, it is safe to assume Object.
-        if (parentCRef == null) {
+        if (parent == null) {
             if (runtime.getObject() != null) {
-                parentCRef = runtime.getObject().getCRef();
+                parent = runtime.getObject();
             }
         }
-        this.cref = new SinglyLinkedList(this, parentCRef);
+        this.parent = parent;
 
         runtime.moduleLastId++;
         this.id = runtime.moduleLastId;
@@ -268,15 +263,11 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyModule getParent() {
-        if (cref.getNext() == null) {
-            return null;
-        }
-
-        return (RubyModule)cref.getNext().getValue();
+        return parent;
     }
 
-    public void setParent(RubyModule p) {
-        cref.setNext(p.getCRef());
+    public void setParent(RubyModule parent) {
+        this.parent = parent;
     }
 
     public Map getMethods() {
@@ -931,7 +922,7 @@ public class RubyModule extends RubyObject {
                 }
             }
             ObjectAllocator allocator = superClazz == null ? getRuntime().getObject().getAllocator() : superClazz.getAllocator();
-            return getRuntime().defineClassUnder(name, superClazz, allocator, cref);
+            return getRuntime().defineClassUnder(name, superClazz, allocator, this);
         } 
 
         if (!(type instanceof RubyClass)) {
@@ -950,7 +941,7 @@ public class RubyModule extends RubyObject {
         IRubyObject type = getInstanceVariable(name);
 
         if (type == null) {
-            return getRuntime().defineClassUnder(name, superClazz, allocator, cref);
+            return getRuntime().defineClassUnder(name, superClazz, allocator, this);
         }
 
         if (!(type instanceof RubyClass)) {
@@ -966,7 +957,7 @@ public class RubyModule extends RubyObject {
         IRubyObject type = getConstantAt(name);
 
         if (type == null) {
-            return getRuntime().defineModuleUnder(name, cref);
+            return getRuntime().defineModuleUnder(name, this);
         }
 
         if (!(type instanceof RubyModule)) {
@@ -1217,12 +1208,12 @@ public class RubyModule extends RubyObject {
         return newModule(runtime, type, name, null);
     }
 
-    public static RubyModule newModule(Ruby runtime, String name, SinglyLinkedList parentCRef) {
-        return newModule(runtime, runtime.getClass("Module"), name, parentCRef);
+    public static RubyModule newModule(Ruby runtime, String name, RubyModule parent) {
+        return newModule(runtime, runtime.getClass("Module"), name, parent);
     }
 
-    public static RubyModule newModule(Ruby runtime, RubyClass type, String name, SinglyLinkedList parentCRef) {
-        RubyModule module = new RubyModule(runtime, type, null, parentCRef, name);
+    public static RubyModule newModule(Ruby runtime, RubyClass type, String name, RubyModule parent) {
+        RubyModule module = new RubyModule(runtime, type, null, parent, name);
         
         return module;
     }
@@ -1298,7 +1289,7 @@ public class RubyModule extends RubyObject {
     }
 
     protected IRubyObject doClone() {
-        return RubyModule.newModule(getRuntime(), null, cref.getNext());
+        return RubyModule.newModule(getRuntime(), null, parent);
     }
 
     /** rb_mod_init_copy
@@ -1943,10 +1934,6 @@ public class RubyModule extends RubyObject {
         return result;
     }
 
-    public SinglyLinkedList getCRef() {
-        return cref;
-    }
-    
     /* Module class methods */
     
     /** 
@@ -1955,11 +1942,11 @@ public class RubyModule extends RubyObject {
     public static RubyArray nesting(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyModule object = runtime.getObject();
-        SinglyLinkedList base = runtime.getCurrentContext().peekCRef();
+        StaticScope scope = runtime.getCurrentContext().getCurrentScope().getStaticScope();
         RubyArray result = runtime.newArray();
         
-        for (SinglyLinkedList current = base; current.getValue() != object; current = current.getNext()) {
-            result.append((RubyModule)current.getValue());
+        for (StaticScope current = scope; current.getModule() != object; current = current.getPreviousCRefScope()) {
+            result.append(current.getModule());
         }
         
         return result;

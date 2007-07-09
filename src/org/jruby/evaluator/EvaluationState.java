@@ -156,7 +156,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
-import org.jruby.util.collections.SinglyLinkedList;
 
 public class EvaluationState {
     public static IRubyObject eval(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
@@ -401,13 +400,12 @@ public class EvaluationState {
 
     private static IRubyObject aliasNode(Ruby runtime, ThreadContext context, Node node) {
         AliasNode iVisited = (AliasNode) node;
+        RubyModule module = context.getRubyClass();
    
-        if (context.getRubyClass() == null) {
-            throw runtime.newTypeError("no class to make alias");
-        }
+        if (module == null) throw runtime.newTypeError("no class to make alias");
    
-        context.getRubyClass().defineAlias(iVisited.getNewName(), iVisited.getOldName());
-        context.getRubyClass().callMethod(context, "method_added", runtime.newSymbol(iVisited.getNewName()));
+        module.defineAlias(iVisited.getNewName(), iVisited.getOldName());
+        module.callMethod(context, "method_added", runtime.newSymbol(iVisited.getNewName()));
    
         return runtime.getNil();
     }
@@ -682,8 +680,11 @@ public class EvaluationState {
         String name = ((INameNode) classNameNode).getName();
         RubyModule enclosingClass = getEnclosingModule(runtime, context, classNameNode, self, aBlock);
         RubyClass rubyClass = enclosingClass.defineOrGetClassUnder(name, superClass);
+        
+        StaticScope scope = iVisited.getScope();
+        scope.setModule(rubyClass);
    
-        return evalClassDefinitionBody(runtime, context, iVisited.getScope(), iVisited.getBodyNode(), rubyClass, self, aBlock);
+        return evalClassDefinitionBody(runtime, context, scope, iVisited.getBodyNode(), rubyClass, self, aBlock);
     }
 
     private static IRubyObject classVarAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -691,9 +692,8 @@ public class EvaluationState {
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
         RubyModule rubyClass = getClassVariableBase(context, runtime);
    
-        if (rubyClass == null) {
-            rubyClass = self.getMetaClass();
-        }     
+        if (rubyClass == null) rubyClass = self.getMetaClass();
+
         rubyClass.setClassVar(iVisited.getName(), result);
    
         return result;
@@ -701,11 +701,12 @@ public class EvaluationState {
 
     private static IRubyObject classVarDeclNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         ClassVarDeclNode iVisited = (ClassVarDeclNode) node;
-   
-        RubyModule rubyClass = getClassVariableBase(context, runtime);                
+        RubyModule rubyClass = getClassVariableBase(context, runtime);
+        
         if (rubyClass == null) {
             throw runtime.newTypeError("no class/module to define class variable");
         }
+        
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
         rubyClass.setClassVar(iVisited.getName(), result);
    
@@ -716,9 +717,7 @@ public class EvaluationState {
         ClassVarNode iVisited = (ClassVarNode) node;
         RubyModule rubyClass = getClassVariableBase(context, runtime);
    
-        if (rubyClass == null) {
-            rubyClass = self.getMetaClass();
-        }
+        if (rubyClass == null) rubyClass = self.getMetaClass();
 
         return rubyClass.getClassVar(iVisited.getName());
     }
@@ -806,8 +805,11 @@ public class EvaluationState {
             visibility = Visibility.PRIVATE;
         }
         
-        DefaultMethod newMethod = new DefaultMethod(containingClass, iVisited.getScope(), 
-                iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), visibility, context.peekCRef());
+        StaticScope scope = iVisited.getScope();
+        scope.determineModule();
+        
+        DefaultMethod newMethod = new DefaultMethod(containingClass, scope, 
+                iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), visibility);
    
         containingClass.addMethod(name, newMethod);
    
@@ -863,10 +865,12 @@ public class EvaluationState {
                 throw runtime.newSecurityError("Redefining method prohibited.");
             }
         }
-   
-        DefaultMethod newMethod = new DefaultMethod(rubyClass, iVisited.getScope(), 
-                iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), 
-                Visibility.PUBLIC, context.peekCRef());
+        
+        StaticScope scope = iVisited.getScope();
+        scope.determineModule();
+      
+        DefaultMethod newMethod = new DefaultMethod(rubyClass, scope, iVisited.getBodyNode(), 
+                (ArgsNode) iVisited.getArgsNode(), Visibility.PUBLIC);
    
         rubyClass.addMethod(iVisited.getName(), newMethod);
         receiver.callMethod(context, "singleton_method_added", runtime.newSymbol(iVisited.getName()));
@@ -1270,7 +1274,11 @@ public class EvaluationState {
         } else {
             module = enclosingModule.defineModuleUnder(name);
         }
-        return evalClassDefinitionBody(runtime, context, iVisited.getScope(), iVisited.getBodyNode(), module, self, aBlock);
+        
+        StaticScope scope = iVisited.getScope();
+        scope.setModule(module);        
+        
+        return evalClassDefinitionBody(runtime, context, scope, iVisited.getBodyNode(), module, self, aBlock);
     }
 
     private static IRubyObject multipleAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1577,10 +1585,15 @@ public class EvaluationState {
             scope = new DynamicScope(iVisited.getStaticScope());
         }
         
+        StaticScope staticScope = scope.getStaticScope();
+        
         // Each root node has a top-level scope that we need to push
         context.preRootNode(scope);
         
         // FIXME: Wire up BEGIN and END nodes
+        if (staticScope.getModule() == null) {
+            staticScope.setModule(runtime.getObject());
+        }
 
         try {
             return evalInternal(runtime, context, iVisited.getBodyNode(), self, aBlock);
@@ -1611,7 +1624,10 @@ public class EvaluationState {
             singletonClass = receiver.getSingletonClass();
         }
 
-        return evalClassDefinitionBody(runtime, context, iVisited.getScope(), iVisited.getBodyNode(), singletonClass, self, aBlock);
+        StaticScope scope = iVisited.getScope();
+        scope.setModule(singletonClass);
+        
+        return evalClassDefinitionBody(runtime, context, scope, iVisited.getBodyNode(), singletonClass, self, aBlock);
     }
 
     private static IRubyObject splatNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1659,13 +1675,13 @@ public class EvaluationState {
     
     private static IRubyObject undefNode(Ruby runtime, ThreadContext context, Node node) {
         UndefNode iVisited = (UndefNode) node;
-        
+        RubyModule module = context.getRubyClass();
    
-        if (context.getRubyClass() == null) {
-            throw runtime
-                    .newTypeError("No class to undef method '" + iVisited.getName() + "'.");
+        if (module == null) {
+            throw runtime.newTypeError("No class to undef method '" + iVisited.getName() + "'.");
         }
-        context.getRubyClass().undef(iVisited.getName());
+        
+        module.undef(iVisited.getName());
    
         return runtime.getNil();
     }
@@ -1886,10 +1902,14 @@ public class EvaluationState {
         
         if (blockNode instanceof IterNode) {
             IterNode iterNode = (IterNode) blockNode;
+
+            StaticScope scope = iterNode.getScope();
+            scope.determineModule();
+            
             // Create block for this iter node
             // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
-            return Block.createBlock(context, iterNode,
-                    new DynamicScope(iterNode.getScope(), context.getCurrentScope()), self);
+            return Block.createBlock(context, iterNode, 
+                    new DynamicScope(scope, context.getCurrentScope()), self);
         } else if (blockNode instanceof BlockPassNode) {
             BlockPassNode blockPassNode = (BlockPassNode) blockNode;
             IRubyObject proc = evalInternal(runtime,context, blockPassNode.getBodyNode(), self, currentBlock);
@@ -1925,12 +1945,12 @@ public class EvaluationState {
     /* Something like cvar_cbase() from eval.c, factored out for the benefit
      * of all the classvar-related node evaluations */
     public static RubyModule getClassVariableBase(ThreadContext context, Ruby runtime) {
-        SinglyLinkedList cref = context.peekCRef();
-        RubyModule rubyClass = (RubyModule) cref.getValue();
+        StaticScope scope = context.getCurrentScope().getStaticScope();
+        RubyModule rubyClass = scope.getModule();
         if (rubyClass.isSingleton()) {
-            cref = cref.getNext();
-            rubyClass = (RubyModule) cref.getValue();
-            if (cref.getNext() == null) {
+            scope = scope.getPreviousCRefScope();
+            rubyClass = scope.getModule();
+            if (scope.getPreviousCRefScope() == null) {
                 runtime.getWarnings().warn("class variable access from toplevel singleton method");
             }            
         }
@@ -2003,16 +2023,18 @@ public class EvaluationState {
             
         case NodeTypes.CLASSVARNODE: {
             ClassVarNode iVisited = (ClassVarNode) node;
+            //RubyModule module = context.getRubyClass();
+            RubyModule module = context.getCurrentScope().getStaticScope().getModule();
             
-            if (context.getRubyClass() == null && self.getMetaClass().isClassVarDefined(iVisited.getName())) {
+            if (module == null && self.getMetaClass().isClassVarDefined(iVisited.getName())) {
                 return "class_variable";
-            } else if (!context.getRubyClass().isSingleton() && context.getRubyClass().isClassVarDefined(iVisited.getName())) {
+            } else if (!module.isSingleton() && module.isClassVarDefined(iVisited.getName())) {
                 return "class_variable";
             } 
             
-            IRubyObject attached =  context.getRubyClass().getInstanceVariable("__attached__");
+            IRubyObject attached =  module.getInstanceVariable("__attached__");
             if (attached instanceof RubyModule) {
-                RubyModule module = (RubyModule)attached;
+                module = (RubyModule)attached;
                 if (module.isClassVarDefined(iVisited.getName())) return "class_variable"; 
             }
 
@@ -2129,7 +2151,7 @@ public class EvaluationState {
         }
 
         if (enclosingModule == null) {
-            enclosingModule = (RubyModule) context.peekCRef().getValue();
+            enclosingModule = (RubyModule) context.getCurrentScope().getStaticScope().getModule();
         }
 
         return enclosingModule;

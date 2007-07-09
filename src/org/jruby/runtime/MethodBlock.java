@@ -38,7 +38,6 @@ import org.jruby.RubyProc;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
-import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
@@ -59,7 +58,6 @@ public class MethodBlock extends Block{
      * frame of method which defined this block
      */
     protected final Frame frame;
-    private final SinglyLinkedList cref;
     private Visibility visibility;
     private final RubyModule klass;
     
@@ -80,7 +78,6 @@ public class MethodBlock extends Block{
     public static MethodBlock createMethodBlock(ThreadContext context, DynamicScope dynamicScope, Callback callback, RubyMethod method, IRubyObject self) {
         return new MethodBlock(self,
                                context.getCurrentFrame().duplicate(),
-                         context.peekCRef(),
                          context.getCurrentFrame().getVisibility(),
                          context.getRubyClass(),
                          dynamicScope,
@@ -88,15 +85,13 @@ public class MethodBlock extends Block{
                          method);
     }
 
-    public MethodBlock(IRubyObject self, Frame frame,
-        SinglyLinkedList cref, Visibility visibility, RubyModule klass,
+    public MethodBlock(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
         DynamicScope dynamicScope, Callback callback, RubyMethod method) {
 
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
         this.klass = klass;
-        this.cref = cref;
         this.dynamicScope = dynamicScope;
         this.callback = callback;
         this.method = method;
@@ -166,7 +161,7 @@ public class MethodBlock extends Block{
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
         // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        Block newBlock = new MethodBlock(self, frame.duplicate(), cref, visibility, klass, 
+        Block newBlock = new MethodBlock(self, frame.duplicate(), visibility, klass, 
                 dynamicScope.cloneScope(), callback, method);
         
         newBlock.isLambda = isLambda;
@@ -193,10 +188,6 @@ public class MethodBlock extends Block{
     
     public void setSelf(IRubyObject self) {
         this.self = self;
-    }
-
-    public SinglyLinkedList getCRef() {
-        return cref;
     }
 
     /**

@@ -41,21 +41,20 @@ public class CallBlock extends Block {
     private BlockCallback callback;
     private IRubyObject self;
     private RubyModule imClass;
-    private ThreadContext tc;
+    private ThreadContext context;
 
-    public CallBlock(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext ctx) {
+    public CallBlock(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
         super(null,
                 self,
-              ctx.getCurrentFrame().duplicate(),
-                ctx.peekCRef(),
+                context.getCurrentFrame().duplicate(),
                 Visibility.PUBLIC,
-                ctx.getRubyClass(),
-                ctx.getCurrentScope());
+                context.getRubyClass(),
+                context.getCurrentScope());
         this.arity = arity;
         this.callback = callback;
         this.self = self;
         this.imClass = imClass;
-        this.tc = ctx;
+        this.context = context;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
@@ -109,7 +108,7 @@ public class CallBlock extends Block {
     }
 
     public Block cloneBlock() {
-        return new CallBlock(self,imClass,arity,callback,tc);
+        return new CallBlock(self,imClass,arity,callback,context);
     }
 
     public Arity arity() {

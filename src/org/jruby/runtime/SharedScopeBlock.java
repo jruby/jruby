@@ -30,7 +30,6 @@ package org.jruby.runtime;
 import org.jruby.RubyModule;
 import org.jruby.ast.IterNode;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * Represents the live state of a for or END construct in Ruby.  This is different from an
@@ -41,15 +40,13 @@ import org.jruby.util.collections.SinglyLinkedList;
  */
 public class SharedScopeBlock extends Block {
     private SharedScopeBlock(IterNode iterNode, IRubyObject self, Frame frame,
-            SinglyLinkedList cref, Visibility visibility, RubyModule klass,
-            DynamicScope dynamicScope) {
-        super(iterNode, self, frame, cref, visibility, klass, dynamicScope);
+            Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
+        super(iterNode, self, frame, visibility, klass, dynamicScope);
     }
     
     public static Block createSharedScopeBlock(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
         return new SharedScopeBlock(iterNode, self,
                                     context.getCurrentFrame().duplicate(),
-                context.peekCRef(),
                 context.getCurrentFrame().getVisibility(),
                 context.getRubyClass(),
                 dynamicScope);

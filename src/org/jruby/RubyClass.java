@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.util.Map;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
@@ -42,7 +41,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  *
@@ -112,12 +110,12 @@ public class RubyClass extends RubyModule {
         this(runtime, metaClass, superClass, allocator, null, null);
     }
     
-    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name) {
-        this (runtime, metaClass, superClass, allocator, parentCRef, name, runtime.isObjectSpaceEnabled());
+    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, RubyModule parent, String name) {
+        this (runtime, metaClass, superClass, allocator, parent, name, runtime.isObjectSpaceEnabled());
     }
     
-    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name, boolean useObjectSpace) {
-        super(runtime, metaClass, superClass, parentCRef, name, useObjectSpace);
+    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, RubyModule parent, String name, boolean useObjectSpace) {
+        super(runtime, metaClass, superClass, parent, name, useObjectSpace);
         this.allocator = allocator;
         this.runtime = runtime;
         
@@ -137,8 +135,8 @@ public class RubyClass extends RubyModule {
      * @return a half-baked meta class for object
      */
     public static RubyClass createBootstrapMetaClass(Ruby runtime, String className, 
-            RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList cref) {
-        RubyClass objectClass = new RubyClass(runtime, null, superClass, allocator, cref, className);
+            RubyClass superClass, ObjectAllocator allocator, RubyModule parent) {
+        RubyClass objectClass = new RubyClass(runtime, null, superClass, allocator, parent, className);
         
         return objectClass;
     }
@@ -146,7 +144,7 @@ public class RubyClass extends RubyModule {
     public int getNativeTypeIndex() {
         return ClassIndex.CLASS;
     }
-    
+
     public final IRubyObject allocate() {
         return getAllocator().allocate(getRuntime(), this);
     }
@@ -253,12 +251,12 @@ public class RubyClass extends RubyModule {
         return this;
     }
 
-    public static RubyClass newClass(Ruby runtime, RubyClass superClass, SinglyLinkedList parentCRef, String name) {
-        return new RubyClass(runtime, runtime.getClass("Class"), superClass, superClass.getAllocator(), parentCRef, name);
+    public static RubyClass newClass(Ruby runtime, RubyClass superClass, RubyModule parent, String name) {
+        return new RubyClass(runtime, runtime.getClass("Class"), superClass, superClass.getAllocator(), parent, name);
     }
 
-    public static RubyClass cloneClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name) {
-        return new RubyClass(runtime, metaClass, superClass, allocator, parentCRef, name);
+    public static RubyClass cloneClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, RubyModule parent, String name) {
+        return new RubyClass(runtime, metaClass, superClass, allocator, parent, name);
     }
 
     /** Create a new subclass of this class.
@@ -307,7 +305,7 @@ public class RubyClass extends RubyModule {
         ThreadContext tc = runtime.getCurrentContext();
         // use allocator of superclass, since this will be a pure Ruby class
         RubyClass newClass = superClass.newSubClass(null, superClass.getAllocator(), 
-                tc.peekCRef(), invokeInherited, true);
+                tc.getCurrentScope().getStaticScope().getModule(), invokeInherited, true);
 
         // call "initialize" method
         newClass.callInit(args, block);
@@ -353,7 +351,7 @@ public class RubyClass extends RubyModule {
     }
 
     public RubyClass newSubClass(String name, ObjectAllocator allocator,
-            SinglyLinkedList parentCRef, boolean invokeInherited, boolean warnOnRedefinition) {
+            RubyModule parent, boolean invokeInherited, boolean warnOnRedefinition) {
         RubyClass classClass = runtime.getClass("Class");
         
         // Cannot subclass 'Class' or metaclasses
@@ -363,9 +361,9 @@ public class RubyClass extends RubyModule {
             throw runtime.newTypeError("can't make subclass of virtual class");
         }
 
-        RubyClass newClass = new RubyClass(runtime, classClass, this, allocator, parentCRef, name);
+        RubyClass newClass = new RubyClass(runtime, classClass, this, allocator, parent, name);
 
-        newClass.makeMetaClass(getMetaClass(), newClass.getCRef());
+        newClass.makeMetaClass(getMetaClass(), newClass);
         
         if (invokeInherited) {
             newClass.inheritedBy(this);
@@ -373,17 +371,17 @@ public class RubyClass extends RubyModule {
 
         if(null != name) {
             if (warnOnRedefinition) {
-                ((RubyModule)parentCRef.getValue()).setConstant(name, newClass);
+                parent.setConstant(name, newClass);
             } else {
-                ((RubyModule)parentCRef.getValue()).setInstanceVariable(name, newClass);
+                parent.setInstanceVariable(name, newClass);
             }
         }
 
         return newClass;
     }
     public RubyClass newSubClass(String name, ObjectAllocator allocator, 
-            SinglyLinkedList parentCRef, boolean warnOnRedefinition) {
-        return newSubClass(name,allocator,parentCRef,true, warnOnRedefinition);
+            RubyModule parent, boolean warnOnRedefinition) {
+        return newSubClass(name, allocator, parent, true, warnOnRedefinition);
     }
     
     

@@ -32,12 +32,12 @@ package org.jruby;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.SinglyLinkedList;
 
 public class MetaClass extends RubyClass {
 
-    public MetaClass(Ruby runtime, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
-        super(runtime, runtime.getClass("Class"), superClass, allocator, parentCRef, null, false);
+    public MetaClass(Ruby runtime, RubyClass superClass, ObjectAllocator allocator, 
+            RubyModule parent) {
+        super(runtime, runtime.getClass("Class"), superClass, allocator, parent, null, false);
         
         this.index = ClassIndex.CLASS;
     }

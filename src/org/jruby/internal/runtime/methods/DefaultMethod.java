@@ -35,9 +35,7 @@ package org.jruby.internal.runtime.methods;
 import java.util.ArrayList;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBinding;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
@@ -61,7 +59,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
-import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  *
@@ -71,7 +68,6 @@ public final class DefaultMethod extends DynamicMethod {
     private StaticScope staticScope;
     private Node body;
     private ArgsNode argsNode;
-    private SinglyLinkedList cref;
     private int callCount = 0;
     private Script jitCompiledScript;
     private int expectedArgsCount;
@@ -80,18 +76,17 @@ public final class DefaultMethod extends DynamicMethod {
     private boolean needsImplementer;
 
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
-            ArgsNode argsNode, Visibility visibility, SinglyLinkedList cref) {
+            ArgsNode argsNode, Visibility visibility) {
         super(implementationClass, visibility);
         this.body = body;
         this.staticScope = staticScope;
         this.argsNode = argsNode;
-        this.cref = cref;
         this.expectedArgsCount = argsNode.getArgsCount();
         this.restArg = argsNode.getRestArg();
         this.hasOptArgs = argsNode.getOptArgs() != null;
-
-        assert argsNode != null;
-        
+		
+		assert argsNode != null;
+    
         if (implementationClass != null) {
             needsImplementer = !implementationClass.isClass();
         }
@@ -112,33 +107,33 @@ public final class DefaultMethod extends DynamicMethod {
             implementer = getImplementationClass();
         }
         
-        context.preDefMethodInternalCall(implementer, name, self, args, getArity().required(), block, noSuper, cref, staticScope, this);
+        context.preDefMethodInternalCall(implementer, name, self, args, getArity().required(), block, noSuper, staticScope, this);
         
         try {
-            Ruby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
+        
+        if (runtime.getInstanceConfig().isJitEnabled()) {
+            runJIT(runtime, context, name);
+        }
 
-            if (runtime.getInstanceConfig().isJitEnabled()) {
-                runJIT(runtime, context, name);
-            }
-
-            try {
-                if (jitCompiledScript != null && !runtime.hasEventHooks()) {
-                    return jitCompiledScript.run(context, self, args, block);
-                } else {
-                    if (argsNode.getBlockArgNode() != null) {
-                        CompilerHelpers.processBlockArgument(runtime, context, block, argsNode.getBlockArgNode().getCount());
-                    }
-
-                    getArity().checkArity(runtime, args);
-
-                    prepareArguments(context, runtime, args);
-
-                    if (runtime.hasEventHooks()) {
-                        traceCall(context, runtime, name);
-                    }
-
-                    return EvaluationState.eval(runtime, context, body, self, block);
+        try {
+            if (jitCompiledScript != null && !runtime.hasEventHooks()) {
+                return jitCompiledScript.run(context, self, args, block);
+            } else {
+                if (argsNode.getBlockArgNode() != null) {
+                    CompilerHelpers.processBlockArgument(runtime, context, block, argsNode.getBlockArgNode().getCount());
                 }
+                
+                getArity().checkArity(runtime, args);
+                
+                prepareArguments(context, runtime, args);
+                
+                if (runtime.hasEventHooks()) {
+                    traceCall(context, runtime, name);
+                }
+                
+                return EvaluationState.eval(runtime, context, body, self, block);
+            }
             } catch (JumpException.ReturnJump rj) {
                     if (rj.getTarget() == this) {
                     return (IRubyObject) rj.getValue();
@@ -146,14 +141,14 @@ public final class DefaultMethod extends DynamicMethod {
                 throw rj;
             } catch (JumpException.RedoJump rj) {
                 throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
-            } finally {
-                if (runtime.hasEventHooks()) {
-                    traceReturn(context, runtime, name);
-                }
+        } finally {
+            if (runtime.hasEventHooks()) {
+                traceReturn(context, runtime, name);
             }
+        }
         } finally {
             context.postDefMethodInternalCall();
-        }
+    }
     }
 
     private void runJIT(Ruby runtime, ThreadContext context, String name) {
@@ -345,6 +340,6 @@ public final class DefaultMethod extends DynamicMethod {
     }
     
     public DynamicMethod dup() {
-        return new DefaultMethod(getImplementationClass(), staticScope, body, argsNode, getVisibility(), cref);
+        return new DefaultMethod(getImplementationClass(), staticScope, body, argsNode, getVisibility());
     }
 }

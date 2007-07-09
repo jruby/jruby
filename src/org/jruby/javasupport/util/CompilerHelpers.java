@@ -10,7 +10,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.evaluator.EvaluationState;
-import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.parser.BlockStaticScope;
@@ -27,7 +26,6 @@ import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * Helper methods which are called by the compiler.  Note: These will show no consumers, but
@@ -41,6 +39,7 @@ public class CompilerHelpers {
             String[] staticScopeNames, CompiledBlockCallback callback) {
         StaticScope staticScope = 
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
+        staticScope.determineModule();
         
         return new CompiledBlock(context, self, Arity.createArity(arity), 
                 new DynamicScope(staticScope, context.getCurrentScope()), callback);
@@ -59,18 +58,18 @@ public class CompilerHelpers {
             runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
         }
         
-        SinglyLinkedList cref = context.peekCRef();
-        StaticScope scope = new LocalStaticScope(null, scopeNames);
+        StaticScope scope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), scopeNames);
+        scope.determineModule();
         
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method;
         
         if (name == "initialize" || visibility.isModuleFunction()) {
             method = factory.getCompiledMethod(containingClass, compiledClass, javaName, 
-                    Arity.createArity(arity), Visibility.PRIVATE, cref, scope);
+                    Arity.createArity(arity), Visibility.PRIVATE, scope);
         } else {
             method = factory.getCompiledMethod(containingClass, compiledClass, javaName, 
-                    Arity.createArity(arity), visibility, cref, scope);
+                    Arity.createArity(arity), visibility, scope);
         }
         
         containingClass.addMethod(name, method);
@@ -183,7 +182,7 @@ public class CompilerHelpers {
     
     public static RubyModule prepareClassNamespace(ThreadContext context, IRubyObject rubyModule) {
         if (rubyModule == null || rubyModule.isNil()) {
-            rubyModule = (RubyModule) context.peekCRef().getValue();
+            rubyModule = context.getCurrentScope().getStaticScope().getModule();
             
             if (rubyModule == null) {
                 throw context.getRuntime().newTypeError("no outer class/module");

@@ -32,7 +32,6 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
-import org.jruby.RubyBinding;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;

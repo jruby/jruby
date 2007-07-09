@@ -151,12 +151,12 @@ public class AssignmentVisitor {
         IRubyObject module;
 
         if (constNode == null) {
-            // FIXME: why do we check RubyClass and then use CRef?
-            if (context.getRubyClass() == null) {
+            module = context.getCurrentScope().getStaticScope().getModule();
+            
+            if (module == null) {
                 // TODO: wire into new exception handling mechanism
                 throw runtime.newTypeError("no class/module to define constant");
             }
-            module = (RubyModule) context.peekCRef().getValue();
         } else if (constNode instanceof Colon2Node) {
             module = EvaluationState.eval(runtime, context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, block);
         } else { // Colon3

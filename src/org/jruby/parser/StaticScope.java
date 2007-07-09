@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2006-2007 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,15 +29,35 @@ package org.jruby.parser;
 
 import java.io.Serializable;
 
+import org.jruby.RubyModule;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.DynamicScope;
 
+/**
+ * StaticScope represents lexical scoping of variables and module/class constants.
+ * 
+ * At a very high level every scopes enclosing scope contains variables in the next outer
+ * lexical layer.  The enclosing scopes variables may or may not be reachable depending
+ * on the scoping rules for variables (governed by BlockStaticScope and LocalStaticScope).
+ * 
+ * StaticScope also keeps track of current module/class that is in scope.  previousCRefScope
+ * will point to the previous scope of the enclosing module/class (cref).
+ * 
+ */
 public abstract class StaticScope implements Serializable {
     private static final long serialVersionUID = 4843861446986961013L;
     
+    // Next immediate scope.  Variable and constant scoping rules make use of this variable
+    // in different ways.
     private StaticScope enclosingScope;
+    
+    // Live reference to module
+    private transient RubyModule cref = null;
+    
+    // Next CRef down the lexical structure
+    private StaticScope previousCRefScope = null;
     
     // Our name holder (offsets are assigned as variables are added
     private String[] variableNames;
@@ -175,4 +195,54 @@ public abstract class StaticScope implements Serializable {
      * @return localScope
      */
     public abstract StaticScope getLocalScope();
+    
+    /**
+     * Get the live CRef module associated with this scope.
+     * 
+     * @return the live module
+     */
+    public RubyModule getModule() {
+        return cref;
+    }
+    
+    public StaticScope getPreviousCRefScope() {
+        return previousCRefScope;
+    }
+
+    public void setModule(RubyModule module) {
+        this.cref = module;
+        
+        if (previousCRefScope == null) {
+            for (StaticScope scope = getEnclosingScope(); scope != null; scope = scope.getEnclosingScope()) {
+                if (scope.cref != null) {
+                    previousCRefScope = scope;
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * Update current scoping structure to populate with proper cref scoping values.  This should
+     * be called at any point when you reference a scope for the first time.  For the interpreter
+     * this is done in a small number of places (defnNode, defsNode, and getBlock).  The compiler
+     * does this in the same places.
+     *
+     * @return the current cref, though this is largely an implementation detail
+     */
+    public RubyModule determineModule() {
+        if (cref == null) {
+            StaticScope scope = getEnclosingScope();
+            
+            assert scope != null : "Scope is always created before determine happens";
+
+            cref = scope.determineModule();
+            
+            assert cref != null : "CRef is always created before determine happens";
+            
+            previousCRefScope = scope.previousCRefScope;
+        }
+        
+        return cref;
+    }
 }

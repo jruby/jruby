@@ -45,7 +45,6 @@ import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
@@ -84,7 +83,6 @@ public class Block {
      * frame of method which defined this block
      */
     protected Frame frame;
-    protected SinglyLinkedList cref;
     protected Visibility visibility;
     protected RubyModule klass;
     
@@ -108,19 +106,17 @@ public class Block {
         return new Block(iterNode,
                          self,
                          context.getCurrentFrame(),
-                         context.peekCRef(),
                          context.getCurrentFrame().getVisibility(),
                          context.getRubyClass(),
                          dynamicScope);
     }
     
     protected Block() {
-        this(null, null, null, null, null, null, null);
+        this(null, null, null, null, null, null);
     }
 
     public Block(IterNode iterNode, IRubyObject self, Frame frame,
-        SinglyLinkedList cref, Visibility visibility, RubyModule klass,
-        DynamicScope dynamicScope) {
+        Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
     	
         //assert method != null;
 
@@ -129,7 +125,6 @@ public class Block {
         this.frame = frame;
         this.visibility = visibility;
         this.klass = klass;
-        this.cref = cref;
         this.dynamicScope = dynamicScope;
         this.arity = iterNode == null ? null : Arity.procArityOf(iterNode.getVarNode());
     }
@@ -167,7 +162,7 @@ public class Block {
         } 
         
         // FIXME: Ruby also saves wrapper, which we do not
-        return new Block(null, frame.getSelf(), frame.duplicate(), context.peekCRef(), frame.getVisibility(), 
+        return new Block(null, frame.getSelf(), frame.duplicate(), frame.getVisibility(), 
                 context.getBindingRubyClass(), extraScope);
     }
 
@@ -291,7 +286,7 @@ public class Block {
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
         // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        Block newBlock = new Block(iterNode, self, frame.duplicate(), cref, visibility, klass, 
+        Block newBlock = new Block(iterNode, self, frame.duplicate(), visibility, klass, 
                 dynamicScope.cloneScope());
         
         newBlock.isLambda = isLambda;
@@ -318,10 +313,6 @@ public class Block {
     
     public void setSelf(IRubyObject self) {
         this.self = self;
-    }
-
-    public SinglyLinkedList getCRef() {
-        return cref;
     }
 
     /**

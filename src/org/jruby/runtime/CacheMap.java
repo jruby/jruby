@@ -30,7 +30,6 @@ package org.jruby.runtime;
 import java.util.WeakHashMap;
 import java.util.Iterator;
 import java.util.Map;
-import org.jruby.Ruby;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -53,11 +52,6 @@ import org.jruby.util.WeakIdentityHashMap;
  */
 public class CacheMap {
 	private final Map mappings = new WeakHashMap();
-    private final Ruby runtime;
-    
-    public CacheMap(Ruby runtime) {
-        this.runtime = runtime;
-    }
     
     /**
      * Add another class to the list of classes which are caching the method.

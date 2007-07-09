@@ -181,7 +181,7 @@ public class YARVMachine {
                 break;
             }
             case YARVInstructions.SETCLASSVARIABLE: {
-                RubyModule rubyClass = (RubyModule) context.peekCRef().getValue();
+                RubyModule rubyClass = context.getCurrentScope().getStaticScope().getModule();
     
                 if (rubyClass == null) {
                     rubyClass = self.getMetaClass();
@@ -193,11 +193,11 @@ public class YARVMachine {
                 break;
             }
             case YARVInstructions.GETCONSTANT:
-                IRubyObject cls = stack[stackTop--];
+                stackTop--;
                 stack[++stackTop] = context.getConstant(bytecodes[ip].s_op0);
                 break;
             case YARVInstructions.SETCONSTANT:
-                RubyModule module = (RubyModule) context.peekCRef().getValue();
+                RubyModule module = context.getCurrentScope().getStaticScope().getModule();
                 module.setConstant(bytecodes[ip].s_op0,stack[stackTop--]);
                 runtime.incGlobalState();
                 break;
@@ -346,7 +346,7 @@ public class YARVMachine {
 
                 StaticScope sco = new LocalStaticScope(null);
                 sco.setVariables(bytecodes[ip].iseq_op.locals);
-                YARVMethod newMethod = new YARVMethod(containingClass, bytecodes[ip].iseq_op, sco, visibility, context.peekCRef());
+                YARVMethod newMethod = new YARVMethod(containingClass, bytecodes[ip].iseq_op, sco, visibility);
 
                 containingClass.addMethod(mname, newMethod);
     
@@ -391,7 +391,7 @@ public class YARVMachine {
                 String name = bytecodes[ip].s_op0;
                 IRubyObject[] args = new IRubyObject[bytecodes[ip].i_op1];
 
-                Instruction[] blockBytecodes = bytecodes[ip].ins_op;
+                //Instruction[] blockBytecodes = bytecodes[ip].ins_op;
                 // TODO: block stuff
                 int flags = bytecodes[ip].i_op3;
                 CallType callType;

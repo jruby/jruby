@@ -52,7 +52,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.util.IdUtil;
-import org.jruby.util.collections.SinglyLinkedList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -205,8 +204,8 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      * @since Ruby 1.6.7
      */
-    public RubyClass makeMetaClass(RubyClass superClass, SinglyLinkedList parentCRef) {
-        RubyClass klass = new MetaClass(getRuntime(), superClass, getMetaClass().getAllocator(), parentCRef);
+    public RubyClass makeMetaClass(RubyClass superClass, RubyModule parent) {
+        RubyClass klass = new MetaClass(getRuntime(), superClass, getMetaClass().getAllocator(), parent);
         setMetaClass(klass);
 		
         klass.setInstanceVariable("__attached__", this);
@@ -393,7 +392,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (getMetaClass().isSingleton() && getMetaClass().getInstanceVariable("__attached__") == this) {
             klass = getMetaClass();            
         } else {
-            klass = makeMetaClass(getMetaClass(), getMetaClass().getCRef());
+            klass = makeMetaClass(getMetaClass(), getMetaClass());
         }
         
         klass.setTaint(isTaint());
@@ -412,7 +411,7 @@ public class RubyObject implements Cloneable, IRubyObject {
            return klass;
 		}
        
-       MetaClass clone = new MetaClass(getRuntime(), klass.getSuperClass(), getMetaClass().getAllocator(), getMetaClass().getCRef());
+       MetaClass clone = new MetaClass(getRuntime(), klass.getSuperClass(), getMetaClass().getAllocator(), getMetaClass());
        clone.setFrozen(klass.isFrozen());
        clone.setTaint(klass.isTaint());
 

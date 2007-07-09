@@ -37,7 +37,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.JRubyClassLoader;
-import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -47,7 +46,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private final static String IRUB_ID = "Lorg/jruby/runtime/builtin/IRubyObject;";
     private final static String BLOCK_ID = "Lorg/jruby/runtime/Block;";
     private final static String COMPILED_CALL_SIG = "(Lorg/jruby/runtime/ThreadContext;" + IRUB_ID + "[" + IRUB_ID + BLOCK_ID + ")" + IRUB_ID;
-    private final static String COMPILED_SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ci(SinglyLinkedList.class) + ci(StaticScope.class) + ")V";
+    private final static String COMPILED_SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ci(StaticScope.class) + ")V";
 
     private JRubyClassLoader classLoader;
     
@@ -82,7 +81,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.visitVarInsn(ALOAD, 2);
         mv.visitVarInsn(ALOAD, 3);
         mv.visitVarInsn(ALOAD, 4);
-        mv.visitVarInsn(ALOAD, 5);
         mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", COMPILED_SUPER_SIG);
         mv.visitInsn(RETURN);
         mv.visitMaxs(0,0);
@@ -112,7 +110,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return classLoader.defineClass(name, code);
     }
 
-    private DynamicMethod getCompleteMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope scope, String sup) {
+    private DynamicMethod getCompleteMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, StaticScope scope, String sup) {
         String typePath = p(type);
         String mname = type.getName() + "Invoker" + method + arity;
         String mnamePath = typePath + "Invoker" + method + arity;
@@ -137,14 +135,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 c = endCall(implementationClass.getRuntime(), cw,mv,mname);
             }
             
-            return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class, SinglyLinkedList.class, StaticScope.class}).newInstance(new Object[]{implementationClass,arity,visibility,cref,scope});
+            return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class, StaticScope.class}).newInstance(new Object[]{implementationClass,arity,visibility,scope});
         } catch(Exception e) {
             e.printStackTrace();
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
 
-    public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref, StaticScope scope) {
-        return getCompleteMethod(implementationClass,type,method,arity,visibility,cref,scope, COMPILED_SUPER_CLASS);
+    public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, StaticScope scope) {
+        return getCompleteMethod(implementationClass,type,method,arity,visibility,scope, COMPILED_SUPER_CLASS);
     }
 }
