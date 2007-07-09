@@ -49,7 +49,6 @@ import jregex.Pattern;
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;

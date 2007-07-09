@@ -32,7 +32,6 @@
 package org.jruby.internal.runtime;
 
 import edu.emory.mathcs.backport.java.util.concurrent.ConcurrentHashMap;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 

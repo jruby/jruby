@@ -30,7 +30,6 @@ package org.jruby;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -48,8 +47,8 @@ public class RubyContinuation {
 
     public static IRubyObject call(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         recv.getRuntime().getWarnings().warn("Continuation.call: Continuations are not implemented in JRuby and will not work");
-        ThreadContext context = recv.getRuntime().getCurrentContext();
-        if(args.length == 1) {
+
+        if (args.length == 1) {
             throw new JumpException.BreakJump(recv.dataGetStruct(), args[0]);
         } else {
             throw new JumpException.BreakJump(recv.dataGetStruct(), recv.getRuntime().newArray(args));

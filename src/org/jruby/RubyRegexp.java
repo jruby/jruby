@@ -44,10 +44,8 @@ import jregex.REFlags;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -432,8 +430,6 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return getRuntime().newString(code.kcode(getRuntime()).toString().toLowerCase());
         }
     }
-
-    private static final int MASK = REFlags.IGNORE_CASE | REFlags.DOTALL | REFlags.IGNORE_SPACES;
 
     public IRubyObject options() {
         if((flags & REFlags.IGNORE_CASE) != 0) {
