@@ -36,6 +36,7 @@ test_equal("", s[6..2])
 t = ""
 test_equal(nil, t[6..2])
 test_equal(nil, t[-2..-4])
+test_equal("", t[0...-1])
 test_equal("ell", s[/[aeiow](.)\1/])
 test_equal("ell", s[/[aeiow](.)\1/, 0])
 test_equal("l", s[/[aeiow](.)\1/, 1])

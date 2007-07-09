@@ -2024,7 +2024,7 @@ public class RubyString extends RubyObject {
             return toString().indexOf(stringValue(args[0]).toString()) != -1 ?
                 args[0] : getRuntime().getNil();
         } else if (args[0] instanceof RubyRange) {
-            long[] begLen = ((RubyRange) args[0]).getBeginLength(value.length(), true, false);
+            long[] begLen = ((RubyRange) args[0]).begLen(value.length(), 0);
             return begLen == null ? getRuntime().getNil() :
                 substr((int) begLen[0], (int) begLen[1]);
         }
