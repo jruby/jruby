@@ -1167,6 +1167,7 @@ class Term implements REFlags{
                      }
                      else break;
                   }
+                  i--;
                   c=(char)oct;
                   break;
                   
@@ -1182,6 +1183,7 @@ class Term implements REFlags{
                      }
                      else break;
                   }
+                  i--;
                   c=(char)dec;
                   break;
                   

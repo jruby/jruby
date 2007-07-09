@@ -152,3 +152,6 @@ test_equal true, m().instance_variable_get(:@set)
 
 # JRUBY-1046: Support \G correctly:
 test_equal ["aa1 ", "aa2 "], "aa1 aa2 ba3 ".scan(/\Ga+\d\s*/)
+
+# JRUBY-1109: Octal literals eat next character...
+test_equal 0, "\034\015" =~ /^\034\015$/
