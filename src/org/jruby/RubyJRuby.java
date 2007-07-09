@@ -27,11 +27,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.IOException;
+
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.Library;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 
 /**
  * Module which defines JRuby-specific methods for use. 
@@ -48,6 +53,25 @@ public class RubyJRuby {
 
         return comparableModule;
     }
+
+    public static RubyModule createJRubyExt(Ruby runtime) {
+        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
+        RubyModule mJRubyExt = runtime.getOrCreateModule("JRuby").defineModuleUnder("Extensions");
+        CallbackFactory cf = runtime.callbackFactory(RubyJRuby.class);
+
+        mJRubyExt.defineFastPublicModuleFunction("steal_method", cf.getFastSingletonMethod("steal_method", IRubyObject.class, IRubyObject.class));
+        mJRubyExt.defineFastPublicModuleFunction("steal_methods", cf.getFastOptSingletonMethod("steal_methods"));
+
+        runtime.getObject().includeModule(mJRubyExt);
+
+        return mJRubyExt;
+    }
+
+    public static class ExtLibrary implements Library {
+        public void load(Ruby runtime) throws IOException {
+            RubyJRuby.createJRubyExt(runtime);
+        }
+    }
     
     public static IRubyObject runtime(IRubyObject recv, Block unusedBlock) {
         return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), recv.getRuntime()), Block.NULL_BLOCK);
@@ -60,5 +84,35 @@ public class RubyJRuby {
         boolean extraPositionInformation = arg3.isTrue();
         return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), 
             recv.getRuntime().parse(content.toString(), filename.toString(), null, 0, extraPositionInformation)), Block.NULL_BLOCK);
+    }
+
+    public static IRubyObject steal_method(IRubyObject recv, IRubyObject type, IRubyObject methodName) {
+        RubyModule to_add = null;
+        if(recv instanceof RubyModule) {
+            to_add = (RubyModule)recv;
+        } else {
+            to_add = recv.getSingletonClass();
+        }
+        String name = methodName.toString();
+        if(!(type instanceof RubyModule)) {
+            throw recv.getRuntime().newArgumentError("First argument must be a module/class");
+        }
+
+        DynamicMethod method = ((RubyModule)type).searchMethod(name);
+        if(method == null || method.isUndefined()) {
+            throw recv.getRuntime().newArgumentError("No such method " + name + " on " + type);
+        }
+
+        to_add.addMethod(name, method);
+        return recv.getRuntime().getNil();
+    }
+
+    public static IRubyObject steal_methods(IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(recv.getRuntime(), args, 1, -1);
+        IRubyObject type = args[0];
+        for(int i=1;i<args.length;i++) {
+            steal_method(recv, type, args[i]);
+        }
+        return recv.getRuntime().getNil();
     }
 }

@@ -672,6 +672,7 @@ public final class Ruby {
             };
 
         registerBuiltin("jruby.rb", new JRubyLibrary());
+        registerBuiltin("jruby/ext.rb", new RubyJRuby.ExtLibrary());
         registerBuiltin("iconv.rb", new IConvLibrary());
         registerBuiltin("nkf.rb", new NKFLibrary());
         registerBuiltin("stringio.rb", new StringIOLibrary());
