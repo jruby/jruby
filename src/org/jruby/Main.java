@@ -53,6 +53,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CommandlineParser;
+import org.jruby.ast.executable.RubiniusRunner;
 import org.jruby.ast.executable.YARVCompiledRunner;
 
 /**
@@ -158,6 +159,7 @@ public class Main {
             out.println("    -C              pre-compile scripts before running (EXPERIMENTAL)");
             out.println("    -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)");
             out.println("    -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)");
+            out.println("    -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)");
             out.println("    --command word  Execute ruby-related shell command (i.e., irb, gem)");
             hasPrintedUsage = true;
         }
@@ -215,6 +217,8 @@ public class Main {
             initializeRuntime(runtime, filename);
             if(commandline.isYARVEnabled()) {
                 new YARVCompiledRunner(runtime,reader,filename).run();
+            } else if(commandline.isRubiniusEnabled()) {
+                new RubiniusRunner(runtime,reader,filename).run();
             } else {
                 Node parsedScript = getParsedScript(runtime, reader, filename);
                 if (commandline.isCompilerEnabled()) {

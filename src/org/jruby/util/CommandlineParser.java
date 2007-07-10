@@ -70,6 +70,7 @@ public class CommandlineParser {
     private boolean objectSpaceEnabled = true;
     private boolean compilerEnabled = false;
     private boolean yarv = false;
+    private boolean rubinius = false;
     private boolean yarvCompile = false;
     private KCode kcode = KCode.NONE;
 
@@ -147,6 +148,9 @@ public class CommandlineParser {
                     break;
                 case 'Y' :
                     yarvCompile = true;
+                    break;
+                case 'R' :
+                    rubinius = true;
                     break;
                 case 'n' :
                     assumeLoop = true;
@@ -359,6 +363,10 @@ public class CommandlineParser {
 
     public boolean isYARVEnabled() {
         return yarv;
+    }
+
+    public boolean isRubiniusEnabled() {
+        return rubinius;
     }
 
     public boolean isYARVCompileEnabled() {
