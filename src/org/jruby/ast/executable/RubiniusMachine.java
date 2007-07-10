@@ -137,8 +137,8 @@ public class RubiniusMachine {
             case RubiniusInstructions.META_SEND_OP_PLUS: {
                 IRubyObject t1 = stack[stackTop--];
                 IRubyObject t2 = stack[stackTop--];
-                if((t1 instanceof RubyFixnum) && (t1 instanceof RubyFixnum)) {
-                    stack[++stackTop] = runtime.newFixnum(RubyNumeric.fix2int(t1) + RubyNumeric.fix2int(t2));
+                if((t1 instanceof RubyFixnum) && (t2 instanceof RubyFixnum)) {
+                    stack[++stackTop] = ((RubyFixnum)t1).plus(t2);
                 } else {
                     stack[++stackTop] = t1.callMethod(runtime.getCurrentContext(), MethodIndex.OP_PLUS, "+", t2);
                 }
