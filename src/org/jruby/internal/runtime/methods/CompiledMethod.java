@@ -38,8 +38,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Block;
 
 public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
-    private Arity arity;
-    private StaticScope staticScope;
+    protected Arity arity;
+    protected StaticScope staticScope;
 //    private boolean needsImplementer;
     
     public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope) {
@@ -53,7 +53,8 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
 //        }
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block);
+    /*public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
         Ruby runtime = context.getRuntime();
         
 //        RubyModule implementer = null;
@@ -90,9 +91,7 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
         } finally {
             context.postDefMethodInternalCall();
         }
-    }
-
-    protected abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
+    }*/
     
     public DynamicMethod dup() {
         try {

@@ -33,19 +33,29 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.jruby.RubyModule;
+import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
+import org.objectweb.asm.Label;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class InvocationMethodFactory extends MethodFactory implements Opcodes {
+    public final static CodegenUtils cg = CodegenUtils.cg;
     private final static String COMPILED_SUPER_CLASS = CompiledMethod.class.getName().replace('.','/');
     private final static String IRUB_ID = "Lorg/jruby/runtime/builtin/IRubyObject;";
     private final static String BLOCK_ID = "Lorg/jruby/runtime/Block;";
-    private final static String COMPILED_CALL_SIG = "(Lorg/jruby/runtime/ThreadContext;" + IRUB_ID + "[" + IRUB_ID + BLOCK_ID + ")" + IRUB_ID;
+    private final static String COMPILED_CALL_SIG = cg.sig(IRubyObject.class,
+            cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, boolean.class, Block.class));
     private final static String COMPILED_SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ci(StaticScope.class) + ")V";
 
     private JRubyClassLoader classLoader;
@@ -118,19 +128,125 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         try {
             if (c == null) {
                 ClassWriter cw = createCompiledCtor(mnamePath,sup);
-                MethodVisitor mv = null;
-
-                // compiled methods will always return IRubyObject
-                //String ret = getReturnName(type, method, new Class[]{ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRUBY_OBJECT_ARR, Block.class});
-                String ret = IRUB_ID;
-                mv = cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null);
+                SkinnyMethodAdapter mv = null;
+                
+                mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
                 mv.visitCode();
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitVarInsn(ALOAD, 2);
-                mv.visitVarInsn(ALOAD, 3);
-                mv.visitVarInsn(ALOAD, 4);
-                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(Lorg/jruby/runtime/ThreadContext;" + IRUB_ID + "[" + IRUB_ID + "Lorg/jruby/runtime/Block;)" + ret);
+                
+                // invoke pre method stuff
+                mv.aload(1); // tc
+                mv.aload(3); // klazz
+                mv.aload(4); // name
+                mv.aload(2); // self
+                mv.aload(5); // args
+                mv.aload(0);
+                mv.getfield(cg.p(CompiledMethod.class), "arity", cg.ci(Arity.class));
+                mv.invokevirtual(cg.p(Arity.class), "required", cg.sig(int.class));
+                // required args count
+                mv.aload(7); // block
+                mv.iload(6); // noSuper
+                mv.aload(0);
+                mv.getfield(cg.p(CompiledMethod.class), "staticScope", cg.ci(StaticScope.class));
+                // static scope
+                mv.aload(0); // jump target
+                mv.invokevirtual(cg.p(ThreadContext.class), "preDefMethodInternalCall", 
+                        cg.sig(void.class, 
+                        cg.params(RubyModule.class, String.class, IRubyObject.class, IRubyObject[].class, int.class, Block.class, boolean.class, 
+                        StaticScope.class, Object.class)));
+                
+                // store null for result var
+                mv.aconst_null();
+                mv.astore(8);
+                    
+                Label tryBegin = new Label();
+                Label tryEnd = new Label();
+                Label tryFinally = new Label();
+                Label tryReturnJump = new Label();
+                Label tryRedoJump = new Label();
+                Label normalExit = new Label();
+                
+                mv.trycatch(tryBegin, tryEnd, tryReturnJump, cg.p(JumpException.ReturnJump.class));
+                mv.trycatch(tryBegin, tryEnd, tryRedoJump, cg.p(JumpException.RedoJump.class));
+                mv.trycatch(tryBegin, tryEnd, tryFinally, null);
+                mv.label(tryBegin);
+                    
+                mv.aload(1);
+                mv.aload(2);
+                mv.aload(5);
+                mv.aload(7);
+                mv.invokestatic(typePath, method, cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class)));
+                
+                // store result in temporary variable 8
+                mv.astore(8);
+
+                mv.label(tryEnd);
+
+                //call post method stuff (non-finally)
+                mv.label(normalExit);
+                mv.aload(1);
+                mv.invokevirtual(cg.p(ThreadContext.class), "postDefMethodInternalCall", cg.sig(void.class));
+                // reload and return result
+                mv.aload(8);
                 mv.visitInsn(ARETURN);
+
+                // return jump handling
+                {
+                    mv.label(tryReturnJump);
+                    
+                    // dup return jump, get target, compare to this method object
+                    mv.dup();
+                    mv.invokevirtual(cg.p(JumpException.FlowControlException.class), "getTarget", cg.sig(Object.class));
+                    mv.aload(0);
+                    Label rethrow = new Label();
+                    mv.if_acmpne(rethrow);
+
+                    // this is the target, store return value and branch to normal exit
+                    mv.invokevirtual(cg.p(JumpException.FlowControlException.class), "getTarget", cg.sig(Object.class));
+                    mv.astore(8);
+                    mv.go_to(normalExit);
+
+                    // this is not the target, rethrow
+                    mv.label(rethrow);
+                    mv.go_to(tryFinally);
+                }
+
+                // redo jump handling
+                {
+                    mv.label(tryRedoJump);
+                    
+                    // clear the redo
+                    mv.pop();
+                    
+                    // get runtime, dup it
+                    mv.aload(1);
+                    mv.invokevirtual(cg.p(ThreadContext.class), "getRuntime", cg.sig(Ruby.class));
+                    mv.dup();
+                    
+                    // get nil
+                    mv.invokevirtual(cg.p(Ruby.class), "getNil", cg.sig(IRubyObject.class));
+                    
+                    // load "redo" under nil
+                    mv.ldc("redo");
+                    mv.swap();
+                    
+                    // load "unexpected redo" message
+                    mv.ldc("unexpected redo");
+                    
+                    mv.invokevirtual(cg.p(Ruby.class), "newLocalJumpError", cg.sig(RaiseException.class, cg.params(String.class, IRubyObject.class, String.class)));
+                    mv.go_to(tryFinally);
+                }
+
+                // finally handling for abnormal exit
+                {
+                    mv.label(tryFinally);
+
+                    //call post method stuff (exception raised)
+                    mv.aload(1);
+                    mv.invokevirtual(cg.p(ThreadContext.class), "postDefMethodInternalCall", cg.sig(void.class));
+
+                    // rethrow exception
+                    mv.athrow(); // rethrow it
+                }
                 
                 c = endCall(implementationClass.getRuntime(), cw,mv,mname);
             }
