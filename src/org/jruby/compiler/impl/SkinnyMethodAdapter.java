@@ -217,6 +217,10 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         mv.visitJumpInsn(IF_ACMPNE, arg0);
     }
     
+    public void if_acmpeq(Label arg0) {
+        mv.visitJumpInsn(IF_ACMPNE, arg0);
+    }
+    
     public void if_icmple(Label arg0) {
         mv.visitJumpInsn(IF_ICMPLE, arg0);
     }

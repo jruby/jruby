@@ -357,8 +357,23 @@ public final class Ruby {
             Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
 
             Script script = (Script)scriptClass.newInstance();
-            // FIXME: Pass something better for args and block here?
-            return script.run(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            
+            try {
+                DynamicScope scope = new DynamicScope(((RootNode)node).getStaticScope());
+
+                StaticScope staticScope = scope.getStaticScope();
+
+                if (staticScope.getModule() == null) {
+                    staticScope.setModule(getObject());
+                }
+
+                // Each root node has a top-level scope that we need to push
+                getCurrentContext().preRootNode(scope);
+
+                return script.run(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            } finally {
+                getCurrentContext().postRootNode();
+            }
         } catch (NotCompilableException nce) {
             System.err.println("Error -- Not compileable: " + nce.getMessage());
             return null;

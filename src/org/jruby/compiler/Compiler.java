@@ -110,7 +110,8 @@ public interface Compiler {
      * to the compiler has prepared the exact number of argument values necessary for this
      * call. Those values will be consumed, and the result of the call will be generated.
      */
-    public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign);
+    //public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign);
+    public void invokeDynamic(String name, ClosureCallback receiverCallback, ClosureCallback argsCallback, CallType callType, ClosureCallback closureArg, boolean attrAssign);
     
     /**
      * Attr assign calls have slightly different semantics that normal calls, so this method handles those additional semantics.
@@ -534,7 +535,7 @@ public interface Compiler {
     
     public void pollThreadEvents();
 
-    public void branchIfModule(BranchCallback moduleCallback, BranchCallback notModuleCallback);
+    public void branchIfModule(ClosureCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback);
 
     /**
      * Push the current back reference

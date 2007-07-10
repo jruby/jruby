@@ -61,6 +61,7 @@ import org.jruby.compiler.Compiler;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -72,6 +73,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
+import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -398,7 +400,84 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.pop(); // [val]
     }
     
-    public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
+    public void invokeDynamic(String name, ClosureCallback receiverCallback, ClosureCallback argsCallback, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        String dispatcherSig = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, int.class, String.class, IRubyObject[].class, CallType.class, Block.class));
+        
+        int index = MethodIndex.getIndex(name);
+        
+        if (receiverCallback != null) {
+            receiverCallback.compile(this);
+        } else {
+            loadSelf();
+        }
+        // [recv]
+        
+        // receiver on stack, prepare dispatcher under self
+        mv.dup(); // [recv, recv]
+        invokeIRubyObject("getMetaClass", cg.sig(RubyClass.class)); // [recv, klazz]
+        mv.invokevirtual(cg.p(RubyModule.class), "getDispatcher", cg.sig(Dispatcher.class)); // [recv, dispatcher]
+        mv.swap(); // [dispatcher, recv]
+        
+        // threadcontext under self
+        loadThreadContext(); // [dispatcher, recv, tc]
+        mv.swap(); // [dispatcher, tc, recv]
+        
+        // metaclass
+        mv.dup(); // [dispatcher, tc, recv, recv]
+        invokeIRubyObject("getMetaClass", cg.sig(RubyClass.class)); // [dispatcher, tc, recv, klazz]
+
+        // load method index
+        mv.ldc(new Integer(index)); // [dispatcher, tc, recv, klazz, index]
+
+        // load method name
+        mv.ldc(name); // [dispatcher, tc, recv, klazz, index, name]
+        
+        // args
+        if (argsCallback != null) {
+            argsCallback.compile(this);
+        } else {
+            mv.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+        }
+        // [dispatcher, tc, recv, klazz, index, name, args]
+        
+        // calltype
+        mv.getstatic(cg.p(CallType.class), callType.toString(), cg.ci(CallType.class)); // [dispatcher, tc, recv, klazz, index, name, args, calltype]
+        
+        // block
+        if (closureArg == null) {
+            mv.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
+        } else {
+            closureArg.compile(this);
+        }
+        // [dispatcher, tc, recv, klazz, index, name, args, calltype, block]
+        
+        if (closureArg != null) {
+            // wrap with try/catch for block flow-control exceptions
+            // FIXME: for flow-control from containing blocks, but it's not working right;
+            // stack is not as expected for invoke calls below...
+            //mv.trycatch(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
+        }
+        
+        mv.invokevirtual(cg.p(Dispatcher.class), "callMethod", dispatcherSig);
+        
+        if (closureArg != null) {
+            // no physical break, terminate loop and skip catch block
+            // FIXME: for flow-control from containing blocks, but it's not working right;
+            // stack is not as expected for invoke calls below...
+//            Label normalEnd = new Label();
+//            mv.go_to(normalEnd);
+//
+//            mv.label(tryCatch);
+//            {
+//                loadClosure();
+//                invokeUtilityMethod("handleJumpException", cg.sig(IRubyObject.class, cg.params(JumpException.class, Block.class)));
+//            }
+//
+        }
+    }
+    
+    private void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
         SkinnyMethodAdapter mv = getMethodAdapter();
         String callSig = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class));
         String callSigIndexed = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class));
@@ -1864,9 +1943,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         invokeUtilityMethod("nullToNil", cg.sig(IRubyObject.class, cg.params(IRubyObject.class, Ruby.class)));
     }
 
-    public void branchIfModule(BranchCallback moduleCallback, BranchCallback notModuleCallback) {
+    public void branchIfModule(ClosureCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback) {
         SkinnyMethodAdapter mv = getMethodAdapter();
-        mv.dup();
+        
+        receiverCallback.compile(this);
         mv.visitTypeInsn(INSTANCEOF, cg.p(RubyModule.class));
         
         Label falseJmp = new Label();

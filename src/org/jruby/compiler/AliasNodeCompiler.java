@@ -43,15 +43,24 @@ public class AliasNodeCompiler implements NodeCompiler {
         final AliasNode alias = (AliasNode)node;
         
         context.defineAlias(alias.getNewName(),alias.getOldName());
-        context.retrieveSelfClass();
         
-        context.createObjectArray(new Object[] {alias.getNewName()}, new ArrayCallback() {
-            public void nextValue(Compiler context, Object sourceArray,
-                                  int index) {
-                context.loadSymbol(alias.getNewName());
+        ClosureCallback receiverCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                context.retrieveSelfClass();
             }
-        });
+        };
         
-        context.invokeDynamic("method_added", true, true, CallType.FUNCTIONAL, null, false);
+        ClosureCallback argsCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                context.createObjectArray(new Object[] {alias.getNewName()}, new ArrayCallback() {
+                    public void nextValue(Compiler context, Object sourceArray,
+                                          int index) {
+                        context.loadSymbol(alias.getNewName());
+                    }
+                });
+            }
+        };
+        
+        context.invokeDynamic("method_added", receiverCallback, argsCallback, CallType.FUNCTIONAL, null, false);
     }
 }// AliasNodeCompiler

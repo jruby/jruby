@@ -44,7 +44,7 @@ public class Colon2NodeCompiler implements NodeCompiler{
     
     public void compile(Node node, Compiler context) {
         context.lineNumber(node.getPosition());
-        Colon2Node iVisited = (Colon2Node) node;
+        final Colon2Node iVisited = (Colon2Node) node;
         Node leftNode = iVisited.getLeftNode();
         final String name = iVisited.getName();
 
@@ -52,21 +52,26 @@ public class Colon2NodeCompiler implements NodeCompiler{
             context.loadObject();
             context.retrieveConstantFromModule(name);
         } else {
-            NodeCompilerFactory.getCompiler(iVisited.getLeftNode()).compile(iVisited.getLeftNode(), context);
+            final ClosureCallback receiverCallback = new ClosureCallback() {
+                public void compile(Compiler context) {
+                    NodeCompilerFactory.getCompiler(iVisited.getLeftNode()).compile(iVisited.getLeftNode(), context);
+                }
+            };
             
             BranchCallback moduleCallback = new BranchCallback() {
                     public void branch(Compiler context) {
+                        receiverCallback.compile(context);
                         context.retrieveConstantFromModule(name);
                     }
                 };
 
             BranchCallback notModuleCallback = new BranchCallback() {
                     public void branch(Compiler context) {
-                        context.invokeDynamic(name, true, false, CallType.FUNCTIONAL, null, false);
+                        context.invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
                     }
                 };
 
-            context.branchIfModule(moduleCallback, notModuleCallback);
+            context.branchIfModule(receiverCallback, moduleCallback, notModuleCallback);
         }
     }
 }

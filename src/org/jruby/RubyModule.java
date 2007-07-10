@@ -250,6 +250,10 @@ public class RubyModule extends RubyObject {
     public int getNativeTypeIndex() {
         return ClassIndex.MODULE;
     }
+    
+    public Dispatcher getDispatcher() {
+        return dispatcher;
+    }
 
     /** Getter for property superClass.
      * @return Value of property superClass.

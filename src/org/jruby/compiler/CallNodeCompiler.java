@@ -27,7 +27,7 @@ public class CallNodeCompiler implements NodeCompiler {
     public void compile(Node node, Compiler context) {
         context.lineNumber(node.getPosition());
         
-        CallNode callNode = (CallNode)node;
+        final CallNode callNode = (CallNode)node;
         
         if (NodeCompilerFactory.SAFE) {
             if (NodeCompilerFactory.UNSAFE_CALLS.contains(callNode.getName())) {
@@ -35,21 +35,26 @@ public class CallNodeCompiler implements NodeCompiler {
             }
         }
         
-        if (callNode.getIterNode() == null) {
-            // no block, go for simple version
-            
-            // handle receiver
-            NodeCompilerFactory.getCompiler(callNode.getReceiverNode()).compile(callNode.getReceiverNode(), context);
-            
-            if (callNode.getArgsNode() != null) {
-                // args compiler processes args and results in an args array for invocation
+        ClosureCallback receiverCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                NodeCompilerFactory.getCompiler(callNode.getReceiverNode()).compile(callNode.getReceiverNode(), context);
+            }
+        };
+        
+        ClosureCallback argsCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
                 NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(callNode.getArgsNode());
                 
                 argsCompiler.compile(callNode.getArgsNode(), context);
-
-                context.invokeDynamic(callNode.getName(), true, true, CallType.NORMAL, null, false);
+            }
+        };
+                
+        if (callNode.getIterNode() == null) {
+            // no block, go for simple version
+            if (callNode.getArgsNode() != null) {
+                context.invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, null, false);
             } else {
-                context.invokeDynamic(callNode.getName(), true, false, CallType.NORMAL, null, false);
+                context.invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, null, false);
             }
         } else {
             // FIXME: Missing blockpassnode handling
@@ -61,18 +66,10 @@ public class CallNodeCompiler implements NodeCompiler {
                 }
             };
             
-            // handle receiver
-            NodeCompilerFactory.getCompiler(callNode.getReceiverNode()).compile(callNode.getReceiverNode(), context);
-            
             if (callNode.getArgsNode() != null) {
-                // args compiler processes args and results in an args array for invocation
-                NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(callNode.getArgsNode());
-                
-                argsCompiler.compile(callNode.getArgsNode(), context);
-
-                context.invokeDynamic(callNode.getName(), true, true, CallType.NORMAL, closureArg, false);
+                context.invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, closureArg, false);
             } else {
-                context.invokeDynamic(callNode.getName(), true, false, CallType.NORMAL, closureArg, false);
+                context.invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, closureArg, false);
             }
         }
     }

@@ -27,7 +27,7 @@ public class FCallNodeCompiler implements NodeCompiler {
     public void compile(Node node, Compiler context) {
         context.lineNumber(node.getPosition());
         
-        FCallNode fcallNode = (FCallNode)node;
+        final FCallNode fcallNode = (FCallNode)node;
         
         if (NodeCompilerFactory.SAFE) {
             if (NodeCompilerFactory.UNSAFE_CALLS.contains(fcallNode.getName())) {
@@ -35,17 +35,20 @@ public class FCallNodeCompiler implements NodeCompiler {
             }
         }
         
-        if (fcallNode.getIterNode() == null) {
-            // no block, go for simple version
-            if (fcallNode.getArgsNode() != null) {
-                // args compiler processes args and results in an args array for invocation
+        ClosureCallback argsCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
                 NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(fcallNode.getArgsNode());
                 
                 argsCompiler.compile(fcallNode.getArgsNode(), context);
-
-                context.invokeDynamic(fcallNode.getName(), false, true, CallType.FUNCTIONAL, null, false);
+            }
+        };
+        
+        if (fcallNode.getIterNode() == null) {
+            // no block, go for simple version
+            if (fcallNode.getArgsNode() != null) {
+                context.invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, null, false);
             } else {
-                context.invokeDynamic(fcallNode.getName(), false, false, CallType.FUNCTIONAL, null, false);
+                context.invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, null, false);
             }
         } else {
             // FIXME: Missing blockpasnode stuff here
@@ -59,14 +62,9 @@ public class FCallNodeCompiler implements NodeCompiler {
             };
 
             if (fcallNode.getArgsNode() != null) {
-                // args compiler processes args and results in an args array for invocation
-                NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(fcallNode.getArgsNode());
-                
-                argsCompiler.compile(fcallNode.getArgsNode(), context);
-                
-                context.invokeDynamic(fcallNode.getName(), false, true, CallType.FUNCTIONAL, closureArg, false);
+                context.invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, false);
             } else {
-                context.invokeDynamic(fcallNode.getName(), false, false, CallType.FUNCTIONAL, closureArg, false);
+                context.invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, closureArg, false);
             }
         }
     }

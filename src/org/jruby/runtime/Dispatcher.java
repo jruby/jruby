@@ -11,7 +11,11 @@ public abstract class Dispatcher {
         
         public IRubyObject callMethod(ThreadContext context, IRubyObject self, RubyModule rubyclass, int methodIndex, String name,
                 IRubyObject[] args, CallType callType, Block block) {
-            return self.callMethod(context, rubyclass, name, args, callType, block);
+            try {
+                return self.callMethod(context, rubyclass, name, args, callType, block);
+            } catch (StackOverflowError soe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep");
+            }
         }
     };
     

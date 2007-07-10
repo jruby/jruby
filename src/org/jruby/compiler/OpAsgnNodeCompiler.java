@@ -30,10 +30,12 @@ public class OpAsgnNodeCompiler implements NodeCompiler {
         
         final OpAsgnNode opAsgnNode = (OpAsgnNode)node;
         
-        NodeCompilerFactory.getCompiler(opAsgnNode.getReceiverNode()).compile(opAsgnNode.getReceiverNode(), context); // [recv]
-        
-        context.duplicateCurrentValue(); // [recv, recv]
-        context.invokeDynamic(opAsgnNode.getVariableName(), true, false, CallType.FUNCTIONAL, null, false); // [recv, varValue]
+        final ClosureCallback receiverCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                NodeCompilerFactory.getCompiler(opAsgnNode.getReceiverNode()).compile(opAsgnNode.getReceiverNode(), context); // [recv]
+                context.duplicateCurrentValue(); // [recv, recv]
+            }
+        };
         
         BranchCallback doneBranch = new BranchCallback() {
             public void branch(Compiler context) {
@@ -60,18 +62,30 @@ public class OpAsgnNodeCompiler implements NodeCompiler {
             }
         };
         
+        ClosureCallback receiver2Callback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                context.invokeDynamic(opAsgnNode.getVariableName(), receiverCallback, null, CallType.FUNCTIONAL, null, false); // [recv, varValue]
+            }
+        };
+        
         if (opAsgnNode.getOperatorName() == "||") {
             // if lhs is true, don't eval rhs and assign
+            receiver2Callback.compile(context);
             context.duplicateCurrentValue();
             context.performBooleanBranch(doneBranch, assignBranch);
         } else if (opAsgnNode.getOperatorName() == "&&") {
             // if lhs is true, eval rhs and assign
+            receiver2Callback.compile(context);
             context.duplicateCurrentValue();
             context.performBooleanBranch(assignBranch, doneBranch);
         } else {
             // eval new value, call operator on old value, and assign
-            context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, justEvalValue);
-            context.invokeDynamic(opAsgnNode.getOperatorName(), true, true, CallType.FUNCTIONAL, null, false);
+            ClosureCallback argsCallback = new ClosureCallback() {
+                public void compile(Compiler context) {
+                    context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, justEvalValue);
+                }
+            };
+            context.invokeDynamic(opAsgnNode.getOperatorName(), receiver2Callback, argsCallback, CallType.FUNCTIONAL, null, false);
             context.createObjectArray(1);
             context.invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
         }
