@@ -157,7 +157,7 @@ public class Block {
                 extraScope = dynamicScope;
             } else {
                 extraScope = new DynamicScope(new BlockStaticScope(dynamicScope.getStaticScope()), dynamicScope);
-                extraScope.getStaticScope().determineModule();
+                //extraScope.getStaticScope().determineModule();
                 dynamicScope.setBindingScope(extraScope);
             }
         } 
