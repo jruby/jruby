@@ -44,14 +44,16 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 public class RubyJRuby {
     public static RubyModule createJRuby(Ruby runtime) {
         runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
-        RubyModule comparableModule = runtime.defineModule("JRuby");
+        RubyModule jrubyModule = runtime.defineModule("JRuby");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
-        comparableModule.defineModuleFunction("parse", 
+        jrubyModule.defineModuleFunction("parse", 
                 callbackFactory.getSingletonMethod("parse", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-        comparableModule.defineModuleFunction("runtime", 
+        jrubyModule.defineModuleFunction("runtime", 
                 callbackFactory.getSingletonMethod("runtime"));
+        jrubyModule.defineModuleFunction("reference", 
+                                         callbackFactory.getFastSingletonMethod("reference", RubyKernel.IRUBY_OBJECT));
 
-        return comparableModule;
+        return jrubyModule;
     }
 
     public static RubyModule createJRubyExt(Ruby runtime) {
@@ -114,5 +116,9 @@ public class RubyJRuby {
             steal_method(recv, type, args[i]);
         }
         return recv.getRuntime().getNil();
+    }
+
+    public static IRubyObject reference(IRubyObject recv, IRubyObject obj) {
+        return Java.wrap(recv.getRuntime().getModule("JavaUtilities"), JavaObject.wrap(recv.getRuntime(), obj));
     }
 }
