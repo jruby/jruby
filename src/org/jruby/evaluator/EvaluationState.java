@@ -2151,7 +2151,7 @@ public class EvaluationState {
         }
 
         if (enclosingModule == null) {
-            enclosingModule = (RubyModule) context.getCurrentScope().getStaticScope().getModule();
+            enclosingModule = context.getCurrentScope().getStaticScope().getModule();
         }
 
         return enclosingModule;

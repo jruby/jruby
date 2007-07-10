@@ -176,3 +176,9 @@ a.instance_eval {
   eval("test_equal(main,self)", b)
   eval("test_equal(Foo, self)", $b)
 }
+
+module EvalScope
+  eval "class Bar; def self.foo; "foo"; end; end"
+end
+
+test_equal("foo", EvalScope::Bar.foo)

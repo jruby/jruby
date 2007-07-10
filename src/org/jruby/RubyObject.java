@@ -864,8 +864,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         assert !scope.isNil();
         assert file != null;
 
-        ThreadContext threadContext = getRuntime().getCurrentContext();
-        ISourcePosition savedPosition = threadContext.getPosition();
+        ISourcePosition savedPosition = context.getPosition();
 
         if (!(scope instanceof RubyBinding)) {
             if (scope instanceof RubyProc) {
@@ -879,21 +878,21 @@ public class RubyObject implements Cloneable, IRubyObject {
         Block blockOfBinding = ((RubyBinding)scope).getBlock();
         try {
             // Binding provided for scope, use it
-            threadContext.preEvalWithBinding(blockOfBinding);
-            IRubyObject newSelf = threadContext.getFrameSelf();
+            context.preEvalWithBinding(blockOfBinding);
+            IRubyObject newSelf = context.getFrameSelf();
             Node node = 
                 getRuntime().parse(src.toString(), file, blockOfBinding.getDynamicScope(), lineNumber);
 
-            return EvaluationState.eval(getRuntime(), threadContext, node, newSelf, blockOfBinding);
+            return EvaluationState.eval(getRuntime(), context, node, newSelf, blockOfBinding);
         } catch (JumpException.BreakJump bj) {
             throw getRuntime().newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
         } catch (JumpException.RedoJump rj) {
             throw getRuntime().newLocalJumpError("redo", (IRubyObject)rj.getValue(), "unexpected redo");
         } finally {
-            threadContext.postEvalWithBinding(blockOfBinding);
+            context.postEvalWithBinding(blockOfBinding);
 
             // restore position
-            threadContext.setPosition(savedPosition);
+            context.setPosition(savedPosition);
         }
     }
 

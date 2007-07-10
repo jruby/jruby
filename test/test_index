@@ -14,9 +14,7 @@ mri/testProc.rb
 mri/testString.rb
 mri/testWhileUntil.rb
 mri/sample/test.rb
-testArraySubclassBehavior.rb
 testReadline.rb
-testBigDecimal.rb
 testBignum.rb
 testCacheMapLeak.rb
 testClass.rb
