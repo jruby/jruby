@@ -103,6 +103,210 @@ public class NodeCompilerFactory {
         UNSAFE_CALLS = new HashSet();
     }
     
+    public static void compile(Node node, Compiler context) {
+        switch (node.nodeId) {
+        case NodeTypes.ALIASNODE:
+            compileAlias(node, context);
+            break;
+        case NodeTypes.ANDNODE:
+            compileAnd(node, context);
+            break;
+        case NodeTypes.ARRAYNODE:
+            compileArray(node, context);
+            break;
+        case NodeTypes.ATTRASSIGNNODE:
+            compileAttrAssign(node, context);
+            break;
+        case NodeTypes.BEGINNODE:
+            compileBegin(node, context);
+            break;
+        case NodeTypes.BIGNUMNODE:
+            compileBignum(node, context);
+            break;
+        case NodeTypes.BLOCKNODE:
+            compileBlock(node, context);
+            break;
+        case NodeTypes.BREAKNODE:
+            // Not safe yet; something weird with break-handling try/catch and calls like "foo bar {}"
+            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
+            compileBreak(node, context);
+            break;
+        case NodeTypes.CALLNODE:
+            compileCall(node, context);
+            break;
+        case NodeTypes.CLASSNODE:
+            if (SAFE) throw new NotCompilableException("Can't compile class definitions safely: " + node);
+            compileClass(node, context);
+            break;
+        case NodeTypes.CLASSVARNODE:
+            compileClassVar(node, context);
+            break;
+        case NodeTypes.CLASSVARASGNNODE:
+            compileClassVarAsgn(node, context);
+            break;
+        case NodeTypes.CONSTDECLNODE:
+            compileConstDecl(node, context);
+            break;
+        case NodeTypes.COLON2NODE:
+            compileColon2(node, context);
+            break;
+        case NodeTypes.CONSTNODE:
+            compileConst(node, context);
+            break;
+        case NodeTypes.DASGNNODE:
+            compileDAsgn(node, context);
+            break;
+        case NodeTypes.DEFNNODE:
+            compileDefn(node, context);
+            break;
+        case NodeTypes.DOTNODE:
+            compileDot(node, context);
+            break;
+        case NodeTypes.DSTRNODE:
+            compileDStr(node, context);
+            break;
+        case NodeTypes.DVARNODE:
+            compileDVar(node, context);
+            break;
+        case NodeTypes.EVSTRNODE:
+            compileEvStr(node, context);
+            break;
+        case NodeTypes.FALSENODE:
+            compileFalse(node, context);
+            break;
+        case NodeTypes.FCALLNODE:
+            compileFCall(node, context);
+            break;
+        case NodeTypes.FIXNUMNODE:
+            compileFixnum(node, context);
+            break;
+        case NodeTypes.FLOATNODE:
+            compileFloat(node, context);
+            break;
+        case NodeTypes.GLOBALASGNNODE:
+            compileGlobalAsgn(node, context);
+            break;
+        case NodeTypes.GLOBALVARNODE:
+            compileGlobalVar(node, context);
+            break;
+        case NodeTypes.HASHNODE:
+            compileHash(node, context);
+            break;
+        case NodeTypes.IFNODE:
+            compileIf(node, context);
+            break;
+        case NodeTypes.INSTASGNNODE:
+            compileInstAsgn(node, context);
+            break;
+        case NodeTypes.INSTVARNODE:
+            compileInstVar(node, context);
+            break;
+        case NodeTypes.ITERNODE:
+            compileIter(node, context);
+            break;
+        case NodeTypes.LOCALASGNNODE:
+            compileLocalAsgn(node, context);
+            break;
+        case NodeTypes.LOCALVARNODE:
+            compileLocalVar(node, context);
+            break;
+        case NodeTypes.MATCHNODE:
+            compileMatch(node, context);
+            break;
+        case NodeTypes.MATCH2NODE:
+            compileMatch2(node, context);
+            break;
+        case NodeTypes.MATCH3NODE:
+            compileMatch3(node, context);
+            break;
+        case NodeTypes.MODULENODE:
+            if (SAFE) throw new NotCompilableException("Can't compile module definitions safely: " + node);
+            compileModule(node, context);
+            break;
+        case NodeTypes.NEWLINENODE:
+            compileNewline(node, context);
+            break;
+        case NodeTypes.NTHREFNODE:
+            compileNthRef(node, context);
+            break;
+        case NodeTypes.NILNODE:
+            compileNil(node, context);
+            break;
+        case NodeTypes.NOTNODE:
+            compileNot(node, context);
+            break;
+        case NodeTypes.OPASGNNODE:
+            compileOpAsgn(node, context);
+            break;
+        case NodeTypes.ORNODE:
+            compileOr(node, context);
+            break;
+        case NodeTypes.REGEXPNODE:
+            compileRegexp(node, context);
+            break;
+        case NodeTypes.RETURNNODE:
+            compileReturn(node, context);
+            break;
+        case NodeTypes.ROOTNODE:
+            compileRoot(node, context);
+            break;
+        case NodeTypes.SELFNODE:
+            compileSelf(node, context);
+            break;
+        case NodeTypes.SPLATNODE:
+            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
+            compileSplat(node, context);
+            break;
+        case NodeTypes.STRNODE:
+            compileStr(node, context);
+            break;
+        case NodeTypes.SVALUENODE:
+            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
+            compileSValue(node, context);
+            break;
+        case NodeTypes.SYMBOLNODE:
+            compileSymbol(node, context);
+            break;
+        case NodeTypes.TRUENODE:
+            compileTrue(node, context);
+            break;
+        case NodeTypes.VCALLNODE:
+            compileVCall(node, context);
+            break;
+        case NodeTypes.WHILENODE:
+            compileWhile(node, context);
+            break;
+        case NodeTypes.YIELDNODE:
+            compileYield(node, context);
+            break;
+        case NodeTypes.ZARRAYNODE:
+            compileZArray(node, context);
+            break;
+        default:
+            throw new NotCompilableException("Can't compile node: " + node);
+        }
+    }
+    
+    public static void compileArguments(Node node, Compiler context) {
+        switch (node.nodeId) {
+        case NodeTypes.ARRAYNODE:
+            compileArrayArguments(node, context);
+            break;
+        default:
+            throw new NotCompilableException("Can't compile argument node: " + node);
+        }
+    }
+    
+    public static NodeCompiler getAssignmentCompiler(Node node) {
+        switch (node.nodeId) {
+            // disabled for now; incomplete
+        //case NodeTypes.MULTIPLEASGNNODE:
+        //    return new MultipleAsgnNodeAsgnCompiler();
+        }
+        
+        throw new NotCompilableException("Can't compile assignment node: " + node);
+    }
+    
     public static YARVNodesCompiler getYARVCompiler() {
         return new YARVNodesCompiler();
     }
@@ -172,7 +376,7 @@ public class NodeCompilerFactory {
         AttrAssignNode attrAssignNode = (AttrAssignNode)node;
         
         compile(attrAssignNode.getReceiverNode(), context);
-        NodeCompilerFactory.getArgumentsCompiler(attrAssignNode.getArgsNode()).compile(attrAssignNode.getArgsNode(), context);
+        compileArguments(attrAssignNode.getArgsNode(), context);
         
         context.invokeAttrAssign(attrAssignNode.getName());
     }
@@ -240,9 +444,7 @@ public class NodeCompilerFactory {
         
         ClosureCallback argsCallback = new ClosureCallback() {
             public void compile(Compiler context) {
-                NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(callNode.getArgsNode());
-                
-                argsCompiler.compile(callNode.getArgsNode(), context);
+                compileArguments(callNode.getArgsNode(), context);
             }
         };
                 
@@ -545,9 +747,7 @@ public class NodeCompilerFactory {
         
         ClosureCallback argsCallback = new ClosureCallback() {
             public void compile(Compiler context) {
-                NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(fcallNode.getArgsNode());
-                
-                argsCompiler.compile(fcallNode.getArgsNode(), context);
+                compileArguments(fcallNode.getArgsNode(), context);
             }
         };
         
@@ -1095,207 +1295,20 @@ public class NodeCompilerFactory {
         context.createEmptyArray();
     }
     
-    public static void compile(Node node, Compiler context) {
-        switch (node.nodeId) {
-        case NodeTypes.ALIASNODE:
-            compileAlias(node, context);
-            break;
-        case NodeTypes.ANDNODE:
-            compileAnd(node, context);
-            break;
-        case NodeTypes.ARRAYNODE:
-            compileArray(node, context);
-            break;
-        case NodeTypes.ATTRASSIGNNODE:
-            compileAttrAssign(node, context);
-            break;
-        case NodeTypes.BEGINNODE:
-            compileBegin(node, context);
-            break;
-        case NodeTypes.BIGNUMNODE:
-            compileBignum(node, context);
-            break;
-        case NodeTypes.BLOCKNODE:
-            compileBlock(node, context);
-            break;
-        case NodeTypes.BREAKNODE:
-            // Not safe yet; something weird with break-handling try/catch and calls like "foo bar {}"
-            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
-            compileBreak(node, context);
-            break;
-        case NodeTypes.CALLNODE:
-            compileCall(node, context);
-            break;
-        case NodeTypes.CLASSNODE:
-            if (SAFE) throw new NotCompilableException("Can't compile class definitions safely: " + node);
-            compileClass(node, context);
-            break;
-        case NodeTypes.CLASSVARNODE:
-            compileClassVar(node, context);
-            break;
-        case NodeTypes.CLASSVARASGNNODE:
-            compileClassVarAsgn(node, context);
-            break;
-        case NodeTypes.CONSTDECLNODE:
-            compileConstDecl(node, context);
-            break;
-        case NodeTypes.COLON2NODE:
-            compileColon2(node, context);
-            break;
-        case NodeTypes.CONSTNODE:
-            compileConst(node, context);
-            break;
-        case NodeTypes.DASGNNODE:
-            compileDAsgn(node, context);
-            break;
-        case NodeTypes.DEFNNODE:
-            compileDefn(node, context);
-            break;
-        case NodeTypes.DOTNODE:
-            compileDot(node, context);
-            break;
-        case NodeTypes.DSTRNODE:
-            compileDStr(node, context);
-            break;
-        case NodeTypes.DVARNODE:
-            compileDVar(node, context);
-            break;
-        case NodeTypes.EVSTRNODE:
-            compileEvStr(node, context);
-            break;
-        case NodeTypes.FALSENODE:
-            compileFalse(node, context);
-            break;
-        case NodeTypes.FCALLNODE:
-            compileFCall(node, context);
-            break;
-        case NodeTypes.FIXNUMNODE:
-            compileFixnum(node, context);
-            break;
-        case NodeTypes.FLOATNODE:
-            compileFloat(node, context);
-            break;
-        case NodeTypes.GLOBALASGNNODE:
-            compileGlobalAsgn(node, context);
-            break;
-        case NodeTypes.GLOBALVARNODE:
-            compileGlobalVar(node, context);
-            break;
-        case NodeTypes.HASHNODE:
-            compileHash(node, context);
-            break;
-        case NodeTypes.IFNODE:
-            compileIf(node, context);
-            break;
-        case NodeTypes.INSTASGNNODE:
-            compileInstAsgn(node, context);
-            break;
-        case NodeTypes.INSTVARNODE:
-            compileInstVar(node, context);
-            break;
-        case NodeTypes.ITERNODE:
-            compileIter(node, context);
-            break;
-        case NodeTypes.LOCALASGNNODE:
-            compileLocalAsgn(node, context);
-            break;
-        case NodeTypes.LOCALVARNODE:
-            compileLocalVar(node, context);
-            break;
-        case NodeTypes.MATCHNODE:
-            compileMatch(node, context);
-            break;
-        case NodeTypes.MATCH2NODE:
-            compileMatch2(node, context);
-            break;
-        case NodeTypes.MATCH3NODE:
-            compileMatch3(node, context);
-            break;
-        case NodeTypes.MODULENODE:
-            if (SAFE) throw new NotCompilableException("Can't compile module definitions safely: " + node);
-            compileModule(node, context);
-            break;
-        case NodeTypes.NEWLINENODE:
-            compileNewline(node, context);
-            break;
-        case NodeTypes.NTHREFNODE:
-            compileNthRef(node, context);
-            break;
-        case NodeTypes.NILNODE:
-            compileNil(node, context);
-            break;
-        case NodeTypes.NOTNODE:
-            compileNot(node, context);
-            break;
-        case NodeTypes.OPASGNNODE:
-            compileOpAsgn(node, context);
-            break;
-        case NodeTypes.ORNODE:
-            compileOr(node, context);
-            break;
-        case NodeTypes.REGEXPNODE:
-            compileRegexp(node, context);
-            break;
-        case NodeTypes.RETURNNODE:
-            compileReturn(node, context);
-            break;
-        case NodeTypes.ROOTNODE:
-            compileRoot(node, context);
-            break;
-        case NodeTypes.SELFNODE:
-            compileSelf(node, context);
-            break;
-        case NodeTypes.SPLATNODE:
-            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
-            compileSplat(node, context);
-            break;
-        case NodeTypes.STRNODE:
-            compileStr(node, context);
-            break;
-        case NodeTypes.SVALUENODE:
-            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
-            compileSValue(node, context);
-            break;
-        case NodeTypes.SYMBOLNODE:
-            compileSymbol(node, context);
-            break;
-        case NodeTypes.TRUENODE:
-            compileTrue(node, context);
-            break;
-        case NodeTypes.VCALLNODE:
-            compileVCall(node, context);
-            break;
-        case NodeTypes.WHILENODE:
-            compileWhile(node, context);
-            break;
-        case NodeTypes.YIELDNODE:
-            compileYield(node, context);
-            break;
-        case NodeTypes.ZARRAYNODE:
-            compileZArray(node, context);
-            break;
-        default:
-            throw new NotCompilableException("Can't compile node: " + node);
-        }
-    }
-    
-    public static NodeCompiler getArgumentsCompiler(Node node) {
-        switch (node.nodeId) {
-        case NodeTypes.ARRAYNODE:
-            return new ArrayNodeArgsCompiler();
-        }
+    public static void compileArrayArguments(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
         
-        throw new NotCompilableException("Can't compile argument node: " + node);
-    }
-    
-    public static NodeCompiler getAssignmentCompiler(Node node) {
-        switch (node.nodeId) {
-            // disabled for now; incomplete
-        //case NodeTypes.MULTIPLEASGNNODE:
-        //    return new MultipleAsgnNodeAsgnCompiler();
-        }
+        ArrayNode arrayNode = (ArrayNode)node;
         
-        throw new NotCompilableException("Can't compile assignment node: " + node);
+        ArrayCallback callback = new ArrayCallback() {
+            public void nextValue(Compiler context, Object sourceArray, int index) {
+                Node node = (Node)((Object[])sourceArray)[index];
+                compile(node, context);
+            }
+        };
+        
+        context.createObjectArray(arrayNode.childNodes().toArray(), callback);
+        // leave as a normal array
     }
     
     /**
