@@ -305,7 +305,7 @@ public final class Ruby {
             Script script = null;
                 try {
                     StandardASMCompiler compiler = new StandardASMCompiler(node);
-                    NodeCompilerFactory.getCompiler(node).compile(node, compiler);
+                    NodeCompilerFactory.compile(node, compiler);
 
                     Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
 
@@ -352,7 +352,7 @@ public final class Ruby {
             
             // do the compile
             StandardASMCompiler compiler = new StandardASMCompiler(node);
-            NodeCompilerFactory.getCompiler(node).compile(node, compiler);
+            NodeCompilerFactory.compile(node, compiler);
 
             Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
 

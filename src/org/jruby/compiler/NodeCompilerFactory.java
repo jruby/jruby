@@ -29,11 +29,67 @@
 package org.jruby.compiler;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
+import org.jruby.ast.AliasNode;
+import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.AttrAssignNode;
+import org.jruby.ast.BeginNode;
+import org.jruby.ast.BignumNode;
+import org.jruby.ast.BlockNode;
+import org.jruby.ast.BreakNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.ClassNode;
+import org.jruby.ast.ClassVarAsgnNode;
+import org.jruby.ast.ClassVarNode;
+import org.jruby.ast.Colon2Node;
+import org.jruby.ast.Colon3Node;
+import org.jruby.ast.ConstDeclNode;
+import org.jruby.ast.ConstNode;
+import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.DStrNode;
+import org.jruby.ast.DVarNode;
+import org.jruby.ast.DefnNode;
+import org.jruby.ast.DotNode;
+import org.jruby.ast.EvStrNode;
+import org.jruby.ast.FCallNode;
+import org.jruby.ast.FixnumNode;
+import org.jruby.ast.FloatNode;
+import org.jruby.ast.GlobalAsgnNode;
+import org.jruby.ast.GlobalVarNode;
+import org.jruby.ast.HashNode;
+import org.jruby.ast.IfNode;
+import org.jruby.ast.InstAsgnNode;
+import org.jruby.ast.InstVarNode;
+import org.jruby.ast.IterNode;
+import org.jruby.ast.ListNode;
 import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.LocalVarNode;
+import org.jruby.ast.Match2Node;
+import org.jruby.ast.Match3Node;
+import org.jruby.ast.MatchNode;
+import org.jruby.ast.ModuleNode;
+import org.jruby.ast.NewlineNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeTypes;
+import org.jruby.ast.NotNode;
+import org.jruby.ast.NthRefNode;
+import org.jruby.ast.OpAsgnNode;
+import org.jruby.ast.OrNode;
+import org.jruby.ast.RegexpNode;
+import org.jruby.ast.ReturnNode;
+import org.jruby.ast.RootNode;
+import org.jruby.ast.SValueNode;
+import org.jruby.ast.SplatNode;
+import org.jruby.ast.StrNode;
+import org.jruby.ast.SymbolNode;
+import org.jruby.ast.VCallNode;
+import org.jruby.ast.WhileNode;
+import org.jruby.ast.YieldNode;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallType;
 
 /**
  *
@@ -50,183 +106,1177 @@ public class NodeCompilerFactory {
     public static YARVNodesCompiler getYARVCompiler() {
         return new YARVNodesCompiler();
     }
-    public static NodeCompiler getCompiler(Node node) {
+
+    public static void compileAlias(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final AliasNode alias = (AliasNode)node;
+        
+        context.defineAlias(alias.getNewName(),alias.getOldName());
+        
+        ClosureCallback receiverCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                context.retrieveSelfClass();
+            }
+        };
+        
+        ClosureCallback argsCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                context.createObjectArray(new Object[] {alias.getNewName()}, new ArrayCallback() {
+                    public void nextValue(Compiler context, Object sourceArray,
+                                          int index) {
+                        context.loadSymbol(alias.getNewName());
+                    }
+                });
+            }
+        };
+        
+        context.invokeDynamic("method_added", receiverCallback, argsCallback, CallType.FUNCTIONAL, null, false);
+    }
+    
+    public static void compileAnd(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final AndNode andNode = (AndNode)node;
+        
+        compile(andNode.getFirstNode(), context);
+        
+        BranchCallback longCallback = new BranchCallback() {
+            public void branch(Compiler context) {
+                compile(andNode.getSecondNode(), context);
+            }
+        };
+        
+        context.performLogicalAnd(longCallback);
+    }
+    
+    public static void compileArray(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ArrayNode arrayNode = (ArrayNode)node;
+        
+        ArrayCallback callback = new ArrayCallback() {
+            public void nextValue(Compiler context, Object sourceArray, int index) {
+                Node node = (Node)((Object[])sourceArray)[index];
+                compile(node, context);
+            }
+        };
+        
+        context.createObjectArray(arrayNode.childNodes().toArray(), callback);
+        context.createNewArray(arrayNode.isLightweight());
+    }
+    
+    public static void compileAttrAssign(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        AttrAssignNode attrAssignNode = (AttrAssignNode)node;
+        
+        compile(attrAssignNode.getReceiverNode(), context);
+        NodeCompilerFactory.getArgumentsCompiler(attrAssignNode.getArgsNode()).compile(attrAssignNode.getArgsNode(), context);
+        
+        context.invokeAttrAssign(attrAssignNode.getName());
+    }
+    
+    public static void compileBegin(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        BeginNode beginNode = (BeginNode)node;
+        
+        compile(beginNode.getBodyNode(), context);
+    }
+
+    public static void compileBignum(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        context.createNewBignum(((BignumNode)node).getValue());
+    }
+
+    public static void compileBlock(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        BlockNode blockNode = (BlockNode)node;
+        
+        for (Iterator iter = blockNode.childNodes().iterator(); iter.hasNext();) {
+            Node n = (Node)iter.next();
+            
+            compile(n, context);
+            
+            if (iter.hasNext()) {
+                // clear result from previous line
+                context.consumeCurrentValue();
+            }
+        }
+    }
+    
+    public static void compileBreak(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        BreakNode breakNode = (BreakNode)node;
+        
+        if (breakNode.getValueNode() != null) {
+            compile(breakNode.getValueNode(), context);
+        } else {
+            context.loadNil();
+        }
+        
+        context.issueBreakEvent();
+    }
+    
+    public static void compileCall(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final CallNode callNode = (CallNode)node;
+        
+        if (NodeCompilerFactory.SAFE) {
+            if (NodeCompilerFactory.UNSAFE_CALLS.contains(callNode.getName())) {
+                throw new NotCompilableException("Can't compile call safely: " + node);
+            }
+        }
+        
+        ClosureCallback receiverCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                NodeCompilerFactory.compile(callNode.getReceiverNode(), context);
+            }
+        };
+        
+        ClosureCallback argsCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(callNode.getArgsNode());
+                
+                argsCompiler.compile(callNode.getArgsNode(), context);
+            }
+        };
+                
+        if (callNode.getIterNode() == null) {
+            // no block, go for simple version
+            if (callNode.getArgsNode() != null) {
+                context.invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, null, false);
+            } else {
+                context.invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, null, false);
+            }
+        } else {
+            // FIXME: Missing blockpassnode handling
+            final IterNode iterNode = (IterNode) callNode.getIterNode();
+            
+            final ClosureCallback closureArg = new ClosureCallback() {
+                public void compile(Compiler context) {
+                    NodeCompilerFactory.compile(iterNode, context);
+                }
+            };
+            
+            if (callNode.getArgsNode() != null) {
+                context.invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, closureArg, false);
+            } else {
+                context.invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, closureArg, false);
+            }
+        }
+    }
+    
+    public static void compileClass(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final ClassNode classNode = (ClassNode)node;
+        
+        final Node superNode = classNode.getSuperNode();
+        
+        final Node cpathNode = classNode.getCPath();
+        
+        ClosureCallback superCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                if (superNode != null) {
+                    NodeCompilerFactory.compile(superNode, context);
+                } else {
+                    context.loadObject();
+                }
+            }
+        };
+        
+        ClosureCallback bodyCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                if (classNode.getBodyNode() != null) {
+                    NodeCompilerFactory.compile(classNode.getBodyNode(), context);
+                }
+                context.loadNil();
+            }
+        };
+        
+        ClosureCallback pathCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                if (cpathNode instanceof Colon2Node) {
+                    Node leftNode = ((Colon2Node)cpathNode).getLeftNode();
+                    if (leftNode != null) {
+                        NodeCompilerFactory.compile(leftNode, context);
+                    } else {
+                        context.loadNil();
+                    }
+                } else if (cpathNode instanceof Colon3Node) {
+                    context.loadObject();
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+        
+        context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback);
+    }
+
+    public static void compileClassVar(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ClassVarNode classVarNode = (ClassVarNode)node;
+        
+        context.retrieveClassVariable(classVarNode.getName());
+    }
+
+    public static void compileClassVarAsgn(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode)node;
+        
+        // FIXME: probably more efficient with a callback
+        compile(classVarAsgnNode.getValueNode(), context);
+        context.assignClassVariable(classVarAsgnNode.getName());
+    }
+    
+    public static void compileConstDecl(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ConstDeclNode constDeclNode = (ConstDeclNode)node;
+        
+        if (constDeclNode.getConstNode() == null) {
+            compile(constDeclNode.getValueNode(), context);
+        
+            context.assignConstantInCurrent(constDeclNode.getName());
+        } else if (constDeclNode.nodeId == NodeTypes.COLON2NODE) {
+            compile(constDeclNode.getValueNode(), context);
+        
+            compile(constDeclNode.getValueNode(), context);
+            
+            context.assignConstantInModule(constDeclNode.getName());
+        } else {// colon3, assign in Object
+            compile(constDeclNode.getValueNode(), context);
+            
+            context.assignConstantInObject(constDeclNode.getName());
+        }
+    }
+
+    public static void compileConst(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ConstNode constNode = (ConstNode)node;
+        
+        context.retrieveConstant(constNode.getName());
+    }
+    
+    public static void compileColon2(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        final Colon2Node iVisited = (Colon2Node) node;
+        Node leftNode = iVisited.getLeftNode();
+        final String name = iVisited.getName();
+
+        if(leftNode == null) {
+            context.loadObject();
+            context.retrieveConstantFromModule(name);
+        } else {
+            final ClosureCallback receiverCallback = new ClosureCallback() {
+                public void compile(Compiler context) {
+                    NodeCompilerFactory.compile(iVisited.getLeftNode(), context);
+                }
+            };
+            
+            BranchCallback moduleCallback = new BranchCallback() {
+                    public void branch(Compiler context) {
+                        receiverCallback.compile(context);
+                        context.retrieveConstantFromModule(name);
+                    }
+                };
+
+            BranchCallback notModuleCallback = new BranchCallback() {
+                    public void branch(Compiler context) {
+                        context.invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
+                    }
+                };
+
+            context.branchIfModule(receiverCallback, moduleCallback, notModuleCallback);
+        }
+    }
+    
+    public static void compileDAsgn(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        DAsgnNode dasgnNode = (DAsgnNode)node;
+        
+        compile(dasgnNode.getValueNode(), context);
+        
+        context.assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
+    }
+    
+    public static void compileDefn(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final DefnNode defnNode = (DefnNode)node;
+        final ArgsNode argsNode = defnNode.getArgsNode();
+        
+        NodeCompilerFactory.confirmNodeIsSafe(argsNode);
+        
+        ClosureCallback body = new ClosureCallback() {
+            public void compile(Compiler context) {
+                if (defnNode.getBodyNode() != null) {
+                    NodeCompilerFactory.compile(defnNode.getBodyNode(), context);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+        
+        final ArrayCallback evalOptionalValue = new ArrayCallback() {
+            public void nextValue(Compiler context, Object object, int index) {
+                ListNode optArgs = (ListNode)object;
+                
+                Node node = optArgs.get(index);
+
+                compile(node, context);
+            }
+        };
+        
+        ClosureCallback args = new ClosureCallback() {
+            public void compile(Compiler context) {
+                int required = argsNode.getArgsCount();
+                int restArg = argsNode.getRestArg();
+                boolean hasOptArgs = argsNode.getOptArgs() != null;
+                Arity arity = argsNode.getArity();
+                
+                context.lineNumber(argsNode.getPosition());
+                
+                if (argsNode.getBlockArgNode() != null) {
+                    context.processBlockArgument(argsNode.getBlockArgNode().getCount());
+                }
+                
+                if (hasOptArgs) {
+                    if (restArg > -1) {
+                        int opt = argsNode.getOptArgs().size();
+                        context.processRequiredArgs(arity, required, opt, restArg);
+                        
+                        ListNode optArgs = argsNode.getOptArgs();
+                        context.assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
+                        
+                        context.processRestArg(required + opt, restArg);
+                    } else {
+                        int opt = argsNode.getOptArgs().size();
+                        context.processRequiredArgs(arity, required, opt, restArg);
+                        
+                        ListNode optArgs = argsNode.getOptArgs();
+                        context.assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
+                    }
+                } else {
+                    if (restArg > -1) {
+                        context.processRequiredArgs(arity, required, 0, restArg);
+                        
+                        context.processRestArg(required, restArg);
+                    } else {
+                        context.processRequiredArgs(arity, required, 0, restArg);
+                    }
+                }
+            }
+        };
+        
+        context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args);
+    }
+    
+    public static void compileDot(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        DotNode dotNode = (DotNode)node;
+
+        compile(dotNode.getBeginNode(), context);
+        compile(dotNode.getEndNode(), context);
+        
+        context.createNewRange(dotNode.isExclusive());
+    }
+    
+    public static void compileDStr(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+
+        final DStrNode dstrNode = (DStrNode)node;
+        
+        ArrayCallback dstrCallback = new ArrayCallback() {
+                public void nextValue(Compiler context, Object sourceArray,
+                                      int index) {
+                    compile(dstrNode.get(index), context);
+                }
+            };
+        context.createNewString(dstrCallback,dstrNode.size());
+    }
+    
+    public static void compileDVar(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        DVarNode dvarNode = (DVarNode)node;
+        
+        context.retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
+    }
+    
+    public static void compileEvStr(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final EvStrNode evStrNode = (EvStrNode)node;
+        
+        compile(evStrNode.getBody(), context);
+        context.asString();
+    }
+    
+    public static void compileFalse(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        context.loadFalse();
+
+        context.pollThreadEvents();
+    }
+    
+    public static void compileFCall(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final FCallNode fcallNode = (FCallNode)node;
+        
+        if (NodeCompilerFactory.SAFE) {
+            if (NodeCompilerFactory.UNSAFE_CALLS.contains(fcallNode.getName())) {
+                throw new NotCompilableException("Can't compile call safely: " + node);
+            }
+        }
+        
+        ClosureCallback argsCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(fcallNode.getArgsNode());
+                
+                argsCompiler.compile(fcallNode.getArgsNode(), context);
+            }
+        };
+        
+        if (fcallNode.getIterNode() == null) {
+            // no block, go for simple version
+            if (fcallNode.getArgsNode() != null) {
+                context.invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, null, false);
+            } else {
+                context.invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, null, false);
+            }
+        } else {
+            // FIXME: Missing blockpasnode stuff here
+            
+            final IterNode iterNode = (IterNode) fcallNode.getIterNode();
+            
+            final ClosureCallback closureArg = new ClosureCallback() {
+                public void compile(Compiler context) {
+                    NodeCompilerFactory.compile(iterNode, context);
+                }
+            };
+
+            if (fcallNode.getArgsNode() != null) {
+                context.invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, false);
+            } else {
+                context.invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, closureArg, false);
+            }
+        }
+    }
+
+    public static void compileFixnum(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        FixnumNode fixnumNode = (FixnumNode)node;
+        
+        context.createNewFixnum(fixnumNode.getValue());
+    }
+    
+    public static void compileFloat(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        FloatNode floatNode = (FloatNode)node;
+        
+        context.createNewFloat(floatNode.getValue());
+    }
+    
+    public static void compileGlobalAsgn(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode)node;
+        
+        compile(globalAsgnNode.getValueNode(), context);
+                
+        if (globalAsgnNode.getName().length() == 2) {
+            // FIXME: This is not aware of lexical scoping
+            switch (globalAsgnNode.getName().charAt(1)) {
+            case '_':
+                context.assignLastLine();
+                return;
+            case '~':
+                assert false: "Parser shouldn't allow assigning to $~";
+                return;
+            }
+        }
+        
+        context.assignGlobalVariable(globalAsgnNode.getName());
+    }
+    
+    public static void compileGlobalVar(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        GlobalVarNode globalVarNode = (GlobalVarNode)node;
+                
+        if (globalVarNode.getName().length() == 2) {
+            // FIXME: This is not aware of lexical scoping
+            switch (globalVarNode.getName().charAt(1)) {
+            case '_':
+                context.retrieveLastLine();
+                return;
+            case '~':
+                context.retrieveBackRef();
+                return;
+            }
+        }
+        
+        context.retrieveGlobalVariable(globalVarNode.getName());
+    }
+    
+    public static void compileHash(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        HashNode hashNode = (HashNode)node;
+        
+        if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
+            context.createEmptyHash();
+            return;
+        }
+        
+        ArrayCallback hashCallback = new ArrayCallback() {
+            public void nextValue(Compiler context, Object sourceArray,
+                                  int index) {
+                ListNode listNode = (ListNode)sourceArray;
+                int keyIndex = index * 2;
+                compile(listNode.get(keyIndex), context);
+                compile(listNode.get(keyIndex + 1), context);
+            }
+        };
+        
+        context.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
+    }
+    
+    public static void compileIf(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final IfNode ifNode = (IfNode)node;
+        
+        compile(ifNode.getCondition(), context);
+        
+        BranchCallback trueCallback = new BranchCallback() {
+            public void branch(Compiler context) {
+                if (ifNode.getThenBody() != null) {
+                    compile(ifNode.getThenBody(), context);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+        
+        BranchCallback falseCallback = new BranchCallback() {
+            public void branch(Compiler context) {
+                if (ifNode.getElseBody() != null) {
+                    compile(ifNode.getElseBody(), context);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+        
+        context.performBooleanBranch(trueCallback, falseCallback);
+    }
+    
+    public static void compileInstAsgn(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        InstAsgnNode instAsgnNode = (InstAsgnNode)node;
+        
+        compile(instAsgnNode.getValueNode(), context);
+        context.assignInstanceVariable(instAsgnNode.getName());
+    }
+    
+    public static void compileInstVar(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        InstVarNode instVarNode = (InstVarNode)node;
+        
+        context.retrieveInstanceVariable(instVarNode.getName());
+    }
+    
+    public static void compileIter(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+
+        final IterNode iterNode = (IterNode)node;
+
+        // create the closure class and instantiate it
+        final ClosureCallback closureBody = new ClosureCallback() {
+            public void compile(Compiler context) {
+                if (iterNode.getBodyNode() != null) {
+                    NodeCompilerFactory.compile(iterNode.getBodyNode(), context);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+
+        // create the closure class and instantiate it
+        final ClosureCallback closureArgs = new ClosureCallback() {
+            public void compile(Compiler context) {
+                if (iterNode.getVarNode() != null) {
+                    AssignmentCompiler.assign(iterNode.getVarNode(), 0, context);
+                }
+            }
+        };
+        
+        context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(), closureBody, closureArgs);
+    }
+
+    public static void compileLocalAsgn(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
+        
+        compile(localAsgnNode.getValueNode(), context);
+        
+        context.assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
+    }
+    
+    public static void compileLocalVar(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        LocalVarNode localVarNode = (LocalVarNode)node;
+        
+        context.retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
+    }
+    
+    public static void compileMatch(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        MatchNode matchNode = (MatchNode)node;
+
+        compile(matchNode.getRegexpNode(), context);
+        
+        context.match();
+    }
+    
+    public static void compileMatch2(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        Match2Node matchNode = (Match2Node)node;
+
+        compile(matchNode.getReceiverNode(), context);
+        compile(matchNode.getValueNode(), context);
+        
+        context.match2();
+    }
+    public static void compileMatch3(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        Match3Node matchNode = (Match3Node)node;
+
+        compile(matchNode.getReceiverNode(), context);
+        compile(matchNode.getValueNode(), context);
+        
+        context.match3();
+    }
+    
+    public static void compileModule(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final ModuleNode moduleNode = (ModuleNode)node;
+        
+        final Node cpathNode = moduleNode.getCPath();
+        
+        ClosureCallback bodyCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                if (moduleNode.getBodyNode() != null) {
+                    NodeCompilerFactory.compile(moduleNode.getBodyNode(), context);
+                }
+                context.loadNil();
+            }
+        };
+        
+        ClosureCallback pathCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                if (cpathNode instanceof Colon2Node) {
+                    Node leftNode = ((Colon2Node)cpathNode).getLeftNode();
+                    if (leftNode != null) {
+                        NodeCompilerFactory.compile(leftNode, context);
+                    } else {
+                        context.loadNil();
+                    }
+                } else if (cpathNode instanceof Colon3Node) {
+                    context.loadObject();
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+        
+        context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback);
+    }
+
+    public static void compileNewline(Node node, Compiler context) {
+        // TODO: add trace call
+        
+        NewlineNode newlineNode = (NewlineNode)node;
+        
+        compile(newlineNode.getNextNode(), context);
+    }
+    public static void compileNthRef(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        NthRefNode nthRefNode = (NthRefNode)node;
+        
+        context.nthRef(nthRefNode.getMatchNumber());
+    }
+    
+    public static void compileNil(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        context.loadNil();
+        
+        context.pollThreadEvents();
+    }
+    
+    public static void compileNot(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        NotNode notNode = (NotNode)node;
+        
+        compile(notNode.getConditionNode(), context);
+        
+        context.negateCurrentValue();
+    }
+    
+    public static void compileOpAsgn(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        // FIXME: This is a little more complicated than it needs to be; do we see now why closures would be nice in Java?
+        
+        final OpAsgnNode opAsgnNode = (OpAsgnNode)node;
+        
+        final ClosureCallback receiverCallback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                NodeCompilerFactory.compile(opAsgnNode.getReceiverNode(), context); // [recv]
+                context.duplicateCurrentValue(); // [recv, recv]
+            }
+        };
+        
+        BranchCallback doneBranch = new BranchCallback() {
+            public void branch(Compiler context) {
+                // get rid of extra receiver, leave the variable result present
+                context.swapValues();
+                context.consumeCurrentValue();
+            }
+        };
+        
+        // Just evaluate the value and stuff it in an argument array
+        final ArrayCallback justEvalValue = new ArrayCallback() {
+            public void nextValue(Compiler context, Object sourceArray,
+                    int index) {
+                compile(((Node[])sourceArray)[index], context);
+            }
+        };
+        
+        BranchCallback assignBranch = new BranchCallback() {
+            public void branch(Compiler context) {
+                // eliminate extra value, eval new one and assign
+                context.consumeCurrentValue();
+                context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, justEvalValue);
+                context.invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
+            }
+        };
+        
+        ClosureCallback receiver2Callback = new ClosureCallback() {
+            public void compile(Compiler context) {
+                context.invokeDynamic(opAsgnNode.getVariableName(), receiverCallback, null, CallType.FUNCTIONAL, null, false); // [recv, varValue]
+            }
+        };
+        
+        if (opAsgnNode.getOperatorName() == "||") {
+            // if lhs is true, don't eval rhs and assign
+            receiver2Callback.compile(context);
+            context.duplicateCurrentValue();
+            context.performBooleanBranch(doneBranch, assignBranch);
+        } else if (opAsgnNode.getOperatorName() == "&&") {
+            // if lhs is true, eval rhs and assign
+            receiver2Callback.compile(context);
+            context.duplicateCurrentValue();
+            context.performBooleanBranch(assignBranch, doneBranch);
+        } else {
+            // eval new value, call operator on old value, and assign
+            ClosureCallback argsCallback = new ClosureCallback() {
+                public void compile(Compiler context) {
+                    context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, justEvalValue);
+                }
+            };
+            context.invokeDynamic(opAsgnNode.getOperatorName(), receiver2Callback, argsCallback, CallType.FUNCTIONAL, null, false);
+            context.createObjectArray(1);
+            context.invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
+        }
+
+        context.pollThreadEvents();
+    }
+    
+    public static void compileOr(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final OrNode orNode = (OrNode)node;
+        
+        compile(orNode.getFirstNode(), context);
+        
+        BranchCallback longCallback = new BranchCallback() {
+            public void branch(Compiler context) {
+                compile(orNode.getSecondNode(), context);
+            }
+        };
+        
+        context.performLogicalOr(longCallback);
+    }
+    
+    public static void compileRegexp(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        RegexpNode reNode = (RegexpNode)node;
+        
+        int opts = reNode.getOptions();
+        String lang = ((opts & 16) == 16) ? "n" : null;
+        if((opts & 48) == 48) { // param s
+            lang = "s";
+        } else if((opts & 32) == 32) { // param e
+            lang = "e";
+        } else if((opts & 64) != 0) { // param u
+            lang = "u";
+        }
+
+        context.createNewRegexp(reNode.getValue(), reNode.getOptions(), lang);
+    }
+    
+    public static void compileReturn(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ReturnNode returnNode = (ReturnNode)node;
+        
+        compile(returnNode.getValueNode(), context);
+        
+        context.performReturn();
+    }
+    
+    public static void compileRoot(Node node, Compiler context) {
+        RootNode rootNode = (RootNode)node;
+        
+        context.startScript();
+        
+        // create method for toplevel of script
+        Object methodToken = context.beginMethod("__file__", null);
+
+        // try to compile the script's body
+        try {
+            Node nextNode = rootNode.getBodyNode();
+            if (nextNode != null) {
+                compile(nextNode, context);
+            }
+        } catch (NotCompilableException nce) {
+            // TODO: recover somehow? build a pure eval method?
+            throw nce;
+        }
+        
+        context.endMethod(methodToken);
+        
+        context.endScript();
+    }
+    
+    public static void compileSelf(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        context.retrieveSelf();
+    }    
+    
+    public static void compileSplat(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        SplatNode splatNode = (SplatNode)node;
+        
+        compile(splatNode.getValue(), context);
+        
+        context.splatCurrentValue();
+    }
+    
+    public static void compileStr(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        StrNode strNode = (StrNode)node;
+        
+        context.createNewString(strNode.getValue());
+    }
+    
+    public static void compileSValue(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        SValueNode svalueNode = (SValueNode)node;
+        
+        compile(svalueNode.getValue(), context);
+        
+        context.singlifySplattedValue();
+    }
+    
+    public static void compileSymbol(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        context.createNewSymbol(((SymbolNode)node).getName());
+    }    
+    
+    public static void compileTrue(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        context.loadTrue();
+        
+        context.pollThreadEvents();
+    }
+
+    public static void compileVCall(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        VCallNode vcallNode = (VCallNode)node;
+        
+        if (NodeCompilerFactory.SAFE) {
+            if (NodeCompilerFactory.UNSAFE_CALLS.contains(vcallNode.getName())) {
+                throw new NotCompilableException("Can't compile call safely: " + node);
+            }
+        }
+        
+        context.invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
+    }
+    
+    public static void compileWhile(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final WhileNode whileNode = (WhileNode)node;
+        
+        BranchCallback condition = new BranchCallback() {
+            public void branch(Compiler context) {
+                compile(whileNode.getConditionNode(), context);
+            }
+        };
+        
+        BranchCallback body = new BranchCallback() {
+            public void branch(Compiler context) {
+                // this could probably be more efficient, and just avoid popping values for each loop
+                // when no values are being generated
+                if (whileNode.getBodyNode() == null) {
+                    context.loadNil();
+                    return;
+                }
+                compile(whileNode.getBodyNode(), context);
+            }
+        };
+        
+        context.performBooleanLoop(condition, body, whileNode.evaluateAtStart());
+        
+        context.pollThreadEvents();
+    }
+    
+    public static void compileYield(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        YieldNode yieldNode = (YieldNode)node;
+        
+        if (yieldNode.getArgsNode() != null) {
+            compile(yieldNode.getArgsNode(), context);
+        }
+        
+        context.yield(yieldNode.getArgsNode() != null, yieldNode.getCheckState());
+    }
+    
+    public static void compileZArray(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        context.createEmptyArray();
+    }
+    
+    public static void compile(Node node, Compiler context) {
         switch (node.nodeId) {
         case NodeTypes.ALIASNODE:
-            // safe
-            return new AliasNodeCompiler();
+            compileAlias(node, context);
+            break;
         case NodeTypes.ANDNODE:
-            // safe
-            return new AndNodeCompiler();
+            compileAnd(node, context);
+            break;
         case NodeTypes.ARRAYNODE:
-            // safe
-            return new ArrayNodeCompiler();
+            compileArray(node, context);
+            break;
         case NodeTypes.ATTRASSIGNNODE:
-            // safe, I think :)
-            return new AttrAssignNodeCompiler();
-            // Doesn't work for some reason...
-            //        case NodeTypes.BACKREFNODE:
-            //        // safe
-            //         return new BackRefNodeCompiler();
+            compileAttrAssign(node, context);
+            break;
         case NodeTypes.BEGINNODE:
-            // safe
-            return new BeginNodeCompiler();
+            compileBegin(node, context);
+            break;
         case NodeTypes.BIGNUMNODE:
-            // safe
-            return new BignumNodeCompiler();
+            compileBignum(node, context);
+            break;
         case NodeTypes.BLOCKNODE:
-            // safe
-            return new BlockNodeCompiler();
+            compileBlock(node, context);
+            break;
         case NodeTypes.BREAKNODE:
             // Not safe yet; something weird with break-handling try/catch and calls like "foo bar {}"
             if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
-            return new BreakNodeCompiler();
+            compileBreak(node, context);
+            break;
         case NodeTypes.CALLNODE:
-            // safe; yield or block nodes that aren't should raise
-            return new CallNodeCompiler();
+            compileCall(node, context);
+            break;
         case NodeTypes.CLASSNODE:
             if (SAFE) throw new NotCompilableException("Can't compile class definitions safely: " + node);
-            return new ClassNodeCompiler();
+            compileClass(node, context);
+            break;
         case NodeTypes.CLASSVARNODE:
-            return new ClassVarNodeCompiler();
+            compileClassVar(node, context);
+            break;
         case NodeTypes.CLASSVARASGNNODE:
-            return new ClassVarAsgnNodeCompiler();
+            compileClassVarAsgn(node, context);
+            break;
         case NodeTypes.CONSTDECLNODE:
-            // this should be safe as well with TC doing the right thing
-            return new ConstDeclNodeCompiler();
+            compileConstDecl(node, context);
+            break;
         case NodeTypes.COLON2NODE:
-            return new Colon2NodeCompiler();
+            compileColon2(node, context);
+            break;
         case NodeTypes.CONSTNODE:
-            // I think this is safe now that cref and class are being pushed on TC
-            return new ConstNodeCompiler();
+            compileConst(node, context);
+            break;
         case NodeTypes.DASGNNODE:
-            // safe
-            return new DAsgnNodeCompiler();
+            compileDAsgn(node, context);
+            break;
         case NodeTypes.DEFNNODE:
-            // safe; it's primarily odd arg types that are problems, and defn compiler will catch those
-            return new DefnNodeCompiler();
+            compileDefn(node, context);
+            break;
         case NodeTypes.DOTNODE:
-            // safe
-            return new DotNodeCompiler();
+            compileDot(node, context);
+            break;
         case NodeTypes.DSTRNODE:
-            // safe
-            return new DStrNodeCompiler();
+            compileDStr(node, context);
+            break;
         case NodeTypes.DVARNODE:
-            // safe
-            return new DVarNodeCompiler();
+            compileDVar(node, context);
+            break;
         case NodeTypes.EVSTRNODE:
-            // safe
-            return new EvStrNodeCompiler();
+            compileEvStr(node, context);
+            break;
         case NodeTypes.FALSENODE:
-            // safe
-            return new FalseNodeCompiler();
+            compileFalse(node, context);
+            break;
         case NodeTypes.FCALLNODE:
-            // safe
-            return new FCallNodeCompiler();
+            compileFCall(node, context);
+            break;
         case NodeTypes.FIXNUMNODE:
-            // safe
-            return new FixnumNodeCompiler();
+            compileFixnum(node, context);
+            break;
         case NodeTypes.FLOATNODE:
-            // safe
-            return new FloatNodeCompiler();
+            compileFloat(node, context);
+            break;
         case NodeTypes.GLOBALASGNNODE:
-            // safe
-            return new GlobalAsgnNodeCompiler();
+            compileGlobalAsgn(node, context);
+            break;
         case NodeTypes.GLOBALVARNODE:
-            // safe
-            return new GlobalVarNodeCompiler();
+            compileGlobalVar(node, context);
+            break;
         case NodeTypes.HASHNODE:
-            // safe
-            return new HashNodeCompiler();
+            compileHash(node, context);
+            break;
         case NodeTypes.IFNODE:
-            // safe
-            return new IfNodeCompiler();
+            compileIf(node, context);
+            break;
         case NodeTypes.INSTASGNNODE:
-            // safe
-            return new InstAsgnNodeCompiler();
+            compileInstAsgn(node, context);
+            break;
         case NodeTypes.INSTVARNODE:
-            // safe
-            return new InstVarNodeCompiler();
+            compileInstVar(node, context);
+            break;
         case NodeTypes.ITERNODE:
-            return new IterNodeCompiler();
+            compileIter(node, context);
+            break;
         case NodeTypes.LOCALASGNNODE:
-            // safe
-            return new LocalAsgnNodeCompiler();
+            compileLocalAsgn(node, context);
+            break;
         case NodeTypes.LOCALVARNODE:
-            // safe
-            return new LocalVarNodeCompiler();
+            compileLocalVar(node, context);
+            break;
         case NodeTypes.MATCHNODE:
-            // safe
-            return new MatchNodeCompiler();
+            compileMatch(node, context);
+            break;
         case NodeTypes.MATCH2NODE:
-            // safe
-            return new Match2NodeCompiler();
+            compileMatch2(node, context);
+            break;
         case NodeTypes.MATCH3NODE:
-            // safe
-            return new Match3NodeCompiler();
+            compileMatch3(node, context);
+            break;
         case NodeTypes.MODULENODE:
             if (SAFE) throw new NotCompilableException("Can't compile module definitions safely: " + node);
-            return new ModuleNodeCompiler();
+            compileModule(node, context);
+            break;
         case NodeTypes.NEWLINENODE:
-            // safe
-            return new NewlineNodeCompiler();
+            compileNewline(node, context);
+            break;
         case NodeTypes.NTHREFNODE:
-            // safe
-            return new NthRefNodeCompiler();
+            compileNthRef(node, context);
+            break;
         case NodeTypes.NILNODE:
-            // safe
-            return new NilNodeCompiler();
+            compileNil(node, context);
+            break;
         case NodeTypes.NOTNODE:
-            // safe
-            return new NotNodeCompiler();
+            compileNot(node, context);
+            break;
         case NodeTypes.OPASGNNODE:
-            // safe
-            return new OpAsgnNodeCompiler();
+            compileOpAsgn(node, context);
+            break;
         case NodeTypes.ORNODE:
-            // safe
-            return new OrNodeCompiler();
+            compileOr(node, context);
+            break;
         case NodeTypes.REGEXPNODE:
-            // safe
-            return new RegexpNodeCompiler();
+            compileRegexp(node, context);
+            break;
         case NodeTypes.RETURNNODE:
-            // safe; throws error if non-local
-            return new ReturnNodeCompiler();
+            compileReturn(node, context);
+            break;
         case NodeTypes.ROOTNODE:
-            // safe
-            return new RootNodeCompiler();
+            compileRoot(node, context);
+            break;
         case NodeTypes.SELFNODE:
-            // safe
-            return new SelfNodeCompiler();
+            compileSelf(node, context);
+            break;
         case NodeTypes.SPLATNODE:
             if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
-            return new SplatNodeCompiler();
+            compileSplat(node, context);
+            break;
         case NodeTypes.STRNODE:
-            // safe
-            return new StringNodeCompiler();
+            compileStr(node, context);
+            break;
         case NodeTypes.SVALUENODE:
             if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
-            return new SValueNodeCompiler();
+            compileSValue(node, context);
+            break;
         case NodeTypes.SYMBOLNODE:
-            // safe
-            return new SymbolNodeCompiler();
+            compileSymbol(node, context);
+            break;
         case NodeTypes.TRUENODE:
-            // safe
-            return new TrueNodeCompiler();
+            compileTrue(node, context);
+            break;
         case NodeTypes.VCALLNODE:
-            // safe
-            return new VCallNodeCompiler();
+            compileVCall(node, context);
+            break;
         case NodeTypes.WHILENODE:
-            // safe; things like next and closures that aren't complete yet will fail to compile
-            return new WhileNodeCompiler();
+            compileWhile(node, context);
+            break;
         case NodeTypes.YIELDNODE:
-            // safe; arg types that can't be handled will fail to compile, but yield logic is correct
-            return new YieldNodeCompiler();
+            compileYield(node, context);
+            break;
         case NodeTypes.ZARRAYNODE:
-            // safe
-            return new ZArrayNodeCompiler();
+            compileZArray(node, context);
+            break;
+        default:
+            throw new NotCompilableException("Can't compile node: " + node);
         }
-        
-        throw new NotCompilableException("Can't compile node: " + node);
     }
     
     public static NodeCompiler getArgumentsCompiler(Node node) {

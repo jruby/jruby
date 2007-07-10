@@ -30,7 +30,7 @@ public class ArrayNodeArgsCompiler implements NodeCompiler {
         ArrayCallback callback = new ArrayCallback() {
             public void nextValue(Compiler context, Object sourceArray, int index) {
                 Node node = (Node)((Object[])sourceArray)[index];
-                NodeCompilerFactory.getCompiler(node).compile(node, context);
+                NodeCompilerFactory.compile(node, context);
             }
         };
         

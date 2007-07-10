@@ -10,7 +10,7 @@ IRubyObject = org.jruby.runtime.builtin.IRubyObject
 def compile_to_class(src)
   node = JRuby.parse(src, "EVAL#{src.object_id}", false)
   context = StandardASMCompiler.new(node)
-  NodeCompilerFactory.getCompiler(node).compile(node, context)
+  NodeCompilerFactory.compile(node, context)
 
   context.loadClass(JRuby.runtime.getJRubyClassLoader)
 end

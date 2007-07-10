@@ -173,7 +173,7 @@ public final class DefaultMethod extends DynamicMethod {
                             
                             Node node = optArgs.get(index);
 
-                            NodeCompilerFactory.getCompiler(node).compile(node, context);
+                            NodeCompilerFactory.compile(node, context);
                         }
                     };
                     
@@ -221,7 +221,7 @@ public final class DefaultMethod extends DynamicMethod {
                     StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), body.getPosition().getFile());
                     compiler.startScript();
                     Object methodToken = compiler.beginMethod("__file__", args);
-                    NodeCompilerFactory.getCompiler(body).compile(body, compiler);
+                    NodeCompilerFactory.compile(body, compiler);
                     compiler.endMethod(methodToken);
                     compiler.endScript();
                     Class sourceClass = compiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));

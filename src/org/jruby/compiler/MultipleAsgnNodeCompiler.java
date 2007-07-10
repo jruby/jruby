@@ -27,7 +27,7 @@ public class MultipleAsgnNodeCompiler implements NodeCompiler{
         
         MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)node;
         
-        NodeCompilerFactory.getCompiler(multipleAsgnNode.getValueNode()).compile(multipleAsgnNode.getValueNode(), context);
+        NodeCompilerFactory.compile(multipleAsgnNode.getValueNode(), context);
         
         NodeCompilerFactory.getAssignmentCompiler(multipleAsgnNode).compile(multipleAsgnNode, context);
     }
