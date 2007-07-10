@@ -63,7 +63,6 @@ public class RubiniusRunner implements Runnable {
     }
 
     private final void readMagic(Reader reader) throws IOException {
-        System.err.println("readMagic");
         char[] first = new char[4];
         reader.read(first);
         if(first[0] != 'R' || first[1] != 'B' || first[2] != 'I' || first[3] != 'X') {
@@ -72,7 +71,6 @@ public class RubiniusRunner implements Runnable {
     }
 
     private final void readVersion(Reader reader) throws IOException {
-        System.err.println("readVersion");
         int version = readInt(reader);
         if(version != RUBINIUS_BYTECODE_VERSION) {
             throw new RuntimeException("Can't run Rubinius code with version " + version);
@@ -225,6 +223,6 @@ public class RubiniusRunner implements Runnable {
         StaticScope scope = new LocalStaticScope(null);
         scope.setVariables(new String[method.locals]);
         context.setPosition(new SimpleSourcePosition(method.file, -1));
-        RubiniusMachine.INSTANCE.exec(context, runtime.getObject(), new DynamicScope(scope,null), method.code);
+        RubiniusMachine.INSTANCE.exec(context, runtime.getObject(), new DynamicScope(scope,null), method.code, method.literals);
     }
 }// RubiniusRunner
