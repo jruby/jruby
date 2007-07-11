@@ -47,7 +47,8 @@ public class RubyJRuby {
         RubyModule jrubyModule = runtime.defineModule("JRuby");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
         jrubyModule.defineModuleFunction("parse", 
-                callbackFactory.getSingletonMethod("parse", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+                callbackFactory.getOptSingletonMethod("parse"));
+        jrubyModule.getMetaClass().defineAlias("ast_for", "parse");
         jrubyModule.defineModuleFunction("runtime", 
                 callbackFactory.getSingletonMethod("runtime"));
         jrubyModule.defineModuleFunction("reference", 
@@ -79,13 +80,24 @@ public class RubyJRuby {
         return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), recv.getRuntime()), Block.NULL_BLOCK);
     }
     
-    public static IRubyObject parse(IRubyObject recv, IRubyObject arg1, IRubyObject arg2, 
-            IRubyObject arg3, Block unusedBlock) {
-        RubyString content = arg1.convertToString();
-        RubyString filename = arg2.convertToString();
-        boolean extraPositionInformation = arg3.isTrue();
-        return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), 
-            recv.getRuntime().parse(content.toString(), filename.toString(), null, 0, extraPositionInformation)), Block.NULL_BLOCK);
+    public static IRubyObject parse(IRubyObject recv, IRubyObject[] args, Block block) {
+        if(block.isGiven()) {
+            Arity.checkArgumentCount(recv.getRuntime(),args,0,0);
+            return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), block.getIterNode().getBodyNode()), Block.NULL_BLOCK);
+        } else {
+            Arity.checkArgumentCount(recv.getRuntime(),args,1,3);
+            String filename = "-";
+            boolean extraPositionInformation = false;
+            RubyString content = args[0].convertToString();
+            if(args.length>1) {
+                filename = args[1].convertToString().toString();
+                if(args.length>2) {
+                    extraPositionInformation = args[2].isTrue();
+                }
+            }
+            return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), 
+               recv.getRuntime().parse(content.toString(), filename, null, 0, extraPositionInformation)), Block.NULL_BLOCK);
+        }
     }
 
     public static IRubyObject steal_method(IRubyObject recv, IRubyObject type, IRubyObject methodName) {

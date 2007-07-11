@@ -294,6 +294,10 @@ public class Block {
         return newBlock;
     }
 
+    public IterNode getIterNode() {
+        return iterNode;
+    }
+
     /**
      * What is the arity of this block?
      * 
