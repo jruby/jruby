@@ -933,6 +933,14 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
     
+    public static final int DISPATCHER_THREADCONTEXT_INDEX = 1;
+    public static final int DISPATCHER_SELF_INDEX = 2;
+    public static final int DISPATCHER_RUBYMODULE_INDEX = 3;
+    public static final int DISPATCHER_METHOD_INDEX = 4;
+    public static final int DISPATCHER_NAME_INDEX = 5;
+    public static final int DISPATCHER_CALLTYPE_INDEX = 7;
+    public static final int DISPATCHER_BLOCK_INDEX = 8;
+    public static final int DISPATCHER_RUNTIME_INDEX = 9;
     
     public Dispatcher createDispatcher(RubyClass metaClass) {
         String className = type.getName() + "Dispatcher_for_" + metaClass.getBaseName();
@@ -1000,9 +1008,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     SkinnyMethodAdapter mv = new SkinnyMethodAdapter(startDispatcher(cw));
                     
                     // store runtime
-                    mv.aload(1);
+                    mv.aload(DISPATCHER_THREADCONTEXT_INDEX);
                     mv.invokevirtual(cg.p(ThreadContext.class), "getRuntime", cg.sig(Ruby.class));
-                    mv.astore(9);
+                    mv.astore(DISPATCHER_RUNTIME_INDEX);
                     
                     Label tryBegin = new Label();
                     Label tryEnd = new Label();
@@ -1025,7 +1033,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                         // ensure size isn't too large
                         mv.dup();
                         mv.arraylength();
-                        mv.iload(4);
+                        mv.iload(DISPATCHER_METHOD_INDEX);
                         Label ok = new Label();
                         mv.if_icmpgt(ok);
                         
@@ -1035,7 +1043,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                         
                         // size is ok, retrieve from table and switch on the result
                         mv.label(ok);
-                        mv.iload(4);
+                        mv.iload(DISPATCHER_METHOD_INDEX);
                         mv.barrayload();
                         
                         // perform switch
@@ -1088,84 +1096,19 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     // done with cases, handle default case by getting method object and invoking it
                     mv.label(defaultLabel);
-                    
-                    // retrieve method
-                    mv.aload(3); // module
-                    mv.aload(5); // name
-                    mv.invokevirtual(cg.p(RubyModule.class), "searchMethod", cg.sig(DynamicMethod.class, cg.params(String.class)));
-                    
                     Label afterCall = new Label();
-                    Label okCall = new Label();
-                    Label methodMissing = new Label();
                     
-                    // if undefined, branch to method_missing
-                    mv.dup();
-                    mv.invokevirtual(cg.p(DynamicMethod.class), "isUndefined", cg.sig(boolean.class));
-                    mv.ifne(methodMissing);
-                    
-                    // if we're not attempting to invoke method_missing and method is not visible, branch to method_missing
-                    mv.aload(5);
-                    mv.ldc("method_missing");
-                    // if it's method_missing, just invoke it
-                    mv.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
-                    mv.ifne(okCall);
-                    // check visibility
-                    mv.dup(); // dup method
-                    mv.aload(1);
-                    mv.invokevirtual(cg.p(ThreadContext.class), "getFrameSelf", cg.sig(IRubyObject.class));
-                    mv.aload(7);
-                    mv.invokevirtual(cg.p(DynamicMethod.class), "isCallableFrom", cg.sig(boolean.class, cg.params(IRubyObject.class, CallType.class)));
-                    mv.ifne(okCall);
-                    
-                    // invoke callMethodMissing
-                    mv.label(methodMissing);
-                    
-                    mv.aload(1); // tc
-                    mv.swap(); // under method
-                    mv.aload(2); // self
-                    mv.swap(); // under method
-                    mv.aload(5); // name
-                    mv.aload(DISPATCHER_ARGS_INDEX); // args
-                    
-                    // caller
-                    mv.aload(1);
-                    mv.invokevirtual(cg.p(ThreadContext.class), "getFrameSelf", cg.sig(IRubyObject.class));
-                    
-                    mv.aload(7); // calltype
-                    mv.aload(8); // block
-                    
-                    // invoke callMethodMissing method directly
-                    // TODO: this could be further optimized, since some DSLs hit method_missing pretty hard...
-                    mv.invokestatic(cg.p(RubyObject.class), "callMethodMissing", cg.sig(IRubyObject.class, 
-                            cg.params(ThreadContext.class, IRubyObject.class, DynamicMethod.class, String.class, 
-                                                IRubyObject[].class, IRubyObject.class, CallType.class, Block.class)));
-                    // if no exception raised, jump to end to leave result on stack for return
-                    mv.go_to(afterCall);
-                    
-                    // call is ok, punch it!
-                    mv.label(okCall);
-                    
-                    // method object already present, push various args
-                    mv.aload(1); // tc
-                    mv.aload(2); // self
-                    mv.aload(3); // klazz
-                    mv.aload(5); // name
-                    mv.aload(DISPATCHER_ARGS_INDEX);
-                    mv.ldc(Boolean.FALSE);
-                    mv.aload(8);
-                    mv.invokevirtual(cg.p(DynamicMethod.class), "call",
-                            cg.sig(IRubyObject.class, 
-                            cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, boolean.class, Block.class)));
+                    dispatchWithoutSTI(mv, afterCall);
 
                     mv.label(tryEnd);
                     mv.go_to(afterCall);
 
                     mv.label(tryCatch);
-                    mv.aload(9);
+                    mv.aload(DISPATCHER_RUNTIME_INDEX);
                     mv.ldc("stack level too deep");
                     mv.invokevirtual(cg.p(Ruby.class), "newSystemStackError", cg.sig(RaiseException.class, cg.params(String.class)));
                     mv.athrow();
-                    
+
                     // calls done, return
                     mv.label(afterCall);
                     
@@ -1182,6 +1125,80 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 throw new IllegalArgumentException(e.getMessage());
             }
         }
+    }
+    
+    private void dispatchWithoutSTI(SkinnyMethodAdapter mv, Label afterCall) {
+        // retrieve method
+        mv.aload(DISPATCHER_RUBYMODULE_INDEX); // module
+        mv.aload(DISPATCHER_NAME_INDEX); // name
+        mv.invokevirtual(cg.p(RubyModule.class), "searchMethod", cg.sig(DynamicMethod.class, cg.params(String.class)));
+
+        Label okCall = new Label();
+        
+        callMethodMissingIfNecessary(mv, afterCall, okCall);
+
+        // call is ok, punch it!
+        mv.label(okCall);
+
+        // method object already present, push various args
+        mv.aload(DISPATCHER_THREADCONTEXT_INDEX); // tc
+        mv.aload(DISPATCHER_SELF_INDEX); // self
+        mv.aload(DISPATCHER_RUBYMODULE_INDEX); // klazz
+        mv.aload(DISPATCHER_NAME_INDEX); // name
+        mv.aload(DISPATCHER_ARGS_INDEX);
+        mv.ldc(Boolean.FALSE);
+        mv.aload(DISPATCHER_BLOCK_INDEX);
+        mv.invokevirtual(cg.p(DynamicMethod.class), "call",
+                cg.sig(IRubyObject.class, 
+                cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, boolean.class, Block.class)));
+    }
+    
+    public void callMethodMissingIfNecessary(SkinnyMethodAdapter mv, Label afterCall, Label okCall) {
+        Label methodMissing = new Label();
+
+        // if undefined, branch to method_missing
+        mv.dup();
+        mv.invokevirtual(cg.p(DynamicMethod.class), "isUndefined", cg.sig(boolean.class));
+        mv.ifne(methodMissing);
+
+        // if we're not attempting to invoke method_missing and method is not visible, branch to method_missing
+        mv.aload(DISPATCHER_NAME_INDEX);
+        mv.ldc("method_missing");
+        // if it's method_missing, just invoke it
+        mv.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
+        mv.ifne(okCall);
+        // check visibility
+        mv.dup(); // dup method
+        mv.aload(DISPATCHER_THREADCONTEXT_INDEX);
+        mv.invokevirtual(cg.p(ThreadContext.class), "getFrameSelf", cg.sig(IRubyObject.class));
+        mv.aload(DISPATCHER_CALLTYPE_INDEX);
+        mv.invokevirtual(cg.p(DynamicMethod.class), "isCallableFrom", cg.sig(boolean.class, cg.params(IRubyObject.class, CallType.class)));
+        mv.ifne(okCall);
+
+        // invoke callMethodMissing
+        mv.label(methodMissing);
+
+        mv.aload(DISPATCHER_THREADCONTEXT_INDEX); // tc
+        mv.swap(); // under method
+        mv.aload(DISPATCHER_SELF_INDEX); // self
+        mv.swap(); // under method
+        mv.aload(DISPATCHER_NAME_INDEX); // name
+        mv.aload(DISPATCHER_ARGS_INDEX); // args
+
+        // caller
+        mv.aload(DISPATCHER_THREADCONTEXT_INDEX);
+        mv.invokevirtual(cg.p(ThreadContext.class), "getFrameSelf", cg.sig(IRubyObject.class));
+
+        mv.aload(DISPATCHER_CALLTYPE_INDEX); // calltype
+        mv.aload(DISPATCHER_BLOCK_INDEX); // block
+
+        // invoke callMethodMissing method directly
+        // TODO: this could be further optimized, since some DSLs hit method_missing pretty hard...
+        mv.invokestatic(cg.p(RubyObject.class), "callMethodMissing", cg.sig(IRubyObject.class, 
+                cg.params(ThreadContext.class, IRubyObject.class, DynamicMethod.class, String.class, 
+                                    IRubyObject[].class, IRubyObject.class, CallType.class, Block.class)));
+        // if no exception raised, jump to end to leave result on stack for return
+        mv.go_to(afterCall);
     }
     
     private void loadArguments(MethodVisitor mv, int argsIndex, int count, Class[] types) {
