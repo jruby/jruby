@@ -962,6 +962,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                                 SimpleCallbackMethod simpleMethod = (SimpleCallbackMethod)dynamicMethod;
                                 InvocationCallback callback = (InvocationCallback)simpleMethod.getCallback();
                                 if (callback.isSingleton()) continue;
+                                
+                                // skipping non-public methods for now, to avoid visibility checks in STI
+                                if (!dynamicMethod.getVisibility().isPublic()) continue;
                             }
                             
                             allMethods.put(entry.getKey(), entry.getValue());
@@ -1103,8 +1106,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     // if we're not attempting to invoke method_missing and method is not visible, branch to method_missing
                     mv.aload(5);
                     mv.ldc("method_missing");
-                    // it's method_missing, just invoke it
-                    mv.if_acmpeq(okCall);
+                    // if it's method_missing, just invoke it
+                    mv.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
+                    mv.ifne(okCall);
                     // check visibility
                     mv.dup(); // dup method
                     mv.aload(1);

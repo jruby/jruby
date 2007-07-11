@@ -64,3 +64,7 @@ test_no_exception { c.new.foo }
 1.times { public }
 def foo; end
 test_exception { self.foo }
+
+# check a few kernel methods to ensure their visibilities are being checked
+test_exception(NoMethodError) { nil.chomp }
+test_exception(NoMethodError) { 'foo'.puts }

@@ -91,8 +91,8 @@ import org.objectweb.asm.Opcodes;
  * @author headius
  */
 public class StandardASMCompiler implements ScriptCompiler, Opcodes {
-
     private static final CodegenUtils cg = CodegenUtils.cg;
+    
     private static final String THREADCONTEXT = cg.p(ThreadContext.class);
     private static final String RUBY = cg.p(Ruby.class);
     private static final String IRUBYOBJECT = cg.p(IRubyObject.class);
@@ -110,33 +110,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private static final int LOCAL_VARS_INDEX = 7;
     private static final int NIL_INDEX = 8;
 
-    private Stack SkinnyMethodAdapters = new Stack();
-    private Stack arities = new Stack();
-    private Stack scopeStarts = new Stack();
-
     private String classname;
     private String sourcename;
 
-    //Map classWriters = new HashMacg.p();
     private ClassWriter classWriter;
-    ClassWriter currentMultiStub = null;
     int methodIndex = -1;
-    int multiStubCount = -1;
     int innerIndex = -1;
-
-    int lastLine = -1;
 
     /** Creates a new instance of StandardCompilerContext */
     public StandardASMCompiler(String classname, String sourcename) {
         this.classname = classname;
         this.sourcename = sourcename;
-    }
-
-    public StandardASMCompiler(Node node) {
-        // determine new class name based on filename of incoming node
-        // must generate unique classnames for evals, since they could be generated many times in a given run
-        classname = "EVAL" + hashCode();
-        sourcename = "EVAL" + hashCode();
     }
 
     public Class loadClass(JRubyClassLoader classLoader) throws ClassNotFoundException {
@@ -1317,7 +1301,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             String name_flags = getNewConstant(cg.ci(Integer.TYPE), "literal_re_flags_");
 
             // in current method, load the field to see if we've created a Pattern yet
-            method.visitFieldInsn(GETSTATIC, classname, name, cg.ci(Pattern.class));
+            method.getstatic(classname, name, cg.ci(Pattern.class));
 
 
             Label alreadyCreated = new Label();
@@ -1336,7 +1320,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.ldc(new Integer(options));
             invokeUtilityMethod("regexpLiteralFlags", cg.sig(Integer.TYPE, cg.params(Integer.TYPE)));
-            method.visitFieldInsn(PUTSTATIC, classname, name_flags, cg.ci(Integer.TYPE));
+            method.putstatic(classname, name_flags, cg.ci(Integer.TYPE));
 
             loadRuntime();
             method.ldc(regexpString);
@@ -1344,9 +1328,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeUtilityMethod("regexpLiteral", cg.sig(Pattern.class, cg.params(Ruby.class, String.class, Integer.TYPE)));
             method.dup();
 
-            method.visitFieldInsn(PUTSTATIC, classname, name, cg.ci(Pattern.class));
+            method.putstatic(classname, name, cg.ci(Pattern.class));
 
-            method.visitFieldInsn(GETSTATIC, classname, name_flags, cg.ci(Integer.TYPE));
+            method.getstatic(classname, name_flags, cg.ci(Integer.TYPE));
             if (null == lang) {
                 method.aconst_null();
             } else {
@@ -1376,7 +1360,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void branchIfModule(ClosureCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback) {
             receiverCallback.compile(this);
-            method.visitTypeInsn(INSTANCEOF, cg.p(RubyModule.class));
+            method.instance_of(cg.p(RubyModule.class));
 
             Label falseJmp = new Label();
             Label afterJmp = new Label();

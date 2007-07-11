@@ -8,8 +8,10 @@ Block = org.jruby.runtime.Block
 IRubyObject = org.jruby.runtime.builtin.IRubyObject
 
 def compile_to_class(src)
-  node = JRuby.parse(src, "EVAL#{src.object_id}", false)
-  context = StandardASMCompiler.new(node)
+  node = JRuby.parse(src, "testCompiler#{src.object_id}", false)
+  filename = node.position.file
+  classname = filename.sub("/", ".").sub("\\", ".").sub(".rb", "")
+  context = StandardASMCompiler.new(classname, filename)
   NodeCompilerFactory.compileRoot(node, context)
 
   context.loadClass(JRuby.runtime.getJRubyClassLoader)
@@ -51,7 +53,8 @@ test_no_exception {
   compile_to_class(asgnFixnumCode);
 }
 
-test_equal(5, compile_and_run(asgnFixnumCode))
+# clone this since we're generating classnames based on object_id above
+test_equal(5, compile_and_run(asgnFixnumCode.clone))
 test_equal(5.5, compile_and_run(asgnFloatCode))
 test_equal('hello', compile_and_run(asgnStringCode))
 test_equal('hello42', compile_and_run(asgnDStringCode))

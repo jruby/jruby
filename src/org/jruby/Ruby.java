@@ -304,7 +304,15 @@ public final class Ruby {
             if (config.isJitEnabled() && !hasEventHooks()) {
             Script script = null;
                 try {
-                    StandardASMCompiler compiler = new StandardASMCompiler(node);
+                String filename = node.getPosition().getFile();
+                String classname;
+                if (filename.equals("-e")) {
+                    classname = "__dash_e__";
+                } else {
+                    classname = filename.replace("/", ".").replace("\\", ".").replace(".rb", "");
+                }
+
+                StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
                     NodeCompilerFactory.compileRoot(node, compiler);
 
                     Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
@@ -351,7 +359,15 @@ public final class Ruby {
             ThreadContext tc = getCurrentContext();
             
             // do the compile
-            StandardASMCompiler compiler = new StandardASMCompiler(node);
+            String filename = node.getPosition().getFile();
+            String classname;
+            if (filename.equals("-e")) {
+                classname = "__dash_e__";
+            } else {
+                classname = filename.replace("/", ".").replace("\\", ".").replace(".rb", "");
+            }
+            
+            StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
             NodeCompilerFactory.compileRoot(node, compiler);
 
             Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
