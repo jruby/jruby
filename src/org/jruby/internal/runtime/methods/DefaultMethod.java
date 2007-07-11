@@ -42,7 +42,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.ClosureCallback;
-import org.jruby.compiler.Compiler;
+import org.jruby.compiler.MethodCompiler;
 import org.jruby.compiler.NodeCompilerFactory;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
@@ -168,7 +168,7 @@ public final class DefaultMethod extends DynamicMethod {
                     NodeCompilerFactory.confirmNodeIsSafe(argsNode);
                     // FIXME: Total duplication from DefnNodeCompiler...need to refactor this
                     final ArrayCallback evalOptionalValue = new ArrayCallback() {
-                        public void nextValue(Compiler context, Object object, int index) {
+                        public void nextValue(MethodCompiler context, Object object, int index) {
                             ListNode optArgs = (ListNode)object;
                             
                             Node node = optArgs.get(index);
@@ -178,7 +178,7 @@ public final class DefaultMethod extends DynamicMethod {
                     };
                     
                     ClosureCallback args = new ClosureCallback() {
-                        public void compile(Compiler context) {
+                        public void compile(MethodCompiler context) {
                             Arity arity = argsNode.getArity();
                             
                             context.lineNumber(argsNode.getPosition());
@@ -220,9 +220,9 @@ public final class DefaultMethod extends DynamicMethod {
                     // FIXME: not handling empty bodies correctly...
                     StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), body.getPosition().getFile());
                     compiler.startScript();
-                    Object methodToken = compiler.beginMethod("__file__", args);
-                    NodeCompilerFactory.compile(body, compiler);
-                    compiler.endMethod(methodToken);
+                    MethodCompiler methodCompiler = compiler.startMethod("__file__", args);
+                    NodeCompilerFactory.compile(body, methodCompiler);
+                    methodCompiler.endMethod();
                     compiler.endScript();
                     Class sourceClass = compiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
                     jitCompiledScript = (Script)sourceClass.newInstance();

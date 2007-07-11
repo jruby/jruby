@@ -14,5 +14,5 @@ package org.jruby.compiler;
  * @author headius
  */
 public interface BranchCallback {
-    public void branch(Compiler context);
+    public void branch(MethodCompiler context);
 }

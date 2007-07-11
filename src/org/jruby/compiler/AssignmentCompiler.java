@@ -21,7 +21,7 @@ import org.jruby.ast.NodeTypes;
  * @author headius
  */
 public class AssignmentCompiler {
-    public static void assign(Node node, int index, Compiler context) {
+    public static void assign(Node node, int index, MethodCompiler context) {
         switch (node.nodeId) {
 //        case NodeTypes.ATTRASSIGNNODE:
 //            attrAssignNode(runtime, context, self, node, value, block);
@@ -58,25 +58,25 @@ public class AssignmentCompiler {
         }
     }
     
-    private static void dasgnArgCompile(Node node,int argIndex, Compiler context) {
+    private static void dasgnArgCompile(Node node,int argIndex, MethodCompiler context) {
         DAsgnNode dasgnNode = (DAsgnNode)node;
         
         context.assignLocalVariableBlockArg(argIndex, dasgnNode.getIndex(), dasgnNode.getDepth());
     }
     
-    private static void localAsgnArgCompile(Node node,int argIndex, Compiler context) {
+    private static void localAsgnArgCompile(Node node,int argIndex, MethodCompiler context) {
         LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
         
         context.assignLocalVariableBlockArg(argIndex, localAsgnNode.getIndex(), localAsgnNode.getDepth());
     }
     
-    private static void instAsgnArgCompile(Node node,int argIndex, Compiler context) {
+    private static void instAsgnArgCompile(Node node,int argIndex, MethodCompiler context) {
         InstAsgnNode instAsgnNode = (InstAsgnNode)node;
         
         context.assignInstanceVariableBlockArg(argIndex,instAsgnNode.getName());
     }
     
-    private static void globalAsgnArgCompile(Node node,int argIndex, Compiler context) {
+    private static void globalAsgnArgCompile(Node node,int argIndex, MethodCompiler context) {
         GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode)node;
         
         context.assignGlobalVariableBlockArg(argIndex,globalAsgnNode.getName());

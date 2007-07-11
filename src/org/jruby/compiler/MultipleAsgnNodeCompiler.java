@@ -22,7 +22,7 @@ public class MultipleAsgnNodeCompiler implements NodeCompiler{
     public MultipleAsgnNodeCompiler() {
     }
     
-    public void compile(Node node, Compiler context) {
+    public void compile(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)node;

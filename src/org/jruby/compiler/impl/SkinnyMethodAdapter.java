@@ -205,6 +205,10 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         mv.visitInsn(ATHROW);
     }
     
+    public void instance_of(String arg0) {
+        mv.visitTypeInsn(INSTANCEOF, arg0);
+    }
+    
     public void ifeq(Label arg0) {
         mv.visitJumpInsn(IFEQ, arg0);
     }

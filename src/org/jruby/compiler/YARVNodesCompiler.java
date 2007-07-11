@@ -28,12 +28,13 @@
 package org.jruby.compiler;
 
 import org.jruby.ast.Node;
+import org.jruby.compiler.yarv.StandardYARVCompiler;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class YARVNodesCompiler {
-    public void compile(Node node, NodeCompiler context) {
+    public void compile(Node node, StandardYARVCompiler context) {
         context.compile(node, null);
     }    
 }// YARVNodesCompiler

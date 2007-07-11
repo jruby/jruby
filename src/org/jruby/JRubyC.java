@@ -59,7 +59,7 @@ public class JRubyC {
             
             // do the compile
             StandardASMCompiler compiler = new StandardASMCompiler(filename.substring(0, filename.lastIndexOf(".")), filename);
-            NodeCompilerFactory.compile(scriptNode, compiler);
+            NodeCompilerFactory.compileRoot(scriptNode, compiler);
             
             compiler.writeClass(destfile);
         } catch (IOException ioe) {

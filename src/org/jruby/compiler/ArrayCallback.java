@@ -14,5 +14,5 @@ package org.jruby.compiler;
  * @author headius
  */
 public interface ArrayCallback {
-    public void nextValue(Compiler context, Object sourceArray, int index);
+    public void nextValue(MethodCompiler context, Object sourceArray, int index);
 }

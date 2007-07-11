@@ -24,7 +24,7 @@ public class MultipleAsgnNodeAsgnCompiler implements NodeCompiler {
     public MultipleAsgnNodeAsgnCompiler() {
     }
     
-    public void compile(Node node, Compiler context) {
+    public void compile(Node node, MethodCompiler context) {
         
         // FIXME: This is incomplete.
         
@@ -36,7 +36,7 @@ public class MultipleAsgnNodeAsgnCompiler implements NodeCompiler {
         
         { // normal items at the "head" of the masgn
             ArrayCallback headAssignCallback = new ArrayCallback() {
-                public void nextValue(Compiler context, Object sourceArray,
+                public void nextValue(MethodCompiler context, Object sourceArray,
                                       int index) {
                     ListNode headNode = (ListNode)sourceArray;
                     Node assignNode = headNode.get(index);
@@ -62,7 +62,7 @@ public class MultipleAsgnNodeAsgnCompiler implements NodeCompiler {
                     // no check for '*'
                 } else {
                     BranchCallback trueBranch = new BranchCallback() {
-                        public void branch(Compiler context) {
+                        public void branch(MethodCompiler context) {
                             
                         }
                     };

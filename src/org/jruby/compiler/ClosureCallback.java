@@ -14,5 +14,5 @@ package org.jruby.compiler;
  * @author headius
  */
 public interface ClosureCallback {
-    public void compile(Compiler context);
+    public void compile(MethodCompiler context);
 }

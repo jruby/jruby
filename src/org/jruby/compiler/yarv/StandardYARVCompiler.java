@@ -66,13 +66,11 @@ import org.jruby.ast.executable.YARVInstructions;
 import org.jruby.ast.executable.YARVMachine;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
-import org.jruby.compiler.Compiler;
-import org.jruby.compiler.NodeCompiler;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-public class StandardYARVCompiler implements NodeCompiler {
+public class StandardYARVCompiler {
     private YARVMachine.InstructionSequence iseq;
     private Ruby runtime;
     private int last_line = -1;

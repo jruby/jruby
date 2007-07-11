@@ -103,7 +103,7 @@ public class NodeCompilerFactory {
         UNSAFE_CALLS = new HashSet();
     }
     
-    public static void compile(Node node, Compiler context) {
+    public static void compile(Node node, MethodCompiler context) {
         switch (node.nodeId) {
         case NodeTypes.ALIASNODE:
             compileAlias(node, context);
@@ -247,9 +247,6 @@ public class NodeCompilerFactory {
         case NodeTypes.RETURNNODE:
             compileReturn(node, context);
             break;
-        case NodeTypes.ROOTNODE:
-            compileRoot(node, context);
-            break;
         case NodeTypes.SELFNODE:
             compileSelf(node, context);
             break;
@@ -287,7 +284,7 @@ public class NodeCompilerFactory {
         }
     }
     
-    public static void compileArguments(Node node, Compiler context) {
+    public static void compileArguments(Node node, MethodCompiler context) {
         switch (node.nodeId) {
         case NodeTypes.ARRAYNODE:
             compileArrayArguments(node, context);
@@ -311,7 +308,7 @@ public class NodeCompilerFactory {
         return new YARVNodesCompiler();
     }
 
-    public static void compileAlias(Node node, Compiler context) {
+    public static void compileAlias(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         final AliasNode alias = (AliasNode)node;
@@ -319,15 +316,15 @@ public class NodeCompilerFactory {
         context.defineAlias(alias.getNewName(),alias.getOldName());
         
         ClosureCallback receiverCallback = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 context.retrieveSelfClass();
             }
         };
         
         ClosureCallback argsCallback = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 context.createObjectArray(new Object[] {alias.getNewName()}, new ArrayCallback() {
-                    public void nextValue(Compiler context, Object sourceArray,
+                    public void nextValue(MethodCompiler context, Object sourceArray,
                                           int index) {
                         context.loadSymbol(alias.getNewName());
                     }
@@ -338,7 +335,7 @@ public class NodeCompilerFactory {
         context.invokeDynamic("method_added", receiverCallback, argsCallback, CallType.FUNCTIONAL, null, false);
     }
     
-    public static void compileAnd(Node node, Compiler context) {
+    public static void compileAnd(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         final AndNode andNode = (AndNode)node;
@@ -346,7 +343,7 @@ public class NodeCompilerFactory {
         compile(andNode.getFirstNode(), context);
         
         BranchCallback longCallback = new BranchCallback() {
-            public void branch(Compiler context) {
+            public void branch(MethodCompiler context) {
                 compile(andNode.getSecondNode(), context);
             }
         };
@@ -354,13 +351,13 @@ public class NodeCompilerFactory {
         context.performLogicalAnd(longCallback);
     }
     
-    public static void compileArray(Node node, Compiler context) {
+    public static void compileArray(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         ArrayNode arrayNode = (ArrayNode)node;
         
         ArrayCallback callback = new ArrayCallback() {
-            public void nextValue(Compiler context, Object sourceArray, int index) {
+            public void nextValue(MethodCompiler context, Object sourceArray, int index) {
                 Node node = (Node)((Object[])sourceArray)[index];
                 compile(node, context);
             }
@@ -370,7 +367,7 @@ public class NodeCompilerFactory {
         context.createNewArray(arrayNode.isLightweight());
     }
     
-    public static void compileAttrAssign(Node node, Compiler context) {
+    public static void compileAttrAssign(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         AttrAssignNode attrAssignNode = (AttrAssignNode)node;
@@ -381,7 +378,7 @@ public class NodeCompilerFactory {
         context.invokeAttrAssign(attrAssignNode.getName());
     }
     
-    public static void compileBegin(Node node, Compiler context) {
+    public static void compileBegin(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         BeginNode beginNode = (BeginNode)node;
@@ -389,12 +386,12 @@ public class NodeCompilerFactory {
         compile(beginNode.getBodyNode(), context);
     }
 
-    public static void compileBignum(Node node, Compiler context) {
+    public static void compileBignum(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         context.createNewBignum(((BignumNode)node).getValue());
     }
 
-    public static void compileBlock(Node node, Compiler context) {
+    public static void compileBlock(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         BlockNode blockNode = (BlockNode)node;
@@ -411,7 +408,7 @@ public class NodeCompilerFactory {
         }
     }
     
-    public static void compileBreak(Node node, Compiler context) {
+    public static void compileBreak(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         BreakNode breakNode = (BreakNode)node;
@@ -425,7 +422,7 @@ public class NodeCompilerFactory {
         context.issueBreakEvent();
     }
     
-    public static void compileCall(Node node, Compiler context) {
+    public static void compileCall(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         final CallNode callNode = (CallNode)node;
@@ -437,13 +434,13 @@ public class NodeCompilerFactory {
         }
         
         ClosureCallback receiverCallback = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 NodeCompilerFactory.compile(callNode.getReceiverNode(), context);
             }
         };
         
         ClosureCallback argsCallback = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 compileArguments(callNode.getArgsNode(), context);
             }
         };
@@ -460,7 +457,7 @@ public class NodeCompilerFactory {
             final IterNode iterNode = (IterNode) callNode.getIterNode();
             
             final ClosureCallback closureArg = new ClosureCallback() {
-                public void compile(Compiler context) {
+                public void compile(MethodCompiler context) {
                     NodeCompilerFactory.compile(iterNode, context);
                 }
             };
@@ -473,7 +470,8 @@ public class NodeCompilerFactory {
         }
     }
     
-    public static void compileClass(Node node, Compiler context) {
+    public static void compileClass(Node node, MethodCompiler context) {
+        /** needs new work
         context.lineNumber(node.getPosition());
         
         final ClassNode classNode = (ClassNode)node;
@@ -483,7 +481,7 @@ public class NodeCompilerFactory {
         final Node cpathNode = classNode.getCPath();
         
         ClosureCallback superCallback = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 if (superNode != null) {
                     NodeCompilerFactory.compile(superNode, context);
                 } else {
@@ -493,7 +491,7 @@ public class NodeCompilerFactory {
         };
         
         ClosureCallback bodyCallback = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 if (classNode.getBodyNode() != null) {
                     NodeCompilerFactory.compile(classNode.getBodyNode(), context);
                 }
@@ -502,7 +500,7 @@ public class NodeCompilerFactory {
         };
         
         ClosureCallback pathCallback = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 if (cpathNode instanceof Colon2Node) {
                     Node leftNode = ((Colon2Node)cpathNode).getLeftNode();
                     if (leftNode != null) {
@@ -518,10 +516,10 @@ public class NodeCompilerFactory {
             }
         };
         
-        context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback);
+        context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback); */
     }
 
-    public static void compileClassVar(Node node, Compiler context) {
+    public static void compileClassVar(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         ClassVarNode classVarNode = (ClassVarNode)node;
@@ -529,7 +527,7 @@ public class NodeCompilerFactory {
         context.retrieveClassVariable(classVarNode.getName());
     }
 
-    public static void compileClassVarAsgn(Node node, Compiler context) {
+    public static void compileClassVarAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode)node;
@@ -539,7 +537,7 @@ public class NodeCompilerFactory {
         context.assignClassVariable(classVarAsgnNode.getName());
     }
     
-    public static void compileConstDecl(Node node, Compiler context) {
+    public static void compileConstDecl(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         ConstDeclNode constDeclNode = (ConstDeclNode)node;
@@ -561,7 +559,7 @@ public class NodeCompilerFactory {
         }
     }
 
-    public static void compileConst(Node node, Compiler context) {
+    public static void compileConst(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         ConstNode constNode = (ConstNode)node;
@@ -569,7 +567,7 @@ public class NodeCompilerFactory {
         context.retrieveConstant(constNode.getName());
     }
     
-    public static void compileColon2(Node node, Compiler context) {
+    public static void compileColon2(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         final Colon2Node iVisited = (Colon2Node) node;
         Node leftNode = iVisited.getLeftNode();
@@ -580,20 +578,20 @@ public class NodeCompilerFactory {
             context.retrieveConstantFromModule(name);
         } else {
             final ClosureCallback receiverCallback = new ClosureCallback() {
-                public void compile(Compiler context) {
+                public void compile(MethodCompiler context) {
                     NodeCompilerFactory.compile(iVisited.getLeftNode(), context);
                 }
             };
             
             BranchCallback moduleCallback = new BranchCallback() {
-                    public void branch(Compiler context) {
+                    public void branch(MethodCompiler context) {
                         receiverCallback.compile(context);
                         context.retrieveConstantFromModule(name);
                     }
                 };
 
             BranchCallback notModuleCallback = new BranchCallback() {
-                    public void branch(Compiler context) {
+                    public void branch(MethodCompiler context) {
                         context.invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
                     }
                 };
@@ -602,7 +600,7 @@ public class NodeCompilerFactory {
         }
     }
     
-    public static void compileDAsgn(Node node, Compiler context) {
+    public static void compileDAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         DAsgnNode dasgnNode = (DAsgnNode)node;
@@ -612,7 +610,7 @@ public class NodeCompilerFactory {
         context.assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
     }
     
-    public static void compileDefn(Node node, Compiler context) {
+    public static void compileDefn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         final DefnNode defnNode = (DefnNode)node;
@@ -621,7 +619,7 @@ public class NodeCompilerFactory {
         NodeCompilerFactory.confirmNodeIsSafe(argsNode);
         
         ClosureCallback body = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 if (defnNode.getBodyNode() != null) {
                     NodeCompilerFactory.compile(defnNode.getBodyNode(), context);
                 } else {
@@ -631,7 +629,7 @@ public class NodeCompilerFactory {
         };
         
         final ArrayCallback evalOptionalValue = new ArrayCallback() {
-            public void nextValue(Compiler context, Object object, int index) {
+            public void nextValue(MethodCompiler context, Object object, int index) {
                 ListNode optArgs = (ListNode)object;
                 
                 Node node = optArgs.get(index);
@@ -641,7 +639,7 @@ public class NodeCompilerFactory {
         };
         
         ClosureCallback args = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 int required = argsNode.getArgsCount();
                 int restArg = argsNode.getRestArg();
                 boolean hasOptArgs = argsNode.getOptArgs() != null;
@@ -684,7 +682,7 @@ public class NodeCompilerFactory {
         context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args);
     }
     
-    public static void compileDot(Node node, Compiler context) {
+    public static void compileDot(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         DotNode dotNode = (DotNode)node;
@@ -695,13 +693,13 @@ public class NodeCompilerFactory {
         context.createNewRange(dotNode.isExclusive());
     }
     
-    public static void compileDStr(Node node, Compiler context) {
+    public static void compileDStr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final DStrNode dstrNode = (DStrNode)node;
         
         ArrayCallback dstrCallback = new ArrayCallback() {
-                public void nextValue(Compiler context, Object sourceArray,
+                public void nextValue(MethodCompiler context, Object sourceArray,
                                       int index) {
                     compile(dstrNode.get(index), context);
                 }
@@ -709,7 +707,7 @@ public class NodeCompilerFactory {
         context.createNewString(dstrCallback,dstrNode.size());
     }
     
-    public static void compileDVar(Node node, Compiler context) {
+    public static void compileDVar(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         DVarNode dvarNode = (DVarNode)node;
@@ -717,7 +715,7 @@ public class NodeCompilerFactory {
         context.retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
     }
     
-    public static void compileEvStr(Node node, Compiler context) {
+    public static void compileEvStr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         final EvStrNode evStrNode = (EvStrNode)node;
@@ -726,7 +724,7 @@ public class NodeCompilerFactory {
         context.asString();
     }
     
-    public static void compileFalse(Node node, Compiler context) {
+    public static void compileFalse(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         context.loadFalse();
@@ -734,7 +732,7 @@ public class NodeCompilerFactory {
         context.pollThreadEvents();
     }
     
-    public static void compileFCall(Node node, Compiler context) {
+    public static void compileFCall(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         final FCallNode fcallNode = (FCallNode)node;
@@ -746,7 +744,7 @@ public class NodeCompilerFactory {
         }
         
         ClosureCallback argsCallback = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 compileArguments(fcallNode.getArgsNode(), context);
             }
         };
@@ -764,7 +762,7 @@ public class NodeCompilerFactory {
             final IterNode iterNode = (IterNode) fcallNode.getIterNode();
             
             final ClosureCallback closureArg = new ClosureCallback() {
-                public void compile(Compiler context) {
+                public void compile(MethodCompiler context) {
                     NodeCompilerFactory.compile(iterNode, context);
                 }
             };
@@ -777,7 +775,7 @@ public class NodeCompilerFactory {
         }
     }
 
-    public static void compileFixnum(Node node, Compiler context) {
+    public static void compileFixnum(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         FixnumNode fixnumNode = (FixnumNode)node;
@@ -785,7 +783,7 @@ public class NodeCompilerFactory {
         context.createNewFixnum(fixnumNode.getValue());
     }
     
-    public static void compileFloat(Node node, Compiler context) {
+    public static void compileFloat(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         FloatNode floatNode = (FloatNode)node;
@@ -793,7 +791,7 @@ public class NodeCompilerFactory {
         context.createNewFloat(floatNode.getValue());
     }
     
-    public static void compileGlobalAsgn(Node node, Compiler context) {
+    public static void compileGlobalAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode)node;
@@ -815,7 +813,7 @@ public class NodeCompilerFactory {
         context.assignGlobalVariable(globalAsgnNode.getName());
     }
     
-    public static void compileGlobalVar(Node node, Compiler context) {
+    public static void compileGlobalVar(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         GlobalVarNode globalVarNode = (GlobalVarNode)node;
@@ -835,7 +833,7 @@ public class NodeCompilerFactory {
         context.retrieveGlobalVariable(globalVarNode.getName());
     }
     
-    public static void compileHash(Node node, Compiler context) {
+    public static void compileHash(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         HashNode hashNode = (HashNode)node;
@@ -846,7 +844,7 @@ public class NodeCompilerFactory {
         }
         
         ArrayCallback hashCallback = new ArrayCallback() {
-            public void nextValue(Compiler context, Object sourceArray,
+            public void nextValue(MethodCompiler context, Object sourceArray,
                                   int index) {
                 ListNode listNode = (ListNode)sourceArray;
                 int keyIndex = index * 2;
@@ -858,7 +856,7 @@ public class NodeCompilerFactory {
         context.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
     }
     
-    public static void compileIf(Node node, Compiler context) {
+    public static void compileIf(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         final IfNode ifNode = (IfNode)node;
@@ -866,7 +864,7 @@ public class NodeCompilerFactory {
         compile(ifNode.getCondition(), context);
         
         BranchCallback trueCallback = new BranchCallback() {
-            public void branch(Compiler context) {
+            public void branch(MethodCompiler context) {
                 if (ifNode.getThenBody() != null) {
                     compile(ifNode.getThenBody(), context);
                 } else {
@@ -876,7 +874,7 @@ public class NodeCompilerFactory {
         };
         
         BranchCallback falseCallback = new BranchCallback() {
-            public void branch(Compiler context) {
+            public void branch(MethodCompiler context) {
                 if (ifNode.getElseBody() != null) {
                     compile(ifNode.getElseBody(), context);
                 } else {
@@ -888,7 +886,7 @@ public class NodeCompilerFactory {
         context.performBooleanBranch(trueCallback, falseCallback);
     }
     
-    public static void compileInstAsgn(Node node, Compiler context) {
+    public static void compileInstAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         InstAsgnNode instAsgnNode = (InstAsgnNode)node;
@@ -897,7 +895,7 @@ public class NodeCompilerFactory {
         context.assignInstanceVariable(instAsgnNode.getName());
     }
     
-    public static void compileInstVar(Node node, Compiler context) {
+    public static void compileInstVar(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         InstVarNode instVarNode = (InstVarNode)node;
@@ -905,14 +903,14 @@ public class NodeCompilerFactory {
         context.retrieveInstanceVariable(instVarNode.getName());
     }
     
-    public static void compileIter(Node node, Compiler context) {
+    public static void compileIter(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final IterNode iterNode = (IterNode)node;
 
         // create the closure class and instantiate it
         final ClosureCallback closureBody = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 if (iterNode.getBodyNode() != null) {
                     NodeCompilerFactory.compile(iterNode.getBodyNode(), context);
                 } else {
@@ -923,7 +921,7 @@ public class NodeCompilerFactory {
 
         // create the closure class and instantiate it
         final ClosureCallback closureArgs = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 if (iterNode.getVarNode() != null) {
                     AssignmentCompiler.assign(iterNode.getVarNode(), 0, context);
                 }
@@ -933,7 +931,7 @@ public class NodeCompilerFactory {
         context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(), closureBody, closureArgs);
     }
 
-    public static void compileLocalAsgn(Node node, Compiler context) {
+    public static void compileLocalAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
@@ -943,7 +941,7 @@ public class NodeCompilerFactory {
         context.assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
     }
     
-    public static void compileLocalVar(Node node, Compiler context) {
+    public static void compileLocalVar(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         LocalVarNode localVarNode = (LocalVarNode)node;
@@ -951,7 +949,7 @@ public class NodeCompilerFactory {
         context.retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
     }
     
-    public static void compileMatch(Node node, Compiler context) {
+    public static void compileMatch(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         MatchNode matchNode = (MatchNode)node;
@@ -961,7 +959,7 @@ public class NodeCompilerFactory {
         context.match();
     }
     
-    public static void compileMatch2(Node node, Compiler context) {
+    public static void compileMatch2(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         Match2Node matchNode = (Match2Node)node;
@@ -971,7 +969,7 @@ public class NodeCompilerFactory {
         
         context.match2();
     }
-    public static void compileMatch3(Node node, Compiler context) {
+    public static void compileMatch3(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         Match3Node matchNode = (Match3Node)node;
@@ -982,7 +980,8 @@ public class NodeCompilerFactory {
         context.match3();
     }
     
-    public static void compileModule(Node node, Compiler context) {
+    public static void compileModule(Node node, MethodCompiler context) {
+        /* needs work
         context.lineNumber(node.getPosition());
         
         final ModuleNode moduleNode = (ModuleNode)node;
@@ -990,7 +989,7 @@ public class NodeCompilerFactory {
         final Node cpathNode = moduleNode.getCPath();
         
         ClosureCallback bodyCallback = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 if (moduleNode.getBodyNode() != null) {
                     NodeCompilerFactory.compile(moduleNode.getBodyNode(), context);
                 }
@@ -999,7 +998,7 @@ public class NodeCompilerFactory {
         };
         
         ClosureCallback pathCallback = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 if (cpathNode instanceof Colon2Node) {
                     Node leftNode = ((Colon2Node)cpathNode).getLeftNode();
                     if (leftNode != null) {
@@ -1015,17 +1014,17 @@ public class NodeCompilerFactory {
             }
         };
         
-        context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback);
+        context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback); */
     }
 
-    public static void compileNewline(Node node, Compiler context) {
+    public static void compileNewline(Node node, MethodCompiler context) {
         // TODO: add trace call
         
         NewlineNode newlineNode = (NewlineNode)node;
         
         compile(newlineNode.getNextNode(), context);
     }
-    public static void compileNthRef(Node node, Compiler context) {
+    public static void compileNthRef(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         NthRefNode nthRefNode = (NthRefNode)node;
@@ -1033,7 +1032,7 @@ public class NodeCompilerFactory {
         context.nthRef(nthRefNode.getMatchNumber());
     }
     
-    public static void compileNil(Node node, Compiler context) {
+    public static void compileNil(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         context.loadNil();
@@ -1041,7 +1040,7 @@ public class NodeCompilerFactory {
         context.pollThreadEvents();
     }
     
-    public static void compileNot(Node node, Compiler context) {
+    public static void compileNot(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         NotNode notNode = (NotNode)node;
@@ -1051,7 +1050,7 @@ public class NodeCompilerFactory {
         context.negateCurrentValue();
     }
     
-    public static void compileOpAsgn(Node node, Compiler context) {
+    public static void compileOpAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         // FIXME: This is a little more complicated than it needs to be; do we see now why closures would be nice in Java?
@@ -1059,14 +1058,14 @@ public class NodeCompilerFactory {
         final OpAsgnNode opAsgnNode = (OpAsgnNode)node;
         
         final ClosureCallback receiverCallback = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 NodeCompilerFactory.compile(opAsgnNode.getReceiverNode(), context); // [recv]
                 context.duplicateCurrentValue(); // [recv, recv]
             }
         };
         
         BranchCallback doneBranch = new BranchCallback() {
-            public void branch(Compiler context) {
+            public void branch(MethodCompiler context) {
                 // get rid of extra receiver, leave the variable result present
                 context.swapValues();
                 context.consumeCurrentValue();
@@ -1075,14 +1074,14 @@ public class NodeCompilerFactory {
         
         // Just evaluate the value and stuff it in an argument array
         final ArrayCallback justEvalValue = new ArrayCallback() {
-            public void nextValue(Compiler context, Object sourceArray,
+            public void nextValue(MethodCompiler context, Object sourceArray,
                     int index) {
                 compile(((Node[])sourceArray)[index], context);
             }
         };
         
         BranchCallback assignBranch = new BranchCallback() {
-            public void branch(Compiler context) {
+            public void branch(MethodCompiler context) {
                 // eliminate extra value, eval new one and assign
                 context.consumeCurrentValue();
                 context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, justEvalValue);
@@ -1091,7 +1090,7 @@ public class NodeCompilerFactory {
         };
         
         ClosureCallback receiver2Callback = new ClosureCallback() {
-            public void compile(Compiler context) {
+            public void compile(MethodCompiler context) {
                 context.invokeDynamic(opAsgnNode.getVariableName(), receiverCallback, null, CallType.FUNCTIONAL, null, false); // [recv, varValue]
             }
         };
@@ -1109,7 +1108,7 @@ public class NodeCompilerFactory {
         } else {
             // eval new value, call operator on old value, and assign
             ClosureCallback argsCallback = new ClosureCallback() {
-                public void compile(Compiler context) {
+                public void compile(MethodCompiler context) {
                     context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, justEvalValue);
                 }
             };
@@ -1121,7 +1120,7 @@ public class NodeCompilerFactory {
         context.pollThreadEvents();
     }
     
-    public static void compileOr(Node node, Compiler context) {
+    public static void compileOr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         final OrNode orNode = (OrNode)node;
@@ -1129,7 +1128,7 @@ public class NodeCompilerFactory {
         compile(orNode.getFirstNode(), context);
         
         BranchCallback longCallback = new BranchCallback() {
-            public void branch(Compiler context) {
+            public void branch(MethodCompiler context) {
                 compile(orNode.getSecondNode(), context);
             }
         };
@@ -1137,7 +1136,7 @@ public class NodeCompilerFactory {
         context.performLogicalOr(longCallback);
     }
     
-    public static void compileRegexp(Node node, Compiler context) {
+    public static void compileRegexp(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         RegexpNode reNode = (RegexpNode)node;
@@ -1155,7 +1154,7 @@ public class NodeCompilerFactory {
         context.createNewRegexp(reNode.getValue(), reNode.getOptions(), lang);
     }
     
-    public static void compileReturn(Node node, Compiler context) {
+    public static void compileReturn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         ReturnNode returnNode = (ReturnNode)node;
@@ -1165,36 +1164,36 @@ public class NodeCompilerFactory {
         context.performReturn();
     }
     
-    public static void compileRoot(Node node, Compiler context) {
+    public static void compileRoot(Node node, ScriptCompiler context) {
         RootNode rootNode = (RootNode)node;
         
         context.startScript();
         
         // create method for toplevel of script
-        Object methodToken = context.beginMethod("__file__", null);
+        MethodCompiler methodCompiler = context.startMethod("__file__", null);
 
         // try to compile the script's body
         try {
             Node nextNode = rootNode.getBodyNode();
             if (nextNode != null) {
-                compile(nextNode, context);
+                compile(nextNode, methodCompiler);
             }
         } catch (NotCompilableException nce) {
             // TODO: recover somehow? build a pure eval method?
             throw nce;
         }
         
-        context.endMethod(methodToken);
+        methodCompiler.endMethod();
         
         context.endScript();
     }
     
-    public static void compileSelf(Node node, Compiler context) {
+    public static void compileSelf(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         context.retrieveSelf();
     }    
     
-    public static void compileSplat(Node node, Compiler context) {
+    public static void compileSplat(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         SplatNode splatNode = (SplatNode)node;
@@ -1204,7 +1203,7 @@ public class NodeCompilerFactory {
         context.splatCurrentValue();
     }
     
-    public static void compileStr(Node node, Compiler context) {
+    public static void compileStr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         StrNode strNode = (StrNode)node;
@@ -1212,7 +1211,7 @@ public class NodeCompilerFactory {
         context.createNewString(strNode.getValue());
     }
     
-    public static void compileSValue(Node node, Compiler context) {
+    public static void compileSValue(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         SValueNode svalueNode = (SValueNode)node;
@@ -1222,12 +1221,12 @@ public class NodeCompilerFactory {
         context.singlifySplattedValue();
     }
     
-    public static void compileSymbol(Node node, Compiler context) {
+    public static void compileSymbol(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         context.createNewSymbol(((SymbolNode)node).getName());
     }    
     
-    public static void compileTrue(Node node, Compiler context) {
+    public static void compileTrue(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         context.loadTrue();
@@ -1235,7 +1234,7 @@ public class NodeCompilerFactory {
         context.pollThreadEvents();
     }
 
-    public static void compileVCall(Node node, Compiler context) {
+    public static void compileVCall(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         VCallNode vcallNode = (VCallNode)node;
@@ -1249,19 +1248,19 @@ public class NodeCompilerFactory {
         context.invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
     }
     
-    public static void compileWhile(Node node, Compiler context) {
+    public static void compileWhile(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         final WhileNode whileNode = (WhileNode)node;
         
         BranchCallback condition = new BranchCallback() {
-            public void branch(Compiler context) {
+            public void branch(MethodCompiler context) {
                 compile(whileNode.getConditionNode(), context);
             }
         };
         
         BranchCallback body = new BranchCallback() {
-            public void branch(Compiler context) {
+            public void branch(MethodCompiler context) {
                 // this could probably be more efficient, and just avoid popping values for each loop
                 // when no values are being generated
                 if (whileNode.getBodyNode() == null) {
@@ -1277,7 +1276,7 @@ public class NodeCompilerFactory {
         context.pollThreadEvents();
     }
     
-    public static void compileYield(Node node, Compiler context) {
+    public static void compileYield(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         YieldNode yieldNode = (YieldNode)node;
@@ -1289,19 +1288,19 @@ public class NodeCompilerFactory {
         context.yield(yieldNode.getArgsNode() != null, yieldNode.getCheckState());
     }
     
-    public static void compileZArray(Node node, Compiler context) {
+    public static void compileZArray(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         context.createEmptyArray();
     }
     
-    public static void compileArrayArguments(Node node, Compiler context) {
+    public static void compileArrayArguments(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
         ArrayNode arrayNode = (ArrayNode)node;
         
         ArrayCallback callback = new ArrayCallback() {
-            public void nextValue(Compiler context, Object sourceArray, int index) {
+            public void nextValue(MethodCompiler context, Object sourceArray, int index) {
                 Node node = (Node)((Object[])sourceArray)[index];
                 compile(node, context);
             }

@@ -35,5 +35,5 @@ import org.jruby.ast.Node;
  * @author headius
  */
 public interface NodeCompiler {
-    public void compile(Node node, Compiler context);
+    public void compile(Node node, MethodCompiler context);
 }
