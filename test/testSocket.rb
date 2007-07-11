@@ -68,4 +68,4 @@ test_equal("AF_INET", received[1][1][0])
 test_ok(/^localhost/ =~ received[1][1][2])
 test_equal("127.0.0.1", received[1][1][3])
 
-test_exception(SocketError) { UDPSocket.open.send("BANG!", 0, 'invalid.', port) }
+test_exception(SocketError) { UDPSocket.open.send("BANG!", -1, 'invalid.', port) }
