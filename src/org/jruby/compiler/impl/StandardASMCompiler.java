@@ -60,6 +60,7 @@ import org.jruby.compiler.ScriptCompiler;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -282,65 +283,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return methodCompiler;
     }
 
-    public class ASMMethodCompiler implements MethodCompiler {
+    public abstract class AbstractMethodCompiler implements MethodCompiler {
+        protected SkinnyMethodAdapter method;
+        
+        protected Label[] currentLoopLabels;
 
-        private String friendlyName;
-        private SkinnyMethodAdapter method;
-        private Arity arity;
-        private Label scopeStart;
+        public abstract void beginMethod(ClosureCallback args);
 
-        public ASMMethodCompiler(String friendlyName) {
-            this.friendlyName = friendlyName;
-
-            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null));
-        }
-
-        public void beginMethod(ClosureCallback args) {
-            method.start();
-
-            // set up a local IRuby variable
-            method.aload(THREADCONTEXT_INDEX);
-            invokeThreadContext("getRuntime", cg.sig(Ruby.class));
-            method.astore(RUNTIME_INDEX);
-
-            // set visibility
-            method.getstatic(cg.p(Visibility.class), "PRIVATE", cg.ci(Visibility.class));
-            method.astore(VISIBILITY_INDEX);
-
-            // store the local vars in a local variable
-            loadThreadContext();
-            invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
-            method.dup();
-            method.astore(LOCAL_VARS_INDEX);
-            method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
-            method.astore(SCOPE_INDEX);
-
-            if (args != null) {
-                args.compile(this);
-            } else {
-                arity = null;
-            }
-
-            // visit a label to start scoping for local vars in this method
-            Label start = new Label();
-            method.label(start);
-
-            scopeStart = start;
-        }
-
-        public void endMethod() {
-            // return last value from execution
-            method.areturn();
-
-            // end of variable scope
-            Label end = new Label();
-            method.label(end);
-
-            // local variable for lvars array
-            method.visitLocalVariable("lvars", cg.ci(IRubyObject[].class), null, scopeStart, end, LOCAL_VARS_INDEX);
-
-            method.end();
-        }
+        public abstract void endMethod();
 
         public void lineNumber(ISourcePosition position) {
             Label line = new Label();
@@ -606,15 +556,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
          * This is for utility methods used by the compiler, to reduce the amount of code generation
          * necessary.  All of these live in CompilerHelpers.
          */
-        private void invokeUtilityMethod(String methodName, String signature) {
+        public void invokeUtilityMethod(String methodName, String signature) {
             method.invokestatic(cg.p(CompilerHelpers.class), methodName, signature);
         }
 
-        private void invokeThreadContext(String methodName, String signature) {
+        public void invokeThreadContext(String methodName, String signature) {
             method.invokevirtual(THREADCONTEXT, methodName, signature);
         }
 
-        private void invokeIRuby(String methodName, String signature) {
+        public void invokeIRuby(String methodName, String signature) {
             method.invokevirtual(RUBY, methodName, signature);
         }
 
@@ -1004,7 +954,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             //method.trycatch(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
             //method.label(tryBegin);
             {
+                Label condJmp = new Label();
+                Label topJmp = new Label();
                 Label endJmp = new Label();
+                
+                Label[] oldLoopLabels = currentLoopLabels;
+                
+                currentLoopLabels = new Label[] {condJmp, topJmp, endJmp};
+                
+                // start loop off with nil
+                loadNil();
+                
                 if (checkFirst) {
                     // calculate condition
                     condition.branch(this);
@@ -1014,24 +974,27 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     method.ifeq(endJmp); // EQ == 0 (i.e. false)
                 }
 
-                Label topJmp = new Label();
-
                 method.label(topJmp);
 
                 body.branch(this);
 
-                // clear result after each loop
+                // clear result after each successful loop, resetting to nil
                 method.pop();
-
-                // calculate condition
+                
+                // check the condition
+                method.label(condJmp);
                 condition.branch(this);
+                
                 // call isTrue on the result
                 isTrue();
 
                 method.ifne(topJmp); // NE == nonzero (i.e. true)
-                if (checkFirst) {
-                    method.label(endJmp);
-                }
+                
+                // exiting loop normally, leave nil on the stack
+                
+                method.label(endJmp);
+                
+                currentLoopLabels = oldLoopLabels;
             }
 
             //method.label(tryEnd);
@@ -1074,73 +1037,19 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 //        }
 //
 //        method.label(normalBreak);
-            loadNil();
-        }
-
-        public void performReturn() {
-            if (isCompilingClosure) {
-                throw new NotCompilableException("Can\'t compile non-local return");
-            }
-
-            // otherwise, just do a local return
-            method.areturn();
         }
 
         public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args) {
-            // FIXME: This isn't quite done yet; waiting to have full support for passing closures so we can test it
-            ClassVisitor cv = getClassVisitor();
-
             String closureMethodName = "closure" + ++innerIndex;
             String closureFieldName = "_" + closureMethodName;
-
-            // declare the field
-            cv.visitField(ACC_PRIVATE | ACC_STATIC, closureFieldName, cg.ci(CompiledBlockCallback.class), null, null);
-
-            ////////////////////////////
-            // closure implementation
-            SkinnyMethodAdapter oldMethod = method;
-            method = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC | ACC_STATIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
-
-            // FIXME: I don't like this pre/post state management.
-            boolean previousIsCompilingClosure = isCompilingClosure;
-            isCompilingClosure = true;
-
-            method.start();
-
-            // store the local vars in a local variable
-            loadThreadContext();
-            invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
-            method.dup();
-            method.astore(LOCAL_VARS_INDEX);
-            method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
-            method.astore(SCOPE_INDEX);
-
-            // set up a local IRuby variable
-            method.aload(THREADCONTEXT_INDEX);
-            invokeThreadContext("getRuntime", cg.sig(Ruby.class));
-            method.astore(RUNTIME_INDEX);
-
-            // set up block arguments
-            args.compile(this);
-
-            // start of scoping for closure's vars
-            Label start = new Label();
-            method.label(start);
-
-            // visit the body of the closure
-            body.compile(this);
-
-            method.areturn();
-
-            // end of scoping for closure's vars
-            Label end = new Label();
-            method.label(end);
-            method.end();
-
-            // FIXME: I don't like this pre/post state management.
-            isCompilingClosure = previousIsCompilingClosure;
-
-            method = oldMethod;
+            
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName);
+            
+            closureCompiler.beginMethod(args);
+            
+            body.compile(closureCompiler);
+            
+            closureCompiler.endMethod();
 
             // Done with closure compilation
             /////////////////////////////////////////////////////////////////////////////
@@ -1171,7 +1080,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeUtilityMethod("createBlock", cg.sig(CompiledBlock.class, cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, String[].class, CompiledBlockCallback.class)));
         }
 
-        private void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {
+        public void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {
             // construct static scope list of names
             method.ldc(new Integer(scope.getNumberOfVariables()));
             method.anewarray(cg.p(String.class));
@@ -1191,7 +1100,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.invokestatic(cg.p(CallbackFactory.class), "createFactory", cg.sig(CallbackFactory.class, cg.params(Ruby.class, Class.class, ClassLoader.class)));
         }
 
-        private void getCompiledClass() {
+        public void getCompiledClass() {
             method.getstatic(classname, "$class", cg.ci(Class.class));
         }
 
@@ -1201,12 +1110,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeIRubyObject("getMetaClass", cg.sig(RubyClass.class));
         }
 
-        private void println() {
+        public void println() {
             method.dup();
             method.getstatic(cg.p(System.class), "out", cg.ci(PrintStream.class));
             method.swap();
 
-            method.invokevirtual(cg.p(PrintStream.class), "setArgValues", cg.sig(Void.TYPE, cg.params(Object.class)));
+            method.invokevirtual(cg.p(PrintStream.class), "println", cg.sig(Void.TYPE, cg.params(Object.class)));
         }
 
         public void defineAlias(String newName, String oldName) {
@@ -1216,160 +1125,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.invokevirtual(cg.p(RubyModule.class), "defineAlias", cg.sig(Void.TYPE, cg.params(String.class, String.class)));
             loadNil();
             // TODO: should call method_added, and possibly push nil.
-        }
-
-        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args) {
-            if (isCompilingClosure) {
-                throw new NotCompilableException("Can\'t compile def within closure yet");
-            }
-
-            // TODO: build arg list based on number of args, optionals, etc
-            ++methodIndex;
-            String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;
-
-            MethodCompiler methodCompiler = startMethod(methodName, args);
-
-            // callbacks to fill in method body
-            body.compile(methodCompiler);
-
-            methodCompiler.endMethod();
-
-            // prepare to call "def" utility method to handle def logic
-            loadThreadContext();
-
-            loadVisibility();
-
-            loadSelf();
-
-            // load the class we're creating, for binding purposes
-            getCompiledClass();
-
-            method.ldc(name);
-
-            method.ldc(methodName);
-
-            buildStaticScopeNames(method, scope);
-
-            method.ldc(new Integer(0));
-
-            invokeUtilityMethod("def", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Visibility.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE)));
-        }
-
-        public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg) {
-            // check arity
-            loadRuntime();
-            method.aload(ARGS_INDEX);
-            method.arraylength();
-            method.ldc(new Integer(requiredArgs));
-            method.ldc(new Integer(optArgs));
-            method.ldc(new Integer(restArg));
-            invokeUtilityMethod("raiseArgumentError", cg.sig(Void.TYPE, cg.params(Ruby.class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE)));
-
-            // arraycopy all arguments into local vars array
-            Label noArgs = new Label();
-
-            // check if args is null
-            method.aload(ARGS_INDEX);
-            method.ifnull(noArgs);
-
-            // check if args length is zero
-            method.aload(ARGS_INDEX);
-            method.arraylength();
-            method.ifeq(noArgs);
-
-            if (requiredArgs + optArgs == 0 && restArg == 0) {
-                // only restarg, just jump to noArgs and it will be processed separately
-                method.go_to(noArgs);
-            }
-
-            // load dynamic scope and args array
-            method.aload(LOCAL_VARS_INDEX);
-            method.aload(ARGS_INDEX);
-
-            // test whether total args count or actual args given is lower, for copying to dynamic scope
-            Label useArgsLength = new Label();
-            Label setArgValues = new Label();
-            method.aload(ARGS_INDEX);
-            method.arraylength();
-            method.ldc(new Integer(requiredArgs + optArgs));
-            method.if_icmplt(useArgsLength);
-
-            // total args is lower, use that
-            method.ldc(new Integer(requiredArgs + optArgs));
-            method.go_to(setArgValues);
-
-            // args length is lower, use that
-            method.label(useArgsLength);
-            method.aload(ARGS_INDEX);
-            method.arraylength();
-
-            // do the dew
-            method.label(setArgValues);
-            method.invokevirtual(cg.p(DynamicScope.class), "setArgValues", cg.sig(Void.TYPE, cg.params(IRubyObject[].class, Integer.TYPE)));
-            method.label(noArgs);
-
-            // push down the argument count of this method
-            this.arity = arity;
-        }
-
-        public void assignOptionalArgs(Object object, int expectedArgsCount, int size, ArrayCallback optEval) {
-            // NOTE: By the time we're here, arity should have already been checked. We proceed without boundschecking.
-            // opt args are handled with a switch; the key is how many args we have coming in, and the cases are
-            // each opt arg index. The cases fall-through, so remaining opt args are handled.
-            method.aload(ARGS_INDEX);
-            method.arraylength();
-
-            Label defaultLabel = new Label();
-            Label[] labels = new Label[size];
-
-            for (int i = 0; i < size; i++) {
-                labels[i] = new Label();
-            }
-
-            method.tableswitch(expectedArgsCount, expectedArgsCount + size - 1, defaultLabel, labels);
-
-            for (int i = 0; i < size; i++) {
-                method.label(labels[i]);
-                optEval.nextValue(this, object, i);
-                method.pop();
-            }
-
-            method.label(defaultLabel);
-        }
-
-        public void processRestArg(int startIndex, int restArg) {
-            method.aload(SCOPE_INDEX);
-            method.ldc(new Integer(restArg));
-
-            method.aload(ARGS_INDEX);
-            method.arraylength();
-            method.ldc(new Integer(startIndex));
-
-            Label emptyArray = new Label();
-            Label store = new Label();
-            method.if_icmple(emptyArray);
-
-            loadRuntime();
-            method.aload(ARGS_INDEX);
-            method.ldc(new Integer(startIndex));
-            method.invokestatic(cg.p(RubyArray.class), "newArrayNoCopy", cg.sig(RubyArray.class, cg.params(Ruby.class, IRubyObject[].class, int.class)));
-            method.go_to(store);
-
-            method.label(emptyArray);
-            loadRuntime();
-            method.lconst_0();
-            method.invokestatic(cg.p(RubyArray.class), "newArray", cg.sig(RubyArray.class, cg.params(Ruby.class, long.class)));
-
-            method.label(store);
-            method.arraystore();
-        }
-
-        public void processBlockArgument(int index) {
-            loadRuntime();
-            loadThreadContext();
-            loadBlock();
-            method.ldc(new Integer(index));
-            invokeUtilityMethod("processBlockArgument", cg.sig(void.class, cg.params(Ruby.class, ThreadContext.class, Block.class, int.class)));
         }
 
         public void loadFalse() {
@@ -1518,21 +1273,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
-        public void issueBreakEvent() {
-            // needs to be rewritten for new jump exceptions
-//        method.newobj(cg.p(JumpException.BreakJump.class));
-//        method.dup();
-//        method.dup_x2();
-//        method.invokespecial(cg.p(JumpException.class), "<init>", cg.sig(Void.TYPE, cg.params(JumpException.JumpType.class)));
-//
-//        // set result into jump exception
-//        method.dup_x1();
-//        method.swap();
-//        method.invokevirtual(cg.p(JumpException.class), "setValue", cg.sig(Void.TYPE, cg.params(Object.class)));
-//
-//        method.athrow();
-        }
-
         public void asString() {
             method.invokeinterface(cg.p(IRubyObject.class), "asString", cg.sig(RubyString.class, cg.params()));
         }
@@ -1659,6 +1399,424 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void backrefMethod(String methodName) {
             invokeThreadContext("getBackref", cg.sig(IRubyObject.class, cg.params()));
             method.invokestatic(cg.p(RubyRegexp.class), methodName, cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
+        }
+        
+        public void issueLoopBreak() {
+            // inside a loop, break out of it
+            method.swap();
+            method.pop();
+
+            // go to end of loop, leaving break value on stack
+            method.go_to(currentLoopLabels[2]);
+        }
+        
+        public void issueLoopNext() {
+            // inside a loop, pop result and jump to conditional
+            method.pop();
+
+            // go to condition
+            method.go_to(currentLoopLabels[0]);
+        }
+        
+        public void issueLoopRedo() {
+            // inside a loop, jump to body
+            method.go_to(currentLoopLabels[1]);
+        }
+    }
+
+    public class ASMClosureCompiler extends AbstractMethodCompiler {
+        private String closureMethodName;
+        private Label startScope;
+        
+        public ASMClosureCompiler(String closureMethodName, String closureFieldName) {
+            this.closureMethodName = closureMethodName;
+
+            // declare the field
+            getClassVisitor().visitField(ACC_PRIVATE | ACC_STATIC, closureFieldName, cg.ci(CompiledBlockCallback.class), null, null);
+        }
+
+        public void beginMethod(ClosureCallback args) {
+            ////////////////////////////
+            // closure implementation
+            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
+
+            method.start();
+
+            // store the local vars in a local variable
+            loadThreadContext();
+            invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
+            method.dup();
+            method.astore(LOCAL_VARS_INDEX);
+            method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
+            method.astore(SCOPE_INDEX);
+
+            // set up a local IRuby variable
+            method.aload(THREADCONTEXT_INDEX);
+            invokeThreadContext("getRuntime", cg.sig(Ruby.class));
+            method.astore(RUNTIME_INDEX);
+
+            // set up block arguments
+            args.compile(this);
+
+            // start of scoping for closure's vars
+            startScope = new Label();
+            method.label(startScope);
+        }
+
+        public void endMethod() {
+            method.areturn();
+
+            // end of scoping for closure's vars
+            Label end = new Label();
+            method.label(end);
+            method.end();
+        }
+
+        public void performReturn() {
+            throw new NotCompilableException("Can\'t compile non-local return");
+        }
+
+        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args) {
+            throw new NotCompilableException("Can\'t compile def within closure yet");
+        }
+
+        public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg) {
+            throw new NotCompilableException("Shouldn't be calling this...");
+        }
+
+        public void assignOptionalArgs(Object object, int expectedArgsCount, int size, ArrayCallback optEval) {
+            throw new NotCompilableException("Shouldn't be calling this...");
+        }
+
+        public void processRestArg(int startIndex, int restArg) {
+            throw new NotCompilableException("Shouldn't be calling this...");
+        }
+
+        public void processBlockArgument(int index) {
+            loadRuntime();
+            loadThreadContext();
+            loadBlock();
+            method.ldc(new Integer(index));
+            invokeUtilityMethod("processBlockArgument", cg.sig(void.class, cg.params(Ruby.class, ThreadContext.class, Block.class, int.class)));
+        }
+        
+        public void issueBreakEvent() {
+            if (currentLoopLabels != null) {
+                issueLoopBreak();
+            } else {
+                throw new NotCompilableException("Can't compile non-local break yet");
+            }
+            // needs to be rewritten for new jump exceptions
+//        method.newobj(cg.p(JumpException.BreakJump.class));
+//        method.dup();
+//        method.dup_x2();
+//        method.invokespecial(cg.p(JumpException.class), "<init>", cg.sig(Void.TYPE, cg.params(JumpException.JumpType.class)));
+//
+//        // set result into jump exception
+//        method.dup_x1();
+//        method.swap();
+//        method.invokevirtual(cg.p(JumpException.class), "setValue", cg.sig(Void.TYPE, cg.params(Object.class)));
+//
+//        method.athrow();
+        }
+
+        public void issueNextEvent() {
+            if (currentLoopLabels != null) {
+                issueLoopNext();
+            } else {
+                throw new NotCompilableException("Can't compile non-local next yet");
+            }
+        }
+
+        public void issueRedoEvent() {
+            if (currentLoopLabels != null) {
+                issueLoopRedo();
+            } else {
+                throw new NotCompilableException("Can't compile non-local next yet");
+            }
+        }
+    }
+
+    public class ASMMethodCompiler extends AbstractMethodCompiler {
+        private String friendlyName;
+        private Arity arity;
+        private Label scopeStart;
+
+        public ASMMethodCompiler(String friendlyName) {
+            this.friendlyName = friendlyName;
+
+            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null));
+        }
+
+        public void beginMethod(ClosureCallback args) {
+            method.start();
+
+            // set up a local IRuby variable
+            method.aload(THREADCONTEXT_INDEX);
+            invokeThreadContext("getRuntime", cg.sig(Ruby.class));
+            method.astore(RUNTIME_INDEX);
+
+            // set visibility
+            method.getstatic(cg.p(Visibility.class), "PRIVATE", cg.ci(Visibility.class));
+            method.astore(VISIBILITY_INDEX);
+
+            // store the local vars in a local variable
+            loadThreadContext();
+            invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
+            method.dup();
+            method.astore(LOCAL_VARS_INDEX);
+            method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
+            method.astore(SCOPE_INDEX);
+
+            if (args != null) {
+                args.compile(this);
+            } else {
+                arity = null;
+            }
+
+            // visit a label to start scoping for local vars in this method
+            Label start = new Label();
+            method.label(start);
+
+            scopeStart = start;
+        }
+
+        public void endMethod() {
+            // return last value from execution
+            method.areturn();
+
+            // end of variable scope
+            Label end = new Label();
+            method.label(end);
+
+            // local variable for lvars array
+            method.visitLocalVariable("lvars", cg.ci(IRubyObject[].class), null, scopeStart, end, LOCAL_VARS_INDEX);
+
+            method.end();
+        }
+
+        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args) {
+            if (isCompilingClosure) {
+                throw new NotCompilableException("Can\'t compile def within closure yet");
+            }
+
+            // TODO: build arg list based on number of args, optionals, etc
+            ++methodIndex;
+            String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;
+
+            MethodCompiler methodCompiler = startMethod(methodName, args);
+
+            // callbacks to fill in method body
+            body.compile(methodCompiler);
+
+            methodCompiler.endMethod();
+
+            // prepare to call "def" utility method to handle def logic
+            loadThreadContext();
+
+            loadVisibility();
+
+            loadSelf();
+
+            // load the class we're creating, for binding purposes
+            getCompiledClass();
+
+            method.ldc(name);
+
+            method.ldc(methodName);
+
+            buildStaticScopeNames(method, scope);
+
+            method.ldc(new Integer(0));
+
+            invokeUtilityMethod("def", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Visibility.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE)));
+        }
+        
+        public void performReturn() {
+            // normal return for method body
+            method.areturn();
+        }
+
+        public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg) {
+            // check arity
+            loadRuntime();
+            method.aload(ARGS_INDEX);
+            method.arraylength();
+            method.ldc(new Integer(requiredArgs));
+            method.ldc(new Integer(optArgs));
+            method.ldc(new Integer(restArg));
+            invokeUtilityMethod("raiseArgumentError", cg.sig(Void.TYPE, cg.params(Ruby.class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE)));
+
+            // arraycopy all arguments into local vars array
+            Label noArgs = new Label();
+
+            // check if args is null
+            method.aload(ARGS_INDEX);
+            method.ifnull(noArgs);
+
+            // check if args length is zero
+            method.aload(ARGS_INDEX);
+            method.arraylength();
+            method.ifeq(noArgs);
+
+            if (requiredArgs + optArgs == 0 && restArg == 0) {
+                // only restarg, just jump to noArgs and it will be processed separately
+                method.go_to(noArgs);
+            }
+
+            // load dynamic scope and args array
+            method.aload(LOCAL_VARS_INDEX);
+            method.aload(ARGS_INDEX);
+
+            // test whether total args count or actual args given is lower, for copying to dynamic scope
+            Label useArgsLength = new Label();
+            Label setArgValues = new Label();
+            method.aload(ARGS_INDEX);
+            method.arraylength();
+            method.ldc(new Integer(requiredArgs + optArgs));
+            method.if_icmplt(useArgsLength);
+
+            // total args is lower, use that
+            method.ldc(new Integer(requiredArgs + optArgs));
+            method.go_to(setArgValues);
+
+            // args length is lower, use that
+            method.label(useArgsLength);
+            method.aload(ARGS_INDEX);
+            method.arraylength();
+
+            // do the dew
+            method.label(setArgValues);
+            method.invokevirtual(cg.p(DynamicScope.class), "setArgValues", cg.sig(Void.TYPE, cg.params(IRubyObject[].class, Integer.TYPE)));
+            method.label(noArgs);
+
+            // push down the argument count of this method
+            this.arity = arity;
+        }
+
+        public void assignOptionalArgs(Object object, int expectedArgsCount, int size, ArrayCallback optEval) {
+            // NOTE: By the time we're here, arity should have already been checked. We proceed without boundschecking.
+            // opt args are handled with a switch; the key is how many args we have coming in, and the cases are
+            // each opt arg index. The cases fall-through, so remaining opt args are handled.
+            method.aload(ARGS_INDEX);
+            method.arraylength();
+
+            Label defaultLabel = new Label();
+            Label[] labels = new Label[size];
+
+            for (int i = 0; i < size; i++) {
+                labels[i] = new Label();
+            }
+
+            method.tableswitch(expectedArgsCount, expectedArgsCount + size - 1, defaultLabel, labels);
+
+            for (int i = 0; i < size; i++) {
+                method.label(labels[i]);
+                optEval.nextValue(this, object, i);
+                method.pop();
+            }
+
+            method.label(defaultLabel);
+        }
+
+        public void processRestArg(int startIndex, int restArg) {
+            method.aload(SCOPE_INDEX);
+            method.ldc(new Integer(restArg));
+
+            method.aload(ARGS_INDEX);
+            method.arraylength();
+            method.ldc(new Integer(startIndex));
+
+            Label emptyArray = new Label();
+            Label store = new Label();
+            method.if_icmple(emptyArray);
+
+            loadRuntime();
+            method.aload(ARGS_INDEX);
+            method.ldc(new Integer(startIndex));
+            method.invokestatic(cg.p(RubyArray.class), "newArrayNoCopy", cg.sig(RubyArray.class, cg.params(Ruby.class, IRubyObject[].class, int.class)));
+            method.go_to(store);
+
+            method.label(emptyArray);
+            loadRuntime();
+            method.lconst_0();
+            method.invokestatic(cg.p(RubyArray.class), "newArray", cg.sig(RubyArray.class, cg.params(Ruby.class, long.class)));
+
+            method.label(store);
+            method.arraystore();
+        }
+
+        public void processBlockArgument(int index) {
+            throw new NotCompilableException("Should not be callin this...");
+        }
+
+        public void issueBreakEvent() {
+            if (currentLoopLabels != null) {
+                issueLoopBreak();
+            } else {
+                // in method body with no containing loop, issue jump error
+                
+                // load runtime under break value
+                loadRuntime();
+                method.swap();
+                
+                // load "break" jump error type under value
+                method.ldc("break");
+                method.swap();
+                
+                // load break jump error message
+                method.ldc("unexpected break");
+                
+                // create and raise local jump error
+                invokeIRuby("newLocalJumpError", cg.sig(RaiseException.class, cg.params(String.class, IRubyObject.class, String.class)));
+                method.athrow();
+            }
+        }
+
+        public void issueNextEvent() {
+            if (currentLoopLabels != null) {
+                issueLoopNext();
+            } else {
+                // in method body with no containing loop, issue jump error
+                
+                // load runtime under next value
+                loadRuntime();
+                method.swap();
+                
+                // load "next" jump error type under value
+                method.ldc("next");
+                method.swap();
+                
+                // load next jump error message
+                method.ldc("unexpected next");
+                
+                // create and raise local jump error
+                invokeIRuby("newLocalJumpError", cg.sig(RaiseException.class, cg.params(String.class, IRubyObject.class, String.class)));
+                method.athrow();
+            }
+        }
+
+        public void issueRedoEvent() {
+            if (currentLoopLabels != null) {
+                issueLoopRedo();
+            } else {
+                // in method body with no containing loop, issue jump error
+                
+                // load runtime
+                loadRuntime();
+                
+                // load "redo" jump error type
+                method.ldc("redo");
+                
+                loadNil();
+                
+                // load break jump error message
+                method.ldc("unexpected redo");
+                
+                // create and raise local jump error
+                invokeIRuby("newLocalJumpError", cg.sig(RaiseException.class, cg.params(String.class, IRubyObject.class, String.class)));
+                method.athrow();
+            }
         }
     }
 

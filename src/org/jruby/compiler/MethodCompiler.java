@@ -467,6 +467,10 @@ public interface MethodCompiler {
     public void loadRubyArraySize();
     
     public void issueBreakEvent();
+    
+    public void issueNextEvent();
+    
+    public void issueRedoEvent();
 
     public void asString();
 

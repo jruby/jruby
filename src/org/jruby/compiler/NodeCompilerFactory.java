@@ -72,12 +72,14 @@ import org.jruby.ast.Match3Node;
 import org.jruby.ast.MatchNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.NewlineNode;
+import org.jruby.ast.NextNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeTypes;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OrNode;
+import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
@@ -127,8 +129,6 @@ public class NodeCompilerFactory {
             compileBlock(node, context);
             break;
         case NodeTypes.BREAKNODE:
-            // Not safe yet; something weird with break-handling try/catch and calls like "foo bar {}"
-            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
             compileBreak(node, context);
             break;
         case NodeTypes.CALLNODE:
@@ -226,6 +226,9 @@ public class NodeCompilerFactory {
         case NodeTypes.NEWLINENODE:
             compileNewline(node, context);
             break;
+        case NodeTypes.NEXTNODE:
+            compileNext(node, context);
+            break;
         case NodeTypes.NTHREFNODE:
             compileNthRef(node, context);
             break;
@@ -240,6 +243,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.ORNODE:
             compileOr(node, context);
+            break;
+        case NodeTypes.REDONODE:
+            compileRedo(node, context);
             break;
         case NodeTypes.REGEXPNODE:
             compileRegexp(node, context);
@@ -1018,11 +1024,25 @@ public class NodeCompilerFactory {
     }
 
     public static void compileNewline(Node node, MethodCompiler context) {
-        // TODO: add trace call
+        // TODO: add trace call?
         
         NewlineNode newlineNode = (NewlineNode)node;
         
         compile(newlineNode.getNextNode(), context);
+    }
+    
+    public static void compileNext(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        NextNode nextNode = (NextNode)node;
+        
+        if (nextNode.getValueNode() != null) {
+            compile(nextNode.getValueNode(), context);
+        } else {
+            context.loadNil();
+        }
+        
+        context.issueNextEvent();
     }
     public static void compileNthRef(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
@@ -1134,6 +1154,14 @@ public class NodeCompilerFactory {
         };
         
         context.performLogicalOr(longCallback);
+    }
+    
+    public static void compileRedo(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        RedoNode redoNode = (RedoNode)node;
+        
+        context.issueRedoEvent();
     }
     
     public static void compileRegexp(Node node, MethodCompiler context) {
@@ -1261,8 +1289,6 @@ public class NodeCompilerFactory {
         
         BranchCallback body = new BranchCallback() {
             public void branch(MethodCompiler context) {
-                // this could probably be more efficient, and just avoid popping values for each loop
-                // when no values are being generated
                 if (whileNode.getBodyNode() == null) {
                     context.loadNil();
                     return;
