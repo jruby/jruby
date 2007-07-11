@@ -108,6 +108,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private static final int RUNTIME_INDEX = 5;
     private static final int VISIBILITY_INDEX = 6;
     private static final int LOCAL_VARS_INDEX = 7;
+    private static final int NIL_INDEX = 8;
 
     private Stack SkinnyMethodAdapters = new Stack();
     private Stack arities = new Stack();
@@ -124,11 +125,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     int innerIndex = -1;
 
     int lastLine = -1;
-
-    /**
-     * Used to make determinations about non-local returns and similar flow control
-     */
-    boolean isCompilingClosure;
 
     /** Creates a new instance of StandardCompilerContext */
     public StandardASMCompiler(String classname, String sourcename) {
@@ -1370,8 +1366,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         private void nullToNil() {
-            loadRuntime();
-            invokeUtilityMethod("nullToNil", cg.sig(IRubyObject.class, cg.params(IRubyObject.class, Ruby.class)));
+            Label notNull = new Label();
+            method.dup();
+            method.ifnonnull(notNull);
+            method.pop();
+            method.aload(NIL_INDEX);
+            method.label(notNull);
         }
 
         public void branchIfModule(ClosureCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback) {
@@ -1453,8 +1453,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // set up a local IRuby variable
             method.aload(THREADCONTEXT_INDEX);
             invokeThreadContext("getRuntime", cg.sig(Ruby.class));
+            method.dup();
             method.astore(RUNTIME_INDEX);
-
+            
+            // grab nil for local variables
+            invokeIRuby("getNil", cg.sig(IRubyObject.class));
+            method.astore(NIL_INDEX);
+            
             // set up block arguments
             args.compile(this);
 
@@ -1554,7 +1559,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // set up a local IRuby variable
             method.aload(THREADCONTEXT_INDEX);
             invokeThreadContext("getRuntime", cg.sig(Ruby.class));
+            method.dup();
             method.astore(RUNTIME_INDEX);
+            
+            // grab nil for local variables
+            invokeIRuby("getNil", cg.sig(IRubyObject.class));
+            method.astore(NIL_INDEX);
 
             // set visibility
             method.getstatic(cg.p(Visibility.class), "PRIVATE", cg.ci(Visibility.class));
@@ -1596,10 +1606,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args) {
-            if (isCompilingClosure) {
-                throw new NotCompilableException("Can\'t compile def within closure yet");
-            }
-
             // TODO: build arg list based on number of args, optionals, etc
             ++methodIndex;
             String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;
