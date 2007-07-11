@@ -876,6 +876,9 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
 
         Block blockOfBinding = ((RubyBinding)scope).getBlock();
+        // FIXME:  This determine module is in a strange location and should somehow be in block
+        blockOfBinding.getDynamicScope().getStaticScope().determineModule();
+
         try {
             // Binding provided for scope, use it
             context.preEvalWithBinding(blockOfBinding);
