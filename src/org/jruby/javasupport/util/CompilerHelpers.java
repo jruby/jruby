@@ -45,10 +45,11 @@ public class CompilerHelpers {
                 new DynamicScope(staticScope, context.getCurrentScope()), callback);
     }
     
-    public static IRubyObject def(ThreadContext context, Visibility visibility, IRubyObject self, Class compiledClass, String name, String javaName, String[] scopeNames, int arity) {
+    public static IRubyObject def(ThreadContext context, IRubyObject self, Class compiledClass, String name, String javaName, String[] scopeNames, int arity) {
         Ruby runtime = context.getRuntime();
         
         RubyModule containingClass = context.getRubyClass();
+        Visibility visibility = context.getCurrentVisibility();
         
         if (containingClass == null) {
             throw runtime.newTypeError("No class to add method.");
@@ -255,12 +256,40 @@ public class CompilerHelpers {
         RubyProc blockArg;
         
         if (block.getProcObject() != null) {
-            blockArg = (RubyProc) block.getProcObject();
+            blockArg = block.getProcObject();
         } else {
             blockArg = runtime.newProc(false, block);
             blockArg.getBlock().isLambda = block.isLambda;
         }
         // We pass depth zero since we know this only applies to newly created local scope
         context.getCurrentScope().setValue(index, blockArg, 0);
+    }
+        
+    public static void processRestArg(Ruby runtime, IRubyObject[] scope, int restArg, IRubyObject[] args, int start) {
+        if (args.length <= start) {
+            scope[restArg] = RubyArray.newArray(runtime, 0);
+        } else {
+            scope[restArg] = RubyArray.newArrayNoCopy(runtime, args, start);
+        }
+    }
+    
+    public static IRubyObject[] createObjectArray(IRubyObject arg1) {
+        return new IRubyObject[] {arg1};
+    }
+    
+    public static IRubyObject[] createObjectArray(IRubyObject arg1, IRubyObject arg2) {
+        return new IRubyObject[] {arg1, arg2};
+    }
+    
+    public static IRubyObject[] createObjectArray(IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return new IRubyObject[] {arg1, arg2, arg3};
+    }
+    
+    public static IRubyObject[] createObjectArray(IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4) {
+        return new IRubyObject[] {arg1, arg2, arg3, arg4};
+    }
+    
+    public static IRubyObject[] createObjectArray(IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
+        return new IRubyObject[] {arg1, arg2, arg3, arg4, arg5};
     }
 }

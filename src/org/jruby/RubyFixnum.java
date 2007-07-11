@@ -124,14 +124,6 @@ public class RubyFixnum extends RubyInteger {
         this.value = value;
     }
     
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
-            IRubyObject[] args, CallType callType, Block block) {
-        // If tracing is on, don't do STI dispatch
-        if (context.getRuntime().hasEventHooks()) return super.callMethod(context, rubyclass, name, args, callType, block);
-        
-        return rubyclass.dispatcher.callMethod(context, this, rubyclass, methodIndex, name, args, callType, block);
-    }
-    
     public int getNativeTypeIndex() {
         return ClassIndex.FIXNUM;
     }

@@ -33,6 +33,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -104,11 +105,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private static final int SELF_INDEX = 1;
     private static final int ARGS_INDEX = 2;
     private static final int CLOSURE_INDEX = 3;
-    private static final int SCOPE_INDEX = 4;
+    private static final int LOCAL_VARS_INDEX = 4;
     private static final int RUNTIME_INDEX = 5;
-    private static final int VISIBILITY_INDEX = 6;
-    private static final int LOCAL_VARS_INDEX = 7;
-    private static final int NIL_INDEX = 8;
+    private static final int SCOPE_INDEX = 6;
+    private static final int NIL_INDEX = 7;
 
     private String classname;
     private String sourcename;
@@ -267,6 +267,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         protected SkinnyMethodAdapter method;
         
         protected Label[] currentLoopLabels;
+        
+        // The current local variable count, to use for temporary locals during processing
+        protected int localVariable = NIL_INDEX + 1;
 
         public abstract void beginMethod(ClosureCallback args);
 
@@ -505,10 +508,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(RUNTIME_INDEX);
         }
 
-        public void loadVisibility() {
-            method.aload(VISIBILITY_INDEX);
-        }
-
         public void loadBlock() {
             method.aload(CLOSURE_INDEX);
         }
@@ -583,6 +582,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.arraystore();
         }
 
+        public void retrieveLocalVariable(int index) {
+            method.aload(SCOPE_INDEX);
+            method.ldc(new Integer(index));
+            method.arrayload();
+            nullToNil();
+        }
+
         public void assignLastLine() {
             method.dup();
 
@@ -601,13 +607,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.arrayload();
             method.iconst_0();
             method.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
-        }
-
-        public void retrieveLocalVariable(int index) {
-            method.aload(SCOPE_INDEX);
-            method.ldc(new Integer(index));
-            method.arrayload();
-            nullToNil();
         }
 
         public void retrieveLastLine() {
@@ -800,20 +799,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void createObjectArray(int elementCount) {
-            // create the array
-            method.ldc(new Integer(elementCount));
-            method.anewarray(cg.p(IRubyObject.class));
-
-            // for each element, swap with array and insert
-            for (int i = 0; i < elementCount; i++) {
-                method.dup_x1();
-                method.dup_x1();
-                method.pop();
-
-                method.ldc(new Integer(elementCount - 1 - i));
-                method.swap();
-
-                method.arraystore();
+            // if element count is less than 6, use helper methods
+            if (elementCount < 6) {
+                Class[] params = new Class[elementCount];
+                Arrays.fill(params, IRubyObject.class);
+                invokeUtilityMethod("createObjectArray", cg.sig(IRubyObject[].class, params));
+            } else {
+                // This is pretty inefficient for building an array, so just raise an error if someone's using it for a lot of elements
+                throw new NotCompilableException("Don't use createObjectArray(int) for more than 5 elements");
             }
         }
 
@@ -1085,9 +1078,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         private void getRubyClass() {
-            loadSelf();
-            // FIXME: This doesn't seem *quite* right. If actually within a class...end, is self.getMetaClass the correct class? should be self, no?
-            invokeIRubyObject("getMetaClass", cg.sig(RubyClass.class));
+            loadThreadContext();
+            invokeThreadContext("getRubyClass", cg.sig(RubyModule.class));
         }
 
         public void println() {
@@ -1349,7 +1341,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeThreadContext("pollThreadEvents", cg.sig(Void.TYPE));
         }
 
-        private void nullToNil() {
+        public void nullToNil() {
             Label notNull = new Label();
             method.dup();
             method.ifnonnull(notNull);
@@ -1550,10 +1542,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeIRuby("getNil", cg.sig(IRubyObject.class));
             method.astore(NIL_INDEX);
 
-            // set visibility
-            method.getstatic(cg.p(Visibility.class), "PRIVATE", cg.ci(Visibility.class));
-            method.astore(VISIBILITY_INDEX);
-
             // store the local vars in a local variable
             loadThreadContext();
             invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
@@ -1604,8 +1592,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // prepare to call "def" utility method to handle def logic
             loadThreadContext();
 
-            loadVisibility();
-
             loadSelf();
 
             // load the class we're creating, for binding purposes
@@ -1619,7 +1605,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.ldc(new Integer(0));
 
-            invokeUtilityMethod("def", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Visibility.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE)));
+            invokeUtilityMethod("def", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE)));
         }
         
         public void performReturn() {
@@ -1639,6 +1625,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             // arraycopy all arguments into local vars array
             Label noArgs = new Label();
+            for (int i = 0; i < arity.required(); i++) {
+                method.aload(ARGS_INDEX);
+                method.ldc(new Integer(i));
+                method.arrayload();
+                method.astore(LOCAL_VARS_INDEX + i + 2 + 2);
+            }
 
             // check if args is null
             method.aload(ARGS_INDEX);
@@ -1652,32 +1644,33 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             if (requiredArgs + optArgs == 0 && restArg == 0) {
                 // only restarg, just jump to noArgs and it will be processed separately
                 method.go_to(noArgs);
+            } else {
+                // load dynamic scope and args array
+                method.aload(LOCAL_VARS_INDEX);
+                method.aload(ARGS_INDEX);
+
+                // test whether total args count or actual args given is lower, for copying to dynamic scope
+                Label useArgsLength = new Label();
+                Label setArgValues = new Label();
+                method.aload(ARGS_INDEX);
+                method.arraylength();
+                method.ldc(new Integer(requiredArgs + optArgs));
+                method.if_icmplt(useArgsLength);
+
+                // total args is lower, use that
+                method.ldc(new Integer(requiredArgs + optArgs));
+                method.go_to(setArgValues);
+
+                // args length is lower, use that
+                method.label(useArgsLength);
+                method.aload(ARGS_INDEX);
+                method.arraylength();
+
+                // do the dew
+                method.label(setArgValues);
+                method.invokevirtual(cg.p(DynamicScope.class), "setArgValues", cg.sig(Void.TYPE, cg.params(IRubyObject[].class, Integer.TYPE)));
             }
-
-            // load dynamic scope and args array
-            method.aload(LOCAL_VARS_INDEX);
-            method.aload(ARGS_INDEX);
-
-            // test whether total args count or actual args given is lower, for copying to dynamic scope
-            Label useArgsLength = new Label();
-            Label setArgValues = new Label();
-            method.aload(ARGS_INDEX);
-            method.arraylength();
-            method.ldc(new Integer(requiredArgs + optArgs));
-            method.if_icmplt(useArgsLength);
-
-            // total args is lower, use that
-            method.ldc(new Integer(requiredArgs + optArgs));
-            method.go_to(setArgValues);
-
-            // args length is lower, use that
-            method.label(useArgsLength);
-            method.aload(ARGS_INDEX);
-            method.arraylength();
-
-            // do the dew
-            method.label(setArgValues);
-            method.invokevirtual(cg.p(DynamicScope.class), "setArgValues", cg.sig(Void.TYPE, cg.params(IRubyObject[].class, Integer.TYPE)));
+            
             method.label(noArgs);
 
             // push down the argument count of this method
@@ -1710,30 +1703,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void processRestArg(int startIndex, int restArg) {
+            loadRuntime();
             method.aload(SCOPE_INDEX);
             method.ldc(new Integer(restArg));
-
-            method.aload(ARGS_INDEX);
-            method.arraylength();
-            method.ldc(new Integer(startIndex));
-
-            Label emptyArray = new Label();
-            Label store = new Label();
-            method.if_icmple(emptyArray);
-
-            loadRuntime();
             method.aload(ARGS_INDEX);
             method.ldc(new Integer(startIndex));
-            method.invokestatic(cg.p(RubyArray.class), "newArrayNoCopy", cg.sig(RubyArray.class, cg.params(Ruby.class, IRubyObject[].class, int.class)));
-            method.go_to(store);
-
-            method.label(emptyArray);
-            loadRuntime();
-            method.lconst_0();
-            method.invokestatic(cg.p(RubyArray.class), "newArray", cg.sig(RubyArray.class, cg.params(Ruby.class, long.class)));
-
-            method.label(store);
-            method.arraystore();
+            
+            invokeUtilityMethod("processRestArg", cg.sig(void.class, cg.params(Ruby.class, IRubyObject[].class, int.class, IRubyObject[].class, int.class)));
         }
 
         public void processBlockArgument(int index) {

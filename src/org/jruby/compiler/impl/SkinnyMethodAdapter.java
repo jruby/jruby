@@ -287,6 +287,10 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         mv.visitInsn(IADD);
     }
     
+    public void iinc() {
+        mv.visitInsn(IINC);
+    }
+    
     public AnnotationVisitor visitAnnotationDefault() {
         return mv.visitAnnotationDefault();
     }

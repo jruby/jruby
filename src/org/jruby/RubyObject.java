@@ -504,7 +504,26 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
     
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block) {
+        if (context.getRuntime().hasEventHooks()) return callMethod(context, rubyclass, name, args, callType, block);
+        
         return rubyclass.dispatcher.callMethod(context, this, rubyclass, methodIndex, name, args, callType, block);
+    }
+    
+    /**
+     *
+     */
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name,
+            IRubyObject[] args, CallType callType, Block block) {
+        assert args != null;
+        DynamicMethod method = null;
+        method = rubyclass.searchMethod(name);
+        
+
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+            return callMethodMissing(context, this, method, name, args, context.getFrameSelf(), callType, block);
+        }
+
+        return method.call(context, this, rubyclass, name, args, false, block);
     }
 
     /**
@@ -571,24 +590,6 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         return receiver.callMethod(context, "method_missing", newArgs, block);
     }
-    
-    /**
-     *
-     */
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name,
-            IRubyObject[] args, CallType callType, Block block) {
-        assert args != null;
-        DynamicMethod method = null;
-        method = rubyclass.searchMethod(name);
-        
-
-        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-            return callMethodMissing(context, this, method, name, args, context.getFrameSelf(), callType, block);
-        }
-
-        return method.call(context, this, rubyclass, name, args, false, block);
-    }
-
 
     public IRubyObject instance_variable_get(IRubyObject var) {
     	String varName = var.asSymbol();
