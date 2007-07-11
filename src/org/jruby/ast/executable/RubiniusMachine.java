@@ -27,8 +27,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast.executable;
 
+import org.jruby.MetaClass;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.parser.StaticScope;
@@ -38,17 +42,16 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.internal.runtime.methods.RubiniusMethod;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class RubiniusMachine {
     public final static RubiniusMachine INSTANCE = new RubiniusMachine();
-
-    public IRubyObject exec(ThreadContext context, IRubyObject self, StaticScope scope, char[] bytecodes, IRubyObject[] literals) {
-        return exec(context,self, new DynamicScope(scope),bytecodes,literals);
-    }
 
     public final static int getInt(char[] bytecodes, int ix) {
         int val = 0;
@@ -59,23 +62,87 @@ public class RubiniusMachine {
         return val;
     }
 
-    public IRubyObject exec(ThreadContext context, IRubyObject self, DynamicScope scope, char[] bytecodes, IRubyObject[] literals) {
+    public IRubyObject exec(ThreadContext context, IRubyObject self, char[] bytecodes, IRubyObject[] literals, IRubyObject[] args) {
         IRubyObject[] stack = new IRubyObject[20];
         int stackTop = 0;
         stack[stackTop] = context.getRuntime().getNil();
+        for(int i=0;i<args.length;i++) {
+            stack[++stackTop] = args[i];
+        }
         int ip = 0;
         int call_flags = -1;
         int cache_index = -1;
         Ruby runtime = context.getRuntime();
-        context.preRootNode(scope);
         IRubyObject recv;
         IRubyObject other;
 
         loop: while (ip < bytecodes.length) {
             int ix = ip;
             int code = bytecodes[ip++];
+            /*
+                System.err.print(RubiniusInstructions.NAMES[code] + " (" + code + ") "); 
+                if(RubiniusInstructions.ONE_INT[code]) {
+                    System.err.print("[" + getInt(bytecodes, ip) + "] ");
+                } else if(RubiniusInstructions.TWO_INT[code]) {
+                    System.err.print("[" + getInt(bytecodes, ip) + ", " + getInt(bytecodes, ip+4) + "] ");
+                }
+                System.err.println("{" + ix + "}");
+
+                for(int i=stackTop; i>=0; i--) {
+                    System.err.println(" [" + i + "]=" + stack[i].callMethod(context, "inspect"));
+                    }*/
             switch(code) {
             case RubiniusInstructions.NOOP: {
+                break;
+            }
+            case RubiniusInstructions.ADD_METHOD: {
+                int val = getInt(bytecodes, ip);
+                ip += 4;
+                String name = literals[val].toString();
+                RubyModule clzz = (RubyModule)stack[stackTop--];
+                RubyArray method = (RubyArray)stack[stackTop--];
+                
+                Visibility visibility = context.getCurrentVisibility();
+                if (name == "initialize" || visibility.isModuleFunction()) {
+                    visibility = Visibility.PRIVATE;
+                }
+
+                RubiniusMethod newMethod = new RubiniusMethod(clzz, new RubiniusCMethod(method), visibility);
+
+                clzz.addMethod(name, newMethod);
+    
+                if (context.getCurrentVisibility().isModuleFunction()) {
+                    clzz.getSingletonClass().addMethod(
+                            name,
+                            new WrapperMethod(clzz.getSingletonClass(), newMethod,
+                                    Visibility.PUBLIC));
+                    clzz.callMethod(context, "singleton_method_added", literals[val]);
+                }
+    
+                if (clzz.isSingleton()) {
+                    ((MetaClass) clzz).getAttachedObject().callMethod(
+                            context, "singleton_method_added", literals[val]);
+                } else {
+                    clzz.callMethod(context, "method_added", literals[val]);
+                }
+                stack[++stackTop] = method;
+                break;
+            }
+            case RubiniusInstructions.META_PUSH_NEG_1: {
+                stack[++stackTop] = RubyFixnum.minus_one(runtime);
+                break;
+            }
+            case RubiniusInstructions.CHECK_ARGCOUNT: {
+                int min = getInt(bytecodes, ip);
+                ip += 4;
+                int max = getInt(bytecodes, ip);
+                ip += 4;
+
+                if(args.length < min) {
+                    throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for " + min + ")");
+                } else if(max>0 && args.length>max) {
+                    throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for " + max + ")");
+                }
                 break;
             }
             case RubiniusInstructions.META_PUSH_0: {
@@ -84,6 +151,10 @@ public class RubiniusMachine {
             }
             case RubiniusInstructions.META_PUSH_1: {
                 stack[++stackTop] = RubyFixnum.one(runtime);
+                break;
+            }
+            case RubiniusInstructions.META_PUSH_2: {
+                stack[++stackTop] = runtime.newFixnum(2);
                 break;
             }
             case RubiniusInstructions.SET_LOCAL: {
@@ -130,17 +201,40 @@ public class RubiniusMachine {
                 if((t1 instanceof RubyFixnum) && (t1 instanceof RubyFixnum)) {
                     stack[++stackTop] = (RubyNumeric.fix2int(t1) < RubyNumeric.fix2int(t2)) ? runtime.getTrue() : runtime.getFalse();
                 } else {
-                    stack[++stackTop] = t1.callMethod(runtime.getCurrentContext(), MethodIndex.OP_LT, "<", t2);
+                    stack[++stackTop] = t1.callMethod(context, MethodIndex.OP_LT, "<", t2);
                 }
                 break;
             }
+
+            case RubiniusInstructions.META_SEND_OP_GT: {
+                IRubyObject t1 = stack[stackTop--];
+                IRubyObject t2 = stack[stackTop--];
+                if((t1 instanceof RubyFixnum) && (t1 instanceof RubyFixnum)) {
+                    stack[++stackTop] = (RubyNumeric.fix2int(t1) > RubyNumeric.fix2int(t2)) ? runtime.getTrue() : runtime.getFalse();
+                } else {
+                    stack[++stackTop] = t1.callMethod(context, MethodIndex.OP_GT, ">", t2);
+                }
+                break;
+            }
+
             case RubiniusInstructions.META_SEND_OP_PLUS: {
                 IRubyObject t1 = stack[stackTop--];
                 IRubyObject t2 = stack[stackTop--];
                 if((t1 instanceof RubyFixnum) && (t2 instanceof RubyFixnum)) {
                     stack[++stackTop] = ((RubyFixnum)t1).plus(t2);
                 } else {
-                    stack[++stackTop] = t1.callMethod(runtime.getCurrentContext(), MethodIndex.OP_PLUS, "+", t2);
+                    stack[++stackTop] = t1.callMethod(context, MethodIndex.OP_PLUS, "+", t2);
+                }
+                break;
+            }
+            case RubiniusInstructions.META_SEND_OP_MINUS: {
+
+                IRubyObject t1 = stack[stackTop--];
+                IRubyObject t2 = stack[stackTop--];
+                if((t1 instanceof RubyFixnum) && (t2 instanceof RubyFixnum)) {
+                    stack[++stackTop] = ((RubyFixnum)t1).minus(t2);
+                } else {
+                    stack[++stackTop] = t1.callMethod(context, MethodIndex.OP_MINUS, "-", t2);
                 }
                 break;
             }
@@ -169,13 +263,14 @@ public class RubiniusMachine {
                 String name = literals[index].toString();
                 int ixi = MethodIndex.getIndex(name);
                 recv = stack[stackTop--];
+                IRubyObject[] argu = new IRubyObject[num_args];
+                for(int i=0;i<num_args;i++) {
+                    argu[i] = stack[stackTop--];
+                }
                 if((call_flags & 0x01) == 0x01) { //Functional
-                    IRubyObject[] args = new IRubyObject[num_args];
-                    for(int i=0;i<num_args;i++) {
-                        args[i] = stack[stackTop--];
-                    }
-                    stack[++stackTop] = recv.callMethod(runtime.getCurrentContext(), recv.getMetaClass(), ixi, name, args, CallType.FUNCTIONAL, Block.NULL_BLOCK); 
+                    stack[++stackTop] = recv.callMethod(context, recv.getMetaClass(), ixi, name, argu, CallType.FUNCTIONAL, Block.NULL_BLOCK); 
                 } else {
+                    stack[++stackTop] = recv.callMethod(context, recv.getMetaClass(), ixi, name, argu, CallType.NORMAL, Block.NULL_BLOCK); 
                 }
                 break;
             }
@@ -185,6 +280,25 @@ public class RubiniusMachine {
                 if(!stack[stackTop--].isTrue()) {
                     ip = val;
                 }
+                break;
+            }
+            case RubiniusInstructions.GOTO_IF_TRUE: {
+                int val = getInt(bytecodes, ip);
+                ip += 4;
+                if(stack[stackTop--].isTrue()) {
+                    ip = val;
+                }
+                break;
+            }
+            case RubiniusInstructions.SWAP_STACK: {
+                IRubyObject swap = stack[stackTop];
+                stack[stackTop] = stack[stackTop-1];
+                stack[stackTop-1] = swap;
+                break;
+            }
+            case RubiniusInstructions.DUP_TOP: {
+                stack[stackTop+1] = stack[stackTop];
+                stackTop++;
                 break;
             }
             case RubiniusInstructions.GOTO: {
@@ -203,15 +317,12 @@ public class RubiniusMachine {
                 break;
             }
             default:
-                System.err.print(RubiniusInstructions.NAMES[code] + " (" + code + ") "); 
+                System.err.println("--COULDN'T");
                 if(RubiniusInstructions.ONE_INT[code]) {
-                    System.err.print("[" + getInt(bytecodes, ip) + "] ");
                     ip+=4;
                 } else if(RubiniusInstructions.TWO_INT[code]) {
-                    System.err.print("[" + getInt(bytecodes, ip) + ", " + getInt(bytecodes, ip+4) + "] ");
                     ip+=8;
                 }
-                System.err.println("{" + ix + "}");
                 break;
             }
         }

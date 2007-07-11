@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.HashMap;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyNumeric;
 
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.LocalStaticScope;
@@ -88,18 +90,10 @@ public class RubiniusRunner implements Runnable {
         return val;
     }
 
-    public static class CMethod {
-        public String name;
-        public String file;
-        public int locals; 
-        public IRubyObject[] literals;
-        public char[] code;
-    }
-
     private Map methods = new HashMap();
 
     private final void readRest(Reader reader) throws IOException {
-        CMethod obj = null;
+        RubiniusCMethod obj = null;
         while((obj = unmarshalCMethod(reader)) != null) {
             methods.put(obj.name, obj);
         }
@@ -137,63 +131,12 @@ public class RubiniusRunner implements Runnable {
         return vals;
     }
 
-    private final CMethod unmarshalCMethod(Reader reader) throws IOException {
-        int tag = reader.read();
-        if(tag == -1) {
+    private final RubiniusCMethod unmarshalCMethod(Reader reader) throws IOException {
+        RubyArray obj = (RubyArray)unmarshal(reader);
+        if(obj == null) {
             return null;
         }
-        if(tag != 'm') {
-            throw new RuntimeException("Toplevel object should only be CMethod");
-        }
-
-        int fields = readInt(reader);
-
-        CMethod meth = new CMethod();
-        unmarshal(reader); fields--;
-        unmarshal(reader); fields--;
-        unmarshal(reader); fields--;
-        unmarshal(reader); fields--;
-
-
-        if(reader.read() == 'b') {
-            meth.code = unmarshalCharArray(reader);
-        } else {
-            throw new RuntimeException("Need a code array for a CMethod object");
-        }
-        fields--;
-
-        if(reader.read() == 'x') {
-            meth.name = unmarshalString(reader);
-        } else {
-            throw new RuntimeException("Need a symbol for method name");
-        }
-        fields--;
-
-        if(reader.read() == 'x') {
-            meth.file = unmarshalString(reader);
-        } else {
-            throw new RuntimeException("Need a String for file name");
-        }
-        fields--;
-
-        if(reader.read() == 'i') {
-            meth.locals = unmarshalInt(reader);
-        } else {
-            throw new RuntimeException("Need an int for locals");
-        }
-        fields--;
-        
-        if(reader.read() == 'p') {
-            meth.literals = unmarshalTuple(reader);
-        } else {
-            throw new RuntimeException("Need a tuple for literals");
-        }
-        fields--;
-
-        while(fields-- > 0) {
-            unmarshal(reader);
-        }
-        return meth;
+        return new RubiniusCMethod(obj);
     }
 
     private final IRubyObject unmarshal(Reader reader)  throws IOException {
@@ -206,7 +149,7 @@ public class RubiniusRunner implements Runnable {
         case 'x': return runtime.newSymbol(unmarshalString(reader));
         case 'p': return runtime.newArray(unmarshalTuple(reader));
         case 'b': return runtime.newString(unmarshalString(reader)); 
-        case 'm': System.err.println("m"); return null;
+        case 'm': return runtime.newArray(unmarshalTuple(reader));
         case 'B': System.err.println("B"); return null;
         case 'd': System.err.println("d"); return null;
         case 'r': System.err.println("r"); return null;
@@ -218,11 +161,12 @@ public class RubiniusRunner implements Runnable {
     }
 
     public void run() {
-        CMethod method = (CMethod)methods.get("__script__");
+        RubiniusCMethod method = (RubiniusCMethod)methods.get("__script__");
         ThreadContext context = runtime.getCurrentContext();
         StaticScope scope = new LocalStaticScope(null);
         scope.setVariables(new String[method.locals]);
         context.setPosition(new SimpleSourcePosition(method.file, -1));
-        RubiniusMachine.INSTANCE.exec(context, runtime.getObject(), new DynamicScope(scope,null), method.code, method.literals);
+        context.preRootNode(new DynamicScope(scope,null));
+        RubiniusMachine.INSTANCE.exec(context, runtime.getObject(), method.code, method.literals, new IRubyObject[0]);
     }
 }// RubiniusRunner
