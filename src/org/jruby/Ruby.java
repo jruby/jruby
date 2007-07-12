@@ -309,7 +309,7 @@ public final class Ruby {
                 if (filename.equals("-e")) {
                     classname = "__dash_e__";
                 } else {
-                    classname = filename.replace("/", ".").replace("\\", ".").replace(".rb", "");
+                    classname = filename.replace("\\", "/").replace(".rb", "");
                 }
 
                 StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
@@ -364,7 +364,7 @@ public final class Ruby {
             if (filename.equals("-e")) {
                 classname = "__dash_e__";
             } else {
-                classname = filename.replace("/", ".").replace("\\", ".").replace(".rb", "");
+                classname = filename.replace("\\", "/").replace(".rb", "");
             }
             
             StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
