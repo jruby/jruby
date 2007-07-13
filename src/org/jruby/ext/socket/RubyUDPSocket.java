@@ -129,12 +129,11 @@ public class RubyUDPSocket extends RubyIPSocket {
 	        int length = RubyNumeric.fix2int(args[0]);
 	        ByteBuffer buf = ByteBuffer.allocate(length);
 	        InetSocketAddress sender = (InetSocketAddress) ((DatagramChannel) this.getChannel()).receive(buf);
-	        byte[] address = sender.getAddress().getAddress();
 	        IRubyObject addressArray = getRuntime().newArray(new IRubyObject[] {
 		        getRuntime().newString("AF_INET"),
 		        getRuntime().newFixnum(sender.getPort()),
 		        getRuntime().newString(sender.getHostName()),
-		        getRuntime().newString("" + address[0] + "." + address[1] + "." + address[2] + "." + address[3] )
+		        getRuntime().newString(sender.getAddress().getHostAddress())
 	        });
 	        IRubyObject result = getRuntime().newString(new ByteList(buf.array(), 0, buf.position()));
 	        return getRuntime().newArray(new IRubyObject[] { result, addressArray });
