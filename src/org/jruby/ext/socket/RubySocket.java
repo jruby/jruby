@@ -134,7 +134,11 @@ public class RubySocket extends RubyBasicSocket {
         try {
             return recv.getRuntime().newString(InetAddress.getLocalHost().getHostName());
         } catch(UnknownHostException e) {
-            throw sockerr(recv, "gethostname: name or service not known");
+            try {
+                return recv.getRuntime().newString(InetAddress.getByAddress(new byte[]{0,0,0,0}).getHostName());
+            } catch(UnknownHostException e2) {
+                throw sockerr(recv, "gethostname: name or service not known");
+            }
         }
     }
 
