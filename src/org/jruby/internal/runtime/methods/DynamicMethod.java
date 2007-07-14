@@ -44,10 +44,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class DynamicMethod {
     protected RubyModule implementationClass;
     protected Visibility visibility;
+    protected CallConfiguration callConfig;
     
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
         this.visibility = visibility;
         this.implementationClass = implementationClass;
+        this.callConfig = callConfig;
     }
 
     /**

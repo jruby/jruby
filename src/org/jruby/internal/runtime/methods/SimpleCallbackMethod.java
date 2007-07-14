@@ -48,7 +48,7 @@ public class SimpleCallbackMethod extends DynamicMethod {
     private Callback callback;
 
     public SimpleCallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
-        super(implementationClass, visibility);
+        super(implementationClass, visibility, CallConfiguration.JAVA_FAST);
         this.callback = callback;
     }
 
@@ -66,6 +66,7 @@ public class SimpleCallbackMethod extends DynamicMethod {
                 runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
             }
         }
+        
         return callback.execute(self, args, block);
     }
 

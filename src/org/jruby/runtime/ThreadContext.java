@@ -39,6 +39,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyThread;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
@@ -282,12 +283,12 @@ public class ThreadContext {
     }
     
     private void pushCallFrame(RubyModule clazz, String name, 
-                               IRubyObject self, IRubyObject[] args, int req, Block block, Object jumpTarget) {
+                               IRubyObject self, IRubyObject[] args, int req, Block block, JumpTarget jumpTarget) {
         pushFrame(clazz, name, self, args, req, block, jumpTarget);        
     }
 
     private void pushFrame(RubyModule clazz, String name, 
-                               IRubyObject self, IRubyObject[] args, int req, Block block, Object jumpTarget) {
+                               IRubyObject self, IRubyObject[] args, int req, Block block, JumpTarget jumpTarget) {
         frameStack[++frameIndex].updateFrame(clazz, self, name, args, req, block, getPosition(), jumpTarget);
         expandFramesIfNecessary();
     }
@@ -298,15 +299,13 @@ public class ThreadContext {
     }
     
     private void popFrame() {
-        Frame frame = (Frame)frameStack[frameIndex];
-        //frameStack[frameIndex--] = null;
+        Frame frame = frameStack[frameIndex];
         frameIndex--;
         setPosition(frame.getPosition());
     }
         
     private void popFrameReal() {
-        Frame frame = (Frame)frameStack[frameIndex];
-        //frameStack[frameIndex--] = null;
+        Frame frame = frameStack[frameIndex];
         frameStack[frameIndex] = new Frame();
         frameIndex--;
         setPosition(frame.getPosition());
@@ -345,7 +344,7 @@ public class ThreadContext {
         return getCurrentFrame().getJumpTarget();
     }
     
-    public void setFrameJumpTarget(Object target) {
+    public void setFrameJumpTarget(JumpTarget target) {
         getCurrentFrame().setJumpTarget(target);
     }
     
@@ -419,7 +418,7 @@ public class ThreadContext {
     }
     
     public RubyModule popRubyClass() {
-        RubyModule ret = (RubyModule)parentStack[parentIndex];
+        RubyModule ret = parentStack[parentIndex];
         parentStack[parentIndex--] = null;
         return ret;
     }
@@ -427,7 +426,7 @@ public class ThreadContext {
     public RubyModule getRubyClass() {
         assert !(parentIndex == -1) : "Trying to get RubyClass from empty stack";
         
-        RubyModule parentModule = (RubyModule)parentStack[parentIndex];
+        RubyModule parentModule = parentStack[parentIndex];
         
         return parentModule.getNonIncludedClass();
     }
@@ -435,9 +434,9 @@ public class ThreadContext {
     public RubyModule getBindingRubyClass() {
         RubyModule parentModule = null;
         if(parentIndex == 0) {
-            parentModule = (RubyModule)parentStack[parentIndex];
+            parentModule = parentStack[parentIndex];
         } else {
-            parentModule = (RubyModule)parentStack[parentIndex-1];
+            parentModule = parentStack[parentIndex-1];
             
         }
         return parentModule.getNonIncludedClass();
@@ -637,8 +636,8 @@ public class ThreadContext {
         popFrame();
     }
 
-    public void preMethodCall(RubyModule implementationClass, RubyModule clazz, 
-                              IRubyObject self, String name, IRubyObject[] args, int req, Block block, boolean noSuper, Object jumpTarget) {
+    public void preMethodCall(RubyModule implementationClass, RubyModule clazz,  IRubyObject self, String name, IRubyObject[] args,
+            int req, Block block, boolean noSuper, JumpTarget jumpTarget) {
         pushRubyClass(implementationClass);
         pushCallFrame(noSuper ? null : clazz, name, self, args, req, block, jumpTarget);
     }
@@ -648,33 +647,28 @@ public class ThreadContext {
         popRubyClass();
     }
     
-    public void preDefMethodInternalCall(RubyModule clazz, String name, 
-                                         IRubyObject self, IRubyObject[] args, int req, Block block, boolean noSuper, 
-            StaticScope staticScope, Object jumpTarget) {
+    public void preRubyMethodFull(RubyModule clazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block, boolean noSuper, 
+            StaticScope staticScope, JumpTarget jumpTarget) {
         RubyModule implementationClass = getCurrentScope().getStaticScope().getModule();
         pushCallFrame(noSuper ? null : clazz, name, self, args, req, block, jumpTarget);
         pushScope(new DynamicScope(staticScope));
         pushRubyClass(implementationClass);
     }
     
-    public void postDefMethodInternalCall() {
+    public void postRubyMethodFull() {
         popRubyClass();
         popScope();
         popFrame();
     }
     
-    // NEW! Push a scope into the frame, since this is now required to use it
-    // XXX: This is screwy...apparently Ruby runs internally-implemented methods in their own frames but in the *caller's* scope
-    public void preReflectedMethodInternalCall(
-            RubyModule implementationClass, RubyModule klazz, IRubyObject self, 
-            String name, IRubyObject[] args, int req, boolean noSuper, 
-            Block block, Object jumpTarget) {
-        pushRubyClass(implementationClass);
+    public void preJavaMethodFull(RubyModule klazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block, boolean noSuper,
+            JumpTarget jumpTarget) {
+        pushRubyClass(klazz);
         pushCallFrame(noSuper ? null : klazz, name, self, args, req, block, jumpTarget);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     
-    public void postReflectedMethodInternalCall() {
+    public void postJavaMethodFull() {
         popFrame();
         popRubyClass();
     }

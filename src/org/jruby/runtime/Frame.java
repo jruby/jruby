@@ -33,6 +33,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -48,7 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * </li>
  * 
  */
-public final class Frame {
+public final class Frame implements JumpTarget {
     /**
      * The class for the method we are invoking for this frame.  Note: This may not be the
      * class where the implementation of the method lives.
@@ -92,13 +93,13 @@ public final class Frame {
      */
     private Visibility visibility = Visibility.PUBLIC;
     
-    private Object jumpTarget;
+    private JumpTarget jumpTarget;
 
-    public Object getJumpTarget() {
+    public JumpTarget getJumpTarget() {
         return jumpTarget;
     }
 
-    public void setJumpTarget(Object jumpTarget) {
+    public void setJumpTarget(JumpTarget jumpTarget) {
         this.jumpTarget = jumpTarget;
     }
     
@@ -135,7 +136,7 @@ public final class Frame {
     }
 
     public void updateFrame(RubyModule klazz, IRubyObject self, String name,
-                 IRubyObject[] args, int requiredArgCount, Block block, ISourcePosition position, Object jumpTarget) {
+                 IRubyObject[] args, int requiredArgCount, Block block, ISourcePosition position, JumpTarget jumpTarget) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
 
         this.self = self;

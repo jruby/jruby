@@ -46,7 +46,7 @@ public class UndefinedMethod extends DynamicMethod {
      * @param visibility
      */
     private UndefinedMethod(Visibility visibility) {
-        super(null, visibility);
+        super(null, visibility, null);
     }
 
     

@@ -36,6 +36,7 @@ import org.jruby.RubyModule;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
@@ -134,25 +135,25 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 mv.visitCode();
                 
                 // invoke pre method stuff
+                mv.aload(0); // load method to get callconfig
+                mv.getfield(cg.p(CompiledMethod.class), "callConfig", cg.ci(CallConfiguration.class));
                 mv.aload(1); // tc
-                mv.aload(3); // klazz
-                mv.aload(4); // name
                 mv.aload(2); // self
-                mv.aload(5); // args
+                mv.aload(3); // klazz
                 mv.aload(0);
-                mv.getfield(cg.p(CompiledMethod.class), "arity", cg.ci(Arity.class));
-                mv.invokevirtual(cg.p(Arity.class), "required", cg.sig(int.class));
-                // required args count
-                mv.aload(7); // block
+                mv.getfield(cg.p(CompiledMethod.class), "arity", cg.ci(Arity.class)); // arity
+                mv.aload(4); // name
+                mv.aload(5); // args
                 mv.iload(6); // noSuper
+                mv.aload(7); // block
                 mv.aload(0);
                 mv.getfield(cg.p(CompiledMethod.class), "staticScope", cg.ci(StaticScope.class));
                 // static scope
                 mv.aload(0); // jump target
-                mv.invokevirtual(cg.p(ThreadContext.class), "preDefMethodInternalCall", 
+                mv.invokevirtual(cg.p(CallConfiguration.class), "pre", 
                         cg.sig(void.class, 
-                        cg.params(RubyModule.class, String.class, IRubyObject.class, IRubyObject[].class, int.class, Block.class, boolean.class, 
-                        StaticScope.class, Object.class)));
+                        cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, Arity.class, String.class, IRubyObject[].class, boolean.class, Block.class, 
+                        StaticScope.class, JumpTarget.class)));
                 
                 // store null for result var
                 mv.aconst_null();
@@ -183,8 +184,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 //call post method stuff (non-finally)
                 mv.label(normalExit);
+                mv.aload(0); // load method to get callconfig
+                mv.getfield(cg.p(DynamicMethod.class), "callConfig", cg.ci(CallConfiguration.class));
                 mv.aload(1);
-                mv.invokevirtual(cg.p(ThreadContext.class), "postDefMethodInternalCall", cg.sig(void.class));
+                mv.invokevirtual(cg.p(CallConfiguration.class), "post", cg.sig(void.class, cg.params(ThreadContext.class)));
                 // reload and return result
                 mv.aload(8);
                 mv.visitInsn(ARETURN);
@@ -241,8 +244,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.label(tryFinally);
 
                     //call post method stuff (exception raised)
+                    mv.aload(0); // load method to get callconfig
+                    mv.getfield(cg.p(DynamicMethod.class), "callConfig", cg.ci(CallConfiguration.class));
                     mv.aload(1);
-                    mv.invokevirtual(cg.p(ThreadContext.class), "postDefMethodInternalCall", cg.sig(void.class));
+                    mv.invokevirtual(cg.p(CallConfiguration.class), "post", cg.sig(void.class, cg.params(ThreadContext.class)));
 
                     // rethrow exception
                     mv.athrow(); // rethrow it

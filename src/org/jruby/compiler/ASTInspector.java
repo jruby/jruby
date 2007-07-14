@@ -9,22 +9,16 @@
 
 package org.jruby.compiler;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import org.jruby.ast.AndNode;
-import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BlockAcceptingNode;
 import org.jruby.ast.BreakNode;
 import org.jruby.ast.CallNode;
-import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.Colon2Node;
-import org.jruby.ast.DStrNode;
-import org.jruby.ast.DefnNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.GlobalAsgnNode;
@@ -125,6 +119,7 @@ public class ASTInspector {
             if (SCOPE_AWARE_METHODS.contains(nameNode)) {
                 hasScopeAwareMethods = true;
             }
+            break;
         case NodeTypes.CLASSNODE:
             hasClass = true;
             break;
@@ -135,6 +130,7 @@ public class ASTInspector {
             if (globalAsgnNode.getName().equals("$_") || globalAsgnNode.getName().equals("$~")) {
                 hasScopeAwareMethods = true;
             }
+            break;
         case NodeTypes.CONSTDECLNODE:
         case NodeTypes.CLASSVARASGNNODE:
         case NodeTypes.DASGNNODE:

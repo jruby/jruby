@@ -35,6 +35,7 @@
 package org.jruby;
 
 import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -45,7 +46,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * @author  jpetersen
  */
-public class RubyProc extends RubyObject {
+public class RubyProc extends RubyObject implements JumpTarget {
     private Block block = Block.NULL_BLOCK;
     private boolean isLambda;
 

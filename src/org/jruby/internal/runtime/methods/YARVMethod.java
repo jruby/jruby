@@ -42,19 +42,20 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ast.executable.YARVMachine;
 import org.jruby.ast.executable.ISeqPosition;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.EventHook;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  * @version $Revision: 1.2 $
  */
-public class YARVMethod extends DynamicMethod {
+public class YARVMethod extends DynamicMethod implements JumpTarget {
     private YARVMachine.InstructionSequence iseq;
     private StaticScope staticScope;
     private Arity arity;
 
     public YARVMethod(RubyModule implementationClass, YARVMachine.InstructionSequence iseq, StaticScope staticScope, Visibility visibility) {
-        super(implementationClass, visibility);
+        super(implementationClass, visibility, CallConfiguration.RUBY_FULL);
         this.staticScope = staticScope;
         this.iseq = iseq;
 
@@ -76,7 +77,7 @@ public class YARVMethod extends DynamicMethod {
         
         Ruby runtime = context.getRuntime();
         
-        context.preDefMethodInternalCall(klazz, name, self, args, arity.required(), block, noSuper, staticScope, this);
+        callConfig.pre(context, self, klazz, getArity(), name, args, noSuper, block, staticScope, this);
         
         try {
             prepareArguments(context, runtime, args);
@@ -101,7 +102,7 @@ public class YARVMethod extends DynamicMethod {
             if (runtime.hasEventHooks()) {
                 traceReturn(context, runtime, name);
             }
-            context.postDefMethodInternalCall();
+            callConfig.post(context);
         }
     }
 

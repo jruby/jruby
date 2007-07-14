@@ -34,6 +34,7 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -45,17 +46,17 @@ import org.jruby.runtime.callback.Callback;
 
 /**
  */
-public class FullFunctionCallbackMethod extends DynamicMethod {
+public class FullFunctionCallbackMethod extends DynamicMethod implements JumpTarget {
     private Callback callback;
 
     public FullFunctionCallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
-        super(implementationClass, visibility);
+        super(implementationClass, visibility, CallConfiguration.JAVA_FULL);
         this.callback = callback;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
         try {
-            context.preReflectedMethodInternalCall(implementationClass, clazz, self, name, args, getArity().required(), noSuper, block, this);
+            callConfig.pre(context, self, clazz, getArity(), name, args, noSuper, block, null, this);
             
             assert args != null;
             Ruby runtime = context.getRuntime();
@@ -80,7 +81,7 @@ public class FullFunctionCallbackMethod extends DynamicMethod {
                 }
             }
         } finally {
-            context.postReflectedMethodInternalCall();
+            callConfig.post(context);
         }
     }
     

@@ -43,6 +43,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ast.executable.RubiniusMachine;
 import org.jruby.ast.executable.RubiniusCMethod;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.EventHook;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
@@ -50,13 +51,13 @@ import org.jruby.lexer.yacc.SimpleSourcePosition;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-public class RubiniusMethod extends DynamicMethod {
+public class RubiniusMethod extends DynamicMethod implements JumpTarget {
     private RubiniusCMethod cmethod;
     private StaticScope staticScope;
     private Arity arity;
 
     public RubiniusMethod(RubyModule implementationClass, RubiniusCMethod cmethod, Visibility visibility) {
-        super(implementationClass, visibility);
+        super(implementationClass, visibility, CallConfiguration.RUBY_FULL);
         this.staticScope = new LocalStaticScope(null);
         this.staticScope.setVariables(new String[cmethod.locals]);
         this.cmethod = cmethod;
@@ -68,7 +69,7 @@ public class RubiniusMethod extends DynamicMethod {
         //        System.err.println("--- entering " + cmethod.name);
         Ruby runtime = context.getRuntime();
         
-        context.preDefMethodInternalCall(klazz, name, self, args, arity.required(), block, noSuper, staticScope, this);
+        callConfig.pre(context, self, klazz, getArity(), name, args, noSuper, block, staticScope, this);
         
         try {
             if (runtime.hasEventHooks()) {
@@ -85,7 +86,8 @@ public class RubiniusMethod extends DynamicMethod {
             if (runtime.hasEventHooks()) {
                 traceReturn(context, runtime, name);
             }
-            context.postDefMethodInternalCall();
+            
+            callConfig.post(context);
             //              System.err.println("--- returning from " + cmethod.name);
         }
     }

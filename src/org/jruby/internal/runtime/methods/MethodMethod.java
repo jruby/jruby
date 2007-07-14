@@ -32,6 +32,7 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyUnboundMethod;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -41,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author jpetersen
  */
-public class MethodMethod extends DynamicMethod {
+public class MethodMethod extends DynamicMethod implements JumpTarget {
     private RubyUnboundMethod method;
 
     /**
@@ -49,7 +50,8 @@ public class MethodMethod extends DynamicMethod {
      * @param visibility
      */
     public MethodMethod(RubyModule implementationClass, RubyUnboundMethod method, Visibility visibility) {
-        super(implementationClass, visibility);
+        // FIXME: set up a CallConfiguration for this
+        super(implementationClass, visibility, null);
         this.method = method;
     }
 

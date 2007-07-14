@@ -48,6 +48,7 @@ import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -63,7 +64,7 @@ import org.jruby.util.JRubyClassLoader;
 /**
  *
  */
-public final class DefaultMethod extends DynamicMethod {
+public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     
     private StaticScope staticScope;
     private Node body;
@@ -77,7 +78,7 @@ public final class DefaultMethod extends DynamicMethod {
 
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
             ArgsNode argsNode, Visibility visibility) {
-        super(implementationClass, visibility);
+        super(implementationClass, visibility, CallConfiguration.RUBY_FULL);
         this.body = body;
         this.staticScope = staticScope;
         this.argsNode = argsNode;
@@ -107,7 +108,7 @@ public final class DefaultMethod extends DynamicMethod {
             implementer = getImplementationClass();
         }
         
-        context.preDefMethodInternalCall(implementer, name, self, args, getArity().required(), block, noSuper, staticScope, this);
+        callConfig.pre(context, self, implementer, getArity(), name, args, noSuper, block, staticScope, this);
         
         try {
         Ruby runtime = context.getRuntime();
@@ -147,8 +148,8 @@ public final class DefaultMethod extends DynamicMethod {
             }
         }
         } finally {
-            context.postDefMethodInternalCall();
-    }
+            callConfig.post(context);
+        }
     }
 
     private void runJIT(Ruby runtime, ThreadContext context, String name) {

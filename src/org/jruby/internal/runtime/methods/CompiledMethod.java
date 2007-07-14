@@ -43,7 +43,7 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
 //    private boolean needsImplementer;
     
     public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope) {
-    	super(implementationClass, visibility);
+    	super(implementationClass, visibility, CallConfiguration.RUBY_FULL);
         this.arity = arity;
         this.staticScope = staticScope;
         
