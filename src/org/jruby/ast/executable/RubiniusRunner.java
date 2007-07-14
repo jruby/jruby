@@ -164,7 +164,13 @@ public class RubiniusRunner implements Runnable {
         RubiniusCMethod method = (RubiniusCMethod)methods.get("__script__");
         ThreadContext context = runtime.getCurrentContext();
         StaticScope scope = new LocalStaticScope(null);
+
+        if (scope.getModule() == null) {
+            scope.setModule(runtime.getObject());
+        }
+        
         scope.setVariables(new String[method.locals]);
+        
         context.setPosition(new SimpleSourcePosition(method.file, -1));
         context.preRootNode(new DynamicScope(scope,null));
         RubiniusMachine.INSTANCE.exec(context, runtime.getObject(), method.code, method.literals, new IRubyObject[0]);

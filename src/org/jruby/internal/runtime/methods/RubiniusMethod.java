@@ -56,10 +56,9 @@ public class RubiniusMethod extends DynamicMethod implements JumpTarget {
     private StaticScope staticScope;
     private Arity arity;
 
-    public RubiniusMethod(RubyModule implementationClass, RubiniusCMethod cmethod, Visibility visibility) {
+    public RubiniusMethod(RubyModule implementationClass, RubiniusCMethod cmethod, StaticScope staticScope, Visibility visibility) {
         super(implementationClass, visibility, CallConfiguration.RUBY_FULL);
-        this.staticScope = new LocalStaticScope(null);
-        this.staticScope.setVariables(new String[cmethod.locals]);
+        this.staticScope = staticScope;
         this.cmethod = cmethod;
         this.arity = Arity.optional();
     }
@@ -116,6 +115,6 @@ public class RubiniusMethod extends DynamicMethod implements JumpTarget {
     }
     
     public DynamicMethod dup() {
-        return new RubiniusMethod(getImplementationClass(), cmethod, getVisibility());
+        return new RubiniusMethod(getImplementationClass(), cmethod, staticScope, getVisibility());
     }	
 }// RubiniusMethod

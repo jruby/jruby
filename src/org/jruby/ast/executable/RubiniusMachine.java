@@ -106,8 +106,14 @@ public class RubiniusMachine {
                 if (name == "initialize" || visibility.isModuleFunction()) {
                     visibility = Visibility.PRIVATE;
                 }
+                
+                RubiniusCMethod cmethod = new RubiniusCMethod(method);
+                
+                StaticScope staticScope = new LocalStaticScope(context.getCurrentScope().getStaticScope());
+                staticScope.setVariables(new String[cmethod.locals]);
+                staticScope.determineModule();
 
-                RubiniusMethod newMethod = new RubiniusMethod(clzz, new RubiniusCMethod(method), visibility);
+                RubiniusMethod newMethod = new RubiniusMethod(clzz, cmethod, staticScope, visibility);
 
                 clzz.addMethod(name, newMethod);
     
@@ -199,7 +205,7 @@ public class RubiniusMachine {
                 IRubyObject t1 = stack[stackTop--];
                 IRubyObject t2 = stack[stackTop--];
                 if((t1 instanceof RubyFixnum) && (t1 instanceof RubyFixnum)) {
-                    stack[++stackTop] = (RubyNumeric.fix2int(t1) < RubyNumeric.fix2int(t2)) ? runtime.getTrue() : runtime.getFalse();
+                    stack[++stackTop] = (((RubyFixnum)t1).getLongValue() < ((RubyFixnum)t2).getLongValue()) ? runtime.getTrue() : runtime.getFalse();
                 } else {
                     stack[++stackTop] = t1.callMethod(context, MethodIndex.OP_LT, "<", t2);
                 }
@@ -210,7 +216,7 @@ public class RubiniusMachine {
                 IRubyObject t1 = stack[stackTop--];
                 IRubyObject t2 = stack[stackTop--];
                 if((t1 instanceof RubyFixnum) && (t1 instanceof RubyFixnum)) {
-                    stack[++stackTop] = (RubyNumeric.fix2int(t1) > RubyNumeric.fix2int(t2)) ? runtime.getTrue() : runtime.getFalse();
+                    stack[++stackTop] = (((RubyFixnum)t1).getLongValue() > ((RubyFixnum)t1).getLongValue()) ? runtime.getTrue() : runtime.getFalse();
                 } else {
                     stack[++stackTop] = t1.callMethod(context, MethodIndex.OP_GT, ">", t2);
                 }
@@ -314,6 +320,14 @@ public class RubiniusMachine {
                 int val = getInt(bytecodes, ip);
                 ip += 4;
                 stack[++stackTop] = runtime.newFixnum(val);
+                break;
+            }
+            case RubiniusInstructions.PUSH_CONST: {
+                int index = getInt(bytecodes, ip);
+                ip += 4;
+                
+                String name = literals[index].toString();
+                stack[++stackTop] = context.getConstant(name);
                 break;
             }
             default:
