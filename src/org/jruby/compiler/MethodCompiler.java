@@ -62,8 +62,6 @@ public interface MethodCompiler {
     public void assignLocalVariableBlockArg(int argIndex, int varIndex);
     public void assignLocalVariableBlockArg(int argIndex, int varIndex, int depth);
     
-    public void assignOptionalArgs(Object object, int expectedArgsCount, int size, ArrayCallback optEval);
-    
     /**
      * Retrieve the current "self" and put a reference on top of the stack.
      */
@@ -221,12 +219,6 @@ public interface MethodCompiler {
      * @param body The callback which will generate the method's body.
      */
     public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args);
-    
-    public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg);
-    
-    public void processRestArg(int startIndex, int restArg);
-    
-    public void processBlockArgument(int index);
     
     /**
      * Define an alias for a new name to an existing oldName'd method.

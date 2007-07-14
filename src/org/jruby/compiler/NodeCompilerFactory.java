@@ -622,8 +622,6 @@ public class NodeCompilerFactory {
         final DefnNode defnNode = (DefnNode)node;
         final ArgsNode argsNode = defnNode.getArgsNode();
         
-        NodeCompilerFactory.confirmNodeIsSafe(argsNode);
-        
         ClosureCallback body = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (defnNode.getBodyNode() != null) {
@@ -634,6 +632,27 @@ public class NodeCompilerFactory {
             }
         };
         
+        ClosureCallback args = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                compileArgs(argsNode, context);
+            }
+        };
+        
+        context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args);
+    }
+    
+    public static void compileArgs(Node node, MethodCompiler context) {
+        ArgsNode argsNode = (ArgsNode)node;
+        
+        int required = argsNode.getArgsCount();
+        int restArg = argsNode.getRestArg();
+        boolean hasOptArgs = argsNode.getOptArgs() != null;
+        Arity arity = argsNode.getArity();
+        
+        NodeCompilerFactory.confirmNodeIsSafe(argsNode);
+
+        context.lineNumber(argsNode.getPosition());
+        
         final ArrayCallback evalOptionalValue = new ArrayCallback() {
             public void nextValue(MethodCompiler context, Object object, int index) {
                 ListNode optArgs = (ListNode)object;
@@ -643,49 +662,37 @@ public class NodeCompilerFactory {
                 compile(node, context);
             }
         };
-        
-        ClosureCallback args = new ClosureCallback() {
-            public void compile(MethodCompiler context) {
-                int required = argsNode.getArgsCount();
-                int restArg = argsNode.getRestArg();
-                boolean hasOptArgs = argsNode.getOptArgs() != null;
-                Arity arity = argsNode.getArity();
-                
-                context.lineNumber(argsNode.getPosition());
-                
-                if (argsNode.getBlockArgNode() != null) {
-                    context.processBlockArgument(argsNode.getBlockArgNode().getCount());
-                }
-                
-                if (hasOptArgs) {
-                    if (restArg > -1) {
-                        int opt = argsNode.getOptArgs().size();
-                        context.processRequiredArgs(arity, required, opt, restArg);
-                        
-                        ListNode optArgs = argsNode.getOptArgs();
-                        context.assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
-                        
-                        context.processRestArg(required + opt, restArg);
-                    } else {
-                        int opt = argsNode.getOptArgs().size();
-                        context.processRequiredArgs(arity, required, opt, restArg);
-                        
-                        ListNode optArgs = argsNode.getOptArgs();
-                        context.assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
-                    }
-                } else {
-                    if (restArg > -1) {
-                        context.processRequiredArgs(arity, required, 0, restArg);
-                        
-                        context.processRestArg(required, restArg);
-                    } else {
-                        context.processRequiredArgs(arity, required, 0, restArg);
-                    }
-                }
+
+        if (argsNode.getBlockArgNode() != null) {
+            context.getVariableCompiler().processBlockArgument(argsNode.getBlockArgNode().getCount());
+        }
+
+        if (hasOptArgs) {
+            if (restArg > -1) {
+                int opt = argsNode.getOptArgs().size();
+                context.getVariableCompiler().processRequiredArgs(arity, required, opt, restArg);
+
+                ListNode optArgs = argsNode.getOptArgs();
+                context.getVariableCompiler().assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
+
+                context.getVariableCompiler().processRestArg(required + opt, restArg);
+            } else {
+                int opt = argsNode.getOptArgs().size();
+                context.getVariableCompiler().processRequiredArgs(arity, required, opt, restArg);
+
+                ListNode optArgs = argsNode.getOptArgs();
+                context.getVariableCompiler().assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
             }
-        };
+        } else {
+            if (restArg > -1) {
+                context.getVariableCompiler().processRequiredArgs(arity, required, 0, restArg);
+
+                context.getVariableCompiler().processRestArg(required, restArg);
+            } else {
+                context.getVariableCompiler().processRequiredArgs(arity, required, 0, restArg);
+            }
+        }
         
-        context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args);
     }
     
     public static void compileDot(Node node, MethodCompiler context) {

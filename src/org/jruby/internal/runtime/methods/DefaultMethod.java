@@ -166,61 +166,18 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                 callCount++;
 
                 if (callCount >= runtime.getInstanceConfig().getJitThreshold()) {
-                    NodeCompilerFactory.confirmNodeIsSafe(argsNode);
-                    // FIXME: Total duplication from DefnNodeCompiler...need to refactor this
-                    final ArrayCallback evalOptionalValue = new ArrayCallback() {
-                        public void nextValue(MethodCompiler context, Object object, int index) {
-                            ListNode optArgs = (ListNode)object;
-                            
-                            Node node = optArgs.get(index);
-
-                            NodeCompilerFactory.compile(node, context);
-                        }
-                    };
-                    
-                    ClosureCallback args = new ClosureCallback() {
-                        public void compile(MethodCompiler context) {
-                            Arity arity = argsNode.getArity();
-                            
-                            context.lineNumber(argsNode.getPosition());
-                            int required = expectedArgsCount;
-                            
-                            if (argsNode.getBlockArgNode() != null) {
-                                context.processBlockArgument(argsNode.getBlockArgNode().getCount());
-                            }
-                            
-                            if (hasOptArgs) {
-                                if (restArg > -1) {
-                                    int opt = argsNode.getOptArgs().size();
-                                    context.processRequiredArgs(arity, required, opt, restArg);
-                                    
-                                    ListNode optArgs = argsNode.getOptArgs();
-                                    context.assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
-                                    
-                                    context.processRestArg(required + opt, restArg);
-                                } else {
-                                    int opt = argsNode.getOptArgs().size();
-                                    context.processRequiredArgs(arity, required, opt, restArg);
-                                    
-                                    ListNode optArgs = argsNode.getOptArgs();
-                                    context.assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
-                                }
-                            } else {
-                                if (restArg > -1) {
-                                    context.processRequiredArgs(arity, required, 0, restArg);
-                                    
-                                    context.processRestArg(required, restArg);
-                                } else {
-                                    context.processRequiredArgs(arity, required, 0, restArg);
-                                }
-                            }
-                        }
-                    };
-                    
                     String cleanName = CodegenUtils.cg.cleanJavaIdentifier(name);
                     // FIXME: not handling empty bodies correctly...
                     StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), body.getPosition().getFile());
                     compiler.startScript();
+                    
+        
+                    ClosureCallback args = new ClosureCallback() {
+                        public void compile(MethodCompiler context) {
+                            NodeCompilerFactory.compileArgs(argsNode, context);
+                        }
+                    };
+        
                     MethodCompiler methodCompiler = compiler.startMethod("__file__", args);
                     NodeCompilerFactory.compile(body, methodCompiler);
                     methodCompiler.endMethod();
