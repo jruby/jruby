@@ -54,44 +54,6 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
     }
 
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block);
-    /*public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        Ruby runtime = context.getRuntime();
-        
-//        RubyModule implementer = null;
-//        if (needsImplementer) {
-//            // modules are included with a shim class; we must find that shim to handle super() appropriately
-//            implementer = klazz.findImplementer(getImplementationClass());
-//        } else {
-//            // classes are directly in the hierarchy, so no special logic is necessary for implementer
-//            implementer = getImplementationClass();
-//        }
-        
-        try {
-            context.preDefMethodInternalCall(klazz, name, self, args, arity.required(), block, noSuper, staticScope, this);
-            // tracing doesn't really work (or make sense yet?) for AOT compiled code
-//            if(runtime.getTraceFunction() != null) {
-//                ISourcePosition position = context.getPosition();
-//                RubyBinding binding = RubyBinding.newBinding(runtime);
-//    
-//                runtime.callTraceFunction(context, "c-call", position, binding, name, getImplementationClass());
-//                try {
-//                    return call(context, self, args, block);
-//                } finally {
-//                    runtime.callTraceFunction(context, "c-return", position, binding, name, getImplementationClass());
-//                }
-//            }
-            return call(context, self, args, block);
-        } catch (JumpException.ReturnJump rj) {
-            if (rj.getTarget() == this) {
-                return (IRubyObject) rj.getValue();
-            }
-            throw rj;
-        } catch (JumpException.RedoJump rj) {
-            throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
-        } finally {
-            context.postDefMethodInternalCall();
-        }
-    }*/
     
     public DynamicMethod dup() {
         try {

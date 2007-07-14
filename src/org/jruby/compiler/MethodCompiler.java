@@ -76,71 +76,10 @@ public interface MethodCompiler {
      */
     public void yield(boolean hasArgs, boolean unwrap);
     
-    /**
-     * Assigns the value on top of the stack to a local variable at the specified index, consuming
-     * that value in the process. This assumes a lexical scoping depth of 0.
-     * 
-     * @param index The index of the local variable to which to assign the value.
-     */
-    public void assignLocalVariable(int index);
-    
-    /**
-     * Assigns the special "last line" variable $_ in the outermost local scope.
-     */
-    public void assignLastLine();
-    
-    /**
-     * Assigns the value from incoming block args to a local variable at the specified index, consuming
-     * that value in the process. This assumes a lexical scoping depth of 0.
-     * 
-     * @param index The index of the local variable to which to assign the value.
-     */
+    public VariableCompiler getVariableCompiler();
+
     public void assignLocalVariableBlockArg(int argIndex, int varIndex);
-    
-    /**
-     * Retrieve the local variable at the specified index to the top of the stack, using whatever local variable store is appropriate.
-     * This assumes the local variable in question should be present at the current lexical scoping depth (0).
-     * 
-     * @param index The index of the local variable to retrieve
-     */
-    public void retrieveLocalVariable(int index);
-    
-    /**
-     * Retrieve the special "last line" variable $_ from the outermost local scope.
-     */
-    public void retrieveLastLine();
-    
-    /**
-     * Retrieve the special "back ref" variable $~ from the outermost local scope.
-     */
-    public void retrieveBackRef();
-    
-    /**
-     * Assign the value on top of the stack to a local variable at the specified index and
-     * lexical scoping depth (0 = current scope), consuming that value in the process.
-     * 
-     * @param index The index in which to store the local variable
-     * @param depth The lexical scoping depth in which to store the variable
-     */
-    public void assignLocalVariable(int index, int depth);
-    
-    /**
-     * Assign the value from incoming block args to a local variable at the specified index and
-     * lexical scoping depth (0 = current scope), consuming that value in the process.
-     * 
-     * @param index The index in which to store the local variable
-     * @param depth The lexical scoping depth in which to store the variable
-     */
     public void assignLocalVariableBlockArg(int argIndex, int varIndex, int depth);
-    
-    /**
-     * Retrieve the local variable as the specified index and lexical scoping depth to the top of the stack,
-     * using whatever local variable store is appropriate.
-     * 
-     * @param index The index of the local variable to retrieve
-     * @param depth The lexical scoping depth from which to retrieve the variable
-     */
-    public void retrieveLocalVariable(int index, int depth);
     
     public void assignOptionalArgs(Object object, int expectedArgsCount, int size, ArrayCallback optEval);
     

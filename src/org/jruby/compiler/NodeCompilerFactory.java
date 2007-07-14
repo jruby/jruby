@@ -613,7 +613,7 @@ public class NodeCompilerFactory {
         
         compile(dasgnNode.getValueNode(), context);
         
-        context.assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
+        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
     }
     
     public static void compileDefn(Node node, MethodCompiler context) {
@@ -718,7 +718,7 @@ public class NodeCompilerFactory {
         
         DVarNode dvarNode = (DVarNode)node;
         
-        context.retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
+        context.getVariableCompiler().retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
     }
     
     public static void compileEvStr(Node node, MethodCompiler context) {
@@ -808,7 +808,7 @@ public class NodeCompilerFactory {
             // FIXME: This is not aware of lexical scoping
             switch (globalAsgnNode.getName().charAt(1)) {
             case '_':
-                context.assignLastLine();
+                context.getVariableCompiler().assignLastLine();
                 return;
             case '~':
                 assert false: "Parser shouldn't allow assigning to $~";
@@ -828,10 +828,10 @@ public class NodeCompilerFactory {
             // FIXME: This is not aware of lexical scoping
             switch (globalVarNode.getName().charAt(1)) {
             case '_':
-                context.retrieveLastLine();
+                context.getVariableCompiler().retrieveLastLine();
                 return;
             case '~':
-                context.retrieveBackRef();
+                context.getVariableCompiler().retrieveBackRef();
                 return;
             }
         }
@@ -944,7 +944,7 @@ public class NodeCompilerFactory {
         
         compile(localAsgnNode.getValueNode(), context);
         
-        context.assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
+        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
     }
     
     public static void compileLocalVar(Node node, MethodCompiler context) {
@@ -952,7 +952,7 @@ public class NodeCompilerFactory {
         
         LocalVarNode localVarNode = (LocalVarNode)node;
         
-        context.retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
+        context.getVariableCompiler().retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
     }
     
     public static void compileMatch(Node node, MethodCompiler context) {

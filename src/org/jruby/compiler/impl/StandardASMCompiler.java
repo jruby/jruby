@@ -59,6 +59,7 @@ import org.jruby.compiler.ClosureCallback;
 import org.jruby.compiler.MethodCompiler;
 import org.jruby.compiler.ScriptCompiler;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.compiler.VariableCompiler;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -105,9 +106,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private static final int SELF_INDEX = 1;
     private static final int ARGS_INDEX = 2;
     private static final int CLOSURE_INDEX = 3;
-    private static final int LOCAL_VARS_INDEX = 4;
+    private static final int DYNAMIC_SCOPE_INDEX = 4;
     private static final int RUNTIME_INDEX = 5;
-    private static final int SCOPE_INDEX = 6;
+    private static final int VARS_ARRAY_INDEX = 6;
     private static final int NIL_INDEX = 7;
 
     private String classname;
@@ -265,6 +266,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
     public abstract class AbstractMethodCompiler implements MethodCompiler {
         protected SkinnyMethodAdapter method;
+        protected VariableCompiler variableCompiler;
         
         protected Label[] currentLoopLabels;
         
@@ -571,71 +573,19 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadSelf();
             invokeIRubyObject("getMetaClass", cg.sig(RubyClass.class));
         }
-
-        public void assignLocalVariable(int index) {
-            method.dup();
-
-            method.aload(SCOPE_INDEX);
-            method.swap();
-            method.ldc(new Integer(index));
-            method.swap();
-            method.arraystore();
-        }
-
-        public void retrieveLocalVariable(int index) {
-            method.aload(SCOPE_INDEX);
-            method.ldc(new Integer(index));
-            method.arrayload();
-            nullToNil();
-        }
-
-        public void assignLastLine() {
-            method.dup();
-
-            loadThreadContext();
-            invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
-            method.swap();
-            method.invokevirtual(cg.p(DynamicScope.class), "setLastLine", cg.sig(Void.TYPE, cg.params(IRubyObject.class)));
+        
+        public VariableCompiler getVariableCompiler() {
+            return variableCompiler;
         }
 
         public void assignLocalVariableBlockArg(int argIndex, int varIndex) {
             // this is copying values, but it would be more efficient to just use the args in-place
-            method.aload(LOCAL_VARS_INDEX);
+            method.aload(DYNAMIC_SCOPE_INDEX);
             method.ldc(new Integer(varIndex));
             method.aload(ARGS_INDEX);
             method.ldc(new Integer(argIndex));
             method.arrayload();
             method.iconst_0();
-            method.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
-        }
-
-        public void retrieveLastLine() {
-            loadThreadContext();
-            invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
-            method.invokevirtual(cg.p(DynamicScope.class), "getLastLine", cg.sig(IRubyObject.class));
-            nullToNil();
-        }
-
-        public void retrieveBackRef() {
-            loadThreadContext();
-            invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
-            method.invokevirtual(cg.p(DynamicScope.class), "getBackRef", cg.sig(IRubyObject.class));
-            nullToNil();
-        }
-
-        public void assignLocalVariable(int index, int depth) {
-            if (depth == 0) {
-                assignLocalVariable(index);
-                return;
-            }
-
-            method.dup();
-
-            method.aload(LOCAL_VARS_INDEX);
-            method.swap();
-            method.ldc(new Integer(index));
-            method.swap();
-            method.ldc(new Integer(depth));
             method.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
         }
 
@@ -645,26 +595,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 return;
             }
 
-            method.aload(LOCAL_VARS_INDEX);
+            method.aload(DYNAMIC_SCOPE_INDEX);
             method.ldc(new Integer(varIndex));
             method.aload(ARGS_INDEX);
             method.ldc(new Integer(argIndex));
             method.arrayload();
             method.ldc(new Integer(depth));
             method.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
-        }
-
-        public void retrieveLocalVariable(int index, int depth) {
-            if (depth == 0) {
-                retrieveLocalVariable(index);
-                return;
-            }
-
-            method.aload(LOCAL_VARS_INDEX);
-            method.ldc(new Integer(index));
-            method.ldc(new Integer(depth));
-            method.invokevirtual(cg.p(DynamicScope.class), "getValue", cg.sig(IRubyObject.class, cg.params(Integer.TYPE, Integer.TYPE)));
-            nullToNil();
         }
 
         public void assignConstantInCurrent(String name) {
@@ -723,13 +660,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.swap();
 
             invokeUtilityMethod("setClassVariable", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
-        }
-
-        private void loadScope(int depth) {
-            // get the appropriate array out of the scopes
-            method.aload(SCOPE_INDEX);
-            method.ldc(new Integer(depth - 1));
-            method.arrayload();
         }
 
         public void createNewFloat(double value) {
@@ -1415,6 +1345,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             ////////////////////////////
             // closure implementation
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
+            variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX);
 
             method.start();
 
@@ -1422,9 +1353,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadThreadContext();
             invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
             method.dup();
-            method.astore(LOCAL_VARS_INDEX);
+            method.astore(DYNAMIC_SCOPE_INDEX);
             method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
-            method.astore(SCOPE_INDEX);
+            method.astore(VARS_ARRAY_INDEX);
 
             // set up a local IRuby variable
             method.aload(THREADCONTEXT_INDEX);
@@ -1527,6 +1458,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             this.friendlyName = friendlyName;
 
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null));
+            variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX);
         }
 
         public void beginMethod(ClosureCallback args) {
@@ -1546,9 +1478,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadThreadContext();
             invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
             method.dup();
-            method.astore(LOCAL_VARS_INDEX);
+            method.astore(DYNAMIC_SCOPE_INDEX);
             method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
-            method.astore(SCOPE_INDEX);
+            method.astore(VARS_ARRAY_INDEX);
 
             if (args != null) {
                 args.compile(this);
@@ -1572,7 +1504,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.label(end);
 
             // local variable for lvars array
-            method.visitLocalVariable("lvars", cg.ci(IRubyObject[].class), null, scopeStart, end, LOCAL_VARS_INDEX);
+            method.visitLocalVariable("lvars", cg.ci(IRubyObject[].class), null, scopeStart, end, DYNAMIC_SCOPE_INDEX);
 
             method.end();
         }
@@ -1629,7 +1561,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 method.aload(ARGS_INDEX);
                 method.ldc(new Integer(i));
                 method.arrayload();
-                method.astore(LOCAL_VARS_INDEX + i + 2 + 2);
+                variableCompiler.assignLocalVariable(i + 2);
             }
 
             // check if args is null
@@ -1646,7 +1578,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 method.go_to(noArgs);
             } else {
                 // load dynamic scope and args array
-                method.aload(LOCAL_VARS_INDEX);
+                method.aload(DYNAMIC_SCOPE_INDEX);
                 method.aload(ARGS_INDEX);
 
                 // test whether total args count or actual args given is lower, for copying to dynamic scope
@@ -1704,7 +1636,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void processRestArg(int startIndex, int restArg) {
             loadRuntime();
-            method.aload(SCOPE_INDEX);
+            method.aload(VARS_ARRAY_INDEX);
             method.ldc(new Integer(restArg));
             method.aload(ARGS_INDEX);
             method.ldc(new Integer(startIndex));
