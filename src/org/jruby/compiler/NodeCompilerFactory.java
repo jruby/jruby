@@ -338,7 +338,7 @@ public class NodeCompilerFactory {
             }
         };
         
-        context.invokeDynamic("method_added", receiverCallback, argsCallback, CallType.FUNCTIONAL, null, false);
+        context.getInvocationCompiler().invokeDynamic("method_added", receiverCallback, argsCallback, CallType.FUNCTIONAL, null, false);
     }
     
     public static void compileAnd(Node node, MethodCompiler context) {
@@ -381,7 +381,7 @@ public class NodeCompilerFactory {
         compile(attrAssignNode.getReceiverNode(), context);
         compileArguments(attrAssignNode.getArgsNode(), context);
         
-        context.invokeAttrAssign(attrAssignNode.getName());
+        context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName());
     }
     
     public static void compileBegin(Node node, MethodCompiler context) {
@@ -454,9 +454,9 @@ public class NodeCompilerFactory {
         if (callNode.getIterNode() == null) {
             // no block, go for simple version
             if (callNode.getArgsNode() != null) {
-                context.invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, null, false);
+                context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, null, false);
             } else {
-                context.invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, null, false);
+                context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, null, false);
             }
         } else {
             // FIXME: Missing blockpassnode handling
@@ -469,9 +469,9 @@ public class NodeCompilerFactory {
             };
             
             if (callNode.getArgsNode() != null) {
-                context.invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, closureArg, false);
+                context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, closureArg, false);
             } else {
-                context.invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, closureArg, false);
+                context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, closureArg, false);
             }
         }
     }
@@ -598,7 +598,7 @@ public class NodeCompilerFactory {
 
             BranchCallback notModuleCallback = new BranchCallback() {
                     public void branch(MethodCompiler context) {
-                        context.invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
+                        context.getInvocationCompiler().invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
                     }
                 };
 
@@ -758,9 +758,9 @@ public class NodeCompilerFactory {
         if (fcallNode.getIterNode() == null) {
             // no block, go for simple version
             if (fcallNode.getArgsNode() != null) {
-                context.invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, null, false);
+                context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, null, false);
             } else {
-                context.invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, null, false);
+                context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, null, false);
             }
         } else {
             // FIXME: Missing blockpasnode stuff here
@@ -774,9 +774,9 @@ public class NodeCompilerFactory {
             };
 
             if (fcallNode.getArgsNode() != null) {
-                context.invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, false);
+                context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, false);
             } else {
-                context.invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, closureArg, false);
+                context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, closureArg, false);
             }
         }
     }
@@ -1105,13 +1105,13 @@ public class NodeCompilerFactory {
                 // eliminate extra value, eval new one and assign
                 context.consumeCurrentValue();
                 context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, justEvalValue);
-                context.invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
+                context.getInvocationCompiler().invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
             }
         };
         
         ClosureCallback receiver2Callback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
-                context.invokeDynamic(opAsgnNode.getVariableName(), receiverCallback, null, CallType.FUNCTIONAL, null, false); // [recv, varValue]
+                context.getInvocationCompiler().invokeDynamic(opAsgnNode.getVariableName(), receiverCallback, null, CallType.FUNCTIONAL, null, false); // [recv, varValue]
             }
         };
         
@@ -1132,9 +1132,9 @@ public class NodeCompilerFactory {
                     context.createObjectArray(new Node[] {opAsgnNode.getValueNode()}, justEvalValue);
                 }
             };
-            context.invokeDynamic(opAsgnNode.getOperatorName(), receiver2Callback, argsCallback, CallType.FUNCTIONAL, null, false);
+            context.getInvocationCompiler().invokeDynamic(opAsgnNode.getOperatorName(), receiver2Callback, argsCallback, CallType.FUNCTIONAL, null, false);
             context.createObjectArray(1);
-            context.invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
+            context.getInvocationCompiler().invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
         }
 
         context.pollThreadEvents();
@@ -1273,7 +1273,7 @@ public class NodeCompilerFactory {
             }
         }
         
-        context.invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
+        context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
     }
     
     public static void compileWhile(Node node, MethodCompiler context) {
@@ -1311,7 +1311,7 @@ public class NodeCompilerFactory {
             compile(yieldNode.getArgsNode(), context);
         }
         
-        context.yield(yieldNode.getArgsNode() != null, yieldNode.getCheckState());
+        context.getInvocationCompiler().yield(yieldNode.getArgsNode() != null, yieldNode.getCheckState());
     }
     
     public static void compileZArray(Node node, MethodCompiler context) {

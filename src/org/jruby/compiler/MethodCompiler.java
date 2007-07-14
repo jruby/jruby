@@ -55,28 +55,9 @@ public interface MethodCompiler {
      */
     public void lineNumber(ISourcePosition position);
     
-    /**
-     * Invoke the named method as a "function", i.e. as a method on the current "self"
-     * object, using the specified argument count. It is expected that previous calls
-     * to the compiler has prepared the exact number of argument values necessary for this
-     * call. Those values will be consumed, and the result of the call will be generated.
-     */
-    //public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign);
-    public void invokeDynamic(String name, ClosureCallback receiverCallback, ClosureCallback argsCallback, CallType callType, ClosureCallback closureArg, boolean attrAssign);
-    
-    /**
-     * Attr assign calls have slightly different semantics that normal calls, so this method handles those additional semantics.
-     */
-    public void invokeAttrAssign(String name);
-    
-    /**
-     * Invoke the block passed into this method, or throw an error if no block is present.
-     * If arguments have been prepared for the block, specify true. Otherwise the default
-     * empty args will be used.
-     */
-    public void yield(boolean hasArgs, boolean unwrap);
-    
     public VariableCompiler getVariableCompiler();
+    
+    public InvocationCompiler getInvocationCompiler();
 
     public void assignLocalVariableBlockArg(int argIndex, int varIndex);
     public void assignLocalVariableBlockArg(int argIndex, int varIndex, int depth);

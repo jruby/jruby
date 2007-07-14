@@ -56,6 +56,7 @@ import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.BranchCallback;
 import org.jruby.compiler.ClosureCallback;
+import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.MethodCompiler;
 import org.jruby.compiler.ScriptCompiler;
 import org.jruby.compiler.NotCompilableException;
@@ -267,6 +268,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public abstract class AbstractMethodCompiler implements MethodCompiler {
         protected SkinnyMethodAdapter method;
         protected VariableCompiler variableCompiler;
+        protected InvocationCompiler invocationCompiler;
         
         protected Label[] currentLoopLabels;
         
@@ -281,216 +283,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             Label line = new Label();
             method.label(line);
             method.visitLineNumber(position.getStartLine() + 1, line);
-        }
-
-        public void invokeAttrAssign(String name) {
-            // start with [recv, args]
-            // get args[length - 1] and stuff it under the receiver
-            // dup args * 2
-            method.dup(); // [recv, args, args]
-            method.dup(); // [recv, args, args, args]
-            method.arraylength(); // [recv, args, args, len]
-            method.iconst_1(); // [recv, args, args, len, 1]
-            method.isub(); // [recv, args, args, len-1]
-            // load from array
-            method.arrayload(); // [recv, args, val]
-            method.dup_x2(); // [val, recv, args, val]
-            method.pop(); // [val, recv, args]
-            invokeDynamic(name, true, true, CallType.NORMAL, null, true); // [val, result]
-            // pop result, use args[length - 1] captured above
-            method.pop(); // [val]
-        }
-
-        public void invokeDynamic(String name, ClosureCallback receiverCallback, ClosureCallback argsCallback, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
-            String dispatcherSig = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, int.class, String.class, IRubyObject[].class, CallType.class, Block.class));
-
-            int index = MethodIndex.getIndex(name);
-
-            if (receiverCallback != null) {
-                receiverCallback.compile(this);
-            } else {
-                loadSelf();
-            }
-            // [recv]
-            // receiver on stack, prepare dispatcher under self
-            method.dup(); // [recv, recv]
-            invokeIRubyObject("getMetaClass", cg.sig(RubyClass.class)); // [recv, klazz]
-            method.invokevirtual(cg.p(RubyModule.class), "getDispatcher", cg.sig(Dispatcher.class)); // [recv, dispatcher]
-            method.swap(); // [dispatcher, recv]
-            // threadcontext under self
-            loadThreadContext(); // [dispatcher, recv, tc]
-            method.swap(); // [dispatcher, tc, recv]
-            // metaclass
-            method.dup(); // [dispatcher, tc, recv, recv]
-            invokeIRubyObject("getMetaClass", cg.sig(RubyClass.class)); // [dispatcher, tc, recv, klazz]
-            // load method index
-            method.ldc(new Integer(index)); // [dispatcher, tc, recv, klazz, index]
-            // load method name
-            method.ldc(name); // [dispatcher, tc, recv, klazz, index, name]
-            // args
-            if (argsCallback != null) {
-                argsCallback.compile(this);
-            } else {
-                method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
-            }
-            // [dispatcher, tc, recv, klazz, index, name, args]
-            // calltype
-            method.getstatic(cg.p(CallType.class), callType.toString(), cg.ci(CallType.class)); // [dispatcher, tc, recv, klazz, index, name, args, calltype]
-            // block
-            if (closureArg == null) {
-                method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
-            } else {
-                closureArg.compile(this);
-            }
-            // [dispatcher, tc, recv, klazz, index, name, args, calltype, block]
-            if (closureArg != null) {
-                // wrap with try/catch for block flow-control exceptions
-                // FIXME: for flow-control from containing blocks, but it's not working right;
-                // stack is not as expected for invoke calls below...
-                //method.trycatch(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
-            }
-
-            method.invokevirtual(cg.p(Dispatcher.class), "callMethod", dispatcherSig);
-
-            if (closureArg != null) {
-                // no physical break, terminate loop and skip catch block
-                // FIXME: for flow-control from containing blocks, but it's not working right;
-                // stack is not as expected for invoke calls below...
-                //            Label normalEnd = new Label();
-                //            method.go_to(normalEnd);
-                //
-                //            method.label(tryCatch);
-                //            {
-                //                loadClosure();
-                //                invokeUtilityMethod("handleJumpException", cg.sig(IRubyObject.class, cg.params(JumpException.class, Block.class)));
-                //            }
-                //
-            }
-        }
-
-        private void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
-            String callSig = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class));
-            String callSigIndexed = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class));
-
-            int index = MethodIndex.getIndex(name);
-
-            if (hasArgs) {
-                if (hasReceiver) {
-                    // Call with args
-                    // receiver already present
-                } else {
-                    // FCall
-                    // no receiver present, use self
-                    loadSelf();
-                    // put self under args
-                    method.swap();
-                }
-            } else {
-                if (hasReceiver) {
-                    // receiver already present
-                    // empty args list
-                    method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
-                } else {
-                    // VCall
-                    // no receiver present, use self
-                    loadSelf();
-
-                    // empty args list
-                    method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
-                }
-            }
-
-            loadThreadContext();
-
-            if (index != 0) {
-                // load method index
-                method.ldc(new Integer(index));
-            }
-
-            method.ldc(name);
-
-            // load self for visibility checks
-            loadSelf();
-
-            method.getstatic(cg.p(CallType.class), callType.toString(), cg.ci(CallType.class));
-
-            if (closureArg == null) {
-                method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
-            } else {
-                closureArg.compile(this);
-            }
-
-            Label tryBegin = new Label();
-            Label tryEnd = new Label();
-            Label tryCatch = new Label();
-            if (closureArg != null) {
-                // wrap with try/catch for block flow-control exceptions
-                // FIXME: for flow-control from containing blocks, but it's not working right;
-                // stack is not as expected for invoke calls below...
-                //method.trycatch(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
-                method.label(tryBegin);
-            }
-
-            if (attrAssign) {
-                if (index != 0) {
-                    invokeUtilityMethod("doAttrAssignIndexed", callSigIndexed);
-                } else {
-                    invokeUtilityMethod("doAttrAssign", callSig);
-                }
-            } else {
-                if (index != 0) {
-                    invokeUtilityMethod("doInvokeDynamicIndexed", callSigIndexed);
-                } else {
-                    invokeUtilityMethod("doInvokeDynamic", callSig);
-                }
-            }
-
-            if (closureArg != null) {
-                method.label(tryEnd);
-
-                // no physical break, terminate loop and skip catch block
-                Label normalEnd = new Label();
-                method.go_to(normalEnd);
-
-                method.label(tryCatch);
-                {
-                    loadClosure();
-                    invokeUtilityMethod("handleJumpException", cg.sig(IRubyObject.class, cg.params(JumpException.class, Block.class)));
-                }
-
-                method.label(normalEnd);
-            }
-        }
-
-        public void yield(boolean hasArgs, boolean unwrap) {
-            loadClosure();
-
-            if (hasArgs) {
-                method.swap();
-
-                loadThreadContext();
-                method.swap();
-
-                // args now here
-            } else {
-                loadThreadContext();
-
-                // empty args
-                method.aconst_null();
-            }
-
-            if (unwrap) {
-                method.checkcast(cg.p(RubyArray.class));
-                method.invokevirtual(cg.p(RubyArray.class), "toJavaArray", cg.sig(IRubyObject[].class));
-            } else {
-                createObjectArray(1);
-            }
-
-            method.aconst_null();
-            method.aconst_null();
-            method.ldc(new Boolean(unwrap));
-
-            method.invokevirtual(cg.p(Block.class), "yield", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject[].class, IRubyObject.class, RubyModule.class, Boolean.TYPE)));
         }
 
         public void loadThreadContext() {
@@ -549,7 +341,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.invokevirtual(RUBY, methodName, signature);
         }
 
-        private void invokeIRubyObject(String methodName, String signature) {
+        public void invokeIRubyObject(String methodName, String signature) {
             method.invokeinterface(IRUBYOBJECT, methodName, signature);
         }
 
@@ -576,6 +368,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         public VariableCompiler getVariableCompiler() {
             return variableCompiler;
+        }
+        
+        public InvocationCompiler getInvocationCompiler() {
+            return invocationCompiler;
         }
 
         public void assignLocalVariableBlockArg(int argIndex, int varIndex) {
@@ -1339,14 +1135,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             // declare the field
             getClassVisitor().visitField(ACC_PRIVATE | ACC_STATIC, closureFieldName, cg.ci(CompiledBlockCallback.class), null, null);
+            
+            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
+            variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX);
+            invocationCompiler = new StandardInvocationCompiler(this, method);
         }
 
         public void beginMethod(ClosureCallback args) {
-            ////////////////////////////
-            // closure implementation
-            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
-            variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX);
-
             method.start();
 
             // store the local vars in a local variable
@@ -1459,6 +1254,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null));
             variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX);
+            invocationCompiler = new StandardInvocationCompiler(this, method);
         }
 
         public void beginMethod(ClosureCallback args) {
@@ -1555,14 +1351,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.ldc(new Integer(restArg));
             invokeUtilityMethod("raiseArgumentError", cg.sig(Void.TYPE, cg.params(Ruby.class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE)));
 
-            // arraycopy all arguments into local vars array
             Label noArgs = new Label();
-            for (int i = 0; i < arity.required(); i++) {
-                method.aload(ARGS_INDEX);
-                method.ldc(new Integer(i));
-                method.arrayload();
-                variableCompiler.assignLocalVariable(i + 2);
-            }
 
             // check if args is null
             method.aload(ARGS_INDEX);
