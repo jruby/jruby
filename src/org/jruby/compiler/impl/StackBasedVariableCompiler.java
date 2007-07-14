@@ -16,8 +16,6 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.VariableCompiler;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 import org.objectweb.asm.Label;
 
@@ -39,7 +37,8 @@ public class StackBasedVariableCompiler implements VariableCompiler {
     }
     
     public void beginMethod(ClosureCallback argsCallback, StaticScope scope) {
-        methodCompiler.loadNil();
+        // fill in all vars with null so compiler is happy about future accesses
+        method.aconst_null();
         for (int i = 0; i < scope.getNumberOfVariables(); i++) {
             assignLocalVariable(i);
         }
@@ -54,7 +53,6 @@ public class StackBasedVariableCompiler implements VariableCompiler {
         method.dup();
 
         method.astore(10 + index);
-        methodCompiler.nullToNil();
     }
 
     public void assignLocalVariable(int index, int depth) {
@@ -67,7 +65,6 @@ public class StackBasedVariableCompiler implements VariableCompiler {
 
     public void retrieveLocalVariable(int index) {
         method.aload(10 + index);
-        methodCompiler.nullToNil();
     }
 
     public void retrieveLocalVariable(int index, int depth) {

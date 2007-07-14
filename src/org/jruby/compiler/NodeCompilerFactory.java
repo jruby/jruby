@@ -638,7 +638,9 @@ public class NodeCompilerFactory {
             }
         };
         
+        // inspect body and args
         ASTInspector inspector = new ASTInspector();
+        inspector.inspect(defnNode.getArgsNode());
         inspector.inspect(defnNode.getBodyNode());
         
         context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args, inspector);

@@ -36,7 +36,6 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Stack;
 import jregex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -51,7 +50,6 @@ import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ArrayCallback;
@@ -63,7 +61,6 @@ import org.jruby.compiler.ScriptCompiler;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.VariableCompiler;
 import org.jruby.evaluator.EvaluationState;
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.CallConfiguration;
@@ -73,15 +70,11 @@ import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
-import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
@@ -1245,7 +1238,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             this.friendlyName = friendlyName;
 
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null));
-            if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+            if (inspector.hasClosure() || inspector.hasScopeAwareMethods() || inspector.hasOptArgs() || inspector.hasBlockArg() || inspector.hasRestArg()) {
                 variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX);
             } else {
                 variableCompiler = new StackBasedVariableCompiler(this, method, ARGS_INDEX);
@@ -1282,9 +1275,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // end of variable scope
             Label end = new Label();
             method.label(end);
-
-            // local variable for lvars array
-            method.visitLocalVariable("lvars", cg.ci(IRubyObject[].class), null, scopeStart, end, DYNAMIC_SCOPE_INDEX);
 
             method.end();
         }

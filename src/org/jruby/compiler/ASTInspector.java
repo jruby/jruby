@@ -12,6 +12,7 @@ package org.jruby.compiler;
 import java.util.HashSet;
 import java.util.Set;
 import org.jruby.ast.AndNode;
+import org.jruby.ast.ArgsNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BeginNode;
@@ -38,6 +39,7 @@ import org.jruby.ast.NotNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.ReturnNode;
+import org.jruby.ast.RootNode;
 import org.jruby.ast.SValueNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.WhileNode;
@@ -54,12 +56,17 @@ public class ASTInspector {
     private boolean hasDef;
     private boolean hasScopeAwareMethods;
     private boolean hasFrameAwareMethods;
+    private boolean hasBlockArg;
+    private boolean hasOptArgs;
+    private boolean hasRestArg;
     
     private static Set FRAME_AWARE_METHODS = new HashSet();
     private static Set SCOPE_AWARE_METHODS = new HashSet();
     
     static {
         FRAME_AWARE_METHODS.add("eval");
+        FRAME_AWARE_METHODS.add("module_eval");
+        FRAME_AWARE_METHODS.add("class_eval");
         FRAME_AWARE_METHODS.add("binding");
         FRAME_AWARE_METHODS.add("public");
         FRAME_AWARE_METHODS.add("private");
@@ -69,22 +76,29 @@ public class ASTInspector {
         FRAME_AWARE_METHODS.add("iterator?");
         
         SCOPE_AWARE_METHODS.add("eval");
+        SCOPE_AWARE_METHODS.add("module_eval");
+        SCOPE_AWARE_METHODS.add("class_eval");
         SCOPE_AWARE_METHODS.add("binding");
         SCOPE_AWARE_METHODS.add("local_variables");
+        SCOPE_AWARE_METHODS.add("gsub");
+    }
+    
+    public void disable() {
+        hasClosure = true;
+        hasClass = true;
+        hasDef = true;
+        hasScopeAwareMethods = true;
+        hasFrameAwareMethods = true;
+        hasBlockArg = true;
+        hasOptArgs = true;
+        hasRestArg = true;
     }
     
     public void inspect(Node node) {
         // TODO: This code effectively disables all inspection-based optimizations; none of them are 100% safe yet
         boolean disabled = true;
-        if (disabled) {
-            hasClosure = true;
-            hasClass = true;
-            hasDef = true;
-            hasScopeAwareMethods = true;
-            hasFrameAwareMethods = true;
-            
-            return;
-        }
+        if (disabled) disable();
+
         if (node == null) return;
         
         switch (node.nodeId) {
@@ -102,6 +116,12 @@ public class ASTInspector {
             for (int i = 0; i < listNode.size(); i++) {
                 inspect(listNode.get(i));
             }
+            break;
+        case NodeTypes.ARGSNODE:
+            ArgsNode argsNode = (ArgsNode)node;
+            if (argsNode.getBlockArgNode() != null) hasBlockArg = true;
+            if (argsNode.getOptArgs() != null) hasOptArgs = true;
+            if (argsNode.getRestArg() == -2 || argsNode.getRestArg() >= 0) hasRestArg = true;
             break;
         case NodeTypes.ATTRASSIGNNODE:
             AttrAssignNode attrAssignNode = (AttrAssignNode)node;
@@ -124,10 +144,10 @@ public class ASTInspector {
             inspect(((BlockAcceptingNode)node).getIterNode());
         case NodeTypes.VCALLNODE:
             INameNode nameNode = (INameNode)node;
-            if (FRAME_AWARE_METHODS.contains(nameNode)) {
+            if (FRAME_AWARE_METHODS.contains(nameNode.getName())) {
                 hasFrameAwareMethods = true;
             }
-            if (SCOPE_AWARE_METHODS.contains(nameNode)) {
+            if (SCOPE_AWARE_METHODS.contains(nameNode.getName())) {
                 hasScopeAwareMethods = true;
             }
             break;
@@ -136,6 +156,7 @@ public class ASTInspector {
             hasClass = true;
             break;
         case NodeTypes.CLASSVARNODE:
+            hasScopeAwareMethods = true;
             break;
         case NodeTypes.GLOBALASGNNODE:
             GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode)node;
@@ -144,8 +165,8 @@ public class ASTInspector {
             }
             break;
         case NodeTypes.CONSTDECLNODE:
-            hasScopeAwareMethods = true;
         case NodeTypes.CLASSVARASGNNODE:
+            hasScopeAwareMethods = true;
         case NodeTypes.DASGNNODE:
         case NodeTypes.INSTASGNNODE:
         case NodeTypes.LOCALASGNNODE:
@@ -245,6 +266,9 @@ public class ASTInspector {
             break;
         case NodeTypes.REGEXPNODE:
             break;
+        case NodeTypes.ROOTNODE:
+            inspect(((RootNode)node).getBodyNode());
+            break;
         case NodeTypes.RETURNNODE:
             inspect(((ReturnNode)node).getValueNode());
             break;
@@ -273,6 +297,8 @@ public class ASTInspector {
         case NodeTypes.ZARRAYNODE:
             break;
         default:
+            // encountered a node we don't recognize, set everything to true to disable optz
+            disable();
         }
     }
 
@@ -294,5 +320,17 @@ public class ASTInspector {
 
     public boolean hasScopeAwareMethods() {
         return hasScopeAwareMethods;
+    }
+
+    public boolean hasBlockArg() {
+        return hasBlockArg;
+    }
+
+    public boolean hasOptArgs() {
+        return hasOptArgs;
+    }
+
+    public boolean hasRestArg() {
+        return hasRestArg;
     }
 }
