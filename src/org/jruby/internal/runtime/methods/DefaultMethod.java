@@ -186,7 +186,8 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     Class sourceClass = compiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
                     jitCompiledScript = (Script)sourceClass.newInstance();
                     
-                    if (!(inspector.hasClosure() || inspector.hasScopeAwareMethods())) {
+                    // if we're not doing any of the operations that still need a scope, use the scopeless config
+                    if (!(inspector.hasClosure() || inspector.hasScopeAwareMethods() || inspector.hasBlockArg() || inspector.hasOptArgs() || inspector.hasRestArg())) {
                         // switch to a slightly faster call config
                         callConfig = CallConfiguration.JAVA_FULL;
                     }
