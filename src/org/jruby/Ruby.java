@@ -60,6 +60,7 @@ import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.YARVCompiledRunner;
 import org.jruby.common.RubyWarnings;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.NodeCompilerFactory;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.StandardASMCompiler;
@@ -304,16 +305,19 @@ public final class Ruby {
             if (config.isJitEnabled() && !hasEventHooks()) {
             Script script = null;
                 try {
-                String filename = node.getPosition().getFile();
-                String classname;
-                if (filename.equals("-e")) {
-                    classname = "__dash_e__";
-                } else {
-                    classname = filename.replace("\\", "/").replace(".rb", "");
-                }
+                    String filename = node.getPosition().getFile();
+                    String classname;
+                    if (filename.equals("-e")) {
+                        classname = "__dash_e__";
+                    } else {
+                        classname = filename.replace("\\", "/").replace(".rb", "");
+                    }
+        
+                    ASTInspector inspector = new ASTInspector();
+                    inspector.inspect(node);
 
-                StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
-                    NodeCompilerFactory.compileRoot(node, compiler);
+                    StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
+                    NodeCompilerFactory.compileRoot(node, compiler, inspector);
 
                     Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
 
@@ -366,9 +370,12 @@ public final class Ruby {
             } else {
                 classname = filename.replace("\\", "/").replace(".rb", "");
             }
+        
+            ASTInspector inspector = new ASTInspector();
+            inspector.inspect(node);
             
             StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
-            NodeCompilerFactory.compileRoot(node, compiler);
+            NodeCompilerFactory.compileRoot(node, compiler, inspector);
 
             Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
 

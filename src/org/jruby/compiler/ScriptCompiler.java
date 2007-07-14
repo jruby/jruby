@@ -28,6 +28,7 @@
 
 package org.jruby.compiler;
 
+import org.jruby.parser.StaticScope;
 
 /**
  * Compiler represents the current state of a compiler and all appropriate
@@ -62,5 +63,5 @@ public interface ScriptCompiler {
      * @return An Object that represents the method within this compiler. Used in calls to
      * endMethod once compilation for this method is completed.
      */
-    public MethodCompiler startMethod(String friendlyName, ClosureCallback argsHandler);
+    public MethodCompiler startMethod(String friendlyName, ClosureCallback argsHandler, StaticScope scope, ASTInspector inspector);
 }

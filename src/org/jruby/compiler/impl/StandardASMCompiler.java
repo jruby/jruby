@@ -53,6 +53,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.BranchCallback;
 import org.jruby.compiler.ClosureCallback;
@@ -65,6 +66,7 @@ import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.ReOptions;
@@ -257,10 +259,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         method.end();
     }
     
-    public MethodCompiler startMethod(String friendlyName, ClosureCallback args) {
-        ASMMethodCompiler methodCompiler = new ASMMethodCompiler(friendlyName);
+    public MethodCompiler startMethod(String friendlyName, ClosureCallback args, StaticScope scope, ASTInspector inspector) {
+        ASMMethodCompiler methodCompiler = new ASMMethodCompiler(friendlyName, inspector);
         
-        methodCompiler.beginMethod(args);
+        methodCompiler.beginMethod(args, scope);
         
         return methodCompiler;
     }
@@ -275,7 +277,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         // The current local variable count, to use for temporary locals during processing
         protected int localVariable = NIL_INDEX + 1;
 
-        public abstract void beginMethod(ClosureCallback args);
+        public abstract void beginMethod(ClosureCallback args, StaticScope scope);
 
         public abstract void endMethod();
 
@@ -744,7 +746,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             
             ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName);
             
-            closureCompiler.beginMethod(args);
+            closureCompiler.beginMethod(args, scope);
             
             body.compile(closureCompiler);
             
@@ -1141,16 +1143,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }
 
-        public void beginMethod(ClosureCallback args) {
+        public void beginMethod(ClosureCallback args, StaticScope scope) {
             method.start();
-
-            // store the local vars in a local variable
-            loadThreadContext();
-            invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
-            method.dup();
-            method.astore(DYNAMIC_SCOPE_INDEX);
-            method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
-            method.astore(VARS_ARRAY_INDEX);
 
             // set up a local IRuby variable
             method.aload(THREADCONTEXT_INDEX);
@@ -1162,8 +1156,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeIRuby("getNil", cg.sig(IRubyObject.class));
             method.astore(NIL_INDEX);
             
-            // set up block arguments
-            args.compile(this);
+            variableCompiler.beginMethod(args, scope);
 
             // start of scoping for closure's vars
             startScope = new Label();
@@ -1183,7 +1176,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             throw new NotCompilableException("Can\'t compile non-local return");
         }
 
-        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args) {
+        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args, ASTInspector inspector) {
             throw new NotCompilableException("Can\'t compile def within closure yet");
         }
 
@@ -1246,18 +1239,21 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
     public class ASMMethodCompiler extends AbstractMethodCompiler {
         private String friendlyName;
-        private Arity arity;
         private Label scopeStart;
 
-        public ASMMethodCompiler(String friendlyName) {
+        public ASMMethodCompiler(String friendlyName, ASTInspector inspector) {
             this.friendlyName = friendlyName;
 
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null));
-            variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX);
+            if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX);
+            } else {
+                variableCompiler = new StackBasedVariableCompiler(this, method, ARGS_INDEX);
+            }
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }
 
-        public void beginMethod(ClosureCallback args) {
+        public void beginMethod(ClosureCallback args, StaticScope scope) {
             method.start();
 
             // set up a local IRuby variable
@@ -1269,20 +1265,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // grab nil for local variables
             invokeIRuby("getNil", cg.sig(IRubyObject.class));
             method.astore(NIL_INDEX);
-
-            // store the local vars in a local variable
-            loadThreadContext();
-            invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
-            method.dup();
-            method.astore(DYNAMIC_SCOPE_INDEX);
-            method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
-            method.astore(VARS_ARRAY_INDEX);
-
-            if (args != null) {
-                args.compile(this);
-            } else {
-                arity = null;
-            }
+            
+            variableCompiler.beginMethod(args, scope);
 
             // visit a label to start scoping for local vars in this method
             Label start = new Label();
@@ -1305,12 +1289,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.end();
         }
 
-        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args) {
+        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args, ASTInspector inspector) {
             // TODO: build arg list based on number of args, optionals, etc
             ++methodIndex;
             String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;
 
-            MethodCompiler methodCompiler = startMethod(methodName, args);
+            MethodCompiler methodCompiler = startMethod(methodName, args, scope, inspector);
 
             // callbacks to fill in method body
             body.compile(methodCompiler);
@@ -1332,8 +1316,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             buildStaticScopeNames(method, scope);
 
             method.ldc(new Integer(0));
-
-            invokeUtilityMethod("def", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE)));
+            
+            if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                method.getstatic(cg.p(CallConfiguration.class), "RUBY_FULL", cg.ci(CallConfiguration.class));
+            } else {
+                method.getstatic(cg.p(CallConfiguration.class), "JAVA_FULL", cg.ci(CallConfiguration.class));
+            }
+            
+            invokeUtilityMethod("def", cg.sig(IRubyObject.class, 
+                    cg.params(ThreadContext.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE, CallConfiguration.class)));
         }
         
         public void performReturn() {

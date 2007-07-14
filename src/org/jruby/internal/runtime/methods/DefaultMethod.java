@@ -40,6 +40,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.ClosureCallback;
 import org.jruby.compiler.MethodCompiler;
@@ -86,7 +87,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         this.restArg = argsNode.getRestArg();
         this.hasOptArgs = argsNode.getOptArgs() != null;
 		
-		assert argsNode != null;
+        assert argsNode != null;
     
         if (implementationClass != null) {
             needsImplementer = !implementationClass.isClass();
@@ -108,31 +109,30 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             implementer = getImplementationClass();
         }
         
-        callConfig.pre(context, self, implementer, getArity(), name, args, noSuper, block, staticScope, this);
-        
-        try {
         Ruby runtime = context.getRuntime();
-        
+
         if (runtime.getInstanceConfig().isJitEnabled()) {
             runJIT(runtime, context, name);
         }
-
+        
         try {
+            callConfig.pre(context, self, implementer, getArity(), name, args, noSuper, block, staticScope, this);
+
             if (jitCompiledScript != null && !runtime.hasEventHooks()) {
                 return jitCompiledScript.run(context, self, args, block);
             } else {
                 if (argsNode.getBlockArgNode() != null) {
                     CompilerHelpers.processBlockArgument(runtime, context, block, argsNode.getBlockArgNode().getCount());
                 }
-                
+
                 getArity().checkArity(runtime, args);
-                
+
                 prepareArguments(context, runtime, args);
-                
+
                 if (runtime.hasEventHooks()) {
                     traceCall(context, runtime, name);
                 }
-                
+
                 return EvaluationState.eval(runtime, context, body, self, block);
             }
             } catch (JumpException.ReturnJump rj) {
@@ -146,8 +146,6 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             if (runtime.hasEventHooks()) {
                 traceReturn(context, runtime, name);
             }
-        }
-        } finally {
             callConfig.post(context);
         }
     }
@@ -178,12 +176,20 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                         }
                     };
         
-                    MethodCompiler methodCompiler = compiler.startMethod("__file__", args);
+                    ASTInspector inspector = new ASTInspector();
+                    inspector.inspect(body);
+                    
+                    MethodCompiler methodCompiler = compiler.startMethod("__file__", args, staticScope, inspector);
                     NodeCompilerFactory.compile(body, methodCompiler);
                     methodCompiler.endMethod();
                     compiler.endScript();
                     Class sourceClass = compiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
                     jitCompiledScript = (Script)sourceClass.newInstance();
+                    
+                    if (!(inspector.hasClosure() || inspector.hasScopeAwareMethods())) {
+                        // switch to a slightly faster call config
+                        callConfig = CallConfiguration.JAVA_FULL;
+                    }
                     
                     if (runtime.getInstanceConfig().isJitLogging()) System.err.println("compiled: " + className + "." + name);
                     callCount = -1;

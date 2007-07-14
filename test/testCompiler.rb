@@ -4,6 +4,7 @@ require 'test/minirunit'
 
 StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
 NodeCompilerFactory = org.jruby.compiler.NodeCompilerFactory
+ASTInspector = org.jruby.compiler.ASTInspector
 Block = org.jruby.runtime.Block
 IRubyObject = org.jruby.runtime.builtin.IRubyObject
 
@@ -11,8 +12,10 @@ def compile_to_class(src)
   node = JRuby.parse(src, "testCompiler#{src.object_id}", false)
   filename = node.position.file
   classname = filename.sub("/", ".").sub("\\", ".").sub(".rb", "")
+  inspector = ASTInspector.new
+  inspector.inspect(node)
   context = StandardASMCompiler.new(classname, filename)
-  NodeCompilerFactory.compileRoot(node, context)
+  NodeCompilerFactory.compileRoot(node, context, inspector)
 
   context.loadClass(JRuby.runtime.getJRubyClassLoader)
 end

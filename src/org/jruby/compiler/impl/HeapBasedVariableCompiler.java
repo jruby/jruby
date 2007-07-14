@@ -11,8 +11,10 @@ package org.jruby.compiler.impl;
 
 import org.jruby.Ruby;
 import org.jruby.compiler.ArrayCallback;
+import org.jruby.compiler.ClosureCallback;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.VariableCompiler;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -39,6 +41,20 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
         this.scopeIndex = scopeIndex;
         this.varsIndex = varsIndex;
         this.argsIndex = argsIndex;
+    }
+    
+    public void beginMethod(ClosureCallback argsCallback, StaticScope scope) {
+        // store the local vars in a local variable
+        methodCompiler.loadThreadContext();
+        methodCompiler.invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
+        method.dup();
+        method.astore(scopeIndex);
+        method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
+        method.astore(varsIndex);
+        
+        if (argsCallback != null) {
+            argsCallback.compile(methodCompiler);
+        }
     }
 
     public void assignLocalVariable(int index) {

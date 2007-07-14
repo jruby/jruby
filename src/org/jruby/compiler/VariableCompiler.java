@@ -9,6 +9,7 @@
 
 package org.jruby.compiler;
 
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 
 /**
@@ -16,6 +17,7 @@ import org.jruby.runtime.Arity;
  * @author headius
  */
 public interface VariableCompiler {
+    public void beginMethod(ClosureCallback argsCallback, StaticScope scope);
     public void assignLocalVariable(int index);
     public void retrieveLocalVariable(int index);
     public void assignLastLine();

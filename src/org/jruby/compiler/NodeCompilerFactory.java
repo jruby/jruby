@@ -638,7 +638,10 @@ public class NodeCompilerFactory {
             }
         };
         
-        context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args);
+        ASTInspector inspector = new ASTInspector();
+        inspector.inspect(defnNode.getBodyNode());
+        
+        context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args, inspector);
     }
     
     public static void compileArgs(Node node, MethodCompiler context) {
@@ -1199,13 +1202,13 @@ public class NodeCompilerFactory {
         context.performReturn();
     }
     
-    public static void compileRoot(Node node, ScriptCompiler context) {
+    public static void compileRoot(Node node, ScriptCompiler context, ASTInspector inspector) {
         RootNode rootNode = (RootNode)node;
         
         context.startScript();
         
         // create method for toplevel of script
-        MethodCompiler methodCompiler = context.startMethod("__file__", null);
+        MethodCompiler methodCompiler = context.startMethod("__file__", null, rootNode.getStaticScope(), inspector);
 
         // try to compile the script's body
         try {

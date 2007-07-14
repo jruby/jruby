@@ -105,4 +105,12 @@ public abstract class DynamicMethod {
     public DynamicMethod getRealMethod() {
         return this;
     }
+
+    public CallConfiguration getCallConfig() {
+        return callConfig;
+    }
+
+    public void setCallConfig(CallConfiguration callConfig) {
+        this.callConfig = callConfig;
+    }
 }

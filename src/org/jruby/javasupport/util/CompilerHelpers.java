@@ -10,6 +10,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.evaluator.EvaluationState;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.parser.BlockStaticScope;
@@ -45,7 +46,8 @@ public class CompilerHelpers {
                 new DynamicScope(staticScope, context.getCurrentScope()), callback);
     }
     
-    public static IRubyObject def(ThreadContext context, IRubyObject self, Class compiledClass, String name, String javaName, String[] scopeNames, int arity) {
+    public static IRubyObject def(ThreadContext context, IRubyObject self, Class compiledClass, String name, String javaName, String[] scopeNames,
+            int arity, CallConfiguration callConfig) {
         Ruby runtime = context.getRuntime();
         
         RubyModule containingClass = context.getRubyClass();
@@ -72,6 +74,8 @@ public class CompilerHelpers {
             method = factory.getCompiledMethod(containingClass, compiledClass, javaName, 
                     Arity.createArity(arity), visibility, scope);
         }
+        
+        method.setCallConfig(callConfig);
         
         containingClass.addMethod(name, method);
         

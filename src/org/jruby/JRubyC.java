@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import org.jruby.ast.Node;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.NodeCompilerFactory;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.StandardASMCompiler;
@@ -56,10 +57,13 @@ public class JRubyC {
             // FIXME: encoding?
             String content = new String(chars);
             Node scriptNode = runtime.parse(content, filename, null, 0);
+        
+            ASTInspector inspector = new ASTInspector();
+            inspector.inspect(scriptNode);
             
             // do the compile
             StandardASMCompiler compiler = new StandardASMCompiler(filename.substring(0, filename.lastIndexOf(".")), filename);
-            NodeCompilerFactory.compileRoot(scriptNode, compiler);
+            NodeCompilerFactory.compileRoot(scriptNode, compiler, inspector);
             
             compiler.writeClass(destfile);
         } catch (IOException ioe) {

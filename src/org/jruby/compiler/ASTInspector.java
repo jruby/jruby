@@ -74,6 +74,17 @@ public class ASTInspector {
     }
     
     public void inspect(Node node) {
+        // TODO: This code effectively disables all inspection-based optimizations; none of them are 100% safe yet
+        boolean disabled = true;
+        if (disabled) {
+            hasClosure = true;
+            hasClass = true;
+            hasDef = true;
+            hasScopeAwareMethods = true;
+            hasFrameAwareMethods = true;
+            
+            return;
+        }
         if (node == null) return;
         
         switch (node.nodeId) {
@@ -121,6 +132,7 @@ public class ASTInspector {
             }
             break;
         case NodeTypes.CLASSNODE:
+            hasScopeAwareMethods = true;
             hasClass = true;
             break;
         case NodeTypes.CLASSVARNODE:
@@ -132,6 +144,7 @@ public class ASTInspector {
             }
             break;
         case NodeTypes.CONSTDECLNODE:
+            hasScopeAwareMethods = true;
         case NodeTypes.CLASSVARASGNNODE:
         case NodeTypes.DASGNNODE:
         case NodeTypes.INSTASGNNODE:
@@ -142,6 +155,7 @@ public class ASTInspector {
             inspect(((Colon2Node)node).getLeftNode());
             break;
         case NodeTypes.CONSTNODE:
+            hasScopeAwareMethods = true;
             break;
         case NodeTypes.DEFNNODE:
             hasDef = true;
@@ -202,6 +216,7 @@ public class ASTInspector {
             break;
         case NodeTypes.MODULENODE:
             hasClass = true;
+            hasScopeAwareMethods = true;
             break;
         case NodeTypes.NEWLINENODE:
             inspect(((NewlineNode)node).getNextNode());
