@@ -115,6 +115,8 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             runJIT(runtime, context, name);
         }
         
+        CallConfiguration callConfig = this.callConfig;
+        
         try {
             callConfig.pre(context, self, implementer, getArity(), name, args, noSuper, block, staticScope, this);
 
@@ -135,12 +137,12 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
                 return EvaluationState.eval(runtime, context, body, self, block);
             }
-            } catch (JumpException.ReturnJump rj) {
-                    if (rj.getTarget() == this) {
-                    return (IRubyObject) rj.getValue();
-                }
-                throw rj;
-            } catch (JumpException.RedoJump rj) {
+        } catch (JumpException.ReturnJump rj) {
+                if (rj.getTarget() == this) {
+                return (IRubyObject) rj.getValue();
+            }
+            throw rj;
+        } catch (JumpException.RedoJump rj) {
                 throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
         } finally {
             if (runtime.hasEventHooks()) {
@@ -184,13 +186,15 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     methodCompiler.endMethod();
                     compiler.endScript();
                     Class sourceClass = compiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
-                    jitCompiledScript = (Script)sourceClass.newInstance();
                     
                     // if we're not doing any of the operations that still need a scope, use the scopeless config
                     if (!(inspector.hasClosure() || inspector.hasScopeAwareMethods() || inspector.hasBlockArg() || inspector.hasOptArgs() || inspector.hasRestArg())) {
                         // switch to a slightly faster call config
                         callConfig = CallConfiguration.JAVA_FULL;
                     }
+                    
+                    // finally, grab the script
+                    jitCompiledScript = (Script)sourceClass.newInstance();
                     
                     if (runtime.getInstanceConfig().isJitLogging()) System.err.println("compiled: " + className + "." + name);
                     callCount = -1;
