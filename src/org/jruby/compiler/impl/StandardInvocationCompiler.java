@@ -16,6 +16,7 @@ import org.jruby.compiler.ClosureCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallAdapter;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.MethodIndex;
@@ -57,47 +58,49 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
 
     public void invokeDynamic(String name, ClosureCallback receiverCallback, ClosureCallback argsCallback, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
-        String dispatcherSig = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, int.class, String.class, IRubyObject[].class, CallType.class, Block.class));
-
-        int index = MethodIndex.getIndex(name);
-
+        String classname = methodCompiler.getScriptCompiler().getClassname();
+        
+        String fieldname = methodCompiler.getScriptCompiler().cacheCallAdapter(name, callType);
+        
         if (receiverCallback != null) {
             receiverCallback.compile(methodCompiler);
         } else {
             methodCompiler.loadSelf();
         }
-        // [recv]
-        // receiver on stack, prepare dispatcher under self
-        method.dup(); // [recv, recv]
-        methodCompiler.invokeIRubyObject("getMetaClass", cg.sig(RubyClass.class)); // [recv, klazz]
-        method.invokevirtual(cg.p(RubyModule.class), "getDispatcher", cg.sig(Dispatcher.class)); // [recv, dispatcher]
-        method.swap(); // [dispatcher, recv]
-        // threadcontext under self
-        methodCompiler.loadThreadContext(); // [dispatcher, recv, tc]
-        method.swap(); // [dispatcher, tc, recv]
-        // metaclass
-        method.dup(); // [dispatcher, tc, recv, recv]
-        methodCompiler.invokeIRubyObject("getMetaClass", cg.sig(RubyClass.class)); // [dispatcher, tc, recv, klazz]
-        // load method index
-        method.ldc(new Integer(index)); // [dispatcher, tc, recv, klazz, index]
-        // load method name
-        method.ldc(name); // [dispatcher, tc, recv, klazz, index, name]
+        
+        // load call adapter
+        // FIXME: These swaps suck, but OpAsgn breaks if it can't dup receiver in the middle of making this call :(
+        method.getstatic(classname, fieldname, cg.ci(CallAdapter.class));
+        method.swap();
+
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+        method.swap();
+        
+        String signature;
         // args
-        if (argsCallback != null) {
+        if (argsCallback == null) {
+            // block
+            if (closureArg == null) {
+                // no args, no block
+                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class));
+            } else {
+                // no args, with block
+                closureArg.compile(methodCompiler);
+                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, Block.class));
+            }
+        } else {
             argsCallback.compile(methodCompiler);
-        } else {
-            method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+            // block
+            if (closureArg == null) {
+                // with args, no block
+                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class));
+            } else {
+                // with args, with block
+                closureArg.compile(methodCompiler);
+                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
+            }
         }
-        // [dispatcher, tc, recv, klazz, index, name, args]
-        // calltype
-        method.getstatic(cg.p(CallType.class), callType.toString(), cg.ci(CallType.class)); // [dispatcher, tc, recv, klazz, index, name, args, calltype]
-        // block
-        if (closureArg == null) {
-            method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
-        } else {
-            closureArg.compile(methodCompiler);
-        }
-        // [dispatcher, tc, recv, klazz, index, name, args, calltype, block]
+        // adapter, tc, recv, args{0,1}, block{0,1}]
         if (closureArg != null) {
             // wrap with try/catch for block flow-control exceptions
             // FIXME: for flow-control from containing blocks, but it's not working right;
@@ -105,7 +108,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             //method.trycatch(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
         }
 
-        method.invokevirtual(cg.p(Dispatcher.class), "callMethod", dispatcherSig);
+        method.invokevirtual(cg.p(CallAdapter.class), "call", signature);
 
         if (closureArg != null) {
             // no physical break, terminate loop and skip catch block

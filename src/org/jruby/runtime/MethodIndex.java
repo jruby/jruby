@@ -20,7 +20,10 @@ import java.util.Map;
  */
 public class MethodIndex {
     public static final List NAMES = new ArrayList();
-    public static final Map NUMBERS = new HashMap();
+    private static final Map NUMBERS = new HashMap();
+    private static final Map CALL_ADAPTERS = new HashMap();
+    private static final Map FUNCTION_ADAPTERS = new HashMap();
+    private static final Map VARIABLE_ADAPTERS = new HashMap();
     
     // ensure zero is devoted to no method name
     public static final int NO_INDEX = getIndex("");
@@ -56,7 +59,7 @@ public class MethodIndex {
     public MethodIndex() {
     }
     
-    public static int getIndex(String methodName) {
+    public synchronized static int getIndex(String methodName) {
         Integer index = (Integer)NUMBERS.get(methodName);
         
         if (index == null) {
@@ -66,5 +69,41 @@ public class MethodIndex {
         }
         
         return index.intValue();
+    }
+    
+    public synchronized static CallAdapter getCallAdapter(String name) {
+        int index = getIndex(name);
+        CallAdapter callAdapter = (CallAdapter)CALL_ADAPTERS.get(new Integer(index));
+        
+        if (callAdapter == null) {
+            callAdapter = new CallAdapter.DefaultCallAdapter(index, name, CallType.NORMAL);
+            CALL_ADAPTERS.put(new Integer(index), callAdapter);
+        }
+        
+        return callAdapter;
+    }
+    
+    public synchronized static CallAdapter getFunctionAdapter(String name) {
+        int index = getIndex(name);
+        CallAdapter callAdapter = (CallAdapter)FUNCTION_ADAPTERS.get(new Integer(index));
+        
+        if (callAdapter == null) {
+            callAdapter = new CallAdapter.DefaultCallAdapter(index, name, CallType.FUNCTIONAL);
+            FUNCTION_ADAPTERS.put(new Integer(index), callAdapter);
+        }
+        
+        return callAdapter;
+    }
+    
+    public synchronized static CallAdapter getVariableAdapter(String name) {
+        int index = getIndex(name);
+        CallAdapter callAdapter = (CallAdapter)VARIABLE_ADAPTERS.get(new Integer(index));
+        
+        if (callAdapter == null) {
+            callAdapter = new CallAdapter.DefaultCallAdapter(index, name, CallType.VARIABLE);
+            VARIABLE_ADAPTERS.put(new Integer(index), callAdapter);
+        }
+        
+        return callAdapter;
     }
 }

@@ -70,10 +70,13 @@ import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -111,6 +114,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private String sourcename;
 
     private ClassWriter classWriter;
+    private SkinnyMethodAdapter clinitMethod;
     int methodIndex = -1;
     int innerIndex = -1;
 
@@ -169,7 +173,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         classWriter.visit(V1_4, ACC_PUBLIC + ACC_SUPER, classname, null, cg.p(Object.class), new String[]{cg.p(Script.class)});
         classWriter.visitSource(sourcename, null);
 
-        createClassInit();
+        beginClassInit();
         createConstructor();
     }
 
@@ -214,6 +218,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         method.invokevirtual(classname, "run", METHOD_SIGNATURE);
         method.voidreturn();
         method.end();
+        
+        endClassInit();
     }
 
     private void createConstructor() {
@@ -227,29 +233,32 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         method.end();
     }
 
-    private void createClassInit() {
+    private void beginClassInit() {
         ClassVisitor cv = getClassVisitor();
 
         cv.visitField(ACC_STATIC | ACC_PRIVATE | ACC_FINAL, "$isClassLoaded", cg.ci(Boolean.TYPE), null, Boolean.FALSE);
         cv.visitField(ACC_STATIC | ACC_PRIVATE | ACC_FINAL, "$class", cg.ci(Class.class), null, null);
 
-        SkinnyMethodAdapter method = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC, "<clinit>", cg.sig(Void.TYPE), null, null));
-        method.start();
+        clinitMethod = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC, "<clinit>", cg.sig(Void.TYPE), null, null));
+        clinitMethod.start();
 
         // This is a little hacky...since clinit recurses, set a boolean so we don't continue trying to load class
-        method.getstatic(classname, "$isClassLoaded", cg.ci(Boolean.TYPE));
+        clinitMethod.getstatic(classname, "$isClassLoaded", cg.ci(Boolean.TYPE));
         Label doNotLoadClass = new Label();
-        method.ifne(doNotLoadClass);
+        clinitMethod.ifne(doNotLoadClass);
 
-        method.ldc(Boolean.TRUE);
-        method.putstatic(classname, "$isClassLoaded", cg.ci(Boolean.TYPE));
-        method.ldc(cg.c(classname));
-        method.invokestatic(cg.p(Class.class), "forName", cg.sig(Class.class, cg.params(String.class)));
-        method.putstatic(classname, "$class", cg.ci(Class.class));
+        clinitMethod.ldc(Boolean.TRUE);
+        clinitMethod.putstatic(classname, "$isClassLoaded", cg.ci(Boolean.TYPE));
+        clinitMethod.ldc(cg.c(classname));
+        clinitMethod.invokestatic(cg.p(Class.class), "forName", cg.sig(Class.class, cg.params(String.class)));
+        clinitMethod.putstatic(classname, "$class", cg.ci(Class.class));
 
-        method.label(doNotLoadClass);
-        method.voidreturn();
-        method.end();
+        clinitMethod.label(doNotLoadClass);
+    }
+
+    private void endClassInit() {
+        clinitMethod.voidreturn();
+        clinitMethod.end();
     }
     
     public MethodCompiler startMethod(String friendlyName, ClosureCallback args, StaticScope scope, ASTInspector inspector) {
@@ -273,6 +282,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public abstract void beginMethod(ClosureCallback args, StaticScope scope);
 
         public abstract void endMethod();
+        
+        public StandardASMCompiler getScriptCompiler() {
+            return StandardASMCompiler.this;
+        }
 
         public void lineNumber(ISourcePosition position) {
             Label line = new Label();
@@ -1394,7 +1407,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
     private int constants = 0;
 
-    private String getNewConstant(String type, String name_prefix) {
+    public String getNewConstant(String type, String name_prefix) {
         ClassVisitor cv = getClassVisitor();
 
         String realName;
@@ -1405,6 +1418,23 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         // declare the field
         cv.visitField(ACC_PRIVATE | ACC_STATIC, realName, type, null, null).visitEnd();
         return realName;
+    }
+    
+    public String cacheCallAdapter(String name, CallType callType) {
+        String fieldname = getNewConstant(cg.ci(CallAdapter.class), cg.cleanJavaIdentifier(name));
+        
+        // retrieve call adapter
+        clinitMethod.ldc(name);
+        if (callType.equals(CallType.NORMAL)) {
+            clinitMethod.invokestatic(cg.p(MethodIndex.class), "getCallAdapter", cg.sig(CallAdapter.class, cg.params(String.class)));
+        } else if (callType.equals(CallType.FUNCTIONAL)) {
+            clinitMethod.invokestatic(cg.p(MethodIndex.class), "getFunctionAdapter", cg.sig(CallAdapter.class, cg.params(String.class)));
+        } else if (callType.equals(CallType.VARIABLE)) {
+            clinitMethod.invokestatic(cg.p(MethodIndex.class), "getVariableAdapter", cg.sig(CallAdapter.class, cg.params(String.class)));
+        }
+        clinitMethod.putstatic(classname, fieldname, cg.ci(CallAdapter.class));
+        
+        return fieldname;
     }
 
     public void defineClass(String name, StaticScope staticScope, ClosureCallback superCallback, ClosureCallback pathCallback, ClosureCallback bodyCallback) {

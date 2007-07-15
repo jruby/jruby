@@ -1123,7 +1123,7 @@ public class NodeCompilerFactory {
         
         ClosureCallback receiver2Callback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
-                context.getInvocationCompiler().invokeDynamic(opAsgnNode.getVariableName(), receiverCallback, null, CallType.FUNCTIONAL, null, false); // [recv, varValue]
+                context.getInvocationCompiler().invokeDynamic(opAsgnNode.getVariableName(), receiverCallback, null, CallType.FUNCTIONAL, null, false);
             }
         };
         
