@@ -35,6 +35,9 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.MethodIndex;
 
 /**
  *
@@ -45,6 +48,7 @@ public class Match3Node extends Node {
 
     private final Node receiverNode;
     private final Node valueNode;
+    public static final CallAdapter callAdapter = new CallAdapter.DefaultCallAdapter(MethodIndex.getIndex("=~"), "=~", CallType.FUNCTIONAL);
 
     public Match3Node(ISourcePosition position, Node receiverNode, Node valueNode) {
         super(position, NodeTypes.MATCH3NODE);

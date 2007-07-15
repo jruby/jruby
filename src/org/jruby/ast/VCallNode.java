@@ -37,6 +37,8 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 
 /**
@@ -49,11 +51,13 @@ public class VCallNode extends Node implements INameNode {
 
     private String name;
     public final int index;
+    public final CallAdapter callAdapter;
 
     public VCallNode(ISourcePosition position, String name) {
         super(position, NodeTypes.VCALLNODE);
         this.name = name.intern();
         this.index = MethodIndex.getIndex(this.name);
+        this.callAdapter = new CallAdapter.DefaultCallAdapter(this.index, this.name, CallType.VARIABLE);
     }
     
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {

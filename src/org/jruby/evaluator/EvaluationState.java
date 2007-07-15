@@ -554,34 +554,15 @@ public class EvaluationState {
         assert receiver.getMetaClass() != null : receiver.getClass().getName();
 
         Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
-        RubyModule module = receiver.getMetaClass();
-        String name = iVisited.getName();
-        int index = iVisited.index;
 
         // No block provided lets look at fast path for STI dispatch.
         if (!block.isGiven()) {
-            if (index != 0) {
-                return receiver.callMethod(context, module, index, name, args, CallType.NORMAL, Block.NULL_BLOCK);
-            } else {
-                DynamicMethod method = module.searchMethod(name);
-      
-                if (method.isUndefined() || (!method.isCallableFrom(self, CallType.NORMAL))) {
-                    return RubyObject.callMethodMissing(context, receiver, method, name, args, self, CallType.NORMAL, Block.NULL_BLOCK);
-                }
-
-                return method.call(context, receiver, module, name, args, false, Block.NULL_BLOCK);
-            }
+            return iVisited.callAdapter.call(context, receiver, args);
         }
             
         while (true) {
             try {
-                DynamicMethod method = module.searchMethod(name);
-
-                if (method.isUndefined() || (index != MethodIndex.METHOD_MISSING && !method.isCallableFrom(self, CallType.NORMAL))) {
-                    return RubyObject.callMethodMissing(context, receiver, method, name, index, args, self, CallType.NORMAL, block);
-                }
-
-                return method.call(context, receiver, module, name, args, false, block);
+                return iVisited.callAdapter.call(context, receiver, args, block);
             } catch (JumpException.RetryJump rj) {
                 // allow loop to retry
             } catch (JumpException.BreakJump bj) {
@@ -1009,35 +990,15 @@ public class EvaluationState {
         
         IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
         Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
-        
-        String name = iVisited.getName();
-        int index = iVisited.index;
 
         // No block provided lets look at fast path for STI dispatch.
         if (!block.isGiven()) {
-            RubyModule module = self.getMetaClass();
-            if (module.index != 0 && index != 0) {
-                return self.callMethod(context, module, iVisited.index, name, args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
-            } else {
-                DynamicMethod method = module.searchMethod(name);
-                if (method.isUndefined() || (!method.isCallableFrom(self, CallType.FUNCTIONAL))) {
-                    return RubyObject.callMethodMissing(context, self, method, name, args, self, CallType.FUNCTIONAL, Block.NULL_BLOCK);
-                }
-
-                return method.call(context, self, module, name, args, false, Block.NULL_BLOCK);
-            }
+            return iVisited.callAdapter.call(context, self, args);
         }
 
         while (true) {
             try {
-                RubyModule module = self.getMetaClass();
-                IRubyObject result = self.callMethod(context, module, name, args,
-                                                     CallType.FUNCTIONAL, block);
-                if (result == null) {
-                    result = runtime.getNil();
-                }
-                    
-                return result; 
+                return iVisited.callAdapter.call(context, self, args, block);
             } catch (JumpException.RetryJump rj) {
                 // allow loop to retry
             } catch (JumpException.BreakJump bj) {
@@ -1115,7 +1076,7 @@ public class EvaluationState {
                         context.setPosition(position);
                     }
    
-                    return recv.callMethod(context, "each", IRubyObject.NULL_ARRAY, CallType.NORMAL, block);
+                    return iVisited.callAdapter.call(context, recv, block);
                 } catch (JumpException.RetryJump rj) {
                     // do nothing, allow loop to retry
                 }
@@ -1250,7 +1211,7 @@ public class EvaluationState {
         if (value instanceof RubyString) {
             return ((RubyRegexp) recv).match(value);
         } else {
-            return value.callMethod(context, "=~", recv);
+            return Match3Node.callAdapter.call(context, value, recv);
         }
     }
 
@@ -1732,22 +1693,8 @@ public class EvaluationState {
 
     private static IRubyObject vcallNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self) {
         VCallNode iVisited = (VCallNode) node;
-        RubyModule module = self.getMetaClass();
-        String name = iVisited.getName();
-        int index = iVisited.index;
 
-        if (module.index != 0 && index != 0) {
-            return self.callMethod(context, module, index, name, 
-                    IRubyObject.NULL_ARRAY, CallType.VARIABLE, Block.NULL_BLOCK);
-        } else {
-            DynamicMethod method = module.searchMethod(name);
-            
-            if (method.isUndefined() || (index != MethodIndex.METHOD_MISSING  && !method.isCallableFrom(self, CallType.VARIABLE))) {
-                return RubyObject.callMethodMissing(context, self, method, name, index, IRubyObject.NULL_ARRAY, self, CallType.VARIABLE, Block.NULL_BLOCK);
-            }
-
-            return method.call(context, self, module, name, IRubyObject.NULL_ARRAY, false, Block.NULL_BLOCK);
-        }
+        return iVisited.callAdapter.call(context, self);
     }
 
     private static IRubyObject whileNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

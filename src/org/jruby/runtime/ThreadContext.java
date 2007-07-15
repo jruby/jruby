@@ -49,7 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * @author jpetersen
  */
-public class ThreadContext {
+public final class ThreadContext {
     public static synchronized ThreadContext newContext(Ruby runtime) {
         ThreadContext context = new ThreadContext(runtime);
         

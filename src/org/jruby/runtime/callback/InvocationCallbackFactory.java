@@ -1022,6 +1022,11 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
                     // receiver is already loaded by startDispatcher
                     
+                    // check if tracing is on
+                    mv.aload(DISPATCHER_RUNTIME_INDEX);
+                    mv.invokevirtual(cg.p(Ruby.class), "hasEventHooks", cg.sig(boolean.class));
+                    mv.ifne(defaultLabel);
+                    
                     // if no switch values, go straight to default
                     if (switchValue == 0) {
                         mv.go_to(defaultLabel);

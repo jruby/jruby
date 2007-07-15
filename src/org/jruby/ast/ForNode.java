@@ -35,6 +35,9 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.MethodIndex;
 
 /**
  * A 'for' statement.  This is implemented using iter and that is how MRI does things,
@@ -45,6 +48,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ForNode extends IterNode {
     static final long serialVersionUID = -8319863477790150586L;
     private Node iterNode;
+    public static final CallAdapter callAdapter = new CallAdapter.DefaultCallAdapter(MethodIndex.getIndex("each"), "each", CallType.NORMAL);
 
     public ForNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
         // For nodes do not have their own scope so we pass null to indicate this.

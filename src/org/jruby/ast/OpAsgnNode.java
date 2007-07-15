@@ -36,6 +36,8 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 
 /**
@@ -51,6 +53,10 @@ public class OpAsgnNode extends Node {
     private String operatorName;
     private String variableNameAsgn;
     public final int index;
+    
+    public final CallAdapter variableCallAdapter;
+    public final CallAdapter operatorCallAdapter;
+    public final CallAdapter variableAsgnCallAdapter;
 
     public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String methodName) {
         super(position, NodeTypes.OPASGNNODE);
@@ -60,6 +66,10 @@ public class OpAsgnNode extends Node {
         this.operatorName = methodName.intern();
         this.variableNameAsgn = (variableName + "=").intern();
         this.index = MethodIndex.getIndex(this.operatorName);
+        
+        this.variableCallAdapter = new CallAdapter.DefaultCallAdapter(MethodIndex.getIndex(this.variableName), this.variableName, CallType.NORMAL);
+        this.operatorCallAdapter = new CallAdapter.DefaultCallAdapter(this.index, this.operatorName, CallType.NORMAL);
+        this.variableAsgnCallAdapter = new CallAdapter.DefaultCallAdapter(MethodIndex.getIndex(this.variableNameAsgn), this.variableNameAsgn, CallType.NORMAL);
     }
     
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {

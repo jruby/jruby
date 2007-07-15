@@ -37,6 +37,8 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 
 /** 
@@ -49,6 +51,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     public final int index;
     private Node argsNode;
     private Node iterNode;
+    public final CallAdapter callAdapter;
 
     public FCallNode(ISourcePosition position, String name, Node argsNode) {
         this(position, name, argsNode, null);
@@ -60,6 +63,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         setArgsNode(argsNode);
         this.iterNode = iterNode;
         this.index = MethodIndex.getIndex(this.name);
+        this.callAdapter = new CallAdapter.DefaultCallAdapter(this.index, this.name, CallType.FUNCTIONAL);
     }
     
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
