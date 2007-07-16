@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * the editor projects who want position info saved.
  */
 public class ListNode extends Node {
-    private static final long serialVersionUID = 1L;
-    
     private Node[] list;
 
     /**

@@ -40,8 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * A call to super(...) with arguments to a method.
  */
 public class SuperNode extends Node implements BlockAcceptingNode {
-    static final long serialVersionUID = 5158689332796676417L;
-
     private final Node argsNode;
     private Node iterNode;
 

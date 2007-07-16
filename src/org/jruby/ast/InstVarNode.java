@@ -45,8 +45,6 @@ import org.jruby.runtime.Arity;
  * Represents an instance variable accessor.
  */
 public class InstVarNode extends Node implements IArityNode, INameNode {
-    static final long serialVersionUID = 6839063763576230282L;
-
     private String name;
 
     public InstVarNode(ISourcePosition position, String name) {

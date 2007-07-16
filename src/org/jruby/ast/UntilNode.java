@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class UntilNode extends Node {
-    static final long serialVersionUID = -2929327250252365636L;
-
     private final Node conditionNode;
     private final Node bodyNode;
     private final boolean evaluateAtStart;

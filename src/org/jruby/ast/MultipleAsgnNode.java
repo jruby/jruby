@@ -42,8 +42,6 @@ import org.jruby.runtime.Arity;
  * @author  jpetersen
  */
 public class MultipleAsgnNode extends AssignableNode {
-    static final long serialVersionUID = 5016291105152162748L;
-    
     private final ListNode headNode;
     private final Node argsNode;
     

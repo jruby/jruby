@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class RedoNode extends Node {
-    static final long serialVersionUID = -356433067591852187L;
-
     public RedoNode(ISourcePosition position) {
         super(position, NodeTypes.REDONODE);
     }

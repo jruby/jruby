@@ -44,8 +44,6 @@ import org.jruby.util.ByteList;
  * @author  jpetersen
  */
 public class XStrNode extends Node implements ILiteralNode {
-    static final long serialVersionUID = 1371310021447439748L;
-
     private final ByteList value;
 
     public XStrNode(ISourcePosition position, ByteList value) {

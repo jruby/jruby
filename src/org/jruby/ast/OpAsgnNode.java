@@ -45,8 +45,6 @@ import org.jruby.runtime.MethodIndex;
  * @author  jpetersen
  */
 public class OpAsgnNode extends Node {
-    static final long serialVersionUID = -1950295226516487753L;
-
     private final Node receiverNode;
     private final Node valueNode;
     private String variableName;

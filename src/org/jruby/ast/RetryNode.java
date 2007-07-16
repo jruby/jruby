@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class RetryNode extends Node {
-    static final long serialVersionUID = 4648280998968560181L;
-
     public RetryNode(ISourcePosition position) {
         super(position, NodeTypes.RETRYNODE);
     }

@@ -45,8 +45,6 @@ import org.jruby.runtime.DynamicScope;
 // TODO: Store BEGIN and END information into this node
 // TODO: Implement BEGIN and END logic so they get invoked at the correct time.
 public class RootNode extends Node {
-    private static final long serialVersionUID = 1754281364026417051L;
-    
     private transient DynamicScope scope;
     private StaticScope staticScope;
     private Node bodyNode;

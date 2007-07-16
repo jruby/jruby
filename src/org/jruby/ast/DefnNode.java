@@ -46,8 +46,6 @@ import org.jruby.runtime.Visibility;
  * @author  jpetersen
  */
 public class DefnNode extends MethodDefNode implements INameNode {
-    static final long serialVersionUID = -7634791007500033454L;
-
     private final Visibility visibility;
     
     public DefnNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 

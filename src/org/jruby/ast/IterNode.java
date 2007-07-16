@@ -42,8 +42,6 @@ import org.jruby.parser.StaticScope;
  *
  */
 public class IterNode extends Node {
-    static final long serialVersionUID = -9181965000180892184L;
-
     private final Node varNode;
     private final Node bodyNode;
     

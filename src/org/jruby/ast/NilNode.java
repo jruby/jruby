@@ -42,8 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class NilNode extends Node implements INameNode {
-    static final long serialVersionUID = -8702073984472296708L;
-
     public NilNode(ISourcePosition position) {
         super(position, NodeTypes.NILNODE);
     }

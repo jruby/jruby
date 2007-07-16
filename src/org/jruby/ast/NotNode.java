@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class NotNode extends Node {
-    static final long serialVersionUID = -9044821606260233871L;
-
     private final Node conditionNode;
 
     public NotNode(ISourcePosition position, Node conditionNode) {

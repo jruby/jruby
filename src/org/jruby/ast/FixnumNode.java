@@ -44,8 +44,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class FixnumNode extends Node implements ILiteralNode {
-    static final long serialVersionUID = 2236565825959274729L;
-
     private long value;
     private RubyFixnum fixnum;
 

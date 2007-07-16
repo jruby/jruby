@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class EnsureNode extends Node {
-    static final long serialVersionUID = -409805241533215981L;
-
     private final Node bodyNode;
     private final Node ensureNode;
 

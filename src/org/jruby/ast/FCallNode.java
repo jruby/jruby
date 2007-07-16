@@ -45,8 +45,6 @@ import org.jruby.runtime.MethodIndex;
  * Represents a method call with self as an implicit receiver.
  */
 public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
-    static final long serialVersionUID = 3590332973770104094L;
-
     private String name;
     public final int index;
     private Node argsNode;

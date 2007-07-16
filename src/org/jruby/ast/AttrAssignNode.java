@@ -40,8 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * 
  */
 public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
-    private static final long serialVersionUID = 4182783536358350118L;
-    
     private final Node receiverNode;
     private String name;
     private Node argsNode;

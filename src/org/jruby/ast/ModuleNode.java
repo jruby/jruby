@@ -42,8 +42,6 @@ import org.jruby.parser.StaticScope;
  * @author  jpetersen
  */
 public class ModuleNode extends Node implements IScopingNode {
-    static final long serialVersionUID = 4938115602547834310L;
-
     private final Colon3Node cpath;
     private final StaticScope scope;
     private final Node bodyNode;

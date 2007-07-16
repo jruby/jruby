@@ -7,7 +7,6 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 public class ArgsPushNode extends Node {
-    private static final long serialVersionUID = 6442216183136232451L;
     private Node node1;
     private Node node2;
     

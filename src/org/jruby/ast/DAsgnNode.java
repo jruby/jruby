@@ -42,8 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * An assignment to a dynamic variable (e.g. block scope local variable).
  */
 public class DAsgnNode extends AssignableNode implements INameNode {
-    static final long serialVersionUID = 2396008643154044043L;
-
     // The name of the variable
     private String name;
     

@@ -42,9 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class FalseNode extends Node implements INameNode {
-    static final long serialVersionUID = 8153681841075601779L;
-
-
     public FalseNode(ISourcePosition position) {
         super(position, NodeTypes.FALSENODE);
     }

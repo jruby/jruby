@@ -43,8 +43,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class GlobalVarNode extends Node implements INameNode {
-    static final long serialVersionUID = -8913633094119740033L;
-
     private String name;
 
     public GlobalVarNode(ISourcePosition position, String name) {

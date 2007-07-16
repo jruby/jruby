@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class NthRefNode extends Node {
-    static final long serialVersionUID = -3301605695065934063L;
-
     private final int matchNumber;
 
     public NthRefNode(ISourcePosition position, int matchNumber) {

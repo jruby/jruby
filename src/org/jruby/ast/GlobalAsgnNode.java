@@ -46,8 +46,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class GlobalAsgnNode extends AssignableNode implements INameNode {
-    static final long serialVersionUID = 2278414591762936906L;
-
     private String name;
 
     public GlobalAsgnNode(ISourcePosition position, String name, Node valueNode) {

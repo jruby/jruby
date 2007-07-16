@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class WhenNode extends Node {
-    static final long serialVersionUID = 9099987602002276708L;
-
     private final Node expressionNodes;
     private final Node bodyNode;
     private final Node nextCase;

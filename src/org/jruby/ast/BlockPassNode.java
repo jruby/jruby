@@ -43,8 +43,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class BlockPassNode extends Node {
-    static final long serialVersionUID = 7201862349971094217L;
-
     private final Node bodyNode;
 
     /** Used by the arg_blk_pass and new_call, new_fcall and new_super

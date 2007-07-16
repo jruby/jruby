@@ -27,17 +27,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import java.util.ArrayList;
-
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
-import org.jruby.parser.LocalStaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -46,7 +41,6 @@ import org.jruby.ast.executable.RubiniusCMethod;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.EventHook;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

@@ -44,9 +44,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class ZArrayNode extends Node implements ILiteralNode {
-    static final long serialVersionUID = -5004157166982016917L;
-
-
     public ZArrayNode(ISourcePosition position) {
         super(position, NodeTypes.ZARRAYNODE);
     }

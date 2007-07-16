@@ -45,8 +45,6 @@ import org.jruby.util.ByteList;
  * @author  jpetersen
  */
 public class RegexpNode extends Node implements ILiteralNode {
-    static final long serialVersionUID = -1566813018564622077L;
-
     private static final RegexpTranslator translator = new RegexpTranslator();
     
     private Pattern pattern;

@@ -44,8 +44,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class FlipNode extends Node {
-    static final long serialVersionUID = -4735579451657299802L;
-
     private final Node beginNode;
     private final Node endNode;
     private final boolean exclusive;

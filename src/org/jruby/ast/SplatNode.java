@@ -36,8 +36,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 
 
 public class SplatNode extends Node {
-    static final long serialVersionUID = -1649004231006940340L;
-    
     private final Node node;
 
     public SplatNode(ISourcePosition position, Node node) {

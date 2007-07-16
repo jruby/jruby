@@ -46,8 +46,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class EvStrNode extends Node {
-    static final long serialVersionUID = 1681935012117120817L;
-
     private final Node body;
 
     public EvStrNode(ISourcePosition position, Node body) {

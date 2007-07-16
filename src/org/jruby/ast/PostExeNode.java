@@ -39,8 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class PostExeNode extends IterNode {
-    static final long serialVersionUID = -2851659895226590014L;
-
     public PostExeNode(ISourcePosition position, Node body) {
         super(position, null, null, body, NodeTypes.POSTEXENODE);
     }

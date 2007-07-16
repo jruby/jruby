@@ -11,8 +11,6 @@ package org.jruby.compiler;
 
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.CallType;
 import org.jruby.util.ByteList;
 
 /**

@@ -42,8 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class BeginNode extends Node {
-    static final long serialVersionUID = 7295877486186461712L;
-
     private final Node bodyNode;
 
     public BeginNode(ISourcePosition position, Node bodyNode) {

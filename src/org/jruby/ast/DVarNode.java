@@ -42,8 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Access a dynamic variable (e.g. block scope local variable).
  */
 public class DVarNode extends Node implements INameNode {
-    static final long serialVersionUID = -8479281167248673970L;
-
     // The name of the variable
     private String name;
     

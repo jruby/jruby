@@ -50,8 +50,6 @@ import org.jruby.runtime.MethodIndex;
  * @author  jpetersen
  */
 public class OpElementAsgnNode extends Node {
-    static final long serialVersionUID = 1509701560452403776L;
-
     private final Node receiverNode;
     private String operatorName;
     private final Node argsNode;

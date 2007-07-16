@@ -42,9 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class TrueNode extends Node implements INameNode {
-    static final long serialVersionUID = -8198252481133454778L;
-
-
     public TrueNode(ISourcePosition position) {
         super(position, NodeTypes.TRUENODE);
     }

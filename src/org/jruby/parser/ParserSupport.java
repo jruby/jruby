@@ -644,11 +644,11 @@ public class ParserSupport {
             warningUnlessEOption(node, "regex literal in condition");
             
             return new MatchNode(node.getPosition(), node);
-        } else if (node instanceof StrNode) {
+        } /*else if (node instanceof StrNode) {
             ISourcePosition position = node.getPosition();
 
             return new MatchNode(position, new RegexpNode(position, (ByteList) ((StrNode) node).getValue().clone(), 0));
-        } 
+        } */
 
         return node;
     }

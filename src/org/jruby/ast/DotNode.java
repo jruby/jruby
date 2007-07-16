@@ -42,8 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class DotNode extends Node {
-    static final long serialVersionUID = 2763797850980107429L;
-
     private final Node beginNode;
     private final Node endNode;
     private final boolean exclusive;

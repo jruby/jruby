@@ -58,8 +58,6 @@ import org.jruby.runtime.Arity;
  * @author  jpetersen
  */
 public class ArgsNode extends Node {
-    static final long serialVersionUID = 3709437716296564785L;
-
     private final ListNode arguments;
     private final ListNode optArgs;
     private final ArgumentNode restArgNode;

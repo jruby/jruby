@@ -42,8 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class Colon2Node extends Colon3Node implements INameNode {
-    static final long serialVersionUID = -3250593470034657352L;
-
     private final Node leftNode;
 
     public Colon2Node(ISourcePosition position, Node leftNode, String name) {

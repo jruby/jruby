@@ -43,8 +43,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class DRegexpNode extends ListNode implements ILiteralNode {
-    static final long serialVersionUID = 7307853378003210140L;
-
     private final int options;
     private final boolean once;
     

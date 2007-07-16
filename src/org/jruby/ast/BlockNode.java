@@ -45,8 +45,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class BlockNode extends ListNode {
-    static final long serialVersionUID = 6070308619613804520L;
-    
     public BlockNode(ISourcePosition position) {
         super(position, NodeTypes.BLOCKNODE);
     }

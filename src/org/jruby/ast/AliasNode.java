@@ -43,8 +43,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class AliasNode extends Node {
-    static final long serialVersionUID = -498707070925086399L;
-
     private String oldName;
     private String newName;
 

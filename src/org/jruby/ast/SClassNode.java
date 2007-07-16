@@ -48,8 +48,6 @@ import org.jruby.parser.StaticScope;
  * @author  jpetersen
  */
 public class SClassNode extends Node {
-    static final long serialVersionUID = -3706492163082062224L;
-
     private final Node receiverNode;
     private final StaticScope scope;
     private final Node bodyNode;

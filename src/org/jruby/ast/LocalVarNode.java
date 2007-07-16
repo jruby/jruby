@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Access a local variable 
  */
 public class LocalVarNode extends Node implements INameNode {
-    static final long serialVersionUID = 8562701804939317217L;
-
     // The name of the variable
     private String name;
     

@@ -42,8 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class IfNode extends Node {
-    static final long serialVersionUID = -163780144332979551L;
-
     private final Node condition;
     private final Node thenBody;
     private final Node elseBody;

@@ -49,8 +49,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class WhileNode extends Node {
-    static final long serialVersionUID = -5355364190446060873L;
-
     private final Node conditionNode;
     private final Node bodyNode;
     private final boolean evaluateAtStart;

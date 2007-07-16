@@ -46,9 +46,9 @@ import org.jruby.runtime.MethodIndex;
  * @see IterNode
  */
 public class ForNode extends IterNode {
-    static final long serialVersionUID = -8319863477790150586L;
-    private Node iterNode;
     public static final CallAdapter callAdapter = new CallAdapter.DefaultCallAdapter(MethodIndex.getIndex("each"), "each", CallType.NORMAL);
+
+    private Node iterNode;
 
     public ForNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
         // For nodes do not have their own scope so we pass null to indicate this.

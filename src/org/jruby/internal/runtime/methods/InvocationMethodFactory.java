@@ -53,8 +53,6 @@ import org.objectweb.asm.Label;
 public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public final static CodegenUtils cg = CodegenUtils.cg;
     private final static String COMPILED_SUPER_CLASS = CompiledMethod.class.getName().replace('.','/');
-    private final static String IRUB_ID = "Lorg/jruby/runtime/builtin/IRubyObject;";
-    private final static String BLOCK_ID = "Lorg/jruby/runtime/Block;";
     private final static String COMPILED_CALL_SIG = cg.sig(IRubyObject.class,
             cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, boolean.class, Block.class));
     private final static String COMPILED_SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ci(StaticScope.class) + ")V";

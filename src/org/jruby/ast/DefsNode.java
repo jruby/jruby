@@ -43,8 +43,6 @@ import org.jruby.parser.StaticScope;
  * @author  jpetersen
  */
 public class DefsNode extends MethodDefNode implements INameNode {
-    static final long serialVersionUID = -4472719020304670080L;
-
     private final Node receiverNode;
     public DefsNode(ISourcePosition position, Node receiverNode, ArgumentNode nameNode, ArgsNode argsNode, 
             StaticScope scope, Node bodyNode) {

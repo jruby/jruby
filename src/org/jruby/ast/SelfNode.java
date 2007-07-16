@@ -42,9 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class SelfNode extends Node implements INameNode {
-    static final long serialVersionUID = 7003057726029491707L;
-
-
     public SelfNode(ISourcePosition position) {
         super(position, NodeTypes.SELFNODE);
     }

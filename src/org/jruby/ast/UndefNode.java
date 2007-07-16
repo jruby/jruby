@@ -42,8 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class UndefNode extends Node {
-    static final long serialVersionUID = -8829084073375820727L;
-
     private String name;
 
     public UndefNode(ISourcePosition position, String name) {

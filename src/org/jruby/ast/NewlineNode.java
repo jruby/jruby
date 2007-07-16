@@ -51,8 +51,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class NewlineNode extends Node {
-    static final long serialVersionUID = -6180129177863553832L;
-
     private final Node nextNode;
 
     public NewlineNode(ISourcePosition position, Node nextNode) {

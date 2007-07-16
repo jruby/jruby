@@ -48,8 +48,6 @@ import org.jruby.runtime.MethodIndex;
  * @author  jpetersen
  */
 public final class CallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
-    static final long serialVersionUID = -1993752395320088525L;
-
     private final Node receiverNode;
     private String name;
     private Node argsNode;

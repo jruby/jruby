@@ -44,8 +44,6 @@ import org.jruby.runtime.MethodIndex;
  * @author  jpetersen
  */
 public class Match3Node extends Node {
-    static final long serialVersionUID = -6147075329935023633L;
-
     private final Node receiverNode;
     private final Node valueNode;
     public static final CallAdapter callAdapter = new CallAdapter.DefaultCallAdapter(MethodIndex.getIndex("=~"), "=~", CallType.FUNCTIONAL);

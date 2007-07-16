@@ -1076,7 +1076,7 @@ public class EvaluationState {
                         context.setPosition(position);
                     }
    
-                    return iVisited.callAdapter.call(context, recv, block);
+                    return ForNode.callAdapter.call(context, recv, block);
                 } catch (JumpException.RetryJump rj) {
                     // do nothing, allow loop to retry
                 }

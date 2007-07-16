@@ -44,8 +44,6 @@ import org.jruby.util.ByteList;
  * @author  jpetersen
  */
 public class StrNode extends Node implements ILiteralNode {
-    static final long serialVersionUID = 4544779503072130759L;
-
     private final ByteList value;
 
     public StrNode(ISourcePosition position, ByteList value) {

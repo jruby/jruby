@@ -43,8 +43,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class HashNode extends Node {
-    static final long serialVersionUID = -7554050553303344025L;
-
     private final ListNode listNode;
     
     public HashNode(ISourcePosition position, ListNode listNode) {

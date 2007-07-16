@@ -40,8 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *   
  */
 public class CommentNode extends Node {
-    private static final long serialVersionUID = -8304070370230933044L;
-   
     // Textual data (this is missing newline as a single line comment and =begin..=end
     // comments do contain the intermediary newlines.
     String content;

@@ -41,11 +41,9 @@ import org.jruby.ast.BignumNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BreakNode;
 import org.jruby.ast.CallNode;
-import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon2Node;
-import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DAsgnNode;
@@ -70,7 +68,6 @@ import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Match2Node;
 import org.jruby.ast.Match3Node;
 import org.jruby.ast.MatchNode;
-import org.jruby.ast.ModuleNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
 import org.jruby.ast.Node;
@@ -79,7 +76,6 @@ import org.jruby.ast.NotNode;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OrNode;
-import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
@@ -1171,7 +1167,7 @@ public class NodeCompilerFactory {
     public static void compileRedo(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
-        RedoNode redoNode = (RedoNode)node;
+        //RedoNode redoNode = (RedoNode)node;
         
         context.issueRedoEvent();
     }

@@ -41,7 +41,6 @@ import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTInspector;
-import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.ClosureCallback;
 import org.jruby.compiler.MethodCompiler;
 import org.jruby.compiler.NodeCompilerFactory;

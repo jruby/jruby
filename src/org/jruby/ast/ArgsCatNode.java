@@ -37,8 +37,6 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 public class ArgsCatNode extends Node {
-	private static final long serialVersionUID = 3906082365066327860L;
-
 	private final Node firstNode;
     private final Node secondNode;
 

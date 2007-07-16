@@ -47,8 +47,6 @@ import org.jruby.runtime.MethodIndex;
  * @author  jpetersen
  */
 public class VCallNode extends Node implements INameNode {
-    static final long serialVersionUID = -7678578490000574578L;
-
     private String name;
     public final int index;
     public final CallAdapter callAdapter;

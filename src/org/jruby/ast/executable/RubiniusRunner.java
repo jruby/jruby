@@ -35,7 +35,6 @@ import java.util.HashMap;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyNumeric;
 
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.LocalStaticScope;

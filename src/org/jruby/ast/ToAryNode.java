@@ -35,8 +35,6 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 public class ToAryNode extends Node {
-	private static final long serialVersionUID = 3256723961709802546L;
-
 	private final Node node;
 
     public ToAryNode(ISourcePosition position, Node node) {

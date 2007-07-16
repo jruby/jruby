@@ -37,8 +37,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * 
  */
 public class DSymbolNode extends ListNode {
-	private static final long serialVersionUID = 3763093063878326071L;
-
     /**
      * For mutating from a DStr to a DSym (we just create a new one with same contents).
      * 

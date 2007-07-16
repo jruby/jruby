@@ -42,8 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class FloatNode extends Node implements ILiteralNode {
-    static final long serialVersionUID = -6358513813684285950L;
-
     private double value;
     
     public FloatNode(ISourcePosition position, double value) {

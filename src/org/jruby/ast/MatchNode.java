@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class MatchNode extends Node {
-    static final long serialVersionUID = 9098121695708691474L;
-
     private final Node regexpNode;
 
     public MatchNode(ISourcePosition position, Node regexpNode) {

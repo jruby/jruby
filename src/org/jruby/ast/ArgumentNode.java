@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * (evaluation does not need this).
  */
 public class ArgumentNode extends Node implements INameNode {
-    private static final long serialVersionUID = -6375678995811376530L;
     private String identifier;
     
     public ArgumentNode(ISourcePosition position, String identifier) {

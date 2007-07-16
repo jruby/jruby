@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class ReturnNode extends Node {
-    static final long serialVersionUID = -6549592319167820636L;
-
     private final Node valueNode;
     private Object target;
 

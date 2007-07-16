@@ -47,8 +47,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class BlockArgNode extends Node implements INameNode {
-    static final long serialVersionUID = 8374824536805365398L;
-
     private final int count;
     private String name;
 

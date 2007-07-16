@@ -44,8 +44,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class ConstNode extends Node implements INameNode {
-    static final long serialVersionUID = -5190161028130457944L;
-
     private String name;
     
     public ConstNode(ISourcePosition position, String name) {

@@ -42,8 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author  jpetersen
  */
 public class VAliasNode extends Node {
-    static final long serialVersionUID = 8647860367861922838L;
-
     private String oldName;
     private String newName;
 

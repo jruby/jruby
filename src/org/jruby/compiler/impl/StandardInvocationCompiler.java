@@ -10,7 +10,6 @@
 package org.jruby.compiler.impl;
 
 import org.jruby.RubyArray;
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ClosureCallback;
 import org.jruby.compiler.InvocationCompiler;
@@ -18,7 +17,6 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallAdapter;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;

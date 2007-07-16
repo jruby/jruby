@@ -35,8 +35,6 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 public class SValueNode extends Node {
-	private static final long serialVersionUID = 3834587720830891576L;
-
 	private final Node node;
     
     public SValueNode(ISourcePosition position, Node node) {
