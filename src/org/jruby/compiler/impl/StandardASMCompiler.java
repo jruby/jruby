@@ -124,6 +124,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         this.sourcename = sourcename;
     }
 
+    public byte[] getClassByteArray() {
+        return classWriter.toByteArray();
+    }
+
     public Class loadClass(JRubyClassLoader classLoader) throws ClassNotFoundException {
         classLoader.defineClass(cg.c(classname), classWriter.toByteArray());
 

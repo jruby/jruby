@@ -38,6 +38,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
+import org.jruby.ast.Node;
+import org.jruby.compiler.ASTInspector;
+import org.jruby.compiler.NodeCompilerFactory;
+import org.jruby.compiler.impl.StandardASMCompiler;
+
 /**
  * Module which defines JRuby-specific methods for use. 
  */
@@ -45,14 +50,24 @@ public class RubyJRuby {
     public static RubyModule createJRuby(Ruby runtime) {
         runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
         RubyModule jrubyModule = runtime.defineModule("JRuby");
+        
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
         jrubyModule.defineModuleFunction("parse", 
                 callbackFactory.getOptSingletonMethod("parse"));
+        jrubyModule.defineModuleFunction("compile", 
+                callbackFactory.getOptSingletonMethod("compile"));
         jrubyModule.getMetaClass().defineAlias("ast_for", "parse");
         jrubyModule.defineModuleFunction("runtime", 
                 callbackFactory.getSingletonMethod("runtime"));
         jrubyModule.defineModuleFunction("reference", 
                                          callbackFactory.getFastSingletonMethod("reference", RubyKernel.IRUBY_OBJECT));
+
+        RubyClass compiledScriptClass = jrubyModule.defineClassUnder("CompiledScript",runtime.getObject(), runtime.getObject().getAllocator());
+
+        compiledScriptClass.attr_accessor(new IRubyObject[]{runtime.newSymbol("name"), runtime.newSymbol("class_name"), runtime.newSymbol("original_script"), runtime.newSymbol("code")});
+        compiledScriptClass.defineFastMethod("to_s", callbackFactory.getFastSingletonMethod("compiled_script_to_s"));
+        compiledScriptClass.defineFastMethod("inspect", callbackFactory.getFastSingletonMethod("compiled_script_inspect"));
+        compiledScriptClass.defineFastMethod("inspect_bytecode", callbackFactory.getFastSingletonMethod("compiled_script_inspect_bytecode"));
 
         return jrubyModule;
     }
@@ -98,6 +113,72 @@ public class RubyJRuby {
             return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), 
                recv.getRuntime().parse(content.toString(), filename, null, 0, extraPositionInformation)), Block.NULL_BLOCK);
         }
+    }
+
+    public static IRubyObject compile(IRubyObject recv, IRubyObject[] args, Block block) {
+        Node node;
+        String filename;
+        RubyString content = recv.getRuntime().newString("");
+        if(block.isGiven()) {
+            Arity.checkArgumentCount(recv.getRuntime(),args,0,0);
+            if(block instanceof org.jruby.runtime.CompiledBlock) {
+                throw new RuntimeException("Cannot compile an already compiled block. Use -J-Djruby.jit.enabled=false to avoid this problem.");
+            }
+            Node bnode = block.getIterNode().getBodyNode();
+            node = new org.jruby.ast.RootNode(bnode.getPosition(), block.getDynamicScope(), bnode);
+            filename = "__block_" + node.getPosition().getFile();
+        } else {
+            Arity.checkArgumentCount(recv.getRuntime(),args,1,3);
+            filename = "-";
+            boolean extraPositionInformation = false;
+            content = args[0].convertToString();
+            if(args.length>1) {
+                filename = args[1].convertToString().toString();
+                if(args.length>2) {
+                    extraPositionInformation = args[2].isTrue();
+                }
+            }
+
+            node = recv.getRuntime().parse(content.toString(), filename, null, 0, extraPositionInformation);
+        }
+
+        String classname;
+        if (filename.equals("-e")) {
+            classname = "__dash_e__";
+        } else {
+            classname = filename.replace("\\", "/").replace(".rb", "").replace("-","_dash_");
+        }
+
+        ASTInspector inspector = new ASTInspector();
+        inspector.inspect(node);
+            
+        StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
+        NodeCompilerFactory.compileRoot(node, compiler, inspector);
+        byte[] bts = compiler.getClassByteArray();
+
+        IRubyObject compiledScript = ((RubyModule)recv).getConstant("CompiledScript").callMethod(recv.getRuntime().getCurrentContext(),"new");
+        compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "name=", recv.getRuntime().newString(filename));
+        compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "class_name=", recv.getRuntime().newString(classname));
+        compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "original_script=", content);
+        compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "code=", Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), bts), Block.NULL_BLOCK));
+
+        return compiledScript;
+    }
+
+    public static IRubyObject compiled_script_to_s(IRubyObject recv) {
+        return recv.getInstanceVariable("@original_script");
+    }
+
+    public static IRubyObject compiled_script_inspect(IRubyObject recv) {
+        return recv.getRuntime().newString("#<JRuby::CompiledScript " + recv.getInstanceVariable("@name") + ">");
+    }
+
+    public static IRubyObject compiled_script_inspect_bytecode(IRubyObject recv) {
+        java.io.StringWriter sw = new java.io.StringWriter();
+        org.objectweb.asm.ClassReader cr = new org.objectweb.asm.ClassReader((byte[])org.jruby.javasupport.JavaUtil.convertRubyToJava(recv.getInstanceVariable("@code"),byte[].class));
+        org.objectweb.asm.util.TraceClassVisitor cv = new org.objectweb.asm.util.TraceClassVisitor(new java.io.PrintWriter(sw));
+        cr.accept(cv, true);
+        return recv.getRuntime().newString(sw.toString());
     }
 
     public static IRubyObject steal_method(IRubyObject recv, IRubyObject type, IRubyObject methodName) {
