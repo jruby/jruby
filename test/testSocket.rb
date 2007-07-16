@@ -57,15 +57,16 @@ sock.send("connection-based", 0)
 server_thread.join
 
 # We can't check port, out of our control
+# FIXME host may not be localhost if assigned a different name on some systems; we need a better way to test this
 
 test_equal("ad hoc", received[0][0])
 test_equal("AF_INET", received[0][1][0])
-test_ok(/^localhost/ =~ received[0][1][2])
+#test_ok(/^localhost/ =~ received[0][1][2])
 test_equal("127.0.0.1", received[0][1][3])
 
 test_equal("connection-based", received[1][0])
 test_equal("AF_INET", received[1][1][0])
-test_ok(/^localhost/ =~ received[1][1][2])
+#test_ok(/^localhost/ =~ received[1][1][2])
 test_equal("127.0.0.1", received[1][1][3])
 
 test_exception(SocketError) { UDPSocket.open.send("BANG!", -1, 'invalid.', port) }
