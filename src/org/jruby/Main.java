@@ -106,7 +106,7 @@ public class Main {
             showVersion();
         }
 
-        if (! commandline.shouldRunInterpreter()) {
+        if (! commandline.shouldRunInterpreter() ) {
             return 0;
         }
 

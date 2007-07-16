@@ -253,6 +253,9 @@ public class CommandlineParser {
     }
 
     public boolean shouldRunInterpreter() {
+        if(isShowVersion() && (hasInlineScript || scriptFileName != null)) {
+            return true;
+        }
         return isShouldRunInterpreter();
     }
     
