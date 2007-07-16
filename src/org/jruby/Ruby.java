@@ -38,9 +38,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -90,6 +88,7 @@ import org.jruby.ext.socket.RubySocket;
 import org.jruby.ext.Generator;
 import org.jruby.ext.Readline;
 import org.jruby.parser.Parser;
+import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
@@ -272,15 +271,15 @@ public final class Ruby {
         return newInstance(config);
     }
 
-    public IRubyObject evalScript(Reader reader, String name) {
-        return eval(parse(reader, name, getCurrentContext().getCurrentScope(), 0, false));
+    public IRubyObject evalFile(Reader reader, String name) {
+        return eval(parseFile(reader, name, getCurrentContext().getCurrentScope()));
     }
     
     /**
      * Evaluates a script and returns a RubyObject.
      */
-    public IRubyObject evalScript(String script) {
-        return eval(parse(script, "<script>", getCurrentContext().getCurrentScope(), 0));
+    public IRubyObject evalScriptlet(String script) {
+        return eval(parseEval(script, "<script>", getCurrentContext().getCurrentScope(), 0));
     }
 
     public IRubyObject eval(Node node) {
@@ -1068,18 +1067,23 @@ public final class Ruby {
     public void defineReadonlyVariable(String name, IRubyObject value) {
         globalVariables.defineReadonly(name, new ValueAccessor(value));
     }
-
-    public Node parse(Reader content, String file, DynamicScope scope, int lineNumber, boolean isInlineScript) {
-        return parser.parse(file, content, scope, lineNumber, false, isInlineScript);
+    
+    public Node parseFile(Reader content, String file, DynamicScope scope) {
+        return parser.parse(file, content, scope, new ParserConfiguration(0, false, false, true));
     }
 
-    public Node parse(String content, String file, DynamicScope scope, int lineNumber) {
-        return parser.parse(file, content, scope, lineNumber);
+    public Node parseInline(Reader content, String file, DynamicScope scope) {
+        return parser.parse(file, content, scope, new ParserConfiguration(0, false, true));
+    }
+
+    public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
+        return parser.parse(file, new StringReader(content), scope, new ParserConfiguration(lineNumber, false));
     }
 
     public Node parse(String content, String file, DynamicScope scope, int lineNumber, 
             boolean extraPositionInformation) {
-        return parser.parse(file, content, scope, lineNumber, extraPositionInformation);
+        return parser.parse(file, new StringReader(content), scope, 
+                new ParserConfiguration(lineNumber, extraPositionInformation, false));
     }
 
     public ThreadService getThreadService() {
@@ -1237,11 +1241,7 @@ public final class Ruby {
      *  It can be used if you want to use JRuby as a Macro language.
      *
      */
-    public void loadScript(RubyString scriptName, RubyString source) {
-        loadScript(scriptName.toString(), new StringReader(source.toString()));
-    }
-
-    public void loadScript(String scriptName, Reader source) {
+    public void loadFile(String scriptName, Reader source) {
         if (!Ruby.isSecurityRestricted()) {
             File f = new File(scriptName);
             if(f.exists() && !f.isAbsolute() && !scriptName.startsWith("./")) {
@@ -1257,7 +1257,7 @@ public final class Ruby {
 
             context.preNodeEval(objectClass, self);
 
-            Node node = parse(source, scriptName, null, 0, false);
+            Node node = parseFile(source, scriptName, null);
             EvaluationState.eval(this, context, node, self, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return;
@@ -1283,82 +1283,6 @@ public final class Ruby {
         }
     }
 
-    public void loadNode(String scriptName, Node node) {
-        IRubyObject self = getTopSelf();
-        ThreadContext context = getCurrentContext();
-
-        try {
-            secure(4); /* should alter global state */
-
-            context.preNodeEval(objectClass, self);
-
-            EvaluationState.eval(this, context, node, self, Block.NULL_BLOCK);
-        } catch (JumpException.ReturnJump rj) {
-            return;
-        } finally {
-            context.postNodeEval();
-        }
-    }
-
-
-    /** Loads, compiles and interprets a Ruby file.
-     *  Used by Kernel#require.
-     *
-     *  @mri rb_load
-     */
-    public void loadFile(File file) {
-        assert file != null : "No such file to load";
-        BufferedReader source = null;
-        try {
-            source = new BufferedReader(new FileReader(file));
-            loadScript(file.getPath().replace(File.separatorChar, '/'), source);
-        } catch (IOException ioExcptn) {
-            throw newIOErrorFromException(ioExcptn);
-        } finally {
-            try {
-                if (source == null) {
-                    source.close();
-                }
-            } catch (IOException ioe) {}
-        }
-    }
-
-    /** Call the trace function
-     *
-     * MRI: eval.c - call_trace_func
-     *
-     */
-//    public void callTraceFunction(ThreadContext context, String event, ISourcePosition position,
-//            RubyBinding binding, String name, IRubyObject type) {
-//        if (traceFunction == null) return;
-//
-//        if (!context.isWithinTrace()) {
-//            context.setWithinTrace(true);
-//
-//            ISourcePosition savePosition = context.getPosition();
-//            String file = position.getFile();
-//
-//            if (file == null) file = "(ruby)";
-//            if (type == null) type = getFalse();
-//
-//            context.preTrace();
-//            try {
-//                traceFunction.call(new IRubyObject[] {
-//                    newString(event), // event name
-//                    newString(file), // filename
-//                    newFixnum(position.getStartLine() + 1), // line numbers should be 1-based
-//                    name != null ? RubySymbol.newSymbol(this, name) : getNil(),
-//                    binding != null ? binding : getNil(),
-//                    type
-//                });
-//            } finally {
-//                context.postTrace();
-//                context.setPosition(savePosition);
-//                context.setWithinTrace(false);
-//            }
-//        }
-//    }
-    
     public class CallTraceFuncHook implements EventHook {
         private RubyProc traceFunc;
         

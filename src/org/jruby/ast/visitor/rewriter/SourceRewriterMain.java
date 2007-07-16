@@ -35,36 +35,28 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import org.jruby.ast.Node;
-import org.jruby.common.NullWarnings;
-import org.jruby.lexer.yacc.LexerSource;
-import org.jruby.parser.DefaultRubyParser;
-import org.jruby.parser.RubyParserConfiguration;
-import org.jruby.parser.RubyParserPool;
+import org.jruby.parser.Parser;
+import org.jruby.parser.ParserConfiguration;
 
 public class SourceRewriterMain {
 	
 	public static void main(String[] args) {
-
 		if (args.length < 1) {
 			System.err.println("Please specify a sourcefile.");
 			return;
 		}
 
-		DefaultRubyParser parser = RubyParserPool.getInstance().borrowParser();
-		parser.setWarnings(new NullWarnings());
-
-		LexerSource lexerSource = null;
 		BufferedReader reader = null;
 		try {
 			reader = new BufferedReader(new InputStreamReader(new FileInputStream(args[0])));
-			lexerSource = new LexerSource(args[0], reader, 0, true);
 		} catch (FileNotFoundException e) {
 			System.err.println("Could not find the file:");
 			System.err.println(args[0]);
 			return;
 		}
-
-		Node rootNode = parser.parse(new RubyParserConfiguration(false), lexerSource).getAST();
+        
+		ParserConfiguration configuration = new ParserConfiguration(0, true, false);
+		Node rootNode = new Parser(null).parseRewriter(args[0], reader, configuration); 
 		if (rootNode == null) {
 			System.err.println("Source File seems to be empty.");
 			return;

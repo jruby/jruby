@@ -32,7 +32,9 @@ package org.jruby.lexer.yacc;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.List;
 
+import org.jruby.parser.ParserConfiguration;
 import org.jruby.util.ByteList;
 
 /**
@@ -82,6 +84,12 @@ public class LexerSource {
 
     // Flag to let us now in next read after a newline that we should reset column
     private boolean nextCharIsOnANewLine = true;
+    
+    // Store each line into this list if not null.
+    private List list;
+    
+    // For 'list' and only populated if list is not null.
+    private StringBuffer lineBuffer;
 	
     /**
      * Create our food-source for the lexer
@@ -91,7 +99,7 @@ public class LexerSource {
      * @param line starting line number for source (used by eval)
      * @param extraPositionInformation will gives us extra information that an IDE may want
      */
-    public LexerSource(String sourceName, Reader reader, int line, 
+    private LexerSource(String sourceName, Reader reader, List list, int line, 
             boolean extraPositionInformation) {
         this.sourceName = sourceName;
         this.reader = reader;
@@ -101,6 +109,8 @@ public class LexerSource {
             positionFactory = new SimplePositionFactory(this, line);
         }
         this.line = line;
+        this.list = list;
+        lineBuffer = new StringBuffer();
     }
     
     /**
@@ -130,7 +140,7 @@ public class LexerSource {
     		nextCharIsOnANewLine = false;
     		column = 0;
     	}
-    	
+        
     	offset++;
     	column++;
     	if (c == '\n') {
@@ -257,6 +267,8 @@ public class LexerSource {
     private char wrappedRead() throws IOException {
         int c = reader.read();
 
+        if (list != null) lineBuffer.append((char) c);
+
         // If \r\n then just pass along \n (windows)
         // If \r[^\n] then pass along \n (MAC)
         if (c == '\r') {
@@ -271,6 +283,11 @@ public class LexerSource {
                 column++;
             }
         }
+        
+        if (c == '\n' && list != null) {
+            list.add(lineBuffer.toString());
+            lineBuffer.setLength(0);
+        }
                    
         return c != -1 ? (char) c : '\0';
     }
@@ -282,9 +299,10 @@ public class LexerSource {
      * @param content the data of the source
      * @return the new source
      */
-    public static LexerSource getSource(String name, Reader content, int line, 
-            boolean extraPositionInformation) {
-        return new LexerSource(name, content, line, extraPositionInformation);
+    public static LexerSource getSource(String name, Reader content, List list,
+            ParserConfiguration configuration) {
+        return new LexerSource(name, content, list, configuration.getLineNumber(), 
+                configuration.hasExtraPositionInformation());
     }
 
     public String readLine() throws IOException {

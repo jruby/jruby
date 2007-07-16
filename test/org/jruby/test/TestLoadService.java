@@ -46,18 +46,18 @@ public class TestLoadService extends TestRubyBase {
     }
     
     public void testRequireSocket() {
-        runtime.evalScript("require 'socket'");
+        runtime.evalScriptlet("require 'socket'");
     }
 
     public void testExtensionLoader() {
         BasicLibraryTestService.counter = 0;
-        runtime.evalScript("require 'org/jruby/test/basic_library_test'");
+        runtime.evalScriptlet("require 'org/jruby/test/basic_library_test'");
         assertEquals("The library should've have been loaded", BasicLibraryTestService.counter, 1);
     }
     
     public void testRequireEmpty(){
         try{
-            runtime.evalScript("require ''");
+            runtime.evalScriptlet("require ''");
         } catch (RaiseException e){
             assertEquals("Empty library is not valid, exception should have been raised", RaiseException.class, e.getClass());
             assertNull("Empty library is not valid, exception should only be RaiseException with no root cause", e.getCause());
@@ -67,7 +67,7 @@ public class TestLoadService extends TestRubyBase {
     public void testNonExistentRequire() {
         try{
             // presumably this require should fail
-            runtime.evalScript("require 'somethingthatdoesnotexist'");
+            runtime.evalScriptlet("require 'somethingthatdoesnotexist'");
         } catch (RaiseException e){
             assertEquals("Require of non-existent library should fail", RaiseException.class, e.getClass());
             assertNull("Require of non-existent library should , exception should only be RaiseException with no root cause", e.getCause());
@@ -78,7 +78,7 @@ public class TestLoadService extends TestRubyBase {
         try{
             // JRUBY-646
             // presumably this require should fail
-            runtime.evalScript("require 'rubygems'; require 'somethingthatdoesnotexist'");
+            runtime.evalScriptlet("require 'rubygems'; require 'somethingthatdoesnotexist'");
         } catch (RaiseException e){
             assertEquals("Require of non-existent library should fail", RaiseException.class, e.getClass());
             assertNull("Require of non-existent library should , exception should only be RaiseException with no root cause", e.getCause());

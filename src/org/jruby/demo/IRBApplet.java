@@ -67,7 +67,7 @@ public class IRBApplet extends Applet {
         
         Thread t2 = new Thread() {
             public void run() {
-                runtime.evalScript("require 'irb'; require 'irb/completion'; IRB.start");
+                runtime.evalScriptlet("require 'irb'; require 'irb/completion'; IRB.start");
             }
         };
         t2.start();

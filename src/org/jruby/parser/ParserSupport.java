@@ -119,7 +119,7 @@ public class ParserSupport {
 
     private IRubyWarnings warnings;
 
-    private RubyParserConfiguration configuration;
+    private ParserConfiguration configuration;
     private RubyParserResult result;
 
     public void reset() {
@@ -799,7 +799,7 @@ public class ParserSupport {
      * Sets the configuration.
      * @param configuration The configuration to set
      */
-    public void setConfiguration(RubyParserConfiguration configuration) {
+    public void setConfiguration(ParserConfiguration configuration) {
         this.configuration = configuration;
     }
 

@@ -31,14 +31,19 @@
 package org.jruby.parser;
 
 import java.io.Reader;
-import java.io.StringReader;
+import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyFile;
+import org.jruby.RubyHash;
+import org.jruby.RubyString;
 import org.jruby.ast.Node;
+import org.jruby.common.NullWarnings;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -49,24 +54,36 @@ public class Parser {
     public Parser(Ruby runtime) {
         this.runtime = runtime;
     }
+    
+    public Node parseRewriter(String file, Reader content, 
+            ParserConfiguration configuration) throws SyntaxException {
 
-    public Node parse(String file, String content, DynamicScope blockScope, int lineNumber, 
-            boolean extraPositionInformation) {
-        return parse(file, new StringReader(content), blockScope, lineNumber, 
-                extraPositionInformation, false);
+        DefaultRubyParser parser = RubyParserPool.getInstance().borrowParser();
+        try {
+            parser.setWarnings(new NullWarnings());
+            LexerSource lexerSource = LexerSource.getSource(file, content, null, configuration);
+            
+            return parser.parse(configuration, lexerSource).getAST();
+        } finally {
+            RubyParserPool.getInstance().returnParser(parser);
+        }
     }
     
-    public Node parse(String file, String content, DynamicScope blockScope, int lineNumber) {
-        return parse(file, new StringReader(content), blockScope, lineNumber, false, false);
-    }
-    
-    public Node parse(String file, Reader content, DynamicScope blockScope, int lineNumber) {
-        return parse(file, content, blockScope, lineNumber, false, false);
-    }
-
-    public Node parse(String file, Reader content, DynamicScope blockScope, int lineNumber, 
-            boolean extraPositionInformation, boolean eOptionParse) {
-        RubyParserConfiguration configuration = new RubyParserConfiguration(eOptionParse); 
+    public Node parse(String file, Reader content, DynamicScope blockScope,
+            ParserConfiguration configuration) {
+        IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
+        List list = null;
+        
+        if (!configuration.isEvalParse() && scriptLines != null) {
+            if (scriptLines instanceof RubyHash) {
+                RubyString filename = runtime.newString(file);
+                IRubyObject object = ((RubyHash) scriptLines).aref(filename);
+                
+                list = (List) (object instanceof RubyArray ? object : runtime.newArray()); 
+                
+                ((RubyHash) scriptLines).aset(filename, (RubyArray) list);
+            }
+        }
 
         // We only need to pass in current scope if we are evaluating as a block (which
         // is only done for evals).  We need to pass this in so that we can appropriately scope
@@ -80,8 +97,7 @@ public class Parser {
         try {
             parser = RubyParserPool.getInstance().borrowParser();
             parser.setWarnings(runtime.getWarnings());
-            LexerSource lexerSource = 
-                LexerSource.getSource(file, content, lineNumber, extraPositionInformation);
+            LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
             result = parser.parse(configuration, lexerSource);
             if (result.isEndSeen()) {
                 org.jruby.runtime.builtin.IRubyObject verbose = runtime.getVerbose();

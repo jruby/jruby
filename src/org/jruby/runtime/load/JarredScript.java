@@ -80,7 +80,7 @@ public class JarredScript implements Library {
                     IRubyObject old = runtime.getGlobalVariables().isDefined("$JAR_URL") ? runtime.getGlobalVariables().get("$JAR_URL") : runtime.getNil();
                     try {
                         runtime.getGlobalVariables().set("$JAR_URL", runtime.newString("jar:" + jarFile + "!/"));
-                        runtime.loadScript("init", new InputStreamReader(in));
+                        runtime.loadFile("init", new InputStreamReader(in));
                     } finally {
                         runtime.getGlobalVariables().set("$JAR_URL", old);
                     }

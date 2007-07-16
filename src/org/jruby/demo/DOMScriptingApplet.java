@@ -36,7 +36,7 @@ public class DOMScriptingApplet extends Applet {
 
             Thread t2 = new Thread() {
                 public void run() {
-                    runtime.evalScript(script);
+                    runtime.evalScriptlet(script);
                 }
             };
             t2.start();

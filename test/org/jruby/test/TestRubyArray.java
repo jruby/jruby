@@ -118,7 +118,7 @@ public class TestRubyArray extends TestRubyBase {
      * This tests toArray-functionality
      */
     public void testToArray() throws Exception {
-        final RubyArray arr = (RubyArray)runtime.evalScript("$h = ['foo','bar']");
+        final RubyArray arr = (RubyArray)runtime.evalScriptlet("$h = ['foo','bar']");
         final String val1 = "foo";
         final String val2 = "bar";
         final Object[] outp = arr.toArray();

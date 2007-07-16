@@ -3290,7 +3290,7 @@ case 492:
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public RubyParserResult parse(RubyParserConfiguration configuration, LexerSource source) {
+    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) {
         support.reset();
         support.setConfiguration(configuration);
         support.setResult(new RubyParserResult());

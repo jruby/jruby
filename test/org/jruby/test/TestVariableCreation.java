@@ -11,14 +11,14 @@ public class TestVariableCreation  extends TestCase {
 	public  void testLocalVars() {
         r = Ruby.getDefaultInstance();
 		// define new method		
-		r.evalScript("a = 1\n");
-		r.evalScript("a.to_s");
+		r.evalScriptlet("a = 1\n");
+		r.evalScriptlet("a.to_s");
 		
 		// will run on non main thread
 		Runnable run = new Runnable(){
 			public void run(){
 				try {
-					r.evalScript("a.to_s");
+					r.evalScriptlet("a.to_s");
 				} catch(RaiseException ex){
 					failed = ex;
 				}

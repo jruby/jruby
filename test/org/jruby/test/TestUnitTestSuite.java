@@ -193,7 +193,7 @@ public class TestUnitTestSuite extends TestCase {
                 script.append("runner.start\n");
                 script.append("runner.faults\n");
 
-                RubyArray faults = (RubyArray)runtime.evalScript(script.toString());
+                RubyArray faults = (RubyArray)runtime.evalScriptlet(script.toString());
 
                 if (!faults.isEmpty()) {
                     StringBuffer faultString = new StringBuffer("Faults encountered running " + scriptName() + ", complete output follows:\n");

@@ -85,7 +85,7 @@ public class JRubyEngine extends BSFEngineImpl {
         	// See eval todo about why this is commented out
             //runtime.setPosition(file, line);
 
-            Node node = runtime.parse(file, funcBody.toString(), null, 0);
+            Node node = runtime.parseEval(file, funcBody.toString(), null, 0);
             IRubyObject result = EvaluationState.eval(runtime, runtime.getCurrentContext(), node, runtime.getTopSelf(), Block.NULL_BLOCK);
             return JavaEmbedUtils.rubyToJava(runtime, result, Object.class);
         } finally {
@@ -100,7 +100,7 @@ public class JRubyEngine extends BSFEngineImpl {
         	// value of whatever line in the string it is in.  Find real way of returning
         	// what is expected.
             //runtime.setPosition(file, line);
-            IRubyObject result = runtime.evalScript(expr.toString());
+            IRubyObject result = runtime.evalScriptlet(expr.toString());
             return JavaEmbedUtils.rubyToJava(runtime, result, Object.class);
         } catch (Exception excptn) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
@@ -111,7 +111,7 @@ public class JRubyEngine extends BSFEngineImpl {
         try {
         	// See eval todo about why this is commented out
             //runtime.setPosition(file, line);
-            runtime.evalScript(expr.toString());
+            runtime.evalScriptlet(expr.toString());
         } catch (Exception excptn) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
         }

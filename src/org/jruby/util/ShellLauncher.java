@@ -178,7 +178,7 @@ public class ShellLauncher {
     }
     
     public Process run(IRubyObject[] rawArgs) throws IOException {
-        String shell = runtime.evalScript("require 'rbconfig'; Config::CONFIG['SHELL']").toString();
+        String shell = runtime.evalScriptlet("require 'rbconfig'; Config::CONFIG['SHELL']").toString();
         rawArgs[0] = runtime.newString(repairDirSeps(rawArgs[0].toString()));
         Process aProcess = null;
         File pwd = new File(runtime.getCurrentDirectory());

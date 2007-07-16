@@ -41,11 +41,8 @@ import java.util.regex.Pattern;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import org.jruby.common.NullWarnings;
-import org.jruby.lexer.yacc.LexerSource;
-import org.jruby.parser.DefaultRubyParser;
-import org.jruby.parser.RubyParserConfiguration;
-import org.jruby.parser.RubyParserPool;
+import org.jruby.parser.Parser;
+import org.jruby.parser.ParserConfiguration;
 
 public class SourceRewriteTester extends TestSuite {
 	
@@ -60,17 +57,13 @@ public class SourceRewriteTester extends TestSuite {
 	}
 	
 	public static String generateSource(String original) {
-		if(original.equals(""))
-			return original;
-		DefaultRubyParser parser = RubyParserPool.getInstance().borrowParser();
-		parser.setWarnings(new NullWarnings());
-		
-		LexerSource lexerSource = new LexerSource("", new StringReader(original), 0, true);
-		StringWriter outputWriter = new StringWriter();
-		ReWriteVisitor visitor = new ReWriteVisitor(outputWriter, original);
-		parser.parse(new RubyParserConfiguration(false), lexerSource).getAST().accept(visitor);
+		if (original.equals("")) return original;
+        
+        StringWriter outputWriter = new StringWriter();
+        ReWriteVisitor visitor = new ReWriteVisitor(outputWriter, original);
+        ParserConfiguration configuration = new ParserConfiguration(0, true, false);
+        new Parser(null).parseRewriter("", new StringReader(original), configuration).accept(visitor); 
 		visitor.flushStream();
-		RubyParserPool.getInstance().returnParser(parser);
 		return outputWriter.getBuffer().toString();
 	}
 	

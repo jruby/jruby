@@ -103,7 +103,7 @@ public class JRubyConstructor extends ConstructorImpl {
     public Object constructRubyScalar(final Node node) {
         ByteList sc = (ByteList)super.constructScalar(node);
         if(sc.length() > 0 && sc.charAt(0) == ':' && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) {
-            return runtime.evalScript(sc.toString());
+            return runtime.evalScriptlet(sc.toString());
         }
 
         return RubyString.newString(runtime,(ByteList)super.constructScalar(node));
@@ -332,7 +332,7 @@ public class JRubyConstructor extends ConstructorImpl {
     public static Object constructRubyRegexp(final Constructor ctor, final Node node) {
         final Ruby runtime = ((JRubyConstructor)ctor).runtime;
         String s1 = ctor.constructScalar(node).toString();
-        return runtime.evalScript(s1);
+        return runtime.evalScriptlet(s1);
     }
 
     public static Object constructRubyRange(final Constructor ctor, final Node node) {

@@ -12,6 +12,8 @@ package org.jruby;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.StringReader;
+
 import org.jruby.ast.Node;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.NodeCompilerFactory;
@@ -56,7 +58,7 @@ public class JRubyC {
             new FileInputStream(srcfile).read(chars);
             // FIXME: encoding?
             String content = new String(chars);
-            Node scriptNode = runtime.parse(content, filename, null, 0);
+            Node scriptNode = runtime.parseFile(new StringReader(content), filename, null);
         
             ASTInspector inspector = new ASTInspector();
             inspector.inspect(scriptNode);
