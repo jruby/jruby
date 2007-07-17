@@ -158,7 +158,7 @@ public class ThreadService {
         return rubyThread;
     }
     
-    public synchronized void setCritical(boolean critical) {
+    public void setCritical(boolean critical) {
         if (criticalLock.isHeldByCurrentThread()) {
             if (critical) {
                 // do nothing
@@ -174,7 +174,7 @@ public class ThreadService {
         }
     }
     
-    public synchronized boolean getCritical() {
+    public boolean getCritical() {
         return criticalLock.isHeldByCurrentThread();
     }
     
