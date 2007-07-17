@@ -87,6 +87,8 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
         method.aload(varsIndex);
         method.ldc(new Integer(index));
         method.arrayload();
+        // FIXME: This is a pretty unpleasant perf hit, and it's not required for most local var accesses. We need a better way
+        methodCompiler.nullToNil();
     }
 
     public void retrieveLocalVariable(int index, int depth) {
@@ -99,6 +101,8 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
         method.ldc(new Integer(index));
         method.ldc(new Integer(depth));
         method.invokevirtual(cg.p(DynamicScope.class), "getValue", cg.sig(IRubyObject.class, cg.params(Integer.TYPE, Integer.TYPE)));
+        // FIXME: This is a pretty unpleasant perf hit, and it's not required for most local var accesses. We need a better way
+        methodCompiler.nullToNil();
     }
 
     public void assignLastLine() {
