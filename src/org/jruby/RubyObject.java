@@ -523,7 +523,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             return callMethodMissing(context, this, method, name, args, context.getFrameSelf(), callType, block);
         }
 
-        return method.call(context, this, rubyclass, name, args, false, block);
+        return method.call(context, this, rubyclass, name, args, block);
     }
 
     /**
@@ -554,7 +554,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             return callMethodMissing(context, this, method, name, args, self, callType, block);
         }
 
-        return method.call(context, this, rubyclass, name, args, false, block);
+        return method.call(context, this, rubyclass, name, args, block);
     }
     
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, int methodIndex,

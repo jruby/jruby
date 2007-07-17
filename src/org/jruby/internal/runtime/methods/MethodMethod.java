@@ -58,8 +58,8 @@ public class MethodMethod extends DynamicMethod implements JumpTarget {
     /**
      * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preMethodCall(implementationClass, klazz, self, name, args, 0, block, noSuper, this);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+        context.preMethodCall(implementationClass, klazz, self, name, args, 0, block, this);
         
         try {
             return method.bind(self, block).call(args, block);

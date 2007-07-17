@@ -112,7 +112,7 @@ public class RubyMethod extends RubyObject {
     	method.getArity().checkArity(getRuntime(), args);
         
         // FIXME: should lastClass be implementation module for a Method?
-        return method.call(tc, receiver, implementationModule, methodName, args, false, block);
+        return method.call(tc, receiver, implementationModule, methodName, args, block);
     }
 
     /** Returns the number of arguments a method accepted.

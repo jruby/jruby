@@ -54,7 +54,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public final static CodegenUtils cg = CodegenUtils.cg;
     private final static String COMPILED_SUPER_CLASS = CompiledMethod.class.getName().replace('.','/');
     private final static String COMPILED_CALL_SIG = cg.sig(IRubyObject.class,
-            cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, boolean.class, Block.class));
+            cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
     private final static String COMPILED_SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ci(StaticScope.class) + ")V";
 
     private JRubyClassLoader classLoader;
@@ -118,6 +118,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
          
         return classLoader.defineClass(name, code);
     }
+    
+    public static final int THREADCONTEXT_INDEX = 1;
+    public static final int RECEIVER_INDEX = 2;
+    public static final int CLASS_INDEX = 3;
+    public static final int NAME_INDEX = 4;
+    public static final int ARGS_INDEX = 5;
+    public static final int BLOCK_INDEX = 6;
 
     private DynamicMethod getCompleteMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, StaticScope scope, String sup) {
         String typePath = p(type);
@@ -135,22 +142,21 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 // invoke pre method stuff
                 mv.aload(0); // load method to get callconfig
                 mv.getfield(cg.p(CompiledMethod.class), "callConfig", cg.ci(CallConfiguration.class));
-                mv.aload(1); // tc
-                mv.aload(2); // self
-                mv.aload(3); // klazz
+                mv.aload(THREADCONTEXT_INDEX); // tc
+                mv.aload(RECEIVER_INDEX); // self
+                mv.aload(CLASS_INDEX); // klazz
                 mv.aload(0);
                 mv.getfield(cg.p(CompiledMethod.class), "arity", cg.ci(Arity.class)); // arity
-                mv.aload(4); // name
-                mv.aload(5); // args
-                mv.iload(6); // noSuper
-                mv.aload(7); // block
+                mv.aload(NAME_INDEX); // name
+                mv.aload(ARGS_INDEX); // args
+                mv.aload(BLOCK_INDEX); // block
                 mv.aload(0);
                 mv.getfield(cg.p(CompiledMethod.class), "staticScope", cg.ci(StaticScope.class));
                 // static scope
                 mv.aload(0); // jump target
                 mv.invokevirtual(cg.p(CallConfiguration.class), "pre", 
                         cg.sig(void.class, 
-                        cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, Arity.class, String.class, IRubyObject[].class, boolean.class, Block.class, 
+                        cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, Arity.class, String.class, IRubyObject[].class, Block.class, 
                         StaticScope.class, JumpTarget.class)));
                 
                 // store null for result var
@@ -169,10 +175,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 mv.trycatch(tryBegin, tryEnd, tryFinally, null);
                 mv.label(tryBegin);
                     
-                mv.aload(1);
-                mv.aload(2);
-                mv.aload(5);
-                mv.aload(7);
+                mv.aload(THREADCONTEXT_INDEX);
+                mv.aload(RECEIVER_INDEX);
+                mv.aload(ARGS_INDEX);
+                mv.aload(BLOCK_INDEX);
                 mv.invokestatic(typePath, method, cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class)));
                 
                 // store result in temporary variable 8

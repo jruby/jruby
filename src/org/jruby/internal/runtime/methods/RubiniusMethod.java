@@ -57,12 +57,12 @@ public class RubiniusMethod extends DynamicMethod implements JumpTarget {
         this.arity = Arity.optional();
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
     	assert args != null;
         //        System.err.println("--- entering " + cmethod.name);
         Ruby runtime = context.getRuntime();
         
-        callConfig.pre(context, self, klazz, getArity(), name, args, noSuper, block, staticScope, this);
+        callConfig.pre(context, self, klazz, getArity(), name, args, block, staticScope, this);
         
         try {
             if (runtime.hasEventHooks()) {

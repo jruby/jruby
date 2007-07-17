@@ -23,8 +23,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public abstract class CallConfiguration {
     public static final CallConfiguration RUBY_FULL = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, IRubyObject[] args, boolean noSuper, Block block, StaticScope scope, JumpTarget jumpTarget) {
-            context.preRubyMethodFull(implementer, name, self, args, arity.required(), block, noSuper, scope, jumpTarget);
+        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, IRubyObject[] args, Block block, StaticScope scope, JumpTarget jumpTarget) {
+            context.preRubyMethodFull(implementer, name, self, args, arity.required(), block, scope, jumpTarget);
         }
         
         public void post(ThreadContext context) {
@@ -32,8 +32,8 @@ public abstract class CallConfiguration {
         }
     };
     public static final CallConfiguration JAVA_FULL = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, IRubyObject[] args, boolean noSuper, Block block, StaticScope scope, JumpTarget jumpTarget) {
-            context.preJavaMethodFull(implementer, name, self, args, arity.required(), block, noSuper, jumpTarget);
+        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, IRubyObject[] args, Block block, StaticScope scope, JumpTarget jumpTarget) {
+            context.preJavaMethodFull(implementer, name, self, args, arity.required(), block, jumpTarget);
         }
         
         public void post(ThreadContext context) {
@@ -41,7 +41,7 @@ public abstract class CallConfiguration {
         }
     };
     public static final CallConfiguration JAVA_FAST = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, IRubyObject[] args, boolean noSuper, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, IRubyObject[] args, Block block, StaticScope scope, JumpTarget jumpTarget) {
         }
         
         public void post(ThreadContext context) {
@@ -51,6 +51,6 @@ public abstract class CallConfiguration {
     private CallConfiguration() {
     }
     
-    public abstract void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, IRubyObject[] args, boolean noSuper, Block block, StaticScope scope, JumpTarget jumpTarget);
+    public abstract void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, IRubyObject[] args, Block block, StaticScope scope, JumpTarget jumpTarget);
     public abstract void post(ThreadContext context);
 }

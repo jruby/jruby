@@ -494,7 +494,7 @@ public class EvaluationState {
             return RubyObject.callMethodMissing(context, receiver, method, name, args, self, callType, Block.NULL_BLOCK);
         }
 
-        method.call(context, receiver, module, name, args, false, Block.NULL_BLOCK);
+        method.call(context, receiver, module, name, args, Block.NULL_BLOCK);
 
         return args[args.length - 1];
     }

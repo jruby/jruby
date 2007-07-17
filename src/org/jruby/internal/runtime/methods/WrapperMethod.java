@@ -50,8 +50,8 @@ public class WrapperMethod extends DynamicMethod {
         this.method = method;
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        return method.call(context, self, klazz, name, args, noSuper, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+        return method.call(context, self, klazz, name, args, block);
     }
     
     public DynamicMethod dup() {

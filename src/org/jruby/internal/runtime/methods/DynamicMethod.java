@@ -58,7 +58,7 @@ public abstract class DynamicMethod {
      * @param receiver 
      */
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, 
-            String name, IRubyObject[] args, boolean noSuper, Block block);
+            String name, IRubyObject[] args, Block block);
     public abstract DynamicMethod dup();
 
     public boolean isCallableFrom(IRubyObject caller, CallType callType) {

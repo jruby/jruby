@@ -1151,11 +1151,10 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.aload(DISPATCHER_RUBYMODULE_INDEX); // klazz
         mv.aload(DISPATCHER_NAME_INDEX); // name
         mv.aload(DISPATCHER_ARGS_INDEX);
-        mv.ldc(Boolean.FALSE);
         mv.aload(DISPATCHER_BLOCK_INDEX);
         mv.invokevirtual(cg.p(DynamicMethod.class), "call",
                 cg.sig(IRubyObject.class, 
-                cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, boolean.class, Block.class)));
+                cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class)));
     }
     
     public void callMethodMissingIfNecessary(SkinnyMethodAdapter mv, Label afterCall, Label okCall) {

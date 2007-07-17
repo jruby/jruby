@@ -637,9 +637,9 @@ public final class ThreadContext {
     }
 
     public void preMethodCall(RubyModule implementationClass, RubyModule clazz,  IRubyObject self, String name, IRubyObject[] args,
-            int req, Block block, boolean noSuper, JumpTarget jumpTarget) {
+            int req, Block block, JumpTarget jumpTarget) {
         pushRubyClass(implementationClass);
-        pushCallFrame(noSuper ? null : clazz, name, self, args, req, block, jumpTarget);
+        pushCallFrame(clazz, name, self, args, req, block, jumpTarget);
     }
     
     public void postMethodCall() {
@@ -647,10 +647,10 @@ public final class ThreadContext {
         popRubyClass();
     }
     
-    public void preRubyMethodFull(RubyModule clazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block, boolean noSuper, 
+    public void preRubyMethodFull(RubyModule clazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block, 
             StaticScope staticScope, JumpTarget jumpTarget) {
         RubyModule implementationClass = getCurrentScope().getStaticScope().getModule();
-        pushCallFrame(noSuper ? null : clazz, name, self, args, req, block, jumpTarget);
+        pushCallFrame(clazz, name, self, args, req, block, jumpTarget);
         pushScope(new DynamicScope(staticScope));
         pushRubyClass(implementationClass);
     }
@@ -661,10 +661,10 @@ public final class ThreadContext {
         popFrame();
     }
     
-    public void preJavaMethodFull(RubyModule klazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block, boolean noSuper,
+    public void preJavaMethodFull(RubyModule klazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block,
             JumpTarget jumpTarget) {
         pushRubyClass(klazz);
-        pushCallFrame(noSuper ? null : klazz, name, self, args, req, block, jumpTarget);
+        pushCallFrame(klazz, name, self, args, req, block, jumpTarget);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     

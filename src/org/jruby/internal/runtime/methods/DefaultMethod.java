@@ -96,7 +96,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     /**
      * @see AbstractCallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         assert args != null;
         
         RubyModule implementer = null;
@@ -117,7 +117,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         CallConfiguration callConfig = this.callConfig;
         
         try {
-            callConfig.pre(context, self, implementer, getArity(), name, args, noSuper, block, staticScope, this);
+            callConfig.pre(context, self, implementer, getArity(), name, args, block, staticScope, this);
 
             if (jitCompiledScript != null && !runtime.hasEventHooks()) {
                 return jitCompiledScript.run(context, self, args, block);
