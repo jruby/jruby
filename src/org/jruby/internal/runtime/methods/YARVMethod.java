@@ -83,25 +83,21 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
             prepareArguments(context, runtime, args);
             getArity().checkArity(runtime, args);
 
-            if (runtime.hasEventHooks()) {
-                traceCall(context, runtime, name);
-            }
+            if (runtime.hasEventHooks()) traceCall(context, runtime, name);
 
-            DynamicScope sc = new DynamicScope(staticScope);
-            for(int i = 0; i<args.length; i++) {
-                sc.setValue(i,args[i],0);
-            }
+            DynamicScope scope = context.getCurrentScope();
+            
+            // Why not setArgValues
+            scope.setBlockArgValues(args, args.length);
 
-            return YARVMachine.INSTANCE.exec(context, self, sc, iseq.body);
+            return YARVMachine.INSTANCE.exec(context, self, scope, iseq.body);
         } catch (JumpException.ReturnJump rj) {
         	if (rj.getTarget() == this) return (IRubyObject) rj.getValue();
-
             
        		throw rj;
         } finally {
-            if (runtime.hasEventHooks()) {
-                traceReturn(context, runtime, name);
-            }
+            if (runtime.hasEventHooks()) traceReturn(context, runtime, name);
+
             callConfig.post(context);
         }
     }

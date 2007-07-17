@@ -12,21 +12,22 @@ import junit.framework.TestCase;
 public class YARVMachineTest extends TestCase {
     public static Instruction[] getSimpleTest(Ruby runtime) {
         return new Instruction[] {
-            new Instruction(YARVInstructions.PUTSTRING, "Hello, YARV!"),
-            new Instruction(YARVInstructions.DUP),
-            new Instruction(YARVInstructions.SETLOCAL, 0),
-            new Instruction(YARVInstructions.GETLOCAL, 0),
-            new Instruction(YARVInstructions.POP),
-            new Instruction(YARVInstructions.SETLOCAL, 1),
-            new Instruction(YARVInstructions.PUTOBJECT, runtime.getTrue()),
-            new Instruction(YARVInstructions.BRANCHIF, 10),
+            new Instruction(YARVInstructions.PUTSTRING, "Hello, YARV!"),    // S: "HY"
+            new Instruction(YARVInstructions.DUP),                          // S: "HY", "HY"
+            new Instruction(YARVInstructions.SETLOCAL, 0),                  // S: "HY"; L: "HY"
+            new Instruction(YARVInstructions.GETLOCAL, 0),                  // S: "HY", "HY"
+            new Instruction(YARVInstructions.POP),                          // S: "HY"
+            new Instruction(YARVInstructions.SETLOCAL, 1),                  // S: ; L: "HY", "HY"
+            new Instruction(YARVInstructions.PUTOBJECT, runtime.getTrue()), // S: true; L: "HY", "HY"
+            new Instruction(YARVInstructions.BRANCHIF, 10),                 // S: ; L: "HY", "HY"
             new Instruction(YARVInstructions.PUTSTRING, "Wrong String"),
             new Instruction(YARVInstructions.JUMP, 11),
-            new Instruction(YARVInstructions.GETLOCAL, 1),
-            new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(2)),
-            new Instruction(YARVInstructions.SEND, "*", 1, null, 0),
-            new Instruction(YARVInstructions.SEND, "to_s", 0, null, YARVInstructions.VCALL_FLAG | YARVInstructions.FCALL_FLAG),
-            new Instruction(YARVInstructions.SEND, "+", 1, null, 0)
+            new Instruction(YARVInstructions.GETLOCAL, 1),                  // S: "HY"; L: "HY", "HY"
+            new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(2)), // S: "HY", 2; L: "HY", "HY"
+            new Instruction(YARVInstructions.SEND, "*", 1, null, 0),           // S: "HYHY"; L: "HY", "HY"
+            new Instruction(YARVInstructions.PUTNIL),                          // S: "HYHY", nil; L: "HY", "HY"
+            new Instruction(YARVInstructions.SEND, "to_s", 0, null, YARVInstructions.VCALL_FLAG | YARVInstructions.FCALL_FLAG), // S: "HYHY", Object; ...
+            new Instruction(YARVInstructions.SEND, "+", 1, null, 0)            // S: "HYHYObject"; L: "HY", "HY"
         };
     };
     
@@ -92,7 +93,6 @@ public class YARVMachineTest extends TestCase {
         
         StaticScope scope = new LocalStaticScope(null);
         scope.setVariables(new String[] {"n", "i", "j", "cur", "k"});
-        
         assertEquals("55", ym.exec(context, runtime.getObject(), scope, getFib(runtime,10)).toString());
         
         IRubyObject fib5k = ym.exec(context, runtime.getObject(), scope, getFib(runtime,5000));

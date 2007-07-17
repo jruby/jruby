@@ -36,17 +36,16 @@ import java.util.IdentityHashMap;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ast.AndNode;
-import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BlockNode;
+import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DefnNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.FixnumNode;
-import org.jruby.ast.FCallNode;
 import org.jruby.ast.IfNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.LocalAsgnNode;
@@ -80,165 +79,176 @@ public class StandardYARVCompiler {
     private String[] locals = new String[0];
 
     private static final int COMPILE_OK=1;
-    private static final int COMPILE_NG=0;
+    //private static final int COMPILE_NG=0;
+
+    // Counter for label
+    private int label_no = 0;
+
 
     private static abstract class LinkElement {
         public LinkElement next;
         public LinkElement prev;
+        
+        public void insert(LinkElement other) {
+            other.prev = prev;
+            other.next = this;
+            prev = other;
+            if (other.prev != null) other.prev.next = other;
+        }
+
+        public void remove() {
+            prev.next = next;
+            if (next != null) next.prev = prev;
+        }
+        
+        public void replace(LinkElement other) {
+            other.prev = prev;
+            other.next = next;
+            if (prev != null) prev.next = other;
+            if (next != null) next.prev = other;
+        }
     }
 
     private static class LinkAnchor extends LinkElement {
         LinkElement last;
+        
+        public LinkAnchor() {
+            last = this;
+        }
+        
+        public void add(LinkElement element) {
+            element.prev = last;
+            last.next = element;
+            last = element;
+            
+            verify_list("add");
+        }
+
+        public void append(LinkAnchor other) {
+            if (other.next != null) {
+                last.next = other.next;
+                other.next.prev = last;
+                last = other.last;
+            }
+            
+            verify_list("append");
+        }
+        
+        public void insert(LinkAnchor other) {
+            if (other.next != null) {
+                LinkElement first = next;
+                next = other.next;
+                next.prev = this;
+                other.last.next = first;
+                if (first != null) {
+                    first.prev = other.last;
+                } else {
+                    last = other.last;
+                }
+            }
+            
+            verify_list("append");
+        }
+        
+        public boolean isEmpty() {
+            return next == null;
+        }
+        
+        public LinkElement pop() {
+            LinkElement element = last;
+            
+            last = last.prev;
+            last.next = null;
+            
+            verify_list("pop");
+
+            return element;
+        }
+        
+        public LinkElement shift() {
+            LinkElement elem = next;
+            
+            if (null != elem) next = elem.next;
+            
+            return elem;
+        }
+        
+        public int size() {
+            int size = 0;
+            
+            for (LinkElement elem = next; elem != null; elem = elem.next) {
+                size++;
+            }
+            
+            return size;
+        }
+        
+        private void verify_list(String info) {
+            int flag = 0;
+            LinkElement plist = this;
+            for (LinkElement list = next; list != null; list = list.next) {
+                if (plist != list.prev) flag++;
+
+                plist = list;
+            }
+
+            if (last != plist && last != null) flag |= 0x70000;
+
+            if (flag != 0) {
+                throw new RuntimeException("list verify error: " + Integer.toString(flag, 16) + 
+                        " (" + info + ")");
+            }
+        }
+
+        public LinkElement first() {
+            // TODO Auto-generated method stub
+            return null;
+        }
     }
 
     private static class Label extends LinkElement {
-        int label_no;
-        int position;
-        int sc_state;
-        int set;
-        int sp;
+        /* Label number (identifier) */
+        int id;
+        
+        // int position; Unused
+        // int sc_state;
+        // int set; Unused
+        // int sp;
+        
+        public Label(int line, int id) {
+            next = null;
+            this.id = id;
+            //sc_state = 0;
+            //labelobj.sp = -1;
+        }
     }
 
     private static class Insn extends LinkElement {
         YARVMachine.Instruction i;
     }
 
+    /*
     private static class EnsureRange {
         Label begin;
         Label end;
         EnsureRange next;
     }
+    */
 
-    private static void verify_list(String info, LinkAnchor anchor) {
-        int flag = 0;
-        LinkElement list = anchor.next;
-        LinkElement plist = anchor;
-        while(list != null) {
-            if(plist != list.prev) {
-                flag++;
-            }
-            plist = list;
-            list = list.next;
-        }
-
-        if(anchor.last != plist && anchor.last != null) {
-            flag |= 0x70000;
-        }
-
-        if(flag != 0) {
-            throw new RuntimeException("list verify error: " + Integer.toString(flag, 16) + " (" + info + ")");
-        }
-    }
-
-    private int label_no = 0;
-    private Label NEW_LABEL(int l) {
-        Label labelobj = new Label();
-        labelobj.next = null;
-        labelobj.label_no = label_no++;
-        labelobj.sc_state = 0;
-        labelobj.sp = -1;
-        return labelobj;
-    }
-
-    private static void ADD_LABEL(LinkAnchor anchor, LinkElement elem) {
-        ADD_ELEM(anchor,elem);
-    }
-
-    private static void ADD_ELEM(LinkAnchor anchor, LinkElement elem) {
-        elem.prev = anchor.last;
-        anchor.last.next = elem;
-        anchor.last = elem;
-        verify_list("add", anchor);
-    }
-
-    private static void INSERT_ELEM_PREV(LinkElement elem1, LinkElement elem2) {
-        elem2.prev = elem1.prev;
-        elem2.next = elem1;
-        elem1.prev = elem2;
-        if(elem2.prev != null) {
-            elem2.prev.next = elem2;
-        }
-    }
-
-    private static void REPLACE_ELEM(LinkElement elem1, LinkElement elem2) {
-        elem2.prev = elem1.prev;
-        elem2.next = elem1.next;
-        if(elem1.prev != null) {
-            elem1.prev.next = elem2;
-        }
-        if(elem1.next != null) {
-            elem1.next.prev = elem2;
-        }
-    }
-
-    private static void REMOVE_ELEM(LinkElement elem) {
-        elem.prev.next = elem.next;
-        if(elem.next != null) {
-            elem.next.prev = elem.prev;
-        }
-    }
-
-    private static LinkElement FIRST_ELEMENT(LinkAnchor anchor) {
-        return anchor.next;
-    }
-
-    private static LinkElement POP_ELEMENT(LinkAnchor anchor) {
-        LinkElement elem = anchor.last;
-        anchor.last = anchor.last.prev;
-        anchor.last.next = null;
-        verify_list("pop", anchor);
-        return elem;
-    }
-
-    private static LinkElement SHIFT_ELEMENT(LinkAnchor anchor) {
-        LinkElement elem = anchor.next;
-        if(null != elem) {
-            anchor.next = elem.next;
-        }
-        return elem;
-    }
-
-    private static int LIST_SIZE(LinkAnchor anchor) {
-        LinkElement elem = anchor.next;
-        int size = 0;
-        while(elem != null) {
-            size++;
-            elem = elem.next;
-        }
-        return size;
-    }
-
-    private static boolean LIST_SIZE_ZERO(LinkAnchor anchor) {
-        return anchor.next == null;
-    }
-
-    private static void APPEND_LIST(LinkAnchor anc1, LinkAnchor anc2) {
-        if(anc2.next != null) {
-            anc1.last.next = anc2.next;
-            anc2.next.prev = anc1.last;
-            anc1.last = anc2.last;
-        }
-        verify_list("append", anc1);
-    }
-
-    private static void INSERT_LIST(LinkAnchor anc1, LinkAnchor anc2) {
-        if(anc2.next != null) {
-            LinkElement first = anc1.next;
-            anc1.next = anc2.next;
-            anc1.next.prev = anc1;
-            anc2.last.next = first;
-            if(first != null) {
-                first.prev = anc2.last;
-            } else {
-                anc1.last = anc2.last;
-            }
-        }
-        verify_list("append", anc1);
-    }
-
-    private static void ADD_SEQ(LinkAnchor seq1, LinkAnchor seq2) {
-        APPEND_LIST(seq1,seq2);
-    }
+    private Label NEW_LABEL(int l) { Label label = new Label(l, label_no); label_no++; return label;}
+    private static void ADD_LABEL(LinkAnchor anchor, LinkElement elem) { anchor.add(elem); }
+    private static void ADD_ELEM(LinkAnchor anchor, LinkElement elem) { anchor.add(elem); }
+    //private static void INSERT_ELEM_PREV(LinkElement elem1, LinkElement elem2) { elem1.insert(elem2); }
+    //private static void REPLACE_ELEM(LinkElement elem1, LinkElement elem2) { elem1.replace(elem2); }
+    //private static void REMOVE_ELEM(LinkElement element) { element.remove(); }
+    //private static LinkElement FIRST_ELEMENT(LinkAnchor anchor) { return anchor.first(); }
+    private static LinkElement POP_ELEMENT(LinkAnchor anchor) { return anchor.pop(); }
+    //private static LinkElement SHIFT_ELEMENT(LinkAnchor anchor) { return anchor.shift(); }
+    //private static int LIST_SIZE(LinkAnchor anchor) { return anchor.size(); }
+    private static boolean LIST_SIZE_ZERO(LinkAnchor anchor) { return anchor.isEmpty(); }
+    private static void APPEND_LIST(LinkAnchor anc1, LinkAnchor anc2) { anc1.append(anc2); }
+    //private static void INSERT_LIST(LinkAnchor anc1, LinkAnchor anc2) { anc1.insert(anc2); }
+    private static void ADD_SEQ(LinkAnchor seq1, LinkAnchor seq2) { seq1.append(seq2); }
 
     private int debug_compile(String msg, int v) {
         debugs(msg);
@@ -258,9 +268,7 @@ public class StandardYARVCompiler {
     }
 
     private LinkAnchor DECL_ANCHOR() {
-        LinkAnchor l = new LinkAnchor();
-        l.last = l;
-        return l;
+        return new LinkAnchor();
     }
 
     public StandardYARVCompiler(Ruby runtime) {
@@ -279,13 +287,20 @@ public class StandardYARVCompiler {
         compile(node);
     }
 
-    public void iseq_compile(IRubyObject self, Node narg) {
+    public void iseq_compile(IRubyObject self, Node node) {
         LinkAnchor list_anchor = DECL_ANCHOR();
-        Node node = narg;
+
         debugs("[compile step 1 (traverse each node)]");
+        
+        /* KRI switched to making newline a flag of a node rather than a whole node */
+        while (node.nodeId == NodeTypes.NEWLINENODE) {
+            node = ((NewlineNode) node).getNextNode();
+        }
+        
         COMPILE(list_anchor, "top level node", node);
         ADD_INSN(list_anchor, last_line, YARVInstructions.LEAVE);
         current_iseq = list_anchor;
+            
     }
 
     private int nd_line(Node node) {
@@ -331,7 +346,7 @@ public class StandardYARVCompiler {
                 continue compileLoop;
             case NodeTypes.ROOTNODE:
                 // getAllNamesInScope now gets all names in scope that have been seen at the current point
-                // of execution.  This may or may not work in this case....?
+                // of von.  This may or may not work in this case....?
                 locals = ((RootNode)node).getStaticScope().getAllNamesInScope(((RootNode) node).getScope());
                 node = ((RootNode)node).getBodyNode();
                 continue compileLoop;
@@ -341,10 +356,12 @@ public class StandardYARVCompiler {
                 YARVMachine.InstructionSequence iseqval =  c.getInstructionSequence(((DefnNode)node).getName(), nd_file(node), "method");
                 List argNames = new ArrayList();
                 ListNode argsNode = ((DefnNode)node).getArgsNode().getArgs();
-                for (int i = 0; i < argsNode.size(); i++) {
-                    ArgumentNode argumentNode = (ArgumentNode)argsNode.get(i);
+                if (argsNode != null) {
+                    for (int i = 0; i < argsNode.size(); i++) {
+                        ArgumentNode argumentNode = (ArgumentNode)argsNode.get(i);
                     
-                    argNames.add(argumentNode.getName());
+                        argNames.add(argumentNode.getName());
+                    }
                 }
                 iseqval.args_argc = argNames.size();
                 String[] l1 = iseqval.locals;
@@ -407,7 +424,6 @@ public class StandardYARVCompiler {
 
                 ADD_LABEL(ret, then_label);
                 ADD_SEQ(ret, then_seq);
-
                 ADD_INSNL(ret, nd_line(node), YARVInstructions.JUMP, end_label);
 
                 ADD_LABEL(ret, else_label);
@@ -421,7 +437,8 @@ public class StandardYARVCompiler {
             case NodeTypes.VCALLNODE:
                 recv = DECL_ANCHOR();
                 args = DECL_ANCHOR();
-                if(node instanceof CallNode) {
+
+                if (node.nodeId == NodeTypes.CALLNODE) {
                     COMPILE(recv, "recv", ((CallNode)node).getReceiverNode());
                 } else {
                     ADD_CALL_RECEIVER(recv, nd_line(node));
@@ -446,8 +463,19 @@ public class StandardYARVCompiler {
                 case NodeTypes.FCALLNODE:
                     flags |= YARVInstructions.FCALL_FLAG;
                 }
+                
+                YARVMachine.Instruction inst = ADD_SEND_R(ret, nd_line(node), ((INameNode)node).getName(), argc, null, flags);
 
-                ADD_SEND_R(ret, nd_line(node), ((INameNode)node).getName(), argc, null, flags);
+                if ((flags & YARVInstructions.FCALL_FLAG) == 0) {
+                    if (((INameNode) node).getName().equals("<")) {
+                        insn_set_specialized_instruction(inst, YARVInstructions.OPT_LT);
+                    } else if (((INameNode) node).getName().equals("+")) {
+                        insn_set_specialized_instruction(inst, YARVInstructions.OPT_PLUS);
+                    } else if (((INameNode) node).getName().equals("-")) {
+                        insn_set_specialized_instruction(inst, YARVInstructions.OPT_MINUS);
+                    }
+                }
+                
                 if(poped) {
                     ADD_INSN(ret, nd_line(node), YARVInstructions.POP);
                 }
@@ -530,7 +558,18 @@ public class StandardYARVCompiler {
                 }
                 break compileLoop;
             }
-
+            case NodeTypes.SELFNODE:
+                if (!poped) ADD_INSN(ret, nd_line(node), YARVInstructions.PUTSELF);
+                break compileLoop;
+            case NodeTypes.NILNODE:
+                if (!poped) ADD_INSN(ret, nd_line(node), YARVInstructions.PUTNIL);
+                break compileLoop;
+            case NodeTypes.TRUENODE:
+                if (!poped) ADD_INSN1(ret, nd_line(node), YARVInstructions.PUTOBJECT, runtime.getTrue());
+                break compileLoop;
+            case NodeTypes.FALSENODE:
+                if (!poped) ADD_INSN1(ret, nd_line(node), YARVInstructions.PUTOBJECT, runtime.getFalse());
+                break compileLoop;
             default:
                 debugs(" ... doesn't handle node: " + node);
                 break compileLoop;
@@ -581,7 +620,6 @@ public class StandardYARVCompiler {
         Node node = node_root;
         int len = ((ArrayNode)node).size();
         int line = nd_line(node);
-        int i =0;
         LinkAnchor anchor = DECL_ANCHOR();
         List c = node.childNodes();
         for(Iterator iter = c.iterator(); iter.hasNext();) {
@@ -619,8 +657,17 @@ public class StandardYARVCompiler {
         Node argn = node.getArgsNode();
         LinkAnchor arg_block = DECL_ANCHOR();
         LinkAnchor args_push = DECL_ANCHOR();
+        boolean blockArgs = false;
 
-        if(argn != null) {
+        if (argn != null) {
+            if (argn instanceof BlockPassNode) {
+                BlockPassNode blockPassNode = (BlockPassNode) argn;
+                COMPILE(arg_block, "block", blockPassNode.getBodyNode());
+                
+                blockArgs = true;
+                argn = blockPassNode.getArgsNode();
+            }
+
             switch(argn.nodeId) {
             case NodeTypes.SPLATNODE:
                 break;
@@ -635,9 +682,8 @@ public class StandardYARVCompiler {
             }
         }
         
-        if (!LIST_SIZE_ZERO(args_push)) {
-            ADD_SEQ(args, args_push);
-        }
+        if (!LIST_SIZE_ZERO(args_push)) ADD_SEQ(args, args_push);
+        if (blockArgs) ADD_SEQ(args, arg_block);
 
         return n;
     }
@@ -648,6 +694,14 @@ public class StandardYARVCompiler {
         n.next = null;
         return n;
     }
+    
+    private void insn_set_specialized_instruction(YARVMachine.Instruction instruction, int insn_id)
+    {
+        instruction.bytecode = insn_id;
+        //iobj->operand_size = 0;
+        //return COMPILE_OK;
+    }
+
 
     private void ADD_CALL_RECEIVER(LinkAnchor seq, int line) {
         ADD_INSN(seq, line, YARVInstructions.PUTNIL);
@@ -660,7 +714,7 @@ public class StandardYARVCompiler {
         ADD_ELEM(seq, new_insn(i));
     }
 
-    private void ADD_SEND_R(LinkAnchor seq, int line, String name, int argc, Object block, int flags) {
+    private YARVMachine.Instruction ADD_SEND_R(LinkAnchor seq, int line, String name, int argc, Object block, int flags) {
         YARVMachine.Instruction i = new YARVMachine.Instruction(YARVInstructions.SEND);
         i.line_no = line;
         i.s_op0 = name;
@@ -668,6 +722,7 @@ public class StandardYARVCompiler {
         i.i_op3 = flags;
         debugs("ADD_SEND_R(" + line + ", " + YARVInstructions.name(YARVInstructions.SEND) + ", " + name + ", " + argc + ", " + flags + ")");
         ADD_ELEM(seq, new_insn(i));
+        return i;
     }
 
     private void ADD_INSN1(LinkAnchor seq, int line, int insn, IRubyObject obj) {
@@ -715,22 +770,19 @@ public class StandardYARVCompiler {
     public YARVMachine.InstructionSequence getInstructionSequence(String name, String filename, String level) {
         iseq = new YARVMachine.InstructionSequence(runtime, name, filename, level);
         List l = new ArrayList();
-        LinkElement elm = current_iseq;
         Map jumps = new IdentityHashMap();
         Map labels = new IdentityHashMap();
         int real=0;
-        while(elm != null) {
-            if(elm instanceof Insn) {
+        for (LinkElement elm = current_iseq; elm != null; elm = elm.next) {
+            if (elm instanceof Insn) {
                 Insn i = (Insn)elm;
-                if(isJump(i.i.bytecode)) {
-                    jumps.put(i, i.i._tmp);
-                }
+                if (isJump(i.i.bytecode)) jumps.put(i, i.i._tmp);
+
                 l.add(i.i);
                 real++;
-            } else if(elm instanceof Label) {
+            } else if (elm instanceof Label) {
                 labels.put(elm, new Integer(real+1));
             }
-            elm = elm.next;
         }
         for(Iterator iter = jumps.keySet().iterator();iter.hasNext();) {
             Insn k = (Insn)iter.next();
@@ -745,7 +797,8 @@ public class StandardYARVCompiler {
     }
 
     private boolean isJump(int i) {
-        return i == YARVInstructions.JUMP || i == YARVInstructions.BRANCHIF || i == YARVInstructions.BRANCHUNLESS || 
-            i == YARVInstructions.GETINLINECACHE || i == YARVInstructions.SETINLINECACHE;
+        return i == YARVInstructions.JUMP || i == YARVInstructions.BRANCHIF || 
+            i == YARVInstructions.BRANCHUNLESS || i == YARVInstructions.GETINLINECACHE || 
+            i == YARVInstructions.SETINLINECACHE;
     }
-}// StandardYARVCompiler
+}
