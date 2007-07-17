@@ -47,6 +47,8 @@ public class RubyInstanceConfig {
     private final boolean jitLogging;
     private final boolean jitLoggingVerbose;
     private final int jitThreshold;
+
+    private final String defaultRegexpEngine;
     
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
@@ -84,6 +86,8 @@ public class RubyInstanceConfig {
             jitLoggingVerbose = Boolean.getBoolean("jruby.jit.logging.verbose");
             jitThreshold = threshold == null ? 20 : Integer.parseInt(threshold); 
         }
+
+        defaultRegexpEngine = System.getProperty("jruby.regexp","jregex");
     }
 
     public LoadServiceCreator getLoadServiceCreator() {
@@ -172,5 +176,9 @@ public class RubyInstanceConfig {
 
     public Map getEnvironment() {
         return environment;
+    }
+
+    public String getDefaultRegexpEngine() {
+        return defaultRegexpEngine;
     }
 }

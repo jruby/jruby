@@ -145,6 +145,9 @@ public class StringTerm extends StrTerm {
             case 'u':
                 kcode = 64;
                 break;
+            case 'j':
+                options |= 256; // Regexp engine 'java'
+                break;
             default:
                 unknownFlags.append(c);
                 break;

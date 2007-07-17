@@ -38,9 +38,6 @@ package org.jruby;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
-import jregex.Matcher;
-import jregex.Pattern;
-import jregex.REFlags;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -52,17 +49,19 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.Sprintf;
+import org.jruby.regexp.RegexpFactory;
+import org.jruby.regexp.RegexpMatcher;
+import org.jruby.regexp.RegexpPattern;
+import org.jruby.regexp.PatternSyntaxException;
 
 /**
  *
  * @author  amoore
  */
 public class RubyRegexp extends RubyObject implements ReOptions {
-    private static final RegexpTranslator REGEXP_TRANSLATOR = new RegexpTranslator();
-
     // \013 is a vertical tab. Java does not support the \v notation used by
     // Ruby.
-    private static final Pattern SPECIAL_CHARS = new Pattern("([\\\t\\\n\\\f\\\r\\ \\#\\\013\\+\\-\\[\\]\\.\\?\\*\\(\\)\\{\\}\\|\\\\\\^\\$])");    
+    private static final jregex.Pattern SPECIAL_CHARS = new jregex.Pattern("([\\\t\\\n\\\f\\\r\\ \\#\\\013\\+\\-\\[\\]\\.\\?\\*\\(\\)\\{\\}\\|\\\\\\^\\$])");    
 
 	/** Class which represents the multibyte character set code.
 	 * (should be an enum in Java 5.0).
@@ -70,10 +69,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	 * Warning: THIS IS NOT REALLY SUPPORTED BY JRUBY. 
 	 */
 
-    private ByteList source;
-    private Pattern pattern;
+    private RegexpPattern pattern;
     private KCode code;
-    private int flags;
     private int options;
 
     KCode getCode() {
@@ -82,7 +79,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
 	// lastTarget and matcher currently only used by searchAgain
 	private String lastTarget = null;
-	private Matcher matcher = null;
+	private RegexpMatcher matcher = null;
 
     public RubyRegexp(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
@@ -144,28 +141,23 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     
     public void initialize(ByteList regex, int options) {
         try {
-            source = regex;
-            pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
-            flags = REGEXP_TRANSLATOR.flagsFor(options, code.flags());
-            this.options = options;
-        } catch(jregex.PatternSyntaxException e) {
-            //            System.err.println(regex);
-            //            e.printStackTrace();
+            if((options & 256) == 256 ) {
+                this.pattern = RegexpFactory.getFactory("java").createPattern(regex, options, code.flags());
+                this.options = options & ~256;
+            } else {
+                this.pattern = getRuntime().getRegexpFactory().createPattern(regex, options, code.flags());
+                this.options = options;
+            }
+
+
+
+        } catch(PatternSyntaxException e) {
             throw getRuntime().newRegexpError(e.getMessage());
         }
     }
 
     public void initialize(String regex, int options) {
-        try {
-            source = ByteList.create(regex);
-            pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
-            flags = REGEXP_TRANSLATOR.flagsFor(options, code.flags());
-            this.options = options;
-        } catch(jregex.PatternSyntaxException e) {
-            //            System.err.println(regex);
-            //            e.printStackTrace();
-            throw getRuntime().newRegexpError(e.getMessage());
-        }
+        initialize(ByteList.create(regex), options);
     }
 
     public static String escapeSpecialChars(String original) {
@@ -198,24 +190,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return newRegexp(str.getRuntime(), str.getByteList(), options, lang);
     }
     
-    public static RubyRegexp newRegexp(Ruby runtime, String source, Pattern pattern, int flags, String lang) {
+    public static RubyRegexp newRegexp(Ruby runtime, RegexpPattern pattern, String lang) {
         RubyRegexp re = new RubyRegexp(runtime);
         re.code = KCode.create(runtime, lang);
-        re.source = ByteList.create(source);
         re.pattern = pattern;
-        re.flags = flags;
         return re;
     }
-    
-    public static RubyRegexp newRegexp(Ruby runtime, ByteList source, Pattern pattern, int flags, String lang) {
-        RubyRegexp re = new RubyRegexp(runtime);
-        re.code = KCode.create(runtime, lang);
-        re.source = source;
-        re.pattern = pattern;
-        re.flags = flags;
-        return re;
-    }
-    
+
     public static RubyRegexp newRegexp(Ruby runtime, String str, int options, String kcode) {
         RubyRegexp re = new RubyRegexp(runtime);
         re.code = KCode.create(runtime, kcode);
@@ -331,7 +312,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
         RubyRegexp re = (RubyRegexp) other;
         checkInitialized();
-        if (!(re.pattern.toString().equals(pattern.toString()) && re.flags == this.flags)) {
+        if (!(re.pattern.toString().equals(pattern.toString()) && re.pattern.getFlags() == this.pattern.getFlags())) {
             return getRuntime().getFalse();
         }
         
@@ -420,7 +401,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public RubyString source() {
         checkInitialized();
-        return getRuntime().newString(source);
+        return getRuntime().newString(pattern.getSource());
     }
 
     public IRubyObject kcode() {
@@ -432,13 +413,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
 
     public IRubyObject options() {
-        if((flags & REFlags.IGNORE_CASE) != 0) {
+        if(this.pattern.isCaseInsensitive()) {
             this.options |= 1;
         }
-        if((flags & REFlags.IGNORE_SPACES) != 0) {
+        if(this.pattern.isExtended()) {
             this.options |= 2;
         }
-        if((flags & REFlags.DOTALL) != 0) {
+        if(this.pattern.isDotAll()) {
             this.options |= 4;
         }
          return getRuntime().newFixnum(options + code.bits());
@@ -449,7 +430,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public RubyBoolean casefold() {
         checkInitialized();
-        return getRuntime().newBoolean((flags & REFlags.IGNORE_CASE) != 0);
+        return getRuntime().newBoolean(this.pattern.isCaseInsensitive());
     }
 
     /** rb_reg_nth_match
@@ -562,28 +543,19 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
         
         IRubyObject _match = getRuntime().getCurrentContext().getBackref();
-        RubyMatchData match;
-        if(!_match.isNil() && !((match = (RubyMatchData)_match).used()) && (utf ^ (match instanceof RubyMatchData.RString))) {
-            match.matcher = matcher;
-            if(utf) {
-                ((RubyMatchData.JavaString)match).original = target;
-            } else {
-                ((RubyMatchData.RString)match).original = rtarget;
-                ((RubyMatchData.RString)match).set();
-            }
-        } else {
-            match = (utf) ? 
-                ((RubyMatchData)new RubyMatchData.JavaString(getRuntime(), target, matcher))
-                :
-                ((RubyMatchData)new RubyMatchData.RString(getRuntime(), rtarget, matcher));
-            getRuntime().getCurrentContext().setBackref(match);
+        RubyMatchData match = (_match instanceof RubyMatchData) ? (RubyMatchData)_match : (RubyMatchData)null;
+        RubyMatchData newMatch = matcher.createOrReplace(match, target, rtarget, utf);
+
+        if(newMatch != match) {
+            getRuntime().getCurrentContext().setBackref(newMatch);
         }
-        
-        return match.matchStartPosition();
+
+        return newMatch.matchStartPosition();
     }
     
     public IRubyObject match(String target, RubyString rtarget, int startPos) {
         boolean utf8 = getCode() == KCode.UTF8;
+
         String t = target;
         if(utf8) {
             try {
@@ -595,28 +567,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             }
         }
 
-    	Matcher aMatcher = pattern.matcher(t);
+    	RegexpMatcher aMatcher = pattern.matcher(t);
     	
         aMatcher.setPosition(startPos);
 
         if (aMatcher.find()) {
             IRubyObject _match = getRuntime().getCurrentContext().getBackref();
-            RubyMatchData match;
-            if(!_match.isNil() && !((match = (RubyMatchData)_match).used()) && (utf8 ^ (match instanceof RubyMatchData.RString))) {
-                match.matcher = aMatcher;
-                if(utf8) {
-                    ((RubyMatchData.JavaString)match).original = target;
-                } else {
-                    ((RubyMatchData.RString)match).original = rtarget;
-                    ((RubyMatchData.RString)match).set();
-                }
-                return match;
-            } else {
-                return (utf8) ? 
-                    ((RubyMatchData)new RubyMatchData.JavaString(getRuntime(), target, aMatcher))
-                    :
-                    ((RubyMatchData)new RubyMatchData.RString(getRuntime(), rtarget, aMatcher));
-            }
+            RubyMatchData match = (_match instanceof RubyMatchData) ? (RubyMatchData)_match : (RubyMatchData)null;
+            return aMatcher.createOrReplace(match, target, rtarget, utf8);
         }
         return getRuntime().getNil();
     }
@@ -649,7 +607,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             p = s;
 
             int no;
-            Matcher mat = match.matcher;
+            RegexpMatcher mat = match.matcher;
 
             ByteList srcList;
             byte[]srcBytes;
@@ -730,7 +688,6 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
 
         RubyRegexp origRegexp = (RubyRegexp)original;
-        source = origRegexp.source;
         pattern = origRegexp.pattern;
         code = origRegexp.code;
 
@@ -741,7 +698,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public IRubyObject inspect() {
-        final ByteList regex = source;
+        final ByteList regex = pattern.getSource();
         final int length = regex.length();
         StringBuffer sb = new StringBuffer(length + 2);
 
@@ -785,15 +742,15 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         } else if(code == KCode.SJIS) {
             sb.append('s');
         }
-        if ((flags & REFlags.IGNORE_CASE) > 0) {
+        if (this.pattern.isCaseInsensitive()) {
             sb.append('i');
         }
   
-        if ((flags & REFlags.DOTALL) > 0) {
+        if (this.pattern.isDotAll()) {
             sb.append('m');
         }
         
-        if ((flags & REFlags.IGNORE_SPACES) > 0) {
+        if (this.pattern.isExtended()) {
             sb.append('x');
         }
 
@@ -844,9 +801,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     	
     	buffer.append("(?");
     	
-    	flagToString(buffer, off, REFlags.DOTALL, 'm');
-    	flagToString(buffer, off, REFlags.IGNORE_CASE, 'i');
-    	flagToString(buffer, off, REFlags.IGNORE_SPACES, 'x');
+    	flagToString(buffer, off, this.pattern.isDotAll(), 'm');
+    	flagToString(buffer, off, this.pattern.isCaseInsensitive(), 'i');
+    	flagToString(buffer, off, this.pattern.isExtended(), 'x');
 
 		if (off.length() > 0) {
 			buffer.append('-').append(off);
@@ -867,8 +824,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	 * @param flag a Pattern flag
 	 * @param c the char which represents the flag
 	 */
-	private void flagToString(StringBuffer buffer, StringBuffer off, int flag, char c) {
-		if ((flags & flag) != 0) {
+	private void flagToString(StringBuffer buffer, StringBuffer off, boolean flag, char c) {
+		if (flag) {
     		buffer.append(c);
     	} else {
     		off.append(c);
@@ -886,23 +843,23 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         output.writeString(regexp.pattern.toString());
 
         int _flags = 0;
-        if ((regexp.flags & REFlags.DOTALL) > 0) {
+        if (regexp.pattern.isDotAll()) {
             _flags |= RE_OPTION_MULTILINE;
         }
-        if ((regexp.flags & REFlags.IGNORE_CASE) > 0) {
+        if (regexp.pattern.isCaseInsensitive()) {
             _flags |= RE_OPTION_IGNORECASE;
         }
-        if ((regexp.flags & REFlags.IGNORE_SPACES) > 0) {
+        if (regexp.pattern.isExtended()) {
             _flags |= RE_OPTION_EXTENDED;
         }
         output.writeInt(_flags);
     }
 	
-	public Pattern getPattern() {
+	public RegexpPattern getPattern() {
 		return this.pattern;
 	}
 
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(this.pattern.toString().hashCode() + flags);
+        return getRuntime().newFixnum(this.pattern.toString().hashCode() + this.pattern.getFlags());
     }
 }

@@ -44,8 +44,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.util.Locale;
-import jregex.Matcher;
-import jregex.Pattern;
+import org.jruby.regexp.RegexpMatcher;
+import org.jruby.regexp.RegexpPattern;
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
@@ -1691,9 +1691,9 @@ public class RubyString extends RubyObject {
         RubyRegexp pattern = getPat(args[0], true);
         boolean utf8 = pattern.getCode() == KCode.UTF8; 
         
-        Pattern pat = pattern.getPattern();
+        RegexpPattern pat = pattern.getPattern();
         String str = toString(utf8); 
-        Matcher mat = pat.matcher(str);
+        RegexpMatcher mat = pat.matcher(str);
         
         if (mat.find()) {
             ThreadContext context = runtime.getCurrentContext();
@@ -1787,9 +1787,9 @@ public class RubyString extends RubyObject {
         RubyRegexp pattern = getPat(args[0], true);
         boolean utf8 = pattern.getCode() == KCode.UTF8; 
         
-        Pattern pat = pattern.getPattern();
+        RegexpPattern pat = pattern.getPattern();
         String str = toString(utf8); 
-        Matcher mat = pat.matcher(str);
+        RegexpMatcher mat = pat.matcher(str);
 
         boolean found = mat.find();
         
@@ -2401,8 +2401,8 @@ public class RubyString extends RubyObject {
                 str = toString(utf8);
             }
 
-            Pattern pat = rr.getPattern();
-            Matcher mat = pat.matcher(str);
+            RegexpPattern pat = rr.getPattern();
+            RegexpMatcher mat = pat.matcher(str);
             beg = 0;
             boolean lastNull = false;
             while (mat.find()) {
@@ -2490,8 +2490,8 @@ public class RubyString extends RubyObject {
         
         String str = toString(utf8);
 
-        Pattern pat = pattern.getPattern();
-        Matcher mat = pat.matcher(str);
+        RegexpPattern pat = pattern.getPattern();
+        RegexpMatcher mat = pat.matcher(str);
         
         if (!block.isGiven()) {
             RubyArray result = runtime.newArray();
@@ -2551,12 +2551,8 @@ public class RubyString extends RubyObject {
         return str;
     }
     
-    private final RubyMatchData matchdata(Ruby runtime, String str, Matcher mat, boolean utf8) { 
-        if (utf8) {
-            return new RubyMatchData.JavaString(runtime, str, mat);
-        } else {
-            return new RubyMatchData.RString(runtime, this, mat);
-        }        
+    private final RubyMatchData matchdata(Ruby runtime, String str, RegexpMatcher mat, boolean utf8) { 
+        return mat.createOrReplace(null, str, this, utf8);
     }
     
     private static final ByteList SPACE_BYTELIST = new ByteList(ByteList.plain(" "));

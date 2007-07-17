@@ -358,7 +358,7 @@ class CharacterClass extends Term implements UnicodeConstants{
       StringBuffer sb=new StringBuffer();
       i=parseName(data,i,out,sb,skipspaces);
       Bitset bs=getNamedClass(sb.toString());
-      if(bs==null) throw new PatternSyntaxException("unknow class: {"+sb+"}");
+      if(bs==null) throw new PatternSyntaxException("unknown class: {"+sb+"}");
       Bitset.unify(bs,term);
       term.inverse=inverse;
       return i;

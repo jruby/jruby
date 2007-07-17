@@ -36,7 +36,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import jregex.Pattern;
+import org.jruby.regexp.RegexpPattern;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -1027,11 +1027,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void createNewRegexp(final ByteList value, final int options, final String lang) {
             String regname = getNewConstant(cg.ci(RubyRegexp.class), "literal_reg_");
-            String name = getNewConstant(cg.ci(Pattern.class), "literal_re_");
+            String name = getNewConstant(cg.ci(RegexpPattern.class), "literal_re_");
             String name_flags = getNewConstant(cg.ci(Integer.TYPE), "literal_re_flags_");
 
             // in current method, load the field to see if we've created a Pattern yet
-            method.getstatic(classname, name, cg.ci(Pattern.class));
+            method.getstatic(classname, name, cg.ci(RegexpPattern.class));
 
 
             Label alreadyCreated = new Label();
@@ -1046,28 +1046,22 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             } else {
                 regexpString = value.toString();
             }
-            method.ldc(regexpString);
-
-            method.ldc(new Integer(options));
-            invokeUtilityMethod("regexpLiteralFlags", cg.sig(Integer.TYPE, cg.params(Integer.TYPE)));
-            method.putstatic(classname, name_flags, cg.ci(Integer.TYPE));
 
             loadRuntime();
             method.ldc(regexpString);
             method.ldc(new Integer(options));
-            invokeUtilityMethod("regexpLiteral", cg.sig(Pattern.class, cg.params(Ruby.class, String.class, Integer.TYPE)));
+            invokeUtilityMethod("regexpLiteral", cg.sig(RegexpPattern.class, cg.params(Ruby.class, String.class, Integer.TYPE)));
             method.dup();
 
-            method.putstatic(classname, name, cg.ci(Pattern.class));
+            method.putstatic(classname, name, cg.ci(RegexpPattern.class));
 
-            method.getstatic(classname, name_flags, cg.ci(Integer.TYPE));
             if (null == lang) {
                 method.aconst_null();
             } else {
                 method.ldc(lang);
             }
 
-            method.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, String.class, Pattern.class, Integer.TYPE, String.class)));
+            method.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, RegexpPattern.class, String.class)));
 
             method.putstatic(classname, regname, cg.ci(RubyRegexp.class));
             method.label(alreadyCreated);

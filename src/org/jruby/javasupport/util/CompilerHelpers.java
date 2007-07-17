@@ -1,7 +1,8 @@
 package org.jruby.javasupport.util;
 
-import jregex.Pattern;
-
+import org.jruby.regexp.RegexpFactory;
+import org.jruby.regexp.RegexpPattern;
+import org.jruby.regexp.PatternSyntaxException;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -27,6 +28,7 @@ import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Helper methods which are called by the compiler.  Note: These will show no consumers, but
@@ -34,8 +36,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public class CompilerHelpers {
-    private final static org.jruby.RegexpTranslator TRANS = new org.jruby.RegexpTranslator();
-
     public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, 
             String[] staticScopeNames, CompiledBlockCallback callback) {
         StaticScope staticScope = 
@@ -197,18 +197,18 @@ public class CompilerHelpers {
         return (RubyModule)rubyModule;
     }
     
-    public static int regexpLiteralFlags(int options) {
-        return TRANS.flagsFor(options,0);
-    }
-
-    public static Pattern regexpLiteral(Ruby runtime, String ptr, int options) {
+    public static RegexpPattern regexpLiteral(Ruby runtime, String ptr, int options) {
         IRubyObject noCaseGlobal = runtime.getGlobalVariables().get("$=");
 
         int extraOptions = noCaseGlobal.isTrue() ? ReOptions.RE_OPTION_IGNORECASE : 0;
 
         try {
-            return TRANS.translate(ptr, options | extraOptions, 0);
-        } catch(jregex.PatternSyntaxException e) {
+            if((options & 256) == 256 ) {
+                return RegexpFactory.getFactory("java").createPattern(ByteList.create(ptr), (options & ~256) | extraOptions, 0);
+            } else {
+                return runtime.getRegexpFactory().createPattern(ByteList.create(ptr), options | extraOptions, 0);
+            }
+        } catch(PatternSyntaxException e) {
             throw runtime.newRegexpError(e.getMessage());
         }
     }

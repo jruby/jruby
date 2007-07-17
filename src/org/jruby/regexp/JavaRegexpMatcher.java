@@ -1,0 +1,106 @@
+/***** BEGIN LICENSE BLOCK *****
+ * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Common Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/cpl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Copyright (C) 2007 Ola Bini <ola.bini@gmail.com>
+ * 
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the CPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the CPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
+package org.jruby.regexp;
+
+import org.jruby.RubyMatchData;
+import org.jruby.RubyString;
+import java.util.regex.Matcher;
+
+/**
+ * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
+ */
+public class JavaRegexpMatcher extends RegexpMatcher {
+    private Matcher matcher;
+    private String target;
+    private int position = -1;
+
+    JavaRegexpMatcher(Matcher matcher, String target) {
+        this.matcher = matcher;
+        this.target = target;
+    }
+
+    public void setPosition(int pos) {
+        this.position = pos;
+    }
+
+    public void setOffset(int pos) {
+        this.position = pos;
+    }
+
+    public boolean find() {
+        if(position != -1) {
+            return matcher.find(position);
+        } else {
+            return matcher.find();
+        }
+    }
+
+    public int start() {
+        return matcher.start();
+    }
+
+    public int start(int pos) {
+        return matcher.start(pos);
+    }
+
+    public int end() {
+        return matcher.end();
+    }
+
+    public int end(int pos) {
+        return matcher.end(pos);
+    }
+
+    public int length(int pos) {
+        return matcher.end(pos) - matcher.start(pos);
+    }
+
+    public int groupCount() {
+        return matcher.groupCount() + 1;
+    }
+
+    public boolean isCaptured(int pos) {
+        return matcher.start(pos) != -1;
+    }
+
+    public boolean proceed() {
+        return find();
+    }
+
+    public String group(int pos) {
+        return matcher.group(pos);
+    }
+
+    public String prefix() {
+        return target.substring(0, matcher.start());
+    }
+
+    public String suffix() {
+        return target.substring(matcher.end());
+    }
+}// JavaRegexpMatcher

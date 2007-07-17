@@ -111,6 +111,7 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.MethodCache;
 import org.jruby.util.NormalizedFile;
+import org.jruby.regexp.RegexpFactory;
 
 /**
  * The jruby runtime.
@@ -215,6 +216,8 @@ public final class Ruby {
     public int moduleLastId = 0;
 
     private Object respondToMethod;
+
+    private RegexpFactory regexpFactory;
     
     /**
      * A list of finalizers, weakly referenced, to be executed on tearDown
@@ -672,6 +675,8 @@ public final class Ruby {
     private void init() {
         ThreadContext tc = getCurrentContext();
 
+        this.regexpFactory = RegexpFactory.getFactory(this.config.getDefaultRegexpEngine());
+
         javaSupport = new JavaSupport(this);
 
         tc.preInitCoreClasses();
@@ -1104,6 +1109,10 @@ public final class Ruby {
 
     public RubyWarnings getWarnings() {
         return warnings;
+    }
+
+    public RegexpFactory getRegexpFactory() {
+        return this.regexpFactory;
     }
 
     public PrintStream getErrorStream() {

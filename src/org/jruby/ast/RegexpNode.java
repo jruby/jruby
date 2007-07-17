@@ -31,9 +31,11 @@
 package org.jruby.ast;
 
 import java.util.List;
-import jregex.Pattern;
+import org.jruby.regexp.RegexpFactory;
+import org.jruby.regexp.RegexpPattern;
+import org.jruby.regexp.PatternSyntaxException;
 
-import org.jruby.RegexpTranslator;
+import org.jruby.Ruby;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
@@ -45,10 +47,7 @@ import org.jruby.util.ByteList;
  * @author  jpetersen
  */
 public class RegexpNode extends Node implements ILiteralNode {
-    private static final RegexpTranslator translator = new RegexpTranslator();
-    
-    private Pattern pattern;
-    private int flags;
+    private RegexpPattern pattern;
     private final ByteList value;
     private final int options;
 
@@ -80,19 +79,14 @@ public class RegexpNode extends Node implements ILiteralNode {
     public ByteList getValue() {
         return value;
     }
-    
-    public int getFlags(int extra_options) {
-        if (pattern == null) {
-            flags = RegexpTranslator.translateFlags(options | extra_options);
-            pattern = translator.translate(value, options, flags);
-        }
-        return flags;
-    }
 
-    public Pattern getPattern(int extra_options) {
+    public RegexpPattern getPattern(Ruby runtime, int extra_options) throws PatternSyntaxException {
         if (pattern == null) {
-            flags = RegexpTranslator.translateFlags(options | extra_options);
-            pattern = translator.translate(value, options, flags);
+            if((options & 256) == 256 ) {
+                pattern = RegexpFactory.getFactory("java").createPattern(value, options & ~256, (options&~256) | extra_options);
+            } else {
+                pattern = runtime.getRegexpFactory().createPattern(value, options, options | extra_options);
+            }
         }
         return pattern;
     }

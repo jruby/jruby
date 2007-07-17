@@ -35,11 +35,11 @@ package org.jruby;
 
 import java.io.UnsupportedEncodingException;
 
-import jregex.Matcher;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.regexp.RegexpMatcher;
 
 /**
  *
@@ -76,9 +76,9 @@ public abstract class RubyMatchData extends RubyObject {
         return matchDataClass;
     }
 
-    Matcher matcher;
+    public RegexpMatcher matcher;
 
-    public RubyMatchData(Ruby runtime, Matcher matcher) {
+    public RubyMatchData(Ruby runtime, RegexpMatcher matcher) {
         super(runtime, runtime.getClass("MatchData"));
         this.matcher = matcher;
     }
@@ -282,8 +282,8 @@ public abstract class RubyMatchData extends RubyObject {
     public abstract IRubyObject doClone();
 
     public static final class JavaString extends RubyMatchData {
-        String original;
-        public JavaString(Ruby runtime, String original, Matcher matcher) {
+        public String original;
+        public JavaString(Ruby runtime, String original, RegexpMatcher matcher) {
             super(runtime, matcher);
             this.original = original;
         }
@@ -370,12 +370,12 @@ public abstract class RubyMatchData extends RubyObject {
     }
 
     public static final class RString extends RubyMatchData {
-        RubyString original;
+        public RubyString original;
         private int len;
         private int[] start;
         private int[] end;
 
-        public RString(Ruby runtime, RubyString original, Matcher matcher) {
+        public RString(Ruby runtime, RubyString original, RegexpMatcher matcher) {
             super(runtime, matcher);
             this.original = original;
             set();

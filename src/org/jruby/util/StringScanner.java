@@ -1,7 +1,7 @@
 package org.jruby.util;
 
-import jregex.Matcher;
-import jregex.Pattern;
+import org.jruby.regexp.RegexpMatcher;
+import org.jruby.regexp.RegexpPattern;
 
 /**
  * @author kscott
@@ -10,7 +10,7 @@ import jregex.Pattern;
 public class StringScanner {
 	
 	private String string;
-	private Matcher matcher;
+	private RegexpMatcher matcher;
 	private int pos = 0;
 	private int lastPos = -1;
 	private int matchStart = -1;
@@ -156,7 +156,7 @@ public class StringScanner {
 		}
 	}
 	
-	public int matches(Pattern pattern) {
+	public int matches(RegexpPattern pattern) {
 		if (!isEndOfString()) {
 			matcher = pattern.matcher(string.subSequence(pos, string.length()).toString());
 			if (matcher.find() && matcher.start() == 0) {
@@ -171,7 +171,7 @@ public class StringScanner {
 		return -1;
 	}
 	
-	public CharSequence scanUntil(Pattern pattern) {
+	public CharSequence scanUntil(RegexpPattern pattern) {
 		if (!isEndOfString()) {
 			matcher = pattern.matcher(string);
             matcher.setOffset(pos);
@@ -190,7 +190,7 @@ public class StringScanner {
 		return null;
 	}
 	
-	public CharSequence scan(Pattern pattern) {
+	public CharSequence scan(RegexpPattern pattern) {
 		if (!isEndOfString()) {
 			matcher = pattern.matcher(string.subSequence(pos, string.length()).toString());
 			if (matcher.find() && matcher.start() == 0) {
@@ -208,7 +208,7 @@ public class StringScanner {
 		return null;
 	}
 	
-	public CharSequence check(Pattern pattern) {
+	public CharSequence check(RegexpPattern pattern) {
 		if (!isEndOfString()) {
 			matcher = pattern.matcher(string.subSequence(pos, string.length()).toString());
 			if (matcher.find() && matcher.start() == 0) {
@@ -223,7 +223,7 @@ public class StringScanner {
 		return null;
 	}
 	
-	public CharSequence checkUntil(Pattern pattern) {
+	public CharSequence checkUntil(RegexpPattern pattern) {
 		if (!isEndOfString()) {
 			matcher = pattern.matcher(string);
             matcher.setOffset(pos);
@@ -239,7 +239,7 @@ public class StringScanner {
 		return null;
 	}
 	
-	public int skip(Pattern pattern) {
+	public int skip(RegexpPattern pattern) {
 		if (!isEndOfString()) {
 			matcher = pattern.matcher(string.subSequence(pos, string.length()).toString());
 			if (matcher.find() && matcher.start() == 0) {
@@ -257,7 +257,7 @@ public class StringScanner {
 		return -1;
 	}
 	
-	public int skipUntil(Pattern pattern) {
+	public int skipUntil(RegexpPattern pattern) {
 		if (!isEndOfString()) {
 			matcher = pattern.matcher(string);
             matcher.setOffset(pos);
@@ -275,7 +275,7 @@ public class StringScanner {
 		return -1;
 	}
 	
-	public int exists(Pattern pattern) {
+	public int exists(RegexpPattern pattern) {
 		if (!isEndOfString()) {
 			matcher = pattern.matcher(string);
             matcher.setOffset(pos);

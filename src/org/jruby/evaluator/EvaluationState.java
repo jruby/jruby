@@ -156,6 +156,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
+import org.jruby.regexp.PatternSyntaxException;
 
 public class EvaluationState {
     public static IRubyObject eval(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
@@ -1448,9 +1449,8 @@ public class EvaluationState {
             int extraOptions = noCaseGlobal.isTrue() ? ReOptions.RE_OPTION_IGNORECASE : 0;
 
             try {
-                iVisited.literal = RubyRegexp.newRegexp(runtime, iVisited.getValue(), 
-                                                        iVisited.getPattern(extraOptions), iVisited.getFlags(extraOptions), lang);
-            } catch(jregex.PatternSyntaxException e) {
+                iVisited.literal = RubyRegexp.newRegexp(runtime, iVisited.getPattern(runtime, extraOptions), lang);
+            } catch(PatternSyntaxException e) {
                 throw runtime.newRegexpError(e.getMessage());
             }
         }
