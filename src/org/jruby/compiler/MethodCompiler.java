@@ -406,4 +406,6 @@ public interface MethodCompiler {
      * Call a static helper method on RubyRegexp with the current backref 
      */
     public void backrefMethod(String methodName);
+    
+    public void nullToNil();
 }

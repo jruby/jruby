@@ -438,6 +438,7 @@ public class NodeCompilerFactory {
         ClosureCallback receiverCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 NodeCompilerFactory.compile(callNode.getReceiverNode(), context);
+                context.nullToNil();
             }
         };
         
