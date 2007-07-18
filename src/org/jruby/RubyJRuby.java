@@ -146,7 +146,7 @@ public class RubyJRuby {
         if (filename.equals("-e")) {
             classname = "__dash_e__";
         } else {
-            classname = filename.replace("\\", "/").replace(".rb", "").replace("-","_dash_");
+            classname = filename.replace('\\', '/').replaceAll(".rb", "").replaceAll("-","_dash_");
         }
 
         ASTInspector inspector = new ASTInspector();

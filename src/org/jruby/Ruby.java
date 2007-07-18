@@ -312,7 +312,7 @@ public final class Ruby {
                     if (filename.equals("-e")) {
                         classname = "__dash_e__";
                     } else {
-                        classname = filename.replace("\\", "/").replace(".rb", "");
+                        classname = filename.replace('\\', '/').replaceAll(".rb", "");
                     }
         
                     ASTInspector inspector = new ASTInspector();
@@ -370,7 +370,7 @@ public final class Ruby {
             if (filename.equals("-e")) {
                 classname = "__dash_e__";
             } else {
-                classname = filename.replace("\\", "/").replace(".rb", "");
+                classname = filename.replace('\\', '/').replaceAll(".rb", "");
             }
         
             ASTInspector inspector = new ASTInspector();
