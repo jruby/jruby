@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.jruby.runtime.Block;
@@ -60,11 +62,17 @@ public class RubyClassPathVariable extends RubyObject {
 
     public IRubyObject append(IRubyObject obj) throws Exception {
         String ss = obj.convertToString().toString();
-        if(ss.indexOf("://") == -1) {
-            ss = "file://" + ss;
-        }
-        getRuntime().getJRubyClassLoader().addURL(new URL(ss));
+        URL url = getURL(ss);
+        getRuntime().getJRubyClassLoader().addURL(url);
         return this;
+    }
+    
+    private URL getURL(String target) throws MalformedURLException {
+        if(target.indexOf("://") == -1) {
+            return new File(target).toURI().toURL();
+        } else {
+            return new URL(target);
+        }
     }
 
     public IRubyObject size() {
