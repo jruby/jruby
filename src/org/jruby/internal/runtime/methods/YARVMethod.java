@@ -90,7 +90,7 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
             // Why not setArgValues
             scope.setBlockArgValues(args, args.length);
 
-            return YARVMachine.INSTANCE.exec(context, self, scope, iseq.body);
+            return YARVMachine.INSTANCE.exec(context, self, iseq.body);
         } catch (JumpException.ReturnJump rj) {
         	if (rj.getTarget() == this) return (IRubyObject) rj.getValue();
             

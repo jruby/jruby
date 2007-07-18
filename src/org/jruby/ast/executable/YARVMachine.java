@@ -1,6 +1,8 @@
 package org.jruby.ast.executable;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBignum;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -122,15 +124,6 @@ public class YARVMachine {
         }
     }
     
-    public IRubyObject exec(ThreadContext context, IRubyObject self, StaticScope scope, Instruction[] bytecodes) {
-        try {
-            context.preRootNode(new DynamicScope(scope));
-            return exec(context,self, new DynamicScope(scope), bytecodes);
-        } finally {
-            context.postRootNode();
-        }
-    }
-    
     IRubyObject[] stack = new IRubyObject[8192];
     int stackTop = 0;
     
@@ -243,7 +236,28 @@ public class YARVMachine {
         System.err.println("Not implemented, YARVMachine." + YARVInstructions.name(bytecode));
     }
 
-    public IRubyObject exec(ThreadContext context, IRubyObject self, DynamicScope scope, Instruction[] bytecodes) {
+    /**
+     * Top-level exec into YARV machine.
+     * 
+     * @param context thread that is executing this machine (Note: We need to make n machines with
+     *   each belonging to an individual context)
+     * @param scope of exec (evals will sometimes pass in something interesting)
+     * @param bytecodes to be executed
+     * @return last value pop'd of machine stack
+     */
+    public IRubyObject exec(ThreadContext context, StaticScope scope, Instruction[] bytecodes) {
+        try {
+            IRubyObject self = context.getRuntime().getObject();
+            
+            context.preRootNode(new DynamicScope(scope));
+            
+            return exec(context, self, bytecodes);
+        } finally {
+            context.postRootNode();
+        }
+    }
+    
+    public IRubyObject exec(ThreadContext context, IRubyObject self, Instruction[] bytecodes) {
         Ruby runtime = context.getRuntime();
         
         // Where this frames stack begins.
@@ -467,12 +481,10 @@ public class YARVMachine {
                 bytecodes[we].l_op1 = runtime.getGlobalState();
                 break;
             case YARVInstructions.OPT_PLUS:
-                other = pop();
-                push(pop().callMethod(context,MethodIndex.OP_PLUS, "+", other));
+                op_plus(runtime, context, pop(), pop());
                 break;
             case YARVInstructions.OPT_MINUS: 
-                other = pop();
-                push(pop().callMethod(context,MethodIndex.OP_MINUS, "-", other));
+                op_minus(runtime, context, pop(), pop());
                 break;
             case YARVInstructions.OPT_MULT: 
                 other = pop();
@@ -491,8 +503,7 @@ public class YARVMachine {
                 push(pop().callMethod(context,MethodIndex.EQUALEQUAL, "==", other));
                 break;
             case YARVInstructions.OPT_LT:
-                other = pop();
-                push(pop().callMethod(context,MethodIndex.OP_LT, "<", other));
+                op_lt(runtime, context, pop(), pop());
                 break;
             case YARVInstructions.OPT_LE: 
                 other = pop();
@@ -600,6 +611,47 @@ public class YARVMachine {
         return pop();
     }
 
+    private void op_plus(Ruby runtime, ThreadContext context, IRubyObject other, IRubyObject receiver) {
+        if (other instanceof RubyFixnum && receiver instanceof RubyFixnum) {
+            long receiverValue = ((RubyFixnum) receiver).getLongValue();
+            long otherValue = ((RubyFixnum) other).getLongValue();
+            long result = receiverValue + otherValue;
+            if ((~(receiverValue ^ otherValue) & (receiverValue ^ result) & RubyFixnum.SIGN_BIT) != 0) {
+                push(RubyBignum.newBignum(runtime, receiverValue).plus(other));
+            }
+
+            push(runtime.newFixnum(result));
+        } else {
+            push(receiver.callMethod(context, MethodIndex.OP_PLUS, "+", other));
+        }
+    }
+
+    private void op_minus(Ruby runtime, ThreadContext context, IRubyObject other, IRubyObject receiver) {
+        if (other instanceof RubyFixnum && receiver instanceof RubyFixnum) {
+            long receiverValue = ((RubyFixnum) receiver).getLongValue();
+            long otherValue = ((RubyFixnum) other).getLongValue();
+            long result = receiverValue - otherValue;
+            if ((~(receiverValue ^ otherValue) & (receiverValue ^ result) & RubyFixnum.SIGN_BIT) != 0) {
+                push(RubyBignum.newBignum(runtime, receiverValue).minus(other));
+            }
+
+            push(runtime.newFixnum(result));
+        } else {
+            push(receiver.callMethod(context, MethodIndex.OP_MINUS, "-", other));
+        }
+    }
+
+    private void op_lt(Ruby runtime, ThreadContext context, IRubyObject other, IRubyObject receiver) {
+        if (other instanceof RubyFixnum && receiver instanceof RubyFixnum) {
+            long receiverValue = ((RubyFixnum) receiver).getLongValue();
+            long otherValue = ((RubyFixnum) other).getLongValue();
+            
+            push(runtime.newBoolean(receiverValue < otherValue));
+        } else {
+            push(receiver.callMethod(context, MethodIndex.OP_LT, "<", other));
+        }
+    }
+
     private int send(Ruby runtime, ThreadContext context, IRubyObject self, Instruction[] bytecodes, int stackStart, int ip) {
         Instruction instruction = bytecodes[ip];
         String name = instruction.s_op0;
@@ -642,8 +694,6 @@ public class YARVMachine {
             int index = MethodIndex.getIndex(name);
             instruction.callAdapter = new CallAdapter.DefaultCallAdapter(index, name, callType);
         }
-        
-        assert recv.getMetaClass() != null : recv.getClass().getName();
         
         if (TAILCALL_OPT && (bytecodes[ip+1].bytecode == YARVInstructions.LEAVE || 
             (flags & YARVInstructions.TAILCALL_FLAG) == YARVInstructions.TAILCALL_FLAG) &&

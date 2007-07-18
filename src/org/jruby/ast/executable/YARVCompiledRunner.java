@@ -44,7 +44,6 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -86,7 +85,7 @@ public class YARVCompiledRunner {
         StaticScope scope = new LocalStaticScope(null);
         scope.setVariables(iseq.locals);
         context.setPosition(new ISeqPosition(iseq));
-        return ym.exec(context, runtime.getObject(), new DynamicScope(scope,null), iseq.body);
+        return ym.exec(context, scope, iseq.body);
     }
 
     private YARVMachine.InstructionSequence transformIntoSequence(IRubyObject arr) {

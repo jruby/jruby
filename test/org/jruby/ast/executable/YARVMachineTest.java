@@ -82,7 +82,7 @@ public class YARVMachineTest extends TestCase {
         
         StaticScope scope = new LocalStaticScope(null);
         scope.setVariables(new String[] { "zero", "one" });
-        assertEquals("Hello, YARV!Hello, YARV!Object", ym.exec(context, runtime.getObject(), scope, getSimpleTest(runtime)).toString());
+        assertEquals("Hello, YARV!Hello, YARV!Object", ym.exec(context, scope, getSimpleTest(runtime)).toString());
     }
     
     public void testIterativeFib() {
@@ -93,9 +93,9 @@ public class YARVMachineTest extends TestCase {
         
         StaticScope scope = new LocalStaticScope(null);
         scope.setVariables(new String[] {"n", "i", "j", "cur", "k"});
-        assertEquals("55", ym.exec(context, runtime.getObject(), scope, getFib(runtime,10)).toString());
+        assertEquals("55", ym.exec(context, scope, getFib(runtime,10)).toString());
         
-        IRubyObject fib5k = ym.exec(context, runtime.getObject(), scope, getFib(runtime,5000));
+        IRubyObject fib5k = ym.exec(context, scope, getFib(runtime,5000));
         assertEquals("38789684543883256337019163083259053120821277146462451061605972148955501390440370" +
                 "9701082291646221066947929345285888297381348310200895498294036143015691147893836421656" +
                 "3944106910214505634133706558656238254656700712525929903854933813928836378347518908762" +
