@@ -751,7 +751,7 @@ public class EmitterImpl implements Emitter {
                 return '\'';
             }
 
-            if(analysis.multiline) {
+            if(analysis.multiline && ev.getValue().charAt(0) != ' ') {
                 return '|';
             }
 

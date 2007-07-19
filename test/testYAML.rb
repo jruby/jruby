@@ -116,3 +116,9 @@ hash['kind'] = 'human'
 need_to_be_serialized = {:first => 'something', :second_params => hash}
 a = {:x => need_to_be_serialized.to_yaml}
 test_equal need_to_be_serialized, YAML.load(YAML.load(a.to_yaml)[:x])
+
+# JRUBY-1220
+bad_text = " A\nR"
+dump = YAML.dump({'text' => bad_text})
+loaded = YAML.load(dump)
+test_equal bad_text, loaded['text']
