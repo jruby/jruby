@@ -634,9 +634,9 @@ public class Convert {
             switch(state) {
             case SBEGIN:
                 if (strict) {
-                    for (; i < buflen && bytes[i] <= ' '; i++) ;
+                    for (; i < buflen && isWhitespace(bytes[i]); i++) ;
                 } else {
-                    for (; i < buflen && ((ival = bytes[i]) <= ' ' || ival == '_'); i++) ;
+                    for (; i < buflen && (isWhitespace(ival = bytes[i]) || ival == '_'); i++) ;
                 }
                 state = i < buflen ? SSIGN : SEOF;
                 break;
@@ -696,14 +696,14 @@ public class Convert {
             case SPOST_SIGN:
                 if (strict) {
                     int ibefore = i;
-                    for (; i < buflen && bytes[i] <= ' '; i++) ;
+                    for (; i < buflen && isWhitespace(bytes[i]); i++) ;
                     if (ibefore != i) {
                         // set this to enforce no-underscore rule (though I think 
                         // it's an MRI bug)
                         flags |= FLAG_WHITESPACE;
                     }
                 } else {
-                    for ( ; i < buflen && ((ival = bytes[i]) <= ' ' || ival == '_'); i++) {
+                    for ( ; i < buflen && (isWhitespace(ival = bytes[i]) || ival == '_'); i++) {
                         if (ival == '_') {
                             if ((flags & FLAG_WHITESPACE) != 0) {
                                 throw new InvalidIntegerException();
@@ -784,7 +784,7 @@ public class Convert {
                     state = SERR_NOT_STRICT;
                     break;
                 }
-                for ( ; i < buflen && bytes[i] <= ' '; i++ );
+                for ( ; i < buflen && isWhitespace(bytes[i]); i++ );
                 state = i < buflen ? SERR_NOT_STRICT : SCOMPLETE;
                 break;
                 
@@ -870,9 +870,9 @@ public class Convert {
             switch(state) {
             case SBEGIN:
                 if (strict) {
-                    for (; i < buflen && bytes[i] <= ' '; i++) ;
+                    for (; i < buflen && isWhitespace(bytes[i]); i++) ;
                 } else {
-                    for (; i < buflen && ((ival = bytes[i]) <= ' ' || ival == '_'); i++) ;
+                    for (; i < buflen && (isWhitespace(ival = bytes[i]) || ival == '_'); i++) ;
                 }
                 state = i < buflen ? SSIGN : SEOF;
                 break;
@@ -931,14 +931,14 @@ public class Convert {
             case SPOST_SIGN:
                 if (strict) {
                     int ibefore = i;
-                    for (; i < buflen && bytes[i] <= ' '; i++) ;
+                    for (; i < buflen && isWhitespace(bytes[i]); i++) ;
                     if (ibefore != i) {
                         // set this to enforce no-underscore rule (though I think 
                         // it's an MRI bug)
                         flags |= FLAG_WHITESPACE;
                     }
                 } else {
-                    for ( ; i < buflen && ((ival = bytes[i]) <= ' ' || ival == '_'); i++) {
+                    for ( ; i < buflen && (isWhitespace(ival = bytes[i]) || ival == '_'); i++) {
                         if (ival == '_') {
                             if ((flags & FLAG_WHITESPACE) != 0) {
                                 throw new InvalidIntegerException();
@@ -1019,7 +1019,7 @@ public class Convert {
                     state = SERR_NOT_STRICT;
                     break;
                 }
-                for ( ; i < buflen && bytes[i] <= ' '; i++ );
+                for ( ; i < buflen && isWhitespace(bytes[i]); i++ );
                 state = i < buflen ? SERR_NOT_STRICT : SCOMPLETE;
                 break;
                 
@@ -1143,9 +1143,9 @@ public class Convert {
             switch(state) {
             case SBEGIN:
                 if (strict) {
-                    for (; i < buflen && bytes[i] <= ' '; i++) ;
+                    for (; i < buflen && isWhitespace(bytes[i]); i++) ;
                 } else {
-                    for (; i < buflen && ((ival = bytes[i]) <= ' ' || ival == '_'); i++) ;
+                    for (; i < buflen && (isWhitespace(ival = bytes[i]) || ival == '_'); i++) ;
                 }
                 if ( i >= buflen) {
                     state = strict ? SERR_NOT_STRICT : SCOMPLETE;
@@ -1314,20 +1314,18 @@ public class Convert {
             case SOPTCALC:
                 // calculation for simple (and typical) case,
                 // adapted from sun.misc.FloatingDecimal
-                if(nDigits == 0 &&
-                   (i+1 < buflen) &&
-                   (ival == 'n' || ival == 'N') && 
-                   (bytes[i] == 'a' || bytes[i] == 'A') &&
-                   (bytes[i+1] == 'n' || bytes[i+1] == 'N')) {
-                    return Double.NaN;
-                } else if(nDigits == 0 &&
-                   (i+1 < buflen) &&
-                   (ival == 'i' || ival == 'I') && 
-                   (bytes[i] == 'n' || bytes[i] == 'N') &&
-                   (bytes[i+1] == 'f' || bytes[i+1] == 'F')) {
-                    return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-                }
                 if (nDigits == 0) {
+                    if (i + 1 < buflen) {
+                        if ((ival == 'n' || ival == 'N') && 
+                                (bytes[i] == 'a' || bytes[i] == 'A') &&
+                                (bytes[i+1] == 'n' || bytes[i+1] == 'N')) {
+                            return Double.NaN;
+                        } else if ((ival == 'i' || ival == 'I') && 
+                                (bytes[i] == 'n' || bytes[i] == 'N') &&
+                                (bytes[i+1] == 'f' || bytes[i+1] == 'F')) {
+                            return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+                        }
+                    }
                     return negative ? -0.0d : 0.0d;
                 }
                 if (decPos < 0) {
@@ -1458,7 +1456,7 @@ public class Convert {
                         break; // switch
                     default:
                         // only whitespace allowed after value for strict
-                        for ( ; i < buflen && bytes[i] <= ' '; i++ );
+                        for ( --i; i < buflen && isWhitespace(bytes[i]); i++ );
                         state = i < buflen ? SERR_NOT_STRICT : SOPTCALC; 
                         break states;
                     } // switch
@@ -1540,7 +1538,7 @@ public class Convert {
                         break; // switch
                     default:
                         // only whitespace allowed after value for strict
-                        for ( ; i < buflen && bytes[i] <= ' '; i++);
+                        for ( --i; i < buflen && isWhitespace(bytes[i]); i++);
                         state = i < buflen ? SERR_NOT_STRICT : SOPTCALC; 
                         break states;
                     } // switch
@@ -1602,7 +1600,7 @@ public class Convert {
                     default:
                         exponent += expSign * expSpec;
                         // only whitespace allowed after value for strict
-                        for ( ; i < buflen && bytes[i] <= ' ';  i++);
+                        for ( --i; i < buflen && isWhitespace(bytes[i]);  i++);
                         state = i < buflen ? SERR_NOT_STRICT : SOPTCALC; 
                         break states;
                     } // switch
@@ -1784,7 +1782,7 @@ public class Convert {
                         break; //switch
                     default:
                         // only whitespace allowed after value for strict
-                        for ( ; i < buflen && bytes[i] <= ' ';  i++) ;
+                        for ( --i; i < buflen && isWhitespace(bytes[i]);  i++) ;
                         state = i < buflen ? SERR_NOT_STRICT : SCOMPLETE; 
                         break states;
                     } // switch
@@ -1827,7 +1825,7 @@ public class Convert {
                         }
                         break; //switch
                     default:
-                        for ( ; i < buflen && bytes[i] <= ' ';  i++) ;
+                        for ( --i; i < buflen && isWhitespace(bytes[i]);  i++) ;
                         state = i < buflen ? SERR_NOT_STRICT : SCOMPLETE; 
                         break states;
                     } // switch
@@ -1881,7 +1879,7 @@ public class Convert {
                         }
                         break; //switch
                     default:
-                        for ( ; i < buflen && bytes[i] <= ' ';  i++) ;
+                        for ( --i; i < buflen && isWhitespace(bytes[i]);  i++) ;
                         state = i < buflen ? SERR_NOT_STRICT : SCOMPLETE; 
                         break states;
                     }
@@ -1948,13 +1946,17 @@ public class Convert {
     public static final int skipLeadingWhitespace(byte[] bytes){
         int length = bytes.length;
         int start = 0;
-        for ( ; start < length && bytes[start] <= ' '; start++) ;
+        for ( ; start < length && isWhitespace(bytes[start]); start++) ;
         return start;
     }
     public static final int skipTrailingWhitespace(byte[] bytes) {
         int stop = bytes.length - 1;
-        for ( ; stop >= 0 && bytes[stop] <= ' '; stop-- ) ;
+        for ( ; stop >= 0 && isWhitespace(bytes[stop]); stop-- ) ;
         return stop + 1;
+    }
+
+    private static final boolean isWhitespace(final byte b) {
+        return b == ' ' || (b <= 13 && b >= 9 && b != 11);
     }
     /**
      * Trims whitespace (any bytes <= 0x20) from the beginning and end
