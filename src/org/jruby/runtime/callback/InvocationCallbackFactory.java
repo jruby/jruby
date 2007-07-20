@@ -209,7 +209,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     private MethodVisitor startDispatcher(ClassWriter cw) {
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "callMethod", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, Integer.TYPE, String.class,
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "callMethod", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Object.class, RubyModule.class, Integer.TYPE, String.class,
                 IRubyObject[].class, CallType.class, Block.class)), null, null);
         ;
         mv.visitCode();
@@ -1154,7 +1154,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.aload(DISPATCHER_BLOCK_INDEX);
         mv.invokevirtual(cg.p(DynamicMethod.class), "call",
                 cg.sig(IRubyObject.class, 
-                cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class)));
+                cg.params(ThreadContext.class, Object.class, RubyModule.class, String.class, IRubyObject[].class, Block.class)));
     }
     
     public void callMethodMissingIfNecessary(SkinnyMethodAdapter mv, Label afterCall, Label okCall) {
@@ -1176,7 +1176,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.aload(DISPATCHER_THREADCONTEXT_INDEX);
         mv.invokevirtual(cg.p(ThreadContext.class), "getFrameSelf", cg.sig(IRubyObject.class));
         mv.aload(DISPATCHER_CALLTYPE_INDEX);
-        mv.invokevirtual(cg.p(DynamicMethod.class), "isCallableFrom", cg.sig(boolean.class, cg.params(IRubyObject.class, CallType.class)));
+        mv.invokevirtual(cg.p(DynamicMethod.class), "isCallableFrom", cg.sig(boolean.class, cg.params(Object.class, CallType.class)));
         mv.ifne(okCall);
 
         // invoke callMethodMissing

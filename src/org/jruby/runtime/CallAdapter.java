@@ -46,60 +46,70 @@ public abstract class CallAdapter {
     }
     
     // no block
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args);
+    public abstract IRubyObject call(ThreadContext context, Object self);
+    public abstract IRubyObject call(ThreadContext context, Object self, IRubyObject arg1);
+    public abstract IRubyObject call(ThreadContext context, Object self, IRubyObject arg1, IRubyObject arg2);
+    public abstract IRubyObject call(ThreadContext context, Object self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
+    public abstract IRubyObject call(ThreadContext context, Object self, IRubyObject[] args);
     // with block
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, Block block);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
+    public abstract IRubyObject call(ThreadContext context, Object self, Block block);
+    public abstract IRubyObject call(ThreadContext context, Object self, IRubyObject arg1, Block block);
+    public abstract IRubyObject call(ThreadContext context, Object self, IRubyObject arg1, IRubyObject arg2, Block block);
+    public abstract IRubyObject call(ThreadContext context, Object self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
+    public abstract IRubyObject call(ThreadContext context, Object self, IRubyObject[] args, Block block);
     
     public static class DefaultCallAdapter extends CallAdapter {
         public DefaultCallAdapter(int methodID, String methodName, CallType callType) {
             super(methodID, methodName, callType);
         }
         
-        public IRubyObject call(ThreadContext context, IRubyObject self) {
+        public IRubyObject call(ThreadContext context, Object selfObject) {
+            IRubyObject self = (IRubyObject)selfObject;
             return self.getMetaClass().getDispatcher().callMethod(context, self, self.getMetaClass(), methodID, methodName, IRubyObject.NULL_ARRAY, callType, Block.NULL_BLOCK);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1) {
+        public IRubyObject call(ThreadContext context, Object selfObject, IRubyObject arg1) {
+            IRubyObject self = (IRubyObject)selfObject;
             return self.getMetaClass().getDispatcher().callMethod(context, self, self.getMetaClass(), methodID, methodName, new IRubyObject[] {arg1}, callType, Block.NULL_BLOCK);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+        public IRubyObject call(ThreadContext context, Object selfObject, IRubyObject arg1, IRubyObject arg2) {
+            IRubyObject self = (IRubyObject)selfObject;
             return self.getMetaClass().getDispatcher().callMethod(context, self, self.getMetaClass(), methodID, methodName, new IRubyObject[] {arg1, arg2}, callType, Block.NULL_BLOCK);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        public IRubyObject call(ThreadContext context, Object selfObject, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+            IRubyObject self = (IRubyObject)selfObject;
             return self.getMetaClass().getDispatcher().callMethod(context, self, self.getMetaClass(), methodID, methodName, new IRubyObject[] {arg1, arg2, arg3}, callType, Block.NULL_BLOCK);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject call(ThreadContext context, Object selfObject, IRubyObject[] args) {
+            IRubyObject self = (IRubyObject)selfObject;
             return self.getMetaClass().getDispatcher().callMethod(context, self, self.getMetaClass(), methodID, methodName, args, callType, Block.NULL_BLOCK);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, Block block) {
+        public IRubyObject call(ThreadContext context, Object selfObject, Block block) {
+            IRubyObject self = (IRubyObject)selfObject;
             return self.getMetaClass().getDispatcher().callMethod(context, self, self.getMetaClass(), methodID, methodName, IRubyObject.NULL_ARRAY, callType, block);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
+        public IRubyObject call(ThreadContext context, Object selfObject, IRubyObject arg1, Block block) {
+            IRubyObject self = (IRubyObject)selfObject;
             return self.getMetaClass().getDispatcher().callMethod(context, self, self.getMetaClass(), methodID, methodName, new IRubyObject[] {arg1}, callType, block);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
+        public IRubyObject call(ThreadContext context, Object selfObject, IRubyObject arg1, IRubyObject arg2, Block block) {
+            IRubyObject self = (IRubyObject)selfObject;
             return self.getMetaClass().getDispatcher().callMethod(context, self, self.getMetaClass(), methodID, methodName, new IRubyObject[] {arg1, arg2}, callType, block);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        public IRubyObject call(ThreadContext context, Object selfObject, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+            IRubyObject self = (IRubyObject)selfObject;
             return self.getMetaClass().getDispatcher().callMethod(context, self, self.getMetaClass(), methodID, methodName, new IRubyObject[] {arg1, arg2, arg3}, callType, block);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        public IRubyObject call(ThreadContext context, Object selfObject, IRubyObject[] args, Block block) {
+            IRubyObject self = (IRubyObject)selfObject;
             return self.getMetaClass().getDispatcher().callMethod(context, self, self.getMetaClass(), methodID, methodName, args, callType, block);
         }
     }

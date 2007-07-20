@@ -51,7 +51,7 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
 //        }
     }
 
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block);
+    public abstract IRubyObject call(ThreadContext context, Object self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block);
     
     public DynamicMethod dup() {
         try {

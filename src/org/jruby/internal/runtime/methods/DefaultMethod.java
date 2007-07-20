@@ -96,8 +96,9 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     /**
      * @see AbstractCallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+    public IRubyObject call(ThreadContext context, Object selfObject, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         assert args != null;
+        IRubyObject self = (IRubyObject)selfObject;
         
         RubyModule implementer = null;
         if (needsImplementer) {

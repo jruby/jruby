@@ -80,22 +80,22 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             // block
             if (closureArg == null) {
                 // no args, no block
-                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class));
+                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Object.class));
             } else {
                 // no args, with block
                 closureArg.compile(methodCompiler);
-                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, Block.class));
+                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Object.class, Block.class));
             }
         } else {
             argsCallback.compile(methodCompiler);
             // block
             if (closureArg == null) {
                 // with args, no block
-                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class));
+                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Object.class, IRubyObject[].class));
             } else {
                 // with args, with block
                 closureArg.compile(methodCompiler);
-                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
+                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Object.class, IRubyObject[].class, Block.class));
             }
         }
         // adapter, tc, recv, args{0,1}, block{0,1}]
