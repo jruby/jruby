@@ -618,3 +618,6 @@ test_exception(TypeError) { "s" << 256 }
 test_equal("s\001", "s" << 1)
 test_exception(NoMethodError) { +"s" }
 
+# JRUBY-1195
+"%mhello".scan(/%m/) { |v| "m" =~ /x/ }
+test_equal("hello", $');

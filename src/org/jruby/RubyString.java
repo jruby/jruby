@@ -2528,6 +2528,8 @@ public class RubyString extends RubyObject {
                 block.yield(context, sub);
             }
         }
+        
+        context.setBackref(matchdata(runtime, str, mat, utf8));
 
         return this;
     }
