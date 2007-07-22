@@ -60,8 +60,7 @@ public class ProcMethod extends DynamicMethod implements JumpTarget {
     /**
      * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject call(ThreadContext context, Object selfObject, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-        IRubyObject self = (IRubyObject)selfObject;
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         context.preMethodCall(implementationClass, klazz, self, name, args, getArity().required(), block, this);
         
         try {

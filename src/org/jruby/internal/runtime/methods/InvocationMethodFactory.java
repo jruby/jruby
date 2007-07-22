@@ -54,7 +54,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public final static CodegenUtils cg = CodegenUtils.cg;
     private final static String COMPILED_SUPER_CLASS = CompiledMethod.class.getName().replace('.','/');
     private final static String COMPILED_CALL_SIG = cg.sig(IRubyObject.class,
-            cg.params(ThreadContext.class, Object.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
+            cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
     private final static String COMPILED_SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ci(StaticScope.class) + ")V";
 
     private JRubyClassLoader classLoader;
@@ -138,11 +138,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 
                 mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
                 mv.visitCode();
-                
-                // this code is specific to IRubyObjects, so cast
-                mv.aload(RECEIVER_INDEX);
-                mv.checkcast(cg.p(IRubyObject.class));
-                mv.astore(RECEIVER_INDEX);
                 
                 // invoke pre method stuff
                 mv.aload(0); // load method to get callconfig

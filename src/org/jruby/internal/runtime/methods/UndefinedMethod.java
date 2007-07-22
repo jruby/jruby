@@ -50,7 +50,7 @@ public class UndefinedMethod extends DynamicMethod {
     }
 
     
-    public IRubyObject call(ThreadContext context, Object self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         throw new UnsupportedOperationException();
     }
 
