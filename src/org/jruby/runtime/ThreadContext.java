@@ -612,6 +612,14 @@ public final class ThreadContext {
         popRubyClass();
     }
     
+    public void preScopeNode(StaticScope staticScope) {
+        pushScope(new DynamicScope(staticScope, getCurrentScope()));
+    }
+
+    public void postScopeNode() {
+        popScope();
+    }
+
     public void preClassEval(StaticScope staticScope, RubyModule type) {
         pushRubyClass(type);
         pushFrameCopy();
