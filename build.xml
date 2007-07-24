@@ -148,7 +148,7 @@
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Main-Class" value="org.jruby.Main"/>
-        <attribute name="Class-Path" value="asm-2.2.3.jar asm-commons-2.2.3.jar jline-0.9.91.jar bsf.jar backport-util-concurrent.jar"/>
+        <attribute name="Class-Path" value="asm-2.2.3.jar asm-commons-2.2.3.jar asm-util-2.2.3.jar jline-0.9.91.jar bsf.jar backport-util-concurrent.jar"/>
       </manifest>
     </jar>
   </target>
@@ -167,6 +167,7 @@
         </fileset>
         <zipfileset src="${lib.dir}/asm-2.2.3.jar"/>
         <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
+        <zipfileset src="${lib.dir}/asm-util-2.2.3.jar"/>
         <zipfileset src="${lib.dir}/jline-0.9.91.jar"/>
       	<zipfileset src="${lib.dir}/backport-util-concurrent.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
@@ -217,6 +218,7 @@
         </fileset>
           <zipfileset src="${lib.dir}/asm-2.2.3.jar"/>
           <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
+          <zipfileset src="${lib.dir}/asm-util-2.2.3.jar"/>
           <zipfileset src="${lib.dir}/jline-0.9.91.jar"/>
       	  <zipfileset src="${lib.dir}/backport-util-concurrent.jar"/>
         <manifest>
