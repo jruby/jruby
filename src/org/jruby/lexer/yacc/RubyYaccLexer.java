@@ -1657,7 +1657,7 @@ public class RubyYaccLexer {
                     } else if (nondigit != '\0') {
                         throw new SyntaxException(getPosition(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 2);
+                    yaccValue = getInteger(tokenBuffer.toString(), 10);
                     return Tokens.tINTEGER;
                 case '0' : case '1' : case '2' : case '3' : case '4' : //Octal
                 case '5' : case '6' : case '7' : case '_' : 
