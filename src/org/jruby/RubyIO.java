@@ -525,8 +525,8 @@ public class RubyIO extends RubyObject {
 		    }
 		    
             return getRuntime().getNil();
-				} catch (EOFException e) {
-					  return getRuntime().getNil();
+        } catch (EOFException e) {
+            return getRuntime().getNil();
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (IOException e) {
@@ -927,9 +927,9 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
-		public IRubyObject closeWrite() {
-				return this;
-		}
+    public IRubyObject closeWrite() {
+        return this;
+    }
 
     /** Flushes the IO output stream.
      * 
@@ -1147,6 +1147,7 @@ public class RubyIO extends RubyObject {
             } else {
                 long len = RubyNumeric.num2long(args[0]);
                 if (len < 0) throw getRuntime().newArgumentError("negative length " + len + " given");
+                if (len == 0) return getRuntime().newString("");
                 buf = handler.read((int)len);
             }
 
