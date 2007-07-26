@@ -75,7 +75,7 @@ public class RubyTCPSocket extends RubyIPSocket {
 
     public IRubyObject initialize(IRubyObject arg1, IRubyObject port) {
         if (port instanceof RubyString) {
-            port = RubyNumeric.str2inum(getRuntime(), (RubyString)port, 10, true);
+            port = RubyNumeric.str2inum(getRuntime(), (RubyString)port, 0, true);
         }
         int porti = RubyNumeric.fix2int(port);
         try {
