@@ -45,10 +45,10 @@ import java.io.Serializable;
  * @author jpetersen
  */
 public final class Visibility implements Serializable {
-	private static final short PUBLIC_VALUE = (short) 1;
-	private static final short PROTECTED_VALUE = (short) 2;
-	private static final short PRIVATE_VALUE = (short) 4;
-	private static final short MODULE_FUNCTION_VALUE = (short) 8;
+    public static final short PUBLIC_VALUE = (short) 1;
+    public static final short PROTECTED_VALUE = (short) 2;
+    public static final short PRIVATE_VALUE = (short) 4;
+    public static final short MODULE_FUNCTION_VALUE = (short) 8;
     public static final Visibility PUBLIC = new Visibility(PUBLIC_VALUE);
     public static final Visibility PROTECTED = new Visibility(PROTECTED_VALUE);
     public static final Visibility PRIVATE = new Visibility(PRIVATE_VALUE);
@@ -56,7 +56,7 @@ public final class Visibility implements Serializable {
     public static final Visibility PUBLIC_PROTECTED = 
     	new Visibility((short) (PUBLIC_VALUE | PROTECTED_VALUE));
 
-    private final short restore;
+    public final short value;
 
     static final long serialVersionUID = 2002102900L;
 
@@ -64,34 +64,34 @@ public final class Visibility implements Serializable {
      * Constructor for MethodScope.
      */
     private Visibility(short restore) {
-        this.restore = restore;
+        this.value = restore;
     }
 
     public boolean isPublic() {
-        return (restore & PUBLIC_VALUE) != 0;
+        return (value & PUBLIC_VALUE) != 0;
     }
 
     public boolean isProtected() {
-        return (restore & PROTECTED_VALUE) != 0;
+        return (value & PROTECTED_VALUE) != 0;
     }
 
     public boolean isPrivate() {
-        return (restore & PRIVATE_VALUE) != 0;
+        return (value & PRIVATE_VALUE) != 0;
     }
     
     public boolean isModuleFunction() {
-        return (restore & MODULE_FUNCTION_VALUE) != 0;
+        return (value & MODULE_FUNCTION_VALUE) != 0;
     }
     
     public boolean is(Visibility other) {
-    	return (restore & other.restore) != 0;
+    	return (value & other.value) != 0;
     }
 
     public String toString() {
     	// XXXEnebo: will only print out actual visibilities
     	// and not masks
-        switch (restore) {
-            case 1:
+        switch (value) {
+                        case 1:
                 return "public";
             case 2:
                 return "protected";
@@ -100,7 +100,7 @@ public final class Visibility implements Serializable {
             case 8:
                 return "module_function";
             default:
-                return "mixed mask: " + restore;
+                return "mixed mask: " + value;
         }
     }
 }
