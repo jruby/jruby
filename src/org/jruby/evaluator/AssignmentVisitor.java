@@ -131,7 +131,8 @@ public class AssignmentVisitor {
 
     private static void classVarAsgnNode(ThreadContext context, Node node, IRubyObject value) {
         ClassVarAsgnNode iVisited = (ClassVarAsgnNode)node;
-        context.getRubyClass().setClassVar(iVisited.getName(), value);
+        RubyModule rubyClass = EvaluationState.getClassVariableBase(context, context.getRuntime());
+        rubyClass.setClassVar(iVisited.getName(), value);
     }
 
     private static void classVarDeclNode(Ruby runtime, ThreadContext context, Node node, IRubyObject value) {
@@ -141,7 +142,8 @@ public class AssignmentVisitor {
             runtime.getWarnings().warn(iVisited.getPosition(),
                     "Declaring singleton class variable.");
         }
-        context.getRubyClass().setClassVar(iVisited.getName(), value);
+        RubyModule rubyClass = EvaluationState.getClassVariableBase(context, context.getRuntime());
+        rubyClass.setClassVar(iVisited.getName(), value);
     }
 
     private static void constDeclNode(Ruby runtime, ThreadContext context, IRubyObject self, Node node, IRubyObject value, Block block) {

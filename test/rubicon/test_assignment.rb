@@ -135,6 +135,19 @@ class TestAssignment < Test::Unit::TestCase
     
     assert_equal([0, 1, 2, [3, 4], 5, 6, [7, 8]], [a,b,c,d,e,f,g])
   end
-
+  
+  class Bar
+    class << self
+      @@foo = {}
+      def bar
+        a, @@foo = 1, {:a=>:b}
+        @@foo
+      end
+    end
+  end
+  
+  def test_multiple_assignment_class_vars
+    assert_equal({:a=>:b}, Bar.bar)
+  end
 end
 
