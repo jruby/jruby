@@ -28,6 +28,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -62,22 +63,22 @@ public class CompiledBlock extends Block {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return yield(context, args, null, null, true);
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
     }
     
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue) {
+    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
         if (klass == null) {
             self = this.self;
             frame.setSelf(self);
         }
         IRubyObject[] realArgs = null;
-//        if (aValue) {
-//            realArgs = args;
-//        } else {
-//            realArgs = ArgsUtil.convertToJavaArray(args[0]);
-//        }
-        // FIXME: Assuming it's already set up correctly when it gets here?
-        realArgs = args;
+        if (!aValue) {
+            // handle as though it's just an array coming in...i.e. it should be multiassigned or just assigned as is to var 0.
+            // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], since single vars will want that anyway
+            realArgs = new IRubyObject[] {args};
+        } else {
+            realArgs = ArgsUtil.convertToJavaArray(args);
+        }
         try {
             pre(context, klass);
             return callback.call(context, self, realArgs);

@@ -62,7 +62,7 @@ public class CallBlock extends Block {
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return yield(context, new IRubyObject[] {value}, null, null, false);
+        return yield(context, value, null, null, false);
     }
 
     /**
@@ -75,7 +75,7 @@ public class CallBlock extends Block {
      * @param aValue Should value be arrayified or not?
      * @return
      */
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, 
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue) {
         if (klass == null) {
             self = this.self;
@@ -85,6 +85,7 @@ public class CallBlock extends Block {
         pre(context, klass);
 
         try {
+            IRubyObject[] args = new IRubyObject[] {value};
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {

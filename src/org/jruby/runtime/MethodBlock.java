@@ -99,7 +99,7 @@ public class MethodBlock extends Block{
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return yield(context, args, null, null, true);
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
     }
     
     protected void pre(ThreadContext context, RubyModule klass) {
@@ -111,7 +111,7 @@ public class MethodBlock extends Block{
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return yield(context, new IRubyObject[] {value}, null, null, false);
+        return yield(context, value, null, null, false);
     }
 
     /**
@@ -124,7 +124,7 @@ public class MethodBlock extends Block{
      * @param aValue Should value be arrayified or not?
      * @return
      */
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, 
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue) {
         if (klass == null) {
             self = this.self;
@@ -137,7 +137,7 @@ public class MethodBlock extends Block{
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    return callback.execute(RubyArray.newArrayNoCopyLight(context.getRuntime(), args), new IRubyObject[] { method, self }, NULL_BLOCK);
+                    return callback.execute(value, new IRubyObject[] { method, self }, NULL_BLOCK);
                 } catch (JumpException.RedoJump rj) {
                     context.pollThreadEvents();
                     // do nothing, allow loop to redo

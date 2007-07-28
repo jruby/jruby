@@ -1776,12 +1776,7 @@ public class EvaluationState {
 
         Block block = context.getCurrentFrame().getBlock();
 
-        if (iVisited.getCheckState()) {
-            // unwrap rubyarray as direct arguments for passing to yield
-            return block.yield(context, ((RubyArray)result).toJavaArray(), null, null, true);
-        }
-        
-        return block.yield(context, new IRubyObject[] {result}, null, null, iVisited.getCheckState());
+        return block.yield(context, result, null, null, iVisited.getCheckState());
     }
 
     private static IRubyObject zArrayNode(Ruby runtime) {

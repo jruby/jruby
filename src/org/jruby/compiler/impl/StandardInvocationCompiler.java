@@ -235,17 +235,17 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             method.aconst_null();
         }
 
-        if (unwrap) {
-            method.checkcast(cg.p(RubyArray.class));
-            method.invokevirtual(cg.p(RubyArray.class), "toJavaArray", cg.sig(IRubyObject[].class));
-        } else {
-            methodCompiler.createObjectArray(1);
-        }
+//        if (unwrap) {
+//            method.checkcast(cg.p(RubyArray.class));
+//            method.invokevirtual(cg.p(RubyArray.class), "toJavaArray", cg.sig(IRubyObject[].class));
+//        } else {
+//            methodCompiler.createObjectArray(1);
+//        }
 
         method.aconst_null();
         method.aconst_null();
         method.ldc(new Boolean(unwrap));
 
-        method.invokevirtual(cg.p(Block.class), "yield", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject[].class, IRubyObject.class, RubyModule.class, Boolean.TYPE)));
+        method.invokevirtual(cg.p(Block.class), "yield", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyModule.class, Boolean.TYPE)));
     }
 }

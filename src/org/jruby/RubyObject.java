@@ -835,13 +835,16 @@ public class RubyObject implements Cloneable, IRubyObject {
 
                 block.setVisibility(Visibility.PUBLIC);
                 try {
+                    IRubyObject valueInYield;
                     boolean aValue;
                     if (args.length == 1) {
+                        valueInYield = args[0];
                         aValue = false;
                     } else {
+                        valueInYield = RubyArray.newArray(getRuntime(), args);
                         aValue = true;
                     }
-                    return block.yield(context, args, selfInYield, context.getRubyClass(), aValue);
+                    return block.yield(context, valueInYield, selfInYield, context.getRubyClass(), aValue);
                     //TODO: Should next and return also catch here?
                 } catch (JumpException.BreakJump bj) {
                         return (IRubyObject) bj.getValue();
