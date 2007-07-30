@@ -79,8 +79,6 @@ import org.jruby.util.collections.IntHashMap;
 
 public class JavaClass extends JavaObject {
 
-    private static boolean DEBUG = false;
-
     private static class AssignedName {
         // to override an assigned name, the type must be less than
         // or equal to the assigned type. so a field name in a subclass
@@ -150,25 +148,25 @@ public class JavaClass extends JavaObject {
         boolean isProtected() {
             return visibility == Visibility.PROTECTED;
         }
-        void logMessage(IRubyObject self, IRubyObject[] args) {
-            if (!DEBUG) {
-                return;
-            }
-            String type;
-            switch (this.type) {
-            case STATIC_FIELD: type = "static field"; break;
-            case STATIC_METHOD: type = "static method"; break;
-            case INSTANCE_FIELD: type = "instance field"; break;
-            case INSTANCE_METHOD: type = "instance method"; break;
-            default: type = "?"; break;
-            }
-            StringBuffer b = new StringBuffer(type).append(" => '").append(name)
-                .append("'; args.length = ").append(args.length);
-            for (int i = 0; i < args.length; i++) {
-                b.append("\n   arg[").append(i).append("] = ").append(args[i]);
-            }
-            System.out.println(b);
-        }
+//        void logMessage(IRubyObject self, IRubyObject[] args) {
+//            if (!DEBUG) {
+//                return;
+//            }
+//            String type;
+//            switch (this.type) {
+//            case STATIC_FIELD: type = "static field"; break;
+//            case STATIC_METHOD: type = "static method"; break;
+//            case INSTANCE_FIELD: type = "instance field"; break;
+//            case INSTANCE_METHOD: type = "instance method"; break;
+//            default: type = "?"; break;
+//            }
+//            StringBuffer b = new StringBuffer(type).append(" => '").append(name)
+//                .append("'; args.length = ").append(args.length);
+//            for (int i = 0; i < args.length; i++) {
+//                b.append("\n   arg[").append(i).append("] = ").append(args[i]);
+//            }
+//            System.out.println(b);
+//        }
     }
 
     private static abstract class FieldCallback extends NamedCallback {
@@ -194,7 +192,7 @@ public class JavaClass extends JavaObject {
             proxy.getSingletonClass().defineFastMethod(this.name,this,this.visibility);
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            logMessage(self,args);
+            //logMessage(self,args);
             if (javaField == null) {
                 javaField = new JavaField(getRuntime(),field);
             }
@@ -214,7 +212,7 @@ public class JavaClass extends JavaObject {
             proxy.getSingletonClass().defineFastMethod(this.name,this,this.visibility);
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            logMessage(self,args);
+            //logMessage(self,args);
             if (javaField == null) {
                 javaField = new JavaField(getRuntime(),field);
             }
@@ -236,7 +234,7 @@ public class JavaClass extends JavaObject {
             proxy.defineFastMethod(this.name,this,this.visibility);
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            logMessage(self,args);
+            //logMessage(self,args);
             if (javaField == null) {
                 javaField = new JavaField(getRuntime(),field);
             }
@@ -258,7 +256,7 @@ public class JavaClass extends JavaObject {
             proxy.defineFastMethod(this.name,this,this.visibility);
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            logMessage(self,args);
+            //logMessage(self,args);
             if (javaField == null) {
                 javaField = new JavaField(getRuntime(),field);
             }
@@ -358,7 +356,7 @@ public class JavaClass extends JavaObject {
             }
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            logMessage(self,args);
+            //logMessage(self,args);
             if (javaMethod == null && javaMethods == null) {
                 createJavaMethods(self.getRuntime());
             }
@@ -409,7 +407,7 @@ public class JavaClass extends JavaObject {
             }
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            logMessage(self,args);
+            //logMessage(self,args);
             if (javaMethod == null && javaMethods == null) {
                 createJavaMethods(self.getRuntime());
             }
@@ -907,9 +905,7 @@ public class JavaClass extends JavaObject {
                 callbackFactory.getFastMethod("declared_classes"));
         result.defineFastMethod("declared_method", 
                 callbackFactory.getFastOptMethod("declared_method"));
-        result.defineFastMethod("define_instance_methods_for_proxy", 
-                callbackFactory.getFastMethod("define_instance_methods_for_proxy", IRubyObject.class));
-        
+
         result.getMetaClass().undefineMethod("new");
         result.getMetaClass().undefineMethod("allocate");
 
@@ -925,180 +921,6 @@ public class JavaClass extends JavaObject {
         return forName(recv.getRuntime(), name.asSymbol());
     }
     
-    // TODO: part of interim solution, can be removed soon
-    private Set getPublicFieldNames(boolean isStatic) {
-        // we're not checking for final here; since the purpose is to prevent
-        // shortcut property names from being created that conflict with
-        // field names, it won't make sense to allow the property setter (name=)
-        // to be created but not the getter.
-        int mask = Modifier.PUBLIC | Modifier.STATIC;
-        int want = isStatic ? Modifier.PUBLIC | Modifier.STATIC : Modifier.PUBLIC;
-        Set names = new HashSet();
-        names.add("class");
-        Field[] fields = ((Class)getValue()).getFields();
-        for (int i = fields.length; --i >= 0; ) {
-            if ((fields[i].getModifiers() & mask) == want) {
-                names.add(fields[i].getName());
-            }
-        }
-        return names;
-    }
-    
-    /**
-     *  Get all methods grouped by name (e.g. 'new => {new(), new(int), new(int, int)}, ...')
-     *  @param isStatic determines whether you want static or instance methods from the class
-     */
-    private Map getMethodsClumped(boolean isStatic, Set assignedNames) {
-        System.out.println("JC.gmc");
-        Map map = new HashMap();
-        if(((Class)getValue()).isInterface()) {
-            return map;
-        }
-
-        Method methods[] = javaClass().getMethods();
-        
-        for (int i = 0; i < methods.length; i++) {
-            if (isStatic != Modifier.isStatic(methods[i].getModifiers())) {
-                continue;
-            }
-            
-            String key = methods[i].getName();
-            RubyArray methodsWithName = (RubyArray) map.get(key); 
-            
-            if (methodsWithName == null) {
-                methodsWithName = RubyArray.newArrayLight(getRuntime());
-                map.put(key, methodsWithName);
-                assignedNames.add(key);
-            }
-            
-            methodsWithName.append(JavaMethod.create(getRuntime(), methods[i]));
-        }
-        
-        return map;
-    }
-    
-    private Map getPropertysClumped(Set assignedNames) {
-        System.out.println("JC.gpc");
-        Map map = new HashMap();
-        BeanInfo info;
-        
-        try {
-            info = Introspector.getBeanInfo(javaClass());
-        } catch (IntrospectionException e) {
-            return map;
-        }
-        
-        PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
-        System.out.println("got bean info for class " + javaClass().getName() + ": " + descriptors.length);
-        for (int i = 0; i < descriptors.length; i++) {
-            Method readMethod = descriptors[i].getReadMethod();
-            
-            if (readMethod != null) {
-                String key = readMethod.getName();
-                List aliases = (List) map.get(key);
-                
-                if (aliases == null) {
-                    aliases = new ArrayList();
-                    
-                    map.put(key, aliases);    
-                }
-
-                if (readMethod.getReturnType() == Boolean.class ||
-                    readMethod.getReturnType() == boolean.class) {
-                    aliases.add(descriptors[i].getName() + "?");
-                }
-                if (!assignedNames.contains(descriptors[i].getName())) {
-                    aliases.add(descriptors[i].getName());
-                }
-            }
-            
-            Method writeMethod = descriptors[i].getWriteMethod();
-
-            if (writeMethod != null) {
-                String key = writeMethod.getName();
-                List aliases = (List) map.get(key);
-                
-                if (aliases == null) {
-                    aliases = new ArrayList();
-                    map.put(key, aliases);
-                }
-                
-                if (!assignedNames.contains(descriptors[i].getName())) {
-                    aliases.add(descriptors[i].getName()  + "=");
-                }
-            }
-        }
-        
-        return map;
-    }
-    
-    private void define_instance_method_for_proxy(final RubyClass proxy, List names, 
-            final RubyArray methods) {
-        final RubyModule javaUtilities = JAVA_UTILITIES;
-        Callback method;
-        if(methods.size()>1) {
-            method = new Callback() {
-                    private IntHashMap matchingMethods = new IntHashMap();
-                    public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                        int len = args.length;
-                        IRubyObject[] argsArray = new IRubyObject[len + 1];
-                
-                        argsArray[0] = self.getInstanceVariable("@java_object");
-
-                        int argsTypeHash = 0;
-                        for (int j = 0; j < len; j++) {
-                            argsArray[j+1] = Java.ruby_to_java(proxy, args[j], Block.NULL_BLOCK);
-                            argsTypeHash += 3*args[j].getMetaClass().id;
-                        }
-
-                        IRubyObject match = (IRubyObject)matchingMethods.get(argsTypeHash);
-                        if (match == null) {
-                            match = Java.matching_method_internal(javaUtilities, methods, argsArray, 1, len);
-                            matchingMethods.put(argsTypeHash, match);
-                        }
-
-                        return Java.java_to_ruby(self, ((JavaMethod)match).invoke(argsArray), Block.NULL_BLOCK);
-                    }
-
-                    public Arity getArity() {
-                        return Arity.optional();
-                    }
-                };
-        } else {
-            final JavaMethod METHOD = (JavaMethod)methods.eltInternal(0);
-            method = new Callback() {
-                    public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                        int len = args.length;
-                        IRubyObject[] argsArray = new IRubyObject[len + 1];
-                        argsArray[0] = self.getInstanceVariable("@java_object");
-                        for(int j = 0; j < len; j++) {
-                            argsArray[j+1] = Java.ruby_to_java(proxy, args[j], Block.NULL_BLOCK);
-                        }
-                        return Java.java_to_ruby(self, METHOD.invoke(argsArray), Block.NULL_BLOCK);
-                    }
-
-                    public Arity getArity() {
-                        return Arity.optional();
-                    }
-                };
-        }
-        
-        for(Iterator iter = names.iterator(); iter.hasNext(); ) {
-            String methodName = (String) iter.next();
-            
-            // We do not override class since it is too important to be overridden by getClass
-            // short name.
-            if (!methodName.equals("class")) {
-                proxy.defineFastMethod(methodName, method);
-                
-                String rubyCasedName = getRubyCasedName(methodName);
-                if (rubyCasedName != null) {
-                    proxy.defineAlias(rubyCasedName, methodName);
-                }
-            }
-        }
-    }
-    
     private static final Callback __jsend_method = new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                 String name = args[0].asSymbol();
@@ -1109,16 +931,10 @@ public class JavaClass extends JavaObject {
 
                 IRubyObject[] newArgs = new IRubyObject[args.length - 1];
                 System.arraycopy(args, 1, newArgs, 0, newArgs.length);
-                if (DEBUG)
-                    System.out.println("__jsend method => '" + name + "'; arity = " + v + ", args.length = " + newArgs.length);
-                
+
                 if(v < 0 || v == (newArgs.length)) {
-                    if (DEBUG)
-                        System.out.println("  calling self");
                     return self.callMethod(self.getRuntime().getCurrentContext(), name, newArgs, CallType.FUNCTIONAL, block);
                 } else {
-                    if (DEBUG)
-                        System.out.println("  calling super");
                     return self.callMethod(self.getRuntime().getCurrentContext(),self.getMetaClass().getSuperClass(), name, newArgs, CallType.SUPER, block);
                 }
             }
@@ -1127,34 +943,6 @@ public class JavaClass extends JavaObject {
                 return Arity.optional();
             }
         };
-
-    public IRubyObject define_instance_methods_for_proxy(IRubyObject arg) {
-        assert arg instanceof RubyClass;
-        // shouldn't be getting called any more
-        System.out.println("JC.define_instance_methods_for_proxy");
-        Set assignedNames = getPublicFieldNames(false);
-        Map methodsClump = getMethodsClumped(false,assignedNames);
-        Map aliasesClump = getPropertysClumped(assignedNames);
-        RubyClass proxy = (RubyClass) arg;
-
-        proxy.defineFastMethod("__jsend!", __jsend_method);
-        
-        for (Iterator iter = methodsClump.keySet().iterator(); iter.hasNext(); ) {
-            String name = (String) iter.next();
-            RubyArray methods = (RubyArray) methodsClump.get(name);
-            List aliases = (List) aliasesClump.get(name);
-
-            if (aliases == null) {
-                aliases = new ArrayList();
-            }
-
-            aliases.add(name);
-            
-            define_instance_method_for_proxy(proxy, aliases, methods);
-        }
-        
-        return getRuntime().getNil();
-    }
 
     public RubyBoolean public_p() {
         return getRuntime().newBoolean(Modifier.isPublic(javaClass().getModifiers()));
@@ -1292,28 +1080,33 @@ public class JavaClass extends JavaObject {
     }
     
     public RubyArray declared_classes() {
-       // TODO: should be able to partially work around this by calling
-       // javaClass().getClasses, which will return any public inner classes.
-       if (Ruby.isSecurityRestricted()) // Can't even get inner classes?
-           return getRuntime().newArray(0);
-        Class[] classes = javaClass().getDeclaredClasses();
-        List accessibleClasses = new ArrayList();
-        for (int i = 0; i < classes.length; i++) {
-            if (Modifier.isPublic(classes[i].getModifiers())) {
-                accessibleClasses.add(classes[i]);
+        Ruby runtime = getRuntime();
+        RubyArray result = runtime.newArray();
+        Class javaClass = javaClass();
+        try {
+            Class[] classes = javaClass.getDeclaredClasses();
+            for (int i = 0; i < classes.length; i++) {
+                if (Modifier.isPublic(classes[i].getModifiers())) {
+                    result.append(get(runtime, classes[i]));
+                }
             }
-        }
-        return buildClasses((Class[]) accessibleClasses.toArray(new Class[accessibleClasses.size()]));
-    }
-    
-    private RubyArray buildClasses(Class [] classes) {
-        RubyArray result = getRuntime().newArray(classes.length);
-        for (int i = 0; i < classes.length; i++) {
-            result.append(new JavaClass(getRuntime(), classes[i]));
+        } catch (SecurityException e) {
+            // restrictive security policy; no matter, we only want public
+            // classes anyway
+            try {
+                Class[] classes = javaClass.getClasses();
+                for (int i = 0; i < classes.length; i++) {
+                    if (javaClass == classes[i].getDeclaringClass()) {
+                        result.append(get(runtime, classes[i]));
+                    }
+                }
+            } catch (SecurityException e2) {
+                // very restrictive policy (disallows Member.PUBLIC)
+                // we'd never actually get this far in that case
+            }
         }
         return result;
     }
-    
 
     public RubyArray declared_constructors() {
         return buildConstructors(javaClass().getDeclaredConstructors());
