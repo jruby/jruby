@@ -408,4 +408,41 @@ public interface MethodCompiler {
     public void backrefMethod(String methodName);
     
     public void nullToNil();
+
+    /**
+     * Makes sure that the code in protectedCode will always run after regularCode.
+     */
+    public void protect(BranchCallback regularCode, BranchCallback protectedCode);
+    public void rescue(BranchCallback regularCode, Class exception, BranchCallback protectedCode);
+    public void inDefined();
+    public void outDefined();
+    public void stringOrNil();
+    public void pushNull();
+    public void isMethodBound(String name, BranchCallback trueBranch, BranchCallback falseBranch);
+    public void hasBlock(BranchCallback trueBranch, BranchCallback falseBranch);
+    public void isGlobalDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);
+    public void isConstantDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);
+    public void isInstanceVariableDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);
+    public void isClassVarDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);
+    public Object getNewEnding();
+    public void ifNull(Object gotoToken);
+    public void ifNotNull(Object gotoToken);
+    public void setEnding(Object endingToken);
+    public void go(Object gotoToken);
+    public void isConstantBranch(BranchCallback setup, BranchCallback isConstant, BranchCallback isMethod, BranchCallback none, String name);
+    public void metaclass();
+    public void getVisibilityFor(String name);
+    public void isPrivate(Object gotoToken, int toConsume);
+    public void isNotProtected(Object gotoToken, int toConsume);
+    public void selfIsKindOf(Object gotoToken);
+    public void loadCurrentModule();
+    public void notIsModuleAndClassVarDefined(String name, Object gotoToken);
+    public void loadSelf();
+    public void ifSingleton(Object gotoToken);
+    public void getInstanceVariable(String name);
+    public void getFrameName();
+    public void getFrameKlazz(); 
+    public void superClass();
+    public void ifNotSuperMethodBound(Object token);
+    public void debug(String str);
 }

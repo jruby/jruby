@@ -201,6 +201,9 @@ public class ASTInspector {
         case NodeTypes.DEFNNODE:
             hasDef = true;
             break;
+        case NodeTypes.DEFINEDNODE:
+            disable();
+            break;
         case NodeTypes.DOTNODE:
             DotNode dotNode = (DotNode)node;
             inspect(dotNode.getBeginNode());
@@ -276,6 +279,9 @@ public class ASTInspector {
             OpAsgnNode opAsgnNode = (OpAsgnNode)node;
             inspect(opAsgnNode.getReceiverNode());
             inspect(opAsgnNode.getValueNode());
+            break;
+        case NodeTypes.OPASGNORNODE:
+            disable(); // Depends on defined
             break;
         case NodeTypes.ORNODE:
             OrNode orNode = (OrNode)node;

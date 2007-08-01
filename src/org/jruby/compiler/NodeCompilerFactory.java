@@ -36,19 +36,23 @@ import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AttrAssignNode;
+import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
+import org.jruby.ast.BinaryOperatorNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BreakNode;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon2Node;
+import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DVarNode;
+import org.jruby.ast.DefinedNode;
 import org.jruby.ast.DefnNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EvStrNode;
@@ -74,6 +78,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.NodeTypes;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.NthRefNode;
+import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.RegexpNode;
@@ -82,12 +87,15 @@ import org.jruby.ast.RootNode;
 import org.jruby.ast.SValueNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.StrNode;
+import org.jruby.ast.SuperNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
+import org.jruby.util.ByteList;
+import org.jruby.exceptions.JumpException;
 
 /**
  *
@@ -152,6 +160,11 @@ public class NodeCompilerFactory {
         case NodeTypes.DASGNNODE:
             compileDAsgn(node, context);
             break;
+            /* Needs more work; mostly the try-catch and try-finally problems
+        case NodeTypes.DEFINEDNODE:
+            compileDefined(node, context);
+            break;
+            */
         case NodeTypes.DEFNNODE:
             compileDefn(node, context);
             break;
@@ -236,6 +249,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.OPASGNNODE:
             compileOpAsgn(node, context);
+            break;
+        case NodeTypes.OPASGNANDNODE:
+            compileOpAsgnAnd(node, context);
             break;
         case NodeTypes.ORNODE:
             compileOr(node, context);
@@ -602,6 +618,417 @@ public class NodeCompilerFactory {
         }
     }
     
+    public static void compileDefined(final Node node, MethodCompiler context) {
+        BranchCallback reg = new BranchCallback() {
+                public void branch(MethodCompiler context) {
+                    context.inDefined();
+                    compileGetDefinition(((DefinedNode)node).getExpressionNode(), context);
+                }
+            };
+        BranchCallback out = new BranchCallback() {
+                public void branch(MethodCompiler context) {
+                    context.outDefined();
+                }
+            };
+        context.protect(reg,out);
+        context.nullToNil();
+    }
+
+    public static void compileGetArgumentDefinition(final Node node, MethodCompiler context, String type) {
+        if (node == null) {
+            context.createNewString(ByteList.create(type));
+        } else if(node instanceof ArrayNode) {
+            Object endToken = context.getNewEnding();
+            for (int i = 0; i < ((ArrayNode)node).size(); i++) {
+                Node iterNode = ((ArrayNode)node).get(i);
+                compileGetDefinition(iterNode, context);
+                context.ifNull(endToken);
+            }
+            context.createNewString(ByteList.create(type));
+            Object realToken = context.getNewEnding();
+            context.go(realToken);
+            context.setEnding(endToken);
+            context.pushNull();
+            context.setEnding(realToken);
+        } else {
+            compileGetDefinition(node, context);
+            Object endToken = context.getNewEnding();
+            context.ifNull(endToken);
+            context.createNewString(ByteList.create(type));
+            Object realToken = context.getNewEnding();
+            context.go(realToken);
+            context.setEnding(endToken);
+            context.pushNull();
+            context.setEnding(realToken);
+        }
+    }
+
+    public static void compileGetDefinition(final Node node, MethodCompiler context) {
+        switch(node.nodeId) {
+        case NodeTypes.CLASSVARASGNNODE: case NodeTypes.CLASSVARDECLNODE: case NodeTypes.CONSTDECLNODE:
+        case NodeTypes.DASGNNODE: case NodeTypes.GLOBALASGNNODE: case NodeTypes.LOCALASGNNODE:
+        case NodeTypes.MULTIPLEASGNNODE: case NodeTypes.OPASGNNODE: case NodeTypes.OPELEMENTASGNNODE:
+            context.createNewString(ByteList.create("assignment"));
+            break;
+        case NodeTypes.BACKREFNODE:
+            context.createNewString(ByteList.create("$" + ((BackRefNode) node).getType()));
+            break;
+        case NodeTypes.DVARNODE:
+            context.createNewString(ByteList.create("local-variable(in-block)"));
+            break;
+        case NodeTypes.FALSENODE:
+            context.createNewString(ByteList.create("false"));
+            break;
+        case NodeTypes.TRUENODE:
+            context.createNewString(ByteList.create("true"));
+            break;
+        case NodeTypes.LOCALVARNODE:
+            context.createNewString(ByteList.create("local-variable"));
+            break;
+        case NodeTypes.MATCH2NODE: case NodeTypes.MATCH3NODE:
+            context.createNewString(ByteList.create("method"));
+            break;
+        case NodeTypes.NILNODE:
+            context.createNewString(ByteList.create("nil"));
+            break;
+        case NodeTypes.NTHREFNODE:
+            context.createNewString(ByteList.create("$" + ((NthRefNode) node).getMatchNumber()));
+            break;
+        case NodeTypes.SELFNODE:
+            context.createNewString(ByteList.create("self"));
+            break;
+        case NodeTypes.VCALLNODE:
+            context.loadSelf();
+            context.isMethodBound(((VCallNode)node).getName(),
+                                  new BranchCallback(){
+                                      public void branch(MethodCompiler context){
+                                          context.createNewString(ByteList.create("method"));
+                                      }
+                                  },
+                                  new BranchCallback(){
+                                      public void branch(MethodCompiler context){
+                                          context.pushNull();
+                                      }
+                                  });
+            break;
+        case NodeTypes.YIELDNODE:
+            context.hasBlock(new BranchCallback(){
+                    public void branch(MethodCompiler context){
+                        context.createNewString(ByteList.create("yield"));
+                    }
+                },
+                new BranchCallback(){
+                    public void branch(MethodCompiler context){
+                        context.pushNull();
+                    }
+                });
+            break;
+        case NodeTypes.GLOBALVARNODE:
+            context.isGlobalDefined(((GlobalVarNode) node).getName(),
+                                    new BranchCallback(){
+                                        public void branch(MethodCompiler context){
+                                            context.createNewString(ByteList.create("global-variable"));
+                                        }
+                                    },
+                                    new BranchCallback(){
+                                        public void branch(MethodCompiler context){
+                                            context.pushNull();
+                                        }
+                                    });
+            break;
+        case NodeTypes.INSTVARNODE:
+            context.isInstanceVariableDefined(((InstVarNode) node).getName(),
+                                              new BranchCallback(){
+                                                  public void branch(MethodCompiler context){
+                                                      context.createNewString(ByteList.create("instance-variable"));
+                                                  }
+                                              },
+                                              new BranchCallback(){
+                                                  public void branch(MethodCompiler context){
+                                                      context.pushNull();
+                                                  }
+                                              });
+            break;
+        case NodeTypes.CONSTNODE:
+            context.isConstantDefined(((ConstNode) node).getName(),
+                                      new BranchCallback(){
+                                          public void branch(MethodCompiler context){
+                                              context.createNewString(ByteList.create("constant"));
+                                          }
+                                      },
+                                      new BranchCallback(){
+                                          public void branch(MethodCompiler context){
+                                              context.pushNull();
+                                          }
+                                      });
+            break;
+        case NodeTypes.FCALLNODE:
+            context.loadSelf();
+            context.isMethodBound(((FCallNode)node).getName(),
+                                  new BranchCallback(){
+                                      public void branch(MethodCompiler context){
+                                          compileGetArgumentDefinition(((FCallNode)node).getArgsNode(), context, "method");
+                                      }
+                                  },
+                                  new BranchCallback(){
+                                      public void branch(MethodCompiler context){
+                                          context.pushNull();
+                                      }
+                                  });
+            break;
+        case NodeTypes.COLON3NODE:
+        case NodeTypes.COLON2NODE: {
+            final Colon3Node iVisited = (Colon3Node) node;
+
+            final String name = iVisited.getName();
+
+            BranchCallback setup = new BranchCallback() {
+                    public void branch(MethodCompiler context){
+                        if(iVisited instanceof Colon2Node) {
+                            final Node leftNode = ((Colon2Node)iVisited).getLeftNode();
+                            NodeCompilerFactory.compile(leftNode, context);
+                        } else {
+                            context.loadObject();
+                        }
+                    }
+                };
+            BranchCallback isConstant = new BranchCallback() {
+                    public void branch(MethodCompiler context){
+                        context.createNewString(ByteList.create("constant"));
+                    }
+                };
+            BranchCallback isMethod = new BranchCallback() {
+                    public void branch(MethodCompiler context){
+                        context.createNewString(ByteList.create("method"));
+                    }
+                };
+            BranchCallback none = new BranchCallback() {
+                    public void branch(MethodCompiler context){
+                        context.pushNull();
+                    }
+                };
+            context.isConstantBranch(setup, isConstant, isMethod, none, name);
+        }
+            break;
+        case NodeTypes.CALLNODE: {
+            final CallNode iVisited = (CallNode) node;
+            Object isnull = context.getNewEnding();
+            Object ending = context.getNewEnding();
+            NodeCompilerFactory.compileGetDefinition(iVisited.getReceiverNode(), context);
+            context.ifNull(isnull);
+
+            context.rescue(new BranchCallback() {
+                    public void branch(MethodCompiler context) {
+                        NodeCompilerFactory.compile(iVisited.getReceiverNode(), context); //[IRubyObject]
+                        context.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
+                        context.metaclass(); //[IRubyObject, RubyClass]
+                        context.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
+                        context.getVisibilityFor(iVisited.getName()); //[IRubyObject, RubyClass, Visibility]
+                        context.duplicateCurrentValue(); //[IRubyObject, RubyClass, Visibility, Visibility]
+                        final Object isfalse = context.getNewEnding();
+                        Object isreal = context.getNewEnding();
+                        Object ending = context.getNewEnding();
+                        context.isPrivate(isfalse,3); //[IRubyObject, RubyClass, Visibility]
+                        context.isNotProtected(isreal,1); //[IRubyObject, RubyClass]
+                        context.selfIsKindOf(isreal); //[IRubyObject]
+                        context.consumeCurrentValue();
+                        context.go(isfalse);
+                        context.setEnding(isreal); //[]
+                        
+                        context.isMethodBound(iVisited.getName(), new BranchCallback(){
+                                public void branch(MethodCompiler context) {
+                                    compileGetArgumentDefinition(iVisited.getArgsNode(), context, "method");
+                                }
+                            }, 
+                            new BranchCallback(){
+                                public void branch(MethodCompiler context) { 
+                                    context.go(isfalse); 
+                                }
+                            });
+                        context.go(ending);
+                        context.setEnding(isfalse);
+                        context.pushNull();
+                        context.setEnding(ending);
+                    }}, JumpException.class,
+                new BranchCallback() {
+                        public void branch(MethodCompiler context) {
+                            context.pushNull();
+                        }});
+
+            //          context.swapValues();
+            //context.consumeCurrentValue();
+            context.go(ending);
+            context.setEnding(isnull);            
+            context.pushNull();
+            context.setEnding(ending); 
+        }
+            break;
+        case NodeTypes.CLASSVARNODE: {
+            ClassVarNode iVisited = (ClassVarNode) node;
+            final Object ending = context.getNewEnding();
+            Object failure = context.getNewEnding();
+            Object second = context.getNewEnding();
+            Object third = context.getNewEnding();
+            
+            context.loadCurrentModule(); //[RubyClass]
+            context.duplicateCurrentValue(); //[RubyClass, RubyClass]
+            context.ifNotNull(second); //[RubyClass]
+            context.consumeCurrentValue(); //[]
+            context.loadSelf(); //[self]
+            context.metaclass(); //[RubyClass]
+            context.duplicateCurrentValue(); //[RubyClass, RubyClass]
+            context.isClassVarDefined(iVisited.getName(),                 
+                                      new BranchCallback() {
+                                          public void branch(MethodCompiler context) {
+                                              context.consumeCurrentValue();
+                                              context.createNewString(ByteList.create("class_variable"));
+                                              context.go(ending);
+                                          }},
+                                      new BranchCallback() {
+                                          public void branch(MethodCompiler context) {}});
+            context.setEnding(second);  //[RubyClass]
+            context.duplicateCurrentValue(); //[RubyClass, RubyClass]
+            context.ifSingleton(third); //[RubyClass]
+            context.duplicateCurrentValue();
+            context.isClassVarDefined(iVisited.getName(),
+                                      new BranchCallback() {
+                                          public void branch(MethodCompiler context) {
+                                              context.consumeCurrentValue();
+                                              context.createNewString(ByteList.create("class_variable"));
+                                              context.go(ending);
+                                          }},
+                                      new BranchCallback() {
+                                          public void branch(MethodCompiler context) {
+                                          }});
+            context.setEnding(third); //[RubyClass]
+            context.getInstanceVariable("__attached__");  //[RubyClass]
+            context.notIsModuleAndClassVarDefined(iVisited.getName(), failure); //[]
+            context.createNewString(ByteList.create("class_variable"));
+            context.go(ending);
+            context.setEnding(failure);
+            context.pushNull();
+            context.setEnding(ending);
+        }
+            break;
+        case NodeTypes.ZSUPERNODE: {
+            Object fail = context.getNewEnding();
+            Object fail2 = context.getNewEnding();
+            Object fail_easy = context.getNewEnding();
+            Object ending = context.getNewEnding();
+
+            context.getFrameName(); //[String]
+            context.duplicateCurrentValue(); //[String, String]
+            context.ifNull(fail); //[String]
+            context.getFrameKlazz(); //[String, RubyClass]
+            context.duplicateCurrentValue(); //[String, RubyClass, RubyClass]
+            context.ifNull(fail2); //[String, RubyClass]
+            context.superClass();
+            context.ifNotSuperMethodBound(fail_easy);
+
+            context.createNewString(ByteList.create("super"));
+            context.go(ending);
+            
+            context.setEnding(fail2);
+            context.consumeCurrentValue();
+            context.setEnding(fail);
+            context.consumeCurrentValue();
+            context.setEnding(fail_easy);
+            context.pushNull();
+            context.setEnding(ending);
+        }
+            break;
+        case NodeTypes.SUPERNODE: {
+            Object fail = context.getNewEnding();
+            Object fail2 = context.getNewEnding();
+            Object fail_easy = context.getNewEnding();
+            Object ending = context.getNewEnding();
+
+            context.getFrameName(); //[String]
+            context.duplicateCurrentValue(); //[String, String]
+            context.ifNull(fail); //[String]
+            context.getFrameKlazz(); //[String, RubyClass]
+            context.duplicateCurrentValue(); //[String, RubyClass, RubyClass]
+            context.ifNull(fail2); //[String, RubyClass]
+            context.superClass();
+            context.ifNotSuperMethodBound(fail_easy);
+
+            compileGetArgumentDefinition(((SuperNode)node).getArgsNode(), context, "super");
+            context.go(ending);
+            
+            context.setEnding(fail2);
+            context.consumeCurrentValue();
+            context.setEnding(fail);
+            context.consumeCurrentValue();
+            context.setEnding(fail_easy);
+            context.pushNull();
+            context.setEnding(ending);
+            break;
+        }
+        case NodeTypes.ATTRASSIGNNODE: {
+            final AttrAssignNode iVisited = (AttrAssignNode) node;
+            Object isnull = context.getNewEnding();
+            Object ending = context.getNewEnding();
+            NodeCompilerFactory.compileGetDefinition(iVisited.getReceiverNode(), context);
+            context.ifNull(isnull);
+
+            context.rescue(new BranchCallback() {
+                    public void branch(MethodCompiler context) {
+                        NodeCompilerFactory.compile(iVisited.getReceiverNode(), context); //[IRubyObject]
+                        context.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
+                        context.metaclass(); //[IRubyObject, RubyClass]
+                        context.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
+                        context.getVisibilityFor(iVisited.getName()); //[IRubyObject, RubyClass, Visibility]
+                        context.duplicateCurrentValue(); //[IRubyObject, RubyClass, Visibility, Visibility]
+                        final Object isfalse = context.getNewEnding();
+                        Object isreal = context.getNewEnding();
+                        Object ending = context.getNewEnding();
+                        context.isPrivate(isfalse,3); //[IRubyObject, RubyClass, Visibility]
+                        context.isNotProtected(isreal,1); //[IRubyObject, RubyClass]
+                        context.selfIsKindOf(isreal); //[IRubyObject]
+                        context.consumeCurrentValue();
+                        context.go(isfalse);
+                        context.setEnding(isreal); //[]
+
+                        context.isMethodBound(iVisited.getName(), new BranchCallback(){
+                                public void branch(MethodCompiler context) {
+                                    compileGetArgumentDefinition(iVisited.getArgsNode(), context, "assignment");
+                                }
+                            }, 
+                            new BranchCallback(){
+                                public void branch(MethodCompiler context) { 
+                                    context.go(isfalse); 
+                                }
+                            });
+                        context.go(ending);
+                        context.setEnding(isfalse);
+                        context.pushNull();
+                        context.setEnding(ending);
+                    }}, JumpException.class,
+                new BranchCallback() {
+                        public void branch(MethodCompiler context) {
+                            context.pushNull();
+                        }});
+
+            context.go(ending);
+            context.setEnding(isnull);            
+            context.pushNull();
+            context.setEnding(ending); 
+        }
+            break;
+        default:
+            context.rescue(new BranchCallback(){
+                    public void branch(MethodCompiler context){
+                        NodeCompilerFactory.compile(node, context);
+                        context.consumeCurrentValue();
+                        context.pushNull();
+                    }
+                },JumpException.class, 
+                new BranchCallback(){public void branch(MethodCompiler context){context.pushNull();}});
+            context.consumeCurrentValue();
+            context.createNewString(ByteList.create("expression"));
+        }        
+    }
+
     public static void compileDAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
@@ -1078,6 +1505,23 @@ public class NodeCompilerFactory {
         context.negateCurrentValue();
     }
     
+    public static void compileOpAsgnAnd(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final BinaryOperatorNode andNode = (BinaryOperatorNode)node;
+        
+        compile(andNode.getFirstNode(), context);
+        
+        BranchCallback longCallback = new BranchCallback() {
+            public void branch(MethodCompiler context) {
+                compile(andNode.getSecondNode(), context);
+            }
+        };
+        
+        context.performLogicalAnd(longCallback);
+        context.pollThreadEvents();
+    }
+
     public static void compileOpAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
