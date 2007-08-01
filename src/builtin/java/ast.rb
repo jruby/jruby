@@ -55,7 +55,7 @@ class Java::OrgJrubyAst::Node
       s << " >#{self.depth.inspect}"
     end
     
-    [:receiver_node, :args_node, :value_node, :iter_node, :body_node, :next_node].each do |mm|
+    [:receiver_node, :args_node, :var_node, :head_node, :value_node, :iter_node, :body_node, :next_node].each do |mm|
       if self.respond_to?(mm)
         begin 
           s << "\n#{self.send(mm).inspect(indent+2)}" if self.send(mm)
