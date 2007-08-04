@@ -1226,7 +1226,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadThreadContext();
             loadSelf();
             method.aload(ARGS_INDEX);
-            loadBlock();
+            if(this instanceof ASMClosureCompiler) {
+                pushNull();
+            } else {
+                loadBlock();
+            }
             method.invokestatic(classname, mname, METHOD_SIGNATURE);
         }
 
@@ -1297,7 +1301,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadThreadContext();
             loadSelf();
             method.aload(ARGS_INDEX);
-            loadBlock();
+            if(this instanceof ASMClosureCompiler) {
+                pushNull();
+            } else {
+                loadBlock();
+            }
             method.invokestatic(classname, mname, METHOD_SIGNATURE);
         }
 
@@ -1508,20 +1516,20 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void notIsModuleAndClassVarDefined(String name, Object gotoToken) {
             method.dup(); //[?, ?]
             method.instance_of(cg.p(RubyModule.class)); //[?, boolean]
+            Label falsePopJmp = new Label();
+            Label successJmp = new Label();
+            method.ifeq(falsePopJmp);
 
-            Label afterJmp = new Label();
-            Label nextJmp = new Label();
-
-            method.ifeq(nextJmp); // EQ == 0 (i.e. false) //[?]
             method.visitTypeInsn(CHECKCAST, cg.p(RubyModule.class)); //[RubyModule]
             method.ldc(name); //[RubyModule, String]
+            
             method.invokevirtual(cg.p(RubyModule.class), "isClassVarDefined", cg.sig(boolean.class, cg.params(String.class))); //[boolean]
-            method.ifeq((Label)gotoToken); //[]
-            pushNull();
-            method.label(nextJmp);
+            method.ifeq((Label)gotoToken);
+            method.go_to(successJmp);
+            method.label(falsePopJmp);
             method.pop();
             method.go_to((Label)gotoToken);
-            method.label(afterJmp);
+            method.label(successJmp);
         }
         public void ifSingleton(Object gotoToken) {
             method.invokevirtual(cg.p(RubyModule.class), "isSingleton", cg.sig(boolean.class));

@@ -881,20 +881,18 @@ public class NodeCompilerFactory {
                                       new BranchCallback() {
                                           public void branch(MethodCompiler context) {
                                               context.consumeCurrentValue();
-                                              context.createNewString(ByteList.create("class_variable"));
+                                              context.createNewString(ByteList.create("class variable"));
                                               context.go(ending);
                                           }},
                                       new BranchCallback() {
                                           public void branch(MethodCompiler context) {}});
             context.setEnding(second);  //[RubyClass]
-            context.duplicateCurrentValue(); //[RubyClass, RubyClass]
-            context.ifSingleton(third); //[RubyClass]
             context.duplicateCurrentValue();
             context.isClassVarDefined(iVisited.getName(),
                                       new BranchCallback() {
                                           public void branch(MethodCompiler context) {
                                               context.consumeCurrentValue();
-                                              context.createNewString(ByteList.create("class_variable"));
+                                              context.createNewString(ByteList.create("class variable"));
                                               context.go(ending);
                                           }},
                                       new BranchCallback() {
@@ -903,7 +901,7 @@ public class NodeCompilerFactory {
             context.setEnding(third); //[RubyClass]
             context.getInstanceVariable("__attached__");  //[RubyClass]
             context.notIsModuleAndClassVarDefined(iVisited.getName(), failure); //[]
-            context.createNewString(ByteList.create("class_variable"));
+            context.createNewString(ByteList.create("class variable"));
             context.go(ending);
             context.setEnding(failure);
             context.pushNull();

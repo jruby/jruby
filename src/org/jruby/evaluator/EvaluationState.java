@@ -1980,17 +1980,15 @@ public class EvaluationState {
             ClassVarNode iVisited = (ClassVarNode) node;
             //RubyModule module = context.getRubyClass();
             RubyModule module = context.getCurrentScope().getStaticScope().getModule();
-            
             if (module == null && self.getMetaClass().isClassVarDefined(iVisited.getName())) {
-                return "class_variable";
-            } else if (!module.isSingleton() && module.isClassVarDefined(iVisited.getName())) {
-                return "class_variable";
+                return "class variable";
+            } else if (module.isClassVarDefined(iVisited.getName())) {
+                return "class variable";
             } 
-            
             IRubyObject attached =  module.getInstanceVariable("__attached__");
             if (attached instanceof RubyModule) {
                 module = (RubyModule)attached;
-                if (module.isClassVarDefined(iVisited.getName())) return "class_variable"; 
+                if (module.isClassVarDefined(iVisited.getName())) return "class variable"; 
             }
 
             return null;
