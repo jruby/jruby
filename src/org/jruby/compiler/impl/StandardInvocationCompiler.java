@@ -37,6 +37,14 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         this.method = method;
     }
 
+    public SkinnyMethodAdapter getMethodAdapter() {
+        return this.method;
+    }
+
+    public void setMethodAdapter(SkinnyMethodAdapter sma) {
+        this.method = sma;
+    }
+
     public void invokeAttrAssign(String name) {
         // start with [recv, args]
         // get args[length - 1] and stuff it under the receiver

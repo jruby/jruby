@@ -55,6 +55,14 @@ public class StackBasedVariableCompiler implements VariableCompiler {
         this.argsIndex = argsIndex;
     }
     
+    public SkinnyMethodAdapter getMethodAdapter() {
+        return this.method;
+    }
+
+    public void setMethodAdapter(SkinnyMethodAdapter sma) {
+        this.method = sma;
+    }
+
     public void beginMethod(ClosureCallback argsCallback, StaticScope scope) {
         // fill in all vars with null so compiler is happy about future accesses
         method.aconst_null();

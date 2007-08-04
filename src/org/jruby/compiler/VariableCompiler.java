@@ -12,11 +12,15 @@ package org.jruby.compiler;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 
+import org.jruby.compiler.impl.SkinnyMethodAdapter;
+
 /**
  *
  * @author headius
  */
 public interface VariableCompiler {
+    public SkinnyMethodAdapter getMethodAdapter();
+    public void setMethodAdapter(SkinnyMethodAdapter sma);
     public void beginMethod(ClosureCallback argsCallback, StaticScope scope);
     public void assignLocalVariable(int index);
     public void retrieveLocalVariable(int index);

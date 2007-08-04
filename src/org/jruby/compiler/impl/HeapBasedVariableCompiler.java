@@ -43,6 +43,14 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
         this.argsIndex = argsIndex;
     }
     
+    public SkinnyMethodAdapter getMethodAdapter() {
+        return this.method;
+    }
+
+    public void setMethodAdapter(SkinnyMethodAdapter sma) {
+        this.method = sma;
+    }
+
     public void beginMethod(ClosureCallback argsCallback, StaticScope scope) {
         // store the local vars in a local variable
         methodCompiler.loadThreadContext();

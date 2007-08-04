@@ -1151,7 +1151,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         private int ensureNumber = 1;
 
-        private String getNewEnsureName() {
+        protected String getNewEnsureName() {
             return "__ensure_" + (ensureNumber++);
         }
 
@@ -1159,9 +1159,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             String mname = getNewEnsureName();
             SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC + ACC_STATIC, mname, METHOD_SIGNATURE, null, null));
             SkinnyMethodAdapter old_method = null;
+            SkinnyMethodAdapter var_old_method = null;
+            SkinnyMethodAdapter inv_old_method = null;
             try {
                 old_method = this.method;
+                var_old_method = getVariableCompiler().getMethodAdapter();;
+                inv_old_method = getInvocationCompiler().getMethodAdapter();;
                 this.method = mv;
+                getVariableCompiler().setMethodAdapter(mv);
+                getInvocationCompiler().setMethodAdapter(mv);
 
                 mv.visitCode();
                 // set up a local IRuby variable
@@ -1177,7 +1183,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.astore(NIL_INDEX);
             
                 mv.invokevirtual(cg.p(ThreadContext.class), "getCurrentScope", cg.sig(DynamicScope.class));
+                mv.dup();
                 mv.astore(DYNAMIC_SCOPE_INDEX);
+                mv.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
+                mv.astore(VARS_ARRAY_INDEX);
 
                 Label l0 = new Label();
                 Label l1 = new Label();
@@ -1210,6 +1219,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.visitEnd();
             } finally {
                 this.method = old_method;
+                getVariableCompiler().setMethodAdapter(var_old_method);
+                getInvocationCompiler().setMethodAdapter(inv_old_method);
             }
 
             loadThreadContext();
@@ -1221,7 +1232,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         private int rescueNumber = 1;
 
-        private String getNewRescueName() {
+        protected String getNewRescueName() {
             return "__rescue_" + (rescueNumber++);
         }
 
@@ -1229,9 +1240,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             String mname = getNewRescueName();
             SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC + ACC_STATIC, mname, METHOD_SIGNATURE, null, null));
             SkinnyMethodAdapter old_method = null;
+            SkinnyMethodAdapter var_old_method = null;
+            SkinnyMethodAdapter inv_old_method = null;
             try {
                 old_method = this.method;
+                var_old_method = getVariableCompiler().getMethodAdapter();;
+                inv_old_method = getInvocationCompiler().getMethodAdapter();;
                 this.method = mv;
+                getVariableCompiler().setMethodAdapter(mv);
+                getInvocationCompiler().setMethodAdapter(mv);
 
                 mv.visitCode();
                 // set up a local IRuby variable
@@ -1247,7 +1264,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.astore(NIL_INDEX);
             
                 mv.invokevirtual(cg.p(ThreadContext.class), "getCurrentScope", cg.sig(DynamicScope.class));
+                mv.dup();
                 mv.astore(DYNAMIC_SCOPE_INDEX);
+                mv.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
+                mv.astore(VARS_ARRAY_INDEX);
 
                 Label l0 = new Label();
                 Label l1 = new Label();
@@ -1271,6 +1291,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.visitEnd();
             } finally {
                 this.method = old_method;
+                getVariableCompiler().setMethodAdapter(var_old_method);
+                getInvocationCompiler().setMethodAdapter(inv_old_method);
             }
             loadThreadContext();
             loadSelf();
@@ -1480,7 +1502,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadSelf();
             method.swap();
             method.invokevirtual(cg.p(RubyClass.class), "getRealClass", cg.sig(RubyClass.class));
-            method.invokeinterface(cg.p(IRubyObject.class), "isKindOf", cg.sig(boolean.class, cg.params(RubyClass.class)));
+            method.invokeinterface(cg.p(IRubyObject.class), "isKindOf", cg.sig(boolean.class, cg.params(RubyModule.class)));
             method.ifne((Label)gotoToken); // EQ != 0 (i.e. true)
         }
         public void notIsModuleAndClassVarDefined(String name, Object gotoToken) {
@@ -1518,7 +1540,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeThreadContext("getFrameKlazz", cg.sig(RubyModule.class));
         }
         public void superClass() {
-            method.invokeinterface(cg.p(IRubyObject.class), "getSuperClass", cg.sig(RubyModule.class));
+            method.invokevirtual(cg.p(RubyModule.class), "getSuperClass", cg.sig(RubyClass.class));
         }
         public void ifNotSuperMethodBound(Object token) {
             method.swap();
@@ -1570,6 +1592,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             Label end = new Label();
             method.label(end);
             method.end();
+        }
+
+        protected String getNewRescueName() {
+            return closureMethodName + "_" + super.getNewRescueName();
+        }
+
+        protected String getNewEnsureName() {
+            return closureMethodName + "_" + super.getNewEnsureName();
         }
 
         public void performReturn() {
@@ -1651,6 +1681,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 variableCompiler = new StackBasedVariableCompiler(this, method, ARGS_INDEX);
             }
             invocationCompiler = new StandardInvocationCompiler(this, method);
+        }
+
+        protected String getNewRescueName() {
+            return friendlyName + "_" + super.getNewRescueName();
+        }
+
+        protected String getNewEnsureName() {
+            return friendlyName + "_" + super.getNewEnsureName();
         }
 
         public void beginMethod(ClosureCallback args, StaticScope scope) {

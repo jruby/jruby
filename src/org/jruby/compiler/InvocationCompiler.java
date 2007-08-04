@@ -11,11 +11,15 @@ package org.jruby.compiler;
 
 import org.jruby.runtime.CallType;
 
+import org.jruby.compiler.impl.SkinnyMethodAdapter;
+
 /**
  *
  * @author headius
  */
 public interface InvocationCompiler {
+    public SkinnyMethodAdapter getMethodAdapter();
+    public void setMethodAdapter(SkinnyMethodAdapter sma);
     /**
      * Invoke the named method as a "function", i.e. as a method on the current "self"
      * object, using the specified argument count. It is expected that previous calls
