@@ -1947,8 +1947,14 @@ public class EvaluationState {
 
             return null;
         }
-        case NodeTypes.BACKREFNODE:
-            return "$" + ((BackRefNode) node).getType();
+        case NodeTypes.BACKREFNODE: {
+            IRubyObject backref = context.getBackref();
+            if(backref instanceof RubyMatchData) {
+                return "$" + ((BackRefNode) node).getType();
+            } else {
+                return null;
+            }
+        }
         case NodeTypes.CALLNODE: {
             CallNode iVisited = (CallNode) node;
             
@@ -2046,10 +2052,18 @@ public class EvaluationState {
             return "method";
         case NodeTypes.NILNODE:
             return "nil";
-        case NodeTypes.NTHREFNODE:
-            return "$" + ((NthRefNode) node).getMatchNumber();
+        case NodeTypes.NTHREFNODE: {
+            IRubyObject backref = context.getBackref();
+            if(backref instanceof RubyMatchData) {
+                ((RubyMatchData)backref).use();
+                if(!((RubyMatchData)backref).group(((NthRefNode) node).getMatchNumber()).isNil()) {
+                    return "$" + ((NthRefNode) node).getMatchNumber();
+                }
+            }
+            return null;
+        }
         case NodeTypes.SELFNODE:
-            return "state.getSelf()";
+            return "self";
         case NodeTypes.SUPERNODE: {
             SuperNode iVisited = (SuperNode) node;
             String name = context.getFrameName();
