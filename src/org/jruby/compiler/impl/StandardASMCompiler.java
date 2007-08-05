@@ -45,6 +45,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
+import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
@@ -1007,8 +1008,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void nthRef(int match) {
             method.ldc(new Integer(match));
-            loadThreadContext();
-            invokeThreadContext("getBackref", cg.sig(IRubyObject.class, cg.params()));
+            backref();
             method.invokestatic(cg.p(RubyRegexp.class), "nth_match", cg.sig(IRubyObject.class, cg.params(Integer.TYPE, IRubyObject.class)));
         }
 
@@ -1100,30 +1100,67 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.label(notNull);
         }
 
-        public void branchIfModule(ClosureCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback) {
-            receiverCallback.compile(this);
-            method.instance_of(cg.p(RubyModule.class));
+        public void isInstanceOf(Class clazz, BranchCallback trueBranch, BranchCallback falseBranch) {
+            method.instance_of(cg.p(clazz));
 
             Label falseJmp = new Label();
             Label afterJmp = new Label();
 
             method.ifeq(falseJmp); // EQ == 0 (i.e. false)
-            moduleCallback.branch(this);
+            trueBranch.branch(this);
 
             method.go_to(afterJmp);
             method.label(falseJmp);
 
-            notModuleCallback.branch(this);
+            falseBranch.branch(this);
 
             method.label(afterJmp);
         }
 
+        public void isCaptured(final int number, final BranchCallback trueBranch, final BranchCallback falseBranch) {
+            backref();
+            method.dup();
+            isInstanceOf(RubyMatchData.class,
+                         new BranchCallback() {
+                public void branch(MethodCompiler context) {
+                    method.visitTypeInsn(CHECKCAST, cg.p(RubyMatchData.class));
+                    method.dup();
+                    method.invokevirtual(cg.p(RubyMatchData.class), "use", cg.sig(void.class));
+                    method.ldc(new Long(number));
+                    method.invokevirtual(cg.p(RubyMatchData.class), "group", cg.sig(IRubyObject.class, cg.params(long.class)));
+                    method.invokeinterface(cg.p(IRubyObject.class), "isNil", cg.sig(boolean.class));
+                    Label isNil = new Label();
+                    Label after = new Label();
+
+                    method.ifne(isNil);
+                    trueBranch.branch(context);
+                    method.go_to(after);
+
+                    method.label(isNil);
+                    falseBranch.branch(context);
+                    method.label(after);
+                }
+            },
+                         new BranchCallback() {
+                             public void branch(MethodCompiler context) {
+                                 method.pop();
+                                 falseBranch.branch(context);
+                             }
+                         });
+        }
+
+        public void branchIfModule(ClosureCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback) {
+            receiverCallback.compile(this);
+            isInstanceOf(RubyModule.class, moduleCallback, notModuleCallback);
+        }
+
         public void backref() {
+            loadThreadContext();
             invokeThreadContext("getBackref", cg.sig(IRubyObject.class, cg.params()));
         }
 
         public void backrefMethod(String methodName) {
-            invokeThreadContext("getBackref", cg.sig(IRubyObject.class, cg.params()));
+            backref();
             method.invokestatic(cg.p(RubyRegexp.class), methodName, cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
         }
         

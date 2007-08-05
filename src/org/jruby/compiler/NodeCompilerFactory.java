@@ -96,6 +96,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.util.ByteList;
 import org.jruby.exceptions.JumpException;
+import org.jruby.RubyMatchData;
 
 /**
  *
@@ -669,7 +670,16 @@ public class NodeCompilerFactory {
             context.createNewString(ByteList.create("assignment"));
             break;
         case NodeTypes.BACKREFNODE:
-            context.createNewString(ByteList.create("$" + ((BackRefNode) node).getType()));
+            context.backref();
+            context.isInstanceOf(RubyMatchData.class, 
+                                 new BranchCallback(){
+                public void branch(MethodCompiler context) {
+                    context.createNewString(ByteList.create("$" + ((BackRefNode) node).getType()));
+                }},
+                                 new BranchCallback(){
+                                     public void branch(MethodCompiler context) {
+                                         context.pushNull();
+                                     }});
             break;
         case NodeTypes.DVARNODE:
             context.createNewString(ByteList.create("local-variable(in-block)"));
@@ -690,7 +700,15 @@ public class NodeCompilerFactory {
             context.createNewString(ByteList.create("nil"));
             break;
         case NodeTypes.NTHREFNODE:
-            context.createNewString(ByteList.create("$" + ((NthRefNode) node).getMatchNumber()));
+            context.isCaptured(((NthRefNode) node).getMatchNumber(),
+                               new BranchCallback(){
+                                   public void branch(MethodCompiler context) {
+                                       context.createNewString(ByteList.create("$" + ((NthRefNode) node).getMatchNumber()));
+                                   }},
+                               new BranchCallback(){
+                                   public void branch(MethodCompiler context) {
+                                       context.pushNull();
+                                   }});
             break;
         case NodeTypes.SELFNODE:
             context.createNewString(ByteList.create("self"));
