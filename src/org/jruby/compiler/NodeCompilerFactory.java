@@ -160,11 +160,9 @@ public class NodeCompilerFactory {
         case NodeTypes.DASGNNODE:
             compileDAsgn(node, context);
             break;
-            /* Needs more work; mostly the try-catch and try-finally problems 
         case NodeTypes.DEFINEDNODE:
             compileDefined(node, context);
             break;
-            */
         case NodeTypes.DEFNNODE:
             compileDefn(node, context);
             break;
