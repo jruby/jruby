@@ -175,7 +175,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
 
     public void startScript() {
-        classWriter = new ClassWriter(true);
+        classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
         // Create the class with the appropriate class name and source file
         classWriter.visit(V1_4, ACC_PUBLIC + ACC_SUPER, classname, null, cg.p(Object.class), new String[]{cg.p(Script.class)});

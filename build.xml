@@ -36,6 +36,8 @@
   <patternset id="other.src.pattern">
     <include name="**/*.properties"/>
   </patternset>
+  
+  <taskdef name="retro" classname="net.sourceforge.retroweaver.ant.RetroWeaverTask" classpathref="build.classpath"/>
 
   <target name="init" description="initialize the build">
     <xmlproperty file="build-config.xml" keepRoot="false" collapseAttributes="true"/>
@@ -148,11 +150,16 @@
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Main-Class" value="org.jruby.Main"/>
-        <attribute name="Class-Path" value="asm-2.2.3.jar asm-commons-2.2.3.jar asm-util-2.2.3.jar jline-0.9.91.jar bsf.jar backport-util-concurrent.jar"/>
+        <attribute name="Class-Path" value="asm-3.0.jar asm-commons-3.0.jar asm-util-3.0.jar jline-0.9.91.jar bsf.jar backport-util-concurrent.jar"/>
       </manifest>
     </jar>
   </target>
 
+  <target name="jar-1.4" depends="jar-jruby">
+    <copy file="${lib.dir}/jruby.jar" tofile="${lib.dir}/jruby1.5.jar"/>
+    <retro inputjar="${lib.dir}/jruby1.5.jar" outputjar="${lib.dir}/jruby.jar"/>
+    <delete file="${lib.dir}/jruby1.5.jar"/>
+  </target>
 
     <target name="jar-complete" depends="generate-method-classes" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
       <property name="mainclass" value="org.jruby.Main"/>
@@ -165,9 +172,9 @@
         <fileset dir="${basedir}/lib/ruby/1.8">
           <include name="**/*.rb"/>
         </fileset>
-        <zipfileset src="${lib.dir}/asm-2.2.3.jar"/>
-        <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
-        <zipfileset src="${lib.dir}/asm-util-2.2.3.jar"/>
+        <zipfileset src="${lib.dir}/asm-3.0.jar"/>
+        <zipfileset src="${lib.dir}/asm-commons-3.0.jar"/>
+        <zipfileset src="${lib.dir}/asm-util-3.0.jar"/>
         <zipfileset src="${lib.dir}/jline-0.9.91.jar"/>
       	<zipfileset src="${lib.dir}/backport-util-concurrent.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
@@ -216,9 +223,9 @@
               <exclude name="**/xmlrpc/**"/>
               <exclude name="**/xsd/**"/>
         </fileset>
-          <zipfileset src="${lib.dir}/asm-2.2.3.jar"/>
-          <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
-          <zipfileset src="${lib.dir}/asm-util-2.2.3.jar"/>
+          <zipfileset src="${lib.dir}/asm-3.0.jar"/>
+          <zipfileset src="${lib.dir}/asm-commons-3.0.jar"/>
+          <zipfileset src="${lib.dir}/asm-util-3.0.jar"/>
           <zipfileset src="${lib.dir}/jline-0.9.91.jar"/>
       	  <zipfileset src="${lib.dir}/backport-util-concurrent.jar"/>
         <manifest>

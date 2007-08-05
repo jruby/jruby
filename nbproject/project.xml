@@ -63,14 +63,14 @@
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
             <compilation-unit>
                 <package-root>src</package-root>
-                <classpath mode="compile">lib/bsf.jar:lib/junit.jar:lib/asm-2.2.3.jar:lib/asm-commons-2.2.3.jar:lib/jline-0.9.91.jar:lib/backport-util-concurrent.jar:lib/ant.jar:lib/asm-util-2.2.3.jar</classpath>
-                <source-level>1.4</source-level>
+                <classpath mode="compile">lib/bsf.jar:lib/junit.jar:lib/jline-0.9.91.jar:lib/backport-util-concurrent.jar:lib/ant.jar:lib/asm-3.0.jar:lib/asm-commons-3.0.jar:lib/asm-util-3.0.jar</classpath>
+                <source-level>1.5</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>test</package-root>
                 <unit-tests/>
                 <classpath mode="compile">lib/bsf.jar:lib/junit.jar:src</classpath>
-                <source-level>1.4</source-level>
+                <source-level>1.5</source-level>
             </compilation-unit>
         </java-data>
     </configuration>

@@ -42,6 +42,7 @@ import org.jruby.ast.Node;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.NodeCompilerFactory;
 import org.jruby.compiler.impl.StandardASMCompiler;
+import org.objectweb.asm.ClassReader;
 
 /**
  * Module which defines JRuby-specific methods for use. 
@@ -177,7 +178,7 @@ public class RubyJRuby {
         java.io.StringWriter sw = new java.io.StringWriter();
         org.objectweb.asm.ClassReader cr = new org.objectweb.asm.ClassReader((byte[])org.jruby.javasupport.JavaUtil.convertRubyToJava(recv.getInstanceVariable("@code"),byte[].class));
         org.objectweb.asm.util.TraceClassVisitor cv = new org.objectweb.asm.util.TraceClassVisitor(new java.io.PrintWriter(sw));
-        cr.accept(cv, true);
+        cr.accept(cv, ClassReader.SKIP_DEBUG);
         return recv.getRuntime().newString(sw.toString());
     }
 

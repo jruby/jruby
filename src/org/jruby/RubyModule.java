@@ -35,6 +35,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
@@ -580,6 +583,64 @@ public class RubyModule extends RubyObject {
         Visibility visibility = name.equals("initialize") ?
                 Visibility.PRIVATE : Visibility.PUBLIC;
         addMethod(name, new FullFunctionCallbackMethod(this, method, visibility));
+    }
+    
+    public void defineAnnotatedMethods(Class clazz, CallbackFactory callbackFactory) {
+        Method[] methods = clazz.getDeclaredMethods();
+        for (Method method: methods) {
+            JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
+            
+            if (jrubyMethod == null) continue;
+            
+            // select current module or module's metaclass for singleton methods
+            RubyModule module = this;
+            if (jrubyMethod.singleton()) module = getMetaClass();
+
+            if (jrubyMethod.optional() != 0) {
+                if (Modifier.isStatic(method.getModifiers())) {
+                    module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastOptSingletonMethod(method.getName()));
+                } else {
+                    module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastOptMethod(method.getName()));
+                }
+            } else {
+                switch (jrubyMethod.required()) {
+                case 0:
+                    if (Modifier.isStatic(method.getModifiers())) {
+                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastSingletonMethod(method.getName()));
+                    } else {
+                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastMethod(method.getName()));
+                    }
+                    break;
+                case 1:
+                    if (Modifier.isStatic(method.getModifiers())) {
+                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastSingletonMethod(method.getName(), IRubyObject.class));
+                    } else {
+                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastMethod(method.getName(), IRubyObject.class));
+                    }
+                    break;
+                case 2:
+                    if (Modifier.isStatic(method.getModifiers())) {
+                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastSingletonMethod(method.getName(), IRubyObject.class, IRubyObject.class));
+                    } else {
+                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastMethod(method.getName(), IRubyObject.class, IRubyObject.class));
+                    }
+                    break;
+                case 3:
+                    if (Modifier.isStatic(method.getModifiers())) {
+                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastSingletonMethod(method.getName(), IRubyObject.class, IRubyObject.class, IRubyObject.class));
+                    } else {
+                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastMethod(method.getName(), IRubyObject.class, IRubyObject.class, IRubyObject.class));
+                    }
+                    break;
+                default:
+                    throw new RuntimeException("Invalid number of required args for annotated method");
+                }
+            }
+            
+            if (jrubyMethod.alias() != "") {
+                module.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
+            }
+        }
     }
 
     public void defineFastMethod(String name, Callback method) {

@@ -93,7 +93,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     private ClassWriter createCtor(String namePath) throws Exception {
-        ClassWriter cw = new ClassWriter(true);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, SUPER_CLASS, null);
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
@@ -106,7 +106,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     private ClassWriter createCtorDispatcher(String namePath, Map switchMap) throws Exception {
-        ClassWriter cw = new ClassWriter(true);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, cg.p(Dispatcher.class), null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", cg.sig(Void.TYPE, cg.params(Ruby.class)), null, null));
         mv.visitCode();
@@ -147,7 +147,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     private ClassWriter createCtorFast(String namePath) throws Exception {
-        ClassWriter cw = new ClassWriter(true);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, FAST_SUPER_CLASS, null);
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
@@ -160,7 +160,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     private ClassWriter createBlockCtor(String namePath) throws Exception {
-        ClassWriter cw = new ClassWriter(true);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, cg.p(Object.class),
                 new String[] { cg.p(CompiledBlockCallback.class) });
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);

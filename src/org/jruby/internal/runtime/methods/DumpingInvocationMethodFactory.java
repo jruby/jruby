@@ -71,7 +71,7 @@ public class DumpingInvocationMethodFactory extends MethodFactory implements Opc
     }
 
     private ClassWriter createCompiledCtor(String namePath, String sup) throws Exception {
-        ClassWriter cw = new ClassWriter(true);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", COMPILED_SUPER_SIG, null, null);
         mv.visitCode();
