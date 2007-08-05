@@ -60,11 +60,8 @@ public class MethodCache {
     }
 
     private void clearAllEntries() {
-        for (int i = 0; i < CACHE_SIZE; i++) {
+        for (int i = CACHE_SIZE; --i >= 0; ) {
             cache[i] = new CacheEntry();
-            cache[i].klass = null;
-            cache[i].mid = null;
-            cache[i].method = null;
         }
     }
     
@@ -73,16 +70,16 @@ public class MethodCache {
     }
     
     public CacheEntry getMethod(RubyModule c, String id) {       
-        int index = cacheIndex(c, id);
-        return cache[index];
+        return cache[cacheIndex(c, id)];
     }
     
     public void putMethod(RubyModule c, String id, DynamicMethod m) {
-        int index = cacheIndex(c, id);
+        CacheEntry entry = new CacheEntry();
+        entry.klass = c;
+        entry.mid = id;
+        entry.method = m;
         
-        cache[index].klass = c;
-        cache[index].mid = id;
-        cache[index].method = m;
+        cache[cacheIndex(c, id)] = entry;
     }
     
     public void removeMethod(RubyClass c, String id) { 
@@ -90,9 +87,9 @@ public class MethodCache {
             return;
         }
         
-        for (int i = 0; i < CACHE_SIZE; i++) {
+        for (int i = CACHE_SIZE; --i >= 0; ) {
             CacheEntry entry = cache[i];
-            if (id.equals(entry.mid) && entry.klass == c) {
+            if (c == entry.klass && id.equals(entry.mid)) {
                 entry.mid = null;
             }
         }
@@ -103,7 +100,7 @@ public class MethodCache {
             return;
         }
         
-        for (int i = 0; i < CACHE_SIZE; i++) {
+        for (int i = CACHE_SIZE; --i >= 0; ) {
             CacheEntry entry = cache[i];
             if (id.equals(entry.mid)) {
                 entry.mid = null;
@@ -116,7 +113,7 @@ public class MethodCache {
             return;
         }
         
-        for (int i = 0; i < CACHE_SIZE; i++) {
+        for (int i = CACHE_SIZE; --i >= 0; ) {
             CacheEntry entry = cache[i]; 
             if (entry.klass == c) {
                 entry.mid = null;
