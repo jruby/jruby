@@ -1458,6 +1458,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public Object getNewEnding() {
             return new Label();
         }
+        public void isNil(BranchCallback trueBranch, BranchCallback falseBranch) {
+            method.invokeinterface(cg.p(IRubyObject.class), "isNil", cg.sig(boolean.class));
+            Label falseLabel = new Label();
+            Label exitLabel = new Label();
+            method.ifeq(falseLabel); // EQ == 0 (i.e. false)
+            trueBranch.branch(this);
+            method.go_to(exitLabel);
+            method.label(falseLabel);
+            falseBranch.branch(this);
+            method.label(exitLabel);
+        }
         public void ifNull(Object gotoToken) {
             method.ifnull((Label)gotoToken);
         }

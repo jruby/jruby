@@ -79,6 +79,7 @@ import org.jruby.ast.NodeTypes;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OpAsgnAndNode;
+import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.RegexpNode;
@@ -252,6 +253,11 @@ public class NodeCompilerFactory {
         case NodeTypes.OPASGNANDNODE:
             compileOpAsgnAnd(node, context);
             break;
+            /* For some reason this compiler is DEAD slow right now...
+        case NodeTypes.OPASGNORNODE:
+            compileOpAsgnOr(node, context);
+            break;
+            */
         case NodeTypes.ORNODE:
             compileOr(node, context);
             break;
@@ -617,11 +623,11 @@ public class NodeCompilerFactory {
         }
     }
     
-    public static void compileDefined(final Node node, MethodCompiler context) {
+    public static void compileGetDefinitionBase(final Node node, MethodCompiler context) {
         BranchCallback reg = new BranchCallback() {
                 public void branch(MethodCompiler context) {
                     context.inDefined();
-                    compileGetDefinition(((DefinedNode)node).getExpressionNode(), context);
+                    compileGetDefinition(node, context);
                 }
             };
         BranchCallback out = new BranchCallback() {
@@ -631,6 +637,10 @@ public class NodeCompilerFactory {
             };
         context.protect(reg,out);
         context.nullToNil();
+    }
+
+    public static void compileDefined(final Node node, MethodCompiler context) {
+        compileGetDefinitionBase(((DefinedNode)node).getExpressionNode(), context);
     }
 
     public static void compileGetArgumentDefinition(final Node node, MethodCompiler context, String type) {
@@ -1533,6 +1543,36 @@ public class NodeCompilerFactory {
         };
         
         context.performLogicalAnd(longCallback);
+        context.pollThreadEvents();
+    }
+
+    public static void compileOpAsgnOr(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final OpAsgnOrNode orNode = (OpAsgnOrNode)node;
+
+        compileGetDefinitionBase(orNode.getFirstNode(), context);
+
+        context.isNil(new BranchCallback() {
+                public void branch(MethodCompiler context) {
+                    compile(orNode.getSecondNode(), context);
+                }}, new BranchCallback() {
+                        public void branch(MethodCompiler context) {
+                            compile(orNode.getFirstNode(), context);
+                            context.duplicateCurrentValue();
+                            context.performBooleanBranch(
+                                                         new BranchCallback() {
+                                                             public void branch(MethodCompiler context) {
+                                                                 //Do nothing
+                                                             }},
+                                                         new BranchCallback() {
+                                                             public void branch(MethodCompiler context) {
+                                                                 context.consumeCurrentValue();
+                                                                 compile(orNode.getSecondNode(), context);
+                                                             }}
+                                                         );
+                        }});
+
         context.pollThreadEvents();
     }
 
