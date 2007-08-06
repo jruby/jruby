@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ * **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -11,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2007 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -25,37 +26,31 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ast.util;
+package org.jruby.lexer.yacc;
 
-import org.ablaf.ast.IAstMarshal;
-import org.ablaf.internal.ast.SerializationAstMarshal;
+public class SimplePositionFactory implements ISourcePositionFactory {
+    private LexerSource source;
+    private ISourcePosition lastPosition;
 
-/**
- * 
- * @author jpetersen
- */
-public final class RubyAstMarshal {
-    private static IAstMarshal instance = null;
-
-    private RubyAstMarshal() {
-        assert false;
+    public SimplePositionFactory(LexerSource source, int line) {
+        this.source = source;
+        lastPosition = new SimpleSourcePosition(source.getFilename(), line);
     }
 
-    public static synchronized IAstMarshal getInstance() {
-        if (instance == null) {
-            instance = newInstance();
+    public ISourcePosition getPosition(ISourcePosition startPosition, boolean inclusive) {
+        if (startPosition != null) {
+            lastPosition = startPosition;
+            
+            return lastPosition;
         }
-        return instance;
+
+        if (lastPosition.getStartLine() == source.getLine()) {
+            return lastPosition;
+        }
+        
+        lastPosition = new SimpleSourcePosition(source.getFilename(), source.getLine());
+
+        return lastPosition;
     }
-    
-    /** Create a new IAstMarshal implementation which should
-     * be used in JRuby by default.
-     * 
-     * Now we use the SerializationAstMarshal implementation.
-     * 
-     * @see org.ablaf.internal.ast.SerializationAstMarshal
-     */
-    private static IAstMarshal newInstance() {
-        return new SerializationAstMarshal();
-    }
+
 }

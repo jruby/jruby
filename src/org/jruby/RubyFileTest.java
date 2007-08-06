@@ -41,6 +41,7 @@ public class RubyFileTest {
 
         fileTestModule.defineFastModuleFunction("file?", callbackFactory.getFastSingletonMethod("file_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastModuleFunction("directory?", callbackFactory.getFastSingletonMethod("directory_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastModuleFunction("executable?", callbackFactory.getFastSingletonMethod("executable_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastModuleFunction("exist?", callbackFactory.getFastSingletonMethod("exist_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastModuleFunction("exists?", callbackFactory.getFastSingletonMethod("exist_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastModuleFunction("readable?", callbackFactory.getFastSingletonMethod("readable_p", RubyKernel.IRUBY_OBJECT));
@@ -52,6 +53,7 @@ public class RubyFileTest {
         
         fileTestModule.defineFastMethod("file?", callbackFactory.getFastSingletonMethod("file_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastMethod("directory?", callbackFactory.getFastSingletonMethod("directory_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastMethod("executable?", callbackFactory.getFastSingletonMethod("executable_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastMethod("exist?", callbackFactory.getFastSingletonMethod("exist_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastMethod("exists?", callbackFactory.getFastSingletonMethod("exist_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastMethod("readable?", callbackFactory.getFastSingletonMethod("readable_p", RubyKernel.IRUBY_OBJECT));
@@ -76,6 +78,11 @@ public class RubyFileTest {
     // in our java process effective and real userid will always be the same.
     public static RubyBoolean readable_p(IRubyObject recv, IRubyObject filename) {
         return filename.getRuntime().newBoolean(newFile(filename).canRead());
+    }
+
+    public static IRubyObject executable_p(IRubyObject recv, IRubyObject filename) {
+        recv.getRuntime().getWarnings().warn("executable? does not work on JRuby and will return a dummy value");
+        return exist_p(recv, filename);
     }
     
     public static IRubyObject size(IRubyObject recv, IRubyObject filename) {

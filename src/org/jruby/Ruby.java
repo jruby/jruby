@@ -107,6 +107,7 @@ import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
+import org.jruby.util.MethodCache;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.collections.SinglyLinkedList;
 
@@ -114,9 +115,10 @@ import org.jruby.util.collections.SinglyLinkedList;
  * The jruby runtime.
  */
 public final class Ruby {
-    private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "yaml/syck" };
+    private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "yaml/syck", "jsignal" };
 
     private CacheMap cacheMap = new CacheMap(this);
+    private MethodCache methodCache = new MethodCache();
     private ThreadService threadService = new ThreadService(this);
     private Hashtable runtimeInformation;
     private final MethodSelectorTable selectorTable = new MethodSelectorTable();
@@ -576,6 +578,15 @@ public final class Ruby {
     public CacheMap getCacheMap() {
         return cacheMap;
     }
+    
+    /**
+     * Retrieve method cache.
+     * 
+     * @return method cache where cached methods have been stored
+     */
+    public MethodCache getMethodCache() {
+        return methodCache;
+    }
 
     /**
      * @see org.jruby.Ruby#getRuntimeInformation
@@ -648,6 +659,8 @@ public final class Ruby {
         getObject().defineConstant("TOPLEVEL_BINDING", newBinding());
 
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
+        
+        methodCache.initialized();
     }
 
     private void initLibraries() {
@@ -802,6 +815,7 @@ public final class Ruby {
         RubyClass ioError = null;
         RubyClass scriptError = null;
         RubyClass nameError = null;
+        RubyClass signalException = null;
         
         RubyClass rangeError = null;
         if (profile.allowClass("StandardError")) {
@@ -826,16 +840,16 @@ public final class Ruby {
             rangeError = defineClass("RangeError", standardError, standardError.getAllocator());
         }
         if (profile.allowClass("SystemExit")) {
-            defineClass("SystemExit", exceptionClass, exceptionClass.getAllocator());
+            RubySystemExit.createSystemExitClass(this, exceptionClass);
         }
         if (profile.allowClass("Fatal")) {
             defineClass("Fatal", exceptionClass, exceptionClass.getAllocator());
         }
-        if (profile.allowClass("Interrupt")) {
-            defineClass("Interrupt", exceptionClass, exceptionClass.getAllocator());
-        }
         if (profile.allowClass("SignalException")) {
-            defineClass("SignalException", exceptionClass, exceptionClass.getAllocator());
+            signalException = defineClass("SignalException", exceptionClass, exceptionClass.getAllocator());
+        }
+        if (profile.allowClass("Interrupt")) {
+            defineClass("Interrupt", signalException, signalException.getAllocator());
         }
         if (profile.allowClass("TypeError")) {
             defineClass("TypeError", standardError, standardError.getAllocator());
@@ -1024,6 +1038,11 @@ public final class Ruby {
         return parser.parse(file, content, scope, lineNumber);
     }
 
+    public Node parse(String content, String file, DynamicScope scope, int lineNumber, 
+            boolean extraPositionInformation) {
+        return parser.parse(file, content, scope, lineNumber, extraPositionInformation);
+    }
+
     public ThreadService getThreadService() {
         return threadService;
     }
@@ -1064,14 +1083,32 @@ public final class Ruby {
     }
 
     public RubyModule getClassFromPath(String path) {
+        RubyModule c = getObject();
         if (path.length() == 0 || path.charAt(0) == '#') {
             throw newTypeError("can't retrieve anonymous class " + path);
         }
-        IRubyObject type = evalScript(path);
-        if (!(type instanceof RubyModule)) {
-            throw newTypeError("class path " + path + " does not point class");
+        int pbeg = 0, p = 0;
+        for(int l=path.length(); p<l; ) {
+            while(p<l && path.charAt(p) != ':') {
+                p++;
+            }
+            String str = path.substring(pbeg, p);
+
+            if(p<l && path.charAt(p) == ':') {
+                if(p+1 < l && path.charAt(p+1) != ':') {
+                    throw newTypeError("undefined class/module " + path.substring(pbeg,p));
+                }
+                p += 2;
+                pbeg = p;
+            }
+
+            IRubyObject cc = c.getConstant(str);
+            if(!(cc instanceof RubyModule)) {
+                throw newTypeError("" + str + " does not refer to class/module");
+            }
+            c = (RubyModule)cc;
         }
-        return (RubyModule) type;
+        return c;
     }
 
     /** Prints an error with backtrace to the error stream.
@@ -1388,7 +1425,7 @@ public final class Ruby {
         return proc;
     }
     
-    public void addFinalizer(RubyObject.Finalizer finalizer) {
+    public void addFinalizer(Finalizable finalizer) {
         synchronized (this) {
             if (finalizers == null) {
                 finalizers = new WeakHashMap();
@@ -1400,7 +1437,7 @@ public final class Ruby {
         }
     }
     
-    public void removeFinalizer(RubyObject.Finalizer finalizer) {
+    public void removeFinalizer(Finalizable finalizer) {
         if (finalizers != null) {
             synchronized (finalizers) {
                 finalizers.remove(finalizer);
@@ -1425,7 +1462,7 @@ public final class Ruby {
         if (finalizers != null) {
             synchronized (finalizers) {
                 for (Iterator finalIter = finalizers.keySet().iterator(); finalIter.hasNext();) {
-                    ((RubyObject.Finalizer)finalIter.next()).finalize();
+                    ((Finalizable) finalIter.next()).finalize();
                     finalIter.remove();
                 }
             }
@@ -1658,10 +1695,9 @@ public final class Ruby {
     }
 
     public RaiseException newSystemExit(int status) {
-        RaiseException re = newRaiseException(getClass("SystemExit"), "");
-        re.getException().setInstanceVariable("status", newFixnum(status));
-
-        return re;
+        RubyClass exc = getClass("SystemExit");
+        IRubyObject[]exArgs = new IRubyObject[]{newFixnum(status), newString("exit")};
+        return new RaiseException((RubyException)exc.newInstance(exArgs, Block.NULL_BLOCK));
     }
 
     public RaiseException newIOError(String message) {

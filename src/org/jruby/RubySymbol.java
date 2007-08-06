@@ -98,6 +98,7 @@ public class RubySymbol extends RubyObject {
     public static final byte TO_I_SWITCHVALUE = 4;
     public static final byte TO_SYM_SWITCHVALUE = 5;
     public static final byte HASH_SWITCHVALUE = 6;
+    public static final byte INSPECT_SWITCHVALUE = 7;
     
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
@@ -123,6 +124,9 @@ public class RubySymbol extends RubyObject {
         case HASH_SWITCHVALUE:
             if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return hash();
+        case INSPECT_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return inspect();
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);

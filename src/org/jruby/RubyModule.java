@@ -64,6 +64,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
+import org.jruby.util.MethodCache;
 import org.jruby.util.collections.SinglyLinkedList;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
@@ -224,7 +225,7 @@ public class RubyModule extends RubyObject {
         moduleClass.defineFastPrivateMethod("remove_class_variable", callbackFactory.getFastMethod("remove_class_variable", IRubyObject.class));
         moduleClass.defineFastPrivateMethod("remove_const", callbackFactory.getFastMethod("remove_const", IRubyObject.class));
         moduleClass.defineFastPrivateMethod("remove_method", callbackFactory.getFastOptMethod("remove_method"));
-        moduleClass.defineFastPrivateMethod("undef_method", callbackFactory.getFastMethod("undef_method", IRubyObject.class));
+        moduleClass.defineFastPrivateMethod("undef_method", callbackFactory.getFastOptMethod("undef_method"));
         
         moduleMetaClass.defineMethod("nesting", callbackFactory.getSingletonMethod("nesting"));
 
@@ -246,6 +247,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static final byte EQQ_SWITCHVALUE = 1;
+    public static final byte INSPECT_SWITCHVALUE = 2;
 
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
@@ -256,6 +258,9 @@ public class RubyModule extends RubyObject {
         case EQQ_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return op_eqq(args[0]);
+        case INSPECT_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return inspect();
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);
@@ -572,6 +577,8 @@ public class RubyModule extends RubyObject {
         }
 
         if (changed) {
+            getRuntime().getMethodCache().clearCache();
+            /*
             // MRI seems to blow away its cache completely after an include; is
             // what we're doing here really safe?
             List methodNames = new ArrayList(((RubyModule) arg).getMethods().keySet());
@@ -580,6 +587,7 @@ public class RubyModule extends RubyObject {
                 String methodName = (String) iter.next();
                 getRuntime().getCacheMap().remove(methodName, searchMethod(methodName));
             }
+            */
         }
 
     }
@@ -673,15 +681,6 @@ public class RubyModule extends RubyObject {
         return getRuntime().newBoolean(false);
     }
 
-    private void addCachedMethod(String name, DynamicMethod method) {
-        // Included modules modify the original 'included' modules class.  Since multiple
-        // classes can include the same module, we cannot cache in the original included module.
-        if (!isIncluded()) {
-            putMethod(name, method);
-            getRuntime().getCacheMap().add(method, this);
-        }
-    }
-
     // TODO: Consider a better way of synchronizing 
     public void addMethod(String name, DynamicMethod method) {
         if (this == getRuntime().getObject()) {
@@ -698,10 +697,13 @@ public class RubyModule extends RubyObject {
         synchronized(getMethods()) {
             // If we add a method which already is cached in this class, then we should update the 
             // cachemap so it stays up to date.
+            /*
             DynamicMethod existingMethod = (DynamicMethod) getMethods().remove(name);
             if (existingMethod != null) {
                 getRuntime().getCacheMap().remove(name, existingMethod);
             }
+            */
+            getRuntime().getMethodCache().removeMethod(name);
             putMethod(name, method);
         }
     }
@@ -726,8 +728,10 @@ public class RubyModule extends RubyObject {
             if (method == null) {
                 throw getRuntime().newNameError("method '" + name + "' not defined in " + getName(), name);
             }
+            
+            getRuntime().getMethodCache().removeMethod(name);
 
-            getRuntime().getCacheMap().remove(name, method);
+            //getRuntime().getCacheMap().remove(name, method);
         }
         
         if(isSingleton()){
@@ -745,15 +749,26 @@ public class RubyModule extends RubyObject {
      * @return The method, or UndefinedMethod if not found
      */
     public DynamicMethod searchMethod(String name) {
+        MethodCache cache = getRuntime().getMethodCache();
+        MethodCache.CacheEntry entry = cache.getMethod(this, name);
+        if (entry.klass == this && name.equals(entry.mid)) {
+            return entry.method;
+        }
+        
         for (RubyModule searchModule = this; searchModule != null; searchModule = searchModule.getSuperClass()) {
             // included modules use delegates methods for we need to synchronize on result of getMethods
             synchronized(searchModule.getMethods()) {
                 // See if current class has method or if it has been cached here already
                 DynamicMethod method = (DynamicMethod) searchModule.getMethods().get(name);
+                
                 if (method != null) {
+                    cache.putMethod(this, name, method);
+                    /*
+                    // TO BE REMOVED
                     if (searchModule != this) {
                         addCachedMethod(name, method);
                     }
+                    */
 
                     return method;
                 }
@@ -909,7 +924,8 @@ public class RubyModule extends RubyObject {
                         (isModule() ? "module" : "class") + " `" + getName() + "'", oldName);
             }
         }
-        getRuntime().getCacheMap().remove(name, searchMethod(name));
+        getRuntime().getMethodCache().removeMethod(name);
+        //getRuntime().getCacheMap().remove(name, searchMethod(name));
         putMethod(name, new AliasMethod(this, method, oldName));
     }
 
@@ -1901,8 +1917,10 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    public RubyModule undef_method(IRubyObject name) {
-        undef(name.asSymbol());
+    public RubyModule undef_method(IRubyObject[] args) {
+        for (int i=0; i<args.length; i++) {
+            undef(args[i].asSymbol());
+        }
         return this;
     }
 

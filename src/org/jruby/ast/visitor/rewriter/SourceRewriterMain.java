@@ -57,7 +57,7 @@ public class SourceRewriterMain {
 		BufferedReader reader = null;
 		try {
 			reader = new BufferedReader(new InputStreamReader(new FileInputStream(args[0])));
-			lexerSource = new LexerSource(args[0], reader, 0);
+			lexerSource = new LexerSource(args[0], reader, 0, true);
 		} catch (FileNotFoundException e) {
 			System.err.println("Could not find the file:");
 			System.err.println(args[0]);

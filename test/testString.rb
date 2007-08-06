@@ -163,8 +163,10 @@ test_equal("", "".gsub(/\r\n|\n/, "\n"))
 testcase='toto'
 test_ok(1 == idx = testcase.index('o'))
 test_ok(3 == testcase.index('o',idx.succ))
+test_ok(nil == "hello".index('', 100))
 test_ok(3 == idx = testcase.rindex('o'))
 test_ok(1 == testcase.rindex('o', idx-1))
+test_ok(0 == testcase.rindex('', 0))
 
 ##### insert #####
 
@@ -209,6 +211,9 @@ test_equal("hi123412341", "hi".ljust(11, "1234"))
 
 # zero width padding
 test_exception(ArgumentError)  { "hello".ljust(11, "") }
+
+# using a substring
+test_equal("ho  ", "hiho"[2..3].ljust(4))
 
 test_equal("hello", "hello".rjust(4))
 test_equal("      hello", "hello".rjust(11))

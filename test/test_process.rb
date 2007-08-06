@@ -42,4 +42,10 @@ class TestProcess < Test::Unit::TestCase
     assert tms.cstime
     assert tms.utime > 0
   end
+  
+  def test_host_process
+    unless Config::CONFIG['host_os'] =~ /Windows/
+      assert_equal "1", %x{sh -c 'bin/jruby -e "exit 1" ; echo $?'}.strip
+    end
+  end
 end

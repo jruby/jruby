@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -40,7 +41,7 @@ import java.io.Serializable;
  * 
  * @see org.jruby.lexer.yacc.ISourcePosition
  */
-public class SourcePosition implements ISourcePosition, Serializable {
+public class IDESourcePosition implements ISourcePosition, Serializable {
     private static final long serialVersionUID = 3762529027281400377L;
     
     // The file of the source
@@ -57,7 +58,7 @@ public class SourcePosition implements ISourcePosition, Serializable {
     /**
      * Creates a default source position - required for serialization.
      */
-    public SourcePosition() {
+    public IDESourcePosition() {
     	this("", 0, 0);
     }
     
@@ -67,7 +68,7 @@ public class SourcePosition implements ISourcePosition, Serializable {
      * @param file location of the source (must not be null)
      * @param endLine what line within the source
      */
-	public SourcePosition(String file, int startLine, int endLine) {
+	public IDESourcePosition(String file, int startLine, int endLine) {
 		if (file == null) { //otherwise equals() and getInstance() will fail
 			throw new NullPointerException();  
 		}
@@ -84,7 +85,7 @@ public class SourcePosition implements ISourcePosition, Serializable {
      * @param file location of the source (must not be null)
      * @param line what line within the source
      */
-	public SourcePosition(String file, int startLine, int endLine, int startOffset, int endOffset) {
+	public IDESourcePosition(String file, int startLine, int endLine, int startOffset, int endOffset) {
 		if (file == null) { //otherwise equals() and getInstance() will fail
 			throw new NullPointerException();  
 		}
@@ -126,11 +127,11 @@ public class SourcePosition implements ISourcePosition, Serializable {
     	if (object == this) {
     		return true;
     	}
-        if (!(object instanceof SourcePosition)) {
+        if (!(object instanceof IDESourcePosition)) {
         	return false;
         }
         
-        SourcePosition other = (SourcePosition) object;
+        IDESourcePosition other = (IDESourcePosition) object;
 
         return file.equals(other.file) && endLine == other.endLine;
     }
@@ -184,7 +185,7 @@ public class SourcePosition implements ISourcePosition, Serializable {
     public ISourcePosition union(ISourcePosition other) {
         // Enebo: All AST nodes but IterNode are in ascending order position-wise.  We should not 
         // need to safe-guard that other is a smaller source position
-        return new SourcePosition(file, startLine, other.getEndLine(), startOffset, other.getEndOffset());
+        return new IDESourcePosition(file, startLine, other.getEndLine(), startOffset, other.getEndOffset());
     }
     
     /**
@@ -193,7 +194,7 @@ public class SourcePosition implements ISourcePosition, Serializable {
      * 
      * @param the positions providing the boundaries for the new position.
      */
-    public static SourcePosition combinePosition(ISourcePosition firstPos, ISourcePosition secondPos){
+    public static IDESourcePosition combinePosition(ISourcePosition firstPos, ISourcePosition secondPos){
         String fileName = firstPos.getFile();
         int startOffset = firstPos.getStartOffset();
         int endOffset = firstPos.getEndOffset();
@@ -210,7 +211,7 @@ public class SourcePosition implements ISourcePosition, Serializable {
             endLine = secondPos.getEndLine();
         }
         
-        SourcePosition combinedPosition = new SourcePosition(fileName, startLine, endLine, startOffset, endOffset);
+        IDESourcePosition combinedPosition = new IDESourcePosition(fileName, startLine, endLine, startOffset, endOffset);
         
         return combinedPosition;             
     }

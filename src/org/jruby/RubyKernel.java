@@ -146,7 +146,7 @@ public class RubyKernel {
         module.defineFastModuleFunction("test", callbackFactory.getFastOptSingletonMethod("test"));
         module.defineModuleFunction("throw", callbackFactory.getOptSingletonMethod("rbThrow"));
         // TODO: Implement Kernel#trace_var
-        module.defineModuleFunction("trap", callbackFactory.getOptSingletonMethod("trap"));
+        module.definePublicModuleFunction("trap", callbackFactory.getOptSingletonMethod("trap"));
         // TODO: Implement Kernel#untrace_var
         module.defineFastModuleFunction("warn", callbackFactory.getFastSingletonMethod("warn", IRUBY_OBJECT));
         
@@ -257,10 +257,11 @@ public class RubyKernel {
         Ruby runtime = recv.getRuntime();
 
         if (args.length == 0 || !(args[0] instanceof RubySymbol)) throw runtime.newArgumentError("no id given");
-
-        ThreadContext tc = runtime.getCurrentContext();
-        Visibility lastVis = tc.getLastVisibility();
-        CallType lastCallType = tc.getLastCallType();
+        
+        String name = args[0].asSymbol();
+        ThreadContext context = runtime.getCurrentContext();
+        Visibility lastVis = context.getLastVisibility();
+        CallType lastCallType = context.getLastCallType();
 
         String format = null;
 
@@ -279,10 +280,40 @@ public class RubyKernel {
 
         if (format == null) format = "undefined method `%s' for %s";
 
-        IRubyObject[]exArgs = new IRubyObject[3];
+        String description = null;
+        
+        if (recv.isNil()) {
+            description = "nil";
+        } else if (recv instanceof RubyBoolean && recv.isTrue()) {
+            description = "true";
+        } else if (recv instanceof RubyBoolean && !recv.isTrue()) {
+            description = "false";
+        } else {
+            if (name.equals("inspect") || name.equals("to_s")) {
+                description = recv.anyToString().toString();
+            } else {
+                IRubyObject d;
+                try {
+                    d = recv.callMethod(context, "inspect");
+                    if (d.getMetaClass() == recv.getMetaClass() || (d instanceof RubyString && ((RubyString)d).length().getLongValue() > 65)) {
+                        d = recv.anyToString();
+                    }
+                } catch (JumpException je) {
+                    d = recv.anyToString();
+                }
+                description = d.toString();
+            }
+        }
+        if (description.length() == 0 || (description.length() > 0 && description.charAt(0) != '#')) {
+            description = description + ":" + recv.getMetaClass().getRealClass().getName();            
+        }
+        
+        IRubyObject[]exArgs = new IRubyObject[noMethod ? 3 : 2];
 
-        RubyArray arr = runtime.newArray(args[0], runtime.newString(recv.inspect() + ":" + recv.getMetaClass().getRealClass().toString()));
+        RubyArray arr = runtime.newArray(args[0], runtime.newString(description));
         RubyString msg = runtime.newString(Sprintf.sprintf(runtime.newString(format), arr).toString());
+        
+        if (recv.isTaint()) msg.setTaint(true);
 
         exArgs[0] = msg;
         exArgs[1] = args[0];
@@ -386,14 +417,25 @@ public class RubyKernel {
     }
     
     public static IRubyObject new_integer(IRubyObject recv, IRubyObject object) {
-        ThreadContext context = recv.getRuntime().getCurrentContext();
-        
-        if(object instanceof RubyString) {
+        if (object instanceof RubyFloat) {
+            double val = ((RubyFloat)object).getDoubleValue(); 
+            if (val <= (double) RubyFixnum.MAX && val >= (double) RubyFixnum.MIN) {
+                IRubyObject tmp = ((RubyObject)object).convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_INT, "to_int", false);
+                if (tmp.isNil()) return ((RubyObject)object).convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_I, "to_i", true);
+                return tmp;
+            }
+            return RubyNumeric.dbl2num(recv.getRuntime(),((RubyFloat)object).getDoubleValue());            
+        } else if (object instanceof RubyFixnum || object instanceof RubyBignum) {
+            return object;
+        } else if (object instanceof RubyString) {
             return RubyNumeric.str2inum(recv.getRuntime(),(RubyString)object,0,true);
-                    }
-        return object.callMethod(context,MethodIndex.TO_I, "to_i");
+        }
+        
+        IRubyObject tmp = ((RubyObject)object).convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_INT, "to_int", false);
+        if (tmp.isNil()) return ((RubyObject)object).convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_I, "to_i", true);
+        return tmp;
     }
-    
+
     public static IRubyObject new_string(IRubyObject recv, IRubyObject object) {
         return object.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
     }
@@ -811,8 +853,8 @@ public class RubyKernel {
     }
 
     public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block block) {
-        // FIXME: We can probably fake some basic signals, but obviously can't do everything. For now, stub.
-        return recv.getRuntime().getNil();
+        recv.getRuntime().getLoadService().require("jsignal");
+        return recv.callMethod(recv.getRuntime().getCurrentContext(), "trap", args, CallType.FUNCTIONAL, block);
     }
     
     public static IRubyObject warn(IRubyObject recv, IRubyObject message) {

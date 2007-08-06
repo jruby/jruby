@@ -38,6 +38,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Unit test for the kernel class.
@@ -87,7 +88,7 @@ public class TestKernel extends TestRubyBase {
         } catch (RaiseException re) {
         	RubyException raisedException = re.getException();
         	if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
-	            RubyObject status = (RubyObject)raisedException.getInstanceVariable("status");
+	            IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
 	            assertEquals(expectedStatus, status);
         	} else {
         		throw re;

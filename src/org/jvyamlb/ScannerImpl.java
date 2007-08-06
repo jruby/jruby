@@ -1133,7 +1133,9 @@ public class ScannerImpl implements Scanner {
         final Object[] chompi = scanBlockScalarIndicators();
         final Boolean chomping = (Boolean)chompi[0];
         final int increment = ((Integer)chompi[1]).intValue();
-        scanBlockScalarIgnoredLine();
+
+        boolean sameLine = scanBlockScalarIgnoredLine();
+
         int minIndent = this.indent+1;
         if(minIndent < 0) {
             minIndent = 0;
@@ -1141,6 +1143,16 @@ public class ScannerImpl implements Scanner {
         ByteList breaks = null;
         int maxIndent = 0;
         int ind = 0;
+        if(sameLine) {
+            final boolean leadingNonSpace = !BLANK_T[peek()];
+            int length = 0;
+            while(!NULL_OR_LINEBR[peek(length)]) {
+                length++;
+            }
+            ensure(length,false);
+            chunks.append(this.buffer.bytes,this.pointer,length);
+            forward(length);
+        }
         if(increment == -1) {
             final Object[] brme = scanBlockScalarIndentation();
             breaks = (ByteList)brme[0];
@@ -1256,7 +1268,8 @@ public class ScannerImpl implements Scanner {
         return new Object[] {chomping,new Integer(increment)};
     }
 
-    private byte[] scanBlockScalarIgnoredLine() {
+    private boolean scanBlockScalarIgnoredLine() {
+        boolean same = true;
         while(peek() == ' ') {
             forward();
         }
@@ -1264,11 +1277,13 @@ public class ScannerImpl implements Scanner {
             while(!NULL_OR_LINEBR[peek()]) {
                 forward();
             }
+            same = false;
         }
-        if(!NULL_OR_LINEBR[peek()]) {
-            throw new ScannerException("while scanning a block scalar","expected a comment or a line break, but found " + peek() + "(" + ((int)peek()) + ")",null);
+        if(NULL_OR_LINEBR[peek()]) {
+            scanLineBreak();
+            return false;
         }
-        return scanLineBreak();
+        return same;
     }
 
     private Token fetchDirective() {

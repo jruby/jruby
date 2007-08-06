@@ -42,7 +42,7 @@ public class RubyJRuby {
         RubyModule comparableModule = runtime.defineModule("JRuby");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
         comparableModule.defineModuleFunction("parse", 
-                callbackFactory.getSingletonMethod("parse", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+                callbackFactory.getSingletonMethod("parse", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
         comparableModule.defineModuleFunction("runtime", 
                 callbackFactory.getSingletonMethod("runtime"));
 
@@ -53,10 +53,12 @@ public class RubyJRuby {
         return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), recv.getRuntime()), Block.NULL_BLOCK);
     }
     
-    public static IRubyObject parse(IRubyObject recv, IRubyObject arg1, IRubyObject arg2, Block unusedBlock) {
+    public static IRubyObject parse(IRubyObject recv, IRubyObject arg1, IRubyObject arg2, 
+            IRubyObject arg3, Block unusedBlock) {
         RubyString content = arg1.convertToString();
         RubyString filename = arg2.convertToString();
+        boolean extraPositionInformation = arg3.isTrue();
         return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), 
-            recv.getRuntime().parse(content.toString(), filename.toString(), null, 0)), Block.NULL_BLOCK);
+            recv.getRuntime().parse(content.toString(), filename.toString(), null, 0, extraPositionInformation)), Block.NULL_BLOCK);
     }
 }

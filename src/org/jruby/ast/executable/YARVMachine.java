@@ -119,7 +119,7 @@ public class YARVMachine {
     }
     
     public IRubyObject exec(ThreadContext context, IRubyObject self, StaticScope scope, Instruction[] bytecodes) {
-        return exec(context,self, new DynamicScope(scope,null),bytecodes);
+        return exec(context,self, new DynamicScope(scope),bytecodes);
     }
 
     public IRubyObject exec(ThreadContext context, IRubyObject self, DynamicScope scope, Instruction[] bytecodes) {

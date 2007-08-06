@@ -735,6 +735,13 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.ldc(name);
         invokeThreadContext("getConstant", cg.sig(IRubyObject.class, cg.params(String.class)));
     }
+
+    public void retrieveConstantFromModule(String name) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        mv.visitTypeInsn(CHECKCAST, cg.p(RubyModule.class));
+        mv.ldc(name);
+        mv.invokevirtual(cg.p(RubyModule.class), "getConstantFrom", cg.sig(IRubyObject.class, cg.params(String.class)));
+    }
     
     public void retrieveClassVariable(String name) {
         loadThreadContext();
@@ -1775,5 +1782,25 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     private void nullToNil() {
         loadRuntime();
         invokeUtilityMethod("nullToNil", cg.sig(IRubyObject.class, cg.params(IRubyObject.class, Ruby.class)));
+    }
+
+    public void branchIfModule(BranchCallback moduleCallback, BranchCallback notModuleCallback) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        mv.dup();
+        mv.visitTypeInsn(INSTANCEOF, cg.p(RubyModule.class));
+        
+        Label falseJmp = new Label();
+        Label afterJmp = new Label();
+
+        mv.ifeq(falseJmp); // EQ == 0 (i.e. false)
+
+        moduleCallback.branch(this);
+
+        mv.go_to(afterJmp);
+        mv.label(falseJmp);
+
+        notModuleCallback.branch(this);
+
+        mv.label(afterJmp);
     }
 }

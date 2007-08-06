@@ -82,10 +82,18 @@ public class RubyNameError extends RubyException {
     }
 
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        super.initialize(args, block);
         if (args.length > 1) {
-            name = args[1];
+            name = args[args.length - 1];
+            int newLength = args.length > 2 ? args.length - 2 : args.length - 1;
+
+            IRubyObject []tmpArgs = new IRubyObject[newLength];
+            System.arraycopy(args, 0, tmpArgs, 0, newLength);
+            args = tmpArgs;
+        } else {
+            name = getRuntime().getNil();
         }
+
+        super.initialize(args, block);
         return this;
     }
 

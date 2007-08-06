@@ -324,7 +324,7 @@ public class RubyIO extends RubyObject {
         ioClass.defineFastMethod("seek", callbackFactory.getFastOptMethod("seek"));
         ioClass.defineFastMethod("sync", callbackFactory.getFastMethod("sync"));
         ioClass.defineFastMethod("sync=", callbackFactory.getFastMethod("sync_set", IRubyObject.class));
-        ioClass.defineFastMethod("sysread", callbackFactory.getFastMethod("sysread", IRubyObject.class));
+        ioClass.defineFastMethod("sysread", callbackFactory.getFastOptMethod("sysread"));
         ioClass.defineFastMethod("syswrite", callbackFactory.getFastMethod("syswrite", IRubyObject.class));
         ioClass.defineAlias("tell", "pos");
         ioClass.defineAlias("to_i", "fileno");
@@ -494,10 +494,12 @@ public class RubyIO extends RubyObject {
     public IRubyObject internalGets(IRubyObject[] args) {
         checkReadable();
 
-        IRubyObject sepVal = getRuntime().getGlobalVariables().get("$/");
+        IRubyObject sepVal;
 
         if (args.length > 0) {
             sepVal = args[0];
+        } else {
+            sepVal = getRuntime().getGlobalVariables().get("$/");
         }
 
         
@@ -1077,11 +1079,28 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    public IRubyObject sysread(IRubyObject number) {
+    public IRubyObject sysread(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
+
+        int len = (int)RubyNumeric.num2long(args[0]);
+        if (len < 0) throw getRuntime().newArgumentError("Negative size");
+
         try {
-            ByteList buf = handler.sysread(RubyNumeric.fix2int(number));
-        
-            return RubyString.newString(getRuntime(), buf);
+            RubyString str;
+            if (args.length == 1 || args[1].isNil()) {
+                if (len == 0) return RubyString.newString(getRuntime(), "");
+                str = RubyString.newString(getRuntime(), handler.sysread(len));
+            } else {
+                str = args[1].convertToString();
+                if (len == 0) {
+                    str.setValue(new ByteList());
+                    return str;
+                }
+                str.setValue(handler.sysread(len)); // should preserve same instance
+            }
+            str.setTaint(true);
+            return str;
+            
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {
@@ -1110,17 +1129,18 @@ public class RubyIO extends RubyObject {
             if (atEOF && handler.isEOF()) throw new EOFException();
 
             if (argCount == 2) {
-                // rdocs say the second arg must be a String if present,
-                // it can't just walk and quack like one
-                if (!(args[1] instanceof RubyString)) {
-                    getRuntime().newTypeError(args[1], getRuntime().getString());
-                }
-                callerBuffer = (RubyString) args[1];
+                callerBuffer = args[1].convertToString(); 
             }
 
-            ByteList buf = readEntireStream ? handler.getsEntireStream() : 
-                handler.read(RubyNumeric.fix2int(args[0]));
-            
+            ByteList buf;
+            if (readEntireStream) {
+                buf = handler.getsEntireStream();
+            } else {
+                long len = RubyNumeric.num2long(args[0]);
+                if (len < 0) throw getRuntime().newArgumentError("negative length " + len + " given");
+                buf = handler.read((int)len);
+            }
+
             if (buf == null) throw new EOFException();
 
             // If we get here then no EOFException was thrown in the handler.  We
@@ -1202,7 +1222,17 @@ public class RubyIO extends RubyObject {
      * <p>Invoke a block for each line.</p>
      */
     public RubyIO each_line(IRubyObject[] args, Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        IRubyObject rs;
+        
+        if (args.length == 0) {
+            rs = getRuntime().getGlobalVariables().get("$/");
+        } else {
+            Arity.checkArgumentCount(getRuntime(), args, 1, 1);
+            rs = args[0];
+            if (!rs.isNil()) rs = rs.convertToString();
+        }
+        
+        ThreadContext context = getRuntime().getCurrentContext();        
         for (IRubyObject line = internalGets(args); !line.isNil(); 
         	line = internalGets(args)) {
             block.yield(context, line);

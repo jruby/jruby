@@ -48,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * </li>
  * 
  */
-public class Frame {
+public final class Frame {
     /**
      * The class for the method we are invoking for this frame.  Note: This may not be the
      * class where the implementation of the method lives.
@@ -80,7 +80,7 @@ public class Frame {
      * and also for block_given?.  Both of those methods needs access to the block of the 
      * previous frame to work.
      */ 
-    private Block block;
+    private final Block block;
     
     /**
      * Does this delimit a frame where an eval with binding occurred.  Used for stack traces.
@@ -114,7 +114,7 @@ public class Frame {
     public Frame(RubyModule klazz, IRubyObject self, String name,
                  IRubyObject[] args, int requiredArgCount, Block block, ISourcePosition position, Object jumpTarget) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
-        
+
         this.self = self;
         this.args = args;
         this.requiredArgCount = requiredArgCount;

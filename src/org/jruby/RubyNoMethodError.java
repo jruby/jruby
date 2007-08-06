@@ -61,7 +61,15 @@ public class RubyNoMethodError extends RubyNameError {
     }    
 
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        this.args = (args.length > 2) ? args[args.length - 1] : getRuntime().getNil();
+        if (args.length > 2) {
+            this.args = args[args.length - 1];
+            IRubyObject []tmpArgs = new IRubyObject[args.length - 1];
+            System.arraycopy(args, 0, tmpArgs, 0, tmpArgs.length);
+            args = tmpArgs;
+        } else {
+            this.args = getRuntime().getNil();
+        }
+
         super.initialize(args, block);
         return this;
     }

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ * **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -11,9 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -27,19 +26,40 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.ablaf.ast;
+package org.jruby.lexer.yacc;
 
-import java.io.IOException;
+public class SimpleSourcePosition implements ISourcePosition {
+    String filename;
+    int line;
 
-import org.jruby.ast.Node;
+    public SimpleSourcePosition(String filename, int line) {
+        this.filename = filename;
+        this.line = line;
+    }
 
-/**
- * An AST encoder can write nodes into some internal stream (not part of this API) and can be
- * eventually closed (which should free the resources of that internal stream).
- * 
- * @author jpetersen
- */
-public interface IAstEncoder {
-    void writeNode(Node node) throws IOException;
-    void close() throws IOException;
+    public void adjustStartOffset(int relativeValue) {}
+
+    public int getEndLine() {
+        return line;
+    }
+
+    public int getEndOffset() {
+        return 0;
+    }
+
+    public String getFile() {
+        return filename;
+    }
+
+    public int getStartLine() {
+        return line;
+    }
+
+    public int getStartOffset() {
+        return 0;
+    }
+
+    public ISourcePosition union(ISourcePosition other) {
+        return this;
+    }
 }

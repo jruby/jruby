@@ -90,6 +90,7 @@ public class RubyBoolean extends RubyObject {
         falseClass.defineFastMethod("^", fact.getFastMethod("false_xor", RubyKernel.IRUBY_OBJECT));
         falseClass.defineFastMethod("id", fact.getFastMethod("false_id"));
         falseClass.defineFastMethod("to_s", fact.getFastMethod("false_to_s"));
+        falseClass.getMetaClass().undefineMethod("new");
         
         return falseClass;
     }
@@ -106,6 +107,7 @@ public class RubyBoolean extends RubyObject {
         trueClass.defineFastMethod("^", fact.getFastMethod("true_xor", RubyKernel.IRUBY_OBJECT));
         trueClass.defineFastMethod("id", fact.getFastMethod("true_id"));
         trueClass.defineFastMethod("to_s", fact.getFastMethod("true_to_s"));
+        trueClass.getMetaClass().undefineMethod("new");
         
         return trueClass;
     }

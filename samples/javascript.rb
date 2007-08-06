@@ -1,4 +1,3 @@
-# This example demonstrates language interoperability and also JRubys' java integration features.
 require 'samples/scripting'
 include Scriptable
 

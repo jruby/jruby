@@ -373,6 +373,13 @@ public interface Compiler {
      * @param name The name of the constant
      */
     public void retrieveConstant(String name);
+
+    /**
+     * Retreive a named constant from the RubyModule/RubyClass that's just been pushed.
+     * 
+     * @param name The name of the constant
+     */
+    public void retrieveConstantFromModule(String name);
     
     /**
      * Load a Ruby "false" value on top of the stack.
@@ -522,4 +529,6 @@ public interface Compiler {
     public void defineModule(String name, StaticScope staticScope, ClosureCallback pathCallback, ClosureCallback bodyCallback);
     
     public void pollThreadEvents();
+
+    public void branchIfModule(BranchCallback moduleCallback, BranchCallback notModuleCallback);
 }

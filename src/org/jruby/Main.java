@@ -148,6 +148,7 @@ public class Main {
             out.println("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]");
             out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
             out.println("    -b              benchmark mode, times the script execution");
+            out.println("    -Jjava option   pass an option on to the JVM (e.g. -J-Xmx512m)");
             out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
             out.println("    --              optional -- before rubyfile.rb for compatibility with ruby");
             out.println("    -d              set debugging flags (set $DEBUG to true)");
@@ -176,9 +177,9 @@ public class Main {
             if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
                 RubyException raisedException = ((RaiseException)je).getException();
                 if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
-                    RubyFixnum status = (RubyFixnum)raisedException.getInstanceVariable("status");
+                    IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
 
-                    if (status != null) {
+                    if (status != null && !status.isNil()) {
                         return RubyNumeric.fix2int(status);
                     } else {
                         return 0;

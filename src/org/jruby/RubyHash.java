@@ -51,6 +51,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -85,9 +86,9 @@ public class RubyHash extends RubyObject implements Map {
         hashc.defineMethod("fetch", callbackFactory.getOptMethod("fetch"));
         hashc.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
         hashc.defineFastMethod("store", callbackFactory.getFastMethod("aset", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-        hashc.defineMethod("default", callbackFactory.getOptMethod("default_value_get"));
+        hashc.defineMethod("default", callbackFactory.getFastOptMethod("default_value_get"));
         hashc.defineFastMethod("default=", callbackFactory.getFastMethod("default_value_set", RubyKernel.IRUBY_OBJECT));
-        hashc.defineMethod("default_proc", callbackFactory.getMethod("default_proc"));
+        hashc.defineMethod("default_proc", callbackFactory.getFastMethod("default_proc"));
         hashc.defineFastMethod("index", callbackFactory.getFastMethod("index", RubyKernel.IRUBY_OBJECT));
         hashc.defineFastMethod("indexes", callbackFactory.getFastOptMethod("indices"));
         hashc.defineFastMethod("indices", callbackFactory.getFastOptMethod("indices"));
@@ -141,15 +142,17 @@ public class RubyHash extends RubyObject implements Map {
 
     public static final byte AREF_SWITCHVALUE = 1;
     public static final byte ASET_SWITCHVALUE = 2;
-    public static final byte NIL_P_SWITCHVALUE = 3;
-    public static final byte EQUALEQUAL_SWITCHVALUE = 4;
-    public static final byte EMPTY_P_SWITCHVALUE = 5;
-    public static final byte TO_S_SWITCHVALUE = 6;
-    public static final byte TO_A_SWITCHVALUE = 7;
-    public static final byte HASH_SWITCHVALUE = 8;
-    public static final byte LENGTH_SWITCHVALUE = 9;
-    public static final byte TO_HASH_SWITCHVALUE = 10;
-    public static final byte EQL_P_SWITCHVALUE = 11;
+    public static final byte DEFAULT_SWITCHVALUE = 3;
+    public static final byte NIL_P_SWITCHVALUE = 4;
+    public static final byte EQUALEQUAL_SWITCHVALUE = 5;
+    public static final byte EMPTY_P_SWITCHVALUE = 6;
+    public static final byte TO_S_SWITCHVALUE = 7;
+    public static final byte TO_A_SWITCHVALUE = 8;
+    public static final byte HASH_SWITCHVALUE = 9;
+    public static final byte LENGTH_SWITCHVALUE = 10;
+    public static final byte TO_HASH_SWITCHVALUE = 11;
+    public static final byte EQL_P_SWITCHVALUE = 12;
+    public static final byte INSPECT_SWITCHVALUE = 13;
 
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
@@ -163,6 +166,8 @@ public class RubyHash extends RubyObject implements Map {
         case ASET_SWITCHVALUE:
             if (args.length != 2) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 2 + ")");
             return aset(args[0],args[1]);
+        case DEFAULT_SWITCHVALUE:
+            return default_value_get(args);
         case NIL_P_SWITCHVALUE:
             if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return nil_p();
@@ -190,6 +195,9 @@ public class RubyHash extends RubyObject implements Map {
         case EQL_P_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return obj_equal(args[0]);
+        case INSPECT_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return inspect();
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);
@@ -684,7 +692,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_default
      * 
      */
-    public IRubyObject default_value_get(IRubyObject[] args, Block unusedBlock) {
+    public IRubyObject default_value_get(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
         if (procDefault) {
@@ -709,7 +717,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_default_proc
      * 
      */    
-    public IRubyObject default_proc(Block unusedBlock) {
+    public IRubyObject default_proc() {
         return procDefault ? ifNone : getRuntime().getNil();
     }
 
@@ -877,8 +885,8 @@ public class RubyHash extends RubyObject implements Map {
      * 
      */
     public IRubyObject aref(IRubyObject key) {        
-        IRubyObject value;        
-        return ((value = internalGet(key)) == null) ? callMethod(getRuntime().getCurrentContext(), "default", key) : value;        
+        IRubyObject value;
+        return ((value = internalGet(key)) == null) ? callMethod(getRuntime().getCurrentContext(), MethodIndex.DEFAULT, "default", key) : value;
     }
 
     /** rb_hash_fetch

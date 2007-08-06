@@ -97,7 +97,7 @@ public class YARVMethod extends DynamicMethod {
                 traceCall(context, runtime, name);
             }
 
-            DynamicScope sc = new DynamicScope(staticScope,null);
+            DynamicScope sc = new DynamicScope(staticScope);
             for(int i = 0; i<args.length; i++) {
                 sc.setValue(i,args[i],0);
             }

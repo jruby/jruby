@@ -1,5 +1,6 @@
-# See javascript.rb for an example of using this module.   This example shows how to import
-# Java APIs and script them.
+# scripting.rb
+# March 30, 2007
+#
 
 require 'jruby'
 

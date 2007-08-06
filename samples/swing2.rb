@@ -1,5 +1,3 @@
-# Simple swing-based application
-
 # Import Java packages
 include Java
 

@@ -147,6 +147,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public static final byte HASH_SWITCHVALUE = 4;
     public static final byte MATCH_SWITCHVALUE = 5;
     public static final byte EQQ_SWITCHVALUE = 6;
+    public static final byte INSPECT_SWITCHVALUE = 7;
     
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
@@ -172,6 +173,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         case EQQ_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return eqq(args[0]);
+        case INSPECT_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return inspect();
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);

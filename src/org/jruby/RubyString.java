@@ -215,6 +215,7 @@ public class RubyString extends RubyObject {
     public static final byte LENGTH_SWITCHVALUE = 19;
     public static final byte MATCH_SWITCHVALUE = 20;
     public static final byte EQQ_SWITCHVALUE = 21;
+    public static final byte INSPECT_SWITCHVALUE = 22;
     
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
@@ -279,6 +280,9 @@ public class RubyString extends RubyObject {
         case EQQ_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return equal(args[0]);
+        case INSPECT_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return inspect();
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);
@@ -934,8 +938,8 @@ public class RubyString extends RubyObject {
         boolean modify = false;
         while (s < send) {
             char c = (char)(buf[s] & 0xff);
-            if (Character.isLetter(c) && Character.isLowerCase(c)) { 
-                buf[s] = (byte)Character.toUpperCase(c);
+            if (c >= 'a' && c<= 'z') {
+                buf[s] = (byte)(c-32);
                 modify = true;
             }
             s++;
@@ -969,8 +973,8 @@ public class RubyString extends RubyObject {
         boolean modify = false;
         while (s < send) {
             char c = (char)(buf[s] & 0xff);
-            if (Character.isLetter(c) && Character.isUpperCase(c)) {
-                buf[s] = (byte)Character.toLowerCase(c);
+            if (c >= 'A' && c <= 'Z') {
+                buf[s] = (byte)(c+32);
                 modify = true;
             }
             s++;
@@ -1797,18 +1801,24 @@ public class RubyString extends RubyObject {
 
             if (repl.isTaint()) tainted = true;
             int startZ = mat.start(0);
-            try {
-                startZ = str.substring(0, startZ).getBytes("UTF8").length;
-            } catch (UnsupportedEncodingException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            if(utf8) {
+                try {
+                    startZ = str.substring(0, startZ).getBytes("UTF8").length;
+                } catch (UnsupportedEncodingException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
-            int plen = mat.end(0) - startZ; 
-            try {
-                plen = mat.group(0).getBytes("UTF8").length;
-            } catch (UnsupportedEncodingException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+
+            int plen = mat.end(0) - startZ;
+
+            if (utf8) {
+                try {
+                    plen = mat.group(0).getBytes("UTF8").length;
+                } catch (UnsupportedEncodingException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
             ByteList replValue = ((RubyString)repl).value;
             
@@ -1990,16 +2000,26 @@ public class RubyString extends RubyObject {
      */
     private IRubyObject index(IRubyObject[] args, boolean reverse) {
         //FIXME may be a problem with pos when doing reverse searches
-        int pos = !reverse ? 0 : value.length();
-
+        int pos;
         boolean offset = false;
+        
         if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             pos = RubyNumeric.fix2int(args[1]);
-            offset = true;
-        }
-        if (pos < 0) {
-            pos += value.length();
-            if (pos < 0) return getRuntime().getNil();
+            if (pos > value.length()) {
+                if (reverse) {
+                    pos = value.length();
+                } else {
+                    return getRuntime().getNil();
+                }
+            } else {
+                if (pos < 0) {
+                    pos += value.length();
+                    if (pos < 0) return getRuntime().getNil();
+                }                 
+            }
+            offset = true;           
+        } else {
+            pos = !reverse ? 0 : value.length();
         }
         
         if (args[0] instanceof RubyRegexp) {
@@ -2027,19 +2047,21 @@ public class RubyString extends RubyObject {
                     dummy = ((RubyRegexp) args[0]).search(toString(), this, pos + 1);
                 }
             }
-        } else if (args[0] instanceof RubyString) {
-            ByteList sub = ((RubyString) args[0]).value;
-            
-            if (sub.length() > value.length()) return getRuntime().getNil();
-            // the empty string is always found at the beginning of a string (or at the end when rindex)
-            if (sub.realSize == 0) return reverse ? getRuntime().newFixnum(value.length()) : getRuntime().newFixnum(0);
-
-            pos = reverse ? value.lastIndexOf(sub, pos) : value.indexOf(sub, pos);
         } else if (args[0] instanceof RubyFixnum) {
             char c = (char) ((RubyFixnum) args[0]).getLongValue();
             pos = reverse ? value.lastIndexOf(c, pos) : value.indexOf(c, pos);
         } else {
-            throw getRuntime().newArgumentError("wrong type of argument");
+            IRubyObject tmp = args[0].checkStringType();
+
+            if (tmp.isNil()) throw getRuntime().newTypeError("type mismatch: " + args[0].getMetaClass().getName() + " given");
+
+            ByteList sub = ((RubyString) tmp).value;
+
+            if (sub.length() > value.length()) return getRuntime().getNil();
+            // the empty string is always found at the beginning of a string (or at the end when rindex)
+            if (sub.realSize == 0) return getRuntime().newFixnum(pos);
+
+            pos = reverse ? value.lastIndexOf(sub, pos) : value.indexOf(sub, pos);
         }
 
         return pos == -1 ? getRuntime().getNil() : getRuntime().newFixnum(pos);
@@ -2684,7 +2706,7 @@ public class RubyString extends RubyObject {
         
         if (jflag != 'r') {
             p += value.realSize;
-            pend = value.begin + width;
+            pend = res.begin + width;
             if (flen <= 1) {
                 while (p < pend) pbuf[p++] = fbuf[f];
             } else {
@@ -2831,17 +2853,26 @@ public class RubyString extends RubyObject {
         return str;
     }
 
+    private final static boolean[] WHITESPACE = new boolean[256];
+    static {
+        WHITESPACE[((byte)' ')+128] = true;
+        WHITESPACE[((byte)'\t')+128] = true;
+        WHITESPACE[((byte)'\n')+128] = true;
+        WHITESPACE[((byte)'\r')+128] = true;
+        WHITESPACE[((byte)'\f')+128] = true;
+    }
+
+
     /** rb_str_lstrip_bang
-     * FIXME support buffer shared
      */
     public IRubyObject lstrip_bang() {
-        if (value.length() == 0) return getRuntime().getNil();
+        if (value.realSize == 0) return getRuntime().getNil();
         
         int i=0;
-        while (i < value.length() && Character.isWhitespace(value.charAt(i))) i++;
+        while (i < value.realSize && WHITESPACE[value.bytes[value.begin+i]+128]) i++;
         
         if (i > 0) {
-            view(i, value.length() - i);
+            view(i, value.realSize - i);
             return this;
         }
         
@@ -2858,21 +2889,20 @@ public class RubyString extends RubyObject {
     }
 
     /** rb_str_rstrip_bang
-     * FIXME support buffer shared
      */ 
     public IRubyObject rstrip_bang() {
-        if (value.length() == 0) return getRuntime().getNil();
-        int i=value.length() - 1;
+        if (value.realSize == 0) return getRuntime().getNil();
+        int i=value.realSize - 1;
         
-        while (i >= 0 && Character.isWhitespace(value.charAt(i))) i--;
+        while (i >= 0 && WHITESPACE[value.bytes[value.begin+i]+128]) i--;
         
-        if (i < value.length() - 1) {
+        if (i < value.realSize - 1) {
             view(0, i + 1);
             return this;
-            }
-
-            return getRuntime().getNil();
         }
+
+        return getRuntime().getNil();
+    }
 
     /** rb_str_strip
      *
@@ -2884,33 +2914,16 @@ public class RubyString extends RubyObject {
         }
 
     /** rb_str_strip_bang
-     *  FIXME support buffer shared
      */
     public IRubyObject strip_bang() {
-        if (value.length() == 0) return getRuntime().getNil();
-        
-        int left = 0;
-        while (left < value.length() && Character.isWhitespace(value.charAt(left))) left++;
-        
-        int right = value.length() - 1;
-        while (right > left && Character.isWhitespace(value.charAt(right))) right--;
-        
-        if (left == 0 && right == value.length() - 1) {
-            return getRuntime().getNil();
+        IRubyObject l = lstrip_bang();
+        IRubyObject r = rstrip_bang();
+
+        if(l.isNil() && r.isNil()) {
+            return l;
         }
-        
-        if (left <= right) {
-            view(left, right - left + 1);
         return this;
     }
-        
-        if (left > right) {
-            view(new ByteList());
-            return this;            
-        }        
-        
-        return getRuntime().getNil();
-        }
 
     /** rb_str_count
      *

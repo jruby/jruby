@@ -11,9 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2007 Damian Steer <pldms@mac.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -27,18 +25,15 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.ablaf.ast;
-
-import java.io.IOException;
-
-import org.jruby.ast.Node;
-
+package org.jruby;
 
 /**
+ * An almost entirely useless interface for those objects that we _really_ want
+ * to finalise.
  * 
- * @author jpetersen
+ * @author pldms
+ *
  */
-public interface IAstDecoder {
-    Node readNode() throws IOException;
-    void close() throws IOException;
+public interface Finalizable {
+    public void finalize();
 }

@@ -105,6 +105,7 @@ public class RubyBignum extends RubyInteger {
     public static final byte OP_TIMES_SWITCHVALUE = 7;
     public static final byte EQUALEQUAL_SWITCHVALUE = 8;
     public static final byte OP_SPACESHIP_SWITCHVALUE = 9;
+    public static final byte INSPECT_SWITCHVALUE = 10;
 
     private final BigInteger value;
 
@@ -142,6 +143,9 @@ public class RubyBignum extends RubyInteger {
         case OP_SPACESHIP_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return cmp(args[0]);
+        case INSPECT_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return inspect();
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);

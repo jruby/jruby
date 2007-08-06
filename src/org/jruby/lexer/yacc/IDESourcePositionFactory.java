@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ * **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -27,33 +28,29 @@
  ***** END LICENSE BLOCK *****/
  package org.jruby.lexer.yacc;
 
-public class SourcePositionFactory implements ISourcePositionFactory {
+public class IDESourcePositionFactory implements ISourcePositionFactory {
     // Position of last token returned.
-    private SourcePosition lastPosition;
+    private IDESourcePosition lastPosition;
     private LexerSource source;
     
-    public SourcePositionFactory(LexerSource source, int line) {
+    public IDESourcePositionFactory(LexerSource source, int line) {
         this.source = source;
-        lastPosition = new SourcePosition("", line, line);
+        lastPosition = new IDESourcePosition("", line, line);
     }
 
     public ISourcePosition getPosition(ISourcePosition startPosition, boolean inclusive) {
 
         if (startPosition == null) {
-            lastPosition = new SourcePosition(source.getFilename(), lastPosition.getEndLine(), 
+            lastPosition = new IDESourcePosition(source.getFilename(), lastPosition.getEndLine(), 
                     source.getLine(), lastPosition.getEndOffset(), source.getOffset());
         } else if (inclusive) {
-            lastPosition = new SourcePosition(source.getFilename(), startPosition.getStartLine(), 
+            lastPosition = new IDESourcePosition(source.getFilename(), startPosition.getStartLine(), 
                     source.getLine(), startPosition.getStartOffset(), source.getOffset());
         } else {
-            lastPosition = new SourcePosition(source.getFilename(), startPosition.getEndLine(), 
+            lastPosition = new IDESourcePosition(source.getFilename(), startPosition.getEndLine(), 
                     source.getLine(), startPosition.getEndOffset(), source.getOffset());
         }
 
         return lastPosition;
 	}
-    
-    public ISourcePosition getDummyPosition() {
-        return new SourcePosition("", -1, -1, 0, 0);
-    }
 }

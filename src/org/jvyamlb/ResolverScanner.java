@@ -382,10 +382,9 @@ static final int resolver_scanner_en_main = 1;
 	int _keys;
 
 	if ( p != pe ) {
+	if ( cs != 0 ) {
 	_resume: while ( true ) {
 	_again: do {
-	if ( cs == 0 )
-		break _resume;
 	_match: do {
 	_keys = _resolver_scanner_key_offsets[cs];
 	_trans = _resolver_scanner_index_offsets[cs];
@@ -439,15 +438,17 @@ static final int resolver_scanner_en_main = 1;
 	cs = _resolver_scanner_trans_targs_wi[_trans];
 
 	} while (false);
+	if ( cs == 0 )
+		break _resume;
 	if ( ++p == pe )
 		break _resume;
 	}
-	}
+	}	}
 	}
 // line 76 "src/org/jvyamlb/resolver_scanner.rl"
 
 
-// line 451 "src/org/jvyamlb/ResolverScanner.java"
+// line 452 "src/org/jvyamlb/ResolverScanner.java"
 	int _acts = _resolver_scanner_eof_actions[cs];
 	int _nacts = (int) _resolver_scanner_actions[_acts++];
 	while ( _nacts-- > 0 ) {
@@ -484,7 +485,7 @@ static final int resolver_scanner_en_main = 1;
 // line 17 "src/org/jvyamlb/resolver_scanner.rl"
 	{ tag = "tag:yaml.org,2002:int"; }
 	break;
-// line 488 "src/org/jvyamlb/ResolverScanner.java"
+// line 489 "src/org/jvyamlb/ResolverScanner.java"
 		}
 	}
 

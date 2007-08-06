@@ -41,6 +41,7 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
@@ -150,9 +151,7 @@ public class RubyException extends RubyObject {
     }
 
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (args.length > 0) {
-            message = args[0];
-        }
+        if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 1) message = args[0];
         return this;
     }
 
@@ -194,7 +193,7 @@ public class RubyException extends RubyObject {
     }
 
     public IRubyObject to_str() {
-        return message.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
+        return callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
     }
 
     /** inspects an object and return a kind of debug information
@@ -203,11 +202,9 @@ public class RubyException extends RubyObject {
      */
     public IRubyObject inspect() {
         RubyModule rubyClass = getMetaClass();
-        RubyString exception = RubyString.stringValue(this);
+        RubyString exception = RubyString.objAsString(this);
 
-        if (exception.getValue().length() == 0) {
-            return getRuntime().newString(rubyClass.getName());
-        }
+        if (exception.getValue().length() == 0) return getRuntime().newString(rubyClass.getName());
         StringBuffer sb = new StringBuffer("#<");
         sb.append(rubyClass.getName()).append(": ").append(exception.getValue()).append(">");
         return getRuntime().newString(sb.toString());

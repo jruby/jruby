@@ -45,12 +45,12 @@ import org.jruby.ast.OptNNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.visitor.rewriter.ReWriteVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.IDESourcePosition;
 import org.jruby.util.ByteList;
 
 public class TestReWriteVisitor extends TestCase {
 
-    static final SourcePosition emptyPosition = new SourcePosition("", 0, 0, 0, 0);
+    static final IDESourcePosition emptyPosition = new IDESourcePosition("", 0, 0, 0, 0);
 
     private String visitNode(Node n) {
         StringWriter out = new StringWriter();
@@ -61,7 +61,7 @@ public class TestReWriteVisitor extends TestCase {
     }
 
     public void testVisitRegexpNode() {
-        RegexpNode n = new RegexpNode(new SourcePosition("", 0, 0, 2, 4), ByteList.create(".*"), 0);
+        RegexpNode n = new RegexpNode(new IDESourcePosition("", 0, 0, 2, 4), ByteList.create(".*"), 0);
         assertEquals("/.*/", visitNode(n));
     }
 
@@ -104,7 +104,7 @@ public class TestReWriteVisitor extends TestCase {
     }
 
     public void testArgumentNode() {
-        Node node = new ArgumentNode(new SourcePosition(), "name");
+        Node node = new ArgumentNode(new IDESourcePosition(), "name");
         assertEquals("name", ReWriteVisitor.createCodeFromNode(node, ""));
     }
 

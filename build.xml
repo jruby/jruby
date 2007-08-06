@@ -234,9 +234,6 @@
     </target>
 
   <target name="jar" depends="init" description="Create the jruby.jar file">
-    <uptodate targetfile="${lib.dir}/jruby.jar" property="jar-up-to-date">
-        <srcfiles dir="${src.dir}" includes="**/*.java"/>
-    </uptodate>
     <antcall target="jar-jruby" inheritall="true"/>
   </target>
 

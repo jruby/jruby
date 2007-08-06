@@ -90,6 +90,8 @@ public class NodeCompilerFactory {
         case NodeTypes.CONSTDECLNODE:
             // this should be safe as well with TC doing the right thing
             return new ConstDeclNodeCompiler();
+        case NodeTypes.COLON2NODE:
+            return new Colon2NodeCompiler();
         case NodeTypes.CONSTNODE:
             // I think this is safe now that cref and class are being pushed on TC
             return new ConstNodeCompiler();

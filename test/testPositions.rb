@@ -35,7 +35,7 @@ def compare_node(node, list, test_name)
 end
 
 def test_tree(expected_list, script_content, test_name=nil, verbose=false)
-   root = JRuby::parse(script_content, "")
+   root = JRuby::parse(script_content, "", true)
    print_tree(root) if verbose
    compare_node(root, expected_list, test_name)
 end
