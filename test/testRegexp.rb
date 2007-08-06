@@ -138,3 +138,6 @@ test_equal("[:alpha:]", %r{[:alpha:]}.source)
 
 # Why anyone would do this I have no idea, but it matches MRI
 test_equal(/x/, +/x/)
+
+# JRUBY-1046: Support \G correctly:
+test_equal ["aa1 ", "aa2 "], "aa1 aa2 ba3 ".scan(/\Ga+\d\s*/)

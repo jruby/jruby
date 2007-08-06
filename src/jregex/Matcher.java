@@ -1094,7 +1094,7 @@ new Exception().printStackTrace();
                   else break main;
                   
                case Term.LAST_MATCH_END:
-                  if(i==wEnd){  //meets
+                  if(i==wEnd || wEnd == -1){  //meets
                      term=term.next;
                      continue matchHere;
                   }
