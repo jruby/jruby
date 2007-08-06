@@ -48,3 +48,30 @@ puts "Measure string.length, integer length to fixnum"
     }
   }
 }
+
+puts "Measure java.lang.Thread#name, String entering Ruby"
+JThread = java::lang::Thread
+class JThread
+  def bench
+    x = nil
+    1000000.times {
+      x = name
+    }
+  end
+end
+
+5.times {
+  puts Benchmark.measure {
+    JThread.currentThread.bench
+  }
+}
+
+puts "Measure Fixnum#to_s, String being constructed"
+5.times {
+  puts Benchmark.measure {
+    x = 1
+    1000000.times {
+      y = x.to_s
+    }
+  }
+}
