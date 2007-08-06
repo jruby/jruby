@@ -27,8 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
-import edu.emory.mathcs.backport.java.util.concurrent.ExecutionException;
-import edu.emory.mathcs.backport.java.util.concurrent.TimeoutException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 public interface ThreadLike {
     public void start();

@@ -48,9 +48,9 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import edu.emory.mathcs.backport.java.util.concurrent.ExecutionException;
-import edu.emory.mathcs.backport.java.util.concurrent.TimeoutException;
-import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectMarshal;
 
