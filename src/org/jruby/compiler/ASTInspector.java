@@ -211,6 +211,9 @@ public class ASTInspector {
             break;
         case NodeTypes.DVARNODE:
             break;
+        case NodeTypes.ENSURENODE:
+            disable();
+            break;
         case NodeTypes.EVSTRNODE:
             inspect(((EvStrNode)node).getBody());
             break;

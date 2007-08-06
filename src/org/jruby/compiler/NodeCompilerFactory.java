@@ -55,6 +55,7 @@ import org.jruby.ast.DVarNode;
 import org.jruby.ast.DefinedNode;
 import org.jruby.ast.DefnNode;
 import org.jruby.ast.DotNode;
+import org.jruby.ast.EnsureNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.FixnumNode;
@@ -98,6 +99,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.util.ByteList;
 import org.jruby.exceptions.JumpException;
 import org.jruby.RubyMatchData;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -176,6 +178,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.DVARNODE:
             compileDVar(node, context);
+            break;
+        case NodeTypes.ENSURENODE:
+            compileEnsureNode(node, context);
             break;
         case NodeTypes.EVSTRNODE:
             compileEvStr(node, context);
@@ -1178,6 +1183,28 @@ public class NodeCompilerFactory {
         context.getVariableCompiler().retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
     }
     
+    public static void compileEnsureNode(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final EnsureNode ensureNode = (EnsureNode)node;
+        
+        if(ensureNode.getEnsureNode() != null) {
+            context.protect(new BranchCallback() {
+                    public void branch(MethodCompiler context) {
+                        compile(ensureNode.getBodyNode(), context);
+                    }
+                },
+                new BranchCallback() {
+                    public void branch(MethodCompiler context) {
+                        compile(ensureNode.getEnsureNode(), context);
+                        context.consumeCurrentValue();
+                    }
+                }, IRubyObject.class);
+        } else {
+            compile(ensureNode.getBodyNode(), context);
+        }
+    }
+
     public static void compileEvStr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         

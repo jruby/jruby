@@ -114,6 +114,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private static final int RUNTIME_INDEX = 5;
     private static final int VARS_ARRAY_INDEX = 6;
     private static final int NIL_INDEX = 7;
+    private static final int EXCEPTION_INDEX = 8;
 
     private String classname;
     private String sourcename;
@@ -283,9 +284,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         protected InvocationCompiler invocationCompiler;
         
         protected Label[] currentLoopLabels;
+        protected boolean withinProtection = false;
         
         // The current local variable count, to use for temporary locals during processing
-        protected int localVariable = NIL_INDEX + 1;
+        protected int localVariable = EXCEPTION_INDEX + 1;
 
         public abstract void beginMethod(ClosureCallback args, StaticScope scope);
 
@@ -1193,15 +1195,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void protect(BranchCallback regularCode, BranchCallback protectedCode, Class ret) {
+
             String mname = getNewEnsureName();
             SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC + ACC_STATIC, mname, cg.sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}), null, null));
             SkinnyMethodAdapter old_method = null;
             SkinnyMethodAdapter var_old_method = null;
             SkinnyMethodAdapter inv_old_method = null;
+            boolean oldWithinProtection = withinProtection;
+            withinProtection = true;
             try {
                 old_method = this.method;
-                var_old_method = getVariableCompiler().getMethodAdapter();;
-                inv_old_method = getInvocationCompiler().getMethodAdapter();;
+                var_old_method = getVariableCompiler().getMethodAdapter();
+                inv_old_method = getInvocationCompiler().getMethodAdapter();
                 this.method = mv;
                 getVariableCompiler().setMethodAdapter(mv);
                 getInvocationCompiler().setMethodAdapter(mv);
@@ -1242,12 +1247,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 Label l4 = new Label();
                 method.visitJumpInsn(GOTO, l4);
                 method.visitLabel(l2);
-                method.visitVarInsn(ASTORE, 1);
+                method.visitVarInsn(ASTORE, EXCEPTION_INDEX);
                 method.visitLabel(l3);
 
                 protectedCode.branch(this);
 
-                method.visitVarInsn(ALOAD, 1);
+                method.visitVarInsn(ALOAD, EXCEPTION_INDEX);
                 method.visitInsn(ATHROW);
                 method.visitLabel(l4);
 
@@ -1258,6 +1263,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 this.method = old_method;
                 getVariableCompiler().setMethodAdapter(var_old_method);
                 getInvocationCompiler().setMethodAdapter(inv_old_method);
+                withinProtection = oldWithinProtection;
             }
 
             loadThreadContext();
@@ -1322,7 +1328,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 Label l3 = new Label();
                 mv.visitJumpInsn(GOTO, l3);
                 mv.visitLabel(l2);
-                mv.visitVarInsn(ASTORE, 1);
+                mv.visitVarInsn(ASTORE, EXCEPTION_INDEX);
 
                 catchCode.branch(this);
 
@@ -1702,6 +1708,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void issueBreakEvent() {
+            if(withinProtection) {
+                throw new NotCompilableException("Can't compile break within ensure yet");
+            }
             if (currentLoopLabels != null) {
                 issueLoopBreak();
             } else {
@@ -1839,6 +1848,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void issueBreakEvent() {
+            if(withinProtection) {
+                throw new NotCompilableException("Can't compile break within ensure yet");
+            }
             if (currentLoopLabels != null) {
                 issueLoopBreak();
             } else {
