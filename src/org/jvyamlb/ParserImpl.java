@@ -144,13 +144,450 @@ public class ParserImpl implements Parser {
         public void setYamlVersion(final int[] yamlVersion) {
             this.yamlVersion = yamlVersion;
         }
-    }
 
-    private static interface Production {
-        Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner);
-    }
+        public Event produce(final int current, final IntStack parseStack, final Scanner scanner) {
+            switch(current) {
+            case P_STREAM: {
+                parseStack.push(P_STREAM_END);
+                parseStack.push(P_EXPLICIT_DOCUMENT);
+                parseStack.push(P_IMPLICIT_DOCUMENT);
+                parseStack.push(P_STREAM_START);
+                return null;
+            }
+            case P_STREAM_START: {
+                scanner.getToken();
+                return STREAM_START;
+            }
+            case P_STREAM_END: {
+                scanner.getToken();
+                return STREAM_END;
+            }
+            case P_IMPLICIT_DOCUMENT: {
+                final Token curr = scanner.peekToken();
+                if(!(curr instanceof DirectiveToken || curr instanceof DocumentStartToken || curr instanceof StreamEndToken)) {
+                    parseStack.push(P_DOCUMENT_END);
+                    parseStack.push(P_BLOCK_NODE);
+                    parseStack.push(P_DOCUMENT_START_IMPLICIT);
+                }
+                return null;
+            }
+            case P_EXPLICIT_DOCUMENT: {
+                if(!(scanner.peekToken() instanceof StreamEndToken)) {
+                    parseStack.push(P_EXPLICIT_DOCUMENT);
+                    parseStack.push(P_DOCUMENT_END);
+                    parseStack.push(P_BLOCK_NODE);
+                    parseStack.push(P_DOCUMENT_START);
+                }
+                return null;
+            }
+            case P_DOCUMENT_START: {
+                Token tok = scanner.peekToken();
+                final Object[] directives = processDirectives(this,scanner);
+                if(!(scanner.peekToken() instanceof DocumentStartToken)) {
+                    throw new ParserException(null,"expected '<document start>', but found " + tok.getClass().getName(),null);
+                }
+                scanner.getToken();
+                return new DocumentStartEvent(true,(int[])directives[0],(Map)directives[1]);
+            }
+            case P_DOCUMENT_START_IMPLICIT: {
+                final Object[] directives = processDirectives(this,scanner);
+                return new DocumentStartEvent(false,(int[])directives[0],(Map)directives[1]);
+            }
+            case P_DOCUMENT_END: {
+                Token tok = scanner.peekToken();
+                boolean explicit = false;
+                while(scanner.peekToken() instanceof DocumentEndToken) {
+                    scanner.getToken();
+                    explicit = true;
+                }
+                return explicit ? DOCUMENT_END_TRUE : DOCUMENT_END_FALSE;
+            }
+            case P_BLOCK_NODE: {
+                final Token curr = scanner.peekToken();
+                if(curr instanceof DirectiveToken || curr instanceof DocumentStartToken || curr instanceof DocumentEndToken || curr instanceof StreamEndToken) {
+                    parseStack.push(P_EMPTY_SCALAR);
+                } else {
+                    if(curr instanceof AliasToken) {
+                        parseStack.push(P_ALIAS);
+                    } else {
+                        parseStack.push(P_PROPERTIES_END);
+                        parseStack.push(P_BLOCK_CONTENT);
+                        parseStack.push(P_PROPERTIES);
+                    }
+                }
+                return null;
+            }
+            case P_BLOCK_CONTENT: {
+                final Token tok = scanner.peekToken();
+                if(tok instanceof BlockSequenceStartToken) {
+                    parseStack.push(P_BLOCK_SEQUENCE);
+                } else if(tok instanceof BlockMappingStartToken) {
+                    parseStack.push(P_BLOCK_MAPPING);
+                } else if(tok instanceof FlowSequenceStartToken) {
+                    parseStack.push(P_FLOW_SEQUENCE);
+                } else if(tok instanceof FlowMappingStartToken) {
+                    parseStack.push(P_FLOW_MAPPING);
+                } else if(tok instanceof ScalarToken) {
+                    parseStack.push(P_SCALAR);
+                } else {
+                    // Part of solution for JRUBY-718
+                    boolean[] implicit = new boolean[]{false,false};
+                    return new ScalarEvent((String)this.getAnchors().get(0),(String)this.getTags().get(0),implicit,new ByteList(new byte[0],false),'\'');
+                }
+                return null;
+            }
+            case P_PROPERTIES: {
+                String anchor = null;
+                Object tag = null;
+                if(scanner.peekToken() instanceof AnchorToken) {
+                    anchor = ((AnchorToken)scanner.getToken()).getValue();
+                    if(scanner.peekToken() instanceof TagToken) {
+                        tag = ((TagToken)scanner.getToken()).getValue();
+                    }
+                } else if(scanner.peekToken() instanceof TagToken) {
+                    tag = ((TagToken)scanner.getToken()).getValue();
+                    if(scanner.peekToken() instanceof AnchorToken) {
+                        anchor = ((AnchorToken)scanner.getToken()).getValue();
+                    }
+                }
+                if(tag != null && !tag.equals("!")) {
+                    final String handle = ScannerImpl.into(((ByteList[])tag)[0]);
+                    String suffix = ScannerImpl.into(((ByteList[])tag)[1]);
+                    int ix = -1;
+                    if((ix = suffix.indexOf("^")) != -1) {
+                        suffix = suffix.substring(0,ix) + suffix.substring(ix+1);
+                    }
+                    if(handle != null) {
+                        if(!this.getTagHandles().containsKey(handle)) {
+                            throw new ParserException("while parsing a node","found undefined tag handle " + handle,null);
+                        }
+                        if((ix = suffix.indexOf("/")) != -1) {
+                            String before = suffix.substring(0,ix);
+                            String after = suffix.substring(ix+1);
+                            if(ONLY_WORD.matcher(before).matches()) {
+                                tag = "tag:" + before + ".yaml.org,2002:" + after;
+                            } else {
+                                if(before.startsWith("tag:")) {
+                                    tag = before + ":" + after;
+                                } else {
+                                    tag = "tag:" + before + ":" + after;
+                                }
+                            }
+                        } else {
+                            tag = ((String)this.getTagHandles().get(handle)) + suffix;
+                        }
+                    } else {
+                        tag = suffix;
+                    }
+                }
+                this.getAnchors().add(0,anchor);
+                this.getTags().add(0,tag);
+                return null;
+            }
+            case P_PROPERTIES_END: {
+                this.getAnchors().remove(0);
+                this.getTags().remove(0);
+                return null;
+            }
+            case P_FLOW_CONTENT: {
+                final Token tok = scanner.peekToken();
+                if(tok instanceof FlowSequenceStartToken) {
+                    parseStack.push(P_FLOW_SEQUENCE);
+                } else if(tok instanceof FlowMappingStartToken) {
+                    parseStack.push(P_FLOW_MAPPING);
+                } else if(tok instanceof ScalarToken) {
+                    parseStack.push(P_SCALAR);
+                } else {
+                    throw new ParserException("while scanning a flow node","expected the node content, but found " + tok.getClass().getName(),null);
+                }
+                return null;
+            }
+            case P_BLOCK_SEQUENCE: {
+                parseStack.push(P_BLOCK_SEQUENCE_END);
+                parseStack.push(P_BLOCK_SEQUENCE_ENTRY);
+                parseStack.push(P_BLOCK_SEQUENCE_START);
+                return null;
+            }
+            case P_BLOCK_MAPPING: {
+                parseStack.push(P_BLOCK_MAPPING_END);
+                parseStack.push(P_BLOCK_MAPPING_ENTRY);
+                parseStack.push(P_BLOCK_MAPPING_START);
+                return null;
+            }
+            case P_FLOW_SEQUENCE: {
+                parseStack.push(P_FLOW_SEQUENCE_END);
+                parseStack.push(P_FLOW_SEQUENCE_ENTRY);
+                parseStack.push(P_FLOW_SEQUENCE_START);
+                return null;
+            }
+            case P_FLOW_MAPPING: {
+                parseStack.push(P_FLOW_MAPPING_END);
+                parseStack.push(P_FLOW_MAPPING_ENTRY);
+                parseStack.push(P_FLOW_MAPPING_START);
+                return null;
+            }
+            case P_SCALAR: {
+                final ScalarToken tok = (ScalarToken)scanner.getToken();
+                boolean[] implicit = null;
+                if((tok.getPlain() && this.getTags().get(0) == null) || "!".equals(this.getTags().get(0))) {
+                    implicit = new boolean[]{true,false};
+                } else if(this.getTags().get(0) == null) {
+                    implicit = new boolean[]{false,true};
+                } else {
+                    implicit = new boolean[]{false,false};
+                }
+                return new ScalarEvent((String)this.getAnchors().get(0),(String)this.getTags().get(0),implicit,tok.getValue(),tok.getStyle());
+            }
+            case P_BLOCK_SEQUENCE_ENTRY: {
+                if(scanner.peekToken() instanceof BlockEntryToken) {
+                    scanner.getToken();
+                    if(!(scanner.peekToken() instanceof BlockEntryToken || scanner.peekToken() instanceof BlockEndToken)) {
+                        parseStack.push(P_BLOCK_SEQUENCE_ENTRY);
+                        parseStack.push(P_BLOCK_NODE);
+                    } else {
+                        parseStack.push(P_BLOCK_SEQUENCE_ENTRY);
+                        parseStack.push(P_EMPTY_SCALAR);
+                    }
+                }
+                return null;
+            }
+            case P_BLOCK_MAPPING_ENTRY: {
+                if(scanner.peekToken() instanceof KeyToken || scanner.peekToken() instanceof ValueToken) {
+                    if(scanner.peekToken() instanceof KeyToken) {
+                        scanner.getToken();
+                        final Token curr = scanner.peekToken();
+                        if(!(curr instanceof KeyToken || curr instanceof ValueToken || curr instanceof BlockEndToken)) {
+                            parseStack.push(P_BLOCK_MAPPING_ENTRY);
+                            parseStack.push(P_BLOCK_MAPPING_ENTRY_VALUE);
+                            parseStack.push(P_BLOCK_NODE_OR_INDENTLESS_SEQUENCE);
+                        } else {
+                            parseStack.push(P_BLOCK_MAPPING_ENTRY);
+                            parseStack.push(P_BLOCK_MAPPING_ENTRY_VALUE);
+                            parseStack.push(P_EMPTY_SCALAR);
+                        }
+                    } else {
+                        parseStack.push(P_BLOCK_MAPPING_ENTRY);
+                        parseStack.push(P_BLOCK_MAPPING_ENTRY_VALUE);
+                        parseStack.push(P_EMPTY_SCALAR);
+                    }
+                }
+                return null;
+            }
+            case P_BLOCK_MAPPING_ENTRY_VALUE: {
+                if(scanner.peekToken() instanceof KeyToken || scanner.peekToken() instanceof ValueToken) {
+                    if(scanner.peekToken() instanceof ValueToken) {
+                        scanner.getToken();
+                        final Token curr = scanner.peekToken();
+                        if(!(curr instanceof KeyToken || curr instanceof ValueToken || curr instanceof BlockEndToken)) {
+                            parseStack.push(P_BLOCK_NODE_OR_INDENTLESS_SEQUENCE);
+                        } else {
+                            parseStack.push(P_EMPTY_SCALAR);
+                        }
+                    } else {
+                        parseStack.push(P_EMPTY_SCALAR);
+                    }
+                }
+                return null;
+            }
+            case P_BLOCK_NODE_OR_INDENTLESS_SEQUENCE: {
+                if(scanner.peekToken() instanceof AliasToken) {
+                    parseStack.push(P_ALIAS);
+                } else {
+                    if(scanner.peekToken() instanceof BlockEntryToken) {
+                        parseStack.push(P_INDENTLESS_BLOCK_SEQUENCE);
+                        parseStack.push(P_PROPERTIES);
+                    } else {
+                        parseStack.push(P_BLOCK_CONTENT);
+                        parseStack.push(P_PROPERTIES);
+                    }
+                }
+                return null;
+            }
+            case P_BLOCK_SEQUENCE_START: {
+                final boolean implicit = this.getTags().get(0) == null || this.getTags().get(0).equals("!");
+                scanner.getToken();
+                return new SequenceStartEvent((String)this.getAnchors().get(0), (String)this.getTags().get(0), implicit,false);
+            }
+            case P_BLOCK_SEQUENCE_END: {
+                Token tok = null;
+                if(!(scanner.peekToken() instanceof BlockEndToken)) {
+                    tok = scanner.peekToken();
+                    throw new ParserException("while scanning a block collection","expected <block end>, but found " + tok.getClass().getName(),null);
+                }
+                scanner.getToken();
+                return SEQUENCE_END;
+            }
+            case P_BLOCK_MAPPING_START: {
+                final boolean implicit = this.getTags().get(0) == null || this.getTags().get(0).equals("!");
+                scanner.getToken();
+                return new MappingStartEvent((String)this.getAnchors().get(0), (String)this.getTags().get(0), implicit,false);
+            }
+            case P_BLOCK_MAPPING_END: {
+                Token tok = null;
+                if(!(scanner.peekToken() instanceof BlockEndToken)) {
+                    tok = scanner.peekToken();
+                    throw new ParserException("while scanning a block mapping","expected <block end>, but found " + tok.getClass().getName(),null);
+                }
+                scanner.getToken();
+                return MAPPING_END;
+            }
+            case P_INDENTLESS_BLOCK_SEQUENCE: {
+                parseStack.push(P_BLOCK_INDENTLESS_SEQUENCE_END);
+                parseStack.push(P_INDENTLESS_BLOCK_SEQUENCE_ENTRY);
+                parseStack.push(P_BLOCK_INDENTLESS_SEQUENCE_START);
+                return null;
+            }
+            case P_BLOCK_INDENTLESS_SEQUENCE_START: {
+                final boolean implicit = this.getTags().get(0) == null || this.getTags().get(0).equals("!");
+                return new SequenceStartEvent((String)this.getAnchors().get(0), (String)this.getTags().get(0), implicit, false);
+            }
+            case P_INDENTLESS_BLOCK_SEQUENCE_ENTRY: {
+                if(scanner.peekToken() instanceof BlockEntryToken) {
+                    scanner.getToken();
+                    final Token curr = scanner.peekToken();
+                    if(!(curr instanceof BlockEntryToken || curr instanceof KeyToken || curr instanceof ValueToken || curr instanceof BlockEndToken)) {
+                        parseStack.push(P_INDENTLESS_BLOCK_SEQUENCE_ENTRY);
+                        parseStack.push(P_BLOCK_NODE);
+                    } else {
+                        parseStack.push(P_INDENTLESS_BLOCK_SEQUENCE_ENTRY);
+                        parseStack.push(P_EMPTY_SCALAR);
+                    }
+                }
+                return null;
+            }
+            case P_BLOCK_INDENTLESS_SEQUENCE_END: {
+                return SEQUENCE_END;
+            }
+            case P_FLOW_SEQUENCE_START: {
+                final boolean implicit = this.getTags().get(0) == null || this.getTags().get(0).equals("!");
+                scanner.getToken();
+                return new SequenceStartEvent((String)this.getAnchors().get(0), (String)this.getTags().get(0), implicit,true);
+            }
+            case P_FLOW_SEQUENCE_ENTRY: {
+                if(!(scanner.peekToken() instanceof FlowSequenceEndToken)) {
+                    if(scanner.peekToken() instanceof KeyToken) {
+                        parseStack.push(P_FLOW_SEQUENCE_ENTRY);
+                        parseStack.push(P_FLOW_ENTRY_MARKER);
+                        parseStack.push(P_FLOW_INTERNAL_MAPPING_END);
+                        parseStack.push(P_FLOW_INTERNAL_VALUE);
+                        parseStack.push(P_FLOW_INTERNAL_CONTENT);
+                        parseStack.push(P_FLOW_INTERNAL_MAPPING_START);
+                    } else {
+                        parseStack.push(P_FLOW_SEQUENCE_ENTRY);
+                        parseStack.push(P_FLOW_NODE);
+                        parseStack.push(P_FLOW_ENTRY_MARKER);
+                    }
+                }
+                return null;
+            }
+            case P_FLOW_SEQUENCE_END: {
+                scanner.getToken();
+                return SEQUENCE_END;
+            }
+            case P_FLOW_MAPPING_START: {
+                final boolean implicit = this.getTags().get(0) == null || this.getTags().get(0).equals("!");
+                scanner.getToken();
+                return new MappingStartEvent((String)this.getAnchors().get(0), (String)this.getTags().get(0), implicit,true);
+            }
+            case P_FLOW_MAPPING_ENTRY: {
+                if(!(scanner.peekToken() instanceof FlowMappingEndToken)) {
+                    if(scanner.peekToken() instanceof KeyToken) {
+                        parseStack.push(P_FLOW_MAPPING_ENTRY);
+                        parseStack.push(P_FLOW_ENTRY_MARKER);
+                        parseStack.push(P_FLOW_MAPPING_INTERNAL_VALUE);
+                        parseStack.push(P_FLOW_MAPPING_INTERNAL_CONTENT);
+                    } else {
+                        parseStack.push(P_FLOW_MAPPING_ENTRY);
+                        parseStack.push(P_FLOW_NODE);
+                        parseStack.push(P_FLOW_ENTRY_MARKER);
+                    }
+                }
+                return null;
+            }
+            case P_FLOW_MAPPING_END: {
+                scanner.getToken();
+                return MAPPING_END;
+            }
+            case P_FLOW_INTERNAL_MAPPING_START: {
+                scanner.getToken();
+                return new MappingStartEvent(null,null,true,true);
+            }
+            case P_FLOW_INTERNAL_CONTENT: {
+                final Token curr = scanner.peekToken();
+                if(!(curr instanceof ValueToken || curr instanceof FlowEntryToken || curr instanceof FlowSequenceEndToken)) {
+                    parseStack.push(P_FLOW_NODE);
+                } else {
+                    parseStack.push(P_EMPTY_SCALAR);
+                }
+                return null;
+            }
+            case P_FLOW_INTERNAL_VALUE: {
+                if(scanner.peekToken() instanceof ValueToken) {
+                    scanner.getToken();
+                    if(!((scanner.peekToken() instanceof FlowEntryToken) || (scanner.peekToken() instanceof FlowSequenceEndToken))) {
+                        parseStack.push(P_FLOW_NODE);
+                    } else {
+                        parseStack.push(P_EMPTY_SCALAR);
+                    }
+                } else {
+                    parseStack.push(P_EMPTY_SCALAR);
+                }
+                return null;
+            }
+            case P_FLOW_INTERNAL_MAPPING_END: {
+                return MAPPING_END;
+            }
+            case P_FLOW_ENTRY_MARKER: {
+                if(scanner.peekToken() instanceof FlowEntryToken) {
+                    scanner.getToken();
+                }
+                return null;
+            }
+            case P_FLOW_NODE: {
+                if(scanner.peekToken() instanceof AliasToken) {
+                    parseStack.push(P_ALIAS);
+                } else {
+                    parseStack.push(P_PROPERTIES_END);
+                    parseStack.push(P_FLOW_CONTENT);
+                    parseStack.push(P_PROPERTIES);
+                }
+                return null;
+            }
+            case P_FLOW_MAPPING_INTERNAL_CONTENT: {
+                final Token curr = scanner.peekToken();
+                if(!(curr instanceof ValueToken || curr instanceof FlowEntryToken || curr instanceof FlowMappingEndToken)) {
+                    scanner.getToken();
+                    parseStack.push(P_FLOW_NODE);
+                } else {
+                    parseStack.push(P_EMPTY_SCALAR);
+                }
+                return null;
+            }
+            case P_FLOW_MAPPING_INTERNAL_VALUE: {
+                if(scanner.peekToken() instanceof ValueToken) {
+                    scanner.getToken();
+                    if(!(scanner.peekToken() instanceof FlowEntryToken || scanner.peekToken() instanceof FlowMappingEndToken)) {
+                        parseStack.push(P_FLOW_NODE);
+                    } else {
+                        parseStack.push(P_EMPTY_SCALAR);
+                    }
+                } else {
+                    parseStack.push(P_EMPTY_SCALAR);
+                }
+                return null;
+            }
+            case P_ALIAS: {
+                final AliasToken tok = (AliasToken)scanner.getToken();
+                return new AliasEvent(tok.getValue());
+            }
+            case P_EMPTY_SCALAR: {
+                return processEmptyScalar();
+            }
+            }
 
-    private final static Production[] P_TABLE = new Production[46];
+            return null;
+        }
+    }
 
     private final static Map DEFAULT_TAGS_1_0 = new HashMap();
     private final static Map DEFAULT_TAGS_1_1 = new HashMap();
@@ -162,536 +599,6 @@ public class ParserImpl implements Parser {
         DEFAULT_TAGS_1_1.put("!!","tag:yaml.org,2002:");
     }
     private final static Pattern ONLY_WORD = Pattern.compile("^\\w+$");
-    static {
-        P_TABLE[P_STREAM] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    parseStack.add(0,P_TABLE[P_STREAM_END]);
-                    parseStack.add(0,P_TABLE[P_EXPLICIT_DOCUMENT]);
-                    parseStack.add(0,P_TABLE[P_IMPLICIT_DOCUMENT]);
-                    parseStack.add(0,P_TABLE[P_STREAM_START]);
-                    return null;
-                }
-            };
-        P_TABLE[P_STREAM_START] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    scanner.getToken();
-                    return STREAM_START;
-                }
-            };
-        P_TABLE[P_STREAM_END] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    scanner.getToken();
-                    return STREAM_END;
-                }
-            };
-        P_TABLE[P_IMPLICIT_DOCUMENT] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final Token curr = scanner.peekToken();
-                    if(!(curr instanceof DirectiveToken || curr instanceof DocumentStartToken || curr instanceof StreamEndToken)) {
-                        parseStack.add(0,P_TABLE[P_DOCUMENT_END]);
-                        parseStack.add(0,P_TABLE[P_BLOCK_NODE]);
-                        parseStack.add(0,P_TABLE[P_DOCUMENT_START_IMPLICIT]);
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_EXPLICIT_DOCUMENT] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    if(!(scanner.peekToken() instanceof StreamEndToken)) {
-                        parseStack.add(0,P_TABLE[P_EXPLICIT_DOCUMENT]);
-                        parseStack.add(0,P_TABLE[P_DOCUMENT_END]);
-                        parseStack.add(0,P_TABLE[P_BLOCK_NODE]);
-                        parseStack.add(0,P_TABLE[P_DOCUMENT_START]);
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_DOCUMENT_START] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    Token tok = scanner.peekToken();
-                    final Object[] directives = processDirectives(env,scanner);
-                    if(!(scanner.peekToken() instanceof DocumentStartToken)) {
-                        throw new ParserException(null,"expected '<document start>', but found " + tok.getClass().getName(),null);
-                    }
-                    scanner.getToken();
-                    return new DocumentStartEvent(true,(int[])directives[0],(Map)directives[1]);
-                }
-            };
-        P_TABLE[P_DOCUMENT_START_IMPLICIT] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final Object[] directives = processDirectives(env,scanner);
-                    return new DocumentStartEvent(false,(int[])directives[0],(Map)directives[1]);
-                }
-            };
-        P_TABLE[P_DOCUMENT_END] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    Token tok = scanner.peekToken();
-                    boolean explicit = false;
-                    while(scanner.peekToken() instanceof DocumentEndToken) {
-                        scanner.getToken();
-                        explicit = true;
-                    }
-                    return explicit ? DOCUMENT_END_TRUE : DOCUMENT_END_FALSE;
-                }
-            };
-        P_TABLE[P_BLOCK_NODE] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final Token curr = scanner.peekToken();
-                    if(curr instanceof DirectiveToken || curr instanceof DocumentStartToken || curr instanceof DocumentEndToken || curr instanceof StreamEndToken) {
-                        parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                    } else {
-                        if(curr instanceof AliasToken) {
-                            parseStack.add(0,P_TABLE[P_ALIAS]);
-                        } else {
-                            parseStack.add(0,P_TABLE[P_PROPERTIES_END]);
-                            parseStack.add(0,P_TABLE[P_BLOCK_CONTENT]);
-                            parseStack.add(0,P_TABLE[P_PROPERTIES]);
-                        }
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_BLOCK_CONTENT] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final Token tok = scanner.peekToken();
-                    if(tok instanceof BlockSequenceStartToken) {
-                        parseStack.add(0,P_TABLE[P_BLOCK_SEQUENCE]);
-                    } else if(tok instanceof BlockMappingStartToken) {
-                        parseStack.add(0,P_TABLE[P_BLOCK_MAPPING]);
-                    } else if(tok instanceof FlowSequenceStartToken) {
-                        parseStack.add(0,P_TABLE[P_FLOW_SEQUENCE]);
-                    } else if(tok instanceof FlowMappingStartToken) {
-                        parseStack.add(0,P_TABLE[P_FLOW_MAPPING]);
-                    } else if(tok instanceof ScalarToken) {
-                        parseStack.add(0,P_TABLE[P_SCALAR]);
-                    } else {
-                        // Part of solution for JRUBY-718
-                        boolean[] implicit = new boolean[]{false,false};
-                        return new ScalarEvent((String)env.getAnchors().get(0),(String)env.getTags().get(0),implicit,new ByteList(new byte[0],false),'\'');
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_PROPERTIES] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    String anchor = null;
-                    Object tag = null;
-                    if(scanner.peekToken() instanceof AnchorToken) {
-                        anchor = ((AnchorToken)scanner.getToken()).getValue();
-                        if(scanner.peekToken() instanceof TagToken) {
-                            tag = ((TagToken)scanner.getToken()).getValue();
-                        }
-                    } else if(scanner.peekToken() instanceof TagToken) {
-                        tag = ((TagToken)scanner.getToken()).getValue();
-                        if(scanner.peekToken() instanceof AnchorToken) {
-                            anchor = ((AnchorToken)scanner.getToken()).getValue();
-                        }
-                    }
-                    if(tag != null && !tag.equals("!")) {
-                        final String handle = ScannerImpl.into(((ByteList[])tag)[0]);
-                        String suffix = ScannerImpl.into(((ByteList[])tag)[1]);
-                        int ix = -1;
-                        if((ix = suffix.indexOf("^")) != -1) {
-                            suffix = suffix.substring(0,ix) + suffix.substring(ix+1);
-                        }
-                        if(handle != null) {
-                            if(!env.getTagHandles().containsKey(handle)) {
-                                throw new ParserException("while parsing a node","found undefined tag handle " + handle,null);
-                            }
-                            if((ix = suffix.indexOf("/")) != -1) {
-                                String before = suffix.substring(0,ix);
-                                String after = suffix.substring(ix+1);
-                                if(ONLY_WORD.matcher(before).matches()) {
-                                    tag = "tag:" + before + ".yaml.org,2002:" + after;
-                                } else {
-                                    if(before.startsWith("tag:")) {
-                                        tag = before + ":" + after;
-                                    } else {
-                                        tag = "tag:" + before + ":" + after;
-                                    }
-                                }
-                            } else {
-                                tag = ((String)env.getTagHandles().get(handle)) + suffix;
-                            }
-                        } else {
-                            tag = suffix;
-                        }
-                    }
-                    env.getAnchors().add(0,anchor);
-                    env.getTags().add(0,tag);
-                    return null;
-                }
-            };
-        P_TABLE[P_PROPERTIES_END] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    env.getAnchors().remove(0);
-                    env.getTags().remove(0);
-                    return null;
-                }
-            };
-        P_TABLE[P_FLOW_CONTENT] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final Token tok = scanner.peekToken();
-                    if(tok instanceof FlowSequenceStartToken) {
-                        parseStack.add(0,P_TABLE[P_FLOW_SEQUENCE]);
-                    } else if(tok instanceof FlowMappingStartToken) {
-                        parseStack.add(0,P_TABLE[P_FLOW_MAPPING]);
-                    } else if(tok instanceof ScalarToken) {
-                        parseStack.add(0,P_TABLE[P_SCALAR]);
-                    } else {
-                        throw new ParserException("while scanning a flow node","expected the node content, but found " + tok.getClass().getName(),null);
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_BLOCK_SEQUENCE] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    parseStack.add(0,P_TABLE[P_BLOCK_SEQUENCE_END]);
-                    parseStack.add(0,P_TABLE[P_BLOCK_SEQUENCE_ENTRY]);
-                    parseStack.add(0,P_TABLE[P_BLOCK_SEQUENCE_START]);
-                    return null;
-                }
-            };
-        P_TABLE[P_BLOCK_MAPPING] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    parseStack.add(0,P_TABLE[P_BLOCK_MAPPING_END]);
-                    parseStack.add(0,P_TABLE[P_BLOCK_MAPPING_ENTRY]);
-                    parseStack.add(0,P_TABLE[P_BLOCK_MAPPING_START]);
-                    return null;
-                }
-            };
-        P_TABLE[P_FLOW_SEQUENCE] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    parseStack.add(0,P_TABLE[P_FLOW_SEQUENCE_END]);
-                    parseStack.add(0,P_TABLE[P_FLOW_SEQUENCE_ENTRY]);
-                    parseStack.add(0,P_TABLE[P_FLOW_SEQUENCE_START]);
-                    return null;
-                }
-            };
-        P_TABLE[P_FLOW_MAPPING] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    parseStack.add(0,P_TABLE[P_FLOW_MAPPING_END]);
-                    parseStack.add(0,P_TABLE[P_FLOW_MAPPING_ENTRY]);
-                    parseStack.add(0,P_TABLE[P_FLOW_MAPPING_START]);
-                    return null;
-                }
-            };
-        P_TABLE[P_SCALAR] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final ScalarToken tok = (ScalarToken)scanner.getToken();
-                    boolean[] implicit = null;
-                    if((tok.getPlain() && env.getTags().get(0) == null) || "!".equals(env.getTags().get(0))) {
-                        implicit = new boolean[]{true,false};
-                    } else if(env.getTags().get(0) == null) {
-                        implicit = new boolean[]{false,true};
-                    } else {
-                        implicit = new boolean[]{false,false};
-                    }
-                    return new ScalarEvent((String)env.getAnchors().get(0),(String)env.getTags().get(0),implicit,tok.getValue(),tok.getStyle());
-                }
-            };
-        P_TABLE[P_BLOCK_SEQUENCE_ENTRY] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    if(scanner.peekToken() instanceof BlockEntryToken) {
-                        scanner.getToken();
-                        if(!(scanner.peekToken() instanceof BlockEntryToken || scanner.peekToken() instanceof BlockEndToken)) {
-                            parseStack.add(0,P_TABLE[P_BLOCK_SEQUENCE_ENTRY]);
-                            parseStack.add(0,P_TABLE[P_BLOCK_NODE]);
-                        } else {
-                            parseStack.add(0,P_TABLE[P_BLOCK_SEQUENCE_ENTRY]);
-                            parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                        }
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_BLOCK_MAPPING_ENTRY] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    if(scanner.peekToken() instanceof KeyToken || scanner.peekToken() instanceof ValueToken) {
-                        if(scanner.peekToken() instanceof KeyToken) {
-                            scanner.getToken();
-                            final Token curr = scanner.peekToken();
-                            if(!(curr instanceof KeyToken || curr instanceof ValueToken || curr instanceof BlockEndToken)) {
-                                parseStack.add(0,P_TABLE[P_BLOCK_MAPPING_ENTRY]);
-                                parseStack.add(0,P_TABLE[P_BLOCK_MAPPING_ENTRY_VALUE]);
-                                parseStack.add(0,P_TABLE[P_BLOCK_NODE_OR_INDENTLESS_SEQUENCE]);
-                            } else {
-                                parseStack.add(0,P_TABLE[P_BLOCK_MAPPING_ENTRY]);
-                                parseStack.add(0,P_TABLE[P_BLOCK_MAPPING_ENTRY_VALUE]);
-                                parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                            }
-                        } else {
-                            parseStack.add(0,P_TABLE[P_BLOCK_MAPPING_ENTRY]);
-                            parseStack.add(0,P_TABLE[P_BLOCK_MAPPING_ENTRY_VALUE]);
-                            parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                        }
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_BLOCK_MAPPING_ENTRY_VALUE] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    if(scanner.peekToken() instanceof KeyToken || scanner.peekToken() instanceof ValueToken) {
-                        if(scanner.peekToken() instanceof ValueToken) {
-                            scanner.getToken();
-                            final Token curr = scanner.peekToken();
-                            if(!(curr instanceof KeyToken || curr instanceof ValueToken || curr instanceof BlockEndToken)) {
-                                parseStack.add(0,P_TABLE[P_BLOCK_NODE_OR_INDENTLESS_SEQUENCE]);
-                            } else {
-                                parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                            }
-                        } else {
-                            parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                        }
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_BLOCK_NODE_OR_INDENTLESS_SEQUENCE] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    if(scanner.peekToken() instanceof AliasToken) {
-                        parseStack.add(0,P_TABLE[P_ALIAS]);
-                    } else {
-                        if(scanner.peekToken() instanceof BlockEntryToken) {
-                            parseStack.add(0,P_TABLE[P_INDENTLESS_BLOCK_SEQUENCE]);
-                            parseStack.add(0,P_TABLE[P_PROPERTIES]);
-                        } else {
-                            parseStack.add(0,P_TABLE[P_BLOCK_CONTENT]);
-                            parseStack.add(0,P_TABLE[P_PROPERTIES]);
-                        }
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_BLOCK_SEQUENCE_START] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final boolean implicit = env.getTags().get(0) == null || env.getTags().get(0).equals("!");
-                    scanner.getToken();
-                    return new SequenceStartEvent((String)env.getAnchors().get(0), (String)env.getTags().get(0), implicit,false);
-                }
-            };
-        P_TABLE[P_BLOCK_SEQUENCE_END] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    Token tok = null;
-                    if(!(scanner.peekToken() instanceof BlockEndToken)) {
-                        tok = scanner.peekToken();
-                        throw new ParserException("while scanning a block collection","expected <block end>, but found " + tok.getClass().getName(),null);
-                    }
-                    scanner.getToken();
-                    return SEQUENCE_END;
-                }
-            };
-        P_TABLE[P_BLOCK_MAPPING_START] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final boolean implicit = env.getTags().get(0) == null || env.getTags().get(0).equals("!");
-                    scanner.getToken();
-                    return new MappingStartEvent((String)env.getAnchors().get(0), (String)env.getTags().get(0), implicit,false);
-                }
-            };
-        P_TABLE[P_BLOCK_MAPPING_END] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    Token tok = null;
-                    if(!(scanner.peekToken() instanceof BlockEndToken)) {
-                        tok = scanner.peekToken();
-                        throw new ParserException("while scanning a block mapping","expected <block end>, but found " + tok.getClass().getName(),null);
-                    }
-                    scanner.getToken();
-                    return MAPPING_END;
-                }
-            };
-        P_TABLE[P_INDENTLESS_BLOCK_SEQUENCE] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    parseStack.add(0,P_TABLE[P_BLOCK_INDENTLESS_SEQUENCE_END]);
-                    parseStack.add(0,P_TABLE[P_INDENTLESS_BLOCK_SEQUENCE_ENTRY]);
-                    parseStack.add(0,P_TABLE[P_BLOCK_INDENTLESS_SEQUENCE_START]);
-                    return null;
-                }
-            };
-        P_TABLE[P_BLOCK_INDENTLESS_SEQUENCE_START] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final boolean implicit = env.getTags().get(0) == null || env.getTags().get(0).equals("!");
-                    return new SequenceStartEvent((String)env.getAnchors().get(0), (String)env.getTags().get(0), implicit, false);
-                }
-            };
-        P_TABLE[P_INDENTLESS_BLOCK_SEQUENCE_ENTRY] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    if(scanner.peekToken() instanceof BlockEntryToken) {
-                        scanner.getToken();
-                        final Token curr = scanner.peekToken();
-                        if(!(curr instanceof BlockEntryToken || curr instanceof KeyToken || curr instanceof ValueToken || curr instanceof BlockEndToken)) {
-                            parseStack.add(0,P_TABLE[P_INDENTLESS_BLOCK_SEQUENCE_ENTRY]);
-                            parseStack.add(0,P_TABLE[P_BLOCK_NODE]);
-                        } else {
-                            parseStack.add(0,P_TABLE[P_INDENTLESS_BLOCK_SEQUENCE_ENTRY]);
-                            parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                        }
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_BLOCK_INDENTLESS_SEQUENCE_END] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    return SEQUENCE_END;
-                }
-            };
-        P_TABLE[P_FLOW_SEQUENCE_START] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final boolean implicit = env.getTags().get(0) == null || env.getTags().get(0).equals("!");
-                    scanner.getToken();
-                    return new SequenceStartEvent((String)env.getAnchors().get(0), (String)env.getTags().get(0), implicit,true);
-                }
-            };
-        P_TABLE[P_FLOW_SEQUENCE_ENTRY] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    if(!(scanner.peekToken() instanceof FlowSequenceEndToken)) {
-                        if(scanner.peekToken() instanceof KeyToken) {
-                            parseStack.add(0,P_TABLE[P_FLOW_SEQUENCE_ENTRY]);
-                            parseStack.add(0,P_TABLE[P_FLOW_ENTRY_MARKER]);
-                            parseStack.add(0,P_TABLE[P_FLOW_INTERNAL_MAPPING_END]);
-                            parseStack.add(0,P_TABLE[P_FLOW_INTERNAL_VALUE]);
-                            parseStack.add(0,P_TABLE[P_FLOW_INTERNAL_CONTENT]);
-                            parseStack.add(0,P_TABLE[P_FLOW_INTERNAL_MAPPING_START]);
-                        } else {
-                            parseStack.add(0,P_TABLE[P_FLOW_SEQUENCE_ENTRY]);
-                            parseStack.add(0,P_TABLE[P_FLOW_NODE]);
-                            parseStack.add(0,P_TABLE[P_FLOW_ENTRY_MARKER]);
-                        }
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_FLOW_SEQUENCE_END] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    scanner.getToken();
-                    return SEQUENCE_END;
-                }
-            };
-        P_TABLE[P_FLOW_MAPPING_START] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final boolean implicit = env.getTags().get(0) == null || env.getTags().get(0).equals("!");
-                    scanner.getToken();
-                    return new MappingStartEvent((String)env.getAnchors().get(0), (String)env.getTags().get(0), implicit,true);
-                }
-            };
-        P_TABLE[P_FLOW_MAPPING_ENTRY] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    if(!(scanner.peekToken() instanceof FlowMappingEndToken)) {
-                        if(scanner.peekToken() instanceof KeyToken) {
-                            parseStack.add(0,P_TABLE[P_FLOW_MAPPING_ENTRY]);
-                            parseStack.add(0,P_TABLE[P_FLOW_ENTRY_MARKER]);
-                            parseStack.add(0,P_TABLE[P_FLOW_MAPPING_INTERNAL_VALUE]);
-                            parseStack.add(0,P_TABLE[P_FLOW_MAPPING_INTERNAL_CONTENT]);
-                        } else {
-                            parseStack.add(0,P_TABLE[P_FLOW_MAPPING_ENTRY]);
-                            parseStack.add(0,P_TABLE[P_FLOW_NODE]);
-                            parseStack.add(0,P_TABLE[P_FLOW_ENTRY_MARKER]);
-                        }
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_FLOW_MAPPING_END] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    scanner.getToken();
-                    return MAPPING_END;
-                }
-            };
-        P_TABLE[P_FLOW_INTERNAL_MAPPING_START] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    scanner.getToken();
-                    return new MappingStartEvent(null,null,true,true);
-                }
-            };
-        P_TABLE[P_FLOW_INTERNAL_CONTENT] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final Token curr = scanner.peekToken();
-                    if(!(curr instanceof ValueToken || curr instanceof FlowEntryToken || curr instanceof FlowSequenceEndToken)) {
-                        parseStack.add(0,P_TABLE[P_FLOW_NODE]);
-                    } else {
-                        parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_FLOW_INTERNAL_VALUE] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    if(scanner.peekToken() instanceof ValueToken) {
-                        scanner.getToken();
-                        if(!((scanner.peekToken() instanceof FlowEntryToken) || (scanner.peekToken() instanceof FlowSequenceEndToken))) {
-                            parseStack.add(0,P_TABLE[P_FLOW_NODE]);
-                        } else {
-                            parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                        }
-                    } else {
-                        parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_FLOW_INTERNAL_MAPPING_END] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    return MAPPING_END;
-                }
-            };
-        P_TABLE[P_FLOW_ENTRY_MARKER] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    if(scanner.peekToken() instanceof FlowEntryToken) {
-                        scanner.getToken();
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_FLOW_NODE] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    if(scanner.peekToken() instanceof AliasToken) {
-                        parseStack.add(0,P_TABLE[P_ALIAS]);
-                    } else {
-                        parseStack.add(0,P_TABLE[P_PROPERTIES_END]);
-                        parseStack.add(0,P_TABLE[P_FLOW_CONTENT]);
-                        parseStack.add(0,P_TABLE[P_PROPERTIES]);
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_FLOW_MAPPING_INTERNAL_CONTENT] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final Token curr = scanner.peekToken();
-                    if(!(curr instanceof ValueToken || curr instanceof FlowEntryToken || curr instanceof FlowMappingEndToken)) {
-                        scanner.getToken();
-                        parseStack.add(0,P_TABLE[P_FLOW_NODE]);
-                    } else {
-                        parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_FLOW_MAPPING_INTERNAL_VALUE] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    if(scanner.peekToken() instanceof ValueToken) {
-                        scanner.getToken();
-                        if(!(scanner.peekToken() instanceof FlowEntryToken || scanner.peekToken() instanceof FlowMappingEndToken)) {
-                            parseStack.add(0,P_TABLE[P_FLOW_NODE]);
-                        } else {
-                            parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                        }
-                    } else {
-                        parseStack.add(0,P_TABLE[P_EMPTY_SCALAR]);
-                    }
-                    return null;
-                }
-            };
-        P_TABLE[P_ALIAS] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    final AliasToken tok = (AliasToken)scanner.getToken();
-                    return new AliasEvent(tok.getValue());
-                }
-            };
-        P_TABLE[P_EMPTY_SCALAR] = new Production() {
-                public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
-                    return processEmptyScalar();
-                }
-            };
-    }
 
     private static Event processEmptyScalar() {
         return new ScalarEvent(null,null,new boolean[]{true,false},new ByteList(ByteList.NULL_ARRAY),(char)0);
@@ -807,20 +714,20 @@ public class ParserImpl implements Parser {
         return eachEvent();
     }
 
-    private List parseStack = null;
+    private IntStack parseStack = null;
     private ProductionEnvironment pEnv = null;
 
     public void parseStream() {
         if(null == parseStack) {
-            this.parseStack = new LinkedList();
-            this.parseStack.add(0,P_TABLE[P_STREAM]);
+            this.parseStack = new IntStack();
+            this.parseStack.push(P_STREAM);
             this.pEnv = new ProductionEnvironment(cfg);
         }
     }
 
     public Event parseStreamNext() {
         while(!parseStack.isEmpty()) {
-            final Event value = ((Production)(this.parseStack.remove(0))).produce(this.parseStack,this.pEnv,this.scanner);
+            final Event value = this.pEnv.produce(this.parseStack.pop(), this.parseStack, this.scanner);
             if(null != value) {
                 return value;
             }
