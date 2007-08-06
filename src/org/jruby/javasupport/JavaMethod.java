@@ -56,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaMethod extends JavaCallable {
     private final Method method;
     private final Class[] parameterTypes;
+    private final JavaUtil.JavaConverter returnConverter;
 
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
@@ -93,6 +94,8 @@ public class JavaMethod extends JavaCallable {
             !Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
             accesibleObject().setAccessible(true);
         }
+        
+        returnConverter = JavaUtil.getJavaConverter(method.getReturnType());
     }
 
     public static JavaMethod create(Ruby runtime, Method method) {
@@ -194,7 +197,7 @@ public class JavaMethod extends JavaCallable {
     private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
-            return JavaObject.wrap(getRuntime(), result);
+            return returnConverter.convert(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
             throw getRuntime().newTypeError("expected " + argument_types().inspect() + "; got: "
                         + dumpArgTypes(arguments)
