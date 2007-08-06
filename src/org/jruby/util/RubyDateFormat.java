@@ -164,6 +164,13 @@ public class RubyDateFormat extends DateFormat {
                     case 'e':
                         compiledPattern.add(new Token(FORMAT_DAY_S));
                         break;
+                    case 'F':
+                        compiledPattern.add(new Token(FORMAT_YEAR_LONG));
+                        compiledPattern.add(new Token(FORMAT_STRING, "-"));
+                        compiledPattern.add(new Token(FORMAT_MONTH));
+                        compiledPattern.add(new Token(FORMAT_STRING, "-"));
+                        compiledPattern.add(new Token(FORMAT_DAY));
+                        break;
                     case 'H':
                         compiledPattern.add(new Token(FORMAT_HOUR));
                         break;
@@ -287,10 +294,14 @@ public class RubyDateFormat extends DateFormat {
                     break;
                 case FORMAT_HOUR_M:
                     value = calendar.get(Calendar.HOUR);
-                    if (value < 10) {
-                        toAppendTo.append('0');
+                    if(value == 0) {
+                        toAppendTo.append("12");
+                    } else {
+                        if (value < 10) {
+                            toAppendTo.append('0');
+                        }
+                        toAppendTo.append(value);
                     }
-                    toAppendTo.append(value);
                     break;
                 case FORMAT_DAY_YEAR:
                     value = calendar.get(Calendar.DAY_OF_YEAR);
