@@ -99,7 +99,7 @@ public class RubyInstanceConfig {
     }
 
     public void updateWithCommandline(CommandlineParser cmdline) {
-        this.objectSpaceEnabled = cmdline.isObjectSpaceEnabled();
+        this.objectSpaceEnabled = this.objectSpaceEnabled && cmdline.isObjectSpaceEnabled();
     }
 
     public boolean isJitEnabled() {
