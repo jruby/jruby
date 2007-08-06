@@ -618,9 +618,13 @@ public class RubyKernel {
         
         RubyThread rubyThread = recv.getRuntime().getThreadService().getCurrentContext().getThread();
         
-        try {
-            rubyThread.sleep(milliseconds);
-        } catch (InterruptedException iExcptn) {
+        while(milliseconds > 0) {
+            long loopStartTime = System.currentTimeMillis();
+            try {
+                rubyThread.sleep(milliseconds);
+            } catch (InterruptedException iExcptn) {
+            }
+            milliseconds -= (System.currentTimeMillis() - loopStartTime);
         }
 
         return recv.getRuntime().newFixnum(
