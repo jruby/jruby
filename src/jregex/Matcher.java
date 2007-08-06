@@ -428,6 +428,14 @@ if(called) setPosition(0);
       called=false;
       flush();
    }
+
+   public void setOffset(int offset){
+       this.offset = offset;
+       wOffset=offset;
+       wEnd=-1;
+       called=false;
+       flush();
+   }
    
   /**
    * Searches through a target for a matching substring, starting from just after the end of last match.
