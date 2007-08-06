@@ -412,12 +412,13 @@ public interface MethodCompiler {
     /**
      * Makes sure that the code in protectedCode will always run after regularCode.
      */
-    public void protect(BranchCallback regularCode, BranchCallback protectedCode);
-    public void rescue(BranchCallback regularCode, Class exception, BranchCallback protectedCode);
+    public void protect(BranchCallback regularCode, BranchCallback protectedCode, Class ret);
+    public void rescue(BranchCallback regularCode, Class exception, BranchCallback protectedCode, Class ret);
     public void inDefined();
     public void outDefined();
     public void stringOrNil();
     public void pushNull();
+    public void pushString(String strVal);
     public void isMethodBound(String name, BranchCallback trueBranch, BranchCallback falseBranch);
     public void hasBlock(BranchCallback trueBranch, BranchCallback falseBranch);
     public void isGlobalDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);
@@ -427,6 +428,7 @@ public interface MethodCompiler {
     public Object getNewEnding();
     public void ifNull(Object gotoToken);
     public void isNil(BranchCallback trueBranch, BranchCallback falseBranch);
+    public void isNull(BranchCallback trueBranch, BranchCallback falseBranch);
     public void ifNotNull(Object gotoToken);
     public void setEnding(Object endingToken);
     public void go(Object gotoToken);

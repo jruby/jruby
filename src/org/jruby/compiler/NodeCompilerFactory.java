@@ -253,11 +253,9 @@ public class NodeCompilerFactory {
         case NodeTypes.OPASGNANDNODE:
             compileOpAsgnAnd(node, context);
             break;
-            /* For some reason this compiler is DEAD slow right now...
         case NodeTypes.OPASGNORNODE:
             compileOpAsgnOr(node, context);
             break;
-            */
         case NodeTypes.ORNODE:
             compileOr(node, context);
             break;
@@ -635,17 +633,17 @@ public class NodeCompilerFactory {
                     context.outDefined();
                 }
             };
-        context.protect(reg,out);
-        context.nullToNil();
+        context.protect(reg,out,String.class);
     }
 
     public static void compileDefined(final Node node, MethodCompiler context) {
         compileGetDefinitionBase(((DefinedNode)node).getExpressionNode(), context);
+        context.stringOrNil();
     }
 
     public static void compileGetArgumentDefinition(final Node node, MethodCompiler context, String type) {
         if (node == null) {
-            context.createNewString(ByteList.create(type));
+            context.pushString(type);
         } else if(node instanceof ArrayNode) {
             Object endToken = context.getNewEnding();
             for (int i = 0; i < ((ArrayNode)node).size(); i++) {
@@ -653,7 +651,7 @@ public class NodeCompilerFactory {
                 compileGetDefinition(iterNode, context);
                 context.ifNull(endToken);
             }
-            context.createNewString(ByteList.create(type));
+            context.pushString(type);
             Object realToken = context.getNewEnding();
             context.go(realToken);
             context.setEnding(endToken);
@@ -663,7 +661,7 @@ public class NodeCompilerFactory {
             compileGetDefinition(node, context);
             Object endToken = context.getNewEnding();
             context.ifNull(endToken);
-            context.createNewString(ByteList.create(type));
+            context.pushString(type);
             Object realToken = context.getNewEnding();
             context.go(realToken);
             context.setEnding(endToken);
@@ -677,14 +675,14 @@ public class NodeCompilerFactory {
         case NodeTypes.CLASSVARASGNNODE: case NodeTypes.CLASSVARDECLNODE: case NodeTypes.CONSTDECLNODE:
         case NodeTypes.DASGNNODE: case NodeTypes.GLOBALASGNNODE: case NodeTypes.LOCALASGNNODE:
         case NodeTypes.MULTIPLEASGNNODE: case NodeTypes.OPASGNNODE: case NodeTypes.OPELEMENTASGNNODE:
-            context.createNewString(ByteList.create("assignment"));
+            context.pushString("assignment");
             break;
         case NodeTypes.BACKREFNODE:
             context.backref();
             context.isInstanceOf(RubyMatchData.class, 
                                  new BranchCallback(){
                 public void branch(MethodCompiler context) {
-                    context.createNewString(ByteList.create("$" + ((BackRefNode) node).getType()));
+                    context.pushString("$" + ((BackRefNode) node).getType());
                 }},
                                  new BranchCallback(){
                                      public void branch(MethodCompiler context) {
@@ -692,28 +690,28 @@ public class NodeCompilerFactory {
                                      }});
             break;
         case NodeTypes.DVARNODE:
-            context.createNewString(ByteList.create("local-variable(in-block)"));
+            context.pushString("local-variable(in-block)");
             break;
         case NodeTypes.FALSENODE:
-            context.createNewString(ByteList.create("false"));
+            context.pushString("false");
             break;
         case NodeTypes.TRUENODE:
-            context.createNewString(ByteList.create("true"));
+            context.pushString("true");
             break;
         case NodeTypes.LOCALVARNODE:
-            context.createNewString(ByteList.create("local-variable"));
+            context.pushString("local-variable");
             break;
         case NodeTypes.MATCH2NODE: case NodeTypes.MATCH3NODE:
-            context.createNewString(ByteList.create("method"));
+            context.pushString("method");
             break;
         case NodeTypes.NILNODE:
-            context.createNewString(ByteList.create("nil"));
+            context.pushString("nil");
             break;
         case NodeTypes.NTHREFNODE:
             context.isCaptured(((NthRefNode) node).getMatchNumber(),
                                new BranchCallback(){
                                    public void branch(MethodCompiler context) {
-                                       context.createNewString(ByteList.create("$" + ((NthRefNode) node).getMatchNumber()));
+                                       context.pushString("$" + ((NthRefNode) node).getMatchNumber());
                                    }},
                                new BranchCallback(){
                                    public void branch(MethodCompiler context) {
@@ -721,14 +719,14 @@ public class NodeCompilerFactory {
                                    }});
             break;
         case NodeTypes.SELFNODE:
-            context.createNewString(ByteList.create("self"));
+            context.pushString("self");
             break;
         case NodeTypes.VCALLNODE:
             context.loadSelf();
             context.isMethodBound(((VCallNode)node).getName(),
                                   new BranchCallback(){
                                       public void branch(MethodCompiler context){
-                                          context.createNewString(ByteList.create("method"));
+                                          context.pushString("method");
                                       }
                                   },
                                   new BranchCallback(){
@@ -740,7 +738,7 @@ public class NodeCompilerFactory {
         case NodeTypes.YIELDNODE:
             context.hasBlock(new BranchCallback(){
                     public void branch(MethodCompiler context){
-                        context.createNewString(ByteList.create("yield"));
+                        context.pushString("yield");
                     }
                 },
                 new BranchCallback(){
@@ -753,7 +751,7 @@ public class NodeCompilerFactory {
             context.isGlobalDefined(((GlobalVarNode) node).getName(),
                                     new BranchCallback(){
                                         public void branch(MethodCompiler context){
-                                            context.createNewString(ByteList.create("global-variable"));
+                                            context.pushString("global-variable");
                                         }
                                     },
                                     new BranchCallback(){
@@ -766,7 +764,7 @@ public class NodeCompilerFactory {
             context.isInstanceVariableDefined(((InstVarNode) node).getName(),
                                               new BranchCallback(){
                                                   public void branch(MethodCompiler context){
-                                                      context.createNewString(ByteList.create("instance-variable"));
+                                                      context.pushString("instance-variable");
                                                   }
                                               },
                                               new BranchCallback(){
@@ -779,7 +777,7 @@ public class NodeCompilerFactory {
             context.isConstantDefined(((ConstNode) node).getName(),
                                       new BranchCallback(){
                                           public void branch(MethodCompiler context){
-                                              context.createNewString(ByteList.create("constant"));
+                                              context.pushString("constant");
                                           }
                                       },
                                       new BranchCallback(){
@@ -820,12 +818,12 @@ public class NodeCompilerFactory {
                 };
             BranchCallback isConstant = new BranchCallback() {
                     public void branch(MethodCompiler context){
-                        context.createNewString(ByteList.create("constant"));
+                        context.pushString("constant");
                     }
                 };
             BranchCallback isMethod = new BranchCallback() {
                     public void branch(MethodCompiler context){
-                        context.createNewString(ByteList.create("method"));
+                        context.pushString("method");
                     }
                 };
             BranchCallback none = new BranchCallback() {
@@ -879,7 +877,7 @@ public class NodeCompilerFactory {
                 new BranchCallback() {
                         public void branch(MethodCompiler context) {
                             context.pushNull();
-                        }});
+                        }}, String.class);
 
             //          context.swapValues();
             //context.consumeCurrentValue();
@@ -907,7 +905,7 @@ public class NodeCompilerFactory {
                                       new BranchCallback() {
                                           public void branch(MethodCompiler context) {
                                               context.consumeCurrentValue();
-                                              context.createNewString(ByteList.create("class variable"));
+                                              context.pushString("class variable");
                                               context.go(ending);
                                           }},
                                       new BranchCallback() {
@@ -918,7 +916,7 @@ public class NodeCompilerFactory {
                                       new BranchCallback() {
                                           public void branch(MethodCompiler context) {
                                               context.consumeCurrentValue();
-                                              context.createNewString(ByteList.create("class variable"));
+                                              context.pushString("class variable");
                                               context.go(ending);
                                           }},
                                       new BranchCallback() {
@@ -927,7 +925,7 @@ public class NodeCompilerFactory {
             context.setEnding(third); //[RubyClass]
             context.getInstanceVariable("__attached__");  //[RubyClass]
             context.notIsModuleAndClassVarDefined(iVisited.getName(), failure); //[]
-            context.createNewString(ByteList.create("class variable"));
+            context.pushString("class variable");
             context.go(ending);
             context.setEnding(failure);
             context.pushNull();
@@ -949,7 +947,7 @@ public class NodeCompilerFactory {
             context.superClass();
             context.ifNotSuperMethodBound(fail_easy);
 
-            context.createNewString(ByteList.create("super"));
+            context.pushString("super");
             context.go(ending);
             
             context.setEnding(fail2);
@@ -1031,7 +1029,7 @@ public class NodeCompilerFactory {
                 new BranchCallback() {
                         public void branch(MethodCompiler context) {
                             context.pushNull();
-                        }});
+                        }}, String.class);
 
             context.go(ending);
             context.setEnding(isnull);            
@@ -1047,9 +1045,9 @@ public class NodeCompilerFactory {
                         context.pushNull();
                     }
                 },JumpException.class, 
-                new BranchCallback(){public void branch(MethodCompiler context){context.pushNull();}});
+                new BranchCallback(){public void branch(MethodCompiler context){context.pushNull();}}, String.class);
             context.consumeCurrentValue();
-            context.createNewString(ByteList.create("expression"));
+            context.pushString("expression");
         }        
     }
 
@@ -1553,7 +1551,7 @@ public class NodeCompilerFactory {
 
         compileGetDefinitionBase(orNode.getFirstNode(), context);
 
-        context.isNil(new BranchCallback() {
+        context.isNull(new BranchCallback() {
                 public void branch(MethodCompiler context) {
                     compile(orNode.getSecondNode(), context);
                 }}, new BranchCallback() {

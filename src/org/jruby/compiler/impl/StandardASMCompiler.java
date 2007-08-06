@@ -1192,9 +1192,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             return "__ensure_" + (ensureNumber++);
         }
 
-        public void protect(BranchCallback regularCode, BranchCallback protectedCode) {
+        public void protect(BranchCallback regularCode, BranchCallback protectedCode, Class ret) {
             String mname = getNewEnsureName();
-            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC + ACC_STATIC, mname, METHOD_SIGNATURE, null, null));
+            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC + ACC_STATIC, mname, cg.sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}), null, null));
             SkinnyMethodAdapter old_method = null;
             SkinnyMethodAdapter var_old_method = null;
             SkinnyMethodAdapter inv_old_method = null;
@@ -1268,7 +1268,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             } else {
                 loadBlock();
             }
-            method.invokestatic(classname, mname, METHOD_SIGNATURE);
+            method.invokestatic(classname, mname, cg.sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}));
         }
 
         private int rescueNumber = 1;
@@ -1277,9 +1277,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             return "__rescue_" + (rescueNumber++);
         }
 
-        public void rescue(BranchCallback regularCode, Class exception, BranchCallback catchCode) {
+        public void rescue(BranchCallback regularCode, Class exception, BranchCallback catchCode, Class ret) {
             String mname = getNewRescueName();
-            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC + ACC_STATIC, mname, METHOD_SIGNATURE, null, null));
+            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC + ACC_STATIC, mname, cg.sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}), null, null));
             SkinnyMethodAdapter old_method = null;
             SkinnyMethodAdapter var_old_method = null;
             SkinnyMethodAdapter inv_old_method = null;
@@ -1343,7 +1343,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             } else {
                 loadBlock();
             }
-            method.invokestatic(classname, mname, METHOD_SIGNATURE);
+            method.invokestatic(classname, mname, cg.sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}));
         }
 
         public void inDefined() {
@@ -1368,12 +1368,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.go_to(haveNil);
             method.label(notNull);
             loadRuntime();
+            method.swap();
             invokeIRuby("newString", cg.sig(RubyString.class, cg.params(String.class)));
             method.label(haveNil);
         }
 
         public void pushNull() {
             method.aconst_null();
+        }
+
+        public void pushString(String str) {
+            method.ldc(str);
         }
 
         public void isMethodBound(String name, BranchCallback trueBranch, BranchCallback falseBranch) {
@@ -1469,6 +1474,16 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             falseBranch.branch(this);
             method.label(exitLabel);
         }
+        public void isNull(BranchCallback trueBranch, BranchCallback falseBranch) {
+            Label falseLabel = new Label();
+            Label exitLabel = new Label();
+            method.ifnonnull(falseLabel);
+            trueBranch.branch(this);
+            method.go_to(exitLabel);
+            method.label(falseLabel);
+            falseBranch.branch(this);
+            method.label(exitLabel);
+        }
         public void ifNull(Object gotoToken) {
             method.ifnull((Label)gotoToken);
         }
@@ -1524,7 +1539,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                         none.branch(AbstractMethodCompiler.this);
             
                         method.label(afterJmp);
-                    }}, JumpException.class, none);
+                    }}, JumpException.class, none, String.class);
         }
         public void metaclass() {
             invokeIRubyObject("getMetaClass", cg.sig(RubyClass.class));
