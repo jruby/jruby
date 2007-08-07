@@ -207,6 +207,7 @@ public class RubyModule extends RubyObject {
         moduleClass.defineFastMethod("public_class_method", callbackFactory.getFastOptMethod("public_class_method"));
         moduleClass.defineFastMethod("public_instance_methods", callbackFactory.getFastOptMethod("public_instance_methods"));
         moduleClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
+        moduleClass.defineFastMethod("class_variable_defined?", callbackFactory.getFastMethod("class_variable_defined_p", IRubyObject.class));
         
         moduleClass.defineAlias("class_eval", "module_eval");
         
@@ -1318,6 +1319,21 @@ public class RubyModule extends RubyObject {
         }
 
         return getClassVar(varName);
+    }
+
+    public IRubyObject class_variable_defined_p(IRubyObject var) {
+        String name = var.asSymbol();
+
+        if (!IdUtil.isClassVariable(name)) {
+            throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", name);
+        }
+
+        RubyModule module = getModuleWithInstanceVar(name);
+
+        if (module != null) {
+            return module.getInstanceVariable(name) == null ? getRuntime().getFalse() : getRuntime().getTrue() ;
+        }
+        return getRuntime().getFalse();
     }
 
     /** rb_mod_cvar_set

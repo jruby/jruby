@@ -141,3 +141,21 @@ test_equal(3 + Object.new.methods.length, m.methods.length)
 test_equal(2, m.public_methods(false).length)
 test_equal(1, m.protected_methods(false).length)
 test_equal(1, m.private_methods(false).length)
+
+  
+class Class1
+  def initialize
+    @one = 123
+    @two = nil
+  end
+end
+
+c1 = Class1.new
+
+test_exception(NameError) do 
+  c1.instance_variable_defined? :abc
+end
+
+test_ok !c1.instance_variable_defined?(:@three)
+test_ok c1.instance_variable_defined?(:@one)
+test_ok c1.instance_variable_defined?(:@two)

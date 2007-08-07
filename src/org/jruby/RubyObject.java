@@ -607,6 +607,10 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject instance_variable_defined_p(IRubyObject var) {
     	String varName = var.asSymbol();
 
+    	if (!IdUtil.isInstanceVariable(varName)) {
+    		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
+    	}
+
     	IRubyObject variable = getInstanceVariable(varName);
 
         return (variable != null) ? getRuntime().getTrue() : getRuntime().getFalse();
