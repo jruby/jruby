@@ -112,7 +112,7 @@ public class ASTInspector {
         hasRestArg = true;
     }
     
-    public static final boolean ENABLED = Boolean.getBoolean("jruby.astInspector.enabled");
+    public static final boolean ENABLED = System.getProperty("jruby.astInspector.enabled", "true").equals("true");
     
     public void inspect(Node node) {
         // TODO: This code effectively disables all inspection-based optimizations; none of them are 100% safe yet
