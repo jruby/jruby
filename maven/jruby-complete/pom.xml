@@ -30,19 +30,19 @@
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
-      <version>2.2.3</version>
+      <version>3.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-commons</artifactId>
-      <version>2.2.3</version>
+      <version>3.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-util</artifactId>
-      <version>2.2.3</version>
+      <version>3.0</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
@@ -64,21 +64,16 @@
                 <artifactItem>
                   <groupId>asm</groupId>
                   <artifactId>asm</artifactId>
-                  <version>2.2.3</version>
+                  <version>3.0</version>
                 </artifactItem>
                 <artifactItem>
                   <groupId>asm</groupId>
                   <artifactId>asm-commons</artifactId>
-                  <version>2.2.3</version>
+                  <version>3.0</version>
                 </artifactItem>
                 <artifactItem>
                   <groupId>asm</groupId>
                   <artifactId>asm-util</artifactId>
-                  <version>2.2.3</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>backport-util-concurrent</groupId>
-                  <artifactId>backport-util-concurrent</artifactId>
                   <version>3.0</version>
                 </artifactItem>
                 <artifactItem>

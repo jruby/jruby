@@ -231,15 +231,15 @@
         </property>
       </activation>
       <properties>
-        <javac.version>1.4</javac.version>
+        <javac.version>1.5</javac.version>
       </properties>
       <build>
         <plugins>
           <plugin>
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
-              <source>1.4</source>
-              <target>1.4</target>
+              <source>1.5</source>
+              <target>1.5</target>
             </configuration>
           </plugin>
         </plugins>

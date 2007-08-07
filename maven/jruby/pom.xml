@@ -16,11 +16,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>backport-util-concurrent</groupId>
-      <artifactId>backport-util-concurrent</artifactId>
-      <version>3.0</version>
-    </dependency>
-    <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
       <version>0.9.91</version>
@@ -28,17 +23,17 @@
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
-      <version>2.2.3</version>
+      <version>3.0</version>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-commons</artifactId>
-      <version>2.2.3</version>
+      <version>3.0</version>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-util</artifactId>
-      <version>2.2.3</version>
+      <version>3.0</version>
     </dependency>
   </dependencies>
 
