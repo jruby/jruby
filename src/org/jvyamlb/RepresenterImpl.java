@@ -390,7 +390,7 @@ public class RepresenterImpl implements Representer {
                     }
                     if(null != pname) {
                         try {
-                            values.put(pname, ems[i].invoke(data,null));
+                            values.put(pname, ems[i].invoke(data));
                         } catch(final Exception exe) {
                             values.put(pname, null);
                         }
