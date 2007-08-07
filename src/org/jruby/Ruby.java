@@ -46,6 +46,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -1461,7 +1462,7 @@ public final class Ruby {
         }
         if (finalizers != null) {
             synchronized (finalizers) {
-                for (Iterator finalIter = finalizers.keySet().iterator(); finalIter.hasNext();) {
+                for (Iterator finalIter = new ArrayList(finalizers.keySet()).iterator(); finalIter.hasNext();) {
                     ((Finalizable) finalIter.next()).finalize();
                     finalIter.remove();
                 }
