@@ -22,7 +22,7 @@ def invoking
   end
 end
 
-puts "Test interpreted: 100k loops calling self's foo 100 times"
+puts "Test ruby method: 100k loops calling self's foo 100 times"
 10.times {
   puts Benchmark.measure {
     invoking

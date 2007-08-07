@@ -46,7 +46,7 @@ def foo
   self
 end
 
-puts "Test interpreted: 1m loops calling self's foo 100 times"
+puts "Test ruby method: 1m loops calling self's foo 100 times"
 5.times {
 puts Benchmark.measure {
   a = []; 
