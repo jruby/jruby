@@ -604,6 +604,14 @@ public class RubyObject implements Cloneable, IRubyObject {
     	return variable == null ? getRuntime().getNil() : variable;
     }
 
+    public IRubyObject instance_variable_defined_p(IRubyObject var) {
+    	String varName = var.asSymbol();
+
+    	IRubyObject variable = getInstanceVariable(varName);
+
+        return (variable != null) ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
+
     public IRubyObject getInstanceVariable(String name) {
         return (IRubyObject) getInstanceVariables().get(name);
     }
