@@ -38,6 +38,7 @@ package org.jruby;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -111,10 +112,6 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy",RubyKernel.IRUBY_OBJECT));        
         regexpClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
         regexpClass.defineFastMethod("eql?", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
-        regexpClass.defineFastMethod("===", callbackFactory.getFastMethod("eqq", RubyKernel.IRUBY_OBJECT));
-        regexpClass.defineFastMethod("=~", callbackFactory.getFastMethod("match", RubyKernel.IRUBY_OBJECT));
-        regexpClass.defineFastMethod("~", callbackFactory.getFastMethod("match2"));
-        regexpClass.defineFastMethod("match", callbackFactory.getFastMethod("match_m", RubyKernel.IRUBY_OBJECT));
         regexpClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
         regexpClass.defineFastMethod("source", callbackFactory.getFastMethod("source"));
         regexpClass.defineFastMethod("casefold?", callbackFactory.getFastMethod("casefold"));
@@ -127,8 +124,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.getMetaClass().defineFastMethod("compile", callbackFactory.getFastOptSingletonMethod("newInstance"));
         regexpClass.getMetaClass().defineFastMethod("quote", callbackFactory.getFastOptSingletonMethod("quote"));
         regexpClass.getMetaClass().defineFastMethod("escape", callbackFactory.getFastSingletonMethod("quote", RubyString.class));
-        regexpClass.getMetaClass().defineFastMethod("last_match", callbackFactory.getFastOptSingletonMethod("last_match_s"));
         regexpClass.getMetaClass().defineFastMethod("union", callbackFactory.getFastOptSingletonMethod("union"));
+        
+        regexpClass.defineAnnotatedMethods(RubyRegexp.class, callbackFactory);
         
         regexpClass.dispatcher = callbackFactory.createDispatcher(regexpClass);
 
@@ -287,9 +285,10 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** 
      * 
      */
+    @JRubyMethod(name = "last_match", optional = 1, singleton = true)
     public static IRubyObject last_match_s(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
-            IRubyObject ret = recv.getRuntime().getCurrentContext().getBackref();
+            IRubyObject ret = recv.getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
             if(ret instanceof RubyMatchData) {
                 ((RubyMatchData)ret).use();
             }
@@ -297,7 +296,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
         
         // FIXME: 
-        return ((RubyMatchData)recv.getRuntime().getCurrentContext().getBackref()).aref(args);
+        return ((RubyMatchData)recv.getRuntime().getCurrentContext().getCurrentFrame().getBackRef()).aref(args);
     }
 
     /** rb_reg_equal
@@ -326,8 +325,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_match2
      * 
      */
+    @JRubyMethod(name = "~")
     public IRubyObject match2() {
-        IRubyObject target = getRuntime().getCurrentContext().getLastline();
+        IRubyObject target = getRuntime().getCurrentContext().getCurrentFrame().getLastLine();
         
         return target instanceof RubyString ? match(target) : getRuntime().getNil();
     }
@@ -335,11 +335,12 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_eqq
      * 
      */
+    @JRubyMethod(name = "===", required = 1)
     public IRubyObject eqq(IRubyObject target) {
         if(!(target instanceof RubyString)) {
             target = target.checkStringType();
             if(target.isNil()) {
-                getRuntime().getCurrentContext().setBackref(getRuntime().getNil());
+                getRuntime().getCurrentContext().getCurrentFrame().setBackRef(getRuntime().getNil());
                 return getRuntime().getFalse();
             }
         }
@@ -357,6 +358,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_match
      * 
      */
+    @JRubyMethod(name = "=~", required = 1)
     public IRubyObject match(IRubyObject target) {
         if (target.isNil()) {
             return getRuntime().getFalse();
@@ -381,6 +383,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_match_m
      * 
      */
+    @JRubyMethod(name = "match", required = 1)
     public IRubyObject match_m(IRubyObject target) {
         if (target.isNil()) return target;
 
@@ -390,7 +393,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return result;
         }
 
-        result = getRuntime().getCurrentContext().getBackref();
+        result = getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
         ((RubyMatchData)result).use();
 
         return result;
@@ -518,7 +521,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
         // If nothing match then nil will be returned
         IRubyObject result = match(target, rtarget, pos);
-        getRuntime().getCurrentContext().setBackref(result);
+        getRuntime().getCurrentContext().getCurrentFrame().setBackRef(result);
 
         // If nothing match then -1 will be returned
         return result instanceof RubyMatchData ? ((RubyMatchData) result).matchStartPosition() : -1;
@@ -527,7 +530,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public IRubyObject search2(String str, RubyString rtarget) {
         IRubyObject result = match(str, rtarget, 0);
         
-        getRuntime().getCurrentContext().setBackref(result);
+        getRuntime().getCurrentContext().getCurrentFrame().setBackRef(result);
         
     	return result;
     }
@@ -542,12 +545,12 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return -1;
         }
         
-        IRubyObject _match = getRuntime().getCurrentContext().getBackref();
+        IRubyObject _match = getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
         RubyMatchData match = (_match instanceof RubyMatchData) ? (RubyMatchData)_match : (RubyMatchData)null;
         RubyMatchData newMatch = matcher.createOrReplace(match, target, rtarget, utf);
 
         if(newMatch != match) {
-            getRuntime().getCurrentContext().setBackref(newMatch);
+            getRuntime().getCurrentContext().getCurrentFrame().setBackRef(newMatch);
         }
 
         return newMatch.matchStartPosition();
@@ -572,7 +575,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         aMatcher.setPosition(startPos);
 
         if (aMatcher.find()) {
-            IRubyObject _match = getRuntime().getCurrentContext().getBackref();
+            IRubyObject _match = getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
             RubyMatchData match = (_match instanceof RubyMatchData) ? (RubyMatchData)_match : (RubyMatchData)null;
             return aMatcher.createOrReplace(match, target, rtarget, utf8);
         }

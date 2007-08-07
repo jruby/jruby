@@ -17,6 +17,7 @@ import org.jruby.compiler.VariableCompiler;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 import org.objectweb.asm.Label;
@@ -116,21 +117,22 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
     public void assignLastLine() {
         method.dup();
 
-        method.aload(scopeIndex);
+        methodCompiler.loadThreadContext();
+        methodCompiler.invokeThreadContext("getCurrentFrame", cg.sig(Frame.class));
         method.swap();
-        method.invokevirtual(cg.p(DynamicScope.class), "setLastLine", cg.sig(Void.TYPE, cg.params(IRubyObject.class)));
+        method.invokevirtual(cg.p(Frame.class), "setLastLine", cg.sig(Void.TYPE, cg.params(IRubyObject.class)));
     }
 
     public void retrieveLastLine() {
-        method.aload(scopeIndex);
-        method.invokevirtual(cg.p(DynamicScope.class), "getLastLine", cg.sig(IRubyObject.class));
-        methodCompiler.nullToNil();
+        methodCompiler.loadThreadContext();
+        methodCompiler.invokeThreadContext("getCurrentFrame", cg.sig(Frame.class));
+        method.invokevirtual(cg.p(Frame.class), "getLastLine", cg.sig(IRubyObject.class));
     }
 
     public void retrieveBackRef() {
-        method.aload(scopeIndex);
-        method.invokevirtual(cg.p(DynamicScope.class), "getBackRef", cg.sig(IRubyObject.class));
-        methodCompiler.nullToNil();
+        methodCompiler.loadThreadContext();
+        methodCompiler.invokeThreadContext("getCurrentFrame", cg.sig(Frame.class));
+        method.invokevirtual(cg.p(Frame.class), "getBackRef", cg.sig(IRubyObject.class));
     }
 
     public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg) {

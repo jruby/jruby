@@ -505,7 +505,7 @@ public class EvaluationState {
 
     private static IRubyObject backRefNode(ThreadContext context, Node node) {
         BackRefNode iVisited = (BackRefNode) node;
-        IRubyObject backref = context.getBackref();
+        IRubyObject backref = context.getCurrentFrame().getBackRef();
         switch (iVisited.getType()) {
         case '~':
             if(backref instanceof RubyMatchData) {
@@ -1098,10 +1098,10 @@ public class EvaluationState {
         if (iVisited.getName().length() == 2) {
             switch (iVisited.getName().charAt(1)) {
             case '_':
-                context.getCurrentScope().setLastLine(result);
+                context.getCurrentFrame().setLastLine(result);
                 return result;
             case '~':
-                context.setBackref(result);
+                context.getCurrentFrame().setBackRef(result);
                 return result;
             }
         }
@@ -1123,13 +1123,13 @@ public class EvaluationState {
             IRubyObject value = null;
             switch (iVisited.getName().charAt(1)) {
             case '_':
-                value = context.getCurrentScope().getLastLine();
+                value = context.getCurrentFrame().getLastLine();
                 if (value == null) {
                     return runtime.getNil();
                 }
                 return value;
             case '~':
-                value = context.getCurrentScope().getBackRef();
+                value = context.getCurrentFrame().getBackRef();
                 if (value == null) {
                     return runtime.getNil();
                 }
@@ -1300,7 +1300,7 @@ public class EvaluationState {
     }
 
     private static IRubyObject nthRefNode(ThreadContext context, Node node) {
-        return RubyRegexp.nth_match(((NthRefNode)node).getMatchNumber(), context.getBackref());
+        return RubyRegexp.nth_match(((NthRefNode)node).getMatchNumber(), context.getCurrentFrame().getBackRef());
     }
     
     private static IRubyObject pollAndReturn(ThreadContext context, IRubyObject result) {
@@ -1948,7 +1948,7 @@ public class EvaluationState {
             return null;
         }
         case NodeTypes.BACKREFNODE: {
-            IRubyObject backref = context.getBackref();
+            IRubyObject backref = context.getCurrentFrame().getBackRef();
             if(backref instanceof RubyMatchData) {
                 return "$" + ((BackRefNode) node).getType();
             } else {
@@ -2053,7 +2053,7 @@ public class EvaluationState {
         case NodeTypes.NILNODE:
             return "nil";
         case NodeTypes.NTHREFNODE: {
-            IRubyObject backref = context.getBackref();
+            IRubyObject backref = context.getCurrentFrame().getBackRef();
             if(backref instanceof RubyMatchData) {
                 ((RubyMatchData)backref).use();
                 if(!((RubyMatchData)backref).group(((NthRefNode) node).getMatchNumber()).isNil()) {

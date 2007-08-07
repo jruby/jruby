@@ -93,10 +93,10 @@ public class RubyKernel {
         module.defineModuleFunction("callcc", callbackFactory.getOptSingletonMethod("callcc"));
         module.defineModuleFunction("caller", callbackFactory.getOptSingletonMethod("caller"));
         module.defineModuleFunction("catch", callbackFactory.getSingletonMethod("rbCatch", IRUBY_OBJECT));
-        module.defineFastModuleFunction("chomp", callbackFactory.getFastOptSingletonMethod("chomp"));
-        module.defineFastModuleFunction("chomp!", callbackFactory.getFastOptSingletonMethod("chomp_bang"));
-        module.defineFastModuleFunction("chop", callbackFactory.getFastSingletonMethod("chop"));
-        module.defineFastModuleFunction("chop!", callbackFactory.getFastSingletonMethod("chop_bang"));
+        module.defineModuleFunction("chomp", callbackFactory.getOptSingletonMethod("chomp"));
+        module.defineModuleFunction("chomp!", callbackFactory.getOptSingletonMethod("chomp_bang"));
+        module.defineModuleFunction("chop", callbackFactory.getSingletonMethod("chop"));
+        module.defineModuleFunction("chop!", callbackFactory.getSingletonMethod("chop_bang"));
         module.defineModuleFunction("eval", callbackFactory.getOptSingletonMethod("eval"));
         module.defineFastModuleFunction("exit", callbackFactory.getFastOptSingletonMethod("exit"));
         module.defineFastModuleFunction("exit!", callbackFactory.getFastOptSingletonMethod("exit_bang"));
@@ -134,7 +134,7 @@ public class RubyKernel {
         module.defineModuleFunction("trace_var", callbackFactory.getOptSingletonMethod("trace_var"));
         module.defineModuleFunction("untrace_var", callbackFactory.getOptSingletonMethod("untrace_var"));
         module.defineFastModuleFunction("sleep", callbackFactory.getFastOptSingletonMethod("sleep"));
-        module.defineFastModuleFunction("split", callbackFactory.getFastOptSingletonMethod("split"));
+        module.defineModuleFunction("split", callbackFactory.getOptSingletonMethod("split"));
         module.defineFastModuleFunction("sprintf", callbackFactory.getFastOptSingletonMethod("sprintf"));
         module.defineFastModuleFunction("srand", callbackFactory.getFastOptSingletonMethod("srand"));
         module.defineModuleFunction("sub", callbackFactory.getOptSingletonMethod("sub"));
@@ -518,7 +518,7 @@ public class RubyKernel {
      * @return value of $_ as String.
      */
     private static RubyString getLastlineString(Ruby runtime) {
-        IRubyObject line = runtime.getCurrentContext().getLastline();
+        IRubyObject line = runtime.getCurrentContext().getPreviousFrame().getLastLine();
 
         if (line.isNil()) {
             throw runtime.newTypeError("$_ value need to be String (nil given).");
@@ -537,7 +537,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(recv.getRuntime()).dup();
 
         if (!str.sub_bang(args, block).isNil()) {
-            recv.getRuntime().getCurrentContext().setLastline(str);
+            recv.getRuntime().getCurrentContext().getPreviousFrame().setLastLine(str);
         }
 
         return str;
@@ -551,33 +551,33 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(recv.getRuntime()).dup();
 
         if (!str.gsub_bang(args, block).isNil()) {
-            recv.getRuntime().getCurrentContext().setLastline(str);
+            recv.getRuntime().getCurrentContext().getPreviousFrame().setLastLine(str);
         }
 
         return str;
     }
 
-    public static IRubyObject chop_bang(IRubyObject recv) {
+    public static IRubyObject chop_bang(IRubyObject recv, Block block) {
         return getLastlineString(recv.getRuntime()).chop_bang();
     }
 
-    public static IRubyObject chop(IRubyObject recv) {
+    public static IRubyObject chop(IRubyObject recv, Block block) {
         RubyString str = getLastlineString(recv.getRuntime());
 
         if (str.getValue().length() > 0) {
             str = (RubyString) str.dup();
             str.chop_bang();
-            recv.getRuntime().getCurrentContext().setLastline(str);
+            recv.getRuntime().getCurrentContext().getPreviousFrame().setLastLine(str);
         }
 
         return str;
     }
 
-    public static IRubyObject chomp_bang(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject chomp_bang(IRubyObject recv, IRubyObject[] args, Block block) {
         return getLastlineString(recv.getRuntime()).chomp_bang(args);
     }
 
-    public static IRubyObject chomp(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject chomp(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyString str = getLastlineString(recv.getRuntime());
         RubyString dup = (RubyString) str.dup();
 
@@ -585,11 +585,11 @@ public class RubyKernel {
             return str;
         } 
 
-        recv.getRuntime().getCurrentContext().setLastline(dup);
+        recv.getRuntime().getCurrentContext().getPreviousFrame().setLastLine(dup);
         return dup;
     }
 
-    public static IRubyObject split(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject split(IRubyObject recv, IRubyObject[] args, Block block) {
         return getLastlineString(recv.getRuntime()).split(args);
     }
 

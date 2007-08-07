@@ -1698,8 +1698,10 @@ public class RubyString extends RubyObject {
         if (mat.find()) {
             ThreadContext context = runtime.getCurrentContext();
             RubyMatchData md = matchdata(runtime, str, mat, utf8);
-            context.setBackref(md);
+            context.getPreviousFrame().setBackRef(md);
             if (iter) {
+                // FIXME: I don't like this setting into the frame directly, but it's necessary since blocks dupe the frame
+                block.getFrame().setBackRef(md);
                 int len = value.realSize;
                 byte[]b = value.bytes;
                 repl = objAsString(block.yield(context, substr(runtime, str, mat.start(0), mat.length(0), utf8)));
@@ -1817,7 +1819,10 @@ public class RubyString extends RubyObject {
         while (found) {
             
             if (iter) {
-                context.setBackref(matchdata(runtime, str, mat, utf8));
+                md = matchdata(runtime, str, mat, utf8);
+                context.getPreviousFrame().setBackRef(md);
+                // FIXME: I don't like this setting into the frame directly, but it's necessary since blocks dupe the
+                block.getFrame().setBackRef(md);
                 val = objAsString(block.yield(context, substr(runtime, str, mat.start(0), mat.length(0), utf8)));
                 modifyCheck(sb, slen);
                 if (bang) frozenCheck();
@@ -1825,7 +1830,7 @@ public class RubyString extends RubyObject {
             } else {
                 if (md == null) {
                     md = matchdata(runtime, str, mat, utf8);
-                    context.setBackref(md);
+                    context.getPreviousFrame().setBackRef(md);
                 } else {
                     md.invalidateRegs();
                 }
@@ -2009,7 +2014,7 @@ public class RubyString extends RubyObject {
             if (args[0] instanceof RubyRegexp) {
                 IRubyObject match = RubyRegexp.regexpValue(args[0]).match(toString(), this, 0);
                 long idx = args[1].convertToInteger().getLongValue();
-                getRuntime().getCurrentContext().setBackref(match);
+                getRuntime().getCurrentContext().getCurrentFrame().setBackRef(match);
                 return RubyRegexp.nth_match((int) idx, match);
             }
             return substr(RubyNumeric.fix2int(args[0]), RubyNumeric.fix2int(args[1]));
@@ -2017,7 +2022,7 @@ public class RubyString extends RubyObject {
 
         if (args[0] instanceof RubyRegexp) {
             return RubyRegexp.regexpValue(args[0]).search(toString(), this, 0) >= 0 ?
-                RubyRegexp.last_match(getRuntime().getCurrentContext().getBackref()) :
+                RubyRegexp.last_match(getRuntime().getCurrentContext().getCurrentFrame().getBackRef()) :
                 getRuntime().getNil();
         } else if (args[0] instanceof RubyString) {
             return toString().indexOf(stringValue(args[0]).toString()) != -1 ?
@@ -2043,7 +2048,7 @@ public class RubyString extends RubyObject {
         int found = regexp.search(this.toString(), this, 0);
         if (found == -1) throw getRuntime().newIndexError("regexp not matched");
 
-        RubyMatchData match = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
+        RubyMatchData match = (RubyMatchData) getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
         match.use();
 
         if (nth >= match.getSize()) {
@@ -2496,7 +2501,7 @@ public class RubyString extends RubyObject {
         if (!block.isGiven()) {
             RubyArray result = runtime.newArray();
             RubyMatchData md = matchdata(runtime, str, mat, utf8); 
-            context.setBackref(md);
+            context.getPreviousFrame().setBackRef(md);
             while(mat.find()) {
                 int groups = mat.groupCount();
                 if (groups == 1) {
@@ -2516,7 +2521,7 @@ public class RubyString extends RubyObject {
         while(mat.find()) {
             int groups = mat.groupCount();
 
-            context.setBackref(matchdata(runtime, str, mat, utf8));
+            context.getPreviousFrame().setBackRef(matchdata(runtime, str, mat, utf8));
             
             if (groups == 1) {
                 block.yield(context, substr(runtime, str, mat.start(0), mat.length(0), utf8));
@@ -2529,7 +2534,7 @@ public class RubyString extends RubyObject {
             }
         }
         
-        context.setBackref(matchdata(runtime, str, mat, utf8));
+        context.getPreviousFrame().setBackRef(matchdata(runtime, str, mat, utf8));
 
         return this;
     }
@@ -3175,7 +3180,7 @@ public class RubyString extends RubyObject {
         String toString = toString();
 
         if (pat.search(toString, this, start) != -1) {
-            RubyMatchData md = (RubyMatchData) tc.getBackref();
+            RubyMatchData md = (RubyMatchData) tc.getCurrentFrame().getBackRef();
             md.use();
 
             block.yield(tc, md.group(0));

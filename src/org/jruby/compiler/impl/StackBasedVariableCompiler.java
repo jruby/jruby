@@ -35,6 +35,8 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.VariableCompiler;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 import org.objectweb.asm.Label;
 
@@ -103,15 +105,24 @@ public class StackBasedVariableCompiler implements VariableCompiler {
     }
 
     public void assignLastLine() {
-        throw new NotCompilableException("Stack-based local variables are not applicable to $_ or $~ variables");
+        method.dup();
+
+        methodCompiler.loadThreadContext();
+        methodCompiler.invokeThreadContext("getCurrentFrame", cg.sig(Frame.class));
+        method.swap();
+        method.invokevirtual(cg.p(Frame.class), "setLastLine", cg.sig(Void.TYPE, cg.params(IRubyObject.class)));
     }
 
     public void retrieveLastLine() {
-        throw new NotCompilableException("Stack-based local variables are not applicable to $_ or $~ variables");
+        methodCompiler.loadThreadContext();
+        methodCompiler.invokeThreadContext("getCurrentFrame", cg.sig(Frame.class));
+        method.invokevirtual(cg.p(Frame.class), "getLastLine", cg.sig(IRubyObject.class));
     }
 
     public void retrieveBackRef() {
-        throw new NotCompilableException("Stack-based local variables are not applicable to $_ or $~ variables");
+        methodCompiler.loadThreadContext();
+        methodCompiler.invokeThreadContext("getCurrentFrame", cg.sig(Frame.class));
+        method.invokevirtual(cg.p(Frame.class), "getBackRef", cg.sig(IRubyObject.class));
     }
 
     public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg) {

@@ -166,38 +166,6 @@ public class DynamicScope {
             variableValues = values;
         }
     }
-
-    // FIXME: Depending on profiling we may want to cache information on location and depth of
-    // both $_ and/or $~ since in some situations they may happen a lot.  isDefined should be
-    // fairly cheap, but you never know...
-    
-    public void setLastLine(IRubyObject value) {
-        lazy();
-        int location = staticScope.isDefined("$_");
-        
-        setValue(location & 0xffff, value, location >> 16);
-    }
-    
-    public IRubyObject getLastLine() {
-        lazy();
-        int location = staticScope.isDefined("$_");
-
-        return getValue(location & 0xffff, location >> 16);
-    }
-
-    public void setBackRef(IRubyObject value) {
-        lazy();
-        int location = staticScope.isDefined("$~");
-        
-        setValue(location & 0xffff, value, location >> 16);
-    }
-    
-    public IRubyObject getBackRef() {
-        lazy();
-        int location = staticScope.isDefined("$~");
-        
-        return getValue(location & 0xffff, location >> 16); 
-    }
     
     public DynamicScope getBindingScope() {
         return bindingScope;

@@ -179,7 +179,7 @@ public class RubyArgsFile extends RubyObject {
         IRubyObject result = internalGets(args);
 
         if (!result.isNil()) {
-            getRuntime().getCurrentContext().setLastline(result);
+            getRuntime().getCurrentContext().getCurrentFrame().setLastLine(result);
         }
 
         return result;

@@ -273,7 +273,7 @@ public class RubyStringIO extends RubyObject {
     public IRubyObject gets(IRubyObject[] args) {
         IRubyObject result = internalGets(args);
         if (!result.isNil()) {
-            getRuntime().getCurrentContext().setLastline(result);
+            getRuntime().getCurrentContext().getCurrentFrame().setLastLine(result);
         }
         return result;
     }

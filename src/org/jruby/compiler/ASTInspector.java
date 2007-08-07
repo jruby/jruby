@@ -99,7 +99,6 @@ public class ASTInspector {
         SCOPE_AWARE_METHODS.add("class_eval");
         SCOPE_AWARE_METHODS.add("binding");
         SCOPE_AWARE_METHODS.add("local_variables");
-        SCOPE_AWARE_METHODS.add("gsub");
     }
     
     public void disable() {
@@ -224,10 +223,6 @@ public class ASTInspector {
         case NodeTypes.FLOATNODE:
             break;
         case NodeTypes.GLOBALVARNODE:
-            GlobalVarNode globalVarNode = (GlobalVarNode)node;
-            if (globalVarNode.getName().equals("$_") || globalVarNode.getName().equals("$~")) {
-                hasScopeAwareMethods = true;
-            }
             break;
         case NodeTypes.HASHNODE:
             HashNode hashNode = (HashNode)node;

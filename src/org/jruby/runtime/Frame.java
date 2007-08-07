@@ -94,6 +94,9 @@ public final class Frame implements JumpTarget {
     private Visibility visibility = Visibility.PUBLIC;
     
     private JumpTarget jumpTarget;
+    
+    private IRubyObject backref;
+    private IRubyObject lastline;
 
     public JumpTarget getJumpTarget() {
         return jumpTarget;
@@ -133,6 +136,8 @@ public final class Frame implements JumpTarget {
         this.jumpTarget = frame.jumpTarget;
         this.visibility = frame.visibility;
         this.isBindingFrame = frame.isBindingFrame;
+        this.backref = frame.backref;
+        this.lastline = frame.lastline;
     }
 
     public void updateFrame(RubyModule klazz, IRubyObject self, String name,
@@ -149,6 +154,8 @@ public final class Frame implements JumpTarget {
         this.jumpTarget = jumpTarget;
         this.visibility = Visibility.PUBLIC;
         this.isBindingFrame = false;
+        this.backref = null;
+        this.lastline = null;
     }
     
     public Frame duplicate() {
@@ -157,6 +164,22 @@ public final class Frame implements JumpTarget {
         newFrame.updateFrame(this);
         
         return newFrame;
+    }
+
+    public IRubyObject getBackRef() {
+        return backref == null ? self.getRuntime().getNil() : backref;
+    }
+
+    public void setBackRef(IRubyObject backref) {
+        this.backref = backref;
+    }
+
+    public IRubyObject getLastLine() {
+        return lastline == null ? self.getRuntime().getNil() : lastline;
+    }
+
+    public void setLastLine(IRubyObject lastline) {
+        this.lastline = lastline;
     }
 
     /** Getter for property args.

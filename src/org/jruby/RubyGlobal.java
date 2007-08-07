@@ -220,7 +220,7 @@ public class RubyGlobal {
         }
         
         public IRubyObject get() {
-            return RubyRegexp.last_match(runtime.getCurrentContext().getBackref());
+            return RubyRegexp.last_match(runtime.getCurrentContext().getCurrentFrame().getBackRef());
         }
     }
 
@@ -230,7 +230,7 @@ public class RubyGlobal {
         }
         
         public IRubyObject get() {
-            return RubyRegexp.match_pre(runtime.getCurrentContext().getBackref());
+            return RubyRegexp.match_pre(runtime.getCurrentContext().getCurrentFrame().getBackRef());
         }
     }
 
@@ -240,7 +240,7 @@ public class RubyGlobal {
         }
         
         public IRubyObject get() {
-            return RubyRegexp.match_post(runtime.getCurrentContext().getBackref());
+            return RubyRegexp.match_post(runtime.getCurrentContext().getCurrentFrame().getBackRef());
         }
     }
 
@@ -250,7 +250,7 @@ public class RubyGlobal {
         }
         
         public IRubyObject get() {
-            return RubyRegexp.match_last(runtime.getCurrentContext().getBackref());
+            return RubyRegexp.match_last(runtime.getCurrentContext().getCurrentFrame().getBackRef());
         }
     }
 
@@ -260,7 +260,7 @@ public class RubyGlobal {
         }
         
         public IRubyObject get() {
-            IRubyObject ret = runtime.getCurrentContext().getBackref();
+            IRubyObject ret = runtime.getCurrentContext().getCurrentFrame().getBackRef();
             if(ret instanceof RubyMatchData) {
                 ((RubyMatchData)ret).use();
             }
@@ -383,11 +383,11 @@ public class RubyGlobal {
         }
 
         public IRubyObject get() {
-            return runtime.getCurrentContext().getLastline();
+            return runtime.getCurrentContext().getCurrentFrame().getLastLine();
         }
 
         public IRubyObject set(IRubyObject value) {
-            runtime.getCurrentContext().setLastline(value);
+            runtime.getCurrentContext().getCurrentFrame().setLastLine(value);
             return value;
         }
     }

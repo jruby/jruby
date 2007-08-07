@@ -792,7 +792,7 @@ public class RubyZlib {
         public IRubyObject gets(IRubyObject[] args) throws IOException {
             IRubyObject result = internalGets(args);
             if (!result.isNil()) {
-                getRuntime().getCurrentContext().setLastline(result);
+                getRuntime().getCurrentContext().getCurrentFrame().setLastLine(result);
             }
             return result;
         }

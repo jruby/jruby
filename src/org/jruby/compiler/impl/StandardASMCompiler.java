@@ -79,6 +79,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -1158,7 +1159,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void backref() {
             loadThreadContext();
-            invokeThreadContext("getBackref", cg.sig(IRubyObject.class, cg.params()));
+            invokeThreadContext("getCurrentFrame", cg.sig(Frame.class));
+            method.invokevirtual(cg.p(Frame.class), "getBackRef", cg.sig(IRubyObject.class));
         }
 
         public void backrefMethod(String methodName) {
