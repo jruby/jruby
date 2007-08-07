@@ -124,6 +124,11 @@ public class RubyRange extends RubyObject {
     
     public static RubyClass createRangeClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
+        result.kindOf = new RubyModule.KindOf() {
+                public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                    return obj instanceof RubyRange;
+                }
+            };
         
         result.setMarshal(RANGE_MARSHAL);
         

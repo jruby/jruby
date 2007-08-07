@@ -101,6 +101,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public static RubyClass createRegexpClass(Ruby runtime) {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
         regexpClass.index = ClassIndex.REGEXP;
+        regexpClass.kindOf = new RubyModule.KindOf() {
+                public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                    return obj instanceof RubyRegexp;
+                }
+            };
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyRegexp.class);
         

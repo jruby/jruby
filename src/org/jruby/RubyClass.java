@@ -204,6 +204,11 @@ public class RubyClass extends RubyModule {
     }
 
     public static void createClassClass(RubyClass classClass) {
+        classClass.kindOf = new RubyModule.KindOf() {
+                public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                    return obj instanceof RubyClass;
+                }
+            };
         CallbackFactory callbackFactory = classClass.getRuntime().callbackFactory(RubyClass.class);
         classClass.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newClass"));
         classClass.defineFastMethod("allocate", callbackFactory.getFastMethod("allocate"));

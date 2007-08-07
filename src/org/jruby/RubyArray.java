@@ -68,6 +68,11 @@ public class RubyArray extends RubyObject implements List {
     public static RubyClass createArrayClass(Ruby runtime) {
         RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
         arrayc.index = ClassIndex.ARRAY;
+        arrayc.kindOf = new RubyModule.KindOf() {
+                public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                    return obj instanceof RubyArray;
+                }
+            };
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyArray.class);
 
         arrayc.includeModule(runtime.getModule("Enumerable"));

@@ -380,7 +380,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public boolean isKindOf(RubyModule type) {
-        return getMetaClass().hasModuleInHierarchy(type);
+        return type.kindOf.isKindOf(this, type);
     }
 
     /** rb_singleton_class
@@ -1222,7 +1222,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public RubyBoolean kind_of(IRubyObject type) {
         // TODO: Generalize this type-checking code into IRubyObject helper.
-        if (!type.isKindOf(getRuntime().getClass("Module"))) {
+        if (!(type instanceof RubyModule)) {
             // TODO: newTypeError does not offer enough for ruby error string...
             throw getRuntime().newTypeError(type, getRuntime().getClass("Module"));
         }

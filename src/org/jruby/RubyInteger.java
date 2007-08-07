@@ -49,6 +49,12 @@ public abstract class RubyInteger extends RubyNumeric {
     public static RubyClass createIntegerClass(Ruby runtime) {
         RubyClass integer = runtime.defineClass("Integer", runtime.getClass("Numeric"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        integer.kindOf = new RubyModule.KindOf() {
+                public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                    return obj instanceof RubyInteger;
+                }
+            };
+
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyInteger.class);
         integer.getSingletonClass().undefineMethod("allocate");
         integer.getSingletonClass().undefineMethod("new");

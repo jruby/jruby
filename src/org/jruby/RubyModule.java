@@ -89,6 +89,15 @@ public class RubyModule extends RubyObject {
     
     public Dispatcher dispatcher = Dispatcher.DEFAULT_DISPATCHER;
 
+    public static class KindOf {
+        public static final KindOf DEFAULT_KIND_OF = new KindOf();
+        public boolean isKindOf(IRubyObject obj, RubyModule type) {
+            return obj.getMetaClass().hasModuleInHierarchy(type);
+        }
+    }
+
+    public KindOf kindOf = KindOf.DEFAULT_KIND_OF;
+
     public final int id;
 
     // Containing class...The parent of Object is null. Object should always be last in chain.
@@ -173,6 +182,11 @@ public class RubyModule extends RubyObject {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyModule.class);   
         RubyClass moduleMetaClass = moduleClass.getMetaClass();
         moduleClass.index = ClassIndex.MODULE;
+        moduleClass.kindOf = new RubyModule.KindOf() {
+                public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                    return obj instanceof RubyModule;
+                }
+            };
 
         moduleClass.defineFastMethod("===", callbackFactory.getFastMethod("op_eqq", IRubyObject.class));
         moduleClass.defineFastMethod("<=>", callbackFactory.getFastMethod("op_cmp", IRubyObject.class));

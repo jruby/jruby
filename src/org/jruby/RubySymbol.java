@@ -65,6 +65,11 @@ public class RubySymbol extends RubyObject {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubySymbol.class);   
         RubyClass symbolMetaClass = symbolClass.getMetaClass();
         symbolClass.index = ClassIndex.SYMBOL;
+        symbolClass.kindOf = new RubyModule.KindOf() {
+                public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                    return obj instanceof RubySymbol;
+                }
+            };
 
         
         symbolClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));

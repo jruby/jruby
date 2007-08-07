@@ -50,6 +50,11 @@ public abstract class RubyMatchData extends RubyObject {
         // TODO: Is NOT_ALLOCATABLE_ALLOCATOR ok here, since you can't actually instantiate MatchData directly?
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
+        matchDataClass.kindOf = new RubyModule.KindOf() {
+                public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                    return obj instanceof RubyMatchData;
+                }
+            };
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMatchData.class);
 

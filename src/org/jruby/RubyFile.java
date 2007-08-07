@@ -136,6 +136,12 @@ public class RubyFile extends RubyIO {
         RubyClass fileMetaClass = fileClass.getMetaClass();
         RubyString separator = runtime.newString("/");
         
+        fileClass.kindOf = new RubyModule.KindOf() {
+                public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                    return obj instanceof RubyFile;
+                }
+            };
+
         separator.freeze();
         fileClass.defineConstant("SEPARATOR", separator);
         fileClass.defineConstant("Separator", separator);

@@ -91,6 +91,11 @@ public class RubyString extends RubyObject {
     public static RubyClass createStringClass(Ruby runtime) {
         RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
         stringClass.index = ClassIndex.STRING;
+        stringClass.kindOf = new RubyModule.KindOf() {
+                public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                    return obj instanceof RubyString;
+                }
+            };
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyString.class);
         
         stringClass.includeModule(runtime.getModule("Comparable"));

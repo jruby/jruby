@@ -55,6 +55,11 @@ public class RubyFixnum extends RubyInteger {
         RubyClass fixnum = runtime.defineClass("Fixnum", runtime.getClass("Integer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         fixnum.index = ClassIndex.FIXNUM;
+        fixnum.kindOf = new RubyModule.KindOf() {
+                public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                    return obj instanceof RubyFixnum;
+                }
+            };
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFixnum.class);
 
         fixnum.includeModule(runtime.getModule("Precision"));
