@@ -29,6 +29,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -132,11 +133,15 @@ public abstract class CallAdapter {
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             try {
                 RubyClass selfType = self.getMetaClass();
-                if (cachedType == selfType) {
+                
+                DynamicMethod cMethod = this.cachedMethod;
+                RubyModule cType = this.cachedType;
+                
+                if (cType == selfType) {
                     if (cachedTable.length > methodID && cachedTable[methodID] != 0) {
                         return selfType.getDispatcher().callMethod(context, self, selfType, methodID, methodName, args, callType, block);
                     } else {
-                        return cachedMethod.call(context, self, selfType, methodName, args, block);
+                        return cMethod.call(context, self, selfType, methodName, args, block);
                     }
                 }
                 
@@ -167,8 +172,8 @@ public abstract class CallAdapter {
         }
 
         public void removeCachedMethod(String name) {
-            cachedMethod = null;
             cachedType = null;
+            cachedMethod = null;
         }
     }
 }
