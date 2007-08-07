@@ -49,7 +49,7 @@ public class ClassExtensionLibrary implements Library {
             try {
                 ((BasicLibraryService)theClass.newInstance()).basicLoad(runtime);
             } catch(final Exception ee) {
-                throw new RuntimeException(ee.getMessage());
+                throw new RuntimeException(ee.getMessage(), ee);
             }
         }
     }
