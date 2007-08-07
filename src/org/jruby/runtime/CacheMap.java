@@ -51,7 +51,11 @@ import org.jruby.util.WeakIdentityHashMap;
  * call this is responsible for synchronization.
  */
 public class CacheMap {
-	private final Map mappings = new WeakHashMap();
+    private final Map mappings = new WeakHashMap();
+    
+    public interface CacheSite {
+        public void removeCachedMethod(String name);
+    }
     
     /**
      * Add another class to the list of classes which are caching the method.
@@ -59,7 +63,7 @@ public class CacheMap {
      * @param method which is cached
      * @param module which is caching method
      */
-    public void add(DynamicMethod method, RubyModule module) {
+    public void add(DynamicMethod method, CacheSite site) {
         Map classList = (Map) mappings.get(method);
         
         if (classList == null) {
@@ -67,7 +71,7 @@ public class CacheMap {
             mappings.put(method, classList);
         }
         
-        classList.put(module,null);
+        classList.put(site,null);
     }
     
     /**
@@ -86,12 +90,29 @@ public class CacheMap {
             return;
         }
         for(Iterator iter = classList.keySet().iterator(); iter.hasNext();) {
-            RubyModule module = (RubyModule) iter.next();
-            if (module != null) {
-                module.removeCachedMethod(name);
-                
-                if (module.index != 0) {
-                    module.dispatcher.clearIndex(MethodIndex.getIndex(name));
+            CacheSite site = (CacheSite) iter.next();
+            if (site != null) {
+                site.removeCachedMethod(name);
+            }
+        }
+    }
+    
+    /**
+     * Remove all method caches associated with all methods.
+     */
+    public void clear() {
+        for (Iterator mapIter = mappings.entrySet().iterator(); mapIter.hasNext();) {
+            Map.Entry mapEntry = (Map.Entry)mapIter.next();
+            Map classList = (Map)mapEntry.getValue();
+        
+            // Removed method has never been used so it has not been cached
+            if (classList == null) {
+                return;
+            }
+            for(Iterator iter = classList.keySet().iterator(); iter.hasNext();) {
+                CacheSite site = (CacheSite) iter.next();
+                if (site != null) {
+                    site.removeCachedMethod(null);
                 }
             }
         }

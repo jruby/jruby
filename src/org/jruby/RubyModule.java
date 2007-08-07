@@ -580,16 +580,11 @@ public class RubyModule extends RubyObject {
 
         if (changed) {
             getRuntime().getMethodCache().clearCache();
-            /*
+            
             // MRI seems to blow away its cache completely after an include; is
             // what we're doing here really safe?
-            List methodNames = new ArrayList(((RubyModule) arg).getMethods().keySet());
-            for (Iterator iter = methodNames.iterator();
-                 iter.hasNext();) {
-                String methodName = (String) iter.next();
-                getRuntime().getCacheMap().remove(methodName, searchMethod(methodName));
-            }
-            */
+            // CON: clearing the whole cache now, though it's pretty inefficient
+            getRuntime().getCacheMap().clear();
         }
 
     }
@@ -757,12 +752,10 @@ public class RubyModule extends RubyObject {
         synchronized(getMethods()) {
             // If we add a method which already is cached in this class, then we should update the 
             // cachemap so it stays up to date.
-            /*
             DynamicMethod existingMethod = (DynamicMethod) getMethods().remove(name);
             if (existingMethod != null) {
                 getRuntime().getCacheMap().remove(name, existingMethod);
             }
-            */
             getRuntime().getMethodCache().removeMethod(name);
             putMethod(name, method);
         }
@@ -791,7 +784,7 @@ public class RubyModule extends RubyObject {
             
             getRuntime().getMethodCache().removeMethod(name);
 
-            //getRuntime().getCacheMap().remove(name, method);
+            getRuntime().getCacheMap().remove(name, method);
         }
         
         if(isSingleton()){
@@ -985,7 +978,7 @@ public class RubyModule extends RubyObject {
             }
         }
         getRuntime().getMethodCache().removeMethod(name);
-        //getRuntime().getCacheMap().remove(name, searchMethod(name));
+        getRuntime().getCacheMap().remove(name, method);
         putMethod(name, new AliasMethod(this, method, oldName));
     }
 
