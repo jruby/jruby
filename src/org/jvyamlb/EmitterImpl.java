@@ -750,8 +750,7 @@ public class EmitterImpl implements Emitter {
             if((ev.getStyle() == 0 || ev.getStyle() == '\'') && (analysis.allowSingleQuoted && !(simpleKeyContext && analysis.multiline))) {
                 return '\'';
             }
-
-            if(analysis.multiline && ev.getValue().charAt(0) != ' ') {
+            if(analysis.multiline && !FIRST_SPACE.matcher(ev.getValue()).find()) {
                 return '|';
             }
 
@@ -869,6 +868,7 @@ public class EmitterImpl implements Emitter {
             if((0 < ending && ending < (text.length()-1)) && (ch == ' ' || start >= ending) && (env.column+(ending-start)) > env.bestWidth && split) {
                 if(start < ending) {
                     data = (ByteList)text.subSequence(start,ending);
+                    data.append(' ');
                     data.append('\\');
                 } else {
                     data = ByteList.create("\\");
@@ -882,11 +882,6 @@ public class EmitterImpl implements Emitter {
                 writeIndent();
                 env.whitespace = false;
                 env.indentation = false;
-                if(text.charAt(start) == ' ') {
-                  data = ByteList.create("\\");
-                  env.column += data.length();
-                  stream.write(data.bytes,0,data.realSize);
-                }
             }
             ending += 1;
         }
@@ -1239,6 +1234,7 @@ public class EmitterImpl implements Emitter {
     }
 
     private final static Pattern DOC_INDIC = Pattern.compile("^(---|\\.\\.\\.)");
+    private final static Pattern FIRST_SPACE = Pattern.compile("(^|\n) ");
     private final static String NULL_BL_T_LINEBR = "\0 \t\r\n\u0085";
     private final static String SPECIAL_INDIC = "#,[]{}#&*!|>'\"%@`";
     private final static String FLOW_INDIC = ",?[]{}";
