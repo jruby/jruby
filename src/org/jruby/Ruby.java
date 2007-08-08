@@ -384,8 +384,7 @@ public final class Ruby {
             Script script = (Script)scriptClass.newInstance();
             
             try {
-                DynamicScope scope = new DynamicScope(((RootNode)node).getStaticScope());
-
+                DynamicScope scope = ((RootNode)node).getScope();
                 StaticScope staticScope = scope.getStaticScope();
 
                 if (staticScope.getModule() == null) {

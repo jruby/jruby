@@ -1844,7 +1844,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.ldc(new Integer(0));
             
-            if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+            if (inspector.hasClosure() || inspector.hasScopeAwareMethods() || inspector.hasBlockArg() || inspector.hasOptArgs() || inspector.hasRestArg()) {
                 method.getstatic(cg.p(CallConfiguration.class), "RUBY_FULL", cg.ci(CallConfiguration.class));
             } else {
                 method.getstatic(cg.p(CallConfiguration.class), "JAVA_FULL", cg.ci(CallConfiguration.class));

@@ -1919,7 +1919,7 @@ public class NodeCompilerFactory {
                 int index = argsNode.getArgsCount() - 1;
                 
                 for (int i = 0; i < argsNode.getOptArgs().size(); i++) {
-                    int newIndex = ((LocalAsgnNode)argsNode.getOptArgs().get(i)).getIndex() - 2;
+                    int newIndex = ((LocalAsgnNode)argsNode.getOptArgs().get(i)).getIndex();
                     
                     if (newIndex - index != 1) {
                         throw new NotCompilableException("Can't compile def with optional args that assign other variables at: " + node.getPosition());

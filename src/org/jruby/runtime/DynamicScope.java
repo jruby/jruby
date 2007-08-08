@@ -126,7 +126,7 @@ public class DynamicScope {
      */
     public void setArgValues(IRubyObject[] values, int size) {
         lazy();
-        System.arraycopy(values, 0, variableValues, 2, size);
+        System.arraycopy(values, 0, variableValues, 0, size);
     }
     
     public void setBlockArgValues(IRubyObject[] blockArgValues, int size) {
@@ -139,8 +139,8 @@ public class DynamicScope {
      */
     public void getArgValues(IRubyObject[] args, int size) {
         lazy();
-        if(variableValues != null && args != null && variableValues.length>=(size+2)) {
-            System.arraycopy(variableValues, 2, args, 0, size);
+        if(variableValues != null && args != null && variableValues.length>=(size)) {
+            System.arraycopy(variableValues, 0, args, 0, size);
         }
     }
 

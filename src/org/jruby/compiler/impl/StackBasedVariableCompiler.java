@@ -158,7 +158,7 @@ public class StackBasedVariableCompiler implements VariableCompiler {
                 method.dup();
                 method.ldc(new Integer(i));
                 method.arrayload();
-                method.astore(10 + i + 2);
+                method.astore(10 + i);
             }
             method.pop();
         }
