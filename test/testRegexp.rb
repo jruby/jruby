@@ -139,8 +139,23 @@ test_equal("[:alpha:]", %r{[:alpha:]}.source)
 # Why anyone would do this I have no idea, but it matches MRI
 test_equal(/x/, +/x/)
 
+
+def m(it = false)
+  a = /a/
+  a.instance_variable_set :@set, true if it
+  a
+end
+
+test_equal nil, m().instance_variable_get(:@set)
+test_equal true, m(true).instance_variable_get(:@set)
+#test_equal true, m().instance_variable_get(:@set)
+
 # JRUBY-1046: Support \G correctly:
 test_equal ["aa1 ", "aa2 "], "aa1 aa2 ba3 ".scan(/\Ga+\d\s*/)
 
 # JRUBY-1109: Octal literals eat next character...
 test_equal 0, "\034\015" =~ /^\034\015$/
+
+test_equal 0, /\0/ =~ "\0"
+test_equal 0, /\00/ =~ "\0"
+test_equal 0, /\00/ =~ "\0"
