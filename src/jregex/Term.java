@@ -1158,16 +1158,16 @@ class Term implements REFlags{
                case 'o':   // oct 2- or 3-digit number -> char
                   int oct=0;
                   for(;;){
-                     char d=data[i++];
+                     char d=data[i];
                      if(d>='0' && d<='7'){
-                        oct*=8;
-                        oct+=d-'0';
-                        if(oct>0xffff) break;
-                        if(i>=out) break;
+                         i++;
+                         oct*=8;
+                         oct+=d-'0';
+                         if(oct>0xffff) break;
+                         if(i>=out) break;
                      }
                      else break;
                   }
-                  i--;
                   c=(char)oct;
                   break;
                   
