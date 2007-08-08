@@ -179,6 +179,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
                     ASTInspector inspector = new ASTInspector();
                     inspector.inspect(body);
+                    inspector.inspect(argsNode);
                     
                     MethodCompiler methodCompiler = compiler.startMethod("__file__", args, staticScope, inspector);
                     NodeCompilerFactory.compile(body, methodCompiler);
