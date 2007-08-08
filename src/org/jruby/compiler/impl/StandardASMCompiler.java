@@ -953,7 +953,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void splatCurrentValue() {
-            method.invokestatic(cg.p(EvaluationState.class), "splatValue", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
+            loadRuntime();
+            method.swap();
+            method.invokestatic(cg.p(EvaluationState.class), "splatValue", cg.sig(RubyArray.class, cg.params(Ruby.class, IRubyObject.class)));
         }
 
         public void singlifySplattedValue() {
@@ -1626,6 +1628,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.iconst_0();
             method.invokevirtual(cg.p(RubyModule.class), "isMethodBound", cg.sig(boolean.class, cg.params(String.class, boolean.class)));
             method.ifeq((Label)token);
+        }
+        
+        public void concatArrays() {
+            method.invokevirtual(cg.p(RubyArray.class), "concat", cg.sig(RubyArray.class, cg.params(IRubyObject.class)));
+        }
+        
+        public void unwrapRubyArray() {
+            method.invokevirtual(cg.p(RubyArray.class), "toJavaArrayUnsafe", cg.sig(IRubyObject[].class));
         }
     }
 

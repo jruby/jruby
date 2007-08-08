@@ -450,4 +450,6 @@ public interface MethodCompiler {
     public void debug(String str);
     public void isInstanceOf(Class clazz, BranchCallback trueBranch, BranchCallback falseBranch);
     public void isCaptured(int number, BranchCallback trueBranch, BranchCallback falseBranch);
+    public void concatArrays();
+    public void unwrapRubyArray();
 }

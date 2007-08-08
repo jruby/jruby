@@ -262,3 +262,10 @@ test_exception { compile_and_run("foo(1, 2, 3)") }
 # we do not compile opt args that cause other vars to be assigned, as in def (a=(b=1))
 test_exception { compile_and_run("def foo(a=(b=1)); end")}
 test_exception { compile_and_run("def foo(a, b=(c=1)); end")}
+
+# argscat
+def foo(a, b, c)
+  return a, b, c
+end
+
+test_equal([1, 2, 3], compile_and_run("foo(1, *[2, 3])"))

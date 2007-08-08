@@ -99,6 +99,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.util.ByteList;
 import org.jruby.exceptions.JumpException;
 import org.jruby.RubyMatchData;
+import org.jruby.ast.ArgsCatNode;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -123,6 +124,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.ARRAYNODE:
             compileArray(node, context);
+            break;
+        case NodeTypes.ARGSCATNODE:
+            compileArgsCat(node, context);
             break;
         case NodeTypes.ATTRASSIGNNODE:
             compileAttrAssign(node, context);
@@ -312,6 +316,9 @@ public class NodeCompilerFactory {
     
     public static void compileArguments(Node node, MethodCompiler context) {
         switch (node.nodeId) {
+        case NodeTypes.ARGSCATNODE:
+            compileArgsCatArguments(node, context);
+            break;
         case NodeTypes.ARRAYNODE:
             compileArrayArguments(node, context);
             break;
@@ -391,6 +398,18 @@ public class NodeCompilerFactory {
         
         context.createObjectArray(arrayNode.childNodes().toArray(), callback);
         context.createNewArray(arrayNode.isLightweight());
+    }
+    
+    public static void compileArgsCat(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ArgsCatNode argsCatNode = (ArgsCatNode)node;
+        
+        compile(argsCatNode.getFirstNode(), context);
+        context.ensureRubyArray();
+        compile(argsCatNode.getSecondNode(), context);
+        context.splatCurrentValue();
+        context.concatArrays();
     }
     
     public static void compileAttrAssign(Node node, MethodCompiler context) {
@@ -1849,6 +1868,21 @@ public class NodeCompilerFactory {
         context.lineNumber(node.getPosition());
         
         context.createEmptyArray();
+    }
+    
+    public static void compileArgsCatArguments(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ArgsCatNode argsCatNode = (ArgsCatNode)node;
+        
+        compileArguments(argsCatNode.getFirstNode(), context);
+        // arguments compilers always create IRubyObject[], but we want to use RubyArray.concat here;
+        // FIXME: as a result, this is NOT efficient, since it creates and then later unwraps an interface
+        context.createNewArray(true);
+        compile(argsCatNode.getSecondNode(), context);
+        context.splatCurrentValue();
+        context.concatArrays();
+        context.unwrapRubyArray();
     }
     
     public static void compileArrayArguments(Node node, MethodCompiler context) {
