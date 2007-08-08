@@ -117,8 +117,23 @@ need_to_be_serialized = {:first => 'something', :second_params => hash}
 a = {:x => need_to_be_serialized.to_yaml}
 test_equal need_to_be_serialized, YAML.load(YAML.load(a.to_yaml)[:x])
 
-# JRUBY-1220
+# JRUBY-1220 - make sure all three variations work
 bad_text = " A\nR"
+dump = YAML.dump({'text' => bad_text})
+loaded = YAML.load(dump)
+test_equal bad_text, loaded['text']
+
+bad_text = %{
+ A
+R}
+dump = YAML.dump({'text' => bad_text})
+loaded = YAML.load(dump)
+test_equal bad_text, loaded['text']
+
+bad_text = %{
+ ActiveRecord::StatementInvalid in ProjectsController#confirm_delete
+RuntimeError: ERROR	C23503	Mupdate or delete on "projects" violates foreign 
+    }
 dump = YAML.dump({'text' => bad_text})
 loaded = YAML.load(dump)
 test_equal bad_text, loaded['text']
