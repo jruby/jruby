@@ -346,10 +346,10 @@ public class NodeCompilerFactory {
         case NodeTypes.LOCALASGNNODE:
             compileLocalAsgnAssignment(node, context);
             break;
-        // working for straight-up assignment, but not yet for blocks
-//        case NodeTypes.MULTIPLEASGNNODE:
-//            compileMultipleAsgnAssignment(node, context);
-//            break;
+        // working for straight-up assignment, but not yet for blocks; disabled in iter compilation
+        case NodeTypes.MULTIPLEASGNNODE:
+            compileMultipleAsgnAssignment(node, context);
+            break;
         default:    
             throw new NotCompilableException("Can't compile assignment node: " + node);
         }
@@ -1471,8 +1471,11 @@ public class NodeCompilerFactory {
         final ClosureCallback closureArgs = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (iterNode.getVarNode() != null) {
+                    if (iterNode.getVarNode() instanceof MultipleAsgnNode) {
+                        // TODO: still no support for multiple block vars, so we explicitly disable it here
+                        throw new NotCompilableException("Can't compile multiple block args");
+                    }
                     compileAssignment(iterNode.getVarNode(), context);
-                    //AssignmentCompiler.assign(iterNode.getVarNode(), 0, context);
                 }
             }
         };
@@ -1591,7 +1594,7 @@ public class NodeCompilerFactory {
         
         MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)node;
         
-        context.ensureRubyArray();
+        context.ensureMultipleAssignableRubyArray(multipleAsgnNode.getHeadNode() != null);
         
         { // normal items at the "head" of the masgn
             ArrayCallback headAssignCallback = new ArrayCallback() {
@@ -1601,7 +1604,7 @@ public class NodeCompilerFactory {
                     Node assignNode = headNode.get(index);
                     
                     // perform assignment for the next node
-                    NodeCompilerFactory.compileAssignment(assignNode, context);
+                    compileAssignment(assignNode, context);
                 }
             };
 

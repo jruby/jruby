@@ -350,6 +350,11 @@ public interface MethodCompiler {
     public void ensureRubyArray();
     
     /**
+     * Ensures that the present value is an IRubyObject[] by wrapping it with one or coercing it if it is not.
+     */
+    public void ensureMultipleAssignableRubyArray(boolean masgnHasHead);
+    
+    /**
      * Load an integer value suitable for numeric comparisons
      */
     public void loadInteger(int value);

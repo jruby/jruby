@@ -966,6 +966,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeUtilityMethod("ensureRubyArray", cg.sig(RubyArray.class, cg.params(IRubyObject.class)));
         }
 
+        public void ensureMultipleAssignableRubyArray(boolean masgnHasHead) {
+            loadRuntime();
+            method.swap();
+            method.ldc(new Boolean(masgnHasHead));
+            invokeUtilityMethod("ensureMultipleAssignableRubyArray", cg.sig(RubyArray.class, cg.params(Ruby.class, IRubyObject.class, boolean.class)));
+        }
+
         public void forEachInValueArray(int start, int count, Object source, ArrayCallback callback) {
             Label noMoreArrayElements = new Label();
             for (; start < count; start++) {
