@@ -100,6 +100,7 @@ import org.jruby.util.ByteList;
 import org.jruby.exceptions.JumpException;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
+import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
@@ -180,6 +181,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.DOTNODE:
             compileDot(node, context);
+            break;
+        case NodeTypes.DREGEXPNODE:
+            compileDRegexp(node, context);
             break;
         case NodeTypes.DSTRNODE:
             compileDStr(node, context);
@@ -1219,6 +1223,37 @@ public class NodeCompilerFactory {
         compile(dotNode.getEndNode(), context);
         
         context.createNewRange(dotNode.isExclusive());
+    }
+    
+    public static void compileDRegexp(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+
+        final DRegexpNode dregexpNode = (DRegexpNode)node;
+        
+        ClosureCallback createStringCallback = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                ArrayCallback dstrCallback = new ArrayCallback() {
+                public void nextValue(MethodCompiler context, Object sourceArray,
+                                      int index) {
+                        NodeCompilerFactory.compile(dregexpNode.get(index), context);
+                    }
+                };
+                context.createNewString(dstrCallback,dregexpNode.size());
+                context.toJavaString();
+            }
+        };
+   
+        int opts = dregexpNode.getOptions();
+        String lang = ((opts & 16) != 0) ? "n" : null;
+        if((opts & 48) == 48) { // param s
+            lang = "s";
+        } else if((opts & 32) == 32) { // param e
+            lang = "e";
+        } else if((opts & 64) != 0) { // param s
+            lang = "u";
+        }
+        
+        context.createNewRegexp(createStringCallback, opts, lang);
     }
     
     public static void compileDStr(Node node, MethodCompiler context) {

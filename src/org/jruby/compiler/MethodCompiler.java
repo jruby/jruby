@@ -398,6 +398,7 @@ public interface MethodCompiler {
     public void match3();
 
     public void createNewRegexp(ByteList value, int options, String lang);
+    public void createNewRegexp(ClosureCallback createStringCallback, int options, String lang);
     
     public void pollThreadEvents();
 
@@ -458,4 +459,5 @@ public interface MethodCompiler {
     public void concatArrays();
     public void unwrapRubyArray();
     public void aryToAry();
+    public void toJavaString();
 }

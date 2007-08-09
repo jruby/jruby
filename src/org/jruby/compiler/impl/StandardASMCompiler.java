@@ -1025,6 +1025,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void asString() {
             method.invokeinterface(cg.p(IRubyObject.class), "asString", cg.sig(RubyString.class, cg.params()));
         }
+        
+        public void toJavaString() {
+            method.invokevirtual(cg.p(Object.class), "toString", cg.sig(String.class));
+        }
 
         public void nthRef(int match) {
             method.ldc(new Integer(match));
@@ -1104,6 +1108,23 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.putstatic(classname, regname, cg.ci(RubyRegexp.class));
             method.label(alreadyCreated);
             method.getstatic(classname, regname, cg.ci(RubyRegexp.class));
+        }
+
+        public void createNewRegexp(ClosureCallback createStringCallback, final int options, final String lang) {
+            loadRuntime();
+
+            loadRuntime();
+            createStringCallback.compile(this);
+            method.ldc(new Integer(options));
+            invokeUtilityMethod("regexpLiteral", cg.sig(RegexpPattern.class, cg.params(Ruby.class, String.class, Integer.TYPE)));
+
+            if (null == lang) {
+                method.aconst_null();
+            } else {
+                method.ldc(lang);
+            }
+
+            method.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, RegexpPattern.class, String.class)));
         }
 
         public void pollThreadEvents() {
