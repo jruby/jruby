@@ -102,6 +102,7 @@ import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.StarNode;
+import org.jruby.ast.ToAryNode;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -298,6 +299,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.SYMBOLNODE:
             compileSymbol(node, context);
+            break;
+        case NodeTypes.TOARYNODE:
+            compileToAry(node, context);
             break;
         case NodeTypes.TRUENODE:
             compileTrue(node, context);
@@ -1916,6 +1920,16 @@ public class NodeCompilerFactory {
     public static void compileSymbol(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         context.createNewSymbol(((SymbolNode)node).getName());
+    }    
+    
+    public static void compileToAry(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+
+        ToAryNode toAryNode = (ToAryNode)node;
+
+        compile(toAryNode.getValue(), context);
+
+        context.aryToAry();
     }    
     
     public static void compileTrue(Node node, MethodCompiler context) {

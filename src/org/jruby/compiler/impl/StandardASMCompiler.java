@@ -962,6 +962,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.invokestatic(cg.p(EvaluationState.class), "aValueSplat", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
         }
 
+        public void aryToAry() {
+            loadRuntime();
+            method.swap();
+            method.invokestatic(cg.p(EvaluationState.class), "aryToAry", cg.sig(IRubyObject.class, cg.params(Ruby.class, IRubyObject.class)));
+        }
+
         public void ensureRubyArray() {
             invokeUtilityMethod("ensureRubyArray", cg.sig(RubyArray.class, cg.params(IRubyObject.class)));
         }
@@ -1646,6 +1652,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void unwrapRubyArray() {
             method.invokevirtual(cg.p(RubyArray.class), "toJavaArrayUnsafe", cg.sig(IRubyObject[].class));
         }
+
+        
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {

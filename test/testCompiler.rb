@@ -277,10 +277,8 @@ test_equal([1, 2, 3], compile_and_run("foo(1, *CoercibleToArray.new)"))
 # multiple assignment
 test_equal([1, 2, 3], compile_and_run("a = nil; 1.times { a, b, @c = 1, 2, 3; a = [a, b, @c] }; a"))
 
-# needs ToAryNode
-#test_equal([1, nil, nil], compile_and_run("a, (b, c) = 1; [a, b, c]"))
-
 # There's a bug in this test script that prevents these succeeding; commenting out for now
+#test_equal([1, nil, nil], compile_and_run("a, (b, c) = 1; [a, b, c]"))
 #test_equal([1, 2, nil], compile_and_run("a, (b, c) = 1, 2; [a, b, c]"))
 #test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]"))
 #test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, CoercibleToArray.new; [a, b, c]"))

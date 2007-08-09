@@ -467,7 +467,7 @@ public class EvaluationState {
         return (RubyArray) newValue;
     }
 
-    private static IRubyObject aryToAry(Ruby runtime, IRubyObject value) {
+    public static IRubyObject aryToAry(Ruby runtime, IRubyObject value) {
         if (value instanceof RubyArray) return value;
 
         if (value.respondsTo("to_ary")) {
