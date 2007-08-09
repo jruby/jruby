@@ -282,3 +282,7 @@ test_equal([1, 2, 3], compile_and_run("a = nil; 1.times { a, b, @c = 1, 2, 3; a 
 #test_equal([1, 2, nil], compile_and_run("a, (b, c) = 1, 2; [a, b, c]"))
 #test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]"))
 #test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, CoercibleToArray.new; [a, b, c]"))
+
+# until loops
+test_equal(3, compile_and_run("a = 1; until a == 3; a += 1; end; a"))
+test_equal(3, compile_and_run("a = 3; until a == 3; end; a"))

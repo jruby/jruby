@@ -103,6 +103,7 @@ import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
+import org.jruby.ast.UntilNode;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -125,11 +126,11 @@ public class NodeCompilerFactory {
         case NodeTypes.ANDNODE:
             compileAnd(node, context);
             break;
-        case NodeTypes.ARRAYNODE:
-            compileArray(node, context);
-            break;
         case NodeTypes.ARGSCATNODE:
             compileArgsCat(node, context);
+            break;
+        case NodeTypes.ARRAYNODE:
+            compileArray(node, context);
             break;
         case NodeTypes.ATTRASSIGNNODE:
             compileAttrAssign(node, context);
@@ -305,6 +306,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.TRUENODE:
             compileTrue(node, context);
+            break;
+        case NodeTypes.UNTILNODE:
+            compileUntil(node, context);
             break;
         case NodeTypes.VCALLNODE:
             compileVCall(node, context);
@@ -1936,6 +1940,33 @@ public class NodeCompilerFactory {
         context.lineNumber(node.getPosition());
         
         context.loadTrue();
+        
+        context.pollThreadEvents();
+    }
+    
+    public static void compileUntil(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final UntilNode untilNode = (UntilNode)node;
+        
+        BranchCallback condition = new BranchCallback() {
+            public void branch(MethodCompiler context) {
+                compile(untilNode.getConditionNode(), context);
+                context.negateCurrentValue();
+            }
+        };
+        
+        BranchCallback body = new BranchCallback() {
+            public void branch(MethodCompiler context) {
+                if (untilNode.getBodyNode() == null) {
+                    context.loadNil();
+                    return;
+                }
+                compile(untilNode.getBodyNode(), context);
+            }
+        };
+        
+        context.performBooleanLoop(condition, body, untilNode.evaluateAtStart());
         
         context.pollThreadEvents();
     }
