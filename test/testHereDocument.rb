@@ -27,3 +27,25 @@ multiDoc = <<-STRING1, <<-STRING2
       STRING2
 
 test_equal(["   Concat\n","      enate\n"], multiDoc)
+
+str = <<-EOL
+blah-blah
+
+
+EOL
+
+test_equal("blah-blah\n\n\n",str)
+
+str1 = <<EOL
+baw-waw
+
+
+EOL
+
+str2 = <<-EOL
+baw-waw
+
+
+              EOL
+              
+test_equal(str1, str2)
