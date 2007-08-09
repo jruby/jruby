@@ -239,6 +239,8 @@ test_no_exception {
   File.new("build.xml").ctime
 }
 
+test_exception(Errno::ENOENT) { File.mtime("NO_SUCH_FILE_EVER") }
+
 # FIXME: Not sure how I feel about pulling in Java here
 include Java
 if java::lang::System.get_property("file.separator") == '/'
