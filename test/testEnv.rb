@@ -61,13 +61,14 @@ ENV['test'] = val.upcase
 test_equal(nil, ENV.index(val))
 test_equal('test', ENV.index(val.upcase))
 
-#nil values are ok
-#nil keys are not
+#nil values are ok (corresponding key will be deleted) 
+#nil keys are not ok
 test_exception(TypeError) {ENV[nil]}
 test_exception(TypeError) {ENV[nil] = "foo"}
 
 ENV['test'] = nil
 test_equal(nil, ENV['test'])
+test_equal(false, ENV.has_key?('test'))
 
 name = (ENV['OS'] =~ /\AWin/i ? '%__JRUBY_T1%' : '$__JRUBY_T1')
 expected = (ENV['OS'] =~ /\AWin/i ? '%__JRUBY_T1%' : '')
