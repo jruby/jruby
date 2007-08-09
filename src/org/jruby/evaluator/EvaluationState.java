@@ -1252,18 +1252,11 @@ public class EvaluationState {
         switch (iVisited.getValueNode().nodeId) {
         case NodeTypes.ARRAYNODE: {
             ArrayNode iVisited2 = (ArrayNode) iVisited.getValueNode();
-            IRubyObject[] array = new IRubyObject[iVisited2.size()];
-
-            for (int i = 0; i < iVisited2.size(); i++) {
-                Node next = iVisited2.get(i);
-
-                array[i] = evalInternal(runtime,context, next, self, aBlock);
-            }
-            return AssignmentVisitor.multiAssign(runtime, context, self, iVisited, RubyArray.newArrayNoCopyLight(runtime, array), false);
+            return multipleAsgnArrayNode(runtime, context, iVisited, iVisited2, self, aBlock);
         }
         case NodeTypes.SPLATNODE: {
             SplatNode splatNode = (SplatNode)iVisited.getValueNode();
-            RubyArray rubyArray = splatValue(runtime, evalInternal(runtime, context, ((SplatNode) splatNode).getValue(), self, aBlock));
+            RubyArray rubyArray = splatValue(runtime, evalInternal(runtime, context, splatNode.getValue(), self, aBlock));
             return AssignmentVisitor.multiAssign(runtime, context, self, iVisited, rubyArray, false);
         }
         default:
@@ -1275,6 +1268,17 @@ public class EvaluationState {
             
             return AssignmentVisitor.multiAssign(runtime, context, self, iVisited, (RubyArray)value, false);
         }
+    }
+
+    private static IRubyObject multipleAsgnArrayNode(Ruby runtime, ThreadContext context, MultipleAsgnNode iVisited, ArrayNode node, IRubyObject self, Block aBlock) {
+        IRubyObject[] array = new IRubyObject[node.size()];
+
+        for (int i = 0; i < node.size(); i++) {
+            Node next = node.get(i);
+
+            array[i] = evalInternal(runtime,context, next, self, aBlock);
+        }
+        return AssignmentVisitor.multiAssign(runtime, context, self, iVisited, RubyArray.newArrayNoCopyLight(runtime, array), false);
     }
 
     private static IRubyObject nextNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

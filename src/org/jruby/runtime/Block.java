@@ -276,7 +276,7 @@ public class Block {
         }
     }
     
-    private int arrayLength(IRubyObject node) {
+    protected int arrayLength(IRubyObject node) {
         return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
     }
 

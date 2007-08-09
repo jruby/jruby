@@ -971,14 +971,16 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             for (; start < count; start++) {
                 // confirm we're not past the end of the array
                 method.dup(); // dup the original array object
-                method.invokevirtual(cg.p(RubyArray.class), "getLength", cg.sig(Integer.TYPE, cg.params()));
+                method.invokevirtual(cg.p(RubyArray.class), "getLength", cg.sig(Integer.TYPE));
                 method.ldc(new Integer(start));
-                method.ifle(noMoreArrayElements); // if length <= start, end loop
+                method.if_icmple(noMoreArrayElements); // if length <= start, end loop
                 // extract item from array
                 method.dup(); // dup the original array object
                 method.ldc(new Integer(start)); // index for the item
-                method.invokevirtual(cg.p(RubyArray.class), "entry", cg.sig(IRubyObject.class, cg.params(Long.TYPE))); // extract item
+                method.invokevirtual(cg.p(RubyArray.class), "entry", cg.sig(IRubyObject.class, cg.params(Integer.TYPE))); // extract item
                 callback.nextValue(this, source, start);
+                // normal assignment leaves the value; pop it.
+                method.pop();
             }
             method.label(noMoreArrayElements);
         }
@@ -1667,7 +1669,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeIRuby("getNil", cg.sig(IRubyObject.class));
             method.astore(NIL_INDEX);
             
-            variableCompiler.beginMethod(args, scope);
+            variableCompiler.beginClosure(args, scope);
 
             // start of scoping for closure's vars
             startScope = new Label();

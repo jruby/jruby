@@ -78,6 +78,17 @@ public class StackBasedVariableCompiler implements VariableCompiler {
         }
     }
 
+    public void beginClosure(ClosureCallback argsCallback, StaticScope scope) {
+        // load args[0] which will be the IRubyObject representing block args
+        method.aload(argsIndex);
+        method.ldc(new Integer(0));
+        method.arrayload();
+        
+        if (argsCallback != null) {
+            argsCallback.compile(methodCompiler);
+        }
+    }
+
     public void assignLocalVariable(int index) {
         method.dup();
 

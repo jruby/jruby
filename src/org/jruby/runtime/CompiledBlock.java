@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -72,12 +74,12 @@ public class CompiledBlock extends Block {
             frame.setSelf(self);
         }
         IRubyObject[] realArgs = null;
-        if (!aValue) {
+        if (aValue) {
             // handle as though it's just an array coming in...i.e. it should be multiassigned or just assigned as is to var 0.
             // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], since single vars will want that anyway
-            realArgs = new IRubyObject[] {args};
+            realArgs = setupBlockArgs(context, args, self);
         } else {
-            realArgs = ArgsUtil.convertToJavaArray(args);
+            realArgs = setupBlockArg(context, args, self);
         }
         try {
             pre(context, klass);
@@ -85,6 +87,51 @@ public class CompiledBlock extends Block {
         } finally {
             post(context);
         }
+    }
+
+    private IRubyObject[] setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
+        Ruby runtime = self.getRuntime();
+        
+//        switch (varNode.nodeId) {
+//        case NodeTypes.ZEROARGNODE:
+//            break;
+//        case NodeTypes.MULTIPLEASGNNODE:
+//            value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode, (RubyArray)value, false);
+//            break;
+//        default:
+            int length = arrayLength(value);
+            switch (length) {
+            case 0:
+                value = runtime.getNil();
+                break;
+            case 1:
+                value = ((RubyArray)value).eltInternal(0);
+                break;
+            default:
+                runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
+            }
+            return new IRubyObject[] {value};
+//        }
+    }
+
+    private IRubyObject[] setupBlockArg(ThreadContext context, IRubyObject value, IRubyObject self) {
+        Ruby runtime = self.getRuntime();
+        
+//        switch (varNode.nodeId) {
+//        case NodeTypes.ZEROARGNODE:
+//            return;
+//        case NodeTypes.MULTIPLEASGNNODE:
+//            value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode,
+//                    ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null), false);
+//            break;
+//        default:
+        // FIXME: the test below would be enabled if we could avoid processing block args for the cases where we don't have any args
+        // since we can't do that just yet, it's disabled
+//            if (value == null) {
+//                runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
+//            }
+            return new IRubyObject[] {value};
+//        }
     }
 
     public Block cloneBlock() {

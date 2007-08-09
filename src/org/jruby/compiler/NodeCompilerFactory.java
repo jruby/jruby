@@ -100,6 +100,8 @@ import org.jruby.util.ByteList;
 import org.jruby.exceptions.JumpException;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
+import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.StarNode;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -241,6 +243,9 @@ public class NodeCompilerFactory {
             if (SAFE) throw new NotCompilableException("Can't compile module definitions safely: " + node);
             compileModule(node, context);
             break;
+        case NodeTypes.MULTIPLEASGNNODE:
+            compileMultipleAsgn(node, context);
+            break;
         case NodeTypes.NEWLINENODE:
             compileNewline(node, context);
             break;
@@ -327,14 +332,27 @@ public class NodeCompilerFactory {
         }
     }
     
-    public static NodeCompiler getAssignmentCompiler(Node node) {
+    public static void compileAssignment(Node node, MethodCompiler context) {
         switch (node.nodeId) {
-            // disabled for now; incomplete
-        //case NodeTypes.MULTIPLEASGNNODE:
-        //    return new MultipleAsgnNodeAsgnCompiler();
+        case NodeTypes.DASGNNODE:
+            compileDAsgnAssignment(node, context);
+            break;
+        case NodeTypes.CLASSVARASGNNODE:
+            compileClassVarAsgn(node, context);
+            break;
+        case NodeTypes.INSTASGNNODE:
+            compileInstAsgnAssignment(node, context);
+            break;
+        case NodeTypes.LOCALASGNNODE:
+            compileLocalAsgnAssignment(node, context);
+            break;
+        // working for straight-up assignment, but not yet for blocks
+//        case NodeTypes.MULTIPLEASGNNODE:
+//            compileMultipleAsgnAssignment(node, context);
+//            break;
+        default:    
+            throw new NotCompilableException("Can't compile assignment node: " + node);
         }
-        
-        throw new NotCompilableException("Can't compile assignment node: " + node);
     }
     
     public static YARVNodesCompiler getYARVCompiler() {
@@ -573,12 +591,19 @@ public class NodeCompilerFactory {
     }
 
     public static void compileClassVarAsgn(Node node, MethodCompiler context) {
-        context.lineNumber(node.getPosition());
-        
         ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode)node;
         
         // FIXME: probably more efficient with a callback
         compile(classVarAsgnNode.getValueNode(), context);
+        
+        compileClassVarAsgnAssignment(node, context);
+    }
+
+    public static void compileClassVarAsgnAssignment(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode)node;
+        
         context.assignClassVariable(classVarAsgnNode.getName());
     }
     
@@ -1082,6 +1107,14 @@ public class NodeCompilerFactory {
         
         compile(dasgnNode.getValueNode(), context);
         
+        compileDAsgnAssignment(dasgnNode, context);
+    }
+
+    public static void compileDAsgnAssignment(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        DAsgnNode dasgnNode = (DAsgnNode)node;
+        
         context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
     }
     
@@ -1396,11 +1429,17 @@ public class NodeCompilerFactory {
     }
     
     public static void compileInstAsgn(Node node, MethodCompiler context) {
-        context.lineNumber(node.getPosition());
-        
         InstAsgnNode instAsgnNode = (InstAsgnNode)node;
         
         compile(instAsgnNode.getValueNode(), context);
+        
+        compileInstAsgnAssignment(node, context);
+    }
+    
+    public static void compileInstAsgnAssignment(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        InstAsgnNode instAsgnNode = (InstAsgnNode)node;
         context.assignInstanceVariable(instAsgnNode.getName());
     }
     
@@ -1432,7 +1471,8 @@ public class NodeCompilerFactory {
         final ClosureCallback closureArgs = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (iterNode.getVarNode() != null) {
-                    AssignmentCompiler.assign(iterNode.getVarNode(), 0, context);
+                    compileAssignment(iterNode.getVarNode(), context);
+                    //AssignmentCompiler.assign(iterNode.getVarNode(), 0, context);
                 }
             }
         };
@@ -1446,6 +1486,15 @@ public class NodeCompilerFactory {
         LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
         
         compile(localAsgnNode.getValueNode(), context);
+        
+        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
+    }
+
+    public static void compileLocalAsgnAssignment(Node node, MethodCompiler context) {
+        // "assignment" means the value is already on the stack
+        context.lineNumber(node.getPosition());
+        
+        LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
         
         context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
     }
@@ -1525,9 +1574,71 @@ public class NodeCompilerFactory {
         
         context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback); */
     }
+    
+    public static void compileMultipleAsgn(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)node;
+        
+        // FIXME: This is a little less efficient than it could be, since in the interpreter we avoid objectspace for these arrays
+        compile(multipleAsgnNode.getValueNode(), context);
+        
+        compileMultipleAsgnAssignment(node, context);
+    }
+    
+    public static void compileMultipleAsgnAssignment(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)node;
+        
+        context.ensureRubyArray();
+        
+        { // normal items at the "head" of the masgn
+            ArrayCallback headAssignCallback = new ArrayCallback() {
+                public void nextValue(MethodCompiler context, Object sourceArray,
+                                      int index) {
+                    ListNode headNode = (ListNode)sourceArray;
+                    Node assignNode = headNode.get(index);
+                    
+                    // perform assignment for the next node
+                    NodeCompilerFactory.compileAssignment(assignNode, context);
+                }
+            };
+
+            context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback);
+        }
+        
+        // FIXME: This needs to fit in somewhere
+        //if (callAsProc && iter.hasNext()) {
+        //    throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
+        //}
+        
+        { // "args node" handling
+            Node argsNode = multipleAsgnNode.getArgsNode();
+            if (argsNode != null) {
+                throw new NotCompilableException("Can't compile multiple assignment with special args");
+//                if (argsNode instanceof StarNode) {
+//                    // no check for '*'
+//                } else {
+//                    BranchCallback trueBranch = new BranchCallback() {
+//                        public void branch(MethodCompiler context) {
+//                            
+//                        }
+//                    };
+//                    
+//                    // check if the number of variables is exceeded by the number of values in the array
+//                    // the number of values
+//                    context.loadRubyArraySize();
+//                    context.loadInteger(varLen);
+//                    //context.performLTBranch(trueBranch, falseBranch);
+//                } 
+            }
+        }
+    }
 
     public static void compileNewline(Node node, MethodCompiler context) {
         // TODO: add trace call?
+        context.lineNumber(node.getPosition());
         
         NewlineNode newlineNode = (NewlineNode)node;
         

@@ -22,6 +22,7 @@ public interface VariableCompiler {
     public SkinnyMethodAdapter getMethodAdapter();
     public void setMethodAdapter(SkinnyMethodAdapter sma);
     public void beginMethod(ClosureCallback argsCallback, StaticScope scope);
+    public void beginClosure(ClosureCallback argsCallback, StaticScope scope);
     public void assignLocalVariable(int index);
     public void retrieveLocalVariable(int index);
     public void assignLastLine();

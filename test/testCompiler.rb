@@ -202,9 +202,6 @@ test_exception {
   compile_and_run("1.times {|a[0]|}")
 }
 test_exception {
-  compile_and_run("1.times {|x, y|}")
-}
-test_exception {
   compile_and_run("1.times {|*x|}")
 }
 
@@ -269,3 +266,6 @@ def foo(a, b, c)
 end
 
 test_equal([1, 2, 3], compile_and_run("foo(1, *[2, 3])"))
+
+# multiple assignment
+test_equal([1, 2, 3], compile_and_run("a = nil; 1.times { a, b, @c = 1, 2, 3; a = [a, b, @c] }; a"))
