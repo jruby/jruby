@@ -353,7 +353,9 @@ public class RubyStringIO extends RubyObject {
         
         for (int i=0,j=obj.length;i<j;i++) {
             append(obj[i]);
-            internal.getByteList().unsafeReplace((int)(pos++),0,NEWLINE_BL);
+            if (!internal.getByteList().subSequence((int)pos - NEWLINE_BL.length(), (int)pos).equals(NEWLINE_BL)) {
+              internal.getByteList().unsafeReplace((int)(pos++),0,NEWLINE_BL);
+            }
         }
         return getRuntime().getNil();
     }

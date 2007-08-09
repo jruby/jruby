@@ -172,3 +172,7 @@ buf = ""
 s = StringIO.new(buf)
 s.puts "HEH"
 test_equal("HEH\n", buf)
+
+n = StringIO.new
+n.puts "test\n"
+test_equal("test\n",n.string)
