@@ -958,7 +958,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void singlifySplattedValue() {
-            method.invokestatic(cg.p(EvaluationState.class), "aValueSplat", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
+            loadRuntime();
+            method.swap();
+            method.invokestatic(cg.p(EvaluationState.class), "aValueSplat", cg.sig(IRubyObject.class, cg.params(Ruby.class, IRubyObject.class)));
         }
 
         public void aryToAry() {

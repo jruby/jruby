@@ -298,7 +298,6 @@ public class NodeCompilerFactory {
             compileStr(node, context);
             break;
         case NodeTypes.SVALUENODE:
-            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
             compileSValue(node, context);
             break;
         case NodeTypes.SYMBOLNODE:
