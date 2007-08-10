@@ -106,7 +106,6 @@ import org.jruby.ast.RescueNode;
 import org.jruby.ast.RetryNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
-import org.jruby.ast.ScopeNode;
 import org.jruby.ast.SClassNode;
 import org.jruby.ast.SValueNode;
 import org.jruby.ast.SelfNode;
@@ -213,7 +212,6 @@ public interface NodeVisitor {
     public Instruction visitReturnNode(ReturnNode iVisited);
     public Instruction visitRootNode(RootNode iVisited);
     public Instruction visitSClassNode(SClassNode iVisited);
-    public Instruction visitScopeNode(ScopeNode iVisited);
     public Instruction visitSelfNode(SelfNode iVisited);
     public Instruction visitSplatNode(SplatNode iVisited);
     public Instruction visitStrNode(StrNode iVisited);

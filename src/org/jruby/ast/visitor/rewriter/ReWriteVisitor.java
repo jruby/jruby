@@ -1439,10 +1439,6 @@ public class ReWriteVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public Instruction visitScopeNode(ScopeNode iVisited) {
-		return null;
-	}
-
 	public Instruction visitSValueNode(SValueNode iVisited) {
 		visitNode(iVisited.getValue());
 		return null;

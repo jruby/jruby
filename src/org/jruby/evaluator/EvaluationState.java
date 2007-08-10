@@ -120,7 +120,6 @@ import org.jruby.ast.RescueNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.SClassNode;
-import org.jruby.ast.ScopeNode;
 import org.jruby.ast.SValueNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.StrNode;
@@ -357,8 +356,6 @@ public class EvaluationState {
                 return rootNode(runtime, context, node, self, aBlock);
             case NodeTypes.SCLASSNODE:
                 return sClassNode(runtime, context, node, self, aBlock);
-            case NodeTypes.SCOPENODE:
-                return scopeNode(runtime, context, node, self, aBlock);
             case NodeTypes.SELFNODE:
                 return pollAndReturn(context, self);
             case NodeTypes.SPLATNODE:
@@ -1596,16 +1593,6 @@ public class EvaluationState {
         scope.setModule(singletonClass);
         
         return evalClassDefinitionBody(runtime, context, scope, iVisited.getBodyNode(), singletonClass, self, aBlock);
-    }
-
-    private static IRubyObject scopeNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        ScopeNode iVisited = (ScopeNode) node;
-        context.preScopeNode(iVisited.getScope());
-        try {
-            return evalInternal(runtime, context, iVisited.getBodyNode(), self, aBlock);
-        } finally {
-            context.postScopeNode();
-        }
     }
 
     private static IRubyObject splatNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
