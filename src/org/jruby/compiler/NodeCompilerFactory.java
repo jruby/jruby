@@ -292,7 +292,6 @@ public class NodeCompilerFactory {
             compileSelf(node, context);
             break;
         case NodeTypes.SPLATNODE:
-            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
             compileSplat(node, context);
             break;
         case NodeTypes.STRNODE:
@@ -1639,7 +1638,8 @@ public class NodeCompilerFactory {
         
         context.ensureMultipleAssignableRubyArray(multipleAsgnNode.getHeadNode() != null);
         
-        { // normal items at the "head" of the masgn
+        {
+            // normal items at the "head" of the masgn
             ArrayCallback headAssignCallback = new ArrayCallback() {
                 public void nextValue(MethodCompiler context, Object sourceArray,
                                       int index) {
@@ -1650,8 +1650,21 @@ public class NodeCompilerFactory {
                     compileAssignment(assignNode, context);
                 }
             };
+            
+            // head items for which we've run out of assignable elements
+            ArrayCallback headNilCallback = new ArrayCallback() {
+                public void nextValue(MethodCompiler context, Object sourceArray,
+                                      int index) {
+                    ListNode headNode = (ListNode)sourceArray;
+                    Node assignNode = headNode.get(index);
+                    
+                    // perform assignment for the next node
+                    context.loadNil();
+                    compileAssignment(assignNode, context);
+                }
+            };
 
-            context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback);
+            context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, headNilCallback);
         }
         
         // FIXME: This needs to fit in somewhere

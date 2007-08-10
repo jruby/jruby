@@ -341,8 +341,10 @@ public interface MethodCompiler {
     /**
      * Given an IRubyObject[] on the stack (or otherwise available as the present object)
      * call back to the provided ArrayCallback 'callback' for 'count' elements, starting with 'start'.
+     * Each call to callback will have a value from the input array on the stack; once the items are exhausted,
+     * the code in nilCallback will be invoked *with no value on the stack*.
      */
-    public void forEachInValueArray(int count, int start, Object source, ArrayCallback callback);
+    public void forEachInValueArray(int count, int start, Object source, ArrayCallback callback, ArrayCallback nilCallback);
     
     /**
      * Ensures that the present value is an IRubyObject[] by wrapping it with one if it is not.

@@ -978,9 +978,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeUtilityMethod("ensureMultipleAssignableRubyArray", cg.sig(RubyArray.class, cg.params(Ruby.class, IRubyObject.class, boolean.class)));
         }
 
-        public void forEachInValueArray(int start, int count, Object source, ArrayCallback callback) {
-            Label noMoreArrayElements = new Label();
+        public void forEachInValueArray(int start, int count, Object source, ArrayCallback callback, ArrayCallback nilCallback) {
             for (; start < count; start++) {
+                Label noMoreArrayElements = new Label();
+                Label doneWithElement = new Label();
                 // confirm we're not past the end of the array
                 method.dup(); // dup the original array object
                 method.invokevirtual(cg.p(RubyArray.class), "getLength", cg.sig(Integer.TYPE));
@@ -991,10 +992,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 method.ldc(new Integer(start)); // index for the item
                 method.invokevirtual(cg.p(RubyArray.class), "entry", cg.sig(IRubyObject.class, cg.params(Integer.TYPE))); // extract item
                 callback.nextValue(this, source, start);
+                method.go_to(doneWithElement);
+                
+                // otherwise no items left available, use the code from nilCallback
+                method.label(noMoreArrayElements);
+                nilCallback.nextValue(this, source, start);
+                
+                // end of this element
+                method.label(doneWithElement);
                 // normal assignment leaves the value; pop it.
                 method.pop();
             }
-            method.label(noMoreArrayElements);
         }
 
         public void loadInteger(int value) {
