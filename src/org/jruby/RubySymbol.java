@@ -37,6 +37,7 @@ package org.jruby;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -66,25 +67,12 @@ public class RubySymbol extends RubyObject {
         RubyClass symbolMetaClass = symbolClass.getMetaClass();
         symbolClass.index = ClassIndex.SYMBOL;
         symbolClass.kindOf = new RubyModule.KindOf() {
-                public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                    return obj instanceof RubySymbol;
-                }
-            };
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof RubySymbol;
+            }
+        };
 
-        
-        symbolClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
-        symbolClass.defineFastMethod("freeze", callbackFactory.getFastMethod("freeze"));
-        symbolClass.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
-        symbolClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
-        symbolClass.defineFastMethod("taint", callbackFactory.getFastMethod("taint"));
-        symbolClass.defineFastMethod("to_i", callbackFactory.getFastMethod("to_i"));
-        symbolClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        symbolClass.defineFastMethod("to_sym", callbackFactory.getFastMethod("to_sym"));
-        symbolClass.defineAlias("id2name", "to_s");
-        symbolClass.defineAlias("to_int", "to_i");
-
-        symbolMetaClass.defineFastMethod("all_symbols", callbackFactory.getFastSingletonMethod("all_symbols"));
-
+        symbolClass.defineAnnotatedMethods(RubySymbol.class, callbackFactory);
         symbolMetaClass.undefineMethod("new");
         
         symbolClass.dispatcher = callbackFactory.createDispatcher(symbolClass);
@@ -142,25 +130,30 @@ public class RubySymbol extends RubyObject {
         return result;
     }
 
+    @JRubyMethod(name = "==", required = 1)
     public IRubyObject equal(IRubyObject other) {
         // Symbol table ensures only one instance for every name,
         // so object identity is enough to compare symbols.
         return RubyBoolean.newBoolean(getRuntime(), this == other);
     }
 
+    @JRubyMethod(name = "to_i", alias = "to_int")
     public RubyFixnum to_i() {
         return getRuntime().newFixnum(id);
     }
 
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
         return getRuntime().newString(":" + 
             (isSymbolName(symbol) ? symbol : getRuntime().newString(symbol).dump().toString())); 
     }
 
+    @JRubyMethod(name = "to_s", alias = "id2name")
     public IRubyObject to_s() {
         return getRuntime().newString(symbol);
     }
 
+    @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         return getRuntime().newFixnum(hashCode());
     }
@@ -173,14 +166,17 @@ public class RubySymbol extends RubyObject {
         return other == this;
     }
     
+    @JRubyMethod(name = "to_sym")
     public IRubyObject to_sym() {
         return this;
     }
 
+    @JRubyMethod(name = "freeze")
     public IRubyObject freeze() {
         return this;
     }
 
+    @JRubyMethod(name = "taint")
     public IRubyObject taint() {
         return this;
     }
@@ -306,6 +302,7 @@ public class RubySymbol extends RubyObject {
         return false;
     }
     
+    @JRubyMethod(name = "all_symbols", singleton = true)
     public static IRubyObject all_symbols(IRubyObject recv) {
         return recv.getRuntime().newArrayNoCopy(recv.getRuntime().getSymbolTable().all_symbols());
     }
