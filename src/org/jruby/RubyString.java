@@ -574,7 +574,7 @@ public class RubyString extends RubyObject {
 
     public static RubyString newUnicodeString(Ruby runtime, String str) {
         try {
-            return new RubyString(runtime, str.getBytes("UTF8"));
+            return new RubyString(runtime, new ByteList(str.getBytes("UTF8"), false));
         } catch (UnsupportedEncodingException uee) {
             return new RubyString(runtime, str);
         }
