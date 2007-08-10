@@ -279,25 +279,7 @@ public class IOHandlerNio extends IOHandler {
     }
 
     public int write(ByteList string) throws IOException, BadDescriptorException {
-        checkWritable();
-
-        ByteBuffer buffer = ByteBuffer.wrap(string.bytes, string.begin, string.realSize);
-        do {
-            /* append data */
-            while (buffer.hasRemaining() && outBuffer.hasRemaining()) {
-                outBuffer.put(buffer.get());
-            }
-
-            outBuffer.flip();
-            if ((buffer.hasRemaining() && !outBuffer.hasRemaining()) || isSync()) {
-                flushOutBuffer();
-            }
-        } while (buffer.hasRemaining());
-        
-        if(!isSync()) {
-          flushOutBuffer();
-        }
-        return buffer.capacity();
+        return syswrite(string);
     }
 
     public ByteList gets(ByteList separator) throws IOException, BadDescriptorException, EOFException {
