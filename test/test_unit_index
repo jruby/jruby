@@ -92,6 +92,7 @@ test_process
 test_parsing
 test_string_java_bytes
 test_string_printf
+test_string_sub
 test_string_to_number
 test_symbol
 test_thread
