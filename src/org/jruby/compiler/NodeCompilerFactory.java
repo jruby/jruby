@@ -102,10 +102,12 @@ import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DSymbolNode;
+import org.jruby.ast.DXStrNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
 import org.jruby.ast.UntilNode;
+import org.jruby.ast.XStrNode;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -194,6 +196,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.DVARNODE:
             compileDVar(node, context);
+            break;
+        case NodeTypes.DXSTRNODE:
+            compileDXStr(node, context);
             break;
         case NodeTypes.ENSURENODE:
             compileEnsureNode(node, context);
@@ -321,6 +326,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.WHILENODE:
             compileWhile(node, context);
+            break;
+        case NodeTypes.XSTRNODE:
+            compileXStr(node, context);
             break;
         case NodeTypes.YIELDNODE:
             compileYield(node, context);
@@ -1294,6 +1302,28 @@ public class NodeCompilerFactory {
         context.getVariableCompiler().retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
     }
     
+    public static void compileDXStr(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+
+        final DXStrNode dxstrNode = (DXStrNode)node;
+        
+        final ArrayCallback dstrCallback = new ArrayCallback() {
+            public void nextValue(MethodCompiler context, Object sourceArray,
+                                  int index) {
+                compile(dxstrNode.get(index), context);
+            }
+        };
+        
+        ClosureCallback argsCallback = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                context.createNewString(dstrCallback,dxstrNode.size());
+                context.createObjectArray(1);
+            }
+        };
+        
+        context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
+    }
+    
     public static void compileEnsureNode(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
@@ -2074,6 +2104,20 @@ public class NodeCompilerFactory {
         context.performBooleanLoop(condition, body, whileNode.evaluateAtStart());
         
         context.pollThreadEvents();
+    }
+    
+    public static void compileXStr(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final XStrNode xstrNode = (XStrNode)node;
+        
+        ClosureCallback argsCallback = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                context.createNewString(xstrNode.getValue());
+                context.createObjectArray(1);
+            }
+        };
+        context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
     }
     
     public static void compileYield(Node node, MethodCompiler context) {
