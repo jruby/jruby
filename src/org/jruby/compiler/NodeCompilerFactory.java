@@ -101,6 +101,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.DRegexpNode;
+import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
@@ -187,6 +188,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.DSTRNODE:
             compileDStr(node, context);
+            break;
+        case NodeTypes.DSYMBOLNODE:
+            compileDSymbol(node, context);
             break;
         case NodeTypes.DVARNODE:
             compileDVar(node, context);
@@ -1266,6 +1270,20 @@ public class NodeCompilerFactory {
                 }
             };
         context.createNewString(dstrCallback,dstrNode.size());
+    }
+    
+    public static void compileDSymbol(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+
+        final DSymbolNode dsymbolNode = (DSymbolNode)node;
+        
+        ArrayCallback dstrCallback = new ArrayCallback() {
+                public void nextValue(MethodCompiler context, Object sourceArray,
+                                      int index) {
+                    compile(dsymbolNode.get(index), context);
+                }
+            };
+        context.createNewSymbol(dstrCallback,dsymbolNode.size());
     }
     
     public static void compileDVar(Node node, MethodCompiler context) {

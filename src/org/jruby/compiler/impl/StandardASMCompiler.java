@@ -506,6 +506,19 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             }
         }
 
+        public void createNewSymbol(ArrayCallback callback, int count) {
+            loadRuntime();
+            invokeIRuby("newString", cg.sig(RubyString.class, cg.params()));
+            for (int i = 0; i < count; i++) {
+                callback.nextValue(this, null, i);
+                method.invokevirtual(cg.p(RubyString.class), "append", cg.sig(RubyString.class, cg.params(IRubyObject.class)));
+            }
+            toJavaString();
+            loadRuntime();
+            method.swap();
+            invokeIRuby("newSymbol", cg.sig(RubySymbol.class, cg.params(String.class)));
+        }
+
         public void createNewString(ByteList value) {
             // FIXME: this is sub-optimal, storing string value in a java.lang.String again
             loadRuntime();

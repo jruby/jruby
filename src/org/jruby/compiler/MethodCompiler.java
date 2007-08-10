@@ -98,6 +98,7 @@ public interface MethodCompiler {
      * Generate a new dynamic "String" value.
      */
     public void createNewString(ArrayCallback callback, int count);
+    public void createNewSymbol(ArrayCallback callback, int count);
 
     /**
      * Generate a new "Symbol" value (or fetch the existing one).
