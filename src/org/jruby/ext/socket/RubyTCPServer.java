@@ -40,8 +40,10 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyNumeric;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -58,7 +60,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         rb_cTCPServer.defineFastMethod("accept", cfact.getFastMethod("accept"));
         rb_cTCPServer.defineFastMethod("close", cfact.getFastMethod("close"));
         rb_cTCPServer.defineFastMethod("listen", cfact.getFastMethod("listen",IRubyObject.class));
-        rb_cTCPServer.getMetaClass().defineFastMethod("open", cfact.getFastOptSingletonMethod("open"));
+        rb_cTCPServer.getMetaClass().defineMethod("open", cfact.getOptSingletonMethod("open"));
         
         runtime.getObject().setConstant("TCPserver",rb_cTCPServer);
     }
@@ -130,7 +132,17 @@ public class RubyTCPServer extends RubyTCPSocket {
         throw getRuntime().newNotImplementedError("not supported");
     }
 
-    public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {
-        return recv.callMethod(recv.getRuntime().getCurrentContext(),"new",args);
+    public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
+        ThreadContext context = recv.getRuntime().getCurrentContext();
+        IRubyObject tcpServer = recv.callMethod(context,"new",args);
+        if (block.isGiven()) {
+            try {
+                return block.yield(context, tcpServer);
+            } finally {
+                tcpServer.callMethod(context, "close");
+            }
+        } else {
+            return recv.callMethod(recv.getRuntime().getCurrentContext(),"new",args);
+        }
     }
 }// RubyTCPServer
