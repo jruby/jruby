@@ -75,6 +75,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     private int restArg;
     private boolean hasOptArgs;
     private boolean needsImplementer;
+    private CallConfiguration jitCallConfig;
 
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
             ArgsNode argsNode, Visibility visibility) {
@@ -114,14 +115,27 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             runJIT(runtime, context, name);
         }
         
-        CallConfiguration callConfig = this.callConfig;
-        
-        try {
-            callConfig.pre(context, self, implementer, getArity(), name, args, block, staticScope, this);
+        if (jitCompiledScript != null && !runtime.hasEventHooks()) {
+            try {
+                jitCallConfig.pre(context, self, implementer, getArity(), name, args, block, staticScope, this);
 
-            if (jitCompiledScript != null && !runtime.hasEventHooks()) {
                 return jitCompiledScript.run(context, self, args, block);
-            } else {
+            } catch (JumpException.ReturnJump rj) {
+                if (rj.getTarget() == this) {
+                    return (IRubyObject) rj.getValue();
+                }
+                throw rj;
+            } catch (JumpException.RedoJump rj) {
+                    throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
+            } finally {
+                if (runtime.hasEventHooks()) {
+                    traceReturn(context, runtime, name);
+                }
+                jitCallConfig.post(context);
+            }
+        } else {
+            try {
+                callConfig.pre(context, self, implementer, getArity(), name, args, block, staticScope, this);
                 if (argsNode.getBlockArgNode() != null) {
                     CompilerHelpers.processBlockArgument(runtime, context, block, argsNode.getBlockArgNode().getCount());
                 }
@@ -135,19 +149,19 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                 }
 
                 return EvaluationState.eval(runtime, context, body, self, block);
-            }
-        } catch (JumpException.ReturnJump rj) {
+            } catch (JumpException.ReturnJump rj) {
                 if (rj.getTarget() == this) {
-                return (IRubyObject) rj.getValue();
-            }
-            throw rj;
-        } catch (JumpException.RedoJump rj) {
+                    return (IRubyObject) rj.getValue();
+                }
+                throw rj;
+            } catch (JumpException.RedoJump rj) {
                 throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
-        } finally {
-            if (runtime.hasEventHooks()) {
-                traceReturn(context, runtime, name);
+            } finally {
+                if (runtime.hasEventHooks()) {
+                    traceReturn(context, runtime, name);
+                }
+                callConfig.post(context);
             }
-            callConfig.post(context);
         }
     }
 
@@ -190,7 +204,9 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     // if we're not doing any of the operations that still need a scope, use the scopeless config
                     if (!(inspector.hasClosure() || inspector.hasScopeAwareMethods() || inspector.hasBlockArg() || inspector.hasOptArgs() || inspector.hasRestArg())) {
                         // switch to a slightly faster call config
-                        callConfig = CallConfiguration.JAVA_FULL;
+                        jitCallConfig = CallConfiguration.JAVA_FULL;
+                    } else {
+                        jitCallConfig = CallConfiguration.RUBY_FULL;
                     }
                     
                     // finally, grab the script
