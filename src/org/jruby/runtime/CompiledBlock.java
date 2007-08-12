@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,6 +30,8 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.NodeTypes;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -40,20 +42,25 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class CompiledBlock extends Block {
     private CompiledBlockCallback callback;
+    private boolean hasMultipleArgsHead;
+    private int argsNodeId;
 
-    public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope, CompiledBlockCallback callback) {
+    public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
+            CompiledBlockCallback callback, boolean hasMultipleArgsHead, int nodeId) {
         this(self,
              context.getCurrentFrame().duplicate(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
-                dynamicScope, arity, callback);
+                dynamicScope, arity, callback, hasMultipleArgsHead, nodeId);
     }
 
     private CompiledBlock(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
-        DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback) {
+        DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int nodeId) {
         super(null, self, frame, visibility, klass, dynamicScope);
         this.arity = arity;
         this.callback = callback;
+        this.hasMultipleArgsHead = hasMultipleArgsHead;
+        this.argsNodeId = nodeId;
     }
     
     protected void pre(ThreadContext context, RubyModule klass) {
@@ -74,12 +81,16 @@ public class CompiledBlock extends Block {
             frame.setSelf(self);
         }
         IRubyObject[] realArgs = null;
-        if (aValue) {
-            // handle as though it's just an array coming in...i.e. it should be multiassigned or just assigned as is to var 0.
-            // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], since single vars will want that anyway
-            realArgs = setupBlockArgs(context, args, self);
+        if (argsNodeId != 0) {
+            if (aValue) {
+                // handle as though it's just an array coming in...i.e. it should be multiassigned or just assigned as is to var 0.
+                // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], since single vars will want that anyway
+                realArgs = setupBlockArgs(context, args, self);
+            } else {
+                realArgs = setupBlockArg(context, args, self);
+            }
         } else {
-            realArgs = setupBlockArg(context, args, self);
+            realArgs = IRubyObject.NULL_ARRAY;
         }
         try {
             pre(context, klass);
@@ -92,13 +103,12 @@ public class CompiledBlock extends Block {
     private IRubyObject[] setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
         Ruby runtime = self.getRuntime();
         
-//        switch (varNode.nodeId) {
-//        case NodeTypes.ZEROARGNODE:
-//            break;
-//        case NodeTypes.MULTIPLEASGNNODE:
-//            value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode, (RubyArray)value, false);
-//            break;
-//        default:
+        switch (argsNodeId) {
+        case NodeTypes.ZEROARGNODE:
+            return IRubyObject.NULL_ARRAY;
+        case NodeTypes.MULTIPLEASGNNODE:
+            return new IRubyObject[] {value};
+        default:
             int length = arrayLength(value);
             switch (length) {
             case 0:
@@ -111,32 +121,30 @@ public class CompiledBlock extends Block {
                 runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
             }
             return new IRubyObject[] {value};
-//        }
+        }
     }
 
     private IRubyObject[] setupBlockArg(ThreadContext context, IRubyObject value, IRubyObject self) {
         Ruby runtime = self.getRuntime();
         
-//        switch (varNode.nodeId) {
-//        case NodeTypes.ZEROARGNODE:
-//            return;
-//        case NodeTypes.MULTIPLEASGNNODE:
-//            value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode,
-//                    ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null), false);
-//            break;
-//        default:
+        switch (argsNodeId) {
+        case NodeTypes.ZEROARGNODE:
+            return IRubyObject.NULL_ARRAY;
+        case NodeTypes.MULTIPLEASGNNODE:
+            return new IRubyObject[] {ArgsUtil.convertToRubyArray(runtime, value, hasMultipleArgsHead)};
+        default:
         // FIXME: the test below would be enabled if we could avoid processing block args for the cases where we don't have any args
         // since we can't do that just yet, it's disabled
-//            if (value == null) {
-//                runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
-//            }
+            if (value == null) {
+                runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
+            }
             return new IRubyObject[] {value};
-//        }
+        }
     }
 
     public Block cloneBlock() {
         return new CompiledBlock(self, frame.duplicate(), visibility, klass, 
-                dynamicScope.cloneScope(), arity, callback);
+                dynamicScope.cloneScope(), arity, callback, hasMultipleArgsHead, argsNodeId);
     }
 
     public Arity arity() {

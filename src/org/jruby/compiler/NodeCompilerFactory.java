@@ -1560,16 +1560,29 @@ public class NodeCompilerFactory {
         final ClosureCallback closureArgs = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (iterNode.getVarNode() != null) {
-                    if (iterNode.getVarNode() instanceof MultipleAsgnNode) {
-                        // TODO: still no support for multiple block vars, so we explicitly disable it here
-                        throw new NotCompilableException("Can't compile multiple block args");
-                    }
                     compileAssignment(iterNode.getVarNode(), context);
                 }
             }
         };
         
-        context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(), closureBody, closureArgs);
+        boolean hasMultipleArgsHead = false;
+        if (iterNode.getVarNode() instanceof MultipleAsgnNode) {
+            hasMultipleArgsHead = ((MultipleAsgnNode)iterNode.getVarNode()).getHeadNode() != null;
+        }
+        
+        int argsNodeId = 0;
+        if (iterNode.getVarNode() != null) {
+            argsNodeId = iterNode.getVarNode().nodeId;
+        }
+        
+        if (argsNodeId == 0) {
+            // no args, do not pass args processor
+            context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
+                    closureBody, null, hasMultipleArgsHead, argsNodeId);
+        } else {
+            context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
+                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId);
+        }
     }
 
     public static void compileLocalAsgn(Node node, MethodCompiler context) {

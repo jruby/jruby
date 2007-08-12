@@ -38,13 +38,13 @@ import org.jruby.util.ByteList;
  */
 public class CompilerHelpers {
     public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, 
-            String[] staticScopeNames, CompiledBlockCallback callback) {
+            String[] staticScopeNames, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeId) {
         StaticScope staticScope = 
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
         
         return new CompiledBlock(context, self, Arity.createArity(arity), 
-                new DynamicScope(staticScope, context.getCurrentScope()), callback);
+                new DynamicScope(staticScope, context.getCurrentScope()), callback, hasMultipleArgsHead, argsNodeId);
     }
     
     public static IRubyObject def(ThreadContext context, IRubyObject self, Class compiledClass, String name, String javaName, String[] scopeNames,

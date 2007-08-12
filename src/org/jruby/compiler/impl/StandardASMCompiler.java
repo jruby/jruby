@@ -769,7 +769,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 //        method.label(normalBreak);
         }
 
-        public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args) {
+        public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, int argsNodeId) {
             String closureMethodName = "closure" + ++innerIndex;
             String closureFieldName = "_" + closureMethodName;
             
@@ -806,8 +806,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             buildStaticScopeNames(method, scope);
 
             method.getstatic(classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
+            method.ldc(Boolean.valueOf(hasMultipleArgsHead));
+            method.ldc(Integer.valueOf(argsNodeId));
 
-            invokeUtilityMethod("createBlock", cg.sig(CompiledBlock.class, cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, String[].class, CompiledBlockCallback.class)));
+            invokeUtilityMethod("createBlock", cg.sig(CompiledBlock.class,
+                    cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, String[].class, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE)));
         }
 
         public void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {

@@ -205,7 +205,7 @@ public interface MethodCompiler {
      * @param arity The arity of the block's argument list
      * @param body The callback which will generate the closure's body
      */
-    public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args);
+    public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, int argsNodeId);
     
     /**
      * Define a new method with the given name, arity, local variable count, and body callback.

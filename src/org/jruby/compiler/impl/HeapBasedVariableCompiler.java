@@ -75,12 +75,11 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
         method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
         method.astore(varsIndex);
         
-        // load args[0] which will be the IRubyObject representing block args
-        method.aload(argsIndex);
-        method.ldc(new Integer(0));
-        method.arrayload();
-        
         if (argsCallback != null) {
+            // load args[0] which will be the IRubyObject representing block args
+            method.aload(argsIndex);
+            method.ldc(new Integer(0));
+            method.arrayload();
             argsCallback.compile(methodCompiler);
         }
     }

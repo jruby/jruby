@@ -62,4 +62,8 @@ public class SimpleSourcePosition implements ISourcePosition {
     public ISourcePosition union(ISourcePosition other) {
         return this;
     }
+
+    public String toString() {
+        return getFile() + ":" + getStartLine();
+    }
 }
