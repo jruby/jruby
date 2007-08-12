@@ -289,3 +289,10 @@ test_equal(3, compile_and_run("a = 3; until a == 3; end; a"))
 
 # dynamic regexp
 test_equal([/foobar/, /foobaz/], compile_and_run('a = "bar"; b = []; while true; b << %r[foo#{a}]; break if a == "baz"; a = "baz"; end; b'))
+
+# return
+test_no_exception {
+    test_equal(1, compile_and_run("def foo; 1; end; foo"))
+    test_equal(nil, compile_and_run("def foo; return; end; foo"))
+    test_equal(1, compile_and_run("def foo; return 1; end; foo"))
+}

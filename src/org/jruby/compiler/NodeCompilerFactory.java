@@ -1954,7 +1954,11 @@ public class NodeCompilerFactory {
         
         ReturnNode returnNode = (ReturnNode)node;
         
-        compile(returnNode.getValueNode(), context);
+        if (returnNode.getValueNode() != null) {
+            compile(returnNode.getValueNode(), context);
+        } else {
+            context.loadNil();
+        }
         
         context.performReturn();
     }
