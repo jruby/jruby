@@ -240,11 +240,11 @@ module Gem
     end
 
     def shebang(spec, install_dir, bin_file_name)
-      if @options[:env_shebang]
+      #if @options[:env_shebang]
         shebang_env
-      else
-        shebang_default(spec, install_dir, bin_file_name)
-      end
+      #else
+      #  shebang_default(spec, install_dir, bin_file_name)
+      #end
     end
 
     def shebang_default(spec, install_dir, bin_file_name)
