@@ -256,4 +256,8 @@ public class StandardInvocationCompiler implements InvocationCompiler {
 
         method.invokevirtual(cg.p(Block.class), "yield", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyModule.class, Boolean.TYPE)));
     }
+
+    public void invokeEqq() {
+        invokeDynamic("===", true, true, CallType.NORMAL, null, false); // [val, result]
+    }
 }

@@ -100,6 +100,7 @@ import org.jruby.util.ByteList;
 import org.jruby.exceptions.JumpException;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
+import org.jruby.ast.CaseNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
@@ -107,6 +108,7 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
 import org.jruby.ast.UntilNode;
+import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -153,6 +155,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.CALLNODE:
             compileCall(node, context);
+            break;
+        case NodeTypes.CASENODE:
+            compileCase(node, context);
             break;
         case NodeTypes.CLASSNODE:
             if (SAFE) throw new NotCompilableException("Can't compile class definitions safely: " + node);
@@ -552,6 +557,152 @@ public class NodeCompilerFactory {
             } else {
                 context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, closureArg, false);
             }
+        }
+    }
+    
+    public static void compileCase(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        CaseNode caseNode = (CaseNode)node;
+        
+        boolean hasCase = false;
+        if (caseNode.getCaseNode() != null) {
+            compile(caseNode.getCaseNode(), context);
+            hasCase = true;
+        }
+
+        context.pollThreadEvents();
+
+        Node firstWhenNode = caseNode.getFirstWhenNode();
+        compileWhen(firstWhenNode, context, hasCase);
+    }
+    
+    public static void compileWhen(Node node, MethodCompiler context, final boolean hasCase) {
+        if (node == null) {
+            // reached the end of the when chain, pop the case (if provided) and we're done
+            if (hasCase) {
+                context.consumeCurrentValue();
+            }
+            context.loadNil();
+            return;
+        }
+        
+        if (!(node instanceof WhenNode)) {
+            if (hasCase) {
+                // case value provided and we're going into "else"; consume it.
+                context.consumeCurrentValue();
+            }
+            compile(node, context);
+            return;
+        }
+        
+        WhenNode whenNode = (WhenNode)node;
+        
+        if (whenNode.getExpressionNodes() instanceof ArrayNode) {
+            ArrayNode arrayNode = (ArrayNode)whenNode.getExpressionNodes();
+            
+            if (arrayNode.size() > 1) {
+                throw new NotCompilableException("Can't compile when node with multiple conditions at :" + whenNode.getPosition());
+            }
+            for (int i = 0; i < arrayNode.size(); i++) {
+                Node tag = arrayNode.get(i);
+
+                // need to add in position stuff some day :)
+                //context.setPosition(tag.getPosition());
+
+                // Ruby grammar has nested whens in a case body because of
+                // productions case_body and when_args.
+                if (tag instanceof WhenNode) {
+                    throw new NotCompilableException("Can't compile nested when nodes at " + tag.getPosition());
+                    //RubyArray expressions = (RubyArray) evalInternal(runtime,context, ((WhenNode) tag)
+                    //                .getExpressionNodes(), self, aBlock);
+
+                    //for (int j = 0,k = expressions.getLength(); j < k; j++) {
+                    //    IRubyObject condition = expressions.eltInternal(j);
+
+                    //    if ((expression != null && condition.callMethod(context, MethodIndex.OP_EQQ, "===", expression)
+                    //            .isTrue())
+                    //            || (expression == null && condition.isTrue())) {
+                    //        node = ((WhenNode) firstWhenNode).getBodyNode();
+                    //        return evalInternal(runtime, context, node, self, aBlock);
+                    //    }
+                    //}
+                    //continue;
+                }
+
+                if (hasCase) {
+                    context.duplicateCurrentValue();
+                }
+                // evaluate the when argument
+                compile(tag, context);
+
+                final WhenNode currentWhen = whenNode;
+
+                if (hasCase) {
+                    // we have a case value, call === on the condition value passing the case value
+                    context.swapValues();
+                    context.createObjectArray(1);
+                    context.getInvocationCompiler().invokeEqq();
+                }
+
+                // check if the condition result is true, branch appropriately
+                BranchCallback trueBranch = new BranchCallback() {
+                    public void branch(MethodCompiler context) {
+                        // consume extra case value, we won't need it anymore
+                        if (hasCase) {
+                            context.consumeCurrentValue();
+                        }
+
+                        NodeCompilerFactory.compile(currentWhen.getBodyNode(), context);
+                    }
+                };
+
+                BranchCallback falseBranch = new BranchCallback() {
+                    public void branch(MethodCompiler context) {
+                        // proceed to the next when
+                        NodeCompilerFactory.compileWhen(currentWhen.getNextCase(), context, hasCase);
+                    }
+                };
+
+                context.performBooleanBranch(trueBranch, falseBranch);
+            }
+        } else {
+            if (hasCase) {
+                context.duplicateCurrentValue();
+            }
+            
+            // evaluate the when argument
+            compile(whenNode.getExpressionNodes(), context);
+
+            final WhenNode currentWhen = whenNode;
+
+            if (hasCase) {
+                // we have a case value, call === on the condition value passing the case value
+                context.swapValues();
+                context.createObjectArray(1);
+                context.getInvocationCompiler().invokeEqq();
+            }
+
+            // check if the condition result is true, branch appropriately
+            BranchCallback trueBranch = new BranchCallback() {
+                public void branch(MethodCompiler context) {
+                    // consume extra case value, we won't need it anymore
+                    if (hasCase) {
+                        context.consumeCurrentValue();
+                    }
+
+                    NodeCompilerFactory.compile(currentWhen.getBodyNode(), context);
+                }
+            };
+
+            BranchCallback falseBranch = new BranchCallback() {
+                public void branch(MethodCompiler context) {
+                    // proceed to the next when
+                    NodeCompilerFactory.compileWhen(currentWhen.getNextCase(), context, hasCase);
+                }
+            };
+
+            context.performBooleanBranch(trueBranch, falseBranch);
         }
     }
     
@@ -1698,7 +1849,7 @@ public class NodeCompilerFactory {
         
         context.ensureMultipleAssignableRubyArray(multipleAsgnNode.getHeadNode() != null);
         
-        {
+        if (multipleAsgnNode.getHeadNode() != null) {
             // normal items at the "head" of the masgn
             ArrayCallback headAssignCallback = new ArrayCallback() {
                 public void nextValue(MethodCompiler context, Object sourceArray,

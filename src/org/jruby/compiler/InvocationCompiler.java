@@ -40,4 +40,9 @@ public interface InvocationCompiler {
      * empty args will be used.
      */
     public void yield(boolean hasArgs, boolean unwrap);
+    
+    /**
+     * Used for when nodes with a case; assumes stack is ..., case_value, when_cond_array
+     */
+    public void invokeEqq();
 }
