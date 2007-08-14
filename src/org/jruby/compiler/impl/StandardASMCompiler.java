@@ -1699,7 +1699,34 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.invokevirtual(cg.p(RubyArray.class), "toJavaArrayUnsafe", cg.sig(IRubyObject[].class));
         }
 
+        public void aliasGlobal(String newName, String oldName) {
+            loadRuntime();
+            invokeIRuby("getGlobalVariables", cg.sig(GlobalVariables.class));
+            method.ldc(newName);
+            method.ldc(oldName);
+            method.invokevirtual(cg.p(GlobalVariables.class), "alias", cg.sig(Void.TYPE, cg.params(String.class, String.class)));
+            loadNil();
+        }
         
+        public void undefMethod(String name) {
+            loadThreadContext();
+            invokeThreadContext("getRubyClass", cg.sig(RubyModule.class));
+            
+            Label notNull = new Label();
+            method.dup();
+            method.ifnonnull(notNull);
+            method.pop();
+            loadRuntime();
+            method.ldc("No class to undef method '" + name + "'.");
+            invokeIRuby("newTypeError", cg.sig(RaiseException.class, cg.params(String.class)));
+            method.athrow();
+            
+            method.label(notNull);
+            method.ldc(name);
+            method.invokevirtual(cg.p(RubyModule.class), "undef", cg.sig(Void.TYPE, cg.params(String.class)));
+            
+            loadNil();
+        }
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {

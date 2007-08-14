@@ -463,4 +463,6 @@ public interface MethodCompiler {
     public void unwrapRubyArray();
     public void aryToAry();
     public void toJavaString();
+    public void aliasGlobal(String newName, String oldName);
+    public void undefMethod(String name);
 }

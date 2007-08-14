@@ -107,7 +107,9 @@ import org.jruby.ast.DXStrNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
+import org.jruby.ast.UndefNode;
 import org.jruby.ast.UntilNode;
+import org.jruby.ast.VAliasNode;
 import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -323,8 +325,14 @@ public class NodeCompilerFactory {
         case NodeTypes.TRUENODE:
             compileTrue(node, context);
             break;
+        case NodeTypes.UNDEFNODE:
+            compileUndef(node, context);
+            break;
         case NodeTypes.UNTILNODE:
             compileUntil(node, context);
+            break;
+        case NodeTypes.VALIASNODE:
+            compileVAlias(node, context);
             break;
         case NodeTypes.VCALLNODE:
             compileVCall(node, context);
@@ -2207,6 +2215,12 @@ public class NodeCompilerFactory {
         context.pollThreadEvents();
     }
     
+    public static void compileUndef(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        context.undefMethod(((UndefNode)node).getName());
+    }
+    
     public static void compileUntil(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
@@ -2232,6 +2246,14 @@ public class NodeCompilerFactory {
         context.performBooleanLoop(condition, body, untilNode.evaluateAtStart());
         
         context.pollThreadEvents();
+    }
+
+    public static void compileVAlias(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        VAliasNode valiasNode = (VAliasNode)node;
+        
+        context.aliasGlobal(valiasNode.getNewName(), valiasNode.getOldName());
     }
 
     public static void compileVCall(Node node, MethodCompiler context) {
