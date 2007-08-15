@@ -613,71 +613,7 @@ public class NodeCompilerFactory {
         if (whenNode.getExpressionNodes() instanceof ArrayNode) {
             ArrayNode arrayNode = (ArrayNode)whenNode.getExpressionNodes();
             
-            if (arrayNode.size() > 1) {
-                throw new NotCompilableException("Can't compile when node with multiple conditions at :" + whenNode.getPosition());
-            }
-            for (int i = 0; i < arrayNode.size(); i++) {
-                Node tag = arrayNode.get(i);
-
-                // need to add in position stuff some day :)
-                //context.setPosition(tag.getPosition());
-
-                // Ruby grammar has nested whens in a case body because of
-                // productions case_body and when_args.
-                if (tag instanceof WhenNode) {
-                    throw new NotCompilableException("Can't compile nested when nodes at " + tag.getPosition());
-                    //RubyArray expressions = (RubyArray) evalInternal(runtime,context, ((WhenNode) tag)
-                    //                .getExpressionNodes(), self, aBlock);
-
-                    //for (int j = 0,k = expressions.getLength(); j < k; j++) {
-                    //    IRubyObject condition = expressions.eltInternal(j);
-
-                    //    if ((expression != null && condition.callMethod(context, MethodIndex.OP_EQQ, "===", expression)
-                    //            .isTrue())
-                    //            || (expression == null && condition.isTrue())) {
-                    //        node = ((WhenNode) firstWhenNode).getBodyNode();
-                    //        return evalInternal(runtime, context, node, self, aBlock);
-                    //    }
-                    //}
-                    //continue;
-                }
-
-                if (hasCase) {
-                    context.duplicateCurrentValue();
-                }
-                // evaluate the when argument
-                compile(tag, context);
-
-                final WhenNode currentWhen = whenNode;
-
-                if (hasCase) {
-                    // we have a case value, call === on the condition value passing the case value
-                    context.swapValues();
-                    context.createObjectArray(1);
-                    context.getInvocationCompiler().invokeEqq();
-                }
-
-                // check if the condition result is true, branch appropriately
-                BranchCallback trueBranch = new BranchCallback() {
-                    public void branch(MethodCompiler context) {
-                        // consume extra case value, we won't need it anymore
-                        if (hasCase) {
-                            context.consumeCurrentValue();
-                        }
-
-                        NodeCompilerFactory.compile(currentWhen.getBodyNode(), context);
-                    }
-                };
-
-                BranchCallback falseBranch = new BranchCallback() {
-                    public void branch(MethodCompiler context) {
-                        // proceed to the next when
-                        NodeCompilerFactory.compileWhen(currentWhen.getNextCase(), context, hasCase);
-                    }
-                };
-
-                context.performBooleanBranch(trueBranch, falseBranch);
-            }
+            compileMultiArgWhen(whenNode, arrayNode, 0, context, hasCase);
         } else {
             if (hasCase) {
                 context.duplicateCurrentValue();
@@ -716,6 +652,75 @@ public class NodeCompilerFactory {
 
             context.performBooleanBranch(trueBranch, falseBranch);
         }
+    }
+    
+    public static void compileMultiArgWhen(
+            final WhenNode whenNode, final ArrayNode expressionsNode, final int conditionIndex, MethodCompiler context, final boolean hasCase) {
+        
+        if (conditionIndex >= expressionsNode.size()) {
+            // done with conditions, continue to next when in the chain
+            compileWhen(whenNode.getNextCase(), context, hasCase);
+            return;
+        }
+        
+        Node tag = expressionsNode.get(conditionIndex);
+
+        // need to add in position stuff some day :)
+        //context.setPosition(tag.getPosition());
+
+        // Ruby grammar has nested whens in a case body because of
+        // productions case_body and when_args.
+        if (tag instanceof WhenNode) {
+            throw new NotCompilableException("Can't compile nested when nodes at " + tag.getPosition());
+            //RubyArray expressions = (RubyArray) evalInternal(runtime,context, ((WhenNode) tag)
+            //                .getExpressionNodes(), self, aBlock);
+
+            //for (int j = 0,k = expressions.getLength(); j < k; j++) {
+            //    IRubyObject condition = expressions.eltInternal(j);
+
+            //    if ((expression != null && condition.callMethod(context, MethodIndex.OP_EQQ, "===", expression)
+            //            .isTrue())
+            //            || (expression == null && condition.isTrue())) {
+            //        node = ((WhenNode) firstWhenNode).getBodyNode();
+            //        return evalInternal(runtime, context, node, self, aBlock);
+            //    }
+            //}
+            //continue;
+        }
+
+        if (hasCase) {
+            context.duplicateCurrentValue();
+        }
+        // evaluate the when argument
+        compile(tag, context);
+
+        if (hasCase) {
+            // we have a case value, call === on the condition value passing the case value
+            context.swapValues();
+            context.createObjectArray(1);
+            context.getInvocationCompiler().invokeEqq();
+        }
+
+        // check if the condition result is true, branch appropriately
+        BranchCallback trueBranch = new BranchCallback() {
+            public void branch(MethodCompiler context) {
+                // consume extra case value, we won't need it anymore
+                if (hasCase) {
+                    context.consumeCurrentValue();
+                }
+
+                NodeCompilerFactory.compile(whenNode.getBodyNode(), context);
+            }
+        };
+
+        BranchCallback falseBranch = new BranchCallback() {
+            public void branch(MethodCompiler context) {
+                // proceed to the next when
+                NodeCompilerFactory.compileMultiArgWhen(whenNode, expressionsNode, conditionIndex + 1, context, hasCase);
+            }
+        };
+
+        context.performBooleanBranch(trueBranch, falseBranch);
     }
     
     public static void compileClass(Node node, MethodCompiler context) {
