@@ -24,6 +24,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
+import org.jruby.runtime.CompiledSharedScopeBlock;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
@@ -45,6 +46,12 @@ public class CompilerHelpers {
         
         return new CompiledBlock(context, self, Arity.createArity(arity), 
                 new DynamicScope(staticScope, context.getCurrentScope()), callback, hasMultipleArgsHead, argsNodeId);
+    }
+    public static CompiledSharedScopeBlock createSharedScopeBlock(ThreadContext context, IRubyObject self, int arity, 
+            CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeId) {
+        
+        return new CompiledSharedScopeBlock(context, self, Arity.createArity(arity), 
+                context.getCurrentScope(), callback, hasMultipleArgsHead, argsNodeId);
     }
     
     public static IRubyObject def(ThreadContext context, IRubyObject self, Class compiledClass, String name, String javaName, String[] scopeNames,

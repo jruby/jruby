@@ -78,6 +78,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
+import org.jruby.runtime.CompiledSharedScopeBlock;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.MethodIndex;
@@ -811,6 +812,48 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             invokeUtilityMethod("createBlock", cg.sig(CompiledBlock.class,
                     cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, String[].class, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE)));
+        }
+
+        public void createNewForLoop(int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, int argsNodeId) {
+            String closureMethodName = "closure" + ++innerIndex;
+            String closureFieldName = "_" + closureMethodName;
+            
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName);
+            
+            closureCompiler.beginMethod(args, null);
+            
+            body.compile(closureCompiler);
+            
+            closureCompiler.endMethod();
+
+            // Done with closure compilation
+            /////////////////////////////////////////////////////////////////////////////
+            // Now, store a compiled block object somewhere we can access it in the future
+            // in current method, load the field to see if we've created a BlockCallback yet
+            method.getstatic(classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
+            Label alreadyCreated = new Label();
+            method.ifnonnull(alreadyCreated);
+
+            // no callback, construct it
+            getCallbackFactory();
+
+            method.ldc(closureMethodName);
+            method.invokevirtual(cg.p(CallbackFactory.class), "getBlockCallback", cg.sig(CompiledBlockCallback.class, cg.params(String.class)));
+            method.putstatic(classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
+
+            method.label(alreadyCreated);
+
+            // Construct the block for passing to the target method
+            loadThreadContext();
+            loadSelf();
+            method.ldc(new Integer(arity));
+
+            method.getstatic(classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
+            method.ldc(Boolean.valueOf(hasMultipleArgsHead));
+            method.ldc(Integer.valueOf(argsNodeId));
+
+            invokeUtilityMethod("createSharedScopeBlock", cg.sig(CompiledSharedScopeBlock.class,
+                    cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE)));
         }
 
         public void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {

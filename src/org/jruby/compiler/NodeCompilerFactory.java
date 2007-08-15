@@ -104,6 +104,7 @@ import org.jruby.ast.CaseNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
+import org.jruby.ast.ForNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
@@ -224,6 +225,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.FLOATNODE:
             compileFloat(node, context);
+            break;
+        case NodeTypes.FORNODE:
+            compileFor(node, context);
             break;
         case NodeTypes.GLOBALASGNNODE:
             compileGlobalAsgn(node, context);
@@ -1579,6 +1583,71 @@ public class NodeCompilerFactory {
         FloatNode floatNode = (FloatNode)node;
         
         context.createNewFloat(floatNode.getValue());
+    }
+    
+    public static void compileFor(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final ForNode forNode = (ForNode)node;
+        
+        ClosureCallback receiverCallback = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                NodeCompilerFactory.compile(forNode.getIterNode(), context);
+            }
+        };
+           
+        final ClosureCallback closureArg = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                compileForIter(forNode, context);
+            }
+        };
+
+        context.getInvocationCompiler().invokeDynamic("each", receiverCallback, null, CallType.NORMAL, closureArg, false);
+    }
+    
+    public static void compileForIter(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+
+        final ForNode forNode = (ForNode)node;
+
+        // create the closure class and instantiate it
+        final ClosureCallback closureBody = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                if (forNode.getBodyNode() != null) {
+                    NodeCompilerFactory.compile(forNode.getBodyNode(), context);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+
+        // create the closure class and instantiate it
+        final ClosureCallback closureArgs = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                if (forNode.getVarNode() != null) {
+                    compileAssignment(forNode.getVarNode(), context);
+                }
+            }
+        };
+        
+        boolean hasMultipleArgsHead = false;
+        if (forNode.getVarNode() instanceof MultipleAsgnNode) {
+            hasMultipleArgsHead = ((MultipleAsgnNode)forNode.getVarNode()).getHeadNode() != null;
+        }
+        
+        int argsNodeId = 0;
+        if (forNode.getVarNode() != null) {
+            argsNodeId = forNode.getVarNode().nodeId;
+        }
+        
+        if (argsNodeId == 0) {
+            // no args, do not pass args processor
+            context.createNewForLoop(Arity.procArityOf(forNode.getVarNode()).getValue(),
+                    closureBody, null, hasMultipleArgsHead, argsNodeId);
+        } else {
+            context.createNewForLoop(Arity.procArityOf(forNode.getVarNode()).getValue(),
+                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId);
+        }
     }
     
     public static void compileGlobalAsgn(Node node, MethodCompiler context) {
