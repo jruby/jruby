@@ -639,7 +639,11 @@ public class NodeCompilerFactory {
                         context.consumeCurrentValue();
                     }
 
-                    NodeCompilerFactory.compile(currentWhen.getBodyNode(), context);
+                    if (currentWhen.getBodyNode() != null) {
+                        NodeCompilerFactory.compile(currentWhen.getBodyNode(), context);
+                    } else {
+                        context.loadNil();
+                    }
                 }
             };
 
@@ -709,7 +713,11 @@ public class NodeCompilerFactory {
                     context.consumeCurrentValue();
                 }
 
-                NodeCompilerFactory.compile(whenNode.getBodyNode(), context);
+                if (whenNode.getBodyNode() != null) {
+                    NodeCompilerFactory.compile(whenNode.getBodyNode(), context);
+                } else {
+                    context.loadNil();
+                }
             }
         };
 
