@@ -205,7 +205,6 @@ test_exception {
   compile_and_run("1.times {|*x|}")
 }
 
-=begin
 class_string = <<EOS
 class CompiledClass1
   def foo
@@ -217,6 +216,7 @@ EOS
 
 test_equal("cc1", compile_and_run(class_string))
 
+=begin
 module_string = <<EOS
 module CompiledModule1
   def bar

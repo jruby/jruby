@@ -1771,6 +1771,81 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             
             loadNil();
         }
+
+        public void defineClass(String name, StaticScope staticScope, ClosureCallback superCallback, ClosureCallback pathCallback, ClosureCallback bodyCallback) {
+            // TODO: build arg list based on number of args, optionals, etc
+            ++methodIndex;
+            String methodName = "rubyclass__" + cg.cleanJavaIdentifier(name) + "__" + methodIndex;
+
+            ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null);
+            methodCompiler.beginMethod(null, staticScope);
+
+            // Here starts the logic for the class definition
+            Label start = new Label();
+            Label end = new Label();
+            Label after = new Label();
+            Label noException = new Label();
+            methodCompiler.method.trycatch(start, end, after, null);
+
+            methodCompiler.method.label(start);
+            methodCompiler.loadRuntime();
+
+            superCallback.compile(methodCompiler);
+
+            methodCompiler.invokeUtilityMethod("prepareSuperClass", cg.sig(RubyClass.class, cg.params(Ruby.class, IRubyObject.class)));
+
+            methodCompiler.loadThreadContext();
+
+            pathCallback.compile(methodCompiler);
+
+            methodCompiler.invokeUtilityMethod("prepareClassNamespace", cg.sig(RubyModule.class, cg.params(ThreadContext.class, IRubyObject.class)));
+
+            methodCompiler.method.swap();
+
+            methodCompiler.method.ldc(name);
+
+            methodCompiler.method.swap();
+
+            methodCompiler.method.invokevirtual(cg.p(RubyModule.class), "defineOrGetClassUnder", cg.sig(RubyClass.class, cg.params(String.class, RubyClass.class)));
+
+            // set self to the class
+            methodCompiler.method.dup();
+            methodCompiler.method.astore(SELF_INDEX);
+
+            // CLASS BODY
+            methodCompiler.loadThreadContext();
+            methodCompiler.method.swap();
+            
+            // static scope
+            methodCompiler.buildStaticScopeNames(methodCompiler.method, staticScope);
+
+            // FIXME: this should be in a try/finally
+            methodCompiler.invokeThreadContext("preCompiledClass", cg.sig(Void.TYPE, cg.params(RubyModule.class, String[].class)));
+
+            bodyCallback.compile(methodCompiler);
+            methodCompiler.method.label(end);
+            
+            methodCompiler.method.go_to(noException);
+            
+            methodCompiler.method.label(after);
+            methodCompiler.loadThreadContext();
+            methodCompiler.invokeThreadContext("postCompiledClass", cg.sig(Void.TYPE, cg.params()));
+            methodCompiler.method.athrow();
+            
+            methodCompiler.method.label(noException);
+            methodCompiler.loadThreadContext();
+            methodCompiler.invokeThreadContext("postCompiledClass", cg.sig(Void.TYPE, cg.params()));
+
+            methodCompiler.endMethod();
+
+            // prepare to call class definition method
+            loadThreadContext();
+            loadSelf();
+            method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+            method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
+
+            method.invokestatic(classname, methodName, METHOD_SIGNATURE);
+        }
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {
@@ -1901,7 +1976,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             this.friendlyName = friendlyName;
 
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null));
-            if (inspector.hasClosure() || inspector.hasScopeAwareMethods() || inspector.hasOptArgs() || inspector.hasBlockArg() || inspector.hasRestArg()) {
+            if (inspector == null || inspector.hasClosure() || inspector.hasScopeAwareMethods() || inspector.hasOptArgs() || inspector.hasBlockArg() || inspector.hasRestArg()) {
                 variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX);
             } else {
                 variableCompiler = new StackBasedVariableCompiler(this, method, ARGS_INDEX);
@@ -2096,70 +2171,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         clinitMethod.putstatic(classname, fieldname, cg.ci(CallAdapter.class));
         
         return fieldname;
-    }
-
-    public void defineClass(String name, StaticScope staticScope, ClosureCallback superCallback, ClosureCallback pathCallback, ClosureCallback bodyCallback) {
-        // TODO: build arg list based on number of args, optionals, etc
-        ++methodIndex;
-        String methodName = "rubyclass__" + cg.cleanJavaIdentifier(name) + "__" + methodIndex;
-
-        /* incomplete...worked with old method stuff, but needs to be reworked and refactored
-        MethodCompiler methodCompiler = new ASMMethodCompiler(methodName);
-        methodCompiler.beginMethod(null);
-
-        // class def bodies default to public visibility
-        method.getstatic(cg.p(Visibility.class), "PUBLIC", cg.ci(Visibility.class));
-        method.astore(VISIBILITY_INDEX);
-
-        // Here starts the logic for the class definition
-        loadRuntime();
-
-        superCallback.compile(this);
-
-        invokeUtilityMethod("prepareSuperClass", cg.sig(RubyClass.class, cg.params(Ruby.class, IRubyObject.class)));
-
-        loadThreadContext();
-
-        pathCallback.compile(this);
-
-        invokeUtilityMethod("prepareClassNamespace", cg.sig(RubyModule.class, cg.params(ThreadContext.class, IRubyObject.class)));
-
-        method.swap();
-
-        method.ldc(name);
-
-        method.swap();
-
-        method.invokevirtual(cg.p(RubyModule.class), "defineOrGetClassUnder", cg.sig(RubyClass.class, cg.params(String.class, RubyClass.class)));
-
-        // set self to the class
-        method.dup();
-        method.astore(SELF_INDEX);
-
-        // CLASS BODY
-        loadThreadContext();
-        method.swap();
-
-        // FIXME: this should be in a try/finally
-        invokeThreadContext("preCompiledClass", cg.sig(Void.TYPE, cg.params(RubyModule.class)));
-
-        bodyCallback.compile(this);
-
-        loadThreadContext();
-        invokeThreadContext("postCompiledClass", cg.sig(Void.TYPE, cg.params()));
-
-        endMethod(mv);
-
-        // return to previous method
-        mv = getMethodAdapter();
-
-        // prepare to call class definition method
-        loadThreadContext();
-        loadSelf();
-        method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
-        method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
-
-        method.invokestatic(classname, methodName, METHOD_SIGNATURE);*/
     }
 
     public void defineModule(String name, StaticScope staticScope, ClosureCallback pathCallback, ClosureCallback bodyCallback) {

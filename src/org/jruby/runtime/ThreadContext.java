@@ -604,12 +604,18 @@ public final class ThreadContext {
         getCurrentFrame().setSelf(runtime.getTopSelf());
     }
     
-    public void preCompiledClass(RubyModule type) {
+    public void preCompiledClass(RubyModule type, String[] scopeNames) {
         pushRubyClass(type);
+        pushFrameCopy();
+        getCurrentFrame().setVisibility(Visibility.PUBLIC);
+        StaticScope staticScope = new LocalStaticScope(getCurrentScope().getStaticScope(), scopeNames);
+        pushScope(new DynamicScope(staticScope, null));
     }
     
     public void postCompiledClass() {
+        popScope();
         popRubyClass();
+        popFrame();
     }
     
     public void preScopeNode(StaticScope staticScope) {

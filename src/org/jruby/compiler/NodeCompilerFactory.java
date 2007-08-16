@@ -101,6 +101,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.CaseNode;
+import org.jruby.ast.ClassNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
@@ -163,7 +164,6 @@ public class NodeCompilerFactory {
             compileCase(node, context);
             break;
         case NodeTypes.CLASSNODE:
-            if (SAFE) throw new NotCompilableException("Can't compile class definitions safely: " + node);
             compileClass(node, context);
             break;
         case NodeTypes.CLASSVARNODE:
@@ -735,7 +735,6 @@ public class NodeCompilerFactory {
     }
     
     public static void compileClass(Node node, MethodCompiler context) {
-        /** needs new work
         context.lineNumber(node.getPosition());
         
         final ClassNode classNode = (ClassNode)node;
@@ -780,7 +779,7 @@ public class NodeCompilerFactory {
             }
         };
         
-        context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback); */
+        context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback);
     }
 
     public static void compileClassVar(Node node, MethodCompiler context) {
