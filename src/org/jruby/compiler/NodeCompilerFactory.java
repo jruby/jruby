@@ -366,6 +366,9 @@ public class NodeCompilerFactory {
         case NodeTypes.ARRAYNODE:
             compileArrayArguments(node, context);
             break;
+        case NodeTypes.SPLATNODE:
+            compileSplatArguments(node, context);
+            break;
         default:
             throw new NotCompilableException("Can't compile argument node: " + node);
         }
@@ -2439,6 +2442,16 @@ public class NodeCompilerFactory {
         
         context.createObjectArray(arrayNode.childNodes().toArray(), callback);
         // leave as a normal array
+    }
+    
+    public static void compileSplatArguments(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        SplatNode splatNode = (SplatNode)node;
+        
+        compile(splatNode.getValue(), context);
+        context.splatCurrentValue();
+        context.unwrapRubyArray();
     }
     
     /**

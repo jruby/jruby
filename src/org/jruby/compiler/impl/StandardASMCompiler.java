@@ -52,6 +52,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.executable.Script;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.BranchCallback;
@@ -1739,7 +1740,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void unwrapRubyArray() {
-            method.invokevirtual(cg.p(RubyArray.class), "toJavaArrayUnsafe", cg.sig(IRubyObject[].class));
+            method.invokestatic(cg.p(ArgsUtil.class), "convertToJavaArray", cg.sig(IRubyObject[].class, cg.params(IRubyObject.class)));
         }
 
         public void aliasGlobal(String newName, String oldName) {
