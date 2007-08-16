@@ -43,6 +43,9 @@ JavaUtilities.extend_proxy('java.util.Collection') {
   def length
     self.size
   end
+  def join(*args)
+    self.to_a.join(*args)
+  end
 }
 
 
