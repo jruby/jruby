@@ -54,6 +54,21 @@ a = Struct.new(:foo, :bar) {
 
 test_equal("hello", a.new(0, 0).hello)
 
+require 'stringio'
+
+module Recording
+  def self.stderr
+    $stderr = recorder = StringIO.new
+    begin
+      yield
+    ensure
+      $stderr = STDERR
+    end
+    recorder.rewind
+    recorder
+  end
+end
+
 # Redefining a named struct should produce a warning, but it should be a new class
 P1 = Struct.new("Post", :foo)
 P1.class_eval do
@@ -61,13 +76,17 @@ P1.class_eval do
     true
   end
 end
-P2 = Struct.new("Post", :foo)
+Recording::stderr do
+  P2 = Struct.new("Post", :foo)
+end
 
 test_exception {
   P2.new.bar
 }
 
-MyStruct = Struct.new("MyStruct", :a, :b)
+Recording::stderr do
+  MyStruct = Struct.new("MyStruct", :a, :b)
+end
 class MySubStruct < MyStruct
   def initialize(v, *args) super(*args); @v = v; end 
 end
