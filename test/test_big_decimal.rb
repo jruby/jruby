@@ -141,4 +141,55 @@ class TestArray < Test::Unit::TestCase
     assert_equal(n.power(-1), BigDecimal("0.1"))
     assert_raises(TypeError) { n.power(1.1) }
   end
+
+  def test_big_decimal_mode
+    # Accept valid arguments to #mode
+    assert BigDecimal.mode(BigDecimal::EXCEPTION_OVERFLOW)
+    assert BigDecimal.mode(BigDecimal::EXCEPTION_OVERFLOW,true)
+    assert BigDecimal.mode(BigDecimal::EXCEPTION_OVERFLOW,false)
+    
+    # Reject invalid arguments to #mode
+    assert_raises(TypeError) { BigDecimal.mode(true) } # first argument must be a Fixnum
+    assert_raises(TypeError) { BigDecimal.mode(BigDecimal::EXCEPTION_OVERFLOW, 1) } # second argument must be [true|false]
+    assert_raises(TypeError) { BigDecimal.mode(512) } # first argument must be == 256, or return non-zero when AND-ed with 255
+    
+    # exception mode defaults to 0
+    assert_equal 0, BigDecimal.mode(1) # value of first argument doesn't matter when retrieving the current exception mode, as long as it's a Fixnum <= 255
+    
+    # set and clear a single exception mode
+    assert_equal BigDecimal::EXCEPTION_INFINITY, BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY, true)
+    assert_equal 0, BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY, false)
+    assert_equal BigDecimal::EXCEPTION_NaN, BigDecimal.mode(BigDecimal::EXCEPTION_NaN, true)
+    assert_equal 0, BigDecimal.mode(BigDecimal::EXCEPTION_NaN, false)
+    
+    # set a composition of exception modes separately, make sure the final result is the composited value
+    BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY, true)
+    BigDecimal.mode(BigDecimal::EXCEPTION_NaN, true)
+    assert_equal BigDecimal::EXCEPTION_INFINITY | BigDecimal::EXCEPTION_NaN, BigDecimal.mode(1)
+    
+    # reset the exception mode to 0 for the following tests
+    BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY, false)
+    BigDecimal.mode(BigDecimal::EXCEPTION_NaN, false)
+    
+    # set a composition of exception modes with one call and retrieve it using the retrieval idiom
+    # note: this is to check compatibility with MRI, which currently sets only the last mode
+    # it checks for
+    BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY | BigDecimal::EXCEPTION_NaN, true)
+    assert_equal BigDecimal::EXCEPTION_NaN, BigDecimal.mode(1)
+    
+    # rounding mode defaults to 0
+    assert_equal 0, BigDecimal.mode(BigDecimal::ROUND_MODE)
+    
+    # make sure each setting complete replaces any previous setting
+    [BigDecimal::ROUND_UP, BigDecimal::ROUND_DOWN, BigDecimal::ROUND_CEILING, BigDecimal::ROUND_FLOOR,
+     BigDecimal::ROUND_HALF_UP, BigDecimal::ROUND_HALF_DOWN, BigDecimal::ROUND_HALF_EVEN].each do |mode|
+    	assert_equal mode, BigDecimal.mode(BigDecimal::ROUND_MODE, mode)
+    end
+    
+    # reset rounding mode to 0 for following tests
+    BigDecimal.mode(BigDecimal::ROUND_MODE, 0)
+    
+    assert_raises(TypeError) { BigDecimal.mode(BigDecimal::ROUND_MODE, true) } # second argument must be a Fixnum
+    assert_raises(TypeError) { BigDecimal.mode(BigDecimal::ROUND_MODE, 7) } # any Fixnum >= 7 should trigger this error, as the valid rounding modes are currently [0..6]
+  end    
 end
