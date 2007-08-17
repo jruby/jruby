@@ -66,8 +66,8 @@ public class StackBasedVariableCompiler implements VariableCompiler {
     }
 
     public void beginMethod(ClosureCallback argsCallback, StaticScope scope) {
-        // fill in all vars with null so compiler is happy about future accesses
-        method.aconst_null();
+        // fill in all vars with nol so compiler is happy about future accesses
+        methodCompiler.loadNil();
         for (int i = 0; i < scope.getNumberOfVariables(); i++) {
             assignLocalVariable(i);
         }
@@ -83,6 +83,13 @@ public class StackBasedVariableCompiler implements VariableCompiler {
         method.aload(argsIndex);
         method.ldc(new Integer(0));
         method.arrayload();
+
+        // load nil into all vars to avoid null/nil checking
+        methodCompiler.loadNil();
+        for (int i = 0; i < scope.getNumberOfVariables(); i++) {
+            assignLocalVariable(i);
+        }
+        method.pop();
         
         if (argsCallback != null) {
             argsCallback.compile(methodCompiler);

@@ -62,20 +62,7 @@ public class LocalStaticScope extends StaticScope {
      * @see org.jruby.parser.StaticScope#getAllNamesInScope()
      */
     public String[] getAllNamesInScope(DynamicScope dynamicScope) {
-        String[] variables = getVariables();
-
-        if (variables.length == 0) return variables;
-        
-        List resultList = new ArrayList();
-        for (int i = 0; i < variables.length; i++) {
-            if (dynamicScope.getValue(i, 0) != null) resultList.add(variables[i]);
-        }
-        int localNamesSize = resultList.size();
-        
-        String[] names = new String[localNamesSize];
-        resultList.toArray(names);
-        
-        return names;
+        return getVariables();
     }
     
     public AssignableNode assign(ISourcePosition position, String name, Node value, 

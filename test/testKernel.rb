@@ -162,12 +162,23 @@ test_exception(TypeError) { "%01.3f" % nil }
 # test bare srand (JRUBY-487)
 srand
 
-
+# Now that JRuby pre-initializes all local variables to nil, we exhibit the 1.9 behavior for local_variables
+#def lvars_test
+#  d = proc {
+#    test_equal(["d"], local_variables)
+#    a = 1
+#    test_equal(["d", "a"], local_variables)
+#    b = 2
+#    test_equal(["d", "a", "b"], local_variables)
+#  }
+#
+#  d.call
+#end
 def lvars_test
   d = proc {
-    test_equal(["d"], local_variables)
+    test_equal(["d", "a", "b"], local_variables)
     a = 1
-    test_equal(["d", "a"], local_variables)
+    test_equal(["d", "a", "b"], local_variables)
     b = 2
     test_equal(["d", "a", "b"], local_variables)
   }

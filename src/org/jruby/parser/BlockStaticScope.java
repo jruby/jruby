@@ -65,25 +65,13 @@ public class BlockStaticScope extends StaticScope {
     public String[] getAllNamesInScope(DynamicScope dynamicScope) {
         String[] variables = getEnclosingScope().getAllNamesInScope(dynamicScope.getNextCapturedScope());
         String[] ourVariables = getVariables();
-        List resultList = new ArrayList();
-
-        // We have no names to add to existing list
-        if (ourVariables == null) return variables;
-
-        for (int i = 0; i < ourVariables.length; i++) {
-            if (dynamicScope.getValue(i, 0) != null) resultList.add(ourVariables[i]);
-        }
-        int localNamesSize = resultList.size();
-        
-        String[] ourNames = new String[localNamesSize];
-        resultList.toArray(ourNames);
         
         // we know variables cannot be null since localstaticscope will create a 0 length one.
-        int newSize = variables.length + resultList.size();
+        int newSize = variables.length + ourVariables.length;
         String[] names = new String[newSize];
         
         System.arraycopy(variables, 0, names, 0, variables.length);
-        System.arraycopy(ourNames, 0, names, variables.length, ourNames.length);
+        System.arraycopy(ourVariables, 0, names, variables.length, ourVariables.length);
         
         return names;
     }

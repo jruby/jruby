@@ -9,6 +9,7 @@
 
 package org.jruby.compiler.impl;
 
+import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.ClosureCallback;
@@ -60,6 +61,11 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
         method.astore(scopeIndex);
         method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
         method.astore(varsIndex);
+
+        // fill local vars with nil, to avoid checking every access.
+        method.aload(varsIndex);
+        methodCompiler.loadNil();
+        method.invokestatic(cg.p(Arrays.class), "fill", cg.sig(Void.TYPE, cg.params(Object[].class, Object.class)));
         
         if (argsCallback != null) {
             argsCallback.compile(methodCompiler);
@@ -74,6 +80,12 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
         method.astore(scopeIndex);
         method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
         method.astore(varsIndex);
+
+        methodCompiler.loadNil();
+        for (int i = 0; i < scope.getNumberOfVariables(); i++) {
+            assignLocalVariable(i);
+        }
+        method.pop();
         
         if (argsCallback != null) {
             // load args[0] which will be the IRubyObject representing block args
@@ -114,8 +126,6 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
         method.aload(varsIndex);
         method.ldc(new Integer(index));
         method.arrayload();
-        // FIXME: This is a pretty unpleasant perf hit, and it's not required for most local var accesses. We need a better way
-        methodCompiler.nullToNil();
     }
 
     public void retrieveLocalVariable(int index, int depth) {
