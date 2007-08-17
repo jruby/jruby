@@ -132,4 +132,13 @@ class TestArray < Test::Unit::TestCase
     assert_equal(BigDecimal("2"), BigDecimal("1.5").round(0, BigDecimal::ROUND_HALF_EVEN))
     assert_equal(BigDecimal("2"), BigDecimal("2.5").round(0, BigDecimal::ROUND_HALF_EVEN))
   end
+    
+  def test_big_decimal_power
+    n = BigDecimal("10")
+    assert_equal(n.power(0), BigDecimal("1"))
+    assert_equal(n.power(1), n)
+    assert_equal(n.power(2), BigDecimal("100"))
+    assert_equal(n.power(-1), BigDecimal("0.1"))
+    assert_raises(TypeError) { n.power(1.1) }
+  end
 end

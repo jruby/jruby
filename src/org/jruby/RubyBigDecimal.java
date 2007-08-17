@@ -250,13 +250,34 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public IRubyObject power(IRubyObject arg) {
-        // TODO: better implementation
-        BigDecimal val = value;
-        int times = RubyNumeric.fix2int(arg.convertToInteger());
-        for(int i=0;i<times;i++) {
-            val = val.multiply(val);
+        if (!(arg instanceof RubyFixnum)) {
+            throw getRuntime().newTypeError("wrong argument type " + arg.getMetaClass() + " (expected Fixnum)");
         }
-        return new RubyBigDecimal(getRuntime(),val).setResult();
+        
+        BigDecimal val = value;
+        
+        int times = RubyNumeric.fix2int(arg.convertToInteger());
+        int sign = 0;
+        if (times < 0) {
+            sign = -1;
+            times = -times;
+        }
+        
+        BigDecimal result = BigDecimal.ONE;
+        while (times > 0) {
+            if (times % 2 != 0) {
+                result = result.multiply(val);
+                times -= 1;
+            }
+            val = val.multiply(val);
+            times /= 2;
+        }
+        
+        if (sign == -1) {
+            result = BigDecimal.ONE.divide(result);
+        }
+        
+        return new RubyBigDecimal(getRuntime(),result).setResult();
     }
 
     public IRubyObject add(IRubyObject[] args) {
