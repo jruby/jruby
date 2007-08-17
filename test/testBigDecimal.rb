@@ -112,3 +112,11 @@ test_equal(BigDecimal("-2"), BigDecimal("-1.5").round(0, BigDecimal::ROUND_FLOOR
 test_equal(BigDecimal("1"), BigDecimal("1.5").round(0, BigDecimal::ROUND_HALF_DOWN))
 test_equal(BigDecimal("2"), BigDecimal("1.5").round(0, BigDecimal::ROUND_HALF_EVEN))
 test_equal(BigDecimal("2"), BigDecimal("2.5").round(0, BigDecimal::ROUND_HALF_EVEN))
+
+# test BigDecimal.power()
+n = BigDecimal("10")
+test_equal(n.power(0), BigDecimal("1"))
+test_equal(n.power(1), n)
+test_equal(n.power(2), BigDecimal("100"))
+test_equal(n.power(-1), BigDecimal("0.1"))
+test_exception(TypeError) { n.power(1.1) }
