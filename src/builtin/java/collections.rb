@@ -58,6 +58,16 @@ JavaUtilities.extend_proxy('java.util.Enumeration') {
   end
 }
 
+JavaUtilities.extend_proxy('java.util.Iterator') {
+  include Enumerable
+  
+  def each
+    while (has_next)
+      yield self.next
+    end
+  end
+}
+
 JavaUtilities.extend_proxy('java.util.List') {
   def [](ix)
     if ix < size
