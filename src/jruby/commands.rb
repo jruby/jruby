@@ -52,6 +52,20 @@ module JRuby
         end 
       end
 
+      def generate_bat_stubs
+        Dir[Config::CONFIG['bindir'] + '/*'].each do |fn|
+          next unless File.file?(fn)
+          next if fn =~ /.bat$/
+          next if File.exist?("#{fn}.bat")
+          next unless File.open(fn) {|io| (io.readline rescue "") =~ /^#!.*ruby/}
+          puts "Generating #{File.basename(fn)}.bat"
+          File.open("#{fn}.bat", "wb") do |f|
+            f << "@echo off\n"
+            f << "call \"%~dp0jruby\" -S #{File.basename(fn)} %*\n"
+          end
+        end
+      end
+
       def extract
         require 'jruby/extract'
         JRuby::Extract.new(ARGV.first).extract
