@@ -41,6 +41,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class RubyBigDecimal extends RubyNumeric {
+    private static BigDecimal ONE = new BigDecimal("1.0");
+
     private static final ObjectAllocator BIGDECIMAL_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyBigDecimal(runtime, klass);
@@ -323,7 +325,7 @@ public class RubyBigDecimal extends RubyNumeric {
             times = -times;
         }
         
-        BigDecimal result = BigDecimal.ONE;
+        BigDecimal result = ONE;
         while (times > 0) {
             if (times % 2 != 0) {
                 result = result.multiply(val);
@@ -334,7 +336,7 @@ public class RubyBigDecimal extends RubyNumeric {
         }
         
         if (sign == -1) {
-            result = BigDecimal.ONE.divide(result);
+            result = ONE.divide(result, result.scale(), BigDecimal.ROUND_HALF_UP);
         }
         
         return new RubyBigDecimal(getRuntime(),result).setResult();
