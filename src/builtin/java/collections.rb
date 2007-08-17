@@ -48,6 +48,15 @@ JavaUtilities.extend_proxy('java.util.Collection') {
   end
 }
 
+JavaUtilities.extend_proxy('java.util.Enumeration') {
+  include Enumerable
+  
+  def each
+    while (has_more_elements)
+      yield next_element
+    end
+  end
+}
 
 JavaUtilities.extend_proxy('java.util.List') {
   def [](ix)
