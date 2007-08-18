@@ -17,9 +17,6 @@ mri/sample/test.rb
 testArraySubclassBehavior.rb
 testReadline.rb
 testBigDecimal.rb
-testBignum.rb
-testCacheMapLeak.rb
-testClass.rb
 testClasses.rb
 testCompiler.rb
 testConstant.rb
