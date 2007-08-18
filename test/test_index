@@ -1,8 +1,5 @@
 mri/sample/test.rb
 testReadline.rb
-testBignum.rb
-testCacheMapLeak.rb
-testClass.rb
 testClasses.rb
 testCompiler.rb
 testConstant.rb

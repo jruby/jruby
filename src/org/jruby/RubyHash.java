@@ -1128,9 +1128,10 @@ public class RubyHash extends RubyObject implements Map {
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {            
                 for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
-                    if (block.yield(context, runtime.newArray(entry.key, entry.value)).isTrue())
+                    if (block.yield(context, runtime.newArray(entry.key, entry.value), null, null, true).isTrue()) {
                         result.append(runtime.newArray(entry.key, entry.value));
-	}
+                    }
+                }
             }
         } finally {postIter();}
         return result;

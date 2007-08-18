@@ -67,8 +67,11 @@ test_array_subclass_behavior
 test_autoload
 test_backquote
 test_big_decimal
+test_bignum
 test_block
+test_cache_map_leak
 test_case
+test_class
 test_comparable
 test_core_arities
 test_date_time
