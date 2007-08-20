@@ -882,6 +882,11 @@ public class EmitterImpl implements Emitter {
                 writeIndent();
                 env.whitespace = false;
                 env.indentation = false;
+
+                if(ending < (text.length()+1) && text.charAt(ending+1) == ' ') {
+                    data = ByteList.create("\\");
+                    stream.write(data.bytes,0,data.realSize);
+                }
             }
             ending += 1;
         }
