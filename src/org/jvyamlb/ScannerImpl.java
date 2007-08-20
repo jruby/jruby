@@ -986,7 +986,8 @@ public class ScannerImpl implements Scanner {
                     chunks.append(parseHexa(length));
                 } else if(FULL_LINEBR[ch]) {
                     scanLineBreak();
-                    chunks.append(scanFlowScalarBreaks());
+                    ByteList ss = scanFlowScalarBreaks();
+                    chunks.append(ss);
                 } else {
                     chunks.append('\\');
                 }
@@ -1034,6 +1035,9 @@ public class ScannerImpl implements Scanner {
             }
             if(FULL_LINEBR[peek()]) {
                 chunks.append(scanLineBreak());
+            } else if('\\' == peek() && BLANK_T[peek(1)]) {
+                forward();
+                chunks.append(scanFlowScalarSpaces());
             } else {
                 return chunks;
             }            

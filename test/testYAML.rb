@@ -137,3 +137,16 @@ RuntimeError: ERROR	C23503	Mupdate or delete on "projects" violates foreign
 dump = YAML.dump({'text' => bad_text})
 loaded = YAML.load(dump)
 test_equal bad_text, loaded['text']
+
+string = <<-YAML
+outer
+  property1: value1
+  additional:
+  - property2: value2
+    color: green
+    data: SELECT 'xxxxxxxxxxxxxxxxxxx', COUNT(*) WHERE xyzabc = 'unk'
+    combine: overlay-bottom
+YAML
+test_equal string, YAML.load(YAML.dump(string))
+
+## TODO: implement real fuzz testing of YAML round tripping here
