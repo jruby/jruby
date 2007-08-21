@@ -319,48 +319,11 @@ public class ShellLauncher {
     }
 
     private List parseCommandLine(IRubyObject[] rawArgs) {
-        // first parse the first element of rawArgs since this may contain
-        // the whole command line
-        String command = rawArgs[0].toString();
-        Stack args = new Stack();
-        StringTokenizer st = new StringTokenizer(command, " ");
-        String quoteChar = null;
-
-        while (st.hasMoreTokens()) {
-            String token = st.nextToken();
-            if (quoteChar == null) {
-                // not currently in the middle of a quoted token
-                if (token.startsWith("'") || token.startsWith("\"")) {
-                    // note quote char and remove from beginning of token
-                    quoteChar = token.substring(0, 1);
-                    token = token.substring(1);
-                }
-                if (quoteChar!=null && token.endsWith(quoteChar)) {
-                    // quoted token self contained, remove from end of token
-                    token = token.substring(0, token.length()-1);
-                    quoteChar = null;
-                }
-                // add new token to list
-                args.push(token);
-            } else {
-                // in the middle of quoted token
-                if (token.endsWith(quoteChar)) {
-                    // end of quoted token
-                    token = token.substring(0, token.length()-1);
-                    quoteChar = null;
-                }
-                // update token at end of list
-                token = args.pop() + " " + token;
-                args.push(token);
-            }
+        String[] args = new String[rawArgs.length];
+        for (int i = 0; i < rawArgs.length; i ++) {
+            args[i] = rawArgs[i].toString();
         }
-
-        // now append the remaining raw args to the cooked arg list
-        for (int i=1;i<rawArgs.length;i++) {
-            args.push(rawArgs[i].toString());
-        }
-
-        return args;
+        return new RawArgParser(args).getArgs();
     }
 
     /**
