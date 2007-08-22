@@ -58,7 +58,7 @@ public class YAMLLoadTest extends TestCase {
         assertEquals(str,YAML.load(s("\n str")));
         assertEquals(str,YAML.load(s("\"str\"")));
         assertEquals(str,YAML.load(s("'str'")));
-        assertEquals(s("ü"),YAML.load(s("---\n\"\\xC3\\xBC\"")));
+        assertEquals(s("\u00fc"),YAML.load(s("---\n\"\\xC3\\xBC\"")));
     }
     
     public void testBasicIntegerScalarLoad() {
