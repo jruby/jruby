@@ -318,7 +318,7 @@ public class LexerSource {
         if (indent) {
         	char c;
         	while ((c = read()) != '\0') {
-        		if (!Character.isWhitespace(c)) {
+                if (!Character.isWhitespace(c) || c == '\n') {
         			unread(c);
         			break;
         		}
