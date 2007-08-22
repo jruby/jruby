@@ -181,3 +181,6 @@ lvars_test
 
 test_exception(ArgumentError) { sleep(-10) }
 test_equal(0, sleep(0))
+
+###### Kernel#system
+test_ok !system("nonexistentcmd")

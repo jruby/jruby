@@ -198,7 +198,7 @@ public class ShellLauncher {
             ScriptThreadProcess ipScript = new ScriptThreadProcess(argArray, getCurrentEnv(), pwd);
             ipScript.start();
             aProcess = ipScript;
-        } else if (shell != null && rawArgs.length == 1) {
+        } else if (shouldRunInShell(shell, rawArgs)) {
             // execute command with sh -c or cmd.exe /c
             // this does shell expansion of wildcards
             String shellSwitch = shell.endsWith("sh") ? "-c" : "/c";
@@ -335,5 +335,9 @@ public class ShellLauncher {
         String [] slashDelimitedTokens = spaceDelimitedTokens[0].split("/");
         String finalToken = slashDelimitedTokens[slashDelimitedTokens.length-1];
         return (finalToken.indexOf("ruby") != -1 || finalToken.endsWith(".rb") || finalToken.endsWith("irb"));
+    }
+
+    private boolean shouldRunInShell(String shell, IRubyObject[] rawArgs) {
+        return shell != null && rawArgs.length == 1 && rawArgs[0].toString().indexOf(" ") >= 0;
     }
 }

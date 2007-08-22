@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import junit.framework.TestCase;
 
 import org.jruby.Ruby;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -34,5 +35,16 @@ public class ShellLauncherTest extends TestCase {
         String msg = baos.toString();
         msg = msg.replaceAll("\r", "");
         assertEquals("hello\ndone\n", msg);
+    }
+
+    public void testSingleArgumentIsOnlyRunByShellIfCommandContainsSpaces() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        RubyString cmd = RubyString.newString(runtime, "nonexistentcmd");
+        try {
+            int result = launcher.runAndWait(new IRubyObject[] {cmd}, baos);
+            fail("should have raised an exception");
+        } catch (RaiseException re) {
+            
+        }
     }
 }
