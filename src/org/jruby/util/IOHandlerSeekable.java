@@ -52,7 +52,7 @@ import org.jruby.RubyIO;
  * @author Thomas E Enebo (enebo@acm.org)
  */
 public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
-    private final static int BUFSIZE = 1024;
+    private final static int BUFSIZE = 16 * 1024;
     
     protected RandomAccessFile file;
     protected String path;
