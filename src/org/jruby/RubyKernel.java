@@ -1183,7 +1183,12 @@ public class RubyKernel {
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
-        int resultCode = new ShellLauncher(runtime).runAndWait(args);
+        int resultCode;
+        try {
+            resultCode = new ShellLauncher(runtime).runAndWait(args);
+        } catch (Exception e) {
+            resultCode = 127;
+        }
         recv.getRuntime().getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         return runtime.newBoolean(resultCode == 0);
     }
