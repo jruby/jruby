@@ -42,8 +42,8 @@ public class YAMLLoadTest extends TestCase {
         super(name);
     }
 
-    private static ByteList s(String st) {
-        return new ByteList(st.getBytes());
+    private static ByteList s(String st) throws Exception {
+        return new ByteList(st.getBytes("UTF-8"));
     }
 
     public void testBasicStringScalarLoad() throws Exception {
@@ -61,35 +61,35 @@ public class YAMLLoadTest extends TestCase {
         assertEquals(s("\u00fc"),YAML.load(s("---\n\"\\xC3\\xBC\"")));
     }
     
-    public void testBasicIntegerScalarLoad() {
+    public void testBasicIntegerScalarLoad() throws Exception {
         assertEquals(new Long(47),YAML.load(s("47")));
         assertEquals(new Long(0),YAML.load(s("0")));
         assertEquals(new Long(-1),YAML.load(s("-1")));
     }
 
-    public void testBlockMappingLoad() {
-        Map expected = new HashMap();
+    public void testBlockMappingLoad() throws Exception {
+        Map<ByteList,ByteList> expected = new HashMap<ByteList,ByteList>();
         expected.put(s("a"),s("b"));
         expected.put(s("c"),s("d"));
         assertEquals(expected,YAML.load(s("a: b\nc: d")));
         assertEquals(expected,YAML.load(s("c: d\na: b\n")));
     }
 
-    public void testFlowMappingLoad() {
-        Map expected = new HashMap();
+    public void testFlowMappingLoad() throws Exception {
+        Map<ByteList,ByteList> expected = new HashMap<ByteList,ByteList>();
         expected.put(s("a"),s("b"));
         expected.put(s("c"),s("d"));
         assertEquals(expected,YAML.load(s("{a: b, c: d}")));
         assertEquals(expected,YAML.load(s("{c: d,\na: b}")));
     }
 
-    public void testInternalChar() {
-        Map expected = new HashMap();
+    public void testInternalChar() throws Exception {
+        Map<ByteList,ByteList> expected = new HashMap<ByteList,ByteList>();
         expected.put(s("bad_sample"),s("something:("));
         assertEquals(expected,YAML.load(s("--- \nbad_sample: something:(\n")));
     }
 
-    public void testBuiltinTag() {
+    public void testBuiltinTag() throws Exception {
         assertEquals(s("str"),YAML.load(s("!!str str")));
         assertEquals(s("str"),YAML.load(s("%YAML 1.1\n---\n!!str str")));
         assertEquals(s("str"),YAML.load(s("%YAML 1.0\n---\n!str str")));
@@ -98,7 +98,7 @@ public class YAMLLoadTest extends TestCase {
         assertEquals(new Long(123),YAML.load(s("%YAML 1.1\n---\n!!int 123"),YAML.config().version("1.0")));
     }
 
-    public void testDirectives() {
+    public void testDirectives() throws Exception {
         assertEquals(s("str"),YAML.load(s("%YAML 1.1\n--- !!str str")));
         assertEquals(s("str"),YAML.load(s("%YAML 1.1\n%TAG !yaml! tag:yaml.org,2002:\n--- !yaml!str str")));
         try {
@@ -109,7 +109,7 @@ public class YAMLLoadTest extends TestCase {
         }
     }
 
-    public void testJavaBeanLoad() {
+    public void testJavaBeanLoad() throws Exception {
         final java.util.Calendar cal = java.util.Calendar.getInstance();
         cal.clear();
         cal.set(1982,5-1,3); // Java's months are zero-based...
