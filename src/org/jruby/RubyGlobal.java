@@ -161,6 +161,12 @@ public class RubyGlobal {
         runtime.defineVariable(new LastMatchGlobalVariable(runtime, "$+"));
         runtime.defineVariable(new LastMatchInfoGlobalVariable(runtime, "$~"));
 
+        // This is not the actual OS process id, but it is a valid JRuby runtime identifier within
+        // the same virtual machine.  So this is a minor incompatibility.  External job control with
+        // this could cause issues.  OTOH, we would not want to report JVM pid since that could 
+        // take down many runtimes.  
+        runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(runtime.hashCode())));
+
         // after defn of $stderr as the call may produce warnings
         defineGlobalEnvConstants(runtime);
         

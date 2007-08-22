@@ -269,8 +269,6 @@ public class Main {
         defineGlobal(runtime, "$-a", commandline.isSplit());
         defineGlobal(runtime, "$-l", commandline.isProcessLineEnds());
         runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
-        // TODO this is a fake cause we have no real process number in Java
-        runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(runtime.hashCode())));
 
         IAccessor d = new ValueAccessor(runtime.newString(filename));
         runtime.getGlobalVariables().define("$PROGRAM_NAME", d);
