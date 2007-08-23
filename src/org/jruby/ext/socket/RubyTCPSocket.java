@@ -39,6 +39,7 @@ import java.nio.channels.SocketChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -73,8 +74,12 @@ public class RubyTCPSocket extends RubyIPSocket {
     }
 
     public IRubyObject initialize(IRubyObject arg1, IRubyObject port) {
+        if (port instanceof RubyString) {
+            port = RubyNumeric.str2inum(getRuntime(), (RubyString)port, 0, true);
+        }
+        int porti = RubyNumeric.fix2int(port);
         try {
-            InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(arg1.convertToString().toString()),RubyNumeric.fix2int(port));
+            InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(arg1.convertToString().toString()),porti);
             SocketChannel channel = SocketChannel.open(addr);
             channel.finishConnect();
             setChannel(channel);

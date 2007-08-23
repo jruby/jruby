@@ -291,6 +291,7 @@ public class RubyIO extends RubyObject {
         ioClass.defineFastMethod("<<", callbackFactory.getFastMethod("addString", IRubyObject.class));
         ioClass.defineFastMethod("binmode", callbackFactory.getFastMethod("binmode"));
         ioClass.defineFastMethod("close", callbackFactory.getFastMethod("close"));
+        ioClass.defineFastMethod("close_write", callbackFactory.getFastMethod("closeWrite"));        
         ioClass.defineFastMethod("closed?", callbackFactory.getFastMethod("closed"));
         ioClass.defineMethod("each", callbackFactory.getOptMethod("each_line"));
         ioClass.defineMethod("each_byte", callbackFactory.getMethod("each_byte"));
@@ -501,7 +502,6 @@ public class RubyIO extends RubyObject {
         } else {
             sepVal = getRuntime().getGlobalVariables().get("$/");
         }
-
         
         ByteList separator = sepVal.isNil() ? null : ((RubyString) sepVal).getByteList();
 
@@ -510,6 +510,7 @@ public class RubyIO extends RubyObject {
         }
 
         try {
+            
             ByteList newLine = handler.gets(separator);
 
 		    if (newLine != null) {
@@ -521,6 +522,8 @@ public class RubyIO extends RubyObject {
 		        return result;
 		    }
 		    
+            return getRuntime().getNil();
+        } catch (EOFException e) {
             return getRuntime().getNil();
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
@@ -922,6 +925,10 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
+    public IRubyObject closeWrite() {
+        return this;
+    }
+    
     /** Flushes the IO output stream.
      * 
      * @return The IO.
