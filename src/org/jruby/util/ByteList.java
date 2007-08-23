@@ -30,6 +30,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 
@@ -118,6 +120,23 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
 
     public ByteList append(int b) {
         append((byte)b);
+        return this;
+    }
+    
+    public ByteList append(InputStream input, int length) throws IOException {
+        grow(length);
+        int read = 0;
+        int n;
+        while (read < length) {
+            n = input.read(bytes, begin + read, length - read);
+            if (n == -1) {
+                if(read == 0) throw new java.io.EOFException();
+                break;
+            }
+            read += n;
+        }
+        
+        realSize += read;
         return this;
     }
 

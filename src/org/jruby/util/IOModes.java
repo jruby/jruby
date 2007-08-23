@@ -81,10 +81,6 @@ public class IOModes implements Cloneable {
         return (modes & RDWR) != 0 || modes == RDONLY || modes == BINARY;
     }
 
-    public boolean isWriteable() {
-        return isWritable();
-    }
-
     public boolean isBinary() {
         return (modes & BINARY) == BINARY;
     }
@@ -104,7 +100,7 @@ public class IOModes implements Cloneable {
     // TODO: Make sure all open flags are added to this check.
     public void checkSubsetOf(IOModes superset) {
         if ((!superset.isReadable() && isReadable()) ||
-            (!superset.isWriteable() && isWriteable()) ||
+            (!superset.isWritable() && isWritable()) ||
             !superset.isAppendable() && isAppendable()) {
             throw runtime.newErrnoEINVALError("bad permissions");
         }

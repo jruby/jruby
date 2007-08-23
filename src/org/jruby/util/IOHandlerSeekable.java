@@ -48,8 +48,6 @@ import org.jruby.RubyIO;
 
 /**
  * <p>This file implements a seekable IO file.</p>
- * 
- * @author Thomas E Enebo (enebo@acm.org)
  */
 public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
     private final static int BUFSIZE = 16 * 1024;
@@ -70,53 +68,41 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
         this.cwd = runtime.getCurrentDirectory();
         JRubyFile theFile = JRubyFile.create(cwd,path);
         
-        if(!theFile.exists()) {
-            if (modes.isReadable() && !modes.isWriteable()) {
-                throw new FileNotFoundException();
-            }
+        if (!theFile.exists()) {
+            if (modes.isReadable() && !modes.isWritable()) throw new FileNotFoundException();
         }
 
-        // Do not open as 'rw' if we don't need to since a file with permissions for read-only
-        // will barf if opened 'rw'.
-        String javaMode = "r";
-        if (modes.isWriteable()) {
-            javaMode += "w";
-        }
-        
         // We always open this rw since we can only open it r or rw.
-        file = new RandomAccessFile(theFile, javaMode);
-        if (modes.shouldTruncate()) {
-            file.setLength(0L);
-        }
+        file = new RandomAccessFile(theFile, javaMode());
+
+        if (modes.shouldTruncate()) file.setLength(0L);
+
         channel = file.getChannel();
         isOpen = true;
         buffer = ByteBuffer.allocate(BUFSIZE);
         buffer.flip();
         reading = true;
         
-        if (modes.isAppendable()) {
-            seek(0, SEEK_END);
-        }
+        if (modes.isAppendable()) seek(0, SEEK_END);
 
-        // We give a fileno last so that we do not consume these when
-        // we have a problem opening a file.
+        // Give a fileno last so that we do not consume then when we have a problem opening a file.
         fileno = RubyIO.getNewFileno();
         
         // Ensure we clean up after ourselves ... eventually
         runtime.addFinalizer(this);
     }
+    
+    private String javaMode() {
+        // Do not open as 'rw' by default since a file with read-only permissions will fail on 'rw'
+        return modes.isWritable() ? "rw" : "r";
+    }
 
     private void reopen() throws IOException {
         long pos = pos();
 
-        String javaMode = "r";
-        if (modes.isWriteable()) {
-            javaMode += "w";
-        }
-        
         JRubyFile theFile = JRubyFile.create(cwd,path);
         file.close();
-        file = new RandomAccessFile(theFile, javaMode);
+        file = new RandomAccessFile(theFile, javaMode());
         channel = file.getChannel();
         isOpen = true;
         buffer.clear();
@@ -131,9 +117,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
     }
 
     private void checkReopen() throws IOException {
-        if(file.length() != new java.io.File(path).length()) {
-            reopen();
-        }
+        if (file.length() != new java.io.File(path).length()) reopen();
     }
     
     public ByteList getsEntireStream() throws IOException {
@@ -143,8 +127,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
         if (left == 0) return null;
         
         try {
-        // let's hope no one grabs big files...
-        return sysread((int)left);
+            return sysread((int) left);
         } catch (BadDescriptorException e) {
             throw new IOException(e.getMessage()); // Ugh! But why rewrite the same code?
         }
@@ -177,9 +160,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
      * @throws BadDescriptorException
      */
     private void close(boolean finalizing) throws IOException, BadDescriptorException {
-        if (!isOpen()) {
-            throw new BadDescriptorException();
-        }
+        if (!isOpen()) throw new BadDescriptorException();
         
         isOpen = false;
         flushWrite();
@@ -194,7 +175,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
      * @see org.jruby.util.IOHandler#flush()
      */
     public void flush() throws IOException, BadDescriptorException {
-        checkWriteable();
+        checkWritable();
         flushWrite();
     }
     
@@ -203,8 +184,8 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
      * @throws IOException
      */
     private void flushWrite() throws IOException {
-        if (reading || !modes.isWritable() || buffer.position() == 0) // Don't bother
-            return;
+        if (reading || !modes.isWritable() || buffer.position() == 0) return; // Don't bother
+            
         buffer.flip();
         channel.write(buffer);
         buffer.clear();
@@ -250,7 +231,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
      * @see org.jruby.util.IOHandler#pos()
      */
     public long pos() throws IOException {
-        checkOpen();
+        checkOpen("not open");
         // Correct position for read / write buffering (we could invalidate, but expensive)
         int offset = (reading) ? - buffer.remaining() : buffer.position();
         return channel.position() + offset;
@@ -259,7 +240,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
     public void resetByModes(IOModes newModes) throws IOException, InvalidValueException {
         if (newModes.isAppendable()) {
             seek(0L, SEEK_END);
-        } else if (newModes.isWriteable()) {
+        } else if (newModes.isWritable()) {
             rewind();
         }
     }
@@ -279,7 +260,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
      * @see org.jruby.util.IOHandler#seek(long, int)
      */
     public void seek(long offset, int type) throws IOException, InvalidValueException {
-        checkOpen();
+        checkOpen("not open");
         invalidateBuffer();
         try {
             switch (type) {
@@ -307,9 +288,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
     }
 
     public ByteList sysread(int number) throws IOException, BadDescriptorException {
-        if (!isOpen()) {
-            throw new IOException("File not open");
-        }
+        checkOpen("File not open");
         checkReadable();
         ensureRead();
         
@@ -370,8 +349,9 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
      */
     private void ensureWrite() throws IOException {
         if (!reading) return;
-        if (buffer.hasRemaining()) // we have read ahead, and need to back up
+        if (buffer.hasRemaining()) { // we have read ahead, and need to back up
             channel.position(channel.position() - buffer.remaining());
+        }
         buffer.clear();
         reading = false;
     }
@@ -386,6 +366,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
             buffer.clear();
             int read = channel.read(buffer);
             buffer.flip();
+            
             if (read == -1) return -1;
         }
         return buffer.get();
@@ -398,20 +379,19 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
      */
     public int syswrite(ByteList buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
-        checkWriteable();
+        checkWritable();
         ensureWrite();
         
         // Ruby ignores empty syswrites
-        if (buf == null || buf.length() == 0) {
-            return 0;
-        }
+        if (buf == null || buf.length() == 0) return 0;
         
         if (buf.length() > buffer.capacity()) { // Doesn't fit in buffer. Write immediately.
             flushWrite(); // ensure nothing left to write
+            
             channel.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
-        }
-        else {
+        } else {
             if (buf.length() > buffer.remaining()) flushWrite();
+            
             buffer.put(buf.unsafeBytes(), buf.begin(), buf.length());
         }
         
@@ -427,7 +407,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
      */
     public int syswrite(int c) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
-        checkWriteable();
+        checkWritable();
         ensureWrite();
 
         if (!buffer.hasRemaining()) flushWrite();

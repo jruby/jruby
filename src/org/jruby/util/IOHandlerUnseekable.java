@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2007 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
@@ -33,6 +33,7 @@
 package org.jruby.util;
 
 import java.io.BufferedInputStream;
+import java.io.EOFException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +44,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyIO;
 
 /**
- * @author enebo
+ * IO Handler for an unseekable source (both input and output supported by this class).
  *
  */
 public class IOHandlerUnseekable extends IOHandlerJavaIO {
@@ -129,10 +130,9 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
         if (modes.isReadable()) {
             input = new RubyInputStream(System.in);
             isOpen = true;
-            if (modes.isWriteable()) {
-                output = System.out;
-            }
-        } else if (isWriteable()) {
+            
+            if (modes.isWritable()) output = System.out;
+        } else if (isWritable()) {
             output = System.out;
             isOpen = true;
         }
@@ -142,31 +142,22 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
     
     
     public ByteList getsEntireStream() throws IOException {
-        ByteList b1 = new ByteList();
-        byte[] buf = new byte[2048];
         boolean read = false;
-        int n = 0;
-        if(ungotc != -1) {
-            b1.append(ungotc);
+        ByteList list = new ByteList();
+        if (ungotc != -1) {
+            list.append(ungotc);
             read = true;
             ungotc = -1;
         }
-        while(true) {
-            n = input.read(buf,0,2048);
-            if(n == -1) {
-                if(!read) {
-                    throw new java.io.EOFException();
-                } else {
-                    break;
-                }
-            }
-            read = true;
-            b1.append(buf,0,n);
+
+        try {
+            list.append(input, Integer.MAX_VALUE);
+        } catch (EOFException e) {
+            if (!read) throw e;
         }
         
-        return b1;
+        return list;
     }
-
 
     public IOHandler cloneIOHandler() throws IOException {
         return new IOHandlerUnseekable(getRuntime(), input, output); 
@@ -186,21 +177,15 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
      * @see org.jruby.util.IOHandler#close()
      */
     public void close() throws IOException, BadDescriptorException {
-        if (!isOpen()) {
-        	throw new BadDescriptorException();
-        }
+        if (!isOpen()) throw new BadDescriptorException();
         
         isOpen = false;
 
         // We are not allowing the underlying System stream to be closed 
-        if (modes.isReadable() && input != System.in) {
-            input.close();
-        }
+        if (modes.isReadable() && input != System.in) input.close();
         
         // We are not allowing the underlying System stream to be closed 
-        if (modes.isWriteable() && output != System.out && output != System.err) {
-            output.close();
-        }
+        if (modes.isWritable() && output != System.out && output != System.err) output.close();
     }
 
     /**
@@ -209,7 +194,7 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
      * @see org.jruby.util.IOHandler#flush()
      */
     public void flush() throws IOException, BadDescriptorException {
-        checkWriteable();
+        checkWritable();
 
         output.flush();
     }
@@ -237,9 +222,7 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
         checkReadable();
 
         int c = input.read();
-        if (c == -1) {
-            return true;
-        }
+        if (c == -1) return true;
         ungetc(c);
         return false;
     }
@@ -285,46 +268,17 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
     public void sync() throws IOException {
         output.flush();
         
-        if (output instanceof FileOutputStream) {
-            ((FileOutputStream) output).getFD().sync();
-        }
+        if (output instanceof FileOutputStream) ((FileOutputStream) output).getFD().sync();
     }
 
-    protected void sysread(ByteList buf, int off, int length) throws IOException {
-        int read = 0;
-        int n;
-        while(read < length) {
-            n = input.read(buf.bytes, buf.begin + off + read, length - read);
-            if(n == -1) {
-                if(read == 0) {
-                    throw new java.io.EOFException();
-                } else {
-                    break;
-                }
-            }
-            read += n;
-        }
-        buf.realSize += read;
+    protected void sysread(ByteList buf, int length) throws IOException {
+        buf.append(input, length);
     }    
 
     public ByteList sysread(int number) throws IOException, BadDescriptorException {
         checkReadable();
-        byte[] buf = new byte[number];
-        int read = 0;
-        int n;
-        while(read < number) {
-            n = input.read(buf,read,number-read);
-            if(n == -1) {
-                if(read == 0) {
-                    throw new java.io.EOFException();
-                } else {
-                    break;
-                }
-            }
-            read += n;
-        }
         
-        return new ByteList(buf, 0, read, false);
+        return new ByteList().append(input, number);
     }
     
     /**
@@ -341,18 +295,14 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
      */
     public int syswrite(ByteList buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
-        checkWriteable();
+        checkWritable();
         
-        if (buf == null || buf.realSize == 0) {
-            return 0;
-        }
+        if (buf == null || buf.realSize == 0) return 0;
         
         output.write(buf.bytes, buf.begin, buf.realSize);
 
         // Should syswrite sync?
-        if (isSync) {
-            sync();
-        }
+        if (isSync) sync();
             
         return buf.realSize;
     }
@@ -364,14 +314,12 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
      */
     public int syswrite(int c) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
-        checkWriteable();
+        checkWritable();
         
         output.write(c);
 
         // Should syswrite sync?
-        if (isSync) {
-            sync();
-        }
+        if (isSync) sync();
             
         return c;
     }

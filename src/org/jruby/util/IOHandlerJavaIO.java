@@ -45,7 +45,7 @@ public abstract class IOHandlerJavaIO extends IOHandler {
     protected int ungotc = -1;
 
     protected IOHandlerJavaIO(Ruby runtime) {
-    super(runtime);
+        super(runtime);
     }
 
     public ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException {
@@ -169,54 +169,7 @@ public abstract class IOHandlerJavaIO extends IOHandler {
         return syswrite(string);
     }
 
-    protected int sysread(ByteList buf, int length) throws IOException {
-        if (buf == null) {
-            throw new IOException("sysread2: Buf is null");
-        }
-
-        int i = 0;
-        for (;i < length; i++) {
-            int c = sysread();
-
-            if (c == -1) {
-                if (i <= 0) {
-                    return -1;
-                }
-                break;
-            }
-
-            buf.append(c);
-        }
-
-        return i;
-    }
-
-    // Question: We should read bytes or chars?
-    public ByteList sysread(int number) throws IOException, BadDescriptorException {
-        if (!isOpen()) {
-            throw new IOException("File not open");
-        }
-        checkReadable();
-
-        ByteList buf = new ByteList(number);
-        int position = 0;
-
-        while (position < number) {
-            int s = sysread(buf, number - position);
-
-            if (s == -1) {
-                if (position <= 0) {
-                    throw new EOFException();
-                }
-                break;
-            }
-
-            position += s;
-        }
-
-        return buf;
-    }
-
+    public abstract ByteList sysread(int number) throws IOException, BadDescriptorException;
     public abstract int sysread() throws IOException;
 
     public abstract InputStream getInputStream();

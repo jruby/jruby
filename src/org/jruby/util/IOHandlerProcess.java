@@ -74,9 +74,7 @@ public class IOHandlerProcess extends IOHandlerJavaIO {
      * @see org.jruby.util.IOHandler#close()
      */
     public void close() throws IOException, BadDescriptorException {
-        if (!isOpen()) {
-        	throw new BadDescriptorException();
-        }
+        if (!isOpen()) throw new BadDescriptorException();
         
         isOpen = false;
 
@@ -94,7 +92,7 @@ public class IOHandlerProcess extends IOHandlerJavaIO {
      * @see org.jruby.util.IOHandler#flush()
      */
     public void flush() throws IOException, BadDescriptorException {
-        checkWriteable();
+        checkWritable();
 
         output.flush();
     }
@@ -205,18 +203,14 @@ public class IOHandlerProcess extends IOHandlerJavaIO {
      */
     public int syswrite(ByteList buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
-        checkWriteable();
+        checkWritable();
         
-        if (buf == null || buf.realSize == 0) {
-            return 0;
-        }
+        if (buf == null || buf.realSize == 0) return 0;
         
         output.write(buf.bytes, buf.begin, buf.realSize);
 
         // Should syswrite sync?
-        if (isSync) {
-            sync();
-        }
+        if (isSync) sync();
             
         return buf.realSize;
     }
@@ -228,7 +222,7 @@ public class IOHandlerProcess extends IOHandlerJavaIO {
      */
     public int syswrite(int c) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
-        checkWriteable();
+        checkWritable();
         
         output.write(c);
 

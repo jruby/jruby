@@ -362,7 +362,7 @@ public class RubyIO extends RubyObject {
      * See checkReadable for commentary.
      */
     protected void checkWriteable() {
-        if (!isOpen() || !modes.isWriteable()) {
+        if (!isOpen() || !modes.isWritable()) {
             throw getRuntime().newIOError("not opened for writing");
         }
     }

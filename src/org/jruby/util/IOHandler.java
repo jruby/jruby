@@ -45,10 +45,7 @@ public abstract class IOHandler {
     public static final int SEEK_CUR = 1;
     public static final int SEEK_END = 2;
     
-    // We use a highly uncommon string to represent the paragraph delimeter. 
-    // The 100% solution is not really worth the extra code.
-    // CON: I used getBytes here to avoid the exception-handling hassle and because
-    // these bytes should be the same in almost all encodings.
+    // We use a highly uncommon string to represent the paragraph delimiter (100% soln not worth it) 
     public static final ByteList PARAGRAPH_DELIMETER = ByteList.create("PARAGRPH_DELIM_MRK_ER");
     
     private Ruby runtime;
@@ -75,46 +72,30 @@ public abstract class IOHandler {
     
     public abstract FileChannel getFileChannel();
     
-    public boolean isReadable() {
-        return modes.isReadable();
-    }
-
     public boolean isOpen() {
         return isOpen;
     }
 
-    public boolean isWriteable() {
-        return modes.isWriteable();
+    public boolean isReadable() {
+        return modes.isReadable();
     }
 
-    protected void checkOpen() throws IOException {
-        if (!isOpen) {
-            throw new IOException("not opened");
-        }
+    public boolean isWritable() {
+        return modes.isWritable();
+    }
+
+    protected void checkOpen(String message) throws IOException {
+        if (!isOpen) throw new IOException(message);
     }
     
     protected void checkReadable() throws IOException, BadDescriptorException {
-        if (!isOpen) {
-            throw new BadDescriptorException();
-        }
-        
-        if (!modes.isReadable()) {
-            throw new IOException("not opened for reading");
-        }
-    }
-
-    protected void checkWriteable() throws IOException, BadDescriptorException {
-	checkWritable();
+        if (!isOpen) throw new BadDescriptorException();
+        if (!modes.isReadable()) throw new IOException("not opened for reading");
     }
 
     protected void checkWritable() throws IOException, BadDescriptorException {
-        if (!isOpen) {
-            throw new BadDescriptorException();
-        }
-        
-        if (!modes.isWriteable()) {
-            throw new IOException("not opened for writing");
-        }
+        if (!isOpen) throw new BadDescriptorException();
+        if (!modes.isWritable()) throw new IOException("not opened for writing");
     }
 
     public void checkPermissionsSubsetOf(IOModes subsetModes) {
@@ -160,12 +141,14 @@ public abstract class IOHandler {
     public abstract IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException;
     public abstract void close() throws IOException, BadDescriptorException;
     public abstract void flush() throws IOException, BadDescriptorException;
+    
     /**
      * <p>Flush and sync all writes to the filesystem.</p>
      * 
      * @throws IOException if the sync does not work
      */
-    public abstract void sync() throws IOException, BadDescriptorException; 
+    public abstract void sync() throws IOException, BadDescriptorException;
+    
     /**
      * <p>Return true when at end of file (EOF).</p>
      * 
