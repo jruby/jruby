@@ -44,7 +44,7 @@ class TestProcess < Test::Unit::TestCase
   end
   
   def test_host_process
-    unless Config::CONFIG['host_os'] =~ /Windows/
+    unless Config::CONFIG['host_os'] =~ /Windows/ || !File.exist?("bin/jruby")
       assert_equal "1", %x{sh -c 'bin/jruby -e "exit 1" ; echo $?'}.strip
     end
   end
