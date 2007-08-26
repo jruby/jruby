@@ -590,6 +590,7 @@ public class RubyModule extends RubyObject {
     }
 
     public void defineMethod(String name, Callback method) {
+        if (method.getClass().isAnonymousClass()) Thread.dumpStack();
         Visibility visibility = name.equals("initialize") ?
                 Visibility.PRIVATE : Visibility.PUBLIC;
         addMethod(name, new FullFunctionCallbackMethod(this, method, visibility));
@@ -1094,11 +1095,11 @@ public class RubyModule extends RubyObject {
             attributeScope = Visibility.PRIVATE;
             // FIXME warning
         }
-        final String variableName = "@" + name;
+        final String variableName = ("@" + name).intern();
         final Ruby runtime = getRuntime();
         ThreadContext context = getRuntime().getCurrentContext();
         if (readable) {
-            defineMethod(name, new Callback() {
+            defineFastMethod(name, new Callback() {
                 public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                     Arity.checkArgumentCount(getRuntime(), args, 0, 0);
 
@@ -1115,7 +1116,7 @@ public class RubyModule extends RubyObject {
         }
         if (writeable) {
             name = name + "=";
-            defineMethod(name, new Callback() {
+            defineFastMethod(name, new Callback() {
                 public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                     // ENEBO: Can anyone get args to be anything but length 1?
                     Arity.checkArgumentCount(getRuntime(), args, 1, 1);

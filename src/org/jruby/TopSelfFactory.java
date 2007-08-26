@@ -51,7 +51,7 @@ public final class TopSelfFactory {
     public static IRubyObject createTopSelf(final Ruby runtime) {
         IRubyObject topSelf = new RubyObject(runtime, runtime.getObject());
         
-        topSelf.getSingletonClass().defineMethod("to_s", new Callback() {
+        topSelf.getSingletonClass().defineFastMethod("to_s", new Callback() {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
