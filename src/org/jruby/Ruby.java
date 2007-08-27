@@ -87,6 +87,7 @@ import org.jruby.libraries.IOWaitLibrary;
 import org.jruby.ext.socket.RubySocket;
 import org.jruby.ext.Generator;
 import org.jruby.ext.Readline;
+import org.jruby.libraries.FiberLibrary;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.StaticScope;
@@ -756,6 +757,7 @@ public final class Ruby {
         registerBuiltin("bigdecimal.rb", new BigDecimalLibrary());
         registerBuiltin("io/wait.so", new IOWaitLibrary());
         registerBuiltin("etc.so", NO_OP_LIBRARY);
+        registerBuiltin("fiber.so", new FiberLibrary());
     }
 
     private void registerBuiltin(String nm, Library lib) {

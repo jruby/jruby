@@ -41,6 +41,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyThread;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.libraries.FiberLibrary.Fiber;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
@@ -67,6 +68,7 @@ public final class ThreadContext {
     private boolean isWithinDefined;
     
     private RubyThread thread;
+    private Fiber fiber;
     
     // Error info is per-thread
     private IRubyObject errorInfo;
@@ -229,6 +231,14 @@ public final class ThreadContext {
     
     public void setThread(RubyThread thread) {
         this.thread = thread;
+    }
+    
+    public Fiber getFiber() {
+        return fiber;
+    }
+    
+    public void setFiber(Fiber fiber) {
+        this.fiber = fiber;
     }
     
 //    public IRubyObject getLastline() {
