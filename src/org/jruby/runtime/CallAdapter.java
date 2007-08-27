@@ -40,8 +40,8 @@ import org.jruby.util.MethodCache;
  * @author headius
  */
 public abstract class CallAdapter {
-    protected final int methodID;
-    protected final String methodName;
+    public final int methodID;
+    public final String methodName;
     protected final CallType callType;
     
     public CallAdapter(int methodID, String methodName, CallType callType) {

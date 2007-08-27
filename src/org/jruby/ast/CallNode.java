@@ -49,10 +49,8 @@ import org.jruby.runtime.MethodIndex;
  */
 public final class CallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
     private final Node receiverNode;
-    private String name;
     private Node argsNode;
     private Node iterNode;
-    public final int index;
     public final CallAdapter callAdapter;
 
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
@@ -63,18 +61,15 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
             Node iterNode) {
         super(position, NodeTypes.CALLNODE);
         this.receiverNode = receiverNode;
-        this.name = name.intern();
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        this.index = MethodIndex.getIndex(this.name);
-        this.callAdapter = new CallAdapter.DefaultCallAdapter(this.index, this.name, CallType.NORMAL);
+        name = name.intern();
+        int index = MethodIndex.getIndex(name);
+        this.callAdapter = new CallAdapter.DefaultCallAdapter(index, name, CallType.NORMAL);
     }
     
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
-        
-        // deserialized strings are not interned; intern it now
-        name = name.intern();
     }
 
     /**
@@ -120,7 +115,7 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
      * @return name
      */
     public String getName() {
-        return name;
+        return callAdapter.methodName;
     }
 
     /**

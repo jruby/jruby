@@ -45,8 +45,6 @@ import org.jruby.runtime.MethodIndex;
  * Represents a method call with self as an implicit receiver.
  */
 public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
-    private String name;
-    public final int index;
     private Node argsNode;
     private Node iterNode;
     public final CallAdapter callAdapter;
@@ -57,18 +55,15 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     
     public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
         super(position, NodeTypes.FCALLNODE);
-        this.name = name.intern();
+        name = name.intern();
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        this.index = MethodIndex.getIndex(this.name);
-        this.callAdapter = new CallAdapter.DefaultCallAdapter(this.index, this.name, CallType.FUNCTIONAL);
+        int index = MethodIndex.getIndex(name);
+        this.callAdapter = new CallAdapter.DefaultCallAdapter(index, name, CallType.FUNCTIONAL);
     }
     
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
-        
-        // deserialized strings are not interned; intern it now
-        name = name.intern();
     }
 
     /**
@@ -116,7 +111,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
      * @return Returns a String
      */
     public String getName() {
-        return name;
+        return callAdapter.methodName;
     }
     
     public List childNodes() {
