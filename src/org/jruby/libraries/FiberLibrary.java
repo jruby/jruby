@@ -29,17 +29,10 @@
 package org.jruby.libraries;
 
 import java.io.IOException;
-import java.util.LinkedList;
 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyThread;
-import org.jruby.RubyInteger;
-import org.jruby.RubyNumeric;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
