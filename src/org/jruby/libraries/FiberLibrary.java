@@ -48,7 +48,7 @@ import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * @author <a href="mailto:mental@rydia.net">MenTaLguY</a>
+ * A basic implementation of Ruby 1.9 Fiber library.
  */
 public class FiberLibrary implements Library {
     public void load(final Ruby runtime) throws IOException {
