@@ -190,14 +190,11 @@ public class CompilerHelpers {
     }
     
     public static RubyClass prepareSuperClass(Ruby runtime, IRubyObject rubyClass) {
-        if (rubyClass != null) {
-            if (!(rubyClass instanceof RubyClass)) {
-                throw runtime.newTypeError("superclass must be a Class (" + 
-                        RubyObject.trueFalseNil(rubyClass) + ") given");
-            }
-            return (RubyClass)rubyClass;
+        if (!(rubyClass instanceof RubyClass)) {
+            throw runtime.newTypeError("superclass must be a Class (" + 
+                    RubyObject.trueFalseNil(rubyClass) + ") given");
         }
-        return (RubyClass)null;
+        return (RubyClass)rubyClass;
     }
     
     public static RubyModule prepareClassNamespace(ThreadContext context, IRubyObject rubyModule) {

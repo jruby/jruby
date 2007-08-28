@@ -745,13 +745,12 @@ public class NodeCompilerFactory {
         
         ClosureCallback superCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
-                if (superNode != null) {
-                    NodeCompilerFactory.compile(superNode, context);
-                } else {
-                    context.loadObject();
-                }
+                NodeCompilerFactory.compile(superNode, context);
             }
         };
+        if (superNode == null) {
+            superCallback = null;
+        }
         
         ClosureCallback bodyCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {

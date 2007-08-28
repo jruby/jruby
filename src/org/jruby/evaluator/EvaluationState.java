@@ -656,7 +656,7 @@ public class EvaluationState {
             if(!(_super instanceof RubyClass)) {
                 throw runtime.newTypeError("superclass must be a Class (" + RubyObject.trueFalseNil(_super) + ") given");
             }
-            superClass = superNode == null ? null : (RubyClass)_super;
+            superClass = (RubyClass)_super;
         }
         Node classNameNode = iVisited.getCPath();
         String name = ((INameNode) classNameNode).getName();

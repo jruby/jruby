@@ -1790,9 +1790,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             methodCompiler.method.label(start);
             methodCompiler.loadRuntime();
 
-            superCallback.compile(methodCompiler);
+            if (superCallback != null) {
+                superCallback.compile(methodCompiler);
 
-            methodCompiler.invokeUtilityMethod("prepareSuperClass", cg.sig(RubyClass.class, cg.params(Ruby.class, IRubyObject.class)));
+                methodCompiler.invokeUtilityMethod("prepareSuperClass", cg.sig(RubyClass.class, cg.params(Ruby.class, IRubyObject.class)));
+            } else {
+                methodCompiler.method.aconst_null();
+            }
 
             methodCompiler.loadThreadContext();
 

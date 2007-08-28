@@ -296,3 +296,8 @@ test_no_exception {
     test_equal(nil, compile_and_run("def foo; return; end; foo"))
     test_equal(1, compile_and_run("def foo; return 1; end; foo"))
 }
+
+# reopening a class
+test_no_exception {
+    test_equal(3, compile_and_run("class Fixnum; def foo; 3; end; end; 1.foo"))
+}
