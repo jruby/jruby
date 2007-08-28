@@ -619,6 +619,7 @@ public final class ThreadContext {
         pushFrameCopy();
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
         StaticScope staticScope = new LocalStaticScope(getCurrentScope().getStaticScope(), scopeNames);
+        staticScope.setModule(type);
         pushScope(new DynamicScope(staticScope, null));
     }
     

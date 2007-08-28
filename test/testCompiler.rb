@@ -216,7 +216,6 @@ EOS
 
 test_equal("cc1", compile_and_run(class_string))
 
-=begin
 module_string = <<EOS
 module CompiledModule1
   def bar
@@ -232,7 +231,6 @@ CompiledClass2.new.bar
 EOS
 
 test_equal("cm1", compile_and_run(module_string))
-=end
 
 # opasgn with anything other than || or && was broken
 class Holder

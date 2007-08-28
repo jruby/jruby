@@ -106,6 +106,7 @@ import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
 import org.jruby.ast.ForNode;
+import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
@@ -266,7 +267,6 @@ public class NodeCompilerFactory {
             compileMatch3(node, context);
             break;
         case NodeTypes.MODULENODE:
-            if (SAFE) throw new NotCompilableException("Can't compile module definitions safely: " + node);
             compileModule(node, context);
             break;
         case NodeTypes.MULTIPLEASGNNODE:
@@ -1886,7 +1886,6 @@ public class NodeCompilerFactory {
     }
     
     public static void compileModule(Node node, MethodCompiler context) {
-        /* needs work
         context.lineNumber(node.getPosition());
         
         final ModuleNode moduleNode = (ModuleNode)node;
@@ -1919,7 +1918,7 @@ public class NodeCompilerFactory {
             }
         };
         
-        context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback); */
+        context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback);
     }
     
     public static void compileMultipleAsgn(Node node, MethodCompiler context) {

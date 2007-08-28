@@ -1850,6 +1850,73 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.invokestatic(classname, methodName, METHOD_SIGNATURE);
         }
+
+        public void defineModule(String name, StaticScope staticScope, ClosureCallback pathCallback, ClosureCallback bodyCallback) {
+            // TODO: build arg list based on number of args, optionals, etc
+            ++methodIndex;
+            String methodName = "rubyclass__" + cg.cleanJavaIdentifier(name) + "__" + methodIndex;
+
+            ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null);
+            methodCompiler.beginMethod(null, staticScope);
+
+            // Here starts the logic for the class definition
+            Label start = new Label();
+            Label end = new Label();
+            Label after = new Label();
+            Label noException = new Label();
+            methodCompiler.method.trycatch(start, end, after, null);
+
+            methodCompiler.method.label(start);
+
+            methodCompiler.loadThreadContext();
+
+            pathCallback.compile(methodCompiler);
+
+            methodCompiler.invokeUtilityMethod("prepareClassNamespace", cg.sig(RubyModule.class, cg.params(ThreadContext.class, IRubyObject.class)));
+
+            methodCompiler.method.ldc(name);
+
+            // FIXME: This logic is a little different from that in EvaluationState for modules
+            methodCompiler.method.invokevirtual(cg.p(RubyModule.class), "defineModuleUnder", cg.sig(RubyModule.class, cg.params(String.class)));
+
+            // set self to the class
+            methodCompiler.method.dup();
+            methodCompiler.method.astore(SELF_INDEX);
+
+            // CLASS BODY
+            methodCompiler.loadThreadContext();
+            methodCompiler.method.swap();
+            
+            // static scope
+            methodCompiler.buildStaticScopeNames(methodCompiler.method, staticScope);
+
+            // FIXME: this should be in a try/finally
+            methodCompiler.invokeThreadContext("preCompiledClass", cg.sig(Void.TYPE, cg.params(RubyModule.class, String[].class)));
+
+            bodyCallback.compile(methodCompiler);
+            methodCompiler.method.label(end);
+            
+            methodCompiler.method.go_to(noException);
+            
+            methodCompiler.method.label(after);
+            methodCompiler.loadThreadContext();
+            methodCompiler.invokeThreadContext("postCompiledClass", cg.sig(Void.TYPE, cg.params()));
+            methodCompiler.method.athrow();
+            
+            methodCompiler.method.label(noException);
+            methodCompiler.loadThreadContext();
+            methodCompiler.invokeThreadContext("postCompiledClass", cg.sig(Void.TYPE, cg.params()));
+
+            methodCompiler.endMethod();
+
+            // prepare to call class definition method
+            loadThreadContext();
+            loadSelf();
+            method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+            method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
+
+            method.invokestatic(classname, methodName, METHOD_SIGNATURE);
+        }
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {
