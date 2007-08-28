@@ -33,11 +33,9 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.MethodCache;
 
 /**
  *
- * @author headius
  */
 public abstract class CallAdapter {
     public final int methodID;
@@ -68,8 +66,8 @@ public abstract class CallAdapter {
         DynamicMethod cachedMethod;
         RubyClass cachedType;
         
-        public DefaultCallAdapter(int methodID, String methodName, CallType callType) {
-            super(methodID, methodName, callType);
+        public DefaultCallAdapter(String methodName, CallType callType) {
+            super(MethodIndex.getIndex(methodName), methodName, callType);
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self) {

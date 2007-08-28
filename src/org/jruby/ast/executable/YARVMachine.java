@@ -691,8 +691,7 @@ public class YARVMachine {
         }
         
         if (instruction.callAdapter == null) {
-            int index = MethodIndex.getIndex(name);
-            instruction.callAdapter = new CallAdapter.DefaultCallAdapter(index, name, callType);
+            instruction.callAdapter = new CallAdapter.DefaultCallAdapter(name.intern(), callType);
         }
         
         if (TAILCALL_OPT && (bytecodes[ip+1].bytecode == YARVInstructions.LEAVE || 

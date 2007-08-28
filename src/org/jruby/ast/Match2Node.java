@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -36,10 +37,6 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/**
- *
- * @author  jpetersen
- */
 public class Match2Node extends Node {
     private final Node receiverNode;
     private final Node valueNode;
@@ -75,8 +72,7 @@ public class Match2Node extends Node {
         return valueNode;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(receiverNode, valueNode);
     }
-
 }

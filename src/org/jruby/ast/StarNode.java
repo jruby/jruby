@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,9 +38,10 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** Represents a star in a multiple assignent.
- * only used in an instanceof check, this node is never visited.
- * @author  jpetersen
+/** 
+ * Represents a star in a multiple assignent.
+ * 
+ * AssignmentVisitor.multiAssign checks for this (this is never visited directly)
  */
 public class StarNode extends Node {
     /**
@@ -56,8 +58,7 @@ public class StarNode extends Node {
     	return null; // never visited, should be fine
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-
 }

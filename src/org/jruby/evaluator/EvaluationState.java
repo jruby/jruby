@@ -1325,8 +1325,8 @@ public class EvaluationState {
             }
             value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
         } else {
-            value = value.callMethod(context, iVisited.index, iVisited.getOperatorName(), evalInternal(runtime,context,
-                    iVisited.getValueNode(), self, aBlock));
+            value = iVisited.operatorCallAdapter.call(context, value, 
+                    evalInternal(runtime, context, iVisited.getValueNode(), self, aBlock));
         }
    
         receiver.callMethod(context, iVisited.getVariableNameAsgn(), value);
@@ -1368,8 +1368,8 @@ public class EvaluationState {
             }
             firstValue = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
         } else {
-            firstValue = firstValue.callMethod(context, iVisited.index, iVisited.getOperatorName(), evalInternal(runtime,context, iVisited
-                            .getValueNode(), self, aBlock));
+            firstValue = iVisited.callAdapter.call(context, firstValue, 
+                    evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock));
         }
    
         IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];

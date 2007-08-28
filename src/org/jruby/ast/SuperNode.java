@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -69,7 +70,7 @@ public class SuperNode extends Node implements BlockAcceptingNode {
         return argsNode;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return createList(argsNode);
     }
 
@@ -80,5 +81,4 @@ public class SuperNode extends Node implements BlockAcceptingNode {
     public void setIterNode(Node iterNode) {
         this.iterNode = iterNode;
     }
-
 }

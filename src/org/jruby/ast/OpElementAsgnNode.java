@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -30,13 +31,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallType;
 
 /** Represents an operator assignment to an element.
  * 
@@ -46,32 +47,21 @@ import org.jruby.runtime.MethodIndex;
  * a[4] += 5
  * a[3] &&= true
  * </pre>
- *
- * @author  jpetersen
  */
 public class OpElementAsgnNode extends Node {
     private final Node receiverNode;
-    private String operatorName;
     private final Node argsNode;
     private final Node valueNode;
-    public final int index;
+    public CallAdapter callAdapter;
 
     public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
         super(position, NodeTypes.OPELEMENTASGNNODE);
         this.receiverNode = receiverNode;
-        this.operatorName = operatorName.intern();
         this.argsNode = argsNode;
         this.valueNode = valueNode;
-        this.index = MethodIndex.getIndex(this.operatorName);
+        callAdapter = new CallAdapter.DefaultCallAdapter(operatorName.intern(), CallType.NORMAL);
     }
     
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        
-        // deserialized strings are not interned; intern it now
-        operatorName = operatorName.intern();
-    }
-
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
@@ -93,7 +83,7 @@ public class OpElementAsgnNode extends Node {
      * @return Returns a String
      */
     public String getOperatorName() {
-        return operatorName;
+        return callAdapter.methodName;
     }
 
     /**
@@ -112,7 +102,7 @@ public class OpElementAsgnNode extends Node {
         return valueNode;
     }
 
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(receiverNode, argsNode, valueNode);
     }
 }

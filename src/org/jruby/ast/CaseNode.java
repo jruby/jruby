@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,12 +38,8 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- * A Case statement.
- * 
- * Represents a complete case statement, including the body with its
+ * A Case statement.  Represents a complete case statement, including the body with its
  * when statements.
- * 
- * @author  jpetersen
  */
 public class CaseNode extends Node {
 	/**
@@ -86,8 +83,7 @@ public class CaseNode extends Node {
         return caseBody;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(caseNode, caseBody);
     }
-
 }

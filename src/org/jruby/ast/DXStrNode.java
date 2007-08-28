@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -36,10 +37,8 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- * Dynamic backquote string.
- * backquote strings are eXecuted using the shell, hence the X 
- * or maybe the X is due to the %x general quote syntax
- * @author  jpetersen
+ * Dynamic backquote string. Backquote strings are eXecuted using the shell, hence the X 
+ * or maybe the X is due to the %x general quote syntax?
  */
 public class DXStrNode extends ListNode implements ILiteralNode {
     public DXStrNode(ISourcePosition position, DStrNode node) {

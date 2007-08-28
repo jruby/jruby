@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -31,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
@@ -40,9 +40,8 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** Represents a symbol (:symbol_name).
- *
- * @author  jpetersen
+/** 
+ * Represents a symbol (:symbol_name).
  */
 public class SymbolNode extends Node implements ILiteralNode, INameNode {
 	private String name;
@@ -51,13 +50,6 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
 	    super(position, NodeTypes.SYMBOLNODE);
 	    this.name = name.intern();
 	}
-    
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        
-        // deserialized strings are not interned; intern it now
-        name = name.intern();
-    }
 
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitSymbolNode(this);
@@ -71,7 +63,7 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
         return name;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
 

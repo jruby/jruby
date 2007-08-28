@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,9 +38,8 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
-/** Represents a module definition.
- *
- * @author  jpetersen
+/** 
+ * Represents a module definition.
  */
 public class ModuleNode extends Node implements IScopingNode {
     private final Colon3Node cpath;
@@ -87,7 +87,7 @@ public class ModuleNode extends Node implements IScopingNode {
         return cpath;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(cpath, bodyNode);
     }
 }

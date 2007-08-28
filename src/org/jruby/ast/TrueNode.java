@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -38,8 +39,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- *
- * @author  jpetersen
+ * Represents 'true'.
  */
 public class TrueNode extends Node implements INameNode {
     public TrueNode(ISourcePosition position) {
@@ -61,8 +61,7 @@ public class TrueNode extends Node implements INameNode {
         return "true";
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-
 }

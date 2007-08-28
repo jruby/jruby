@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -36,7 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** Represents a while stetement. This could be the both versions:
+/** 
+ * Represents a while statement. This could be the both versions:
  * 
  * while &lt;condition&gt;
  *    &lt;body&gt;
@@ -45,8 +47,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * and
  * 
  * &lt;body&gt; 'while' &lt;condition&gt;
- *
- * @author  jpetersen
  */
 public class WhileNode extends Node {
     private final Node conditionNode;
@@ -54,7 +54,7 @@ public class WhileNode extends Node {
     private final boolean evaluateAtStart;
 
     public WhileNode(ISourcePosition position, Node conditionNode, Node bodyNode) {
-	this(position, conditionNode, bodyNode, true);
+        this(position, conditionNode, bodyNode, true);
     }
 
     public WhileNode(ISourcePosition position, Node conditionNode, Node bodyNode,
@@ -72,6 +72,7 @@ public class WhileNode extends Node {
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitWhileNode(this);
     }
+    
     /**
      * Gets the bodyNode.
      * @return Returns a Node
@@ -96,7 +97,7 @@ public class WhileNode extends Node {
         return evaluateAtStart;
     }
 
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(conditionNode, bodyNode);
     }
 

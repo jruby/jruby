@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -39,9 +40,8 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** Represents a big integer literal.
- *
- * @author  jpetersen
+/** 
+ * Represents a big integer literal.
  */
 public class BignumNode extends Node implements ILiteralNode {
     private BigInteger value;
@@ -63,7 +63,7 @@ public class BignumNode extends Node implements ILiteralNode {
         return value;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
 

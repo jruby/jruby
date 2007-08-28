@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,24 +38,15 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- *	Regexp backref.
- *	generated when one of the following special global variables are found
- *
- *
- *    - $&amp; last succesfull match
- *     
+ *	Regexp back reference:
+ *    - $&amp; last successful match
  *    - $+ highest numbered group matched in last successful match.
- *     
  *    - $` what precedes the last successful match
- *    
  *    - $' what follows the last successful match
- *
- *	
- * @author  jpetersen
  */
 public class BackRefNode extends Node {
 	/**
-	 * the character which generated the backreference
+	 * the character which generated the back reference
 	 **/
     private final char type;
 
@@ -72,16 +64,15 @@ public class BackRefNode extends Node {
     }
 
     /**
-     * Gets the type.
-	 * the type is the character which generates the backreference
-     * @return type
+     * Gets the type 
+     * 
+     * @return the character which generates the back reference
      */
     public char getType() {
         return type;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-
 }

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -39,13 +40,8 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- * Global scope node.
- * Node produced when using :: without a scope in front.
- * This is used to gain access to the global scope (that of the Object class)
- * when refering to a constant or method.  This is the same as a Colon2Node but with 
- * no leftNode which implicitly uses the Object class as a left node.
- * 
- * @author  jpetersen
+ * Global scope node (::FooBar).  This is used to gain access to the global scope (that of the 
+ * Object class) when referring to a constant or method.
  */
 public class Colon3Node extends Node implements INameNode {
     private String name;
@@ -83,12 +79,11 @@ public class Colon3Node extends Node implements INameNode {
         return name;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
 
 	public void setName(String name) {
 		this.name = name;
 	}
-
 }

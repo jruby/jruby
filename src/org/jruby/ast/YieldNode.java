@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -36,9 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** Represents a yield statement.
- *
- * @author  jpetersen
+/** 
+ * Represents a yield statement.
  */
 public class YieldNode extends Node {
     private final Node argsNode;
@@ -47,7 +47,7 @@ public class YieldNode extends Node {
     public YieldNode(ISourcePosition position, Node argsNode, boolean checkState) {
         super(position, NodeTypes.YIELDNODE);
         this.argsNode = argsNode;
-        // If we have more than one arg, make sure the array created to contain them is not ObjectSpaced
+        // If we have more than one argument, then make sure the array is not ObjectSpaced.
         if (argsNode instanceof ArrayNode) {
             ((ArrayNode)argsNode).setLightweight(true);
         }
@@ -74,8 +74,7 @@ public class YieldNode extends Node {
         return checkState;
     }
 
-    public List childNodes() {
+    public List<Node> childNodes() {
         return createList(argsNode);
     }
-
 }

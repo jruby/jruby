@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -36,9 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** Represents a return statement.
- *
- * @author  jpetersen
+/** 
+ * Represents a return statement.
  */
 public class ReturnNode extends Node {
     private final Node valueNode;
@@ -69,8 +69,7 @@ public class ReturnNode extends Node {
         this.target = target;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return createList(valueNode);
     }
-
 }

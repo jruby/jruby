@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -31,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.INameNode;
@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Class variable declaration.
- * 
- * @author  jpetersen
  */
 public class ClassVarDeclNode extends AssignableNode implements INameNode {
     private String name;
@@ -55,13 +53,6 @@ public class ClassVarDeclNode extends AssignableNode implements INameNode {
         setValueNode(valueNode);
     }
     
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        
-        // deserialized strings are not interned; intern it now
-        name = name.intern();
-    }
-
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
@@ -78,7 +69,7 @@ public class ClassVarDeclNode extends AssignableNode implements INameNode {
         return name;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return createList(getValueNode());
     }
 

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,9 +38,8 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** Represents a '::' constant access or method call.
- *
- * @author  jpetersen
+/** 
+ * Represents a '::' constant access or method call (Java::JavaClass).
  */
 public class Colon2Node extends Colon3Node implements INameNode {
     private final Node leftNode;
@@ -65,7 +65,7 @@ public class Colon2Node extends Colon3Node implements INameNode {
         return leftNode;
     }
 
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(leftNode);
     }
     

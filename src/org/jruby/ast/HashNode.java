@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,10 +38,8 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- * a Literal Hash.
- * this can represent either a {a=&amp;b, c=&amp;d} type expression or the list of default 
- * values in a method call.
- * @author  jpetersen
+ * A Literal Hash that can represent either a {a=&amp;b, c=&amp;d} type expression or the list 
+ * of default values in a method call.
  */
 public class HashNode extends Node {
     private final ListNode listNode;
@@ -66,8 +65,7 @@ public class HashNode extends Node {
         return listNode;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return createList(listNode);
     }
-
 }

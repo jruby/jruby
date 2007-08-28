@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,10 +38,8 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- *	Dynamic regexp node.
- *	a regexp is dynamic if it contains some expressions which will need to be evaluated
- *	everytime the regexp is used for a match
- * @author  jpetersen
+ * A regexp which contains some expressions which will need to be evaluated everytime the regexp 
+ * is used for a match.
  */
 public class DRegexpNode extends ListNode implements ILiteralNode {
     private final int options;

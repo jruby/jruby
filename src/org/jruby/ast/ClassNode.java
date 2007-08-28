@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -38,13 +39,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
 /**
- * A class statement.
- * A class statement is defined by its name, its supertype and its body.
- * The body is a separate naming scope.
- * This node is for a regular class definition, Singleton classes get their own
- * node, the SClassNode
- * 
- * @author  jpetersen
+ * A class statement (name, superClass, body). Classes bodies also define their own scope. 
  */
 public class ClassNode extends Node implements IScopingNode {
     private final Colon3Node cpath;
@@ -102,12 +97,11 @@ public class ClassNode extends Node implements IScopingNode {
         return superNode;
     }
 
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(cpath, bodyNode, superNode);
     }
     
     public String toString() {
         return "ClassNode [" + cpath + "]";
     }
-
 }

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -39,16 +40,13 @@ import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * A new (logical) source code line.
- * This is used to change the value of the ruby interpreter        
- * source and line values.
+ * This is used to change the value of the ruby interpreter source and line values.
  * There is one such node for each logical line.  Logical line differs
  * from physical line in that a ';' can be used to make several logical
  * line out of a physical line and a physical line if it is in a comment
  * or in a string does not necessarily correspond to a physical line.
  * This is normally a wrapper around another more significant node.
  * The parser generates such a node around each separate statement.  
- *
- * @author  jpetersen
  */
 public class NewlineNode extends Node {
     private final Node nextNode;
@@ -76,9 +74,7 @@ public class NewlineNode extends Node {
         return nextNode;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return createList(nextNode);
     }
-
-
 }

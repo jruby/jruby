@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -39,9 +40,8 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
 
-/** Representing a simple String literal.
- *
- * @author  jpetersen
+/** 
+ * Representing a simple String literal.
  */
 public class StrNode extends Node implements ILiteralNode {
     private final ByteList value;
@@ -74,7 +74,7 @@ public class StrNode extends Node implements ILiteralNode {
         return value;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
 

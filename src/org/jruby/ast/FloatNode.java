@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,9 +38,8 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** Represents a float literal.
- *
- * @author  jpetersen
+/** 
+ * Represents a float literal.
  */
 public class FloatNode extends Node implements ILiteralNode {
     private double value;
@@ -69,8 +69,7 @@ public class FloatNode extends Node implements ILiteralNode {
         this.value = value;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-
 }

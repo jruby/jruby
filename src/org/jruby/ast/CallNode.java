@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -31,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.INameNode;
@@ -40,12 +40,9 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallAdapter;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.MethodIndex;
 
 /**
  * A method or operator call.
- * 
- * @author  jpetersen
  */
 public final class CallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
     private final Node receiverNode;
@@ -63,15 +60,9 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
         this.receiverNode = receiverNode;
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        name = name.intern();
-        int index = MethodIndex.getIndex(name);
-        this.callAdapter = new CallAdapter.DefaultCallAdapter(index, name, CallType.NORMAL);
+        this.callAdapter = new CallAdapter.DefaultCallAdapter(name.intern(), CallType.NORMAL);
     }
     
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-    }
-
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
@@ -127,7 +118,7 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
         return receiverNode;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(receiverNode, argsNode, iterNode);
     }
     

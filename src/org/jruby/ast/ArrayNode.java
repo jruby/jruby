@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,10 +38,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- * Represents an array. This could be an array literal, quoted words or
- * some args stuff.
- *
- * @author  jpetersen
+ * Represents an array. This could be an array literal, quoted words or some args stuff.
  */
 public class ArrayNode extends ListNode implements ILiteralNode {
     // This field is used during argument processing to avoid putting RubyArray

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -39,9 +40,9 @@ import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Declaration (and assignment) of a Constant.
- * 
- * @author  jpetersen
  */
+// FIXME: ConstDecl could be two seperate classes (or done differently since constNode and name
+// never exist at the same time.
 public class ConstDeclNode extends AssignableNode implements INameNode {
     private final String name;
     private final INameNode constNode;
@@ -79,8 +80,7 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
         return (Node) constNode;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return createList(getValueNode());
     }
-
 }

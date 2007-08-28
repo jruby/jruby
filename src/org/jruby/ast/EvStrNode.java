@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -42,8 +43,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * 
  * Before this Node is evaluated it contains the code as a String (value). After
  * the first evaluation this String is parsed into the evaluatedNode Node.
- *
- * @author  jpetersen
  */
 public class EvStrNode extends Node {
     private final Node body;
@@ -69,8 +68,7 @@ public class EvStrNode extends Node {
         return body;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return createList(body);
     }
-
 }

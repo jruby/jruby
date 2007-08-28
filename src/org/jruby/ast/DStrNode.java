@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,9 +38,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- * a Dynamic String node.
  * A string which contains some dynamic elements which needs to be evaluated (introduced by #).
- * @author  jpetersen
  */
 public class DStrNode extends ListNode implements ILiteralNode {
     public DStrNode(ISourcePosition position) {

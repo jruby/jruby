@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -38,10 +39,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- * a Range in a boolean expression.
- * named after a FlipFlop component in electronic I believe.
- * 
- * @author  jpetersen
+ * A Range in a boolean expression (named after a FlipFlop component in electronic?).
  */
 public class FlipNode extends Node {
     private final Node beginNode;
@@ -113,8 +111,7 @@ public class FlipNode extends Node {
         return location & 0xffff;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(beginNode, endNode);
     }
-
 }

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -31,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.io.IOException;
 import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -39,7 +39,6 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallAdapter;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.MethodIndex;
 
 /** 
  * Represents a method call with self as an implicit receiver.
@@ -55,17 +54,11 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     
     public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
         super(position, NodeTypes.FCALLNODE);
-        name = name.intern();
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        int index = MethodIndex.getIndex(name);
-        this.callAdapter = new CallAdapter.DefaultCallAdapter(index, name, CallType.FUNCTIONAL);
+        this.callAdapter = new CallAdapter.DefaultCallAdapter(name.intern(), CallType.FUNCTIONAL);
     }
     
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-    }
-
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
@@ -114,7 +107,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         return callAdapter.methodName;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return createList(argsNode, iterNode);
     }
 

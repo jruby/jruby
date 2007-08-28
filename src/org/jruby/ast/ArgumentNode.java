@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -27,7 +28,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.INameNode;
@@ -48,12 +48,6 @@ public class ArgumentNode extends Node implements INameNode {
         this.identifier = identifier.intern();
     }
     
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        
-        identifier = identifier.intern();
-    }
-
     public Instruction accept(NodeVisitor visitor) {
         throw new RuntimeException("ArgumentNode should never be evaluated");
     }
@@ -66,7 +60,7 @@ public class ArgumentNode extends Node implements INameNode {
         this.identifier = name;
     }
 
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
 }

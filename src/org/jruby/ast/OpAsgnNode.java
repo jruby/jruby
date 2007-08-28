@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -30,7 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -38,45 +38,24 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallAdapter;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.MethodIndex;
 
 /**
  *
- * @author  jpetersen
  */
 public class OpAsgnNode extends Node {
     private final Node receiverNode;
     private final Node valueNode;
-    private String variableName;
-    private String operatorName;
-    private String variableNameAsgn;
-    public final int index;
-    
     public final CallAdapter variableCallAdapter;
     public final CallAdapter operatorCallAdapter;
     public final CallAdapter variableAsgnCallAdapter;
 
-    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String methodName) {
+    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String operatorName) {
         super(position, NodeTypes.OPASGNNODE);
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
-        this.variableName = variableName.intern();
-        this.operatorName = methodName.intern();
-        this.variableNameAsgn = (variableName + "=").intern();
-        this.index = MethodIndex.getIndex(this.operatorName);
-        
-        this.variableCallAdapter = new CallAdapter.DefaultCallAdapter(MethodIndex.getIndex(this.variableName), this.variableName, CallType.NORMAL);
-        this.operatorCallAdapter = new CallAdapter.DefaultCallAdapter(this.index, this.operatorName, CallType.NORMAL);
-        this.variableAsgnCallAdapter = new CallAdapter.DefaultCallAdapter(MethodIndex.getIndex(this.variableNameAsgn), this.variableNameAsgn, CallType.NORMAL);
-    }
-    
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        
-        // deserialized strings are not interned; intern it now
-        variableName = variableName.intern();
-        operatorName = operatorName.intern();
-        variableNameAsgn = variableNameAsgn.intern();
+        this.variableCallAdapter = new CallAdapter.DefaultCallAdapter(variableName.intern(), CallType.NORMAL);
+        this.operatorCallAdapter = new CallAdapter.DefaultCallAdapter(operatorName.intern(), CallType.NORMAL);
+        this.variableAsgnCallAdapter = new CallAdapter.DefaultCallAdapter((variableName + "=").intern(), CallType.NORMAL);
     }
 
     /**
@@ -92,7 +71,7 @@ public class OpAsgnNode extends Node {
      * @return Returns a String
      */
     public String getOperatorName() {
-        return operatorName;
+        return operatorCallAdapter.methodName;
     }
 
     /**
@@ -116,15 +95,14 @@ public class OpAsgnNode extends Node {
      * @return Returns a String
      */
     public String getVariableName() {
-        return variableName;
+        return variableCallAdapter.methodName;
     }
     
     public String getVariableNameAsgn() {
-        return variableNameAsgn;
+        return variableAsgnCallAdapter.methodName;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(receiverNode, valueNode);
     }
-
 }

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,15 +38,14 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
-/** Singleton class definition.
+/** 
+ * Singleton class definition.
  * 
  * <pre>
  * class &lt;&lt; anObject
  * 
  * end
  * </pre>
- *
- * @author  jpetersen
  */
 public class SClassNode extends Node {
     private final Node receiverNode;
@@ -93,7 +93,7 @@ public class SClassNode extends Node {
         return receiverNode;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(receiverNode, bodyNode);
     }
 }

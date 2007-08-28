@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -28,22 +29,20 @@
 package org.jruby.ast;
 
 /**
- * Base class for Defn- and DefsNode 
- * 
- * @author  jpetersen
+ * Base class for DefnNode and DefsNode 
  */
 import org.jruby.ast.types.INameNode;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
 public abstract class MethodDefNode extends Node implements INameNode {
-
 	protected final ArgumentNode nameNode;
 	protected final ArgsNode argsNode;
 	protected final StaticScope scope;
 	protected final Node bodyNode;
 
-	public MethodDefNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, StaticScope scope, Node bodyNode, int id) {
+	public MethodDefNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
+	        StaticScope scope, Node bodyNode, int id) {
 		super(position, id);
 		this.nameNode = nameNode;
 		this.argsNode = argsNode;

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -82,12 +83,11 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
         return name;
     }
 
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
     
     public void setName(String name){
-    		this.name = name;
+        this.name = name;
     }
-
 }

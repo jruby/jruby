@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,7 +38,6 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallAdapter;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.MethodIndex;
 
 /**
  * A 'for' statement.  This is implemented using iter and that is how MRI does things,
@@ -46,7 +46,7 @@ import org.jruby.runtime.MethodIndex;
  * @see IterNode
  */
 public class ForNode extends IterNode {
-    public static final CallAdapter callAdapter = new CallAdapter.DefaultCallAdapter(MethodIndex.getIndex("each"), "each", CallType.NORMAL);
+    public static final CallAdapter callAdapter = new CallAdapter.DefaultCallAdapter("each", CallType.NORMAL);
 
     private Node iterNode;
 
@@ -72,8 +72,7 @@ public class ForNode extends IterNode {
         return iVisitor.visitForNode(this);
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(getVarNode(), getBodyNode(), iterNode);
     }
-
 }

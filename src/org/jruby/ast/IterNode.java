@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -39,7 +40,6 @@ import org.jruby.parser.StaticScope;
 
 /**
  * Represents a block.  
- *
  */
 public class IterNode extends Node {
     private final Node varNode;
@@ -88,7 +88,7 @@ public class IterNode extends Node {
         return varNode;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(varNode, bodyNode);
     }
 }

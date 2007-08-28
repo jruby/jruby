@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -42,8 +43,6 @@ import org.jruby.runtime.Visibility;
 
 /**
  * method definition node.
- * 
- * @author  jpetersen
  */
 public class DefnNode extends MethodDefNode implements INameNode {
     private final Visibility visibility;
@@ -60,8 +59,8 @@ public class DefnNode extends MethodDefNode implements INameNode {
     }
 
     /**
-     * Gets the noex.
-     * @return Returns a int
+     * Gets the visibility of the method.
+     * @return the visibility
      */
     public Visibility getVisibility() {
         return visibility;
@@ -74,7 +73,7 @@ public class DefnNode extends MethodDefNode implements INameNode {
         return nameNode.getName();
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(nameNode, argsNode, bodyNode);
     }
 }

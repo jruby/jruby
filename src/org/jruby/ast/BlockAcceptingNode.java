@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -29,7 +30,7 @@
 package org.jruby.ast;
 
 /**
- *  Any thing which implements this represents a callable-like node which can have a block 
+ *  Any thing which implements this represents a Callable-like node which can have a block 
  *  associated with it as part of that call.  The calls which can be this are: CallNode, FCallNode,
  *  VCallNode, and SuperNode.  Blocks (the IterNode that this interface refers to can be either
  *  an IterNode ( {...} or do ... end ) or a BlockPassNode (&block).

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -36,10 +37,6 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/**
- *
- * @author  jpetersen
- */
 public class OpAsgnAndNode extends Node implements BinaryOperatorNode {
     private final Node firstNode;
     private final Node secondNode;
@@ -74,8 +71,7 @@ public class OpAsgnAndNode extends Node implements BinaryOperatorNode {
         return secondNode;
     }
 
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(firstNode, secondNode);
     }
-
 }

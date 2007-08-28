@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -37,8 +38,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- *
- * @author  jpetersen
+ * Represents the contents of a rescue to be evaluated
  */
 public class RescueBodyNode extends Node {
     private final Node exceptionNodes;
@@ -83,10 +83,9 @@ public class RescueBodyNode extends Node {
         return exceptionNodes;
     }
     
-    public List childNodes() {
-    	if (optRescueNode != null)
-    		return Node.createList(exceptionNodes, bodyNode, optRescueNode);
-    	return Node.createList(exceptionNodes, bodyNode);
+    public List<Node> childNodes() {
+    	if (optRescueNode != null) return Node.createList(exceptionNodes, bodyNode, optRescueNode);
     	
+    	return Node.createList(exceptionNodes, bodyNode);
     }
 }

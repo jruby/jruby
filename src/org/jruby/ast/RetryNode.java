@@ -36,9 +36,8 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** Represents a 'retry' statement.
- *
- * @author  jpetersen
+/** 
+ * Represents a 'retry' statement.
  */
 public class RetryNode extends Node {
     public RetryNode(ISourcePosition position) {
@@ -53,7 +52,7 @@ public class RetryNode extends Node {
         return iVisitor.visitRetryNode(this);
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
 

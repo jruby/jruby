@@ -45,7 +45,6 @@ import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeTypes;
-import org.jruby.ast.StarNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -206,7 +205,7 @@ public class AssignmentVisitor {
 
         Node argsNode = node.getArgsNode();
         if (argsNode != null) {
-            if (argsNode instanceof StarNode) {
+            if (argsNode.nodeId == NodeTypes.STARNODE) {
                 // no check for '*'
             } else if (varLen < valueLen) {
                 assign(runtime, context, self, argsNode, value.subseqLight(varLen, valueLen), Block.NULL_BLOCK, callAsProc);

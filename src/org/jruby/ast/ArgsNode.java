@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -40,22 +41,12 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 
 /**
- * arguments for a function.
- *  this is used both in the function definition
- * and in actual function calls                                     
+ * Arguments for a function definition.
  * <ul>
- * <li>
- * u1 ==&gt; optNode (BlockNode) Optional argument description
- * </li>
- * <li>
- * u2 ==&gt; rest (int) index of the rest argument (the array arg with a * in front 
- * </li>
- * <li>
- * u3 ==&gt; count (int) number of arguments
- * </li>
+ * <li>u1 ==&gt; optNode (BlockNode) Optional argument description</li>
+ * <li>u2 ==&gt; rest (int) index of the rest argument (the array arg with a * in front</li>
+ * <li>u3 ==&gt; count (int) number of arguments</li>
  * </ul>
- *
- * @author  jpetersen
  */
 public class ArgsNode extends Node {
     private final ListNode arguments;
@@ -151,8 +142,7 @@ public class ArgsNode extends Node {
         return blockArgNode;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return Node.createList(arguments, optArgs, restArgNode, blockArgNode);
     }
-
 }

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -38,13 +39,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- *	a block argument.
- *	A block argument, when present in a function declaration is the last argument
- *	and it is preceded by an ampersand:<br>
- *	
- *	<code>def tutu(a, b, &amp;c)</code>
- *	in this example c is a BlockArgNode
- * @author  jpetersen
+ *	An explicit block argument (&amp;my_block).
  */
 public class BlockArgNode extends Node implements INameNode {
     private final int count;
@@ -85,8 +80,7 @@ public class BlockArgNode extends Node implements INameNode {
 		this.name = name;
 	}
 	
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-
 }

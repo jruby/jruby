@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -43,7 +44,6 @@ import org.jruby.runtime.DynamicScope;
  *
  */
 // TODO: Store BEGIN and END information into this node
-// TODO: Implement BEGIN and END logic so they get invoked at the correct time.
 public class RootNode extends Node {
     private transient DynamicScope scope;
     private StaticScope staticScope;
@@ -94,8 +94,7 @@ public class RootNode extends Node {
         return iVisitor.visitRootNode(this);
     }
 
-    public List childNodes() {
+    public List<Node> childNodes() {
         return createList(bodyNode);
     }
-
 }

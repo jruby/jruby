@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -36,10 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** Begin/End block.
- *  A Begin ... End block without rescue.
- *
- * @author  jpetersen
+/** 
+ * Begin/End block.  A Begin ... End block without rescue.
  */
 public class BeginNode extends Node {
     private final Node bodyNode;
@@ -65,8 +64,7 @@ public class BeginNode extends Node {
         return bodyNode;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return createList(bodyNode);
     }
-
 }

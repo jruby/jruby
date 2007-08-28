@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -46,7 +47,6 @@ import org.jruby.runtime.Arity;
  * end
  * </pre>
  *
- * @author  jpetersen
  */
 public class ZeroArgNode extends Node implements IArityNode {
     public ZeroArgNode(ISourcePosition position) {
@@ -67,7 +67,7 @@ public class ZeroArgNode extends Node implements IArityNode {
 		return Arity.noArguments();
 	}
 
-    public List childNodes() {
+    public List<Node> childNodes() {
         return EMPTY_LIST;
     }
 }

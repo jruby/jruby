@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -34,7 +35,6 @@ package org.jruby.ast;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -44,17 +44,17 @@ import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.IDESourcePosition;
 
 /**
- *
- * @author  jpetersen
+ * Base class for all Nodes in the AST
  */
 public abstract class Node implements ISourcePositionHolder {
     // We define an actual list to get around bug in java integration (1387115)
-    static final List EMPTY_LIST = new ArrayList();
+    static final List<Node> EMPTY_LIST = new ArrayList<Node>();
+    static final List<CommentNode> EMPTY_COMMENT_LIST = new ArrayList<CommentNode>();
     
     public final int nodeId;
 
     private ISourcePosition position;
-    private ArrayList comments;
+    static private ArrayList<CommentNode> comments;
 
     public Node(ISourcePosition position, int id) {
         this.position = position;
@@ -73,38 +73,18 @@ public abstract class Node implements ISourcePositionHolder {
     }
     
     public abstract Instruction accept(NodeVisitor visitor);
-    public abstract List childNodes();
+    public abstract List<Node> childNodes();
 
-    static void addNode(Node node, List list) {
-        if (node != null)
-            list.add(node);
-    }
-
-    //TODO: Change to variable parameter list method once we have Java 1.5
-    protected static List createList(Node node) {
-        List list = new ArrayList();
-        Node.addNode(node, list);
+    protected static List<Node> createList(Node... nodes) {
+        ArrayList<Node> list = new ArrayList<Node>();
+        
+        for (Node node: nodes) {
+            if (node != null) list.add(node);
+        }
+        
         return list;
     }
 
-    protected  static List createList(Node node1, Node node2) {
-        List list = createList(node1);
-        Node.addNode(node2, list);
-        return list;
-    }
-
-    protected  static List createList(Node node1, Node node2, Node node3) {
-        List list = createList(node1, node2);
-        Node.addNode(node3, list);
-        return list;
-    }
-
-    protected  static List createList(Node node1, Node node2, Node node3, Node node4) {
-        List list = createList(node1, node2, node3);
-        Node.addNode(node4, list);
-        return list;
-    }    
-    
     public String toString() {
         return getNodeName() + "[]";
     }
@@ -117,23 +97,20 @@ public abstract class Node implements ISourcePositionHolder {
     }
     
     public void addComment(CommentNode comment) {
-        if(comments == null) {
-            comments = new ArrayList();
-        }
+        if (comments == null) comments = new ArrayList<CommentNode>();
+
         comments.add(comment);
     }
     
-    public void addComments(Collection comments) {
-        if(this.comments == null) {
-            this.comments = new ArrayList();
-        }
-        this.comments.addAll(comments);
+    public void addComments(Collection<CommentNode> moreComments) {
+        if (comments == null) comments = new ArrayList<CommentNode>();
+
+        comments.addAll(moreComments);
     }
     
-    public Collection getComments() {
-        if(comments == null) {
-            return EMPTY_LIST;
-        }
+    public Collection<CommentNode> getComments() {
+        if(comments == null) return EMPTY_COMMENT_LIST;
+
         return comments;
     }
     
@@ -142,9 +119,7 @@ public abstract class Node implements ISourcePositionHolder {
     }
     
     public ISourcePosition getPositionIncludingComments() {
-        if(position == null || !hasComments()) {
-            return position;
-        }
+        if (position == null || !hasComments()) return position;
         
         String fileName = position.getFile();
         int startOffset = position.getStartOffset();
@@ -153,12 +128,12 @@ public abstract class Node implements ISourcePositionHolder {
         int endLine = position.getEndLine();
         
         // Since this is only used for IDEs this is safe code, but there is an obvious abstraction issue here.
-        ISourcePosition commentIncludingPos = new IDESourcePosition(fileName, startLine, endLine, startOffset, endOffset);
+        ISourcePosition commentIncludingPos = 
+            new IDESourcePosition(fileName, startLine, endLine, startOffset, endOffset);
         
-        Iterator commentItr = comments.iterator();
-        while(commentItr.hasNext()) {
-            ISourcePosition commentPos = ((CommentNode)commentItr.next()).getPosition();
-            commentIncludingPos = IDESourcePosition.combinePosition(commentIncludingPos, commentPos);
+        for (CommentNode comment: comments) {
+            commentIncludingPos = 
+                IDESourcePosition.combinePosition(commentIncludingPos, comment.getPosition());
         }       
 
         return commentIncludingPos;

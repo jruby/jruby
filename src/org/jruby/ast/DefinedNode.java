@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -39,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * a defined statement.
- * @author  jpetersen
  */
 public class DefinedNode extends Node {
     private final Node expressionNode;
@@ -65,7 +65,7 @@ public class DefinedNode extends Node {
         return expressionNode;
     }
     
-    public List childNodes() {
+    public List<Node> childNodes() {
         return createList(expressionNode);
     }
 
