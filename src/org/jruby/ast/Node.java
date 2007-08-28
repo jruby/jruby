@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -40,8 +39,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
-import org.jruby.evaluator.InstructionBundle;
-import org.jruby.evaluator.InstructionContext;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.IDESourcePosition;
@@ -50,14 +47,11 @@ import org.jruby.lexer.yacc.IDESourcePosition;
  *
  * @author  jpetersen
  */
-public abstract class Node implements ISourcePositionHolder, InstructionContext, Serializable {
-    static final long serialVersionUID = -5962822607672530224L;
+public abstract class Node implements ISourcePositionHolder {
     // We define an actual list to get around bug in java integration (1387115)
     static final List EMPTY_LIST = new ArrayList();
     
     public final int nodeId;
-    
-    public InstructionBundle instruction;
 
     private ISourcePosition position;
     private ArrayList comments;

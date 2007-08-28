@@ -9,5 +9,4 @@ package org.jruby.evaluator;
 
 
 public interface Instruction {
-	public void execute(EvaluationState state, InstructionContext ctx);
 }
