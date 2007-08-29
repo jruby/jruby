@@ -155,6 +155,28 @@ public class CompilerHelpers {
         return runtime.getNil();
     }
     
+    public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
+        RubyClass singletonClass;
+
+        if (receiver.isNil()) {
+            singletonClass = runtime.getNilClass();
+        } else if (receiver == runtime.getTrue()) {
+            singletonClass = runtime.getClass("TrueClass");
+        } else if (receiver == runtime.getFalse()) {
+            singletonClass = runtime.getClass("FalseClass");
+        } else if (receiver.getMetaClass() == runtime.getFixnum() || receiver.getMetaClass() == runtime.getClass("Symbol")) {
+            throw runtime.newTypeError("no virtual class for " + receiver.getMetaClass().getBaseName());
+        } else {
+            if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
+                throw runtime.newSecurityError("Insecure: can't extend object.");
+            }
+
+            singletonClass = receiver.getSingletonClass();
+        }
+        
+        return singletonClass;
+    }
+    
     public static IRubyObject doAttrAssign(IRubyObject receiver, IRubyObject[] args, 
             ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
         if (receiver == caller) callType = CallType.VARIABLE;

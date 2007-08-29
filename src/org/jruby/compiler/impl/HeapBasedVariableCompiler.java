@@ -72,6 +72,32 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
         }
     }
 
+    public void beginClass(ClosureCallback bodyPrep, StaticScope scope) {
+        // store the local vars in a local variable for preparing the class (using previous scope)
+        methodCompiler.loadThreadContext();
+        methodCompiler.invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
+        method.dup();
+        method.astore(scopeIndex);
+        method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
+        method.astore(varsIndex);
+        
+        // class bodies prepare their own dynamic scope, so let it do that
+        bodyPrep.compile(methodCompiler);
+        
+        // store the new local vars in a local variable
+        methodCompiler.loadThreadContext();
+        methodCompiler.invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
+        method.dup();
+        method.astore(scopeIndex);
+        method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
+        method.astore(varsIndex);
+
+        // fill local vars with nil, to avoid checking every access.
+        method.aload(varsIndex);
+        methodCompiler.loadNil();
+        method.invokestatic(cg.p(Arrays.class), "fill", cg.sig(Void.TYPE, cg.params(Object[].class, Object.class)));
+    }
+
     public void beginClosure(ClosureCallback argsCallback, StaticScope scope) {
         // store the local vars in a local variable
         methodCompiler.loadThreadContext();

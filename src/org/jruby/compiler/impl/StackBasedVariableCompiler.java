@@ -78,6 +78,10 @@ public class StackBasedVariableCompiler implements VariableCompiler {
         }
     }
 
+    public void beginClass(ClosureCallback bodyPrep, StaticScope scope) {
+        throw new NotCompilableException("ERROR: stack-based variables should not be compiling class bodies");
+    }
+
     public void beginClosure(ClosureCallback argsCallback, StaticScope scope) {
         // load args[0] which will be the IRubyObject representing block args
         method.aload(argsIndex);

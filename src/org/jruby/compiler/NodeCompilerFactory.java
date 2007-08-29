@@ -109,6 +109,7 @@ import org.jruby.ast.DefsNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.SClassNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
 import org.jruby.ast.UndefNode;
@@ -311,6 +312,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.RETURNNODE:
             compileReturn(node, context);
+            break;
+        case NodeTypes.SCLASSNODE:
+            compileSClass(node, context);
             break;
         case NodeTypes.SELFNODE:
             compileSelf(node, context);
@@ -760,8 +764,9 @@ public class NodeCompilerFactory {
             public void compile(MethodCompiler context) {
                 if (classNode.getBodyNode() != null) {
                     NodeCompilerFactory.compile(classNode.getBodyNode(), context);
+                } else {
+                    context.loadNil();
                 }
-                context.loadNil();
             }
         };
         
@@ -782,7 +787,31 @@ public class NodeCompilerFactory {
             }
         };
         
-        context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback);
+        context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback, null);
+    }
+    
+    public static void compileSClass(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final SClassNode sclassNode = (SClassNode)node;
+        
+        ClosureCallback receiverCallback = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                NodeCompilerFactory.compile(sclassNode.getReceiverNode(), context);
+            }
+        };
+        
+        ClosureCallback bodyCallback = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                if (sclassNode.getBodyNode() != null) {
+                    NodeCompilerFactory.compile(sclassNode.getBodyNode(), context);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+        
+        context.defineClass("SCLASS", sclassNode.getScope(), null, null, bodyCallback, receiverCallback);
     }
 
     public static void compileClassVar(Node node, MethodCompiler context) {
