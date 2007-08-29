@@ -870,6 +870,7 @@ public class EmitterImpl implements Emitter {
                     data = (ByteList)text.subSequence(start,ending);
                     data.append(' ');
                     data.append('\\');
+                    ending++;
                 } else {
                     data = ByteList.create("\\");
                 }
