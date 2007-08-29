@@ -150,3 +150,30 @@ YAML
 test_equal string, YAML.load(YAML.dump(string))
 
 ## TODO: implement real fuzz testing of YAML round tripping here
+
+text = " "*80 + "\n" + " "*30
+test_equal text, YAML.load(YAML.dump(text))
+
+text = <<-YAML
+  - label: New
+    color: green
+    data: SELECT 'Iteration Scheduled', COUNT(*) WHERE Status = 'New'
+    combine: overlay-bottom
+  - label: Open
+    color: pink
+    data: SELECT 'Iteration Scheduled', COUNT(*) WHERE Status = 'Open'
+    combine: overlay-bottom
+  - label: Ready for Development
+    color: yellow
+    data: SELECT 'Iteration Scheduled', COUNT(*) WHERE Status = 'Ready for Development'
+    combine: overlay-bottom
+    color: blue
+    data: SELECT 'Iteration Scheduled', COUNT(*) WHERE Status = 'Complete'
+    combine: overlay-bottom
+  - label: Other statuses
+    color: red
+    data: SELECT 'Iteration Scheduled', COUNT(*)
+                    combine: total
+YAML
+
+test_equal text, YAML.load(YAML.dump(text))
