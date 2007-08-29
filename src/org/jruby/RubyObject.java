@@ -147,14 +147,14 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public RubyObject(Ruby runtime, RubyClass metaClass) {
-        this(runtime, metaClass, runtime.isObjectSpaceEnabled());
+        this(runtime, metaClass, true);
     }
 
     protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         this.metaClass = metaClass;
 
         // Do not store any immediate objects into objectspace.
-        if (useObjectSpace) runtime.getObjectSpace().add(this);
+        if (useObjectSpace && runtime.isObjectSpaceEnabled()) runtime.getObjectSpace().add(this);
 
         // FIXME are there objects who shouldn't be tainted?
         // (mri: OBJSETUP)
