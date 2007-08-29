@@ -50,7 +50,7 @@ public class FlipNode extends Node {
     private final int location;
     
     public FlipNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, int location) {
-        super(position, NodeTypes.FLIPNODE);
+        super(position, NodeType.FLIPNODE);
         this.beginNode = beginNode;
         this.endNode = endNode;
         this.exclusive = exclusive;

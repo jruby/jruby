@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -42,7 +43,6 @@ import org.jruby.ast.Colon2Node;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.GlobalAsgnNode;
-import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.HashNode;
 import org.jruby.ast.IArgumentNode;
 import org.jruby.ast.IfNode;
@@ -53,7 +53,6 @@ import org.jruby.ast.MatchNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.NodeTypes;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OrNode;
@@ -79,8 +78,8 @@ public class ASTInspector {
     private boolean hasOptArgs;
     private boolean hasRestArg;
     
-    private static Set FRAME_AWARE_METHODS = new HashSet();
-    private static Set SCOPE_AWARE_METHODS = new HashSet();
+    private static Set<String> FRAME_AWARE_METHODS = new HashSet<String>();
+    private static Set<String> SCOPE_AWARE_METHODS = new HashSet<String>();
     
     static {
         FRAME_AWARE_METHODS.add("eval");
@@ -121,47 +120,47 @@ public class ASTInspector {
         if (node == null) return;
         
         switch (node.nodeId) {
-        case NodeTypes.ALIASNODE:
+        case ALIASNODE:
             break;
-        case NodeTypes.ANDNODE:
+        case ANDNODE:
             AndNode andNode = (AndNode)node;
             inspect(andNode.getFirstNode());
             inspect(andNode.getSecondNode());
             break;
-        case NodeTypes.ARRAYNODE:
-        case NodeTypes.BLOCKNODE:
-        case NodeTypes.DSTRNODE:
+        case ARRAYNODE:
+        case BLOCKNODE:
+        case DSTRNODE:
             ListNode listNode = (ListNode)node;
             for (int i = 0; i < listNode.size(); i++) {
                 inspect(listNode.get(i));
             }
             break;
-        case NodeTypes.ARGSNODE:
+        case ARGSNODE:
             ArgsNode argsNode = (ArgsNode)node;
             if (argsNode.getBlockArgNode() != null) hasBlockArg = true;
             if (argsNode.getOptArgs() != null) hasOptArgs = true;
             if (argsNode.getRestArg() == -2 || argsNode.getRestArg() >= 0) hasRestArg = true;
             break;
-        case NodeTypes.ATTRASSIGNNODE:
+        case ATTRASSIGNNODE:
             AttrAssignNode attrAssignNode = (AttrAssignNode)node;
             inspect(attrAssignNode.getArgsNode());
             inspect(attrAssignNode.getReceiverNode());
             break;
-        case NodeTypes.BEGINNODE:
+        case BEGINNODE:
             inspect(((BeginNode)node).getBodyNode());
             break;
-        case NodeTypes.BIGNUMNODE:
+        case BIGNUMNODE:
             break;
-        case NodeTypes.BREAKNODE:
+        case BREAKNODE:
             inspect(((BreakNode)node).getValueNode());
             break;
-        case NodeTypes.CALLNODE:
+        case CALLNODE:
             CallNode callNode = (CallNode)node;
             inspect(callNode.getReceiverNode());
-        case NodeTypes.FCALLNODE:
+        case FCALLNODE:
             inspect(((IArgumentNode)node).getArgsNode());
             inspect(((BlockAcceptingNode)node).getIterNode());
-        case NodeTypes.VCALLNODE:
+        case VCALLNODE:
             INameNode nameNode = (INameNode)node;
             if (FRAME_AWARE_METHODS.contains(nameNode.getName())) {
                 hasFrameAwareMethods = true;
@@ -170,155 +169,155 @@ public class ASTInspector {
                 hasScopeAwareMethods = true;
             }
             break;
-        case NodeTypes.CLASSNODE:
+        case CLASSNODE:
             hasScopeAwareMethods = true;
             hasClass = true;
             break;
-        case NodeTypes.CLASSVARNODE:
+        case CLASSVARNODE:
             hasScopeAwareMethods = true;
             break;
-        case NodeTypes.GLOBALASGNNODE:
+        case GLOBALASGNNODE:
             GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode)node;
             if (globalAsgnNode.getName().equals("$_") || globalAsgnNode.getName().equals("$~")) {
                 hasScopeAwareMethods = true;
             }
             break;
-        case NodeTypes.CONSTDECLNODE:
-        case NodeTypes.CLASSVARASGNNODE:
+        case CONSTDECLNODE:
+        case CLASSVARASGNNODE:
             hasScopeAwareMethods = true;
-        case NodeTypes.DASGNNODE:
-        case NodeTypes.INSTASGNNODE:
-        case NodeTypes.LOCALASGNNODE:
+        case DASGNNODE:
+        case INSTASGNNODE:
+        case LOCALASGNNODE:
             inspect(((AssignableNode)node).getValueNode());
             break;
-        case NodeTypes.COLON2NODE:
+        case COLON2NODE:
             inspect(((Colon2Node)node).getLeftNode());
             break;
-        case NodeTypes.CONSTNODE:
+        case CONSTNODE:
             hasScopeAwareMethods = true;
             break;
-        case NodeTypes.DEFNNODE:
+        case DEFNNODE:
             hasDef = true;
             break;
-        case NodeTypes.DEFINEDNODE:
+        case DEFINEDNODE:
             disable();
             break;
-        case NodeTypes.DOTNODE:
+        case DOTNODE:
             DotNode dotNode = (DotNode)node;
             inspect(dotNode.getBeginNode());
             inspect(dotNode.getEndNode());
             break;
-        case NodeTypes.DVARNODE:
+        case DVARNODE:
             break;
-        case NodeTypes.ENSURENODE:
+        case ENSURENODE:
             disable();
             break;
-        case NodeTypes.EVSTRNODE:
+        case EVSTRNODE:
             inspect(((EvStrNode)node).getBody());
             break;
-        case NodeTypes.FALSENODE:
+        case FALSENODE:
             break;
-        case NodeTypes.FIXNUMNODE:
+        case FIXNUMNODE:
             break;
-        case NodeTypes.FLOATNODE:
+        case FLOATNODE:
             break;
-        case NodeTypes.GLOBALVARNODE:
+        case GLOBALVARNODE:
             break;
-        case NodeTypes.HASHNODE:
+        case HASHNODE:
             HashNode hashNode = (HashNode)node;
             for (int i = 0; i < hashNode.getListNode().size(); i++) {
                 inspect(hashNode.getListNode().get(i));
             }
             break;
-        case NodeTypes.IFNODE:
+        case IFNODE:
             IfNode ifNode = (IfNode)node;
             inspect(ifNode.getCondition());
             inspect(ifNode.getThenBody());
             inspect(ifNode.getElseBody());
             break;
-        case NodeTypes.INSTVARNODE:
+        case INSTVARNODE:
             break;
-        case NodeTypes.ITERNODE:
+        case ITERNODE:
             hasClosure = true;
             break;
-        case NodeTypes.LOCALVARNODE:
+        case LOCALVARNODE:
             break;
-        case NodeTypes.MATCHNODE:
+        case MATCHNODE:
             inspect(((MatchNode)node).getRegexpNode());
             break;
-        case NodeTypes.MATCH2NODE:
+        case MATCH2NODE:
             Match2Node match2Node = (Match2Node)node;
             inspect(match2Node.getReceiverNode());
             inspect(match2Node.getValueNode());
             break;
-        case NodeTypes.MATCH3NODE:
+        case MATCH3NODE:
             Match3Node match3Node = (Match3Node)node;
             inspect(match3Node.getReceiverNode());
             inspect(match3Node.getValueNode());
             break;
-        case NodeTypes.MODULENODE:
+        case MODULENODE:
             hasClass = true;
             hasScopeAwareMethods = true;
             break;
-        case NodeTypes.NEWLINENODE:
+        case NEWLINENODE:
             inspect(((NewlineNode)node).getNextNode());
             break;
-        case NodeTypes.NEXTNODE:
+        case NEXTNODE:
             inspect(((NextNode)node).getValueNode());
             break;
-        case NodeTypes.NTHREFNODE:
+        case NTHREFNODE:
             break;
-        case NodeTypes.NILNODE:
+        case NILNODE:
             break;
-        case NodeTypes.NOTNODE:
+        case NOTNODE:
             inspect(((NotNode)node).getConditionNode());
             break;
-        case NodeTypes.OPASGNNODE:
+        case OPASGNNODE:
             OpAsgnNode opAsgnNode = (OpAsgnNode)node;
             inspect(opAsgnNode.getReceiverNode());
             inspect(opAsgnNode.getValueNode());
             break;
-        case NodeTypes.OPASGNORNODE:
+        case OPASGNORNODE:
             disable(); // Depends on defined
             break;
-        case NodeTypes.ORNODE:
+        case ORNODE:
             OrNode orNode = (OrNode)node;
             inspect(orNode.getFirstNode());
             inspect(orNode.getSecondNode());
             break;
-        case NodeTypes.REDONODE:
+        case REDONODE:
             break;
-        case NodeTypes.REGEXPNODE:
+        case REGEXPNODE:
             break;
-        case NodeTypes.ROOTNODE:
+        case ROOTNODE:
             inspect(((RootNode)node).getBodyNode());
             break;
-        case NodeTypes.RETURNNODE:
+        case RETURNNODE:
             inspect(((ReturnNode)node).getValueNode());
             break;
-        case NodeTypes.SELFNODE:
+        case SELFNODE:
             break;
-        case NodeTypes.SPLATNODE:
+        case SPLATNODE:
             inspect(((SplatNode)node).getValue());
             break;
-        case NodeTypes.STRNODE:
+        case STRNODE:
             break;
-        case NodeTypes.SVALUENODE:
+        case SVALUENODE:
             inspect(((SValueNode)node).getValue());
             break;
-        case NodeTypes.SYMBOLNODE:
+        case SYMBOLNODE:
             break;
-        case NodeTypes.TRUENODE:
+        case TRUENODE:
             break;
-        case NodeTypes.WHILENODE:
+        case WHILENODE:
             WhileNode whileNode = (WhileNode)node;
             inspect(whileNode.getConditionNode());
             inspect(whileNode.getBodyNode());
             break;
-        case NodeTypes.YIELDNODE:
+        case YIELDNODE:
             inspect(((YieldNode)node).getArgsNode());
             break;
-        case NodeTypes.ZARRAYNODE:
+        case ZARRAYNODE:
             break;
         default:
             // encountered a node we don't recognize, set everything to true to disable optz

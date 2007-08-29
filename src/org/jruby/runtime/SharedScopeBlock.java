@@ -39,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  */
 public class SharedScopeBlock extends Block {
-    private SharedScopeBlock(IterNode iterNode, IRubyObject self, Frame frame,
+    protected SharedScopeBlock(IterNode iterNode, IRubyObject self, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
         super(iterNode, self, frame, visibility, klass, dynamicScope);
     }

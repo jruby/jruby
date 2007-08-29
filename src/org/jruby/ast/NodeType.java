@@ -12,8 +12,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,29 +29,19 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.util.List;
-
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
-import org.jruby.lexer.yacc.ISourcePosition;
-
-public class SplatNode extends Node {
-    private final Node node;
-
-    public SplatNode(ISourcePosition position, Node node) {
-        super(position, NodeType.SPLATNODE);
-        this.node = node;
-    }
-
-    public Instruction accept(NodeVisitor visitor) {
-        return visitor.visitSplatNode(this);
-    }
-    
-    public Node getValue() {
-        return node;
-    }
-
-    public List<Node> childNodes() {
-        return createList(node);
-    }
+public enum NodeType {
+    ALIASNODE, ANDNODE, ARGSCATNODE, ARGSNODE, ARGUMENTNODE, ARRAYNODE, ASSIGNABLENODE,
+    BACKREFNODE, BEGINNODE, BIGNUMNODE, BINARYOPERATORNODE, BLOCKARGNODE, BLOCKNODE,
+    BLOCKPASSNODE, BREAKNODE, CALLNODE, CASENODE, CLASSNODE, CLASSVARASGNNODE, CLASSVARDECLNODE,
+    CLASSVARNODE, COLON2NODE, COLON3NODE, CONSTDECLNODE, CONSTNODE, DASGNNODE, DEFINEDNODE,
+    DEFNNODE, DEFSNODE, DOTNODE, DREGEXPNODE, DSTRNODE, DSYMBOLNODE, DVARNODE, DXSTRNODE,
+    ENSURENODE, EVSTRNODE, FALSENODE, FCALLNODE, FIXNUMNODE, FLIPNODE, FLOATNODE, FORNODE,
+    GLOBALASGNNODE, GLOBALVARNODE, HASHNODE, IFNODE, INSTASGNNODE, INSTVARNODE, ISCOPINGNODE,
+    ITERNODE, LISTNODE, LOCALASGNNODE, LOCALVARNODE, MATCH2NODE, MATCH3NODE, MATCHNODE,MODULENODE,
+    MULTIPLEASGNNODE, NEWLINENODE, NEXTNODE, NILNODE, NODETYPES, NOTNODE, NTHREFNODE, OPASGNANDNODE,
+    OPASGNNODE, OPASGNORNODE, OPELEMENTASGNNODE, OPTNNODE, ORNODE, POSTEXENODE, REDONODE, 
+    REGEXPNODE, RESCUEBODYNODE, RESCUENODE, RETRYNODE, RETURNNODE, SCLASSNODE, SCOPENODE,
+    SELFNODE, SPLATNODE, STARNODE, STRNODE, SUPERNODE, SVALUENODE, SYMBOLNODE, TOARYNODE,
+    TRUENODE, UNDEFNODE, UNTILNODE, VALIASNODE, VCALLNODE, WHENNODE, WHILENODE, XSTRNODE, YIELDNODE,
+    ZARRAYNODE, ZEROARGNODE, ZSUPERNODE, COMMENTNODE, ROOTNODE, ATTRASSIGNNODE, ARGSPUSHNODE
 }

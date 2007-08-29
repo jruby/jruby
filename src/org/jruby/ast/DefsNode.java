@@ -46,7 +46,7 @@ public class DefsNode extends MethodDefNode implements INameNode {
     private final Node receiverNode;
     public DefsNode(ISourcePosition position, Node receiverNode, ArgumentNode nameNode, ArgsNode argsNode, 
             StaticScope scope, Node bodyNode) {
-        super(position, nameNode, argsNode, scope, bodyNode, NodeTypes.DEFSNODE);
+        super(position, nameNode, argsNode, scope, bodyNode, NodeType.DEFSNODE);
         
         this.receiverNode = receiverNode;
     }

@@ -46,11 +46,11 @@ public class ArrayNode extends ListNode implements ILiteralNode {
     private boolean lightweight = false;
     
     public ArrayNode(ISourcePosition position, Node firstNode) {
-        super(position, NodeTypes.ARRAYNODE, firstNode);
+        super(position, NodeType.ARRAYNODE, firstNode);
     }
 
     public ArrayNode(ISourcePosition position) {
-        super(position, NodeTypes.ARRAYNODE);
+        super(position, NodeType.ARRAYNODE);
     }
 
     /**

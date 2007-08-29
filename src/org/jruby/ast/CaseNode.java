@@ -52,7 +52,7 @@ public class CaseNode extends Node {
     private final Node caseBody;
     
     public CaseNode(ISourcePosition position, Node caseNode, Node caseBody) {
-        super(position, NodeTypes.CASENODE);
+        super(position, NodeType.CASENODE);
         this.caseNode = caseNode;
         this.caseBody = caseBody;
     }

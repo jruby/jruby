@@ -56,7 +56,7 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
     
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, 
             Node iterNode) {
-        super(position, NodeTypes.CALLNODE);
+        super(position, NodeType.CALLNODE);
         this.receiverNode = receiverNode;
         setArgsNode(argsNode);
         this.iterNode = iterNode;

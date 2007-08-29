@@ -49,7 +49,7 @@ public class DotNode extends Node {
 
     public DotNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, 
             boolean isLiteral) {
-        super(position, NodeTypes.DOTNODE);
+        super(position, NodeType.DOTNODE);
         this.beginNode = beginNode;
         this.endNode = endNode;
         this.exclusive = exclusive;

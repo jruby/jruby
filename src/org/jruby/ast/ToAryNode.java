@@ -39,7 +39,7 @@ public class ToAryNode extends Node {
 	private final Node node;
 
     public ToAryNode(ISourcePosition position, Node node) {
-        super(position, NodeTypes.TOARYNODE);
+        super(position, NodeType.TOARYNODE);
 
         this.node = node;
     }

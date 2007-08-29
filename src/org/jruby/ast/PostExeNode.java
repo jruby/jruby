@@ -40,7 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class PostExeNode extends IterNode {
     public PostExeNode(ISourcePosition position, Node body) {
-        super(position, null, null, body, NodeTypes.POSTEXENODE);
+        super(position, null, null, body, NodeType.POSTEXENODE);
     }
 
     /**

@@ -70,7 +70,7 @@ public class ArgsNode extends Node {
      **/
     public ArgsNode(ISourcePosition position, ListNode arguments, ListNode optionalArguments, 
             int restArguments, ArgumentNode restArgNode, BlockArgNode blockArgNode) {
-        super(position, NodeTypes.ARGSNODE);
+        super(position, NodeType.ARGSNODE);
 
         this.arguments = arguments;
         this.optArgs = optionalArguments;

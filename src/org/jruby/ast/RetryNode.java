@@ -41,7 +41,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class RetryNode extends Node {
     public RetryNode(ISourcePosition position) {
-        super(position, NodeTypes.RETRYNODE);
+        super(position, NodeType.RETRYNODE);
     }
 
     /**

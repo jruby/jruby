@@ -45,7 +45,7 @@ public class YieldNode extends Node {
     private final boolean checkState;
 
     public YieldNode(ISourcePosition position, Node argsNode, boolean checkState) {
-        super(position, NodeTypes.YIELDNODE);
+        super(position, NodeType.YIELDNODE);
         this.argsNode = argsNode;
         // If we have more than one argument, then make sure the array is not ObjectSpaced.
         if (argsNode instanceof ArrayNode) {

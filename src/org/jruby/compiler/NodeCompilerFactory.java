@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -76,10 +77,9 @@ import org.jruby.ast.MatchNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.NodeTypes;
+import org.jruby.ast.NodeType;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.NthRefNode;
-import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OrNode;
@@ -96,7 +96,6 @@ import org.jruby.ast.WhileNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
-import org.jruby.util.ByteList;
 import org.jruby.exceptions.JumpException;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
@@ -110,7 +109,6 @@ import org.jruby.ast.ForNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.SClassNode;
-import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
 import org.jruby.ast.UndefNode;
 import org.jruby.ast.UntilNode;
@@ -125,240 +123,240 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class NodeCompilerFactory {
     public static final boolean SAFE = System.getProperty("jruby.jit.safe", "true").equals("true");
-    public static final Set UNSAFE_CALLS;
+    public static final Set<String> UNSAFE_CALLS;
     
     static {
-        UNSAFE_CALLS = new HashSet();
+        UNSAFE_CALLS = new HashSet<String>();
     }
     
     public static void compile(Node node, MethodCompiler context) {
         switch (node.nodeId) {
-        case NodeTypes.ALIASNODE:
+        case ALIASNODE:
             compileAlias(node, context);
             break;
-        case NodeTypes.ANDNODE:
+        case ANDNODE:
             compileAnd(node, context);
             break;
-        case NodeTypes.ARGSCATNODE:
+        case ARGSCATNODE:
             compileArgsCat(node, context);
             break;
-        case NodeTypes.ARRAYNODE:
+        case ARRAYNODE:
             compileArray(node, context);
             break;
-        case NodeTypes.ATTRASSIGNNODE:
+        case ATTRASSIGNNODE:
             compileAttrAssign(node, context);
             break;
-        case NodeTypes.BEGINNODE:
+        case BEGINNODE:
             compileBegin(node, context);
             break;
-        case NodeTypes.BIGNUMNODE:
+        case BIGNUMNODE:
             compileBignum(node, context);
             break;
-        case NodeTypes.BLOCKNODE:
+        case BLOCKNODE:
             compileBlock(node, context);
             break;
-        case NodeTypes.BREAKNODE:
+        case BREAKNODE:
             compileBreak(node, context);
             break;
-        case NodeTypes.CALLNODE:
+        case CALLNODE:
             compileCall(node, context);
             break;
-        case NodeTypes.CASENODE:
+        case CASENODE:
             compileCase(node, context);
             break;
-        case NodeTypes.CLASSNODE:
+        case CLASSNODE:
             compileClass(node, context);
             break;
-        case NodeTypes.CLASSVARNODE:
+        case CLASSVARNODE:
             compileClassVar(node, context);
             break;
-        case NodeTypes.CLASSVARASGNNODE:
+        case CLASSVARASGNNODE:
             compileClassVarAsgn(node, context);
             break;
-        case NodeTypes.CONSTDECLNODE:
+        case CONSTDECLNODE:
             compileConstDecl(node, context);
             break;
-        case NodeTypes.COLON2NODE:
+        case COLON2NODE:
             compileColon2(node, context);
             break;
-        case NodeTypes.CONSTNODE:
+        case CONSTNODE:
             compileConst(node, context);
             break;
-        case NodeTypes.DASGNNODE:
+        case DASGNNODE:
             compileDAsgn(node, context);
             break;
-        case NodeTypes.DEFINEDNODE:
+        case DEFINEDNODE:
             compileDefined(node, context);
             break;
-        case NodeTypes.DEFNNODE:
+        case DEFNNODE:
             compileDefn(node, context);
             break;
-        case NodeTypes.DEFSNODE:
+        case DEFSNODE:
             compileDefs(node, context);
             break;
-        case NodeTypes.DOTNODE:
+        case DOTNODE:
             compileDot(node, context);
             break;
-        case NodeTypes.DREGEXPNODE:
+        case DREGEXPNODE:
             compileDRegexp(node, context);
             break;
-        case NodeTypes.DSTRNODE:
+        case DSTRNODE:
             compileDStr(node, context);
             break;
-        case NodeTypes.DSYMBOLNODE:
+        case DSYMBOLNODE:
             compileDSymbol(node, context);
             break;
-        case NodeTypes.DVARNODE:
+        case DVARNODE:
             compileDVar(node, context);
             break;
-        case NodeTypes.DXSTRNODE:
+        case DXSTRNODE:
             compileDXStr(node, context);
             break;
-        case NodeTypes.ENSURENODE:
+        case ENSURENODE:
             compileEnsureNode(node, context);
             break;
-        case NodeTypes.EVSTRNODE:
+        case EVSTRNODE:
             compileEvStr(node, context);
             break;
-        case NodeTypes.FALSENODE:
+        case FALSENODE:
             compileFalse(node, context);
             break;
-        case NodeTypes.FCALLNODE:
+        case FCALLNODE:
             compileFCall(node, context);
             break;
-        case NodeTypes.FIXNUMNODE:
+        case FIXNUMNODE:
             compileFixnum(node, context);
             break;
-        case NodeTypes.FLOATNODE:
+        case FLOATNODE:
             compileFloat(node, context);
             break;
-        case NodeTypes.FORNODE:
+        case FORNODE:
             compileFor(node, context);
             break;
-        case NodeTypes.GLOBALASGNNODE:
+        case GLOBALASGNNODE:
             compileGlobalAsgn(node, context);
             break;
-        case NodeTypes.GLOBALVARNODE:
+        case GLOBALVARNODE:
             compileGlobalVar(node, context);
             break;
-        case NodeTypes.HASHNODE:
+        case HASHNODE:
             compileHash(node, context);
             break;
-        case NodeTypes.IFNODE:
+        case IFNODE:
             compileIf(node, context);
             break;
-        case NodeTypes.INSTASGNNODE:
+        case INSTASGNNODE:
             compileInstAsgn(node, context);
             break;
-        case NodeTypes.INSTVARNODE:
+        case INSTVARNODE:
             compileInstVar(node, context);
             break;
-        case NodeTypes.ITERNODE:
+        case ITERNODE:
             compileIter(node, context);
             break;
-        case NodeTypes.LOCALASGNNODE:
+        case LOCALASGNNODE:
             compileLocalAsgn(node, context);
             break;
-        case NodeTypes.LOCALVARNODE:
+        case LOCALVARNODE:
             compileLocalVar(node, context);
             break;
-        case NodeTypes.MATCHNODE:
+        case MATCHNODE:
             compileMatch(node, context);
             break;
-        case NodeTypes.MATCH2NODE:
+        case MATCH2NODE:
             compileMatch2(node, context);
             break;
-        case NodeTypes.MATCH3NODE:
+        case MATCH3NODE:
             compileMatch3(node, context);
             break;
-        case NodeTypes.MODULENODE:
+        case MODULENODE:
             compileModule(node, context);
             break;
-        case NodeTypes.MULTIPLEASGNNODE:
+        case MULTIPLEASGNNODE:
             compileMultipleAsgn(node, context);
             break;
-        case NodeTypes.NEWLINENODE:
+        case NEWLINENODE:
             compileNewline(node, context);
             break;
-        case NodeTypes.NEXTNODE:
+        case NEXTNODE:
             compileNext(node, context);
             break;
-        case NodeTypes.NTHREFNODE:
+        case NTHREFNODE:
             compileNthRef(node, context);
             break;
-        case NodeTypes.NILNODE:
+        case NILNODE:
             compileNil(node, context);
             break;
-        case NodeTypes.NOTNODE:
+        case NOTNODE:
             compileNot(node, context);
             break;
-        case NodeTypes.OPASGNNODE:
+        case OPASGNNODE:
             compileOpAsgn(node, context);
             break;
-        case NodeTypes.OPASGNANDNODE:
+        case OPASGNANDNODE:
             compileOpAsgnAnd(node, context);
             break;
-        case NodeTypes.OPASGNORNODE:
+        case OPASGNORNODE:
             compileOpAsgnOr(node, context);
             break;
-        case NodeTypes.ORNODE:
+        case ORNODE:
             compileOr(node, context);
             break;
-        case NodeTypes.REDONODE:
+        case REDONODE:
             compileRedo(node, context);
             break;
-        case NodeTypes.REGEXPNODE:
+        case REGEXPNODE:
             compileRegexp(node, context);
             break;
-        case NodeTypes.RETURNNODE:
+        case RETURNNODE:
             compileReturn(node, context);
             break;
-        case NodeTypes.SCLASSNODE:
+        case SCLASSNODE:
             compileSClass(node, context);
             break;
-        case NodeTypes.SELFNODE:
+        case SELFNODE:
             compileSelf(node, context);
             break;
-        case NodeTypes.SPLATNODE:
+        case SPLATNODE:
             compileSplat(node, context);
             break;
-        case NodeTypes.STRNODE:
+        case STRNODE:
             compileStr(node, context);
             break;
-        case NodeTypes.SVALUENODE:
+        case SVALUENODE:
             compileSValue(node, context);
             break;
-        case NodeTypes.SYMBOLNODE:
+        case SYMBOLNODE:
             compileSymbol(node, context);
             break;
-        case NodeTypes.TOARYNODE:
+        case TOARYNODE:
             compileToAry(node, context);
             break;
-        case NodeTypes.TRUENODE:
+        case TRUENODE:
             compileTrue(node, context);
             break;
-        case NodeTypes.UNDEFNODE:
+        case UNDEFNODE:
             compileUndef(node, context);
             break;
-        case NodeTypes.UNTILNODE:
+        case UNTILNODE:
             compileUntil(node, context);
             break;
-        case NodeTypes.VALIASNODE:
+        case VALIASNODE:
             compileVAlias(node, context);
             break;
-        case NodeTypes.VCALLNODE:
+        case VCALLNODE:
             compileVCall(node, context);
             break;
-        case NodeTypes.WHILENODE:
+        case WHILENODE:
             compileWhile(node, context);
             break;
-        case NodeTypes.XSTRNODE:
+        case XSTRNODE:
             compileXStr(node, context);
             break;
-        case NodeTypes.YIELDNODE:
+        case YIELDNODE:
             compileYield(node, context);
             break;
-        case NodeTypes.ZARRAYNODE:
+        case ZARRAYNODE:
             compileZArray(node, context);
             break;
         default:
@@ -368,13 +366,13 @@ public class NodeCompilerFactory {
     
     public static void compileArguments(Node node, MethodCompiler context) {
         switch (node.nodeId) {
-        case NodeTypes.ARGSCATNODE:
+        case ARGSCATNODE:
             compileArgsCatArguments(node, context);
             break;
-        case NodeTypes.ARRAYNODE:
+        case ARRAYNODE:
             compileArrayArguments(node, context);
             break;
-        case NodeTypes.SPLATNODE:
+        case SPLATNODE:
             compileSplatArguments(node, context);
             break;
         default:
@@ -384,20 +382,20 @@ public class NodeCompilerFactory {
     
     public static void compileAssignment(Node node, MethodCompiler context) {
         switch (node.nodeId) {
-        case NodeTypes.DASGNNODE:
+        case DASGNNODE:
             compileDAsgnAssignment(node, context);
             break;
-        case NodeTypes.CLASSVARASGNNODE:
+        case CLASSVARASGNNODE:
             compileClassVarAsgn(node, context);
             break;
-        case NodeTypes.INSTASGNNODE:
+        case INSTASGNNODE:
             compileInstAsgnAssignment(node, context);
             break;
-        case NodeTypes.LOCALASGNNODE:
+        case LOCALASGNNODE:
             compileLocalAsgnAssignment(node, context);
             break;
         // working for straight-up assignment, but not yet for blocks; disabled in iter compilation
-        case NodeTypes.MULTIPLEASGNNODE:
+        case MULTIPLEASGNNODE:
             compileMultipleAsgnAssignment(node, context);
             break;
         default:    
@@ -509,8 +507,8 @@ public class NodeCompilerFactory {
         
         BlockNode blockNode = (BlockNode)node;
         
-        for (Iterator iter = blockNode.childNodes().iterator(); iter.hasNext();) {
-            Node n = (Node)iter.next();
+        for (Iterator<Node> iter = blockNode.childNodes().iterator(); iter.hasNext();) {
+            Node n = iter.next();
             
             compile(n, context);
             
@@ -540,10 +538,8 @@ public class NodeCompilerFactory {
         
         final CallNode callNode = (CallNode)node;
         
-        if (NodeCompilerFactory.SAFE) {
-            if (NodeCompilerFactory.UNSAFE_CALLS.contains(callNode.getName())) {
-                throw new NotCompilableException("Can't compile call safely: " + node);
-            }
+        if (SAFE && UNSAFE_CALLS.contains(callNode.getName())) {
+            throw new NotCompilableException("Can't compile call safely: " + node);
         }
         
         ClosureCallback receiverCallback = new ClosureCallback() {
@@ -848,7 +844,7 @@ public class NodeCompilerFactory {
             compile(constDeclNode.getValueNode(), context);
         
             context.assignConstantInCurrent(constDeclNode.getName());
-        } else if (constDeclNode.nodeId == NodeTypes.COLON2NODE) {
+        } else if (constDeclNode.nodeId == NodeType.COLON2NODE) {
             compile(constDeclNode.getValueNode(), context);
         
             compile(constDeclNode.getValueNode(), context);
@@ -953,12 +949,12 @@ public class NodeCompilerFactory {
 
     public static void compileGetDefinition(final Node node, MethodCompiler context) {
         switch(node.nodeId) {
-        case NodeTypes.CLASSVARASGNNODE: case NodeTypes.CLASSVARDECLNODE: case NodeTypes.CONSTDECLNODE:
-        case NodeTypes.DASGNNODE: case NodeTypes.GLOBALASGNNODE: case NodeTypes.LOCALASGNNODE:
-        case NodeTypes.MULTIPLEASGNNODE: case NodeTypes.OPASGNNODE: case NodeTypes.OPELEMENTASGNNODE:
+        case CLASSVARASGNNODE: case CLASSVARDECLNODE: case CONSTDECLNODE:
+        case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE:
+        case MULTIPLEASGNNODE: case OPASGNNODE: case OPELEMENTASGNNODE:
             context.pushString("assignment");
             break;
-        case NodeTypes.BACKREFNODE:
+        case BACKREFNODE:
             context.backref();
             context.isInstanceOf(RubyMatchData.class, 
                                  new BranchCallback(){
@@ -970,25 +966,25 @@ public class NodeCompilerFactory {
                                          context.pushNull();
                                      }});
             break;
-        case NodeTypes.DVARNODE:
+        case DVARNODE:
             context.pushString("local-variable(in-block)");
             break;
-        case NodeTypes.FALSENODE:
+        case FALSENODE:
             context.pushString("false");
             break;
-        case NodeTypes.TRUENODE:
+        case TRUENODE:
             context.pushString("true");
             break;
-        case NodeTypes.LOCALVARNODE:
+        case LOCALVARNODE:
             context.pushString("local-variable");
             break;
-        case NodeTypes.MATCH2NODE: case NodeTypes.MATCH3NODE:
+        case MATCH2NODE: case MATCH3NODE:
             context.pushString("method");
             break;
-        case NodeTypes.NILNODE:
+        case NILNODE:
             context.pushString("nil");
             break;
-        case NodeTypes.NTHREFNODE:
+        case NTHREFNODE:
             context.isCaptured(((NthRefNode) node).getMatchNumber(),
                                new BranchCallback(){
                                    public void branch(MethodCompiler context) {
@@ -999,10 +995,10 @@ public class NodeCompilerFactory {
                                        context.pushNull();
                                    }});
             break;
-        case NodeTypes.SELFNODE:
+        case SELFNODE:
             context.pushString("self");
             break;
-        case NodeTypes.VCALLNODE:
+        case VCALLNODE:
             context.loadSelf();
             context.isMethodBound(((VCallNode)node).getName(),
                                   new BranchCallback(){
@@ -1016,7 +1012,7 @@ public class NodeCompilerFactory {
                                       }
                                   });
             break;
-        case NodeTypes.YIELDNODE:
+        case YIELDNODE:
             context.hasBlock(new BranchCallback(){
                     public void branch(MethodCompiler context){
                         context.pushString("yield");
@@ -1028,7 +1024,7 @@ public class NodeCompilerFactory {
                     }
                 });
             break;
-        case NodeTypes.GLOBALVARNODE:
+        case GLOBALVARNODE:
             context.isGlobalDefined(((GlobalVarNode) node).getName(),
                                     new BranchCallback(){
                                         public void branch(MethodCompiler context){
@@ -1041,7 +1037,7 @@ public class NodeCompilerFactory {
                                         }
                                     });
             break;
-        case NodeTypes.INSTVARNODE:
+        case INSTVARNODE:
             context.isInstanceVariableDefined(((InstVarNode) node).getName(),
                                               new BranchCallback(){
                                                   public void branch(MethodCompiler context){
@@ -1054,7 +1050,7 @@ public class NodeCompilerFactory {
                                                   }
                                               });
             break;
-        case NodeTypes.CONSTNODE:
+        case CONSTNODE:
             context.isConstantDefined(((ConstNode) node).getName(),
                                       new BranchCallback(){
                                           public void branch(MethodCompiler context){
@@ -1067,7 +1063,7 @@ public class NodeCompilerFactory {
                                           }
                                       });
             break;
-        case NodeTypes.FCALLNODE:
+        case FCALLNODE:
             context.loadSelf();
             context.isMethodBound(((FCallNode)node).getName(),
                                   new BranchCallback(){
@@ -1081,8 +1077,8 @@ public class NodeCompilerFactory {
                                       }
                                   });
             break;
-        case NodeTypes.COLON3NODE:
-        case NodeTypes.COLON2NODE: {
+        case COLON3NODE:
+        case COLON2NODE: {
             final Colon3Node iVisited = (Colon3Node) node;
 
             final String name = iVisited.getName();
@@ -1115,7 +1111,7 @@ public class NodeCompilerFactory {
             context.isConstantBranch(setup, isConstant, isMethod, none, name);
         }
             break;
-        case NodeTypes.CALLNODE: {
+        case CALLNODE: {
             final CallNode iVisited = (CallNode) node;
             Object isnull = context.getNewEnding();
             Object ending = context.getNewEnding();
@@ -1168,7 +1164,7 @@ public class NodeCompilerFactory {
             context.setEnding(ending); 
         }
             break;
-        case NodeTypes.CLASSVARNODE: {
+        case CLASSVARNODE: {
             ClassVarNode iVisited = (ClassVarNode) node;
             final Object ending = context.getNewEnding();
             Object failure = context.getNewEnding();
@@ -1213,7 +1209,7 @@ public class NodeCompilerFactory {
             context.setEnding(ending);
         }
             break;
-        case NodeTypes.ZSUPERNODE: {
+        case ZSUPERNODE: {
             Object fail = context.getNewEnding();
             Object fail2 = context.getNewEnding();
             Object fail_easy = context.getNewEnding();
@@ -1240,7 +1236,7 @@ public class NodeCompilerFactory {
             context.setEnding(ending);
         }
             break;
-        case NodeTypes.SUPERNODE: {
+        case SUPERNODE: {
             Object fail = context.getNewEnding();
             Object fail2 = context.getNewEnding();
             Object fail_easy = context.getNewEnding();
@@ -1267,7 +1263,7 @@ public class NodeCompilerFactory {
             context.setEnding(ending);
             break;
         }
-        case NodeTypes.ATTRASSIGNNODE: {
+        case ATTRASSIGNNODE: {
             final AttrAssignNode iVisited = (AttrAssignNode) node;
             Object isnull = context.getNewEnding();
             Object ending = context.getNewEnding();
@@ -1614,10 +1610,8 @@ public class NodeCompilerFactory {
         
         final FCallNode fcallNode = (FCallNode)node;
         
-        if (NodeCompilerFactory.SAFE) {
-            if (NodeCompilerFactory.UNSAFE_CALLS.contains(fcallNode.getName())) {
-                throw new NotCompilableException("Can't compile call safely: " + node);
-            }
+        if (SAFE && UNSAFE_CALLS.contains(fcallNode.getName())) { 
+            throw new NotCompilableException("Can't compile call safely: " + node);
         }
         
         ClosureCallback argsCallback = new ClosureCallback() {
@@ -1718,12 +1712,12 @@ public class NodeCompilerFactory {
             hasMultipleArgsHead = ((MultipleAsgnNode)forNode.getVarNode()).getHeadNode() != null;
         }
         
-        int argsNodeId = 0;
+        NodeType argsNodeId = null;
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().nodeId;
         }
         
-        if (argsNodeId == 0) {
+        if (argsNodeId == null) {
             // no args, do not pass args processor
             context.createNewForLoop(Arity.procArityOf(forNode.getVarNode()).getValue(),
                     closureBody, null, hasMultipleArgsHead, argsNodeId);
@@ -1881,12 +1875,12 @@ public class NodeCompilerFactory {
             hasMultipleArgsHead = ((MultipleAsgnNode)iterNode.getVarNode()).getHeadNode() != null;
         }
         
-        int argsNodeId = 0;
+        NodeType argsNodeId = null;
         if (iterNode.getVarNode() != null) {
             argsNodeId = iterNode.getVarNode().nodeId;
         }
         
-        if (argsNodeId == 0) {
+        if (argsNodeId == null) {
             // no args, do not pass args processor
             context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
                     closureBody, null, hasMultipleArgsHead, argsNodeId);
@@ -2412,10 +2406,8 @@ public class NodeCompilerFactory {
         
         VCallNode vcallNode = (VCallNode)node;
         
-        if (NodeCompilerFactory.SAFE) {
-            if (NodeCompilerFactory.UNSAFE_CALLS.contains(vcallNode.getName())) {
-                throw new NotCompilableException("Can't compile call safely: " + node);
-            }
+        if (SAFE && UNSAFE_CALLS.contains(vcallNode.getName())) {
+            throw new NotCompilableException("Can't compile call safely: " + node);
         }
         
         context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
@@ -2527,7 +2519,7 @@ public class NodeCompilerFactory {
      */
     public static void confirmNodeIsSafe(Node node) {
         switch (node.nodeId) {
-        case NodeTypes.ARGSNODE:
+        case ARGSNODE:
             ArgsNode argsNode = (ArgsNode)node;
             // FIXME: We can't compile cases like def(a=(b=1)) because the variables
             // in the arg list get ordered differently than you might expect (b comes first)

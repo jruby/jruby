@@ -44,12 +44,12 @@ public class NextNode extends Node {
     private final Node valueNode;
     
     public NextNode(ISourcePosition position) {
-        super(position, NodeTypes.NEXTNODE);
+        super(position, NodeType.NEXTNODE);
         valueNode = null;
     }
 
     public NextNode(ISourcePosition position, Node valueNode) {
-        super(position, NodeTypes.NEXTNODE);
+        super(position, NodeType.NEXTNODE);
         this.valueNode = valueNode;
     }
     

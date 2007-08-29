@@ -53,7 +53,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     }
     
     public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
-        super(position, NodeTypes.FCALLNODE);
+        super(position, NodeType.FCALLNODE);
         setArgsNode(argsNode);
         this.iterNode = iterNode;
         this.callAdapter = new CallAdapter.DefaultCallAdapter(name.intern(), CallType.FUNCTIONAL);

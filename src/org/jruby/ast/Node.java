@@ -51,12 +51,12 @@ public abstract class Node implements ISourcePositionHolder {
     static final List<Node> EMPTY_LIST = new ArrayList<Node>();
     static final List<CommentNode> EMPTY_COMMENT_LIST = new ArrayList<CommentNode>();
     
-    public final int nodeId;
+    public final NodeType nodeId;
 
     private ISourcePosition position;
     static private ArrayList<CommentNode> comments;
 
-    public Node(ISourcePosition position, int id) {
+    public Node(ISourcePosition position, NodeType id) {
         this.position = position;
         this.nodeId = id;
     }

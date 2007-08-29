@@ -45,7 +45,7 @@ public class AndNode extends Node implements BinaryOperatorNode {
     private final Node secondNode;
 
     public AndNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position, NodeTypes.ANDNODE);
+        super(position, NodeType.ANDNODE);
         this.firstNode = firstNode;
         this.secondNode = secondNode;
     }

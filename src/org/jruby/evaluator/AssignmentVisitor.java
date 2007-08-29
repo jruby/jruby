@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -44,7 +45,7 @@ import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.NodeTypes;
+import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -60,34 +61,34 @@ public class AssignmentVisitor {
         IRubyObject result = null;
         
         switch (node.nodeId) {
-        case NodeTypes.ATTRASSIGNNODE:
+        case ATTRASSIGNNODE:
             attrAssignNode(runtime, context, self, node, value, block);
             break;
-        case NodeTypes.CALLNODE:
+        case CALLNODE:
             callNode(runtime, context, self, node, value, block);
             break;
-        case NodeTypes.CLASSVARASGNNODE:
+        case CLASSVARASGNNODE:
             classVarAsgnNode(context, node, value);
             break;
-        case NodeTypes.CLASSVARDECLNODE:
+        case CLASSVARDECLNODE:
             classVarDeclNode(runtime, context, node, value);
             break;
-        case NodeTypes.CONSTDECLNODE:
+        case CONSTDECLNODE:
             constDeclNode(runtime, context, self, node, value, block);
             break;
-        case NodeTypes.DASGNNODE:
+        case DASGNNODE:
             dasgnNode(context, node, value);
             break;
-        case NodeTypes.GLOBALASGNNODE:
+        case GLOBALASGNNODE:
             globalAsgnNode(runtime, node, value);
             break;
-        case NodeTypes.INSTASGNNODE:
+        case INSTASGNNODE:
             instAsgnNode(self, node, value);
             break;
-        case NodeTypes.LOCALASGNNODE:
+        case LOCALASGNNODE:
             localAsgnNode(context, node, value);
             break;
-        case NodeTypes.MULTIPLEASGNNODE:
+        case MULTIPLEASGNNODE:
             result = multipleAsgnNode(runtime, context, self, node, value, check);
             break;
         default:
@@ -205,7 +206,7 @@ public class AssignmentVisitor {
 
         Node argsNode = node.getArgsNode();
         if (argsNode != null) {
-            if (argsNode.nodeId == NodeTypes.STARNODE) {
+            if (argsNode.nodeId == NodeType.STARNODE) {
                 // no check for '*'
             } else if (varLen < valueLen) {
                 assign(runtime, context, self, argsNode, value.subseqLight(varLen, valueLen), Block.NULL_BLOCK, callAsProc);

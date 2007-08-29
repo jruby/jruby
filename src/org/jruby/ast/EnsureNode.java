@@ -45,7 +45,7 @@ public class EnsureNode extends Node {
     private final Node ensureNode;
 
     public EnsureNode(ISourcePosition position, Node bodyNode, Node ensureNode) {
-        super(position, NodeTypes.ENSURENODE);
+        super(position, NodeType.ENSURENODE);
         this.bodyNode = bodyNode;
         this.ensureNode = ensureNode;
     }

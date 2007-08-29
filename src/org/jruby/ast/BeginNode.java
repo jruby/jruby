@@ -44,7 +44,7 @@ public class BeginNode extends Node {
     private final Node bodyNode;
 
     public BeginNode(ISourcePosition position, Node bodyNode) {
-        super(position, NodeTypes.BEGINNODE);
+        super(position, NodeType.BEGINNODE);
         this.bodyNode = bodyNode;
     }
 

@@ -59,7 +59,7 @@ public class WhileNode extends Node {
 
     public WhileNode(ISourcePosition position, Node conditionNode, Node bodyNode,
             boolean evalAtStart) {
-        super(position, NodeTypes.WHILENODE);
+        super(position, NodeType.WHILENODE);
         this.conditionNode = conditionNode;
         this.bodyNode = bodyNode;
         this.evaluateAtStart = evalAtStart;

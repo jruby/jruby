@@ -55,7 +55,7 @@ public class OpElementAsgnNode extends Node {
     public CallAdapter callAdapter;
 
     public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
-        super(position, NodeTypes.OPELEMENTASGNNODE);
+        super(position, NodeType.OPELEMENTASGNNODE);
         this.receiverNode = receiverNode;
         this.argsNode = argsNode;
         this.valueNode = valueNode;

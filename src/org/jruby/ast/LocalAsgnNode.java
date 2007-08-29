@@ -52,7 +52,7 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
     private final int location;
 
     public LocalAsgnNode(ISourcePosition position, String name, int location, Node valueNode) {
-        super(position, NodeTypes.LOCALASGNNODE);
+        super(position, NodeType.LOCALASGNNODE);
         this.name = name.intern();
         this.location = location;
         setValueNode(valueNode);

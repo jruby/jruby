@@ -45,7 +45,7 @@ public class Match3Node extends Node {
     public static final CallAdapter callAdapter = new CallAdapter.DefaultCallAdapter("=~", CallType.FUNCTIONAL);
 
     public Match3Node(ISourcePosition position, Node receiverNode, Node valueNode) {
-        super(position, NodeTypes.MATCH3NODE);
+        super(position, NodeType.MATCH3NODE);
 
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;

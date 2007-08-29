@@ -48,7 +48,7 @@ public class ClassNode extends Node implements IScopingNode {
     private final Node superNode;
     
     public ClassNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode, Node superNode) {
-        super(position, NodeTypes.CLASSNODE);
+        super(position, NodeType.CLASSNODE);
         this.cpath = cpath;
         this.scope = scope;
         this.bodyNode = bodyNode;

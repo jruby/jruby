@@ -46,7 +46,7 @@ public class BlockArgNode extends Node implements INameNode {
     private String name;
 
     public BlockArgNode(ISourcePosition position, int count, String name) {
-        super(position, NodeTypes.BLOCKARGNODE);
+        super(position, NodeType.BLOCKARGNODE);
         this.count = count;
         this.name = name;
     }

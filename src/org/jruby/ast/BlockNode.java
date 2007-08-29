@@ -42,7 +42,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class BlockNode extends ListNode {
     public BlockNode(ISourcePosition position) {
-        super(position, NodeTypes.BLOCKNODE);
+        super(position, NodeType.BLOCKNODE);
     }
 
     /**

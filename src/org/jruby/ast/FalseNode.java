@@ -43,7 +43,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class FalseNode extends Node implements INameNode {
     public FalseNode(ISourcePosition position) {
-        super(position, NodeTypes.FALSENODE);
+        super(position, NodeType.FALSENODE);
     }
 
     /**

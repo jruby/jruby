@@ -50,7 +50,7 @@ public class OpAsgnNode extends Node {
     public final CallAdapter variableAsgnCallAdapter;
 
     public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String operatorName) {
-        super(position, NodeTypes.OPASGNNODE);
+        super(position, NodeType.OPASGNNODE);
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
         this.variableCallAdapter = new CallAdapter.DefaultCallAdapter(variableName.intern(), CallType.NORMAL);

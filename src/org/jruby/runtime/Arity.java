@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -45,7 +46,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public final class Arity implements Serializable {
     private static final long serialVersionUID = 1L;
-    private static final Map arities = new HashMap();
+    private static final Map<Integer, Arity> arities = new HashMap<Integer, Arity>();
     private final int value;
     
     public final static Arity NO_ARGUMENTS = newArity(0);

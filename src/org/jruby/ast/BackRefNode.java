@@ -51,7 +51,7 @@ public class BackRefNode extends Node {
     private final char type;
 
     public BackRefNode(ISourcePosition position, char type) {
-        super(position, NodeTypes.BACKREFNODE);
+        super(position, NodeType.BACKREFNODE);
         this.type = type;
     }
 

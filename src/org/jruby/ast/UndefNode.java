@@ -44,7 +44,7 @@ public class UndefNode extends Node {
     private String name;
 
     public UndefNode(ISourcePosition position, String name) {
-        super(position, NodeTypes.UNDEFNODE);
+        super(position, NodeType.UNDEFNODE);
         this.name = name.intern();
     }
     

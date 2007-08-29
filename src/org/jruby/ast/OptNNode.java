@@ -44,7 +44,7 @@ public class OptNNode extends Node {
     private final Node bodyNode;
 
     public OptNNode(ISourcePosition position, Node bodyNode) {
-        super(position, NodeTypes.OPTNNODE);
+        super(position, NodeType.OPTNNODE);
         this.bodyNode = bodyNode;
     }
 

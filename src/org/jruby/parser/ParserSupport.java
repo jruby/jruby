@@ -79,7 +79,6 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.NodeTypes;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
@@ -448,11 +447,11 @@ public class ParserSupport {
             if (node == null) return false;
 
             switch (node.nodeId) {
-            case NodeTypes.NEWLINENODE:
+            case NEWLINENODE:
                 node = ((NewlineNode) node).getNextNode();
                 continue breakLoop;
-            case NodeTypes.BREAKNODE: case NodeTypes.NEXTNODE: case NodeTypes.REDONODE:
-            case NodeTypes.RETRYNODE: case NodeTypes.RETURNNODE:
+            case BREAKNODE: case NEXTNODE: case REDONODE:
+            case RETRYNODE: case RETURNNODE:
                 return true;
             default:
                 return false;
@@ -488,24 +487,24 @@ public class ParserSupport {
             if (node == null) return true;
             
             switch (node.nodeId) {
-            case NodeTypes.BEGINNODE:
+            case BEGINNODE:
                 node = ((BeginNode) node).getBodyNode();
                 continue expressionLoop;
-            case NodeTypes.BLOCKNODE:
+            case BLOCKNODE:
                 node = ((BlockNode) node).getLast();
                 continue expressionLoop;
-            case NodeTypes.BREAKNODE:
+            case BREAKNODE:
                 node = ((BreakNode) node).getValueNode();
                 continue expressionLoop;
-            case NodeTypes.CLASSNODE: case NodeTypes.DEFNNODE: case NodeTypes.DEFSNODE:
-            case NodeTypes.MODULENODE: case NodeTypes.NEXTNODE: case NodeTypes.REDONODE:
-            case NodeTypes.RETRYNODE: case NodeTypes.RETURNNODE: case NodeTypes.UNTILNODE:
-            case NodeTypes.WHILENODE:
+            case CLASSNODE: case DEFNNODE: case DEFSNODE:
+            case MODULENODE: case NEXTNODE: case REDONODE:
+            case RETRYNODE: case RETURNNODE: case UNTILNODE:
+            case WHILENODE:
                 return false;
-            case NodeTypes.IFNODE:
+            case IFNODE:
                 return isExpression(((IfNode) node).getThenBody()) &&
                   isExpression(((IfNode) node).getElseBody());
-            case NodeTypes.NEWLINENODE:
+            case NEWLINENODE:
                 node = ((NewlineNode) node).getNextNode();
                 continue expressionLoop;
             default: // Node
@@ -545,10 +544,10 @@ public class ParserSupport {
             if (node == null) return;
             
             switch (node.nodeId) {
-            case NodeTypes.NEWLINENODE:
+            case NEWLINENODE:
                 node = ((NewlineNode) node).getNextNode();
                 continue uselessLoop;
-            case NodeTypes.CALLNODE: {
+            case CALLNODE: {
                 String name = ((CallNode) node).getName().intern();
                 
                 if (name == "+" || name == "-" || name == "*" || name == "/" || name == "%" || 
@@ -559,32 +558,32 @@ public class ParserSupport {
                 }
                 return;
             }
-            case NodeTypes.BACKREFNODE: case NodeTypes.DVARNODE: case NodeTypes.GLOBALVARNODE:
-            case NodeTypes.LOCALVARNODE: case NodeTypes.NTHREFNODE: case NodeTypes.CLASSVARNODE:
-            case NodeTypes.INSTVARNODE:
+            case BACKREFNODE: case DVARNODE: case GLOBALVARNODE:
+            case LOCALVARNODE: case NTHREFNODE: case CLASSVARNODE:
+            case INSTVARNODE:
                 handleUselessWarn(node, "a variable"); return;
             // FIXME: Temporarily disabling because this fires way too much running Rails tests. JRUBY-518
-            /*case NodeTypes.CONSTNODE:
+            /*case CONSTNODE:
                 handleUselessWarn(node, "a constant"); return;*/
-            case NodeTypes.BIGNUMNODE: case NodeTypes.DREGEXPNODE: case NodeTypes.DSTRNODE:
-            case NodeTypes.FIXNUMNODE: case NodeTypes.FLOATNODE: case NodeTypes.REGEXPNODE:
-            case NodeTypes.STRNODE: case NodeTypes.SYMBOLNODE:
+            case BIGNUMNODE: case DREGEXPNODE: case DSTRNODE:
+            case FIXNUMNODE: case FLOATNODE: case REGEXPNODE:
+            case STRNODE: case SYMBOLNODE:
                 handleUselessWarn(node, "a literal"); return;
             // FIXME: Temporarily disabling because this fires way too much running Rails tests. JRUBY-518
-            /*case NodeTypes.CLASSNODE: case NodeTypes.COLON2NODE:
+            /*case CLASSNODE: case COLON2NODE:
                 handleUselessWarn(node, "::"); return;*/
-            case NodeTypes.DOTNODE:
+            case DOTNODE:
                 handleUselessWarn(node, ((DotNode) node).isExclusive() ? "..." : ".."); return;
-            case NodeTypes.DEFINEDNODE:
+            case DEFINEDNODE:
                 handleUselessWarn(node, "defined?"); return;
-            case NodeTypes.FALSENODE:
+            case FALSENODE:
                 handleUselessWarn(node, "false"); return;
-            case NodeTypes.NILNODE: 
+            case NILNODE: 
                 handleUselessWarn(node, "nil"); return;
             // FIXME: Temporarily disabling because this fires way too much running Rails tests. JRUBY-518
-            /*case NodeTypes.SELFNODE:
+            /*case SELFNODE:
                 handleUselessWarn(node, "self"); return;*/
-            case NodeTypes.TRUENODE:
+            case TRUENODE:
                 handleUselessWarn(node, "true"); return;
             default: return;
             }

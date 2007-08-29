@@ -48,7 +48,7 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
     private final INameNode constNode;
 
     public ConstDeclNode(ISourcePosition position, String name, INameNode constNode, Node valueNode) {
-        super(position, NodeTypes.CONSTDECLNODE);
+        super(position, NodeType.CONSTDECLNODE);
         if (name != null) name.intern();
         this.name = name;
         this.constNode = constNode;

@@ -42,7 +42,7 @@ public class Match2Node extends Node {
     private final Node valueNode;
 
     public Match2Node(ISourcePosition position, Node receiverNode, Node valueNode) {
-        super(position, NodeTypes.MATCH2NODE);
+        super(position, NodeType.MATCH2NODE);
 
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;

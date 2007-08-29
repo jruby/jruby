@@ -43,12 +43,12 @@ public class DSymbolNode extends ListNode {
      * @param node to be copied
      */
 	public DSymbolNode(ISourcePosition position, DStrNode node) {
-		super(position, NodeTypes.DSYMBOLNODE);
+		super(position, NodeType.DSYMBOLNODE);
 		addAll(node);
 	}
     
     public DSymbolNode(ISourcePosition position) {
-        super(position, NodeTypes.DSYMBOLNODE);
+        super(position, NodeType.DSYMBOLNODE);
     }
 
 	public Instruction accept(NodeVisitor visitor) {

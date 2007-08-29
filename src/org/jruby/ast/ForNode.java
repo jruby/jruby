@@ -55,7 +55,7 @@ public class ForNode extends IterNode {
         // 'For's are implemented as blocks in evaluation, but they have no scope so we
         // just deal with this lack of scope throughout its lifespan.  We should probably
         // change the way this works to get rid of multiple null checks.
-        super(position, varNode, null, bodyNode, NodeTypes.FORNODE);
+        super(position, varNode, null, bodyNode, NodeType.FORNODE);
         
         this.iterNode = iterNode;
     }

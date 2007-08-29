@@ -52,7 +52,7 @@ public class NewlineNode extends Node {
     private final Node nextNode;
 
     public NewlineNode(ISourcePosition position, Node nextNode) {
-        super(position, NodeTypes.NEWLINENODE);
+        super(position, NodeType.NEWLINENODE);
 
         this.nextNode = nextNode;
     }

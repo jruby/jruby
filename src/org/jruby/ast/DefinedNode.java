@@ -45,7 +45,7 @@ public class DefinedNode extends Node {
     private final Node expressionNode;
 
     public DefinedNode(ISourcePosition position, Node expressionNode) {
-        super(position, NodeTypes.DEFINEDNODE);
+        super(position, NodeType.DEFINEDNODE);
         this.expressionNode = expressionNode;
     }
 

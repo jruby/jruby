@@ -49,7 +49,7 @@ public class ClassVarAsgnNode extends AssignableNode implements INameNode {
      * @param valueNode  Node used to compute the new value when the assignment is evaled
      */
     public ClassVarAsgnNode(ISourcePosition position, String name, Node valueNode) {
-        super(position, NodeTypes.CLASSVARASGNNODE);
+        super(position, NodeType.CLASSVARASGNNODE);
         this.name = name.intern();
         
         setValueNode(valueNode);

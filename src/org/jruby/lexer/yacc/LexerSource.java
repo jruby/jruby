@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -86,7 +87,7 @@ public class LexerSource {
     private boolean nextCharIsOnANewLine = true;
     
     // Store each line into this list if not null.
-    private List list;
+    private List<String> list;
     
     // For 'list' and only populated if list is not null.
     private StringBuffer lineBuffer;
@@ -99,7 +100,7 @@ public class LexerSource {
      * @param line starting line number for source (used by eval)
      * @param extraPositionInformation will gives us extra information that an IDE may want
      */
-    private LexerSource(String sourceName, Reader reader, List list, int line, 
+    private LexerSource(String sourceName, Reader reader, List<String> list, int line, 
             boolean extraPositionInformation) {
         this.sourceName = sourceName;
         this.reader = reader;
@@ -299,7 +300,7 @@ public class LexerSource {
      * @param content the data of the source
      * @return the new source
      */
-    public static LexerSource getSource(String name, Reader content, List list,
+    public static LexerSource getSource(String name, Reader content, List<String> list,
             ParserConfiguration configuration) {
         return new LexerSource(name, content, list, configuration.getLineNumber(), 
                 configuration.hasExtraPositionInformation());

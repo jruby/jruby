@@ -44,12 +44,12 @@ public class BreakNode extends Node {
     private final Node valueNode;
     
     public BreakNode(ISourcePosition position) {
-        super(position, NodeTypes.BREAKNODE);
+        super(position, NodeType.BREAKNODE);
         valueNode = null;
     }
     
     public BreakNode(ISourcePosition position, Node valueNode) {
-        super(position, NodeTypes.BREAKNODE);
+        super(position, NodeType.BREAKNODE);
         this.valueNode = valueNode;
     }
 

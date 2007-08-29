@@ -53,7 +53,7 @@ public class SClassNode extends Node {
     private final Node bodyNode;
 
     public SClassNode(ISourcePosition position, Node recvNode, StaticScope scope, Node bodyNode) {
-        super(position, NodeTypes.SCLASSNODE);
+        super(position, NodeType.SCLASSNODE);
         this.receiverNode = recvNode;
         this.scope = scope;
         this.bodyNode = bodyNode;

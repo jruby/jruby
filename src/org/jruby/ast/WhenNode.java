@@ -46,7 +46,7 @@ public class WhenNode extends Node {
     private final Node nextCase;
 
     public WhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
-        super(position, NodeTypes.WHENNODE);
+        super(position, NodeType.WHENNODE);
         this.expressionNodes = expressionNodes;
         this.bodyNode = bodyNode;
         this.nextCase = nextCase;

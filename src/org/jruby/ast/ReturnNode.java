@@ -45,7 +45,7 @@ public class ReturnNode extends Node {
     private Object target;
 
     public ReturnNode(ISourcePosition position, Node valueNode) {
-        super(position, NodeTypes.RETURNNODE);
+        super(position, NodeType.RETURNNODE);
         this.valueNode = valueNode;
     }
 

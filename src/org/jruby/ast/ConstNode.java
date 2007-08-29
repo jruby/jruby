@@ -45,7 +45,7 @@ public class ConstNode extends Node implements INameNode {
     private String name;
     
     public ConstNode(ISourcePosition position, String name) {
-        super(position, NodeTypes.CONSTNODE);
+        super(position, NodeType.CONSTNODE);
         this.name = name.intern();
     }
     

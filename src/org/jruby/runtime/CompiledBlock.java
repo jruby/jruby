@@ -27,11 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.NodeTypes;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -43,36 +40,23 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CompiledBlock extends Block {
     private CompiledBlockCallback callback;
     private boolean hasMultipleArgsHead;
-    private int argsNodeId;
+    private int argumentType;
 
     public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
-            CompiledBlockCallback callback, boolean hasMultipleArgsHead, int nodeId) {
+            CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         this(self,
              context.getCurrentFrame().duplicate(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
-                dynamicScope, arity, callback, hasMultipleArgsHead, nodeId);
+                dynamicScope, arity, callback, hasMultipleArgsHead, argumentType);
     }
 
     private CompiledBlock(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
-        DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int nodeId) {
-        super(null, self, frame, visibility, klass, dynamicScope);
-        this.arity = arity;
+        DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+        super(null, self, arity, frame, visibility, klass, dynamicScope);
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
-        this.argsNodeId = nodeId;
-    }
-    
-    protected void pre(ThreadContext context, RubyModule klass) {
-        context.preYieldSpecificBlock(this, klass);
-    }
-    
-    protected void post(ThreadContext context) {
-        context.postYield();
-    }
-
-    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
+        this.argumentType = argumentType;
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
@@ -80,19 +64,14 @@ public class CompiledBlock extends Block {
             self = this.self;
             frame.setSelf(self);
         }
-        IRubyObject[] realArgs = null;
-        if (argsNodeId != 0) {
-            if (aValue) {
-                // handle as though it's just an array coming in...i.e. it should be multiassigned or just assigned as is to var 0.
-                // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], since single vars will want that anyway
-                realArgs = setupBlockArgs(context, args, self);
-            } else {
-                realArgs = setupBlockArg(context, args, self);
-            }
-        } else {
-            realArgs = IRubyObject.NULL_ARRAY;
-        }
+
+        // handle as though it's just an array coming in...i.e. it should be multiassigned or just 
+        // assigned as is to var 0.
+        // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], 
+        // since single vars will want that anyway
         try {
+            IRubyObject[] realArgs = aValue ? 
+                    setupBlockArgs(context, args, self) : setupBlockArg(context, args, self); 
             pre(context, klass);
             return callback.call(context, self, realArgs);
         } finally {
@@ -101,42 +80,39 @@ public class CompiledBlock extends Block {
     }
 
     private IRubyObject[] setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
-        Ruby runtime = self.getRuntime();
-        
-        switch (argsNodeId) {
-        case NodeTypes.ZEROARGNODE:
+        switch (argumentType) {
+        case ZERO_ARGS:
             return IRubyObject.NULL_ARRAY;
-        case NodeTypes.MULTIPLEASGNNODE:
+        case MULTIPLE_ASSIGNMENT:
             return new IRubyObject[] {value};
         default:
             int length = arrayLength(value);
             switch (length) {
             case 0:
-                value = runtime.getNil();
+                value = context.getRuntime().getNil();
                 break;
             case 1:
                 value = ((RubyArray)value).eltInternal(0);
                 break;
             default:
-                runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
+                context.getRuntime().getWarnings().warn("multiple values for a block parameter (" +
+                        length + " for 1)");
             }
             return new IRubyObject[] {value};
         }
     }
 
     private IRubyObject[] setupBlockArg(ThreadContext context, IRubyObject value, IRubyObject self) {
-        Ruby runtime = self.getRuntime();
-        
-        switch (argsNodeId) {
-        case NodeTypes.ZEROARGNODE:
+        switch (argumentType) {
+        case ZERO_ARGS:
             return IRubyObject.NULL_ARRAY;
-        case NodeTypes.MULTIPLEASGNNODE:
-            return new IRubyObject[] {ArgsUtil.convertToRubyArray(runtime, value, hasMultipleArgsHead)};
+        case MULTIPLE_ASSIGNMENT:
+            return new IRubyObject[] {ArgsUtil.convertToRubyArray(context.getRuntime(), value, hasMultipleArgsHead)};
         default:
         // FIXME: the test below would be enabled if we could avoid processing block args for the cases where we don't have any args
         // since we can't do that just yet, it's disabled
             if (value == null) {
-                runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
+                context.getRuntime().getWarnings().warn("multiple values for a block parameter (0 for 1)");
             }
             return new IRubyObject[] {value};
         }
@@ -144,10 +120,6 @@ public class CompiledBlock extends Block {
 
     public Block cloneBlock() {
         return new CompiledBlock(self, frame.duplicate(), visibility, klass, 
-                dynamicScope.cloneScope(), arity, callback, hasMultipleArgsHead, argsNodeId);
-    }
-
-    public Arity arity() {
-        return arity;
+                dynamicScope.cloneScope(), arity, callback, hasMultipleArgsHead, argumentType);
     }
 }

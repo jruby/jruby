@@ -54,7 +54,7 @@ public class RegexpNode extends Node implements ILiteralNode {
     public org.jruby.RubyRegexp literal;
     
     public RegexpNode(ISourcePosition position, ByteList value, int options) {
-        super(position, NodeTypes.REGEXPNODE);
+        super(position, NodeType.REGEXPNODE);
 
         this.value = value;
         this.options = options;

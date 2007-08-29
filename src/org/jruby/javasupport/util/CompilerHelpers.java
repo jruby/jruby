@@ -10,6 +10,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
+import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.internal.runtime.methods.CallConfiguration;
@@ -39,19 +40,20 @@ import org.jruby.util.ByteList;
  */
 public class CompilerHelpers {
     public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, 
-            String[] staticScopeNames, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeId) {
+            String[] staticScopeNames, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeType) {
         StaticScope staticScope = 
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
         
         return new CompiledBlock(context, self, Arity.createArity(arity), 
-                new DynamicScope(staticScope, context.getCurrentScope()), callback, hasMultipleArgsHead, argsNodeId);
+                new DynamicScope(staticScope, context.getCurrentScope()), callback, hasMultipleArgsHead, argsNodeType);
     }
+    
     public static CompiledSharedScopeBlock createSharedScopeBlock(ThreadContext context, IRubyObject self, int arity, 
-            CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeId) {
+            CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeType) {
         
         return new CompiledSharedScopeBlock(context, self, Arity.createArity(arity), 
-                context.getCurrentScope(), callback, hasMultipleArgsHead, argsNodeId);
+                context.getCurrentScope(), callback, hasMultipleArgsHead, argsNodeType);
     }
     
     public static IRubyObject def(ThreadContext context, IRubyObject self, Class compiledClass, String name, String javaName, String[] scopeNames,

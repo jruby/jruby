@@ -50,7 +50,7 @@ public class UntilNode extends Node {
     }
 
     public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode, boolean evaluateAtStart) {
-        super(position, NodeTypes.UNTILNODE);
+        super(position, NodeType.UNTILNODE);
         this.conditionNode = conditionNode;
         this.bodyNode = bodyNode;
         this.evaluateAtStart = evaluateAtStart;

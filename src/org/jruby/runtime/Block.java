@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -38,7 +39,7 @@ import org.jruby.RubyProc;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.NodeTypes;
+import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluationState;
@@ -50,6 +51,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  *  Internal live representation of a block ({...} or do ... end).
  */
 public class Block {
+    // FIXME: Maybe not best place, but move it to a good home
+    public static final int ZERO_ARGS = 0;
+    public static final int MULTIPLE_ASSIGNMENT = 1;
+    public static final int ARRAY = 2;
+    
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
@@ -116,16 +122,19 @@ public class Block {
 
     public Block(IterNode iterNode, IRubyObject self, Frame frame,
         Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
-    	
-        //assert method != null;
-
+        this(iterNode, self,iterNode == null ? null : Arity.procArityOf(iterNode.getVarNode()),
+                frame, visibility, klass, dynamicScope);
+    }
+    
+    public Block(IterNode iterNode, IRubyObject self, Arity arity, Frame frame,
+            Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
         this.iterNode = iterNode;
         this.self = self;
+        this.arity = arity;
         this.frame = frame;
         this.visibility = visibility;
         this.klass = klass;
         this.dynamicScope = dynamicScope;
-        this.arity = iterNode == null ? null : Arity.procArityOf(iterNode.getVarNode());
     }
     
     public static Block createBinding(Frame frame, DynamicScope dynamicScope) {
@@ -237,9 +246,9 @@ public class Block {
         Ruby runtime = self.getRuntime();
         
         switch (varNode.nodeId) {
-        case NodeTypes.ZEROARGNODE:
+        case ZEROARGNODE:
             break;
-        case NodeTypes.MULTIPLEASGNNODE:
+        case MULTIPLEASGNNODE:
             value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode, (RubyArray)value, false);
             break;
         default:
@@ -262,9 +271,9 @@ public class Block {
         Ruby runtime = self.getRuntime();
         
         switch (varNode.nodeId) {
-        case NodeTypes.ZEROARGNODE:
+        case ZEROARGNODE:
             return;
-        case NodeTypes.MULTIPLEASGNNODE:
+        case MULTIPLEASGNNODE:
             value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode,
                     ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null), false);
             break;
@@ -370,5 +379,21 @@ public class Block {
      */
     public boolean isGiven() {
         return true;
+    }
+    
+    /**
+     * Compiled codes way of examining arguments
+     * 
+     * @param nodeId to be considered
+     * @return something not linked to AST and a constant to make compiler happy
+     */
+    public static int asArgumentType(NodeType nodeId) {
+        if (nodeId == null) return ZERO_ARGS;
+        
+        switch (nodeId) {
+        case ZEROARGNODE: return ZERO_ARGS;
+        case MULTIPLEASGNNODE: return MULTIPLE_ASSIGNMENT;
+        }
+        return ARRAY;
     }
 }

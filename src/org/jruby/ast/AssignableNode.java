@@ -40,7 +40,7 @@ import org.jruby.runtime.Arity;
 public abstract class AssignableNode extends Node implements IArityNode {
     private Node valueNode;
     
-    public AssignableNode(ISourcePosition position, int id) {
+    public AssignableNode(ISourcePosition position, NodeType id) {
         super(position, id);
     }
     

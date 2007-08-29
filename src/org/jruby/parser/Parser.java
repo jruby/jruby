@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -31,7 +32,6 @@
 package org.jruby.parser;
 
 import java.io.Reader;
-import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -69,19 +69,20 @@ public class Parser {
         }
     }
     
+    @SuppressWarnings("unchecked")
     public Node parse(String file, Reader content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
-        List list = null;
+        RubyArray list = null;
         
         if (!configuration.isEvalParse() && scriptLines != null) {
             if (scriptLines instanceof RubyHash) {
                 RubyString filename = runtime.newString(file);
                 IRubyObject object = ((RubyHash) scriptLines).aref(filename);
                 
-                list = (List) (object instanceof RubyArray ? object : runtime.newArray()); 
+                list = (RubyArray) (object instanceof RubyArray ? object : runtime.newArray()); 
                 
-                ((RubyHash) scriptLines).aset(filename, (RubyArray) list);
+                ((RubyHash) scriptLines).aset(filename, list);
             }
         }
 

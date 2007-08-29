@@ -43,7 +43,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class TrueNode extends Node implements INameNode {
     public TrueNode(ISourcePosition position) {
-        super(position, NodeTypes.TRUENODE);
+        super(position, NodeType.TRUENODE);
     }
 
     /**

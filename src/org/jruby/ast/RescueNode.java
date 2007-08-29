@@ -47,7 +47,7 @@ public class RescueNode extends Node {
     private final Node elseNode;
     
     public RescueNode(ISourcePosition position, Node bodyNode, RescueBodyNode rescueNode, Node elseNode) {
-        super(position, NodeTypes.RESCUENODE);
+        super(position, NodeType.RESCUENODE);
         this.bodyNode = bodyNode;
         this.rescueNode = rescueNode;
         this.elseNode = elseNode;

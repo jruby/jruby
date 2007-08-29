@@ -47,7 +47,7 @@ public class IfNode extends Node {
     private final Node elseBody;
 
     public IfNode(ISourcePosition position, Node condition, Node thenBody, Node elseBody) {
-        super(position, NodeTypes.IFNODE);
+        super(position, NodeType.IFNODE);
         this.condition = condition;
         this.thenBody = thenBody;
         this.elseBody = elseBody;

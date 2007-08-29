@@ -42,12 +42,12 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class DXStrNode extends ListNode implements ILiteralNode {
     public DXStrNode(ISourcePosition position, DStrNode node) {
-        super(position, NodeTypes.DXSTRNODE);
+        super(position, NodeType.DXSTRNODE);
         addAll(node);
     }
     
     public DXStrNode(ISourcePosition position) {
-        super(position, NodeTypes.DXSTRNODE);
+        super(position, NodeType.DXSTRNODE);
     }
 
     /**

@@ -42,7 +42,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class RedoNode extends Node {
     public RedoNode(ISourcePosition position) {
-        super(position, NodeTypes.REDONODE);
+        super(position, NodeType.REDONODE);
     }
 
     /**

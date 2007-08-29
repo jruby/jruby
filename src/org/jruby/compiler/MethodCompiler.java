@@ -9,6 +9,7 @@
 
 package org.jruby.compiler;
 
+import org.jruby.ast.NodeType;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.ByteList;
@@ -205,7 +206,7 @@ public interface MethodCompiler {
      * @param arity The arity of the block's argument list
      * @param body The callback which will generate the closure's body
      */
-    public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, int argsNodeId);
+    public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId);
     
     /**
      * Create a new closure (block) for a for loop with the given call arity and
@@ -215,7 +216,7 @@ public interface MethodCompiler {
      * @param arity The arity of the block's argument list
      * @param body The callback which will generate the closure's body
      */
-    public void createNewForLoop(int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, int argsNodeId);
+    public void createNewForLoop(int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId);
     
     /**
      * Define a new method with the given name, arity, local variable count, and body callback.

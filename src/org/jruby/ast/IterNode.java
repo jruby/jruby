@@ -49,11 +49,11 @@ public class IterNode extends Node {
     private StaticScope scope;
 
     public IterNode(ISourcePosition position, Node varNode, StaticScope scope, Node bodyNode) {
-        this(position, varNode, scope, bodyNode, NodeTypes.ITERNODE);
+        this(position, varNode, scope, bodyNode, NodeType.ITERNODE);
     }
     
     public IterNode(ISourcePosition position, Node varNode, StaticScope scope, Node bodyNode, 
-            int id) {
+            NodeType id) {
         super(position, id);
         this.varNode = varNode;
         this.scope = scope;

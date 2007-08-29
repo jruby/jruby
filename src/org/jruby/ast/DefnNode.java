@@ -49,7 +49,7 @@ public class DefnNode extends MethodDefNode implements INameNode {
     
     public DefnNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
             StaticScope scope, Node bodyNode, Visibility visibility) {
-        super(position, nameNode, argsNode, scope, bodyNode, NodeTypes.DEFNNODE);
+        super(position, nameNode, argsNode, scope, bodyNode, NodeType.DEFNNODE);
         
         this.visibility = visibility;
     }

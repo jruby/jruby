@@ -44,7 +44,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     private Node argsNode;
 
     public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
-        super(position, NodeTypes.ATTRASSIGNNODE);
+        super(position, NodeType.ATTRASSIGNNODE);
         
         this.receiverNode = receiverNode;
         this.name = name.intern();

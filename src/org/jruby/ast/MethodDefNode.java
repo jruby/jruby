@@ -42,7 +42,7 @@ public abstract class MethodDefNode extends Node implements INameNode {
 	protected final Node bodyNode;
 
 	public MethodDefNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
-	        StaticScope scope, Node bodyNode, int id) {
+	        StaticScope scope, Node bodyNode, NodeType id) {
 		super(position, id);
 		this.nameNode = nameNode;
 		this.argsNode = argsNode;

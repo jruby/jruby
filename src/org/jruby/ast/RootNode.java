@@ -50,7 +50,7 @@ public class RootNode extends Node {
     private Node bodyNode;
 
     public RootNode(ISourcePosition position, DynamicScope scope, Node bodyNode) {
-        super(position, NodeTypes.ROOTNODE);
+        super(position, NodeType.ROOTNODE);
         
         this.scope = scope;
         this.staticScope = scope.getStaticScope();

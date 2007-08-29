@@ -42,7 +42,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class DStrNode extends ListNode implements ILiteralNode {
     public DStrNode(ISourcePosition position) {
-        super(position, NodeTypes.DSTRNODE);
+        super(position, NodeType.DSTRNODE);
     }
 
     /**

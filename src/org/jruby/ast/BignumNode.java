@@ -47,7 +47,7 @@ public class BignumNode extends Node implements ILiteralNode {
     private BigInteger value;
 
     public BignumNode(ISourcePosition position, BigInteger value) {
-        super(position, NodeTypes.BIGNUMNODE);
+        super(position, NodeType.BIGNUMNODE);
         this.value = value;
     }
 

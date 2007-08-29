@@ -43,7 +43,7 @@ public class ArgumentNode extends Node implements INameNode {
     private String identifier;
     
     public ArgumentNode(ISourcePosition position, String identifier) {
-        super(position, NodeTypes.ARGUMENTNODE);
+        super(position, NodeType.ARGUMENTNODE);
         
         this.identifier = identifier.intern();
     }

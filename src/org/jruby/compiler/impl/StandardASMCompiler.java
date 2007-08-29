@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -51,6 +52,7 @@ import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.ast.NodeType;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.ASTInspector;
@@ -117,7 +119,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private static final int VARS_ARRAY_INDEX = 6;
     private static final int NIL_INDEX = 7;
     private static final int EXCEPTION_INDEX = 8;
-
+    
     private String classname;
     private String sourcename;
 
@@ -125,7 +127,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private SkinnyMethodAdapter clinitMethod;
     int methodIndex = -1;
     int innerIndex = -1;
-
+    
     /** Creates a new instance of StandardCompilerContext */
     public StandardASMCompiler(String classname, String sourcename) {
         this.classname = classname;
@@ -136,7 +138,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return classWriter.toByteArray();
     }
 
-    public Class loadClass(JRubyClassLoader classLoader) throws ClassNotFoundException {
+    public Class<?> loadClass(JRubyClassLoader classLoader) throws ClassNotFoundException {
         classLoader.defineClass(cg.c(classname), classWriter.toByteArray());
         return classLoader.loadClass(cg.c(classname));
     }
@@ -662,7 +664,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void performLogicalOr(BranchCallback longBranch) {
-            Label afterJmp = new Label();
+            // FIXME: after jump is not in here.  Will if ever be?
+            //Label afterJmp = new Label();
             Label falseJmp = new Label();
 
             // dup it since we need to return appropriately if it's false
@@ -771,7 +774,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 //        method.label(normalBreak);
         }
 
-        public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, int argsNodeId) {
+        public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId) {
             String closureMethodName = "closure" + ++innerIndex;
             String closureFieldName = "_" + closureMethodName;
             
@@ -809,13 +812,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.getstatic(classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
             method.ldc(Boolean.valueOf(hasMultipleArgsHead));
-            method.ldc(Integer.valueOf(argsNodeId));
+            method.ldc(Block.asArgumentType(argsNodeId));
 
             invokeUtilityMethod("createBlock", cg.sig(CompiledBlock.class,
                     cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, String[].class, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE)));
         }
 
-        public void createNewForLoop(int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, int argsNodeId) {
+        public void createNewForLoop(int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId) {
             String closureMethodName = "closure" + ++innerIndex;
             String closureFieldName = "_" + closureMethodName;
             
@@ -851,7 +854,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.getstatic(classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
             method.ldc(Boolean.valueOf(hasMultipleArgsHead));
-            method.ldc(Integer.valueOf(argsNodeId));
+            method.ldc(Block.asArgumentType(argsNodeId));
 
             invokeUtilityMethod("createSharedScopeBlock", cg.sig(CompiledSharedScopeBlock.class,
                     cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE)));

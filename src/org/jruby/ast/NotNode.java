@@ -44,7 +44,7 @@ public class NotNode extends Node {
     private final Node conditionNode;
 
     public NotNode(ISourcePosition position, Node conditionNode) {
-        super(position, NodeTypes.NOTNODE);
+        super(position, NodeType.NOTNODE);
         this.conditionNode = conditionNode;
     }
 
