@@ -1,0 +1,12 @@
+#!/usr/bin/ruby
+# -*- mode: ruby -*-
+# $Id: sumcol.jruby,v 1.1 2007-06-10 22:33:44 igouy-guest Exp $
+# http://www.bagley.org/~doug/shootout/
+# from: Mathieu Bouchard, revised by Dave Anderson
+
+count = 0
+l=""
+STDIN.each{ |l|
+    count += l.to_i
+}
+puts count
