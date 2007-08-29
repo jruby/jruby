@@ -1975,7 +1975,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             throw new NotCompilableException("Can\'t compile non-local return");
         }
 
-        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args, ASTInspector inspector) {
+        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args, ClosureCallback receiver, ASTInspector inspector) {
             throw new NotCompilableException("Can\'t compile def within closure yet");
         }
 
@@ -2096,7 +2096,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.end();
         }
 
-        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args, ASTInspector inspector) {
+        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args, ClosureCallback receiver, ASTInspector inspector) {
             // TODO: build arg list based on number of args, optionals, etc
             ++methodIndex;
             String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;
@@ -2112,6 +2112,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadThreadContext();
 
             loadSelf();
+            
+            if (receiver != null) receiver.compile(this);
 
             // load the class we're creating, for binding purposes
             getCompiledClass();
@@ -2130,8 +2132,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 method.getstatic(cg.p(CallConfiguration.class), "JAVA_FULL", cg.ci(CallConfiguration.class));
             }
             
-            invokeUtilityMethod("def", cg.sig(IRubyObject.class, 
-                    cg.params(ThreadContext.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE, CallConfiguration.class)));
+            if (receiver != null) {
+                invokeUtilityMethod("defs", cg.sig(IRubyObject.class, 
+                        cg.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE, CallConfiguration.class)));
+            } else {
+                invokeUtilityMethod("def", cg.sig(IRubyObject.class, 
+                        cg.params(ThreadContext.class, IRubyObject.class, Class.class, String.class, String.class, String[].class, Integer.TYPE, CallConfiguration.class)));
+            }
         }
         
         public void performReturn() {

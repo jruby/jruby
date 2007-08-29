@@ -105,6 +105,7 @@ import org.jruby.ast.ClassNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
+import org.jruby.ast.DefsNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
@@ -190,6 +191,9 @@ public class NodeCompilerFactory {
             break;
         case NodeTypes.DEFNNODE:
             compileDefn(node, context);
+            break;
+        case NodeTypes.DEFSNODE:
+            compileDefs(node, context);
             break;
         case NodeTypes.DOTNODE:
             compileDot(node, context);
@@ -1344,7 +1348,43 @@ public class NodeCompilerFactory {
         inspector.inspect(defnNode.getArgsNode());
         inspector.inspect(defnNode.getBodyNode());
         
-        context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args, inspector);
+        context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args, null, inspector);
+    }
+    
+    public static void compileDefs(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final DefsNode defsNode = (DefsNode)node;
+        final ArgsNode argsNode = defsNode.getArgsNode();
+        
+        ClosureCallback receiver = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                NodeCompilerFactory.compile(defsNode.getReceiverNode(), context);
+            }
+        };
+        
+        ClosureCallback body = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                if (defsNode.getBodyNode() != null) {
+                    NodeCompilerFactory.compile(defsNode.getBodyNode(), context);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+        
+        ClosureCallback args = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                compileArgs(argsNode, context);
+            }
+        };
+        
+        // inspect body and args
+        ASTInspector inspector = new ASTInspector();
+        inspector.inspect(defsNode.getArgsNode());
+        inspector.inspect(defsNode.getBodyNode());
+        
+        context.defineNewMethod(defsNode.getName(), defsNode.getScope(), body, args, receiver, inspector);
     }
     
     public static void compileArgs(Node node, MethodCompiler context) {

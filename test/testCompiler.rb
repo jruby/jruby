@@ -299,3 +299,8 @@ test_no_exception {
 test_no_exception {
     test_equal(3, compile_and_run("class Fixnum; def foo; 3; end; end; 1.foo"))
 }
+
+# singleton defs
+test_equal("foo", compile_and_run("a = 'bar'; def a.foo; 'foo'; end; a.foo"))
+test_equal("foo", compile_and_run("class Fixnum; def self.foo; 'foo'; end; end; Fixnum.foo"))
+test_equal("foo", compile_and_run("def String.foo; 'foo'; end; String.foo"))

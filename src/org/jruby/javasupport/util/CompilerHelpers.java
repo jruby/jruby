@@ -105,6 +105,56 @@ public class CompilerHelpers {
         return runtime.getNil();
     }
     
+    public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Class compiledClass, String name, String javaName, String[] scopeNames,
+            int arity, CallConfiguration callConfig) {
+        Ruby runtime = context.getRuntime();
+        
+        RubyClass rubyClass;
+        if (receiver.isNil()) {
+            rubyClass = runtime.getNilClass();
+        } else if (receiver == runtime.getTrue()) {
+            rubyClass = runtime.getClass("TrueClass");
+        } else if (receiver == runtime.getFalse()) {
+            rubyClass = runtime.getClass("FalseClass");
+        } else {
+            if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
+                throw runtime.newSecurityError("Insecure; can't define singleton method.");
+            }
+            if (receiver.isFrozen()) {
+                throw runtime.newFrozenError("object");
+            }
+            if (receiver.getMetaClass() == runtime.getFixnum() || receiver.getMetaClass() == runtime.getClass("Symbol")) {
+                throw runtime.newTypeError("can't define singleton method \"" + name
+                                           + "\" for " + receiver.getType());
+            }
+   
+            rubyClass = receiver.getSingletonClass();
+        }
+   
+        if (runtime.getSafeLevel() >= 4) {
+            Object method = rubyClass.getMethods().get(name);
+            if (method != null) {
+                throw runtime.newSecurityError("Redefining method prohibited.");
+            }
+        }
+        
+        StaticScope scope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), scopeNames);
+        scope.determineModule();
+        
+        MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
+        DynamicMethod method;
+        
+        method = factory.getCompiledMethod(rubyClass, compiledClass, javaName, 
+                Arity.createArity(arity), Visibility.PUBLIC, scope);
+        
+        method.setCallConfig(callConfig);
+        
+        rubyClass.addMethod(name, method);
+        receiver.callMethod(context, "singleton_method_added", runtime.newSymbol(name));
+        
+        return runtime.getNil();
+    }
+    
     public static IRubyObject doAttrAssign(IRubyObject receiver, IRubyObject[] args, 
             ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
         if (receiver == caller) callType = CallType.VARIABLE;
