@@ -1322,7 +1322,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject class_variable_get(IRubyObject var) {
         String varName = var.asSymbol();
 
-        if (!IdUtil.isClassVariable(varName)) {
+        if (!IdUtil.isValidClassVariableName(varName)) {
             throw getRuntime().newNameError("`" + varName + "' is not allowed as a class variable name", varName);
         }
 
@@ -1332,7 +1332,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject class_variable_defined_p(IRubyObject var) {
         String name = var.asSymbol();
 
-        if (!IdUtil.isClassVariable(name)) {
+        if (!IdUtil.isValidClassVariableName(name)) {
             throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", name);
         }
 
@@ -1350,7 +1350,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
         String varName = var.asSymbol();
 
-        if (!IdUtil.isClassVariable(varName)) {
+        if (!IdUtil.isValidClassVariableName(varName)) {
             throw getRuntime().newNameError("`" + varName + "' is not allowed as a class variable name", varName);
         }
 
@@ -1633,7 +1633,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject const_get(IRubyObject symbol) {
         String name = symbol.asSymbol();
 
-        if (!IdUtil.isConstant(name)) {
+        if (!IdUtil.isValidConstantName(name)) {
             throw wrongConstantNameError(name);
         }
 
@@ -1646,7 +1646,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
         String name = symbol.asSymbol();
 
-        if (!IdUtil.isConstant(name)) {
+        if (!IdUtil.isValidConstantName(name)) {
             throw wrongConstantNameError(name);
         }
 
@@ -1659,7 +1659,7 @@ public class RubyModule extends RubyObject {
     public RubyBoolean const_defined(IRubyObject symbol) {
         String name = symbol.asSymbol();
 
-        if (!IdUtil.isConstant(name)) {
+        if (!IdUtil.isValidConstantName(name)) {
             throw wrongConstantNameError(name);
         }
         

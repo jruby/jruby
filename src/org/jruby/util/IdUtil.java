@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -93,4 +94,66 @@ public final class IdUtil {
 	public static boolean isAttrSet(String id) {
 	    return id.endsWith("=");
 	}
+
+    public static boolean isValidConstantName(final String id) {
+        final char c;
+        final int len;
+        if ((len = id.length()) > 0 && (c = id.charAt(0)) <= 'Z' && c >= 'A') {
+            return isNameString(id, 1, len);
+        }
+        return false;
+    }
+    
+    // Pickaxe says @ must be followed by a name character, but MRI
+    // does not require this.
+    public static boolean isValidInstanceVariableName(final String id) {
+        final int len;
+        if ((len = id.length()) > 0 && '@' == id.charAt(0)) {
+            if (len > 1) {
+                if (isInitialCharacter(id.charAt(1))) {
+                    return isNameString(id, 2, len);
+                }
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    // Pickaxe says @@ must be followed by a name character, but MRI
+    // does not require this.
+    public static boolean isValidClassVariableName(final String id) {
+        final int len;
+        if ((len = id.length()) > 1 && '@' == id.charAt(0) && '@' == id.charAt(1)) {
+            if (len > 2) {
+                if (isInitialCharacter(id.charAt(2))) {
+                    return isNameString(id, 3, len);
+                }
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    public static boolean isInitialCharacter(int c) {
+        return ((c &= ~0x20) <= 'Z' && c >= 'A') || c == '_';
+    }
+    
+    public static boolean isNameCharacter(final char c) {
+        final int letter;
+        return ((letter = c & ~0x20) <= 'Z' && letter >= 'A') ||
+            c == '_' ||
+            (c <= '9' && c >= '0');
+    }
+    
+    public static boolean isNameString(final String id, final int start, final int limit) {
+        for (int i = start; i < limit; i++) {
+            if (!isNameCharacter(id.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
 }
