@@ -90,7 +90,9 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         assert argsNode != null;
     
         if (implementationClass != null) {
-            needsImplementer = !implementationClass.isClass();
+            // Classes don't need the implementer search because they're not included
+            // Kernel doesn't need the implementer class because it's always at the top of the hierarchy
+            needsImplementer = !implementationClass.isClass() && implementationClass != implementationClass.getRuntime().getModule("Kernel");
         }
     }
 
@@ -117,7 +119,9 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
             try {
-                jitCallConfig.pre(context, self, implementer, getArity(), name, args, block, staticScope, this);
+                // FIXME: For some reason this wants (and works with) clazz instead of implementer,
+                // and needed it for compiled module method_function's called from outside the module. Why?
+                jitCallConfig.pre(context, self, clazz, getArity(), name, args, block, staticScope, this);
 
                 return jitCompiledScript.run(context, self, args, block);
             } catch (JumpException.ReturnJump rj) {

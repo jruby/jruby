@@ -675,6 +675,10 @@ public final class ThreadContext {
     public void preRubyMethodFull(RubyModule clazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block, 
             StaticScope staticScope, JumpTarget jumpTarget) {
         RubyModule implementationClass = getCurrentScope().getStaticScope().getModule();
+        // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
+        if (implementationClass == null) {
+            implementationClass = clazz;
+        }
         pushCallFrame(clazz, name, self, args, req, block, jumpTarget);
         pushScope(new DynamicScope(staticScope));
         pushRubyClass(implementationClass);

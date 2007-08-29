@@ -30,6 +30,8 @@ package org.jruby.util;
 import java.io.OutputStream;
 import java.io.IOException;
 import org.jruby.RubyString;
+import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -45,6 +47,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class IOOutputStream extends OutputStream {
     private IRubyObject io;
+    private CallAdapter writeAdapter = new CallAdapter.DefaultCallAdapter("write", CallType.FUNCTIONAL);
+    private CallAdapter closeAdapter = new CallAdapter.DefaultCallAdapter("close", CallType.FUNCTIONAL);
 
     /**
      * Creates a new OutputStream with the object provided.
@@ -59,7 +63,7 @@ public class IOOutputStream extends OutputStream {
     }
     
     public void write(final int bite) throws IOException {
-        io.callMethod(io.getRuntime().getCurrentContext(), "write", RubyString.newString(io.getRuntime(), new ByteList(new byte[]{(byte)bite},false)));
+        writeAdapter.call(io.getRuntime().getCurrentContext(), io, RubyString.newStringLight(io.getRuntime(), new ByteList(new byte[]{(byte)bite},false)));
     }
 
     public void write(final byte[] b) throws IOException {
@@ -67,10 +71,10 @@ public class IOOutputStream extends OutputStream {
     }
 
     public void write(final byte[] b,final int off, final int len) throws IOException {
-        io.callMethod(io.getRuntime().getCurrentContext(),"write", RubyString.newString(io.getRuntime(), new ByteList(b, off, len, false)));
+        writeAdapter.call(io.getRuntime().getCurrentContext(), io, RubyString.newStringLight(io.getRuntime(), new ByteList(b, off, len, false)));
     }
     
     public void close() throws IOException {
-        io.callMethod(io.getRuntime().getCurrentContext(), "close");
+        closeAdapter.call(io.getRuntime().getCurrentContext(), io);
     }
 }

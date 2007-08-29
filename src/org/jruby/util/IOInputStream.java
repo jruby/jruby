@@ -32,6 +32,8 @@ import java.io.IOException;
 
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
+import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -46,6 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class IOInputStream extends InputStream {
     private IRubyObject io;
     private final IRubyObject numOne;
+    private CallAdapter readAdapter = new CallAdapter.DefaultCallAdapter("read", CallType.FUNCTIONAL);
 
     /**
      * Creates a new InputStream with the object provided.
@@ -61,7 +64,7 @@ public class IOInputStream extends InputStream {
     }
     
     public int read() throws IOException {
-        IRubyObject readValue = io.callMethod(io.getRuntime().getCurrentContext(), "read", numOne);
+        IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, numOne);
         int returnValue = -1;
         if (!readValue.isNil()) {
             returnValue = readValue.toString().charAt(0);
@@ -70,7 +73,7 @@ public class IOInputStream extends InputStream {
     }
 
     public int read(byte[] b) throws IOException {
-        IRubyObject readValue = io.callMethod(io.getRuntime().getCurrentContext(), "read", this.io.getRuntime().newFixnum(b.length));
+        IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io.getRuntime().newFixnum(b.length));
         int returnValue = -1;
         if (!readValue.isNil()) {
             ByteList str = ((RubyString)readValue).getByteList();
@@ -81,7 +84,7 @@ public class IOInputStream extends InputStream {
     }
 
     public int read(byte[] b, int off, int len) throws IOException {
-        IRubyObject readValue = io.callMethod(io.getRuntime().getCurrentContext(), "read", io.getRuntime().newFixnum(len));
+        IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io.getRuntime().newFixnum(len));
         int returnValue = -1;
         if (!readValue.isNil()) {
             ByteList str = ((RubyString)readValue).getByteList();

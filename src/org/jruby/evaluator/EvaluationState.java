@@ -1555,7 +1555,6 @@ public class EvaluationState {
         // Each root node has a top-level scope that we need to push
         context.preRootNode(scope);
         
-        // FIXME: Wire up BEGIN and END nodes
         if (staticScope.getModule() == null) {
             staticScope.setModule(runtime.getObject());
         }
