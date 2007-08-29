@@ -31,7 +31,11 @@
 package org.jruby;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -41,6 +45,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.collections.WeakHashSet;
 
 /**
  *
@@ -54,6 +59,8 @@ public class RubyClass extends RubyModule {
     private final ObjectAllocator allocator;
     
     private ObjectMarshal marshal;
+    
+    private Set subclasses;
     
     private static final ObjectMarshal DEFAULT_OBJECT_MARSHAL = new ObjectMarshal() {
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
@@ -122,9 +129,17 @@ public class RubyClass extends RubyModule {
         // use parent's marshal, or default object marshal by default
         if (superClass != null) {
             this.marshal = superClass.getMarshal();
+            if (this.isClass()) {
+                superClass.addSubclass(this);
+            }
         } else {
             this.marshal = DEFAULT_OBJECT_MARSHAL;
         }
+    }
+    
+    public synchronized void addSubclass(RubyClass subclass) {
+        if (subclasses == null) subclasses = new WeakHashSet();
+        subclasses.add(subclass);
     }
     
     /**
@@ -220,8 +235,39 @@ public class RubyClass extends RubyModule {
         classClass.undefineMethod("append_features");
         classClass.undefineMethod("extend_object");
         
+        // This is a non-standard method; have we decided to start extending Ruby?
+        //classClass.defineFastMethod("subclasses", callbackFactory.getFastOptMethod("subclasses"));
+        
         // FIXME: for some reason this dispatcher causes a VerifyError...
         //classClass.dispatcher = callbackFactory.createDispatcher(classClass);
+    }
+    
+    public IRubyObject subclasses(IRubyObject[] args) {
+        boolean recursive = false;
+        if (args.length == 1) {
+            if (args[0] instanceof RubyBoolean) {
+                recursive = args[0].isTrue();
+            } else {
+                getRuntime().newTypeError(args[0], getRuntime().getClass("Boolean"));
+            }
+        }
+        
+        return RubyArray.newArray(getRuntime(), subclasses(recursive)).freeze();
+    }
+    
+    public Collection subclasses(boolean includeDescendants) {
+        if (subclasses != null) {
+            Collection mine = new ArrayList(subclasses);
+            if (includeDescendants) {
+                for (Object i: subclasses) {
+                    mine.addAll(((RubyClass)i).subclasses(includeDescendants));
+                }
+            }
+
+            return mine;
+        } else {
+            return Collections.EMPTY_LIST;
+        }
     }
     
     public static IRubyObject inherited(IRubyObject recv, IRubyObject arg, Block block) {

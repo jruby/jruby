@@ -107,13 +107,28 @@ public class RubyObjectSpace {
         } else {
             rubyClass = (RubyModule) args[0];
         }
+        Ruby runtime = recv.getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        Iterator iter;
         int count = 0;
-        Iterator iter = recv.getRuntime().getObjectSpace().iterator(rubyClass);
-        IRubyObject obj = null;
-        ThreadContext context = recv.getRuntime().getCurrentContext();
-        while ((obj = (IRubyObject)iter.next()) != null) {
-            count++;
-            block.yield(context, obj);
+        if (rubyClass != runtime.getClass("Class")) {
+            if (!runtime.isObjectSpaceEnabled()) {
+                runtime.getWarnings().warn("ObjectSpace is disabled; each_object will only work with Class");
+            }
+            iter = recv.getRuntime().getObjectSpace().iterator(rubyClass);
+            
+            IRubyObject obj = null;
+            while ((obj = (IRubyObject)iter.next()) != null) {
+                count++;
+                block.yield(context, obj);
+            }
+        } else {
+            iter = runtime.getObject().subclasses(true).iterator();
+            
+            while (iter.hasNext()) {
+                count++;
+                block.yield(context, (IRubyObject)iter.next());
+            }
         }
         return recv.getRuntime().newFixnum(count);
     }
