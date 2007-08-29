@@ -97,7 +97,7 @@ public class WeakHashSet<T> implements Set<T> {
     }
 
     public <T> T[] toArray(T[] arg0) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return map.keySet().toArray(arg0);
     }
 
 }
