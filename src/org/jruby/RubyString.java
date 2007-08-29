@@ -405,7 +405,11 @@ public class RubyString extends RubyObject {
     public static boolean isPrint(int c) {
         return c >= 0x20 && c <= 0x7E;
     }
-    
+
+    public RubyString asString() {
+        return this;
+    }
+
     public IRubyObject checkStringType() {
         return this;
     }

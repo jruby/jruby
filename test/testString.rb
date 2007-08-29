@@ -621,3 +621,11 @@ test_exception(NoMethodError) { +"s" }
 # JRUBY-1195
 "%mhello".scan(/%m/) { |v| "m" =~ /x/ }
 test_equal("hello", $');
+
+class Foo
+    def to_s
+        nil
+    end
+end
+
+test_exception(TypeError){String(Foo.new)}

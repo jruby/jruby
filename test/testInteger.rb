@@ -70,3 +70,11 @@ test_equal(10.to_i,10)
 test_exception(TypeError){Integer.induced_from "2"}
 test_equal(Fixnum,Integer.induced_from(2.0).class)
 test_equal(Bignum,Integer.induced_from(100**100).class)
+
+class Foo
+    def to_i
+        nil
+    end
+end
+
+test_exception(TypeError){Integer(Foo.new)}

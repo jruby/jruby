@@ -681,82 +681,88 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public RubyArray convertToArray() {
-        return (RubyArray) convertToType(getRuntime().getArray(), MethodIndex.TO_ARY, true);
+        return (RubyArray) convertToType(getRuntime().getArray(), MethodIndex.TO_ARY, "to_ary");
     }
 
     public RubyHash convertToHash() {
-        return (RubyHash)convertToType(getRuntime().getHash(), MethodIndex.TO_HASH, "to_hash", true, true, false);
+        return (RubyHash)convertToType(getRuntime().getHash(), MethodIndex.TO_HASH, "to_hash");
     }
     
     public RubyFloat convertToFloat() {
-        return (RubyFloat) convertToType(getRuntime().getClass("Float"), MethodIndex.TO_F, true);
+        return (RubyFloat) convertToType(getRuntime().getClass("Float"), MethodIndex.TO_F, "to_f");
     }
 
     public RubyInteger convertToInteger() {
-        return (RubyInteger) convertToType(getRuntime().getClass("Integer"), MethodIndex.TO_INT, true);
+        return convertToInteger(MethodIndex.TO_INT, "to_int");
+    }
+
+    public RubyInteger convertToInteger(int convertMethodIndex, String convertMethod) {
+        IRubyObject val = convertToType(getRuntime().getClass("Integer"), convertMethodIndex, convertMethod, true);
+        if (!(val instanceof RubyInteger)) throw getRuntime().newTypeError(getMetaClass().getName() + "#" + convertMethod + " should return Integer");
+        return (RubyInteger)val;
     }
 
     public RubyString convertToString() {
-        return (RubyString) convertToType(getRuntime().getString(), MethodIndex.TO_STR, true);
+        return (RubyString) convertToType(getRuntime().getString(), MethodIndex.TO_STR, "to_str");
+    }
+
+    /** convert_type
+     * 
+     */
+    public final IRubyObject convertToType(RubyClass target, int convertMethodIndex, String convertMethod, boolean raise) {
+        if (!respondsTo(convertMethod)) {
+            if (raise) {
+                String type;
+                if (isNil()) {
+                    type = "nil";
+                } else if (this instanceof RubyBoolean) {
+                    type = isTrue() ? "true" : "false";
+                } else {
+                    type = target.getName();
+                }
+                throw getRuntime().newTypeError("can't convert " + getMetaClass().getName() + " into " + type);
+            } else {
+                return getRuntime().getNil();
+            }
+        }
+        return callMethod(getRuntime().getCurrentContext(), convertMethodIndex, convertMethod);
+    }
+    
+    public final IRubyObject convertToType(RubyClass target, int convertMethodIndex) {
+        return convertToType(target, convertMethodIndex, (String)MethodIndex.NAMES.get(convertMethodIndex));
+    }
+
+    /** rb_convert_type
+     * 
+     */
+    public final IRubyObject convertToType(RubyClass target, int convertMethodIndex, String convertMethod) {
+        if (isKindOf(target)) return this;
+        IRubyObject val = convertToType(target, convertMethodIndex, convertMethod, true);
+        if (!val.isKindOf(target)) throw getRuntime().newTypeError(getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        return val;
     }
 
     /*
      * @see org.jruby.runtime.builtin.IRubyObject#convertToTypeWithCheck(java.lang.String, java.lang.String)
      */
-    public IRubyObject convertToTypeWithCheck(RubyClass targetType, int convertMethodIndex, String convertMethod) {
-        return convertToType(targetType, convertMethodIndex, convertMethod, false, true, true);
-    }
-
-    /*
-     * @see org.jruby.runtime.builtin.IRubyObject#convertToType(java.lang.String, java.lang.String, boolean)
+    /** rb_check_convert_type
+     * 
      */
-    public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, String convertMethod, boolean raise) {
-        return convertToType(targetType, convertMethodIndex, convertMethod, raise, false, false);
-    }
-
-    /*
-     * @see org.jruby.runtime.builtin.IRubyObject#convertToType(java.lang.String, java.lang.String, boolean)
-     */
-    public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, boolean raise) {
-        return convertToType(targetType, convertMethodIndex, (String)MethodIndex.NAMES.get(convertMethodIndex), raise, true, false);
-    }
-    
-    public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, String convertMethod, boolean raiseOnMissingMethod, boolean raiseOnWrongTypeResult, boolean allowNilThrough) {
-        if (isKindOf(targetType)) {
-            return this;
-        }
-        
-        if (!respondsTo(convertMethod)) {
-            if (raiseOnMissingMethod) {
-                throw getRuntime().newTypeError("can't convert " + trueFalseNil(this) + " into " + trueFalseNil(targetType.getName()));
-            } 
-
-            return getRuntime().getNil();
-        }
-        
-        IRubyObject value = callMethod(getRuntime().getCurrentContext(), convertMethodIndex, convertMethod, IRubyObject.NULL_ARRAY);
-        
-        if (allowNilThrough && value.isNil()) {
-            return value;
-        }
-
-        if (raiseOnWrongTypeResult && !value.isKindOf(targetType)) {
-            throw getRuntime().newTypeError(getMetaClass().getName() + "#" + convertMethod +
-                    " should return " + targetType);
-        }
-        
-        return value;
+    public final IRubyObject convertToTypeWithCheck(RubyClass target, int convertMethodIndex, String convertMethod) {  
+        if (isKindOf(target)) return this;
+        IRubyObject val = convertToType(target, convertMethodIndex, convertMethod, false);
+        if (val.isNil()) return val;
+        if (!val.isKindOf(target)) throw getRuntime().newTypeError(getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        return val;
     }
 
     /** rb_obj_as_string
      */
     public RubyString asString() {
-        if (this instanceof RubyString) return (RubyString) this;
+        IRubyObject str = callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
         
-        IRubyObject str = this.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
-        
-        if (!(str instanceof RubyString)) str = anyToString();
-
+        if (!(str instanceof RubyString)) return (RubyString)anyToString();
+        if (isTaint()) str.setTaint(true);
         return (RubyString) str;
     }
     

@@ -1464,7 +1464,7 @@ public class RubyIO extends RubyObject {
        IRubyObject[] readArguments;
        
        if (args.length >= 2) {
-           readArguments = new IRubyObject[] {args[1].convertToType(runtime.getFixnum(), MethodIndex.TO_INT, "to_int", true)};
+           readArguments = new IRubyObject[] {args[1].convertToInteger()};
        } else {
            readArguments = new IRubyObject[] {};
        }
@@ -1472,7 +1472,7 @@ public class RubyIO extends RubyObject {
        try {
            
            if (args.length == 3) {
-               file.seek(new IRubyObject[] {args[2].convertToType(runtime.getFixnum(), MethodIndex.TO_INT, "to_int", true)});
+               file.seek(new IRubyObject[] {args[2].convertToInteger()});
            }
            
            return file.read(readArguments);

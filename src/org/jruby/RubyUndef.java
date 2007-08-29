@@ -123,6 +123,10 @@ public class RubyUndef implements IRubyObject {
         return null;
     }
 
+    public RubyInteger convertToInteger(int convertMethodIndex, String convertMethod) {
+        return null;
+    }
+
     public RubyString convertToString() {
         return null;
     }
@@ -131,10 +135,7 @@ public class RubyUndef implements IRubyObject {
             String convertMethod, boolean raiseOnError) {
         return null;
     }
-
-    public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex,
-            String convertMethod, boolean raiseOnMissingMethod, boolean raiseOnWrongTypeResult,
-            boolean allowNilThrough) {
+    public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, String convertMethod) {
         return null;
     }
 

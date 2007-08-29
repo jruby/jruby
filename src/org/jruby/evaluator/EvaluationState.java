@@ -446,22 +446,20 @@ public class EvaluationState {
     }
 
     public static RubyArray arrayValue(Ruby runtime, IRubyObject value) {
-        IRubyObject newValue = value.convertToType(runtime.getArray(), MethodIndex.TO_ARY, "to_ary", false);
-        if (newValue.isNil()) {
+        IRubyObject tmp = value.checkArrayType();
+
+        if (tmp.isNil()) {
             // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can 
             // remove this hack too.
-            if (value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime
-                    .getKernel()) {
-                newValue = value.convertToType(runtime.getArray(), MethodIndex.TO_A, "to_a", false);
-                if (newValue.getType() != runtime.getClass("Array")) {
-                    throw runtime.newTypeError("`to_a' did not return Array");
-                }
+            if (value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
+                value = value.callMethod(runtime.getCurrentContext(), MethodIndex.TO_A, "to_a");
+                if (!(value instanceof RubyArray)) throw runtime.newTypeError("`to_a' did not return Array");
+                return (RubyArray)value;
             } else {
-                newValue = runtime.newArray(value);
+                return runtime.newArray(value);
             }
         }
-
-        return (RubyArray) newValue;
+        return (RubyArray)tmp;
     }
 
     public static IRubyObject aryToAry(Ruby runtime, IRubyObject value) {

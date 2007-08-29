@@ -376,26 +376,20 @@ public class RubyKernel {
     }
 
     public static IRubyObject new_array(IRubyObject recv, IRubyObject object) {
-        IRubyObject value = object.convertToType(recv.getRuntime().getArray(), MethodIndex.TO_ARY, "to_ary", false, true, true);
-        
+        IRubyObject value = object.checkArrayType();
+
         if (value.isNil()) {
-            DynamicMethod method = object.getMetaClass().searchMethod("to_a");
-            
-            if (method.getImplementationClass() == recv.getRuntime().getKernel()) {
+            if (object.getMetaClass().searchMethod("to_a").getImplementationClass() != recv.getRuntime().getKernel()) {
+                value = object.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_A, "to_a");
+                if (!(value instanceof RubyArray)) throw recv.getRuntime().newTypeError("`to_a' did not return Array");
+                return value;
+            } else {
                 return recv.getRuntime().newArray(object);
             }
-            
-            // Strange that Ruby has custom code here and not convertToTypeWithCheck equivalent.
-            value = object.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_A, "to_a");
-            if (value.getMetaClass() != recv.getRuntime().getClass("Array")) {
-                throw recv.getRuntime().newTypeError("`to_a' did not return Array");
-               
-            }
         }
-        
         return value;
     }
-    
+
     public static IRubyObject new_float(IRubyObject recv, IRubyObject object) {
         if(object instanceof RubyFixnum){
             return RubyFloat.newFloat(object.getRuntime(), ((RubyFixnum)object).getDoubleValue());
@@ -411,39 +405,33 @@ public class RubyKernel {
         }else if(object.isNil()){
             throw recv.getRuntime().newTypeError("can't convert nil into Float");
         } else {
-            RubyFloat rFloat = object.convertToFloat();
-            if(Double.isNaN(rFloat.getDoubleValue())){
-                recv.getRuntime().newArgumentError("invalid value for Float()");
-        }
+            RubyFloat rFloat = (RubyFloat)object.convertToType(recv.getRuntime().getClass("Float"), MethodIndex.TO_F, "to_f");
+            if (Double.isNaN(rFloat.getDoubleValue())) throw recv.getRuntime().newArgumentError("invalid value for Float()");
             return rFloat;
+        }
     }
-    }
-    
+
     public static IRubyObject new_integer(IRubyObject recv, IRubyObject object) {
         if (object instanceof RubyFloat) {
             double val = ((RubyFloat)object).getDoubleValue(); 
-            if (val <= (double) RubyFixnum.MAX && val >= (double) RubyFixnum.MIN) {
-                IRubyObject tmp = ((RubyObject)object).convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_INT, "to_int", false);
-                if (tmp.isNil()) return ((RubyObject)object).convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_I, "to_i", true);
-                return tmp;
+            if (val > (double) RubyFixnum.MAX && val < (double) RubyFixnum.MIN) {
+                return RubyNumeric.dbl2num(recv.getRuntime(),((RubyFloat)object).getDoubleValue());
             }
-            return RubyNumeric.dbl2num(recv.getRuntime(),((RubyFloat)object).getDoubleValue());            
         } else if (object instanceof RubyFixnum || object instanceof RubyBignum) {
             return object;
         } else if (object instanceof RubyString) {
             return RubyNumeric.str2inum(recv.getRuntime(),(RubyString)object,0,true);
         }
         
-        IRubyObject tmp = ((RubyObject)object).convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_INT, "to_int", false);
-        if (tmp.isNil()) return ((RubyObject)object).convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_I, "to_i", true);
+        IRubyObject tmp = object.convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_INT, "to_int", false);
+        if (tmp.isNil()) return object.convertToInteger(MethodIndex.TO_I, "to_i");
         return tmp;
     }
 
     public static IRubyObject new_string(IRubyObject recv, IRubyObject object) {
-        return object.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
+        return object.convertToType(recv.getRuntime().getString(), MethodIndex.TO_S, "to_s");
     }
-    
-    
+
     public static IRubyObject p(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
         ThreadContext context = recv.getRuntime().getCurrentContext();
@@ -1137,8 +1125,7 @@ public class RubyKernel {
         long oldRandomSeed = runtime.getRandomSeed();
 
         if (args.length > 0) {
-            RubyInteger integerSeed = 
-                (RubyInteger) args[0].convertToType(runtime.getClass("Integer"), MethodIndex.TO_I, "to_i", true);
+            RubyInteger integerSeed = args[0].convertToInteger(MethodIndex.TO_INT, "to_int");
             runtime.setRandomSeed(integerSeed.getLongValue());
         } else {
             // Not sure how well this works, but it works much better than
@@ -1165,7 +1152,7 @@ public class RubyKernel {
                 return new RubyBignum(runtime, new BigInteger(bytes).abs()); 
             }
              
-            RubyInteger integerCeil = (RubyInteger) args[0].convertToType(runtime.getClass("Integer"), MethodIndex.TO_I, "to_i", true);
+            RubyInteger integerCeil = (RubyInteger)RubyKernel.new_integer(recv, args[0]); 
             ceil = Math.abs(integerCeil.getLongValue());
         } else {
             throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for 1)");
