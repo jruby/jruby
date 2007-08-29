@@ -35,9 +35,10 @@ public class JRubyC {
                 return;
             }
             String filename = args[0];
+            if (filename.startsWith("./")) filename = filename.substring(2);
             File srcfile = new File(filename);
             if (!srcfile.exists()) {
-                System.err.println("Error -- file not found: " + filename);
+                System.out.println("Error -- file not found: " + filename);
                 return;
             }
             File destfile = new File(System.getProperty("user.dir"));
@@ -45,11 +46,11 @@ public class JRubyC {
                 String dirname = args[1];
                 destfile = new File(dirname);
                 if (!destfile.exists()) {
-                    System.err.println("Error -- destination not found: " + dirname);
+                    System.out.println("Error -- destination not found: " + dirname);
                     return;
                 }
                 if (!destfile.isDirectory()) {
-                    System.err.println("Error -- not a directory: " + dirname);
+                    System.out.println("Error -- not a directory: " + dirname);
                 }
             }
 
@@ -64,7 +65,10 @@ public class JRubyC {
             inspector.inspect(scriptNode);
             
             // do the compile
-            StandardASMCompiler compiler = new StandardASMCompiler(filename.substring(0, filename.lastIndexOf(".")), filename);
+            String classPath = filename.substring(0, filename.lastIndexOf("."));
+            String classDotted = classPath.replace('/', '.').replace('\\', '.');
+            StandardASMCompiler compiler = new StandardASMCompiler(classPath, filename);
+            System.out.println("Compiling file \"" + filename + "\" as class \"" + classDotted + "\"");
             NodeCompilerFactory.compileRoot(scriptNode, compiler, inspector);
             
             compiler.writeClass(destfile);
