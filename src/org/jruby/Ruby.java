@@ -87,6 +87,7 @@ import org.jruby.libraries.IOWaitLibrary;
 import org.jruby.ext.socket.RubySocket;
 import org.jruby.ext.Generator;
 import org.jruby.ext.Readline;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.libraries.FiberLibrary;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
@@ -120,7 +121,7 @@ import org.jruby.regexp.RegexpFactory;
 public final class Ruby {
     private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "yaml/syck", "jsignal" };
 
-    private CacheMap cacheMap = new CacheMap();
+    private CacheMap cacheMap = new CacheMap<DynamicMethod, CacheMap.CacheSite>();
     private MethodCache methodCache = new MethodCache();
     private ThreadService threadService = new ThreadService(this);
     private Hashtable runtimeInformation;

@@ -30,10 +30,9 @@ package org.jruby.runtime;
 import java.util.WeakHashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
-import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.util.WeakIdentityHashMap;
+import org.jruby.util.collections.WeakHashSet;
 
 /**
  * This class represents mappings between methods that have been cached and the classes which
@@ -50,8 +49,8 @@ import org.jruby.util.WeakIdentityHashMap;
  * we are going to rely on synchronization further upstream.  RubyModule methods that directly
  * call this is responsible for synchronization.
  */
-public class CacheMap {
-    private final Map mappings = new WeakHashMap();
+public class CacheMap<K, V extends CacheMap.CacheSite> {
+    private final Map<K, Set<V>> mappings = new WeakHashMap<K, Set<V>>();
     
     public interface CacheSite {
         public void removeCachedMethod(String name);
@@ -63,15 +62,19 @@ public class CacheMap {
      * @param method which is cached
      * @param module which is caching method
      */
-    public void add(DynamicMethod method, CacheSite site) {
-        Map classList = (Map) mappings.get(method);
+    public synchronized void add(K method, V site) {
+        Set<V> siteList = mappings.get(method);
         
-        if (classList == null) {
-            classList = new WeakIdentityHashMap();
-            mappings.put(method, classList);
+        if (siteList == null) {
+            siteList = new WeakHashSet<V>();
+            synchronized (mappings) {
+                mappings.put(method, siteList);
+            }
         }
-        
-        classList.put(site,null);
+
+        synchronized (siteList) {
+            siteList.add(site);
+        }
     }
     
     /**
@@ -82,17 +85,19 @@ public class CacheMap {
      * @param name of the method to remove
      * @param method to remove all caches of
      */
-    public void remove(String name, DynamicMethod method) {
-        Map classList = (Map) mappings.remove(method);
+    public synchronized void remove(String name, K method) {
+        Set<V> siteList = mappings.remove(method);
         
         // Removed method has never been used so it has not been cached
-        if (classList == null) {
+        if (siteList == null) {
             return;
         }
-        for(Iterator iter = classList.keySet().iterator(); iter.hasNext();) {
-            CacheSite site = (CacheSite) iter.next();
-            if (site != null) {
-                site.removeCachedMethod(name);
+        synchronized (siteList) {
+            for(Iterator<V> iter = siteList.iterator(); iter.hasNext();) {
+                V site = iter.next();
+                if (site != null) {
+                    site.removeCachedMethod(name);
+                }
             }
         }
     }
@@ -101,18 +106,22 @@ public class CacheMap {
      * Remove all method caches associated with all methods.
      */
     public void clear() {
-        for (Iterator mapIter = mappings.entrySet().iterator(); mapIter.hasNext();) {
-            Map.Entry mapEntry = (Map.Entry)mapIter.next();
-            Map classList = (Map)mapEntry.getValue();
-        
-            // Removed method has never been used so it has not been cached
-            if (classList == null) {
-                return;
-            }
-            for(Iterator iter = classList.keySet().iterator(); iter.hasNext();) {
-                CacheSite site = (CacheSite) iter.next();
-                if (site != null) {
-                    site.removeCachedMethod(null);
+        synchronized (mappings) {
+            for (Iterator<Map.Entry<K,Set<V>>> mapIter = mappings.entrySet().iterator(); mapIter.hasNext();) {
+                Map.Entry<K,Set<V>> mapEntry = mapIter.next();
+                Set<V> siteList = mapEntry.getValue();
+
+                // Removed method has never been used so it has not been cached
+                if (siteList == null) {
+                    return;
+                }
+                synchronized(siteList) {
+                    for(Iterator<V> iter = siteList.iterator(); iter.hasNext();) {
+                        V site = iter.next();
+                        if (site != null) {
+                            site.removeCachedMethod(null);
+                        }
+                    }
                 }
             }
         }

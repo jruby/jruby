@@ -33,20 +33,19 @@ import java.util.*;
  *
  * @author <a href="http://www.cs.auckland.ac.nz/~robert/">Robert Egglestone</a>
  */
-public class WeakHashSet implements Set {
-    private static final Object MAP_VALUE = new Object();
-    private WeakHashMap map;
+public class WeakHashSet<T> implements Set<T> {
+    private WeakHashMap<T,T> map;
 
     public WeakHashSet() {
-        map = new WeakHashMap();
+        map = new WeakHashMap<T,T>();
     }
 
-    public boolean add(Object o) {
-        Object previousValue = map.put(o, MAP_VALUE);
+    public boolean add(T o) {
+        T previousValue = map.put(o, null);
         return previousValue == null;
     }
 
-    public Iterator iterator() {
+    public Iterator<T> iterator() {
         return map.keySet().iterator();
     }
 
@@ -63,7 +62,9 @@ public class WeakHashSet implements Set {
     }
 
     public boolean remove(Object o) {
-        return map.remove(o) == MAP_VALUE;
+        boolean contains = contains(o);
+        map.remove(o);
+        return contains;
     }
 
     public boolean removeAll(Collection collection) {
@@ -82,21 +83,21 @@ public class WeakHashSet implements Set {
         return map.keySet().toArray();
     }
 
-    public Object[] toArray(Object[] arg0) {
-        return map.keySet().toArray(arg0);
-    }
-
     public boolean containsAll(Collection arg0) {
         return map.keySet().containsAll(arg0);
     }
 
-    public boolean addAll(Collection arg0) {
+    public boolean addAll(Collection<? extends T> arg0) {
         boolean added = false;
-        for (Object i: arg0) {
-            add(arg0);
+        for (T i: arg0) {
+            add(i);
             added = true;
         }
         return added;
+    }
+
+    public <T> T[] toArray(T[] arg0) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
 }
