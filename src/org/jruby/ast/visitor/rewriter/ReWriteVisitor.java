@@ -294,7 +294,7 @@ public class ReWriteVisitor implements NodeVisitor {
 		if (iVisited.getOptArgs() != null) arguments.addAll(iVisited.getOptArgs().childNodes());
         
 		if (iVisited.getRestArgNode() != null) {
-			arguments.add(new ConstNode(null, '*' + iVisited.getRestArgNode().getName()));
+			arguments.add(new ConstNode(iVisited.getRestArgNode().getPosition(), '*' + iVisited.getRestArgNode().getName()));
         	}
         
 		if (iVisited.getBlockArgNode() != null) arguments.add(iVisited.getBlockArgNode());

@@ -33,12 +33,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.util.Collection;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyThread;
+import org.jruby.ast.CommentNode;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.FiberLibrary.Fiber;
@@ -97,6 +99,8 @@ public final class ThreadContext {
         public int getStartLine() { return 0; }
         public int getStartOffset() { return 0; }
         public ISourcePosition union(ISourcePosition position) { return this; }
+        public Collection<CommentNode> getComments() { return null; }
+        public void setComments(Collection<CommentNode> comments) { }
     };
     
     /**

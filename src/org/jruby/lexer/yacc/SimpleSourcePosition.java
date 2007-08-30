@@ -28,6 +28,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
+import java.util.Collection;
+
+import org.jruby.ast.CommentNode;
+
 public class SimpleSourcePosition implements ISourcePosition {
     String filename;
     int line;
@@ -65,5 +69,13 @@ public class SimpleSourcePosition implements ISourcePosition {
 
     public String toString() {
         return getFile() + ":" + getStartLine();
+    }
+
+    public Collection<CommentNode> getComments() {
+        return null;
+    }
+
+    public void setComments(Collection<CommentNode> comments) {
+        // do nothing
     }
 }

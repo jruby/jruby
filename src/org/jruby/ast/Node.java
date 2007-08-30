@@ -49,14 +49,13 @@ import org.jruby.lexer.yacc.IDESourcePosition;
 public abstract class Node implements ISourcePositionHolder {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<Node> EMPTY_LIST = new ArrayList<Node>();
-    static final List<CommentNode> EMPTY_COMMENT_LIST = new ArrayList<CommentNode>();
+    public static final List<CommentNode> EMPTY_COMMENT_LIST = new ArrayList<CommentNode>();
     
     public final NodeType nodeId;
-
     private ISourcePosition position;
-    static private ArrayList<CommentNode> comments;
 
     public Node(ISourcePosition position, NodeType id) {
+        assert position != null;
         this.position = position;
         this.nodeId = id;
     }
@@ -97,29 +96,35 @@ public abstract class Node implements ISourcePositionHolder {
     }
     
     public void addComment(CommentNode comment) {
-        if (comments == null) comments = new ArrayList<CommentNode>();
+        Collection<CommentNode> comments = position.getComments();
+        if (comments == null) {
+            comments = new ArrayList<CommentNode>();
+            position.setComments(comments);
+        }
 
         comments.add(comment);
     }
     
     public void addComments(Collection<CommentNode> moreComments) {
-        if (comments == null) comments = new ArrayList<CommentNode>();
+        Collection<CommentNode> comments = position.getComments();
+        if (comments == EMPTY_COMMENT_LIST) {
+            comments = new ArrayList<CommentNode>();
+            position.setComments(comments);
+        }
 
         comments.addAll(moreComments);
     }
     
     public Collection<CommentNode> getComments() {
-        if(comments == null) return EMPTY_COMMENT_LIST;
-
-        return comments;
+        return position.getComments();
     }
     
     public boolean hasComments() {
-        return comments != null && !comments.isEmpty();
+        return getComments() != EMPTY_COMMENT_LIST;
     }
     
     public ISourcePosition getPositionIncludingComments() {
-        if (position == null || !hasComments()) return position;
+        if (!hasComments()) return position;
         
         String fileName = position.getFile();
         int startOffset = position.getStartOffset();
@@ -131,7 +136,7 @@ public abstract class Node implements ISourcePositionHolder {
         ISourcePosition commentIncludingPos = 
             new IDESourcePosition(fileName, startLine, endLine, startOffset, endOffset);
         
-        for (CommentNode comment: comments) {
+        for (CommentNode comment: getComments()) {
             commentIncludingPos = 
                 IDESourcePosition.combinePosition(commentIncludingPos, comment.getPosition());
         }       

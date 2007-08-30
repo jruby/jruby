@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -27,11 +28,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast.executable;
 
+import java.util.Collection;
+
+import org.jruby.ast.CommentNode;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
 public class ISeqPosition implements ISourcePosition {
     private YARVMachine.InstructionSequence iseq;
 
@@ -65,4 +66,12 @@ public class ISeqPosition implements ISourcePosition {
     public ISourcePosition union(ISourcePosition position) {
         return this;
     }
-}// ISeqPosition
+
+    public Collection<CommentNode> getComments() {
+        return null;
+    }
+
+    public void setComments(Collection<CommentNode> comments) {
+        // Do nothing
+    }
+}

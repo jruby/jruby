@@ -31,6 +31,10 @@
  package org.jruby.lexer.yacc;
 
 import java.io.Serializable;
+import java.util.Collection;
+
+import org.jruby.ast.CommentNode;
+import org.jruby.ast.Node;
 
 /**
  * 
@@ -54,6 +58,8 @@ public class IDESourcePosition implements ISourcePosition, Serializable {
     // The start/end offsets of the source
     private int startOffset;
     private final int endOffset;
+    
+    private Collection<CommentNode> comments = Node.EMPTY_COMMENT_LIST;
 
     /**
      * Creates a default source position - required for serialization.
@@ -214,5 +220,13 @@ public class IDESourcePosition implements ISourcePosition, Serializable {
         IDESourcePosition combinedPosition = new IDESourcePosition(fileName, startLine, endLine, startOffset, endOffset);
         
         return combinedPosition;             
+    }
+
+    public Collection<CommentNode> getComments() {
+        return comments;
+    }
+
+    public void setComments(Collection<CommentNode> comments) {
+        this.comments = comments;
     }
 }
