@@ -54,12 +54,11 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
-import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -919,10 +918,9 @@ public class JavaClass extends JavaObject {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                 String name = args[0].asSymbol();
                 
-                // FIXME: why newMethod ?
-                RubyMethod method = (org.jruby.RubyMethod)self.getMetaClass().newMethod(self, name, true);
-                int v = RubyNumeric.fix2int(method.arity());
-
+                DynamicMethod method = self.getMetaClass().searchMethod(name);
+                int v = method.getArity().getValue();
+                
                 IRubyObject[] newArgs = new IRubyObject[args.length - 1];
                 System.arraycopy(args, 1, newArgs, 0, newArgs.length);
 

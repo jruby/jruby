@@ -21,11 +21,7 @@ module JavaUtilities
       constructors = self.class.java_proxy_class.constructors.select {|c| c.arity == args.length }
       raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
       args.collect! { |v| Java.ruby_to_java(v) }
-      self.java_object = JavaUtilities.matching_method(constructors, args).new_instance(args) { |proxy, method, *args|
-        args.collect! { |arg| Java.java_to_ruby(arg) }
-        result = __jsend!(method.name, *args)
-        Java.ruby_to_java(result)
-      } 
+      self.java_object = JavaUtilities.matching_method(constructors, args).new_instance2(self, args)
     }
   end
 

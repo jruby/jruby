@@ -39,11 +39,13 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -106,6 +108,8 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
 
         result.defineMethod("new_instance", callbackFactory
                 .getOptMethod("new_instance"));
+        
+        result.defineMethod("new_instance2", callbackFactory.getOptMethod("new_instance2"));
 
         result.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
 
@@ -137,6 +141,47 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
 
     public RubyArray argument_types() {
         return buildRubyArray(getParameterTypes());
+    }
+    
+    public RubyObject new_instance2(IRubyObject[] args, Block unusedBlock) {
+        Arity.checkArgumentCount(getRuntime(), args, 2, 2);
+
+        final IRubyObject self = args[0];
+        RubyArray constructor_args = (RubyArray) args[1];
+        Class[] parameterTypes = getParameterTypes();
+        int count = (int) constructor_args.length().getLongValue();
+        Object[] converted = new Object[count];
+        
+        for (int i = 0; i < count; i++) {
+            // TODO: call ruby method
+            IRubyObject ith = constructor_args.aref(new IRubyObject[] { getRuntime().newFixnum(i) });
+            converted[i] = JavaUtil.convertArgument(Java.ruby_to_java(this, ith, Block.NULL_BLOCK), parameterTypes[i]);
+        }
+
+        JavaProxyInvocationHandler handler = new JavaProxyInvocationHandler() {
+            public Object invoke(Object proxy, JavaProxyMethod m, Object[] nargs) throws Throwable {
+                Ruby runtime = self.getRuntime();
+                String name = m.getName();
+                DynamicMethod method = self.getMetaClass().searchMethod(name);
+                int v = method.getArity().getValue();
+                IRubyObject[] newArgs = JavaUtil.convertJavaArrayToRuby(runtime, nargs);
+                
+                if (v < 0 || v == (newArgs.length)) {
+                    return JavaUtil.convertRubyToJava(self.callMethod(runtime.getCurrentContext(), name, newArgs, CallType.FUNCTIONAL, Block.NULL_BLOCK));
+                } else {
+                    return JavaUtil.convertRubyToJava(self.callMethod(runtime.getCurrentContext(),self.getMetaClass().getSuperClass(), name, newArgs, CallType.SUPER, Block.NULL_BLOCK));
+                }
+            }
+        };
+
+        try {
+            return JavaObject.wrap(getRuntime(), newInstance(converted, handler));
+        } catch (Exception e) {
+            RaiseException ex = getRuntime().newArgumentError(
+                    "Constructor invocation failed: " + e.getMessage());
+            ex.initCause(e);
+            throw ex;
+        }
     }
 
     public RubyObject new_instance(IRubyObject[] args, Block block) {
