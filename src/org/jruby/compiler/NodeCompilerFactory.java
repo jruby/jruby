@@ -29,9 +29,7 @@
 
 package org.jruby.compiler;
 
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsNode;
@@ -99,6 +97,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.exceptions.JumpException;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
+import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.CaseNode;
 import org.jruby.ast.ClassNode;
@@ -124,11 +123,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class NodeCompilerFactory {
     public static final boolean SAFE = System.getProperty("jruby.jit.safe", "true").equals("true");
-    public static final Set<String> UNSAFE_CALLS;
-    
-    static {
-        UNSAFE_CALLS = new HashSet<String>();
-    }
     
     public static void compile(Node node, MethodCompiler context) {
         switch (node.nodeId) {
@@ -140,6 +134,9 @@ public class NodeCompilerFactory {
             break;
         case ARGSCATNODE:
             compileArgsCat(node, context);
+            break;
+        case ARGSPUSHNODE:
+            compileArgsPush(node, context);
             break;
         case ARRAYNODE:
             compileArray(node, context);
@@ -373,6 +370,9 @@ public class NodeCompilerFactory {
         case ARGSCATNODE:
             compileArgsCatArguments(node, context);
             break;
+        case ARGSPUSHNODE:
+            compileArgsPushArguments(node, context);
+            break;
         case ARRAYNODE:
             compileArrayArguments(node, context);
             break;
@@ -482,6 +482,16 @@ public class NodeCompilerFactory {
         context.concatArrays();
     }
     
+    public static void compileArgsPush(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ArgsPushNode argsPush = (ArgsPushNode)node;
+        
+        compile(argsPush.getFirstNode(), context);
+        compile(argsPush.getSecondNode(), context);
+        context.concatArrays();
+    }
+    
     public static void compileAttrAssign(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
@@ -553,10 +563,6 @@ public class NodeCompilerFactory {
         context.lineNumber(node.getPosition());
         
         final CallNode callNode = (CallNode)node;
-        
-        if (SAFE && UNSAFE_CALLS.contains(callNode.getName())) {
-            throw new NotCompilableException("Can't compile call safely: " + node);
-        }
         
         ClosureCallback receiverCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
@@ -1642,10 +1648,6 @@ public class NodeCompilerFactory {
         
         final FCallNode fcallNode = (FCallNode)node;
         
-        if (SAFE && UNSAFE_CALLS.contains(fcallNode.getName())) { 
-            throw new NotCompilableException("Can't compile call safely: " + node);
-        }
-        
         ClosureCallback argsCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 compileArguments(fcallNode.getArgsNode(), context);
@@ -2458,10 +2460,6 @@ public class NodeCompilerFactory {
         
         VCallNode vcallNode = (VCallNode)node;
         
-        if (SAFE && UNSAFE_CALLS.contains(vcallNode.getName())) {
-            throw new NotCompilableException("Can't compile call safely: " + node);
-        }
-        
         context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
     }
     
@@ -2535,6 +2533,16 @@ public class NodeCompilerFactory {
         compile(argsCatNode.getSecondNode(), context);
         context.splatCurrentValue();
         context.concatArrays();
+        context.unwrapRubyArray();
+    }
+    
+    public static void compileArgsPushArguments(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ArgsPushNode argsPushNode = (ArgsPushNode)node;
+        compile(argsPushNode.getFirstNode(), context);
+        compile(argsPushNode.getSecondNode(), context);
+        context.appendToArray();
         context.unwrapRubyArray();
     }
     

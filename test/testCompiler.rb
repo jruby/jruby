@@ -346,3 +346,6 @@ test_equal([false, true], compile_and_run("public; def foo; block_given?; end; p
 
 # backref nodes
 test_equal(["foo", "foo", "bazbar", "barfoo", "foo"], compile_and_run("'bazbarfoobarfoo' =~ /(foo)/; [$~[0], $&, $`, $', $+]"))
+
+# argspush
+test_equal("fasdfo", compile_and_run("a = 'foo'; y = ['o']; a[*y] = 'asdf'; a"))

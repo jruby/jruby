@@ -1793,6 +1793,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.invokevirtual(cg.p(RubyArray.class), "concat", cg.sig(RubyArray.class, cg.params(IRubyObject.class)));
         }
         
+        public void appendToArray() {
+            method.invokevirtual(cg.p(RubyArray.class), "append", cg.sig(RubyArray.class, cg.params(IRubyObject.class)));
+        }
+        
         public void unwrapRubyArray() {
             method.invokestatic(cg.p(ArgsUtil.class), "convertToJavaArray", cg.sig(IRubyObject[].class, cg.params(IRubyObject.class)));
         }

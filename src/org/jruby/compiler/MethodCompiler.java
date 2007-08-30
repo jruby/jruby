@@ -471,6 +471,7 @@ public interface MethodCompiler {
     public void isInstanceOf(Class clazz, BranchCallback trueBranch, BranchCallback falseBranch);
     public void isCaptured(int number, BranchCallback trueBranch, BranchCallback falseBranch);
     public void concatArrays();
+    public void appendToArray();
     public void unwrapRubyArray();
     public void aryToAry();
     public void toJavaString();
