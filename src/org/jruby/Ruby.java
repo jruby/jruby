@@ -1771,22 +1771,20 @@ public final class Ruby {
     }
 
     private ThreadLocal inspect = new ThreadLocal();
-    public boolean registerInspecting(Object obj) {
+    public void registerInspecting(Object obj) {
         java.util.Map val = (java.util.Map)inspect.get();
-        if(null == val) {
-            val = new java.util.IdentityHashMap();
-            inspect.set(val);
-        }
-        if(val.containsKey(obj)) {
-            return false;
-        }
+        if (val == null) inspect.set(val = new java.util.IdentityHashMap());
         val.put(obj, null);
-        return true;
+    }
+
+    public boolean isInspecting(Object obj) {
+        java.util.Map val = (java.util.Map)inspect.get();
+        return val == null ? false : val.containsKey(obj);
     }
 
     public void unregisterInspecting(Object obj) {
         java.util.Map val = (java.util.Map)inspect.get();
-        val.remove(obj);
+        if (val != null ) val.remove(obj);
     }
 
     public boolean isObjectSpaceEnabled() {

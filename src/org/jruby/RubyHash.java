@@ -671,16 +671,12 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    /** rb_hash_inspect
+    /** inspect_hash
      * 
      */
-    public IRubyObject inspect() {
-        Ruby runtime = getRuntime();
-        if (!runtime.registerInspecting(this)) {
-            return runtime.newString("{...}");
-        }
-
+    public IRubyObject inspectHash() {
         try {
+            Ruby runtime = getRuntime();
             final String sep = ", ";
             final String arrow = "=>";
             final StringBuffer sb = new StringBuffer("{");
@@ -694,15 +690,29 @@ public class RubyHash extends RubyObject implements Map {
                     if (!firstEntry) sb.append(sep);
                     sb.append(entry.key.callMethod(context, "inspect")).append(arrow);
                     sb.append(entry.value.callMethod(context, "inspect"));
-                firstEntry = false;
-            }
+                    firstEntry = false;
+                }
             }
             sb.append("}");
             return runtime.newString(sb.toString());
         } finally {
             postIter();
-            runtime.unregisterInspecting(this);
-        }
+        }         
+    }
+
+    /** rb_hash_inspect
+     * 
+     */
+    public IRubyObject inspect() {
+        if (size == 0) return getRuntime().newString("{}");
+        if (getRuntime().isInspecting(this)) return getRuntime().newString("{...}");
+        
+        try {
+            getRuntime().registerInspecting(this);
+            return inspectHash();
+        } finally {
+            getRuntime().unregisterInspecting(this);
+        }        
     }
 
     /** rb_hash_size
@@ -740,14 +750,13 @@ public class RubyHash extends RubyObject implements Map {
         return result;
     }
 
-    /** rb_hash_to_s
+    /** rb_hash_to_s & to_s_hash
      * 
      */
     public IRubyObject to_s() {
-        if (!getRuntime().registerInspecting(this)) {
-            return getRuntime().newString("{...}");
-        }
+        if (getRuntime().isInspecting(this)) return getRuntime().newString("{...}");
         try {
+            getRuntime().registerInspecting(this);
             return to_a().to_s();
         } finally {
             getRuntime().unregisterInspecting(this);

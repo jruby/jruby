@@ -1156,15 +1156,37 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getRuntime().newBoolean(isFrozen());
     }
 
+    /** inspect_obj
+     * 
+     */
+    private StringBuffer inspectObj(StringBuffer part) {
+        String sep = "";
+        Map iVars = getInstanceVariablesSnapshot();
+        for (Iterator iter = iVars.keySet().iterator(); iter.hasNext();) {
+            String name = (String) iter.next();
+            if(IdUtil.isInstanceVariable(name)) {
+                part.append(sep);
+                part.append(" ");
+                part.append(name);
+                part.append("=");
+                part.append(((IRubyObject)(iVars.get(name))).callMethod(getRuntime().getCurrentContext(), "inspect"));
+                sep = ",";
+            }
+        }
+        part.append(">");
+        return part;
+    }
+
     /** rb_obj_inspect
      *
      */
     public IRubyObject inspect() {
+        Ruby runtime = getRuntime();
         if ((!isImmediate()) &&
                 // TYPE(obj) == T_OBJECT
                 !(this instanceof RubyClass) &&
-                this != getRuntime().getObject() &&
-                this != getRuntime().getClass("Module") &&
+                this != runtime.getObject() &&
+                this != runtime.getClass("Module") &&
                 !(this instanceof RubyModule) &&
                 safeHasInstanceVariables()) {
 
@@ -1172,34 +1194,22 @@ public class RubyObject implements Cloneable, IRubyObject {
             String cname = getMetaClass().getRealClass().getName();
             part.append("#<").append(cname).append(":0x");
             part.append(Integer.toHexString(System.identityHashCode(this)));
-            if(!getRuntime().registerInspecting(this)) {
+
+            if (runtime.isInspecting(this)) {
                 /* 6:tags 16:addr 1:eos */
                 part.append(" ...>");
-                return getRuntime().newString(part.toString());
+                return runtime.newString(part.toString());
             }
             try {
-                String sep = "";
-                Map iVars = getInstanceVariablesSnapshot();
-                for (Iterator iter = iVars.keySet().iterator(); iter.hasNext();) {
-                    String name = (String) iter.next();
-                    if(IdUtil.isInstanceVariable(name)) {
-                        part.append(sep);
-                        part.append(" ");
-                        part.append(name);
-                        part.append("=");
-                        part.append(((IRubyObject)(iVars.get(name))).callMethod(getRuntime().getCurrentContext(), "inspect"));
-                        sep = ",";
-                    }
-                }
-                part.append(">");
-                return getRuntime().newString(part.toString());
+                runtime.registerInspecting(this);
+                return runtime.newString(inspectObj(part).toString());
             } finally {
-                getRuntime().unregisterInspecting(this);
+                runtime.unregisterInspecting(this);
             }
         }
-        
+
         if (isNil()) return RubyNil.inspect(this);
-        return callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
+        return callMethod(runtime.getCurrentContext(), MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
     }
 
     /** rb_obj_is_instance_of

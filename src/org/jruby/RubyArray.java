@@ -1126,33 +1126,42 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    /** rb_ary_inspect
-     *
+    /** inspect_ary
+     * 
      */
+    private IRubyObject inspectAry() {
+        StringBuffer buffer = new StringBuffer("[");
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        boolean tainted = isTaint();
+
+        for (int i = 0; i < realLength; i++) {
+            RubyString s = RubyString.objAsString(values[begin + i].callMethod(context, "inspect"));
+
+            if (s.isTaint()) tainted = true;
+
+            if (i > 0) buffer.append(", ");
+
+            buffer.append(s.toString());
+        }
+        buffer.append("]");
+
+        RubyString str = runtime.newString(buffer.toString());
+        if (tainted) str.setTaint(true);
+
+        return str;
+    }
+
+    /** rb_ary_inspect
+    *
+    */    
     public IRubyObject inspect() {
         if (realLength == 0) return getRuntime().newString("[]");
+        if (getRuntime().isInspecting(this)) return  getRuntime().newString("[...]");
 
-        if (!getRuntime().registerInspecting(this)) return getRuntime().newString("[...]");
-
-        RubyString s;
         try {
-            StringBuffer buffer = new StringBuffer("[");
-            Ruby runtime = getRuntime();
-            ThreadContext context = runtime.getCurrentContext();
-            boolean tainted = isTaint();
-            for (int i = 0; i < realLength; i++) {
-                s = RubyString.objAsString(values[begin + i].callMethod(context, "inspect"));
-                
-                if (s.isTaint()) tainted = true;
-
-                if (i > 0) buffer.append(", ");
-
-                buffer.append(s.toString());
-            }
-            buffer.append("]");
-            if (tainted) setTaint(true);
-
-            return runtime.newString(buffer.toString());
+            getRuntime().registerInspecting(this);
+            return inspectAry();
         } finally {
             getRuntime().unregisterInspecting(this);
         }
@@ -1246,10 +1255,13 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    private final IRubyObject inspectJoin(IRubyObject sep) {
-        IRubyObject result = join(sep);
-        getRuntime().unregisterInspecting(this);
-        return result;
+    private IRubyObject inspectJoin(RubyArray tmp, IRubyObject sep) {
+        try {
+            getRuntime().registerInspecting(this);
+            return tmp.join(sep);
+        } finally {
+            getRuntime().unregisterInspecting(this);
+        }
     }
 
     /** rb_ary_join
@@ -1279,10 +1291,10 @@ public class RubyArray extends RubyObject implements List {
             if (tmp instanceof RubyString) {
                 // do nothing
             } else if (tmp instanceof RubyArray) {
-                if (!runtime.registerInspecting(tmp)) {
+                if (runtime.isInspecting(tmp)) {
                     tmp = runtime.newString("[...]");
                 } else {
-                    tmp = ((RubyArray) tmp).inspectJoin(sep);
+                    tmp = inspectJoin((RubyArray)tmp, sep);
                 }
             } else {
                 tmp = RubyString.objAsString(tmp);
@@ -1291,7 +1303,7 @@ public class RubyArray extends RubyObject implements List {
             if (i > begin && !sep.isNil()) buf.append(strSep.getByteList());
 
             buf.append(tmp.asString().getByteList());
-            taint |= tmp.isTaint();
+            if (tmp.isTaint()) taint = true;
         }
 
         RubyString result = runtime.newString(buf); 

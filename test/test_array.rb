@@ -213,4 +213,12 @@ class TestArray < Test::Unit::TestCase
   	  +[2,3]
   	end
   end
+
+  def test_recursive_join
+    arr = []
+    arr << [arr]
+    arr << 1
+    assert_equal("[...]1", arr.join)
+  end
+
 end
