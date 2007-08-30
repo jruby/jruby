@@ -402,4 +402,30 @@ public class CompilerHelpers {
     public static IRubyObject[] createObjectArray(IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
         return new IRubyObject[] {arg1, arg2, arg3, arg4, arg5};
     }
+    
+    public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
+        Ruby runtime = proc.getRuntime();
+
+        // No block from a nil proc
+        if (proc.isNil()) return Block.NULL_BLOCK;
+
+        // If not already a proc then we should try and make it one.
+        if (!(proc instanceof RubyProc)) {
+            proc = proc.convertToType(runtime.getClass("Proc"), 0, "to_proc", false);
+
+            if (!(proc instanceof RubyProc)) {
+                throw runtime.newTypeError("wrong argument type "
+                        + proc.getMetaClass().getName() + " (expected Proc)");
+            }
+        }
+
+        // TODO: Add safety check for taintedness
+        if (currentBlock != null && currentBlock.isGiven()) {
+            RubyProc procObject = currentBlock.getProcObject();
+            // The current block is already associated with proc.  No need to create a new one
+            if (procObject != null && procObject == proc) return currentBlock;
+        }
+
+        return ((RubyProc) proc).getBlock();
+    }
 }

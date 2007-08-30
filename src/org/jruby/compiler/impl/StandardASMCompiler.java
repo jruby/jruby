@@ -1990,6 +1990,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.invokestatic(classname, methodName, METHOD_SIGNATURE);
         }
+        
+        public void unwrapPassedBlock() {
+            loadBlock();
+            invokeUtilityMethod("getBlockFromBlockPassBody", cg.sig(Block.class, cg.params(IRubyObject.class, Block.class)));
+        }
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {

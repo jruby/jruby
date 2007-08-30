@@ -339,3 +339,7 @@ test_equal(3, compile_and_run("def foo(&b); while true; b.call; end; end; foo { 
 # this one doesn't work normally, so I wouldn't expect it to work here yet
 #test_equal(2, compile_and_run("a = 0; 1.times { a += 1; eval 'redo' if a < 2 }; a"))
 test_equal(3, compile_and_run("def foo(&b); while true; b.call; end; end; foo { eval 'break 3' }"))
+
+# block pass node compilation
+test_equal([false, true], compile_and_run("def foo; block_given?; end; p = proc {}; [foo(&nil), foo(&p)]"))
+test_equal([false, true], compile_and_run("public; def foo; block_given?; end; p = proc {}; [self.foo(&nil), self.foo(&p)]"))

@@ -143,6 +143,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
@@ -1857,29 +1858,8 @@ public class EvaluationState {
         } else if (blockNode instanceof BlockPassNode) {
             BlockPassNode blockPassNode = (BlockPassNode) blockNode;
             IRubyObject proc = evalInternal(runtime,context, blockPassNode.getBodyNode(), self, currentBlock);
-
-            // No block from a nil proc
-            if (proc.isNil()) return Block.NULL_BLOCK;
-
-            // If not already a proc then we should try and make it one.
-            if (!(proc instanceof RubyProc)) {
-                proc = proc.convertToType(runtime.getClass("Proc"), 0, "to_proc", false);
-
-                if (!(proc instanceof RubyProc)) {
-                    throw runtime.newTypeError("wrong argument type "
-                            + proc.getMetaClass().getName() + " (expected Proc)");
-                }
-            }
-
-            // TODO: Add safety check for taintedness
             
-            if (currentBlock.isGiven()) {
-                RubyProc procObject = currentBlock.getProcObject();
-                // The current block is already associated with proc.  No need to create a new one
-                if (procObject != null && procObject == proc) return currentBlock;
-            }
-            
-            return ((RubyProc) proc).getBlock();
+            return CompilerHelpers.getBlockFromBlockPassBody(proc, currentBlock);
         }
          
         assert false: "Trying to get block from something which cannot deliver";

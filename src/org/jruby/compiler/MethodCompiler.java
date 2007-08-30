@@ -478,4 +478,5 @@ public interface MethodCompiler {
     public void undefMethod(String name);
     public void defineClass(String name, StaticScope staticScope, ClosureCallback superCallback, ClosureCallback pathCallback, ClosureCallback bodyCallback, ClosureCallback receiverCallback);
     public void defineModule(String name, StaticScope staticScope, ClosureCallback pathCallback, ClosureCallback bodyCallback);
+    public void unwrapPassedBlock();
 }

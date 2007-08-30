@@ -99,6 +99,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.exceptions.JumpException;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
+import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.CaseNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.DRegexpNode;
@@ -566,14 +567,30 @@ public class NodeCompilerFactory {
                 context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, null, false);
             }
         } else {
-            // FIXME: Missing blockpassnode handling
-            final IterNode iterNode = (IterNode) callNode.getIterNode();
-            
-            final ClosureCallback closureArg = new ClosureCallback() {
-                public void compile(MethodCompiler context) {
-                    NodeCompilerFactory.compile(iterNode, context);
-                }
-            };
+            ClosureCallback closureArg;
+            switch (callNode.getIterNode().nodeId) {
+            case ITERNODE:
+                final IterNode iterNode = (IterNode) callNode.getIterNode();
+
+                closureArg = new ClosureCallback() {
+                    public void compile(MethodCompiler context) {
+                        NodeCompilerFactory.compile(iterNode, context);
+                    }
+                };
+                break;
+            case BLOCKPASSNODE:
+                final BlockPassNode blockPassNode = (BlockPassNode) callNode.getIterNode();
+
+                closureArg = new ClosureCallback() {
+                    public void compile(MethodCompiler context) {
+                        NodeCompilerFactory.compile(blockPassNode.getBodyNode(), context);
+                        context.unwrapPassedBlock();
+                    }
+                };
+                break;
+            default:
+                throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + callNode.getPosition());
+            }
             
             if (callNode.getArgsNode() != null) {
                 context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, closureArg, false);
@@ -1632,15 +1649,30 @@ public class NodeCompilerFactory {
                 context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, null, false);
             }
         } else {
-            // FIXME: Missing blockpasnode stuff here
-            
-            final IterNode iterNode = (IterNode) fcallNode.getIterNode();
-            
-            final ClosureCallback closureArg = new ClosureCallback() {
-                public void compile(MethodCompiler context) {
-                    NodeCompilerFactory.compile(iterNode, context);
-                }
-            };
+            ClosureCallback closureArg;
+            switch (fcallNode.getIterNode().nodeId) {
+            case ITERNODE:
+                final IterNode iterNode = (IterNode) fcallNode.getIterNode();
+
+                closureArg = new ClosureCallback() {
+                    public void compile(MethodCompiler context) {
+                        NodeCompilerFactory.compile(iterNode, context);
+                    }
+                };
+                break;
+            case BLOCKPASSNODE:
+                final BlockPassNode blockPassNode = (BlockPassNode) fcallNode.getIterNode();
+
+                closureArg = new ClosureCallback() {
+                    public void compile(MethodCompiler context) {
+                        NodeCompilerFactory.compile(blockPassNode.getBodyNode(), context);
+                        context.unwrapPassedBlock();
+                    }
+                };
+                break;
+            default:
+                throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + fcallNode.getPosition());
+            }
 
             if (fcallNode.getArgsNode() != null) {
                 context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, false);
