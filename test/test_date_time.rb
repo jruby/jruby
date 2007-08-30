@@ -48,5 +48,25 @@ class TestDateTime < Test::Unit::TestCase
     0.upto(5) do |i|
       assert(answers[i] == Time.gm(*t[0..-(i+1)]).to_s)
     end
+
+    # Test the fifth beatle of gm/utc
+    t = Time.gm(2005,1,1,0,1,0,10)
+    class << t
+      def seconds_since_midnight
+        self.to_i - self.change(:hour => 0).to_i + (self.usec/1.0e+6)
+      end
+
+      def change(options)
+        ::Time.send(self.utc? ? :utc : :local, 
+            options[:year]  || self.year, 
+            options[:month] || self.month, 
+            options[:mday]  || self.mday, 
+            options[:hour]  || self.hour, 
+            options[:min]   || (options[:hour] ? 0 : self.min),
+            options[:sec]   || ((options[:hour] || options[:min]) ? 0 : self.sec),
+            options[:usec]  || ((options[:hour] || options[:min] || options[:sec]) ? 0 : self.usec))
+      end
+    end
+    assert(60.00001, t.seconds_since_midnight)
   end
 end
