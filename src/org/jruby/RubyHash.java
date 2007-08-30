@@ -215,6 +215,15 @@ public class RubyHash extends RubyObject implements Map {
         this.ifNone = defaultValue;
         alloc();
     }
+    
+    /*
+     *  Constructor for internal usage (mainly for Array#|, Array#&, Array#- and Array#uniq)
+     *  it doesn't initialize ifNone field 
+     */
+    RubyHash(Ruby runtime, boolean objectSpace) {
+        super(runtime, runtime.getHash(), objectSpace);
+        alloc();
+    }
 
     // TODO should this be deprecated ? (to be efficient, internals should deal with RubyHash directly) 
     public RubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
@@ -231,7 +240,7 @@ public class RubyHash extends RubyObject implements Map {
     private final void alloc() {
         threshold = INITIAL_THRESHOLD;
         table = new RubyHashEntry[MRI_HASH_RESIZE ? MRI_INITIAL_CAPACITY : JAVASOFT_INITIAL_CAPACITY];
-    }    
+    }
 
     /* ============================
      * Here are hash internals 
@@ -1102,6 +1111,10 @@ public class RubyHash extends RubyObject implements Map {
 
         if ((flags & PROCDEFAULT_HASH_F) != 0) return ifNone.callMethod(getRuntime().getCurrentContext(), "call", new IRubyObject[]{this, getRuntime().getNil()});
         return ifNone;
+    }
+    
+    public final RubyHashEntry fastDelete(IRubyObject key) {
+        return internalDelete(key);
     }
 
     /** rb_hash_delete

@@ -220,5 +220,24 @@ class TestArray < Test::Unit::TestCase
     arr << 1
     assert_equal("[...]1", arr.join)
   end
+  
+  class ArrayMock
+     def hash
+       0
+     end
+
+     def eql? a
+       true
+     end
+  end
+
+  def test_methods_requiring_hashing
+    a1 = ArrayMock.new
+    a2 = ArrayMock.new
+    assert_equal(1, [a1,a2].uniq.size)
+    assert_equal(1, ([a1] | [a2]).size)
+    assert_equal(1, ([a1] & [a2]).size)
+    assert_equal(0, ([a1] - [a2]).size)
+  end
 
 end

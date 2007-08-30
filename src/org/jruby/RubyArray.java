@@ -2002,34 +2002,34 @@ public class RubyArray extends RubyObject implements List {
     /** ary_make_hash
      * 
      */
-    private final Set makeSet(RubyArray ary2) {
-        final Set set = new HashSet();
+    private final RubyHash makeHash(RubyArray ary2) {
+        RubyHash hash = new RubyHash(getRuntime(), false);
         int begin = this.begin;
         for (int i = begin; i < begin + realLength; i++) {
-            set.add(values[i]);
+            hash.fastASet(values[i], NEVER);
         }
 
         if (ary2 != null) {
             begin = ary2.begin;            
             for (int i = begin; i < begin + ary2.realLength; i++) {
-                set.add(ary2.values[i]);
+                hash.fastASet(ary2.values[i], NEVER);
             }
         }
-        return set;
+        return hash;
     }
 
     /** rb_ary_uniq_bang
      *
      */
     public IRubyObject uniq_bang() {
-        Set set = makeSet(null);
+        RubyHash hash = makeHash(null);
 
-        if (realLength == set.size()) return getRuntime().getNil();
+        if (realLength == hash.size()) return getRuntime().getNil();
 
         int j = 0;
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (set.remove(v)) store(j++, v);
+            if (hash.fastDelete(v) != null) store(j++, v);
         }
         realLength = j;
         return this;
@@ -2048,13 +2048,12 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject op_diff(IRubyObject other) {
-        Set set = other.convertToArray().makeSet(null);
+        RubyHash hash = other.convertToArray().makeHash(null);
         RubyArray ary3 = new RubyArray(getRuntime());
 
         int begin = this.begin;
         for (int i = begin; i < begin + realLength; i++) {
-            if (set.contains(values[i])) continue;
-
+            if (hash.fastARef(values[i]) != null) continue;
             ary3.append(elt(i - begin));
         }
 
@@ -2066,13 +2065,13 @@ public class RubyArray extends RubyObject implements List {
      */
     public IRubyObject op_and(IRubyObject other) {
         RubyArray ary2 = other.convertToArray();
-        Set set = ary2.makeSet(null);
+        RubyHash hash = ary2.makeHash(null);
         RubyArray ary3 = new RubyArray(getRuntime(), 
                 realLength < ary2.realLength ? realLength : ary2.realLength);
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (set.remove(v)) ary3.append(v);
+            if (hash.fastDelete(v) != null) ary3.append(v);
         }
 
         return ary3;
@@ -2083,17 +2082,17 @@ public class RubyArray extends RubyObject implements List {
      */
     public IRubyObject op_or(IRubyObject other) {
         RubyArray ary2 = other.convertToArray();
-        Set set = makeSet(ary2);
+        RubyHash set = makeHash(ary2);
 
         RubyArray ary3 = new RubyArray(getRuntime(), realLength + ary2.realLength);
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (set.remove(v)) ary3.append(v);
+            if (set.fastDelete(v) != null) ary3.append(v);
         }
         for (int i = 0; i < ary2.realLength; i++) {
             IRubyObject v = ary2.elt(i);
-            if (set.remove(v)) ary3.append(v);
+            if (set.fastDelete(v) != null) ary3.append(v);
         }
         return ary3;
     }
