@@ -1995,6 +1995,29 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadBlock();
             invokeUtilityMethod("getBlockFromBlockPassBody", cg.sig(Block.class, cg.params(IRubyObject.class, Block.class)));
         }
+        
+        public void performBackref(char type) {
+            loadThreadContext();
+            switch (type) {
+            case '~':
+                invokeUtilityMethod("backref", cg.sig(IRubyObject.class, cg.params(ThreadContext.class)));
+                break;
+            case '&':
+                invokeUtilityMethod("backrefLastMatch", cg.sig(IRubyObject.class, cg.params(ThreadContext.class)));
+                break;
+            case '`':
+                invokeUtilityMethod("backrefMatchPre", cg.sig(IRubyObject.class, cg.params(ThreadContext.class)));
+                break;
+            case '\'':
+                invokeUtilityMethod("backrefMatchPost", cg.sig(IRubyObject.class, cg.params(ThreadContext.class)));
+                break;
+            case '+':
+                invokeUtilityMethod("backrefMatchLast", cg.sig(IRubyObject.class, cg.params(ThreadContext.class)));
+                break;
+            default:
+                throw new NotCompilableException("ERROR: backref with invalid type");
+            }
+        }
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {

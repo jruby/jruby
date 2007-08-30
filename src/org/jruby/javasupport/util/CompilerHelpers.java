@@ -9,9 +9,11 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyLocalJumpError;
+import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
+import org.jruby.RubyRegexp;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.EvaluationState;
@@ -427,5 +429,38 @@ public class CompilerHelpers {
         }
 
         return ((RubyProc) proc).getBlock();
+    }
+    
+    public static IRubyObject backref(ThreadContext context) {
+        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        
+        if(backref instanceof RubyMatchData) {
+            ((RubyMatchData)backref).use();
+        }
+        return backref;
+    }
+    
+    public static IRubyObject backrefLastMatch(ThreadContext context) {
+        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        
+        return RubyRegexp.last_match(backref);
+    }
+    
+    public static IRubyObject backrefMatchPre(ThreadContext context) {
+        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        
+        return RubyRegexp.match_pre(backref);
+    }
+    
+    public static IRubyObject backrefMatchPost(ThreadContext context) {
+        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        
+        return RubyRegexp.match_post(backref);
+    }
+    
+    public static IRubyObject backrefMatchLast(ThreadContext context) {
+        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        
+        return RubyRegexp.match_last(backref);
     }
 }

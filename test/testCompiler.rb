@@ -343,3 +343,6 @@ test_equal(3, compile_and_run("def foo(&b); while true; b.call; end; end; foo { 
 # block pass node compilation
 test_equal([false, true], compile_and_run("def foo; block_given?; end; p = proc {}; [foo(&nil), foo(&p)]"))
 test_equal([false, true], compile_and_run("public; def foo; block_given?; end; p = proc {}; [self.foo(&nil), self.foo(&p)]"))
+
+# backref nodes
+test_equal(["foo", "foo", "bazbar", "barfoo", "foo"], compile_and_run("'bazbarfoobarfoo' =~ /(foo)/; [$~[0], $&, $`, $', $+]"))

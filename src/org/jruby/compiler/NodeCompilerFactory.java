@@ -147,6 +147,9 @@ public class NodeCompilerFactory {
         case ATTRASSIGNNODE:
             compileAttrAssign(node, context);
             break;
+        case BACKREFNODE:
+            compileBackref(node, context);
+            break;
         case BEGINNODE:
             compileBegin(node, context);
             break;
@@ -488,6 +491,14 @@ public class NodeCompilerFactory {
         compileArguments(attrAssignNode.getArgsNode(), context);
         
         context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName());
+    }
+    
+    public static void compileBackref(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        BackRefNode iVisited = (BackRefNode) node;
+        
+        context.performBackref(iVisited.getType());
     }
     
     public static void compileBegin(Node node, MethodCompiler context) {
