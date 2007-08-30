@@ -659,6 +659,16 @@ public class RubyTime extends RubyObject {
         } else {
             // MRI accepts additional wday argument which appears to be ignored.
             len = Arity.checkArgumentCount(runtime, args, 1, 8);
+            
+            if (len < 6) {
+                IRubyObject[] newArgs = new IRubyObject[6];
+                System.arraycopy(args, 0, newArgs, 0, args.length);
+                for (int i = len; i < 6; i++) {
+                    newArgs[i] = runtime.getNil();
+                }
+                args = newArgs;
+                len = 6;
+            }
         }
         ThreadContext tc = runtime.getCurrentContext();
         
@@ -696,7 +706,7 @@ public class RubyTime extends RubyObject {
 
         int[] int_args = { 1, 0, 0, 0, 0 };
 
-        for (int i = 0; len > i + 2; i++) {
+        for (int i = 0; int_args.length >= i + 2; i++) {
             if (!args[i + 2].isNil()) {
                 if(!(args[i+2] instanceof RubyNumeric)) {
                     args[i+2] = args[i+2].callMethod(tc,"to_i");
