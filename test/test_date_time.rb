@@ -34,5 +34,19 @@ class TestDateTime < Test::Unit::TestCase
     assert_equal(0, early <=> early)
     assert_equal(1, late <=> early)
   end
-  
+
+  def test_create_various_number_of_args
+    t = [2007, 8, 28, 0, 37, 29]
+    answers = ["Tue Aug 28 00:37:29 UTC 2007",
+               "Tue Aug 28 00:37:00 UTC 2007",
+               "Tue Aug 28 00:00:00 UTC 2007",
+               "Tue Aug 28 00:00:00 UTC 2007",
+               "Wed Aug 01 00:00:00 UTC 2007",
+               "Mon Jan 01 00:00:00 UTC 2007",
+               "Mon Jan 01 00:00:00 UTC 2007"]
+
+    0.upto(5) do |i|
+      assert(answers[i] == Time.gm(*t[0..-(i+1)]).to_s)
+    end
+  end
 end
