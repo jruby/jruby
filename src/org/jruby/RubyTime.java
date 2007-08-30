@@ -650,24 +650,25 @@ public class RubyTime extends RubyObject {
     private static final long[] time_min = {1, 0, 0, 0, 0};
     private static final long[] time_max = {31, 23, 59, 60, Long.MAX_VALUE};
 
+    private static final int ARG_SIZE = 7;
     private static RubyTime createTime(IRubyObject recv, IRubyObject[] args, boolean gmt) {
         Ruby runtime = recv.getRuntime();
-        int len = 6;
+        int len = ARG_SIZE;
         
         if (args.length == 10) {
-            args = new IRubyObject[] { args[5], args[4], args[3], args[2], args[1], args[0] };
+            args = new IRubyObject[] { args[5], args[4], args[3], args[2], args[1], args[0], runtime.getNil() };
         } else {
             // MRI accepts additional wday argument which appears to be ignored.
             len = Arity.checkArgumentCount(runtime, args, 1, 8);
             
-            if (len < 6) {
-                IRubyObject[] newArgs = new IRubyObject[6];
+            if (len < ARG_SIZE) {
+                IRubyObject[] newArgs = new IRubyObject[ARG_SIZE];
                 System.arraycopy(args, 0, newArgs, 0, args.length);
-                for (int i = len; i < 6; i++) {
+                for (int i = len; i < ARG_SIZE; i++) {
                     newArgs[i] = runtime.getNil();
                 }
                 args = newArgs;
-                len = 6;
+                len = ARG_SIZE;
             }
         }
         ThreadContext tc = runtime.getCurrentContext();
@@ -704,7 +705,7 @@ public class RubyTime extends RubyObject {
             }
         }
 
-        int[] int_args = { 1, 0, 0, 0, 0 };
+        int[] int_args = { 1, 0, 0, 0, 0, 0 };
 
         for (int i = 0; int_args.length >= i + 2; i++) {
             if (!args[i + 2].isNil()) {
