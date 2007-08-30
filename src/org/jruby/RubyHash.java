@@ -695,7 +695,7 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     if (!firstEntry) sb.append(sep);
                     sb.append(entry.key.callMethod(context, "inspect")).append(arrow);
                     sb.append(entry.value.callMethod(context, "inspect"));
@@ -749,9 +749,9 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {                
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {                
                     result.append(RubyArray.newArray(runtime, entry.key, entry.value));
-        }
+                }
             }
         } finally {postIter();}
 
@@ -789,7 +789,7 @@ public class RubyHash extends RubyObject implements Map {
                     int i = bucketIndex(entry.hash, newTable.length);
                     entry.next = newTable[i];
                     newTable[i] = entry;
-        }
+                }
                 entry = next;
             }
         }
@@ -882,9 +882,9 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     if (entry.value.equalInternal(context, value).isTrue()) return runtime.getTrue();
-    }
+                }
             }
         } finally {postIter();}
         return runtime.getFalse();
@@ -901,10 +901,10 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     // rb_assoc_new equivalent
                     block.yield(context, RubyArray.newArray(runtime, entry.key, entry.value), null, null, false);
-	}
+                }
             }
         } finally {postIter();}
 
@@ -922,11 +922,11 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     // rb_yield_values(2,...) equivalent
                     block.yield(context, RubyArray.newArray(runtime, entry.key, entry.value), null, null, true);                    
-        }
-    }
+                }
+            }
         } finally {postIter();}
 
         return this;	
@@ -943,10 +943,10 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     block.yield(context, entry.value);
-		}
-	}
+                }
+            }
         } finally {postIter();}
 
         return this;        
@@ -963,10 +963,10 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     block.yield(context, entry.key);
-		}
-	}
+                }
+            }
         } finally {postIter();}
 
         return this;  
@@ -990,10 +990,10 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     if (entry.value.equalInternal(context, value).isTrue()) return entry.key;
+                }
             }
-        }
         } finally {postIter();}
 
         return getRuntime().getNil();        
@@ -1023,9 +1023,9 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     keys.append(entry.key);
-    }
+                }
             }
         } finally {postIter();}
 
@@ -1042,9 +1042,9 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     values.append(entry.value);
-    }
+                }
             }
         } finally {postIter();}
 
@@ -1079,12 +1079,12 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     IRubyObject value = otherHash.internalGet(entry.key);
                     if (value == null) return runtime.getFalse();
                     if (!entry.value.equalInternal(context, value).isTrue()) return runtime.getFalse();
-        }
-    }
+                }
+            }
         } finally {postIter();}        
 
         return runtime.getTrue();
@@ -1100,12 +1100,12 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     RubyArray result = RubyArray.newArray(getRuntime(), entry.key, entry.value);
                     internalDeleteSafe(entry.key);
                     flags |= DELETED_HASH_F;
                     return result;
-    }
+                }
             }
         } finally {postIter();}          
 
@@ -1149,7 +1149,7 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {            
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     if (block.yield(context, runtime.newArray(entry.key, entry.value), null, null, true).isTrue()) {
                         result.append(runtime.newArray(entry.key, entry.value));
                     }
@@ -1172,7 +1172,7 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {            
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     if (block.yield(context, RubyArray.newArray(runtime, entry.key, entry.value), null, null, true).isTrue())
                         delete(entry.key, block);
                 }
@@ -1224,10 +1224,10 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     result.aset(entry.value, entry.key);
-		}
-	}
+                }
+            }
         } finally {postIter();}        
 
         return result;        
@@ -1249,20 +1249,20 @@ public class RubyHash extends RubyObject implements Map {
                  ThreadContext context = runtime.getCurrentContext();
 
                  for (int i = 0; i < ltable.length; i++) {
-                     for (RubyHashEntry entry = ltable[i]; entry != null && (entry = otherHash.checkIter(ltable, entry)) != null; entry = entry.next) {
+                     for (RubyHashEntry entry = ltable[i]; (entry = otherHash.checkIter(ltable, entry)) != null; entry = entry.next) {
                          IRubyObject value;
                          if (internalGet(entry.key) != null)
                              value = block.yield(context, RubyArray.newArrayNoCopy(runtime, new IRubyObject[]{entry.key, aref(entry.key), entry.value}));
                          else
                              value = entry.value;
                          aset(entry.key, value);
-                }
-            }
+                     }
+                 }
             } else { 
                 for (int i = 0; i < ltable.length; i++) {
-                    for (RubyHashEntry entry = ltable[i]; entry != null && (entry = otherHash.checkIter(ltable, entry)) != null; entry = entry.next) {
+                    for (RubyHashEntry entry = ltable[i]; (entry = otherHash.checkIter(ltable, entry)) != null; entry = entry.next) {
                         aset(entry.key, entry.value);
-        }
+                    }
                 }
             }  
         } finally {otherHash.postIter();}
@@ -1291,7 +1291,7 @@ public class RubyHash extends RubyObject implements Map {
             otherHash.preIter();
             RubyHashEntry[]ltable = otherHash.table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = otherHash.checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = otherHash.checkIter(ltable, entry)) != null; entry = entry.next) {
                     aset(entry.key, entry.value);
                 }
             }
@@ -1335,11 +1335,11 @@ public class RubyHash extends RubyObject implements Map {
             hash.preIter();
             RubyHashEntry[]ltable = hash.table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = hash.checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = hash.checkIter(ltable, entry)) != null; entry = entry.next) {
                     output.dumpObject(entry.key);
                     output.dumpObject(entry.value);
-        }
-        }
+                }
+            }
         } finally {hash.postIter();}         
 
         if (!hash.ifNone.isNil()) output.dumpObject(hash.ifNone);
@@ -1383,10 +1383,10 @@ public class RubyHash extends RubyObject implements Map {
             preIter();
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
-                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     if (entry.value.equalInternal(context, element).isTrue()) return true;
-			}
-		}
+                }
+            }
         } finally {postIter();}        
 
 		return false;

@@ -135,3 +135,9 @@ class H1 < Hash
 end
 
 test_no_exception{ H1.new.clone }
+
+h = {1=>2}
+test_exception(RuntimeError){h.each{h.rehash}}
+
+h = {:foo=>:bar}
+test_exception(RuntimeError){h.each{66.times{|i|h[i]=i}}}
