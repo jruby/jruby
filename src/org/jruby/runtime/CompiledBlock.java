@@ -30,6 +30,7 @@ package org.jruby.runtime;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -69,12 +70,26 @@ public class CompiledBlock extends Block {
         // assigned as is to var 0.
         // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], 
         // since single vars will want that anyway
+        Visibility oldVis = frame.getVisibility();
         try {
             IRubyObject[] realArgs = aValue ? 
                     setupBlockArgs(context, args, self) : setupBlockArg(context, args, self); 
             pre(context, klass);
-            return callback.call(context, self, realArgs);
+            
+            // NOTE: Redo jump handling is within compiled closure, wrapping the body
+            try {
+                return callback.call(context, self, realArgs);
+            } catch (JumpException.BreakJump bj) {
+                if (bj.getTarget() == null) {
+                    bj.setTarget(this);
+                }
+                throw bj;
+            }
+        } catch (JumpException.NextJump nj) {
+            // A 'next' is like a local return from the block, ending this call or yield.
+            return isLambda ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
         } finally {
+            frame.setVisibility(oldVis);
             post(context);
         }
     }
@@ -119,7 +134,11 @@ public class CompiledBlock extends Block {
     }
 
     public Block cloneBlock() {
-        return new CompiledBlock(self, frame.duplicate(), visibility, klass, 
+        Block newBlock = new CompiledBlock(self, frame.duplicate(), visibility, klass, 
                 dynamicScope.cloneScope(), arity, callback, hasMultipleArgsHead, argumentType);
+        
+        newBlock.isLambda = isLambda;
+        
+        return newBlock;
     }
 }

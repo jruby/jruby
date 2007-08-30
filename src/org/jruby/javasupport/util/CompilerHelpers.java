@@ -7,12 +7,15 @@ import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyException;
+import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.EvaluationState;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
@@ -340,8 +343,25 @@ public class CompilerHelpers {
         }
     }
     
+    public static String getLocalJumpTypeOrRethrow(RaiseException re) {
+        RubyException exception = re.getException();
+        Ruby runtime = exception.getRuntime();
+        if (exception.isKindOf(runtime.getClass("LocalJumpError"))) {
+            RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
+
+            IRubyObject reason = jumpError.reason();
+
+            return reason.asSymbol();
+        }
+
+        throw re;
+    }
+    
     public static void processBlockArgument(Ruby runtime, ThreadContext context, Block block, int index) {
-        if (!block.isGiven()) return;
+        if (!block.isGiven()) {
+            context.getCurrentScope().setValue(index, runtime.getNil(), 0);
+            return;
+        }
         
         RubyProc blockArg;
         

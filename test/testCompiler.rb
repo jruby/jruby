@@ -309,3 +309,33 @@ test_equal("foo", compile_and_run("def String.foo; 'foo'; end; String.foo"))
 test_equal("bar", compile_and_run("a = 'bar'; class << a; def bar; 'bar'; end; end; a.bar"))
 test_equal("bar", compile_and_run("class Fixnum; class << self; def bar; 'bar'; end; end; end; Fixnum.bar"))
 test_equal(class << Fixnum; self; end, compile_and_run("class Fixnum; def self.metaclass; class << self; self; end; end; end; Fixnum.metaclass"))
+
+# some loop flow control tests
+test_equal(nil, compile_and_run("a = true; b = while a; a = false; break; end; b"))
+test_equal(1, compile_and_run("a = true; b = while a; a = false; break 1; end; b"))
+test_equal(2, compile_and_run("a = 0; while true; a += 1; next if a < 2; break; end; a"))
+test_equal(2, compile_and_run("a = 0; while true; a += 1; next 1 if a < 2; break; end; a"))
+test_equal(2, compile_and_run("a = 0; while true; a += 1; redo if a < 2; break; end; a"))
+test_equal(nil, compile_and_run("a = false; b = until a; a = true; break; end; b"))
+test_equal(1, compile_and_run("a = false; b = until a; a = true; break 1; end; b"))
+test_equal(2, compile_and_run("a = 0; until false; a += 1; next if a < 2; break; end; a"))
+test_equal(2, compile_and_run("a = 0; until false; a += 1; next 1 if a < 2; break; end; a"))
+test_equal(2, compile_and_run("a = 0; until false; a += 1; redo if a < 2; break; end; a"))
+# same with evals
+test_equal(nil, compile_and_run("a = true; b = while a; a = false; eval 'break'; end; b"))
+test_equal(1, compile_and_run("a = true; b = while a; a = false; eval 'break 1'; end; b"))
+test_equal(2, compile_and_run("a = 0; while true; a += 1; eval 'next' if a < 2; eval 'break'; end; a"))
+test_equal(2, compile_and_run("a = 0; while true; a += 1; eval 'next 1' if a < 2; eval 'break'; end; a"))
+test_equal(2, compile_and_run("a = 0; while true; a += 1; eval 'redo' if a < 2; eval 'break'; end; a"))
+test_equal(nil, compile_and_run("a = false; b = until a; a = true; eval 'break'; end; b"))
+test_equal(1, compile_and_run("a = false; b = until a; a = true; eval 'break 1'; end; b"))
+test_equal(2, compile_and_run("a = 0; until false; a += 1; eval 'next' if a < 2; eval 'break'; end; a"))
+test_equal(2, compile_and_run("a = 0; until false; a += 1; eval 'next 1' if a < 2; eval 'break'; end; a"))
+test_equal(2, compile_and_run("a = 0; until false; a += 1; eval 'redo' if a < 2; eval 'break'; end; a"))
+
+# non-local flow control with while loops
+test_equal(2, compile_and_run("a = 0; 1.times { a += 1; redo if a < 2 }; a"))
+test_equal(3, compile_and_run("def foo(&b); while true; b.call; end; end; foo { break 3 }"))
+# this one doesn't work normally, so I wouldn't expect it to work here yet
+#test_equal(2, compile_and_run("a = 0; 1.times { a += 1; eval 'redo' if a < 2 }; a"))
+test_equal(3, compile_and_run("def foo(&b); while true; b.call; end; end; foo { eval 'break 3' }"))

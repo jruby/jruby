@@ -43,9 +43,11 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
+import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyRange;
@@ -288,6 +290,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         protected InvocationCompiler invocationCompiler;
         
         protected Label[] currentLoopLabels;
+        protected Label scopeStart;
+        protected Label scopeEnd;
+        protected Label redoJump;
         protected boolean withinProtection = false;
         
         // The current local variable count, to use for temporary locals during processing
@@ -329,8 +334,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void loadNil() {
-            loadRuntime();
-            invokeIRuby("getNil", cg.sig(IRubyObject.class));
+            method.aload(NIL_INDEX);
         }
 
         public void loadSymbol(String symbol) {
@@ -683,95 +687,148 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void performBooleanLoop(BranchCallback condition, BranchCallback body, boolean checkFirst) {
             // FIXME: handle next/continue, break, etc
-            //Label tryBegin = new Label();
-            //Label tryEnd = new Label();
-            //Label tryCatch = new Label();
-            //method.trycatch(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
-            //method.label(tryBegin);
+            Label tryBegin = new Label();
+            Label tryEnd = new Label();
+            Label tryCatch = new Label();
+            Label catchRedo = new Label();
+            Label catchNext = new Label();
+            Label catchBreak = new Label();
+            Label catchRaised = new Label();
+            Label endOfBody = new Label();
+            Label conditionCheck = new Label();
+            Label topOfBody = new Label();
+            Label done = new Label();
+            Label normalLoopEnd = new Label();
+            method.trycatch(tryBegin, tryEnd, catchRedo, cg.p(JumpException.RedoJump.class));
+            method.trycatch(tryBegin, tryEnd, catchNext, cg.p(JumpException.NextJump.class));
+            method.trycatch(tryBegin, tryEnd, catchBreak, cg.p(JumpException.BreakJump.class));
+            if (checkFirst) {
+                // only while loops seem to have this RaiseException magic
+                method.trycatch(tryBegin, tryEnd, catchRaised, cg.p(RaiseException.class));
+            }
+            
+            method.label(tryBegin);
             {
-                Label condJmp = new Label();
-                Label topJmp = new Label();
-                Label endJmp = new Label();
                 
                 Label[] oldLoopLabels = currentLoopLabels;
                 
-                currentLoopLabels = new Label[] {condJmp, topJmp, endJmp};
-                
-                // start loop off with nil
-                loadNil();
+                currentLoopLabels = new Label[] {endOfBody, topOfBody, done};
                 
                 if (checkFirst) {
-                    // calculate condition
-                    condition.branch(this);
-                    // call isTrue on the result
-                    isTrue();
-
-                    method.ifeq(endJmp); // EQ == 0 (i.e. false)
+                    method.go_to(conditionCheck);
                 }
 
-                method.label(topJmp);
+                method.label(topOfBody);
 
                 body.branch(this);
+                
+                method.label(endOfBody);
 
-                // clear result after each successful loop, resetting to nil
+                // clear body or next result after each successful loop
                 method.pop();
                 
+                method.label(conditionCheck);
+                
                 // check the condition
-                method.label(condJmp);
                 condition.branch(this);
-                
-                // call isTrue on the result
                 isTrue();
-
-                method.ifne(topJmp); // NE == nonzero (i.e. true)
-                
-                // exiting loop normally, leave nil on the stack
-                
-                method.label(endJmp);
+                method.ifne(topOfBody); // NE == nonzero (i.e. true)
                 
                 currentLoopLabels = oldLoopLabels;
             }
 
-            //method.label(tryEnd);
-            // no physical break, terminate loop and skip catch block
-//        Label normalBreak = new Label();
-//        method.go_to(normalBreak);
-//
-//        method.label(tryCatch);
-//        {
-//            method.dup();
-//            method.invokevirtual(cg.p(JumpException.class), "getJumpType", cg.sig(JumpException.JumpType.class));
-//            method.invokevirtual(cg.p(JumpException.JumpType.class), "getTypeId", cg.sig(Integer.TYPE));
-//
-//            Label tryDefault = new Label();
-//            Label breakLabel = new Label();
-//
-//            method.lookupswitch(tryDefault, new int[] {JumpException.JumpType.BREAK}, new Label[] {breakLabel});
-//
-//            // default is to just re-throw unhandled exception
-//            method.label(tryDefault);
-//            method.athrow();
-//
-//            // break just terminates the loop normally, unless it's a block break...
-//            method.label(breakLabel);
-//
-//            // JRUBY-530 behavior
-//            method.dup();
-//            method.invokevirtual(cg.p(JumpException.class), "getTarget", cg.sig(Object.class));
-//            loadClosure();
-//            Label notBlockBreak = new Label();
-//            method.if_acmpne(notBlockBreak);
-//            method.dup();
-//            method.aconst_null();
-//            method.invokevirtual(cg.p(JumpException.class), "setTarget", cg.sig(Void.TYPE, cg.params(Object.class)));
-//            method.athrow();
-//
-//            method.label(notBlockBreak);
-//            // target is not == closure, normal loop exit, pop remaining exception object
-//            method.pop();
-//        }
-//
-//        method.label(normalBreak);
+            method.label(tryEnd);
+            // skip catch block
+            method.go_to(normalLoopEnd);
+
+            // catch logic for flow-control exceptions
+            {
+                // redo jump
+                method.label(catchRedo);
+                method.pop();
+                method.go_to(topOfBody);
+
+                // next jump
+                method.label(catchNext);
+                method.pop();
+                // exceptionNext target is for a next that doesn't push a new value, like this one
+                method.go_to(conditionCheck);
+
+                // break jump
+                Label whileBreak = new Label();
+                {
+                    method.label(catchBreak);
+                    method.dup();
+                    method.invokevirtual(cg.p(JumpException.BreakJump.class), "getTarget", cg.sig(Object.class));
+                    loadBlock();
+                    method.if_acmpeq(whileBreak);
+
+                    // else get result and break loop
+                    method.invokevirtual(cg.p(JumpException.BreakJump.class), "getValue", cg.sig(Object.class));
+                    method.checkcast(cg.p(IRubyObject.class));
+                    method.go_to(done);
+
+                    // if break is intended for our block, clear target and rethrow
+                    method.label(whileBreak);
+                    method.dup();
+                    method.aconst_null();
+                    method.invokevirtual(cg.p(JumpException.BreakJump.class), "setTarget", cg.sig(Void.TYPE, cg.params(Object.class)));
+                    method.athrow();
+                }
+
+                // raised exception
+                if (checkFirst) {
+                    // only while loops seem to have this RaiseException magic
+                    method.label(catchRaised);
+                    Label raiseNext = new Label();
+                    Label raiseRedo = new Label();
+                    Label raiseRethrow = new Label();
+                    method.dup();
+                    invokeUtilityMethod("getLocalJumpTypeOrRethrow", cg.sig(String.class, cg.params(RaiseException.class)));
+                    // if we get here we have a RaiseException we know is a local jump error and an error type
+
+                    // is it break?
+                    method.dup(); // dup string
+                    method.ldc("break");
+                    method.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
+                    method.ifeq(raiseNext);
+                    // pop the extra string, get the break value, and end the loop
+                    method.pop();
+                    method.invokevirtual(cg.p(RaiseException.class), "getException", cg.sig(RubyException.class));
+                    method.checkcast(cg.p(RubyLocalJumpError.class));
+                    method.invokevirtual(cg.p(RubyLocalJumpError.class), "exitValue", cg.sig(IRubyObject.class));
+                    method.go_to(done);
+
+                    // is it next?
+                    method.label(raiseNext);
+                    method.dup();
+                    method.ldc("next");
+                    method.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
+                    method.ifeq(raiseRedo);
+                    // pop the extra string and the exception, jump to the condition
+                    method.pop2();
+                    method.go_to(conditionCheck);
+
+                    // is it redo?
+                    method.label(raiseRedo);
+                    method.dup();
+                    method.ldc("redo");
+                    method.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
+                    method.ifeq(raiseRethrow);
+                    // pop the extra string and the exception, jump to the condition
+                    method.pop2();
+                    method.go_to(topOfBody);
+
+                    // just rethrow it
+                    method.label(raiseRethrow);
+                    method.pop(); // pop extra string
+                    method.athrow();
+                }
+            }
+            
+            method.label(normalLoopEnd);
+            loadNil();
+            method.label(done);
         }
 
         public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId) {
@@ -1280,18 +1337,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         public void issueLoopBreak() {
             // inside a loop, break out of it
-            method.swap();
-            method.pop();
-
             // go to end of loop, leaving break value on stack
             method.go_to(currentLoopLabels[2]);
         }
         
         public void issueLoopNext() {
-            // inside a loop, pop result and jump to conditional
-            method.pop();
-
-            // go to condition
+            // inside a loop, jump to conditional
             method.go_to(currentLoopLabels[0]);
         }
         
@@ -1943,7 +1994,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {
         private String closureMethodName;
-        private Label startScope;
         
         public ASMClosureCompiler(String closureMethodName, String closureFieldName) {
             this.closureMethodName = closureMethodName;
@@ -1952,7 +2002,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             getClassVisitor().visitField(ACC_PRIVATE | ACC_STATIC, closureFieldName, cg.ci(CompiledBlockCallback.class), null, null);
             
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
-            variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX);
+            variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }
 
@@ -1972,8 +2022,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             variableCompiler.beginClosure(args, scope);
 
             // start of scoping for closure's vars
-            startScope = new Label();
-            method.label(startScope);
+            scopeStart = new Label();
+            scopeEnd = new Label();
+            redoJump = new Label();
+            method.label(scopeStart);
         }
 
         public void beginClass(ClosureCallback bodyPrep, StaticScope scope) {
@@ -1981,12 +2033,77 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void endMethod() {
-            method.areturn();
-
             // end of scoping for closure's vars
-            Label end = new Label();
-            method.label(end);
+            scopeEnd = new Label();
+            Label doReturn = new Label();
+            method.label(scopeEnd);
+            method.go_to(doReturn);
+            
+            // handle redo jumps occuring within the closure body
+//            method.label(redoJump);
+//            method.pop();
+//            method.go_to(scopeStart);
+            
+            // handle redo LocalJumpErrors...primarily these are bubbling out of other methods and out of eval
+//            Label catchRaised = new Label();
+//            {
+//                // only while loops seem to have this RaiseException magic
+//                method.label(catchRaised);
+//                //Label raiseRedo = new Label();
+//                Label raiseRethrow = new Label();
+//                method.dup();
+//                invokeUtilityMethod("getLocalJumpTypeOrRethrow", cg.sig(String.class, cg.params(RaiseException.class)));
+//                // if we get here we have a RaiseException we know is a local jump error and an error type
+//
+//                // is it break?
+//                method.dup(); // dup string
+//                method.ldc("break");
+//                method.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
+//                method.ifeq(raiseNext);
+//                // pop the extra string, get the break value, and end the loop
+//                method.pop();
+//                method.invokevirtual(cg.p(RaiseException.class), "getException", cg.sig(RubyException.class));
+//                method.checkcast(cg.p(RubyLocalJumpError.class));
+//                method.invokevirtual(cg.p(RubyLocalJumpError.class), "exitValue", cg.sig(IRubyObject.class));
+//                method.go_to(doReturn);
+
+                // is it next?
+//                method.label(raiseNext);
+//                method.dup();
+//                method.ldc("next");
+//                method.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
+//                method.ifeq(raiseRedo);
+//                // pop the extra string and the exception, jump to the condition
+//                method.pop2();
+//                method.go_to(exceptionNext);
+
+//                // is it redo?
+//                //method.label(raiseRedo);
+//                method.dup();
+//                method.ldc("redo");
+//                method.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
+//                method.ifeq(raiseRethrow);
+//                // pop the extra string and the exception, jump to the body
+//                method.pop2();
+//                method.go_to(scopeStart);
+//                
+//                // just rethrow it
+//                method.label(raiseRethrow);
+//                method.pop(); // pop extra string
+//                method.athrow();
+//            }
+//            method.trycatch(scopeStart, scopeEnd, redoJump, cg.p(JumpException.RedoJump.class));
+//            method.trycatch(scopeStart, scopeEnd, catchRaised, cg.p(RaiseException.class));
+            
+            method.label(doReturn);
+            method.areturn();
             method.end();
+        }
+
+        public void loadBlock() {
+            // blocks don't accept blocks yet, so we just load null here and cast to Block
+            method.aconst_null();
+            method.checkcast(cg.p(Block.class));
         }
 
         protected String getNewRescueName() {
@@ -2025,34 +2142,36 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeUtilityMethod("processBlockArgument", cg.sig(void.class, cg.params(Ruby.class, ThreadContext.class, Block.class, int.class)));
         }
         
-        public void issueBreakEvent() {
+        public void issueBreakEvent(ClosureCallback value) {
             if(withinProtection) {
                 throw new NotCompilableException("Can't compile break within ensure yet");
             }
             if (currentLoopLabels != null) {
+                value.compile(this);
                 issueLoopBreak();
             } else {
-                throw new NotCompilableException("Can't compile non-local break yet");
+                method.newobj(cg.p(JumpException.BreakJump.class));
+                method.dup();
+                method.aconst_null();
+                value.compile(this);
+                method.invokespecial(cg.p(JumpException.BreakJump.class), "<init>", cg.sig(Void.TYPE, cg.params(Object.class, Object.class)));
+
+                method.athrow();
             }
-            // needs to be rewritten for new jump exceptions
-//        method.newobj(cg.p(JumpException.BreakJump.class));
-//        method.dup();
-//        method.dup_x2();
-//        method.invokespecial(cg.p(JumpException.class), "<init>", cg.sig(Void.TYPE, cg.params(JumpException.JumpType.class)));
-//
-//        // set result into jump exception
-//        method.dup_x1();
-//        method.swap();
-//        method.invokevirtual(cg.p(JumpException.class), "setValue", cg.sig(Void.TYPE, cg.params(Object.class)));
-//
-//        method.athrow();
         }
 
-        public void issueNextEvent() {
+        public void issueNextEvent(ClosureCallback value) {
             if (currentLoopLabels != null) {
+                value.compile(this);
                 issueLoopNext();
             } else {
-                throw new NotCompilableException("Can't compile non-local next yet");
+                method.newobj(cg.p(JumpException.NextJump.class));
+                method.dup();
+                method.aconst_null();
+                value.compile(this);
+                method.invokespecial(cg.p(JumpException.NextJump.class), "<init>", cg.sig(Void.TYPE, cg.params(Object.class, Object.class)));
+
+                method.athrow();
             }
         }
 
@@ -2060,21 +2179,21 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             if (currentLoopLabels != null) {
                 issueLoopRedo();
             } else {
-                throw new NotCompilableException("Can't compile non-local next yet");
+                // jump back to the top of the main body of this closure
+                method.go_to(scopeStart);
             }
         }
     }
 
     public class ASMMethodCompiler extends AbstractMethodCompiler {
         private String friendlyName;
-        private Label scopeStart;
 
         public ASMMethodCompiler(String friendlyName, ASTInspector inspector) {
             this.friendlyName = friendlyName;
 
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null));
             if (inspector == null || inspector.hasClosure() || inspector.hasScopeAwareMethods() || inspector.hasOptArgs() || inspector.hasBlockArg() || inspector.hasRestArg()) {
-                variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX);
+                variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
             } else {
                 variableCompiler = new StackBasedVariableCompiler(this, method, ARGS_INDEX);
             }
@@ -2194,22 +2313,23 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.areturn();
         }
 
-        public void issueBreakEvent() {
+        public void issueBreakEvent(ClosureCallback value) {
             if(withinProtection) {
                 throw new NotCompilableException("Can't compile break within ensure yet");
             }
             if (currentLoopLabels != null) {
+                value.compile(this);
                 issueLoopBreak();
             } else {
                 // in method body with no containing loop, issue jump error
                 
-                // load runtime under break value
+                // load runtime
                 loadRuntime();
-                method.swap();
                 
-                // load "break" jump error type under value
+                // load "break" jump error type
                 method.ldc("break");
-                method.swap();
+                
+                value.compile(this);
                 
                 // load break jump error message
                 method.ldc("unexpected break");
@@ -2220,19 +2340,20 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             }
         }
 
-        public void issueNextEvent() {
+        public void issueNextEvent(ClosureCallback value) {
             if (currentLoopLabels != null) {
+                value.compile(this);
                 issueLoopNext();
             } else {
                 // in method body with no containing loop, issue jump error
                 
-                // load runtime under next value
+                // load runtime
                 loadRuntime();
-                method.swap();
                 
-                // load "next" jump error type under value
+                // load "next" jump error type
                 method.ldc("next");
-                method.swap();
+                
+                value.compile(this);
                 
                 // load next jump error message
                 method.ldc("unexpected next");

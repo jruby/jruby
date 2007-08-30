@@ -17,8 +17,10 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.VariableCompiler;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 import org.objectweb.asm.Label;
@@ -34,15 +36,17 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
     private int scopeIndex; // the index of the DynamicScope in the local Java scope to use for depth > 0 variable accesses
     private int varsIndex; // the index of the IRubyObject[] in the local Java scope to use for depth 0 variable accesses
     private int argsIndex; // the index where an IRubyObject[] representing incoming arguments can be found
+    private int closureIndex; // the index of the block parameter
     private Arity arity;
 
-    public HeapBasedVariableCompiler(StandardASMCompiler.AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method, int scopeIndex, int varsIndex, int argsIndex) {
+    public HeapBasedVariableCompiler(StandardASMCompiler.AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method, int scopeIndex, int varsIndex, int argsIndex, int closureIndex) {
         this.methodCompiler = methodCompiler;
         this.method = method;
         
         this.scopeIndex = scopeIndex;
         this.varsIndex = varsIndex;
         this.argsIndex = argsIndex;
+        this.closureIndex = closureIndex;
     }
     
     public SkinnyMethodAdapter getMethodAdapter() {
@@ -121,6 +125,7 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
             method.ldc(new Integer(0));
             method.arrayload();
             argsCallback.compile(methodCompiler);
+            method.pop(); // clear remaining value on the stack
         }
     }
 
@@ -284,6 +289,10 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
     }
 
     public void processBlockArgument(int index) {
-        throw new NotCompilableException("block args do not compile yet");
+        methodCompiler.loadRuntime();
+        methodCompiler.loadThreadContext();
+        method.aload(closureIndex);
+        method.ldc(Integer.valueOf(index));
+        methodCompiler.invokeUtilityMethod("processBlockArgument", cg.sig(Void.TYPE, cg.params(Ruby.class, ThreadContext.class, Block.class, int.class)));
     }
 }

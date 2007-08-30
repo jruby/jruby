@@ -395,9 +395,9 @@ public interface MethodCompiler {
     
     public void loadRubyArraySize();
     
-    public void issueBreakEvent();
+    public void issueBreakEvent(ClosureCallback value);
     
-    public void issueNextEvent();
+    public void issueNextEvent(ClosureCallback value);
     
     public void issueRedoEvent();
 

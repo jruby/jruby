@@ -149,7 +149,7 @@ ruby_args=("${ruby_args[@]}" "$@")
 # Put the ruby_args back into the position arguments $1, $2 etc
 set -- "${ruby_args[@]}"
 
-JAVA_OPTS="$JAVA_OPTS ${java_args[@]} $JAVA_MEM $JAVA_STACK -Xverify:none"
+JAVA_OPTS="$JAVA_OPTS ${java_args[@]} $JAVA_MEM $JAVA_STACK"
 
 if $cygwin; then
   JAVA_HOME=`cygpath --mixed "$JAVA_HOME"`

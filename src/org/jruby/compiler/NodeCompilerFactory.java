@@ -522,15 +522,19 @@ public class NodeCompilerFactory {
     public static void compileBreak(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
-        BreakNode breakNode = (BreakNode)node;
+        final BreakNode breakNode = (BreakNode)node;
         
-        if (breakNode.getValueNode() != null) {
-            compile(breakNode.getValueNode(), context);
-        } else {
-            context.loadNil();
-        }
+        ClosureCallback valueCallback = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                if (breakNode.getValueNode() != null) {
+                    NodeCompilerFactory.compile(breakNode.getValueNode(), context);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
         
-        context.issueBreakEvent();
+        context.issueBreakEvent(valueCallback);
     }
     
     public static void compileCall(Node node, MethodCompiler context) {
@@ -2071,15 +2075,20 @@ public class NodeCompilerFactory {
     public static void compileNext(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
-        NextNode nextNode = (NextNode)node;
+        final NextNode nextNode = (NextNode)node;
         
-        if (nextNode.getValueNode() != null) {
-            compile(nextNode.getValueNode(), context);
-        } else {
-            context.loadNil();
-        }
+        ClosureCallback valueCallback = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                if (nextNode.getValueNode() != null) {
+                    NodeCompilerFactory.compile(nextNode.getValueNode(), context);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
         
-        context.issueNextEvent();
+        context.pollThreadEvents();
+        context.issueNextEvent(valueCallback);
     }
     public static void compileNthRef(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
@@ -2540,7 +2549,7 @@ public class NodeCompilerFactory {
             }
             
             // Also do not compile anything with a block argument or "rest" argument
-            if (argsNode.getBlockArgNode() != null) throw new NotCompilableException("Can't compile def with block arg at: " + node.getPosition());
+            //if (argsNode.getBlockArgNode() != null) throw new NotCompilableException("Can't compile def with block arg at: " + node.getPosition());
             break;
         }
     }

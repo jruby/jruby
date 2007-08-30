@@ -31,6 +31,7 @@ package org.jruby.runtime;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -129,43 +130,47 @@ public abstract class CallAdapter {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            try {
-                RubyClass selfType = self.getMetaClass();
-                
-                DynamicMethod cMethod = this.cachedMethod;
-                RubyModule cType = this.cachedType;
-                
-                if (cType == selfType && cMethod != null) {
-                    if (cachedTable.length > methodID && cachedTable[methodID] != 0) {
-                        return selfType.getDispatcher().callMethod(context, self, selfType, methodID, methodName, args, callType, block);
-                    } else {
-                        return cMethod.call(context, self, selfType, methodName, args, block);
+            while (true) {
+                try {
+                    RubyClass selfType = self.getMetaClass();
+
+                    DynamicMethod cMethod = this.cachedMethod;
+                    RubyModule cType = this.cachedType;
+
+                    if (cType == selfType && cMethod != null) {
+                        if (cachedTable.length > methodID && cachedTable[methodID] != 0) {
+                            return selfType.getDispatcher().callMethod(context, self, selfType, methodID, methodName, args, callType, block);
+                        } else {
+                            return cMethod.call(context, self, selfType, methodName, args, block);
+                        }
                     }
-                }
-                
-                byte[] table = selfType.getDispatcher().switchTable;
-                if (table.length > methodID && table[methodID] != 0) {
-                    cachedTable = table;
+
+                    byte[] table = selfType.getDispatcher().switchTable;
+                    if (table.length > methodID && table[methodID] != 0) {
+                        cachedTable = table;
+                        cachedType = selfType;
+                        return selfType.getDispatcher().callMethod(context, self, selfType, methodID, methodName, args, callType, block);
+                    }
+                    DynamicMethod method = null;
+                    method = selfType.searchMethod(methodName);
+
+
+                    if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+                        return RubyObject.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, block);
+                    }
+
+                    cachedMethod = method;
                     cachedType = selfType;
-                    return selfType.getDispatcher().callMethod(context, self, selfType, methodID, methodName, args, callType, block);
+                    cachedTable = table;
+
+                    selfType.getRuntime().getCacheMap().add(method, this);
+
+                    return method.call(context, self, selfType, methodName, args, block);
+                } catch (JumpException.BreakJump bj) {
+                    return (IRubyObject)bj.getValue();
+                } catch (StackOverflowError soe) {
+                    throw context.getRuntime().newSystemStackError("stack level too deep");
                 }
-                DynamicMethod method = null;
-                method = selfType.searchMethod(methodName);
-
-
-                if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                    return RubyObject.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, block);
-                }
-
-                cachedMethod = method;
-                cachedType = selfType;
-                cachedTable = table;
-                
-                selfType.getRuntime().getCacheMap().add(method, this);
-                
-                return method.call(context, self, selfType, methodName, args, block);
-            } catch (StackOverflowError soe) {
-                throw context.getRuntime().newSystemStackError("stack level too deep");
             }
         }
 

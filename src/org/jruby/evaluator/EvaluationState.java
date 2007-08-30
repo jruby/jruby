@@ -1431,7 +1431,7 @@ public class EvaluationState {
         context.pollThreadEvents();
    
         // now used as an interpreter event
-        throw new JumpException.RedoJump(null, node);
+        throw new JumpException.RedoJump(null, null);
     }
 
     private static IRubyObject regexpNode(Ruby runtime, Node node) {
