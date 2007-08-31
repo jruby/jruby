@@ -106,9 +106,10 @@ public class DynamicScope {
             
             parent.setValue(offset, value, depth - 1);
         } else {
+            lazy();
+
             assert offset < variableValues.length : "Setting " + offset + " to " + value + ", O: " + this; 
 
-            lazy();
             variableValues[offset] = value;
         }
     }
