@@ -46,7 +46,7 @@ public class CompiledBlock extends Block {
     public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
             CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         this(self,
-             context.getCurrentFrame().duplicate(),
+             context.getCurrentFrame(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
                 dynamicScope, arity, callback, hasMultipleArgsHead, argumentType);

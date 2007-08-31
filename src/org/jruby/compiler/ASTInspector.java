@@ -146,6 +146,9 @@ public class ASTInspector {
             inspect(attrAssignNode.getArgsNode());
             inspect(attrAssignNode.getReceiverNode());
             break;
+        case BACKREFNODE:
+            hasFrameAwareMethods = true;
+            break;
         case BEGINNODE:
             inspect(((BeginNode)node).getBodyNode());
             break;
