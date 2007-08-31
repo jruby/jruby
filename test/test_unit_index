@@ -79,6 +79,7 @@ test_defined
 #test_digest2
 test_dup_clone_taint_freeze
 test_env
+test_flip
 test_globals
 test_hash
 test_higher_javasupport

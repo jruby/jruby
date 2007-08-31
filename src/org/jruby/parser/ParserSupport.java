@@ -629,25 +629,36 @@ public class ParserSupport {
     private Node cond0(Node node) {
         checkAssignmentInCondition(node);
 
-        if (node instanceof DRegexpNode) {
+        switch(node.nodeId) {
+        case DREGEXPNODE: {
             ISourcePosition position = node.getPosition();
 
             return new Match2Node(position, node, new GlobalVarNode(position, "$_"));
-        } else if (node instanceof DotNode && !((DotNode) node).isLiteral()) {
-            int slot = currentScope.getLocalScope().addVariable("");
+        }
+        case ANDNODE:
+            return new AndNode(node.getPosition(), cond0(((AndNode) node).getFirstNode()), 
+                    cond0(((AndNode) node).getSecondNode()));
+        case ORNODE:
+            return new OrNode(node.getPosition(), cond0(((OrNode) node).getFirstNode()), 
+                    cond0(((OrNode) node).getSecondNode()));
+        case DOTNODE: {
+            DotNode dotNode = (DotNode) node;
+            if (dotNode.isLiteral()) return node; 
+            
+            String label = String.valueOf("FLIP" + node.hashCode());
+            currentScope.getLocalScope().addVariable(label);
+            int slot = currentScope.isDefined(label);
+
             return new FlipNode(node.getPosition(),
                     getFlipConditionNode(((DotNode) node).getBeginNode()),
                     getFlipConditionNode(((DotNode) node).getEndNode()),
-                    ((DotNode) node).isExclusive(), slot);
-        } else if (node instanceof RegexpNode) {
+                    dotNode.isExclusive(), slot);
+        }
+        case REGEXPNODE:
             warningUnlessEOption(node, "regex literal in condition");
             
             return new MatchNode(node.getPosition(), node);
-        } /*else if (node instanceof StrNode) {
-            ISourcePosition position = node.getPosition();
-
-            return new MatchNode(position, new RegexpNode(position, (ByteList) ((StrNode) node).getValue().clone(), 0));
-        } */
+        } 
 
         return node;
     }

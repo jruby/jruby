@@ -23,6 +23,7 @@ class FlipTest < Test::Unit::TestCase
   def test_skip_four_two_and_threedot
     s = true
     a = (1..20).reject { true if (s = !s) .. (s = !s) and (s = !s) ... (s) }
+    assert_equal(['s', 'a'], local_variables)
     assert_equal([1, 5, 9, 13, 17], a)
   end
   

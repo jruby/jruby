@@ -52,7 +52,6 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -63,6 +62,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
+import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.Sprintf;
 
@@ -667,9 +667,8 @@ public class RubyKernel {
         final Ruby runtime = recv.getRuntime();
         RubyArray localVariables = runtime.newArray();
         
-        String[] names = runtime.getCurrentContext().getCurrentScope().getAllNamesInScope();
-        for (int i = 0; i < names.length; i++) {
-            localVariables.append(runtime.newString(names[i]));
+        for (String name: runtime.getCurrentContext().getCurrentScope().getAllNamesInScope()) {
+            if (IdUtil.isLocal(name)) localVariables.append(runtime.newString(name));
         }
 
         return localVariables;
