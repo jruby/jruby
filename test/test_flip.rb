@@ -1,7 +1,7 @@
 require 'test/unit'
 
 class FlipTest < Test::Unit::TestCase
-  # flip (taken from http://redhanded.hobix.com/inspect/hopscotchingArraysWithFlipFlops.html)
+  # flip (taken from post and comments at http://redhanded.hobix.com/inspect/hopscotchingArraysWithFlipFlops.html)
   def test_skip_one
     s = true
     a = (1..10).reject { true if (s = !s) .. (s) }

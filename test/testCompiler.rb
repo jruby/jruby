@@ -350,3 +350,36 @@ test_equal(["", "foo ", "foo bar ", "foo bar foo "], compile_and_run("a = []; 'f
 
 # argspush
 test_equal("fasdfo", compile_and_run("a = 'foo'; y = ['o']; a[*y] = 'asdf'; a"))
+
+# constnode, colon2node, and colon3node
+const_code = <<EOS
+A = 'a'; module X; B = 'b'; end; module Y; def self.go; [A, X::B, ::A]; end; end; Y.go
+EOS
+test_equal(["a", "b", "a"], compile_and_run(const_code))
+
+# flip (taken from http://redhanded.hobix.com/inspect/hopscotchingArraysWithFlipFlops.html)
+test_equal([1, 3, 5, 7, 9], compile_and_run("s = true; (1..10).reject { true if (s = !s) .. (s) }"))
+test_equal([1, 4, 7, 10], compile_and_run("s = true; (1..10).reject { true if (s = !s) .. (s = !s) }"))
+big_flip = <<EOS
+s = true; (1..10).inject([]) do |ary, v|; ary << [] unless (s = !s) .. (s = !s); ary.last << v; ary; end
+EOS
+test_equal([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]], compile_and_run(big_flip))
+big_triple_flip = <<EOS
+s = true
+(1..64).inject([]) do |ary, v|
+    unless (s ^= v[2].zero?)...(s ^= !v[1].zero?)
+        ary << []
+    end
+    ary.last << v
+    ary
+end
+EOS
+expected = [[1, 2, 3, 4, 5, 6, 7, 8],
+      [9, 10, 11, 12, 13, 14, 15, 16],
+      [17, 18, 19, 20, 21, 22, 23, 24],
+      [25, 26, 27, 28, 29, 30, 31, 32],
+      [33, 34, 35, 36, 37, 38, 39, 40],
+      [41, 42, 43, 44, 45, 46, 47, 48],
+      [49, 50, 51, 52, 53, 54, 55, 56],
+      [57, 58, 59, 60, 61, 62, 63, 64]]
+test_equal(expected, compile_and_run(big_triple_flip))

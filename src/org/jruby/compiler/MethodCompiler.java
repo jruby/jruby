@@ -481,4 +481,5 @@ public interface MethodCompiler {
     public void defineModule(String name, StaticScope staticScope, ClosureCallback pathCallback, ClosureCallback bodyCallback);
     public void unwrapPassedBlock();
     public void performBackref(char type);
+    public void callZSuper(ClosureCallback closure);
 }

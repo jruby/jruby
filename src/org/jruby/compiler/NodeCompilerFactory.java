@@ -105,6 +105,7 @@ import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
 import org.jruby.ast.DefsNode;
+import org.jruby.ast.FlipNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
@@ -115,6 +116,7 @@ import org.jruby.ast.UntilNode;
 import org.jruby.ast.VAliasNode;
 import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
+import org.jruby.ast.ZSuperNode;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -122,8 +124,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author headius
  */
 public class NodeCompilerFactory {
-    public static final boolean SAFE = System.getProperty("jruby.jit.safe", "true").equals("true");
-    
     public static void compile(Node node, MethodCompiler context) {
         switch (node.nodeId) {
         case ALIASNODE:
@@ -174,11 +174,16 @@ public class NodeCompilerFactory {
         case CLASSVARASGNNODE:
             compileClassVarAsgn(node, context);
             break;
-        case CONSTDECLNODE:
-            compileConstDecl(node, context);
-            break;
+        case CLASSVARDECLNODE:
+            throw new NotCompilableException("Class var declaration at " + node.getPosition());
         case COLON2NODE:
             compileColon2(node, context);
+            break;
+        case COLON3NODE:
+            compileColon3(node, context);
+            break;
+        case CONSTDECLNODE:
+            compileConstDecl(node, context);
             break;
         case CONSTNODE:
             compileConst(node, context);
@@ -228,6 +233,9 @@ public class NodeCompilerFactory {
         case FIXNUMNODE:
             compileFixnum(node, context);
             break;
+        case FLIPNODE:
+            compileFlip(node, context);
+            break;
         case FLOATNODE:
             compileFloat(node, context);
             break;
@@ -261,14 +269,14 @@ public class NodeCompilerFactory {
         case LOCALVARNODE:
             compileLocalVar(node, context);
             break;
-        case MATCHNODE:
-            compileMatch(node, context);
-            break;
         case MATCH2NODE:
             compileMatch2(node, context);
             break;
         case MATCH3NODE:
             compileMatch3(node, context);
+            break;
+        case MATCHNODE:
+            compileMatch(node, context);
             break;
         case MODULENODE:
             compileModule(node, context);
@@ -291,27 +299,41 @@ public class NodeCompilerFactory {
         case NOTNODE:
             compileNot(node, context);
             break;
-        case OPASGNNODE:
-            compileOpAsgn(node, context);
-            break;
         case OPASGNANDNODE:
             compileOpAsgnAnd(node, context);
+            break;
+        case OPASGNNODE:
+            compileOpAsgn(node, context);
             break;
         case OPASGNORNODE:
             compileOpAsgnOr(node, context);
             break;
+        case OPELEMENTASGNNODE:
+            throw new NotCompilableException("Operator element assignment at: " + node.getPosition());
+        case OPTNNODE:
+            throw new NotCompilableException("Opt N at: " + node.getPosition());
         case ORNODE:
             compileOr(node, context);
             break;
+        case POSTEXENODE:
+            throw new NotCompilableException("EXIT block at: " + node.getPosition());
         case REDONODE:
             compileRedo(node, context);
             break;
         case REGEXPNODE:
             compileRegexp(node, context);
             break;
+        case RESCUEBODYNODE:
+            throw new NotCompilableException("rescue body at: " + node.getPosition());
+        case RESCUENODE:
+            throw new NotCompilableException("rescue at: " + node.getPosition());
+        case RETRYNODE:
+            throw new NotCompilableException("retry at: " + node.getPosition());
         case RETURNNODE:
             compileReturn(node, context);
             break;
+        case ROOTNODE:
+            throw new NotCompilableException("Use compileRoot(); Root node at: " + node.getPosition());
         case SCLASSNODE:
             compileSClass(node, context);
             break;
@@ -324,6 +346,8 @@ public class NodeCompilerFactory {
         case STRNODE:
             compileStr(node, context);
             break;
+        case SUPERNODE:
+            throw new NotCompilableException("super call at: " + node.getPosition());
         case SVALUENODE:
             compileSValue(node, context);
             break;
@@ -351,6 +375,8 @@ public class NodeCompilerFactory {
         case WHILENODE:
             compileWhile(node, context);
             break;
+        case WHENNODE:
+            assert false: "When nodes are handled by case node compilation.";
         case XSTRNODE:
             compileXStr(node, context);
             break;
@@ -360,8 +386,12 @@ public class NodeCompilerFactory {
         case ZARRAYNODE:
             compileZArray(node, context);
             break;
+        case ZSUPERNODE:
+            throw new NotCompilableException("no-arg super call at: " + node.getPosition());
+//            compileZSuper(node, context);
+//            break;
         default:
-            throw new NotCompilableException("Can't compile node: " + node);
+            assert false: "Unknown node encountered in compiler: " + node;
         }
     }
     
@@ -584,30 +614,7 @@ public class NodeCompilerFactory {
                 context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, null, false);
             }
         } else {
-            ClosureCallback closureArg;
-            switch (callNode.getIterNode().nodeId) {
-            case ITERNODE:
-                final IterNode iterNode = (IterNode) callNode.getIterNode();
-
-                closureArg = new ClosureCallback() {
-                    public void compile(MethodCompiler context) {
-                        NodeCompilerFactory.compile(iterNode, context);
-                    }
-                };
-                break;
-            case BLOCKPASSNODE:
-                final BlockPassNode blockPassNode = (BlockPassNode) callNode.getIterNode();
-
-                closureArg = new ClosureCallback() {
-                    public void compile(MethodCompiler context) {
-                        NodeCompilerFactory.compile(blockPassNode.getBodyNode(), context);
-                        context.unwrapPassedBlock();
-                    }
-                };
-                break;
-            default:
-                throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + callNode.getPosition());
-            }
+            ClosureCallback closureArg = getBlock(callNode.getIterNode());
             
             if (callNode.getArgsNode() != null) {
                 context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, closureArg, false);
@@ -934,6 +941,16 @@ public class NodeCompilerFactory {
 
             context.branchIfModule(receiverCallback, moduleCallback, notModuleCallback);
         }
+    }
+    
+    public static void compileColon3(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        Colon3Node iVisited = (Colon3Node) node;
+        String name = iVisited.getName();
+
+        context.loadObject();
+        context.retrieveConstantFromModule(name);
     }
     
     public static void compileGetDefinitionBase(final Node node, MethodCompiler context) {
@@ -1662,36 +1679,39 @@ public class NodeCompilerFactory {
                 context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, null, false);
             }
         } else {
-            ClosureCallback closureArg;
-            switch (fcallNode.getIterNode().nodeId) {
-            case ITERNODE:
-                final IterNode iterNode = (IterNode) fcallNode.getIterNode();
-
-                closureArg = new ClosureCallback() {
-                    public void compile(MethodCompiler context) {
-                        NodeCompilerFactory.compile(iterNode, context);
-                    }
-                };
-                break;
-            case BLOCKPASSNODE:
-                final BlockPassNode blockPassNode = (BlockPassNode) fcallNode.getIterNode();
-
-                closureArg = new ClosureCallback() {
-                    public void compile(MethodCompiler context) {
-                        NodeCompilerFactory.compile(blockPassNode.getBodyNode(), context);
-                        context.unwrapPassedBlock();
-                    }
-                };
-                break;
-            default:
-                throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + fcallNode.getPosition());
-            }
+            ClosureCallback closureArg = getBlock(fcallNode.getIterNode());
 
             if (fcallNode.getArgsNode() != null) {
                 context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, false);
             } else {
                 context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, closureArg, false);
             }
+        }
+    }
+    
+    private static ClosureCallback getBlock(Node node) {
+        if (node == null) return null;
+        
+        switch (node.nodeId) {
+        case ITERNODE:
+            final IterNode iterNode = (IterNode) node;
+
+            return new ClosureCallback() {
+                public void compile(MethodCompiler context) {
+                    NodeCompilerFactory.compile(iterNode, context);
+                }
+            };
+        case BLOCKPASSNODE:
+            final BlockPassNode blockPassNode = (BlockPassNode) node;
+
+            return new ClosureCallback() {
+                public void compile(MethodCompiler context) {
+                    NodeCompilerFactory.compile(blockPassNode.getBodyNode(), context);
+                    context.unwrapPassedBlock();
+                }
+            };
+        default:
+            throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
         }
     }
 
@@ -1701,6 +1721,98 @@ public class NodeCompilerFactory {
         FixnumNode fixnumNode = (FixnumNode)node;
         
         context.createNewFixnum(fixnumNode.getValue());
+    }
+
+    public static void compileFlip(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final FlipNode flipNode = (FlipNode)node;
+        
+        context.getVariableCompiler().retrieveLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+   
+        if (flipNode.isExclusive()) {
+            context.performBooleanBranch(
+                    new BranchCallback() {
+                        public void branch(MethodCompiler context) {
+                            compile(flipNode.getEndNode(), context);
+                            context.performBooleanBranch(
+                                    new BranchCallback() {
+                                        public void branch(MethodCompiler context) {
+                                            context.loadFalse();
+                                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+                                            context.consumeCurrentValue();
+                                        }
+                                    }, new BranchCallback() {public void branch(MethodCompiler context) {}});
+                            context.loadTrue();
+                        }
+                    }, new BranchCallback() {
+                        public void branch(MethodCompiler context) {
+                            compile(flipNode.getBeginNode(), context);
+                            becomeTrueOrFalse(context);
+                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+                        }
+                    });
+        } else {
+            context.performBooleanBranch(
+                    new BranchCallback() {
+                        public void branch(MethodCompiler context) {
+                            compile(flipNode.getEndNode(), context);
+                            context.performBooleanBranch(
+                                    new BranchCallback() {
+                                        public void branch(MethodCompiler context) {
+                                            context.loadFalse();
+                                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+                                            context.consumeCurrentValue();
+                                        }
+                                    }, new BranchCallback() {public void branch(MethodCompiler context) {}});
+                            context.loadTrue();
+                        }
+                    }, new BranchCallback() {
+                        public void branch(MethodCompiler context) {
+                            compile(flipNode.getBeginNode(), context);
+                            context.performBooleanBranch(
+                                    new BranchCallback() {
+                                        public void branch(MethodCompiler context) {
+                                            compile(flipNode.getEndNode(), context);
+                                            flipTrueOrFalse(context);
+                                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+                                            context.consumeCurrentValue();
+                                            context.loadTrue();
+                                        }
+                                    }, new BranchCallback() {
+                                        public void branch(MethodCompiler context) {
+                                            context.loadFalse();
+                                        }
+                                    });
+                        }
+                    });
+        }
+    }
+    
+    private static void becomeTrueOrFalse(MethodCompiler context) {
+        context.performBooleanBranch(
+                new BranchCallback() {
+                    public void branch(MethodCompiler context) {
+                        context.loadTrue();
+                    }
+                }, new BranchCallback() {
+                    public void branch(MethodCompiler context) {
+                        context.loadFalse();
+                    }
+                });
+    }
+    
+    private static void flipTrueOrFalse(MethodCompiler context) {
+        context.performBooleanBranch(
+                new BranchCallback() {
+                    public void branch(MethodCompiler context) {
+                        context.loadFalse();
+                    }
+                }, new BranchCallback() {
+                    public void branch(MethodCompiler context) {
+                        context.loadTrue();
+                    }
+                });
     }
     
     public static void compileFloat(Node node, MethodCompiler context) {
@@ -2519,6 +2631,16 @@ public class NodeCompilerFactory {
         context.lineNumber(node.getPosition());
         
         context.createEmptyArray();
+    }
+    
+    public static void compileZSuper(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ZSuperNode zsuperNode = (ZSuperNode)node;
+        
+        ClosureCallback closure = getBlock(zsuperNode.getIterNode());
+        
+        context.callZSuper(closure);
     }
     
     public static void compileArgsCatArguments(Node node, MethodCompiler context) {

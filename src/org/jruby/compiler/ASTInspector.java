@@ -42,6 +42,7 @@ import org.jruby.ast.CallNode;
 import org.jruby.ast.Colon2Node;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EvStrNode;
+import org.jruby.ast.FlipNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.HashNode;
 import org.jruby.ast.IArgumentNode;
@@ -62,6 +63,7 @@ import org.jruby.ast.SValueNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.ast.YieldNode;
+import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.types.INameNode;
 
 /**
@@ -222,6 +224,10 @@ public class ASTInspector {
             break;
         case FIXNUMNODE:
             break;
+        case FLIPNODE:
+            inspect(((FlipNode)node).getBeginNode());
+            inspect(((FlipNode)node).getEndNode());
+            break;
         case FLOATNODE:
             break;
         case GLOBALVARNODE:
@@ -322,6 +328,10 @@ public class ASTInspector {
             break;
         case ZARRAYNODE:
             break;
+        case ZSUPERNODE:
+            hasScopeAwareMethods = true;
+            hasFrameAwareMethods = true;
+            inspect(((ZSuperNode)node).getIterNode());
         default:
             // encountered a node we don't recognize, set everything to true to disable optz
             disable();

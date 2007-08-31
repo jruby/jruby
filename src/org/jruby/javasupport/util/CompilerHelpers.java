@@ -463,4 +463,18 @@ public class CompilerHelpers {
         
         return RubyRegexp.match_last(backref);
     }
+    
+    public static IRubyObject callZSuper(Ruby runtime, ThreadContext context, Block block, IRubyObject self) {
+        if (context.getFrameKlazz() == null) {
+            String name = context.getFrameName();
+            throw runtime.newNameError("superclass method '" + name
+                    + "' disabled", name);
+        }
+        
+        // Has the method that is calling super received a block argument
+        if (!block.isGiven()) block = context.getCurrentFrame().getBlock(); 
+        
+        context.getCurrentScope().getArgValues(context.getFrameArgs(),context.getCurrentFrame().getRequiredArgCount());
+        return self.callSuper(context, context.getFrameArgs(), block);
+    }
 }

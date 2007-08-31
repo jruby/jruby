@@ -1774,19 +1774,8 @@ public class EvaluationState {
     }
     
     private static IRubyObject zsuperNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        if (context.getFrameKlazz() == null) {
-            String name = context.getFrameName();
-            throw runtime.newNameError("superclass method '" + name
-                    + "' disabled", name);
-        }
-
         Block block = getBlock(runtime, context, self, aBlock, ((ZSuperNode) node).getIterNode());
-
-        // Has the method that is calling super received a block argument
-        if (!block.isGiven()) block = context.getCurrentFrame().getBlock(); 
-        
-        context.getCurrentScope().getArgValues(context.getFrameArgs(),context.getCurrentFrame().getRequiredArgCount());
-        return self.callSuper(context, context.getFrameArgs(), block);
+        return CompilerHelpers.callZSuper(runtime, context, block, self);
     }
 
     public static IRubyObject aValueSplat(Ruby runtime, IRubyObject value) {

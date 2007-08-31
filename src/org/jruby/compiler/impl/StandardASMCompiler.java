@@ -2022,6 +2022,19 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 throw new NotCompilableException("ERROR: backref with invalid type");
             }
         }
+        
+        public void callZSuper(ClosureCallback closure) {
+            loadRuntime();
+            loadThreadContext();
+            if (closure != null) {
+                closure.compile(this);
+            } else {
+                method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
+            }
+            loadSelf();
+            
+            invokeUtilityMethod("callZSuper", cg.sig(IRubyObject.class, cg.params(Ruby.class, ThreadContext.class, Block.class, IRubyObject.class)));
+        }
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {
