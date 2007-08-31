@@ -14,6 +14,18 @@ class FlipTest < Test::Unit::TestCase
     assert_equal([1, 4, 7, 10], a)
   end
   
+  def test_skip_two_threedot
+    s = true
+    a = (1..10).reject { true if (s = !s) ... (s) }
+    assert_equal([1, 4, 7, 10], a)
+  end
+  
+  def test_skip_four_two_and_threedot
+    s = true
+    a = (1..20).reject { true if (s = !s) .. (s = !s) and (s = !s) ... (s) }
+    assert_equal([1, 5, 9, 13, 17], a)
+  end
+  
   def test_big_flip
     s = true;
     a = (1..10).inject([]) do |ary, v|
