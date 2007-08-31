@@ -128,6 +128,7 @@ public class CompiledBlock extends Block {
         // since we can't do that just yet, it's disabled
             if (value == null) {
                 context.getRuntime().getWarnings().warn("multiple values for a block parameter (0 for 1)");
+                return new IRubyObject[] {context.getRuntime().getNil()};
             }
             return new IRubyObject[] {value};
         }

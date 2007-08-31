@@ -383,3 +383,6 @@ expected = [[1, 2, 3, 4, 5, 6, 7, 8],
       [49, 50, 51, 52, 53, 54, 55, 56],
       [57, 58, 59, 60, 61, 62, 63, 64]]
 test_equal(expected, compile_and_run(big_triple_flip))
+
+# bug 1305, no values yielded to single-arg block assigns a null into the arg
+test_equal(NilClass, compile_and_run("def foo; yield; end; foo {|x| x.class}"))
