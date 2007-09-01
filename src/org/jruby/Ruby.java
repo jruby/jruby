@@ -38,6 +38,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import com.sun.jna.Native;
+import com.sun.jna.NativeLibrary;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -86,6 +88,8 @@ import org.jruby.libraries.ThreadLibrary;
 import org.jruby.libraries.IOWaitLibrary;
 import org.jruby.ext.socket.RubySocket;
 import org.jruby.ext.Generator;
+import org.jruby.ext.JavaBasedPOSIX;
+import org.jruby.ext.POSIX;
 import org.jruby.ext.Readline;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.libraries.FiberLibrary;
@@ -125,6 +129,8 @@ public final class Ruby {
     private MethodCache methodCache = new MethodCache();
     private ThreadService threadService = new ThreadService(this);
     private Hashtable runtimeInformation;
+    
+    private static POSIX posix = loadPosix();
 
     private int stackTraces = 0;
 
@@ -1856,5 +1862,18 @@ public final class Ruby {
     
     public static void setSecurityRestricted(boolean restricted) {
         securityRestricted = restricted;
+    }
+
+    private static POSIX loadPosix() {
+        try {
+            return (POSIX)Native.loadLibrary("c", POSIX.class);
+        } catch (Throwable t) {
+            // on any error, fall back on our own stupid POSIX impl
+            return new JavaBasedPOSIX();
+        }
+    }
+    
+    public static POSIX getPosix() {
+        return posix;
     }
 }

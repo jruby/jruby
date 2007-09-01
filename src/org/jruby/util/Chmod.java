@@ -47,7 +47,7 @@ public class Chmod {
         CHMOD_API_AVAILABLE = apiAvailable;
     }
     
-    public static boolean chmod(File file, String mode) {
+    public static int chmod(File file, String mode) {
         if (CHMOD_API_AVAILABLE) {
             // fast version
             char other = mode.charAt(mode.length() - 1);
@@ -56,21 +56,21 @@ public class Chmod {
             char setuidgid = mode.charAt(mode.length() - 3);
             
             // group and setuid/gid are ignored, no way to do them fast. Should we fall back on slow?
-            if (!setPermissions(file, other, false)) return false;
-            if (!setPermissions(file, user, true)) return false;
+            if (!setPermissions(file, other, false)) return -1;
+            if (!setPermissions(file, user, true)) return -1;
         } else {
             // slow version
             try {
                 Process chmod = Runtime.getRuntime().exec("chmod " + mode + " " + file.getName());
                 chmod.waitFor();
-                return chmod.exitValue() == 0;
+                return chmod.exitValue();
             } catch (IOException ioe) {
                 // FIXME: ignore?
             } catch (InterruptedException ie) {
                 // FIXME: ignore?
             }
         }
-        return false;
+        return -1;
     }
     
     private static boolean setPermissions(File file, char permChar, boolean userOnly) {

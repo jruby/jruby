@@ -11,7 +11,7 @@
   <property file="default.build.properties"/>
 
   <path id="build.classpath">
-    <fileset dir="${lib.dir}" includes="*.jar" excludes="jruby.jar"/>
+    <fileset dir="${lib.dir}" includes="*.jar" excludes="jruby*.jar"/>
   </path>
 
   <!-- directory that contains emma.jar and emma_ant.jar: -->
