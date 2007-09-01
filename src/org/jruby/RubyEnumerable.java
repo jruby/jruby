@@ -51,7 +51,6 @@ public class RubyEnumerable {
 
         enm.defineFastMethod("to_a", callbackFactory.getFastSingletonMethod("to_a"));
         enm.defineFastMethod("entries", callbackFactory.getFastSingletonMethod("to_a"));
-        enm.defineFastMethod("entries", callbackFactory.getFastSingletonMethod("to_a"));
         enm.defineMethod("sort", callbackFactory.getSingletonMethod("sort"));
         enm.defineMethod("sort_by", callbackFactory.getSingletonMethod("sort_by"));
         enm.defineMethod("grep", callbackFactory.getSingletonMethod("grep", IRubyObject.class));
@@ -122,9 +121,8 @@ public class RubyEnumerable {
                 int i = 0;
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                    valuesAndCriteria[i][0] = arg;
-                    valuesAndCriteria[i++][1] = block.yield(context, arg);
+                    valuesAndCriteria[i][0] = largs[0];
+                    valuesAndCriteria[i++][1] = block.yield(context, largs[0]);
                     return runtime.getNil();
                 }
             });
@@ -178,22 +176,18 @@ public class RubyEnumerable {
         if (block.isGiven()) {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                    if (pattern.callMethod(context, MethodIndex.OP_EQQ, "===", arg).isTrue()) {
-                        result.append(block.yield(context, arg));
+                    if (pattern.callMethod(context, MethodIndex.OP_EQQ, "===", largs[0]).isTrue()) {
+                        result.append(block.yield(context, largs[0]));
                     }
-                    
                     return runtime.getNil();
                 }
             });
         } else {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                    if (pattern.callMethod(context, MethodIndex.OP_EQQ, "===", arg).isTrue()) {
-                        result.append(arg);
+                    if (pattern.callMethod(context, MethodIndex.OP_EQQ, "===", largs[0]).isTrue()) {
+                        result.append(largs[0]);
                     }
-                    
                     return runtime.getNil();
                 }
             });
@@ -213,10 +207,9 @@ public class RubyEnumerable {
         try {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                    if (block.yield(context, arg).isTrue()) {
-                        result[0] = arg;
-                        throw new JumpException.SpecialJump();
+                    if (block.yield(context, largs[0]).isTrue()) {
+                        result[0] = largs[0];
+                        throw JumpException.SPECIAL_JUMP;
                     }
                     return runtime.getNil();
                 }
@@ -235,10 +228,7 @@ public class RubyEnumerable {
 
         callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                
-                if (block.yield(context, arg).isTrue()) result.append(arg);
-                
+                if (block.yield(context, largs[0]).isTrue()) result.append(largs[0]);
                 return runtime.getNil();
             }
         });
@@ -253,10 +243,7 @@ public class RubyEnumerable {
 
         callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                
-                if (!block.yield(context, arg).isTrue()) result.append(arg);
-
+                if (!block.yield(context, largs[0]).isTrue()) result.append(largs[0]);
                 return runtime.getNil();
             }
         });
@@ -272,8 +259,7 @@ public class RubyEnumerable {
         if (block.isGiven()) {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                    result.append(block.yield(context, arg));
+                    result.append(block.yield(context, largs[0]));
                     return runtime.getNil();
                 }
             });
@@ -292,11 +278,9 @@ public class RubyEnumerable {
 
         callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                
                 result[0] = result[0] == null ? 
-                        arg : block.yield(context, runtime.newArray(result[0], arg));
-                
+                        largs[0] : block.yield(context, runtime.newArray(result[0], largs[0]));
+
                 return runtime.getNil();
             }
         });
@@ -312,14 +296,12 @@ public class RubyEnumerable {
 
         callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                
-                if (block.yield(context, arg).isTrue()) {
-                    arr_true.append(arg);
+                if (block.yield(context, largs[0]).isTrue()) {
+                    arr_true.append(largs[0]);
                 } else {
-                    arr_false.append(arg);
+                    arr_false.append(largs[0]);
                 }
-                
+
                 return runtime.getNil();
             }
         });
@@ -338,11 +320,8 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-            IRubyObject val = iargs.length > 1 ? runtime.newArray(iargs) : iargs[0];  
-
-            this.block.yield(context, runtime.newArray(val, runtime.newFixnum(index++)));
-            
-            return runtime.getNil();
+            this.block.yield(context, runtime.newArray(iargs[0], runtime.newFixnum(index++)));
+            return runtime.getNil();            
         }
     }
 
@@ -361,11 +340,9 @@ public class RubyEnumerable {
         try {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject larg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                    if (arg.equalInternal(context, larg).isTrue()) {
-                        throw new JumpException.SpecialJump();
+                    if (arg.equalInternal(context, largs[0]).isTrue()) {
+                        throw JumpException.SPECIAL_JUMP;
                     }
-                    
                     return runtime.getNil();
                 }
             });
@@ -384,25 +361,20 @@ public class RubyEnumerable {
         if (block.isGiven()) {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                    
                     if (result[0] == null || RubyComparable.cmpint(block.yield(context, 
-                            runtime.newArray(arg, result[0])), arg, result[0]) > 0) {
-                        result[0] = arg;
+                            runtime.newArray(largs[0], result[0])), largs[0], result[0]) > 0) {
+                        result[0] = largs[0];
                     }
-                    
                     return runtime.getNil();
                 }
             });
         } else {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                    if (result[0] == null || RubyComparable.cmpint(arg.callMethod(context,
-                            MethodIndex.OP_SPACESHIP, "<=>", result[0]), arg, result[0]) > 0) {
-                        result[0] = arg;
+                    if (result[0] == null || RubyComparable.cmpint(largs[0].callMethod(context,
+                            MethodIndex.OP_SPACESHIP, "<=>", result[0]), largs[0], result[0]) > 0) {
+                        result[0] = largs[0];
                     }
-                    
                     return runtime.getNil();
                 }
             });
@@ -419,24 +391,20 @@ public class RubyEnumerable {
         if (block.isGiven()) {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
                     if (result[0] == null || RubyComparable.cmpint(block.yield(context, 
-                            runtime.newArray(arg, result[0])), arg, result[0]) < 0) {
-                        result[0] = arg;
+                            runtime.newArray(largs[0], result[0])), largs[0], result[0]) < 0) {
+                        result[0] = largs[0];
                     }
-                    
                     return runtime.getNil();
                 }
             });
         } else {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                    if (result[0] == null || RubyComparable.cmpint(arg.callMethod(context,
-                            MethodIndex.OP_SPACESHIP, "<=>", result[0]), arg, result[0]) < 0) {
-                        result[0] = arg;
+                    if (result[0] == null || RubyComparable.cmpint(largs[0].callMethod(context,
+                            MethodIndex.OP_SPACESHIP, "<=>", result[0]), largs[0], result[0]) < 0) {
+                        result[0] = largs[0];
                     }
-                    
                     return runtime.getNil();
                 }
             });
@@ -453,24 +421,18 @@ public class RubyEnumerable {
             if (block.isGiven()) {
                 callEach(runtime, context, self, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                        
-                        if (!block.yield(context, arg).isTrue()) {
-                            throw new JumpException.SpecialJump();
+                        if (!block.yield(context, largs[0]).isTrue()) {
+                            throw JumpException.SPECIAL_JUMP;
                         }
-                        
                         return runtime.getNil();
                     }
                 });
             } else {
                 callEach(runtime, context, self, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                        
-                        if (!arg.isTrue()) {
-                            throw new JumpException.SpecialJump();
+                        if (!largs[0].isTrue()) {
+                            throw JumpException.SPECIAL_JUMP;
                         }
-                        
                         return runtime.getNil();
                     }
                 });
@@ -490,22 +452,18 @@ public class RubyEnumerable {
             if (block.isGiven()) {
                 callEach(runtime, context, self, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                        if (block.yield(context, arg).isTrue()) {
-                            throw new JumpException.SpecialJump();
+                        if (block.yield(context, largs[0]).isTrue()) {
+                            throw JumpException.SPECIAL_JUMP;
                         }
-                        
                         return runtime.getNil();
                     }
                 });
             } else {
                 callEach(runtime, context, self, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                        if (arg.isTrue()) {
-                            throw new JumpException.SpecialJump();
+                        if (largs[0].isTrue()) {
+                            throw JumpException.SPECIAL_JUMP;
                         }
-                        
                         return runtime.getNil();
                     }
                 });
@@ -532,9 +490,8 @@ public class RubyEnumerable {
                 int ix = 0;
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
                     RubyArray array = runtime.newArray(aLen);
-                    array.append(arg);
+                    array.append(largs[0]);
                     for (int i = 0, j = args.length; i < j; i++) {
                         array.append(((RubyArray) args[i]).entry(ix));
                     }
@@ -550,9 +507,8 @@ public class RubyEnumerable {
                 int ix = 0;
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
                     RubyArray array = runtime.newArray(aLen);
-                    array.append(arg);
+                    array.append(largs[0]);
                     for (int i = 0, j = args.length; i < j; i++) {
                         array.append(((RubyArray) args[i]).entry(ix));
                     }
@@ -572,15 +528,14 @@ public class RubyEnumerable {
 
         callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                IRubyObject arg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                IRubyObject key = block.yield(context, arg);
+                IRubyObject key = block.yield(context, largs[0]);
                 IRubyObject curr = result.fastARef(key);
 
                 if (curr == null) {
                     curr = runtime.newArray();
                     result.fastASet(key, curr);
                 }
-                curr.callMethod(context, MethodIndex.OP_LSHIFT, "<<", arg);
+                curr.callMethod(context, MethodIndex.OP_LSHIFT, "<<", largs[0]);
                 return runtime.getNil();
             }
         });
@@ -588,7 +543,7 @@ public class RubyEnumerable {
         return result;
     }
     
-    public static class AppendBlockCallback implements BlockCallback {
+    public static final class AppendBlockCallback implements BlockCallback {
         private Ruby runtime;
         private RubyArray result;
 
@@ -598,7 +553,7 @@ public class RubyEnumerable {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
-            result.append(largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0]);
+            result.append(largs[0]);
             
             return runtime.getNil();
         }

@@ -66,6 +66,7 @@ public class JumpException extends RuntimeException {
     public static class ThrowJump extends FlowControlException { public ThrowJump(Object t, Object v) { super(t, v); }}
     public static class RedoJump extends FlowControlException { public RedoJump(Object t, Object v) { super(t, v); }}
     public static class SpecialJump extends FlowControlException {}
+    public static final SpecialJump SPECIAL_JUMP = new SpecialJump(); 
     public static class ReturnJump extends FlowControlException { public ReturnJump(Object t, Object v) { super(t, v); }}
     
     /**
