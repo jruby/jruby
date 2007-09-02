@@ -800,7 +800,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_dup
      * 
      */
-    private final RubyArray aryDup() {
+    public final RubyArray aryDup() {
         RubyArray dup = new RubyArray(getRuntime(), getMetaClass(), this);
         dup.flags |= flags & TAINTED_F; // from DUP_SETUP
         // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..

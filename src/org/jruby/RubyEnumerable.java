@@ -75,12 +75,6 @@ public class RubyEnumerable {
 
         return enm;
     }
-    
-    public static IRubyObject callEachOld(ThreadContext context, IRubyObject self,
-            RubyModule module, BlockCallback bc) {
-        return self.callMethod(context, "each", new CallBlock(self, module, Arity.noArguments(),
-                bc, context));
-    }
 
     public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self,
             BlockCallback callback) {
