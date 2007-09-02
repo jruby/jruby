@@ -6,10 +6,10 @@ module EnvUtil
     ruby = "ruby"
     rubyexe = ruby+".exe"
     3.times do
-      if File.exist? ruby and !File.directory? ruby
+      if File.exist? ruby and File.executable? ruby and !File.directory? ruby
         return File.expand_path(ruby)
       end
-      if File.exist? rubyexe 
+      if File.exist? rubyexe and File.executable? rubyexe
         return File.expand_path(ruby)
       end
       ruby = File.join("..", ruby)
