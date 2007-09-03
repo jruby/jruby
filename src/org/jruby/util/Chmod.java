@@ -83,17 +83,17 @@ public class Chmod {
                 setExecutable.invoke(file, new Object[] {Boolean.FALSE, Boolean.valueOf(userOnly)});
             }
             
-            
             if ((permValue & 2) != 0) {
-                setReadable.invoke(file, new Object[] {Boolean.TRUE, Boolean.valueOf(userOnly)});
-            } else {
-                setReadable.invoke(file, new Object[] {Boolean.FALSE, Boolean.valueOf(userOnly)});
-            }
-            
-            if ((permValue & 4) != 0) {
                 setWritable.invoke(file, new Object[] {Boolean.TRUE, Boolean.valueOf(userOnly)});
             } else {
                 setWritable.invoke(file, new Object[] {Boolean.FALSE, Boolean.valueOf(userOnly)});
+            }
+            
+            
+            if ((permValue & 4) != 0) {
+                setReadable.invoke(file, new Object[] {Boolean.TRUE, Boolean.valueOf(userOnly)});
+            } else {
+                setReadable.invoke(file, new Object[] {Boolean.FALSE, Boolean.valueOf(userOnly)});
             }
             
             return true;
