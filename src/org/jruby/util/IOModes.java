@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -78,7 +79,8 @@ public class IOModes implements Cloneable {
     }
     
     public boolean isReadable() {
-        return (modes & RDWR) != 0 || modes == RDONLY || modes == BINARY;
+        return (modes & RDWR) != 0 || modes == RDONLY || (modes & BINARY) != 0  || 
+            (modes & CREAT) != 0;
     }
 
     public boolean isWriteable() {
@@ -89,8 +91,12 @@ public class IOModes implements Cloneable {
         return (modes & BINARY) == BINARY;
     }
 
+    public boolean isCreate() {
+        return (modes & CREAT) != 0;
+    }
+
     public boolean isWritable() {
-    	return (modes & RDWR) != 0 || (modes & WRONLY) != 0 || (modes & CREAT) != 0;
+        return (modes & RDWR) != 0 || (modes & WRONLY) != 0;
     }
     
     public boolean isAppendable() {
