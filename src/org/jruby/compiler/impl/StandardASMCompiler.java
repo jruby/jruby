@@ -1895,9 +1895,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             Label noException = new Label();
             methodCompiler.method.trycatch(start, end, after, null);
 
-            methodCompiler.method.label(start);
-
             methodCompiler.beginClass(bodyPrep, staticScope);
+
+            methodCompiler.method.label(start);
 
             bodyCallback.compile(methodCompiler);
             methodCompiler.method.label(end);
@@ -1965,10 +1965,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             Label after = new Label();
             Label noException = new Label();
             methodCompiler.method.trycatch(start, end, after, null);
-
-            methodCompiler.method.label(start);
             
             methodCompiler.beginClass(bodyPrep, staticScope);
+
+            methodCompiler.method.label(start);
 
             bodyCallback.compile(methodCompiler);
             methodCompiler.method.label(end);

@@ -386,3 +386,9 @@ test_equal(expected, compile_and_run(big_triple_flip))
 
 # bug 1305, no values yielded to single-arg block assigns a null into the arg
 test_equal(NilClass, compile_and_run("def foo; yield; end; foo {|x| x.class}"))
+
+# ensure that invalid classes and modules raise errors
+AFixnum = 1;
+test_exception(TypeError) { compile_and_run("class AFixnum; end")}
+test_exception(TypeError) { compile_and_run("class B < AFixnum; end")}
+test_exception(TypeError) { compile_and_run("module AFixnum; end")}
