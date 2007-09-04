@@ -259,3 +259,10 @@ test_exception(Errno::EINVAL) {
 test_exception(Errno::EINVAL) {
   File.truncate("#{tmp}/truncate_test_file", -1)
 }
+
+filename = '2nnever'
+test_equal(nil, File.new(filename, File::CREAT).read(1))
+File.delete(filename)
+
+test_exception(IOError) { File.new(filename, File::CREAT) << 'b' }
+File.delete(filename)
