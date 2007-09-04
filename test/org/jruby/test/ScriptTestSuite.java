@@ -129,7 +129,7 @@ public class ScriptTestSuite extends TestSuite {
             script.append("test_load('").append(scriptName()).append("')").append('\n');
             script.append("$failed").append('\n');
 
-            RubyArray lastFailed = (RubyArray)runtime.evalScriptlet(script.toString());
+            RubyArray lastFailed = (RubyArray)runtime.executeScript(script.toString(), scriptName() + "_generated_test.rb");
             
             if (!lastFailed.isEmpty()) {
                 RubyString message = (RubyString) lastFailed.callMethod(lastFailed.getRuntime().getCurrentContext(), "to_s");

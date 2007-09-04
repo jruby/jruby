@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -305,6 +306,22 @@ public final class Ruby {
         } catch (JumpException.RedoJump rj) {
             throw newLocalJumpError("redo", (IRubyObject)rj.getValue(), "unexpected redo");
         }
+    }
+    
+    /**
+     * This differs from the other methods in that it accepts a string-based script and
+     * parses and runs it as though it were loaded at a command-line. This is the preferred
+     * way to start up a new script when calling directly into the Ruby object (which is
+     * generally *dis*couraged.
+     * 
+     * @param script The contents of the script to run as a normal, root script
+     * @return The last value of the script
+     */
+    public IRubyObject executeScript(String script, String filename) {
+        Reader reader = new StringReader(script);
+        Node node = parseInline(reader, filename, getCurrentContext().getCurrentScope());
+        
+        return compileOrFallbackAndRun(node);
     }
     
     public IRubyObject compileOrFallbackAndRun(Node node) {
@@ -1872,7 +1889,7 @@ public final class Ruby {
             }
         } catch (Throwable t) {
         }
-        
+
         // on any error, fall back on our own stupid POSIX impl
         return new JavaBasedPOSIX();
     }
