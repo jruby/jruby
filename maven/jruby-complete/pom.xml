@@ -45,6 +45,14 @@
       <version>3.0</version>
       <scope>provided</scope>
     </dependency>
+    <!-- TODO: replace this JNA system dependency with a real one -->
+    <dependency>
+      <groupId>com.sun.jna</groupId>
+      <artifactId>jna</artifactId>
+      <version>incomplete</version>
+      <systemPath>${project.basedir}/../../lib/jna.jar</systemPath>
+      <scope>system</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -108,6 +116,9 @@
             <phase>process-resources</phase>
             <configuration>
               <tasks>
+                <!-- TODO: remove this manual unzipping of JNA -->
+                <unzip src="${project.basedir}/../../lib/jna.jar"
+                  dest="${project.build.outputDirectory}" />
                 <delete file="${project.build.outputDirectory}/META-INF/MANIFEST.MF"/>
                 <mkdir dir="${project.build.outputDirectory}/META-INF/jruby.home"/>
                 <copy todir="${project.build.outputDirectory}/META-INF/jruby.home">
