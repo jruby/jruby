@@ -1866,11 +1866,15 @@ public final class Ruby {
 
     private static POSIX loadPosix() {
         try {
-            return (POSIX)Native.loadLibrary("c", POSIX.class);
+            POSIX posix = (POSIX)Native.loadLibrary("c", POSIX.class);
+            if (posix != null) {
+                return posix;
+            }
         } catch (Throwable t) {
-            // on any error, fall back on our own stupid POSIX impl
-            return new JavaBasedPOSIX();
         }
+        
+        // on any error, fall back on our own stupid POSIX impl
+        return new JavaBasedPOSIX();
     }
     
     public static POSIX getPosix() {
