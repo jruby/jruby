@@ -177,3 +177,33 @@ text = <<-YAML
 YAML
 
 test_equal text, YAML.load(YAML.dump(text))
+
+text = <<-YAML
+stack-bar-chart
+  conditions: 'Release' in (R1) and not 'Iteration Scheduled' = null
+  labels: SELECT DISTINCT 'Iteration Scheduled' ORDER BY 'Iteration Scheduled'
+  cumulative: true
+  series:
+  - label: New
+    color: green
+    data: SELECT 'Iteration Scheduled', COUNT(*) WHERE Status = 'New'
+    combine: overlay-bottom
+  - label: Open
+    color: pink
+    data: SELECT 'Iteration Scheduled', COUNT(*) WHERE Status = 'Open'
+    combine: overlay-bottom
+  - label: Ready for Development
+    color: yellow
+    data: SELECT 'Iteration Scheduled', COUNT(*) WHERE Status = 'Ready for Development'
+    combine: overlay-bottom
+  - label: Complete
+    color: blue
+    data: SELECT 'Iteration Scheduled', COUNT(*) WHERE Status = 'Complete'
+    combine: overlay-bottom
+  - label: Other statuses
+    color: red
+    data: SELECT 'Iteration Scheduled', COUNT(*)
+    combine: total
+YAML
+
+test_equal text, YAML.load(YAML.dump(text))
