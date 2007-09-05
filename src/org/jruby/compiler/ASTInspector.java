@@ -32,35 +32,57 @@ package org.jruby.compiler;
 import java.util.HashSet;
 import java.util.Set;
 import org.jruby.ast.AndNode;
+import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgsPushNode;
+import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BeginNode;
+import org.jruby.ast.BinaryOperatorNode;
 import org.jruby.ast.BlockAcceptingNode;
+import org.jruby.ast.BlockArgNode;
+import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
 import org.jruby.ast.CallNode;
+import org.jruby.ast.CaseNode;
 import org.jruby.ast.Colon2Node;
+import org.jruby.ast.Colon3Node;
+import org.jruby.ast.DRegexpNode;
+import org.jruby.ast.DStrNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FlipNode;
+import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.HashNode;
 import org.jruby.ast.IArgumentNode;
+import org.jruby.ast.IScopingNode;
 import org.jruby.ast.IfNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Match2Node;
 import org.jruby.ast.Match3Node;
 import org.jruby.ast.MatchNode;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NotNode;
+import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
+import org.jruby.ast.OpElementAsgnNode;
+import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
+import org.jruby.ast.PostExeNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.SValueNode;
 import org.jruby.ast.SplatNode;
+import org.jruby.ast.StarNode;
+import org.jruby.ast.SuperNode;
+import org.jruby.ast.ToAryNode;
+import org.jruby.ast.UntilNode;
+import org.jruby.ast.WhenNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZSuperNode;
@@ -129,9 +151,25 @@ public class ASTInspector {
             inspect(andNode.getFirstNode());
             inspect(andNode.getSecondNode());
             break;
+        case ARGSCATNODE:
+            ArgsCatNode argsCatNode = (ArgsCatNode)node;
+            inspect(argsCatNode.getFirstNode());
+            inspect(argsCatNode.getSecondNode());
+            break;
+        case ARGSPUSHNODE:
+            ArgsPushNode argsPushNode = (ArgsPushNode)node;
+            inspect(argsPushNode.getFirstNode());
+            inspect(argsPushNode.getSecondNode());
+            break;
+        case ARGUMENTNODE:
+            break;
         case ARRAYNODE:
         case BLOCKNODE:
+        case DREGEXPNODE:
         case DSTRNODE:
+        case DSYMBOLNODE:
+        case DXSTRNODE:
+        case LISTNODE:
             ListNode listNode = (ListNode)node;
             for (int i = 0; i < listNode.size(); i++) {
                 inspect(listNode.get(i));
@@ -142,6 +180,10 @@ public class ASTInspector {
             if (argsNode.getBlockArgNode() != null) hasBlockArg = true;
             if (argsNode.getOptArgs() != null) hasOptArgs = true;
             if (argsNode.getRestArg() == -2 || argsNode.getRestArg() >= 0) hasRestArg = true;
+            break;
+        case ASSIGNABLENODE:
+            AssignableNode assignableNode = (AssignableNode)node;
+            inspect(assignableNode.getValueNode());
             break;
         case ATTRASSIGNNODE:
             AttrAssignNode attrAssignNode = (AttrAssignNode)node;
@@ -155,6 +197,18 @@ public class ASTInspector {
             inspect(((BeginNode)node).getBodyNode());
             break;
         case BIGNUMNODE:
+            break;
+        case BINARYOPERATORNODE:
+            BinaryOperatorNode binaryOperatorNode = (BinaryOperatorNode)node;
+            inspect(binaryOperatorNode.getFirstNode());
+            inspect(binaryOperatorNode.getSecondNode());
+            break;
+        case BLOCKARGNODE:
+            break;
+        case BLOCKPASSNODE:
+            BlockPassNode blockPassNode = (BlockPassNode)node;
+            inspect(blockPassNode.getArgsNode());
+            inspect(blockPassNode.getBodyNode());
             break;
         case BREAKNODE:
             inspect(((BreakNode)node).getValueNode());
@@ -174,6 +228,11 @@ public class ASTInspector {
                 hasScopeAwareMethods = true;
             }
             break;
+        case CASENODE:
+            CaseNode caseNode = (CaseNode)node;
+            inspect(caseNode.getCaseNode());
+            inspect(caseNode.getFirstWhenNode());
+            break;
         case CLASSNODE:
             hasScopeAwareMethods = true;
             hasClass = true;
@@ -189,6 +248,7 @@ public class ASTInspector {
             break;
         case CONSTDECLNODE:
         case CLASSVARASGNNODE:
+        case CLASSVARDECLNODE:
             hasScopeAwareMethods = true;
         case DASGNNODE:
         case INSTASGNNODE:
@@ -198,11 +258,15 @@ public class ASTInspector {
         case COLON2NODE:
             inspect(((Colon2Node)node).getLeftNode());
             break;
+        case COLON3NODE:
+            break;
         case CONSTNODE:
             hasScopeAwareMethods = true;
             break;
         case DEFNNODE:
+        case DEFSNODE:
             hasDef = true;
+            hasScopeAwareMethods = true;
             break;
         case DEFINEDNODE:
             disable();
@@ -230,13 +294,19 @@ public class ASTInspector {
             break;
         case FLOATNODE:
             break;
+        case FORNODE:
+            hasClosure = true;
+            hasScopeAwareMethods = true;
+            hasFrameAwareMethods = true;
+            inspect(((ForNode)node).getIterNode());
+            inspect(((ForNode)node).getBodyNode());
+            inspect(((ForNode)node).getVarNode());
+            break;
         case GLOBALVARNODE:
             break;
         case HASHNODE:
             HashNode hashNode = (HashNode)node;
-            for (int i = 0; i < hashNode.getListNode().size(); i++) {
-                inspect(hashNode.getListNode().get(i));
-            }
+            inspect(hashNode.getListNode());
             break;
         case IFNODE:
             IfNode ifNode = (IfNode)node;
@@ -246,8 +316,14 @@ public class ASTInspector {
             break;
         case INSTVARNODE:
             break;
+        case ISCOPINGNODE:
+            IScopingNode iscopingNode = (IScopingNode)node;
+            inspect(iscopingNode.getCPath());
+            break;
         case ITERNODE:
             hasClosure = true;
+            hasFrameAwareMethods = true;
+            hasScopeAwareMethods = true;
             break;
         case LOCALVARNODE:
             break;
@@ -268,18 +344,29 @@ public class ASTInspector {
             hasClass = true;
             hasScopeAwareMethods = true;
             break;
+        case MULTIPLEASGNNODE:
+            MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)node;
+            inspect(multipleAsgnNode.getArgsNode());
+            inspect(multipleAsgnNode.getHeadNode());
+            inspect(multipleAsgnNode.getValueNode());
+            break;
         case NEWLINENODE:
             inspect(((NewlineNode)node).getNextNode());
             break;
         case NEXTNODE:
             inspect(((NextNode)node).getValueNode());
             break;
-        case NTHREFNODE:
-            break;
         case NILNODE:
             break;
         case NOTNODE:
             inspect(((NotNode)node).getConditionNode());
+            break;
+        case NTHREFNODE:
+            break;
+        case OPASGNANDNODE:
+            OpAsgnAndNode opAsgnAndNode = (OpAsgnAndNode)node;
+            inspect(opAsgnAndNode.getFirstNode());
+            inspect(opAsgnAndNode.getSecondNode());
             break;
         case OPASGNNODE:
             OpAsgnNode opAsgnNode = (OpAsgnNode)node;
@@ -289,10 +376,29 @@ public class ASTInspector {
         case OPASGNORNODE:
             disable(); // Depends on defined
             break;
+        case OPELEMENTASGNNODE:
+            OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode)node;
+            inspect(opElementAsgnNode.getArgsNode());
+            inspect(opElementAsgnNode.getReceiverNode());
+            inspect(opElementAsgnNode.getValueNode());
+            break;
+        case OPTNNODE:
+            OptNNode optNNode = (OptNNode)node;
+            hasFrameAwareMethods = true;
+            inspect(optNNode.getBodyNode());
+            break;
         case ORNODE:
             OrNode orNode = (OrNode)node;
             inspect(orNode.getFirstNode());
             inspect(orNode.getSecondNode());
+            break;
+        case POSTEXENODE:
+            PostExeNode postExeNode = (PostExeNode)node;
+            hasClosure = true;
+            hasFrameAwareMethods = true;
+            hasScopeAwareMethods = true;
+            inspect(postExeNode.getBodyNode());
+            inspect(postExeNode.getVarNode());
             break;
         case REDONODE:
             break;
@@ -301,39 +407,85 @@ public class ASTInspector {
         case ROOTNODE:
             inspect(((RootNode)node).getBodyNode());
             break;
+        case RESCUEBODYNODE:
+            disable();
+            break;
+        case RESCUENODE:
+            disable();
+            break;
+        case RETRYNODE:
+            disable();
+            break;
         case RETURNNODE:
             inspect(((ReturnNode)node).getValueNode());
+            break;
+        case SCLASSNODE:
+            hasClass = true;
+            hasScopeAwareMethods = true;
+            break;
+        case SCOPENODE:
             break;
         case SELFNODE:
             break;
         case SPLATNODE:
             inspect(((SplatNode)node).getValue());
             break;
+        case STARNODE:
+            break;
         case STRNODE:
+            break;
+        case SUPERNODE:
+            SuperNode superNode = (SuperNode)node;
+            inspect(superNode.getArgsNode());
+            inspect(superNode.getIterNode());
             break;
         case SVALUENODE:
             inspect(((SValueNode)node).getValue());
             break;
         case SYMBOLNODE:
             break;
+        case TOARYNODE:
+            inspect(((ToAryNode)node).getValue());
+            break;
         case TRUENODE:
+            break;
+        case UNDEFNODE:
+            hasScopeAwareMethods = true;
+            break;
+        case UNTILNODE:
+            UntilNode untilNode = (UntilNode)node;
+            inspect(untilNode.getConditionNode());
+            inspect(untilNode.getBodyNode());
+            break;
+        case VALIASNODE:
+            break;
+        case WHENNODE:
+            inspect(((WhenNode)node).getBodyNode());
+            inspect(((WhenNode)node).getExpressionNodes());
+            inspect(((WhenNode)node).getNextCase());
             break;
         case WHILENODE:
             WhileNode whileNode = (WhileNode)node;
             inspect(whileNode.getConditionNode());
             inspect(whileNode.getBodyNode());
             break;
+        case XSTRNODE:
+            break;
         case YIELDNODE:
             inspect(((YieldNode)node).getArgsNode());
             break;
         case ZARRAYNODE:
             break;
+        case ZEROARGNODE:
+            break;
         case ZSUPERNODE:
             hasScopeAwareMethods = true;
             hasFrameAwareMethods = true;
             inspect(((ZSuperNode)node).getIterNode());
+            break;
         default:
             // encountered a node we don't recognize, set everything to true to disable optz
+            assert false : "All nodes should be accounted for in AST inspector: " + node;
             disable();
         }
     }
