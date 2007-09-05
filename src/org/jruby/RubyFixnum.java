@@ -67,6 +67,10 @@ public class RubyFixnum extends RubyInteger {
         fixnum.defineAnnotatedMethods(RubyFixnum.class, callbackFactory);
         
         fixnum.dispatcher = callbackFactory.createDispatcher(fixnum);
+        
+        for (int i = 0; i < runtime.fixnumCache.length; i++) {
+            runtime.fixnumCache[i] = new RubyFixnum(runtime, fixnum, i - 128);
+        }
 
         return fixnum;
     }    
@@ -85,6 +89,11 @@ public class RubyFixnum extends RubyInteger {
 
     public RubyFixnum(Ruby runtime, long value) {
         super(runtime, runtime.getFixnum(), false);
+        this.value = value;
+    }
+    
+    private RubyFixnum(Ruby runtime, RubyClass klazz, long value) {
+        super(runtime, klazz, false);
         this.value = value;
     }
     
@@ -116,19 +125,11 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
-        RubyFixnum fixnum;
-        RubyFixnum[] fixnumCache = runtime.getFixnumCache();
-
-        if (value >= 0 && value < fixnumCache.length) {
-            fixnum = fixnumCache[(int) value];
-            if (fixnum == null) {
-                fixnum = new RubyFixnum(runtime, value);
-                fixnumCache[(int) value] = fixnum;
-            }
-        } else {
-            fixnum = new RubyFixnum(runtime, value);
+        final int offset = 128;
+        if (value <= 127 && value >= -128) {
+            return runtime.fixnumCache[(int) value + offset];
         }
-        return fixnum;
+        return new RubyFixnum(runtime, value);
     }
 
     public RubyFixnum newFixnum(long newValue) {

@@ -137,7 +137,7 @@ public final class Ruby {
 
     private ObjectSpace objectSpace = new ObjectSpace();
 
-    private final RubyFixnum[] fixnumCache = new RubyFixnum[256];
+    public final RubyFixnum[] fixnumCache = new RubyFixnum[256];
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable();
     private Hashtable ioHandlers = new Hashtable();
     private long randomSeed = 0;
@@ -1755,10 +1755,6 @@ public final class Ruby {
 
     public Hashtable getIoHandlers() {
         return ioHandlers;
-    }
-
-    public RubyFixnum[] getFixnumCache() {
-        return fixnumCache;
     }
 
     public long incrementRandomSeedSequence() {
