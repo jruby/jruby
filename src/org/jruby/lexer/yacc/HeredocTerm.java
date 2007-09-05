@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -12,6 +13,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004-2007 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -44,15 +46,15 @@ public class HeredocTerm extends StrTerm {
     }
     
     public int parseString(RubyYaccLexer lexer, LexerSource src) throws java.io.IOException {
-        char c;
         boolean indent = (func & RubyYaccLexer.STR_FUNC_INDENT) != 0;
         ByteList str = new ByteList();
 
-        if ((c = src.read()) == RubyYaccLexer.EOF) {
+        if (src.peek((char) RubyYaccLexer.EOF)) {
             throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
         }
         if (src.wasBeginOfLine() && src.matchString(eos + '\n', indent)) {
             src.unreadMany(lastLine);
+            lexer.yaccValue = new Token(eos, lexer.getPosition());
             return Tokens.tSTRING_END;
         }
 
@@ -71,11 +73,6 @@ public class HeredocTerm extends StrTerm {
              * str.append(support.readLine()); str.append("\n"); }
              */
 
-            /*
-             * c was read above and should be unread before we start
-             * to fill the str buffer
-             */
-            src.unread(c);
             do {
                 str.append(src.readLineBytes());
                 str.append('\n');
@@ -85,6 +82,7 @@ public class HeredocTerm extends StrTerm {
                 }
             } while (!src.matchString(eos + '\n', indent));
         } else {
+            char c = src.read();
             ByteList buffer = new ByteList();
             if (c == '#') {
                 switch (c = src.read()) {
@@ -102,6 +100,8 @@ public class HeredocTerm extends StrTerm {
 
             src.unread(c);
 
+            // MRI has extra pointer which makes our code look a little bit more strange in 
+            // comparison
             do {
                 if ((c = new StringTerm(func, '\n', '\0').parseStringIntoBuffer(src, buffer)) == RubyYaccLexer.EOF) {
                     throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
