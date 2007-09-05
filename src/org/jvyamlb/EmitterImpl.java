@@ -866,11 +866,13 @@ public class EmitterImpl implements Emitter {
             }
 
             if((0 < ending && ending < (text.length()-1)) && (ch == ' ' || start >= ending) && (env.column+(ending-start)) > env.bestWidth && split) {
+                int offset=1;
                 if(start < ending) {
                     data = (ByteList)text.subSequence(start,ending);
                     data.append(' ');
                     data.append('\\');
                     ending++;
+                    offset=0;
                 } else {
                     data = ByteList.create("\\");
                 }
@@ -884,7 +886,7 @@ public class EmitterImpl implements Emitter {
                 env.whitespace = false;
                 env.indentation = false;
 
-                if(ending < (text.length()+1) && text.charAt(ending+1) == ' ') {
+                if(ending < (text.length()+1) && text.charAt(ending+offset) == ' ') {
                     data = ByteList.create("\\");
                     stream.write(data.bytes,0,data.realSize);
                 }
