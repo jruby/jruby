@@ -416,6 +416,9 @@ public class NodeCompilerFactory {
     
     public static void compileAssignment(Node node, MethodCompiler context) {
         switch (node.nodeId) {
+        case ATTRASSIGNNODE:
+            compileAttrAssignAssignment(node, context);
+            break;
         case DASGNNODE:
             compileDAsgnAssignment(node, context);
             break;
@@ -428,7 +431,6 @@ public class NodeCompilerFactory {
         case LOCALASGNNODE:
             compileLocalAsgnAssignment(node, context);
             break;
-        // working for straight-up assignment, but not yet for blocks; disabled in iter compilation
         case MULTIPLEASGNNODE:
             compileMultipleAsgnAssignment(node, context);
             break;
@@ -529,6 +531,24 @@ public class NodeCompilerFactory {
         
         compile(attrAssignNode.getReceiverNode(), context);
         compileArguments(attrAssignNode.getArgsNode(), context);
+        
+        context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName());
+    }
+    
+    public static void compileAttrAssignAssignment(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        AttrAssignNode attrAssignNode = (AttrAssignNode)node;
+        
+        compile(attrAssignNode.getReceiverNode(), context);
+        context.swapValues();
+        if (attrAssignNode.getArgsNode() != null) {
+            compileArguments(attrAssignNode.getArgsNode(), context);
+            context.swapValues();
+            context.appendToObjectArray();
+        } else {
+            context.createObjectArray(1);
+        }
         
         context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName());
     }

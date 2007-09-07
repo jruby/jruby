@@ -392,3 +392,7 @@ AFixnum = 1;
 test_exception(TypeError) { compile_and_run("class AFixnum; end")}
 test_exception(TypeError) { compile_and_run("class B < AFixnum; end")}
 test_exception(TypeError) { compile_and_run("module AFixnum; end")}
+
+# attr assignment in multiple assign
+test_equal("bar", compile_and_run("a = Object.new; class << a; attr_accessor :b; end; a.b, a.b = 'baz', 'bar'; a.b"))
+test_equal(["foo", "bar"], compile_and_run("a = []; a[0], a[1] = 'foo', 'bar'; a"))

@@ -482,4 +482,5 @@ public interface MethodCompiler {
     public void unwrapPassedBlock();
     public void performBackref(char type);
     public void callZSuper(ClosureCallback closure);
+    public void appendToObjectArray();
 }

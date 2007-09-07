@@ -477,4 +477,11 @@ public class CompilerHelpers {
         context.getCurrentScope().getArgValues(context.getFrameArgs(),context.getCurrentFrame().getRequiredArgCount());
         return self.callSuper(context, context.getFrameArgs(), block);
     }
+    
+    public static IRubyObject[] appendToObjectArray(IRubyObject[] array, IRubyObject add) {
+        IRubyObject[] newArray = new IRubyObject[array.length + 1];
+        System.arraycopy(array, 0, newArray, 0, array.length);
+        newArray[array.length] = add;
+        return newArray;
+    }
 }
