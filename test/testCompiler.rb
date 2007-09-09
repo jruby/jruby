@@ -396,3 +396,8 @@ test_exception(TypeError) { compile_and_run("module AFixnum; end")}
 # attr assignment in multiple assign
 test_equal("bar", compile_and_run("a = Object.new; class << a; attr_accessor :b; end; a.b, a.b = 'baz', 'bar'; a.b"))
 test_equal(["foo", "bar"], compile_and_run("a = []; a[0], a[1] = 'foo', 'bar'; a"))
+
+# for loops
+test_equal([2, 4, 6], compile_and_run("a = []; for b in [1, 2, 3]; a << b * 2; end; a"))
+# FIXME: scoping is all wrong for running these tests, so c doesn't scope right here
+#test_equal([1, 2, 3], compile_and_run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort"))

@@ -31,6 +31,8 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     private static final CodegenUtils cg = CodegenUtils.cg;
     private StandardASMCompiler.AbstractMethodCompiler methodCompiler;
     private SkinnyMethodAdapter method;
+    
+    private static final int THIS = 0;
 
     public StandardInvocationCompiler(StandardASMCompiler.AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method) {
         this.methodCompiler = methodCompiler;
@@ -76,7 +78,8 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         
         // load call adapter
         // FIXME: These swaps suck, but OpAsgn breaks if it can't dup receiver in the middle of making this call :(
-        method.getstatic(classname, fieldname, cg.ci(CallAdapter.class));
+        method.aload(THIS);
+        method.getfield(classname, fieldname, cg.ci(CallAdapter.class));
         method.swap();
 
         methodCompiler.loadThreadContext(); // [adapter, tc]

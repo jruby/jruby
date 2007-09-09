@@ -61,8 +61,9 @@ public class CompilerHelpers {
                 context.getCurrentScope(), callback, hasMultipleArgsHead, argsNodeType);
     }
     
-    public static IRubyObject def(ThreadContext context, IRubyObject self, Class compiledClass, String name, String javaName, String[] scopeNames,
+    public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String name, String javaName, String[] scopeNames,
             int arity, CallConfiguration callConfig) {
+        Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
         
         RubyModule containingClass = context.getRubyClass();
@@ -83,11 +84,11 @@ public class CompilerHelpers {
         DynamicMethod method;
         
         if (name == "initialize" || visibility.isModuleFunction()) {
-            method = factory.getCompiledMethod(containingClass, compiledClass, javaName, 
-                    Arity.createArity(arity), Visibility.PRIVATE, scope);
+            method = factory.getCompiledMethod(containingClass, javaName, 
+                    Arity.createArity(arity), Visibility.PRIVATE, scope, scriptObject);
         } else {
-            method = factory.getCompiledMethod(containingClass, compiledClass, javaName, 
-                    Arity.createArity(arity), visibility, scope);
+            method = factory.getCompiledMethod(containingClass, javaName, 
+                    Arity.createArity(arity), visibility, scope, scriptObject);
         }
         
         method.setCallConfig(callConfig);
@@ -112,8 +113,9 @@ public class CompilerHelpers {
         return runtime.getNil();
     }
     
-    public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Class compiledClass, String name, String javaName, String[] scopeNames,
+    public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String name, String javaName, String[] scopeNames,
             int arity, CallConfiguration callConfig) {
+        Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
         
         RubyClass rubyClass;
@@ -151,8 +153,8 @@ public class CompilerHelpers {
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method;
         
-        method = factory.getCompiledMethod(rubyClass, compiledClass, javaName, 
-                Arity.createArity(arity), Visibility.PUBLIC, scope);
+        method = factory.getCompiledMethod(rubyClass, javaName, 
+                Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject);
         
         method.setCallConfig(callConfig);
         

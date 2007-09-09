@@ -32,11 +32,20 @@ import java.io.FileOutputStream;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.CodegenUtils;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -44,6 +53,7 @@ import org.objectweb.asm.Opcodes;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class DumpingInvocationMethodFactory extends MethodFactory implements Opcodes {
+    private final static CodegenUtils cg = CodegenUtils.cg;
     private final static String COMPILED_SUPER_CLASS = CompiledMethod.class.getName().replace('.','/');
     private final static String IRUB_ID = "Lorg/jruby/runtime/builtin/IRubyObject;";
     private final static String BLOCK_ID = "Lorg/jruby/runtime/Block;";
@@ -111,40 +121,161 @@ public class DumpingInvocationMethodFactory extends MethodFactory implements Opc
         }
         return runtime.getJRubyClassLoader().defineClass(name, code);
     }
+    
+    public static final int SCRIPT_INDEX = 0;
+    public static final int THREADCONTEXT_INDEX = 1;
+    public static final int RECEIVER_INDEX = 2;
+    public static final int CLASS_INDEX = 3;
+    public static final int NAME_INDEX = 4;
+    public static final int ARGS_INDEX = 5;
+    public static final int BLOCK_INDEX = 6;
 
-    private DynamicMethod getCompleteMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, String sup) {
-        String typePath = p(type);
-        String mname = type.getName() + "Invoker" + method + arity;
+    private DynamicMethod getCompleteMethod(RubyModule implementationClass, String method, Arity arity, Visibility visibility, StaticScope scope, String sup, Object scriptObject) {
+        Class scriptClass = scriptObject.getClass();
+        String typePath = p(scriptClass);
+        String mname = scriptClass.getName() + "Invoker" + method + arity;
         String mnamePath = typePath + "Invoker" + method + arity;
         Class c = tryClass(implementationClass.getRuntime(), mname);
+        
         try {
-            if(c == null) {
+            if (c == null) {
                 ClassWriter cw = createCompiledCtor(mnamePath,sup);
-                MethodVisitor mv = null;
-
-                // compiled methods will always return IRubyObject
-                //String ret = getReturnName(type, method, new Class[]{ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRUBY_OBJECT_ARR, Block.class});
-                String ret = IRUB_ID;
-                mv = cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null);
+                SkinnyMethodAdapter mv = null;
+                
+                mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
                 mv.visitCode();
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitVarInsn(ALOAD, 2);
-                mv.visitVarInsn(ALOAD, 3);
-                mv.visitVarInsn(ALOAD, 4);
-                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(Lorg/jruby/runtime/ThreadContext;" + IRUB_ID + "[" + IRUB_ID + "Lorg/jruby/runtime/Block;)" + ret);
+                
+                // invoke pre method stuff
+                mv.aload(0); // load method to get callconfig
+                mv.getfield(cg.p(CompiledMethod.class), "callConfig", cg.ci(CallConfiguration.class));
+                mv.aload(THREADCONTEXT_INDEX); // tc
+                mv.aload(RECEIVER_INDEX); // self
+                mv.aload(CLASS_INDEX); // klazz
+                mv.aload(0);
+                mv.getfield(cg.p(CompiledMethod.class), "arity", cg.ci(Arity.class)); // arity
+                mv.aload(NAME_INDEX); // name
+                mv.aload(ARGS_INDEX); // args
+                mv.aload(BLOCK_INDEX); // block
+                mv.aload(0);
+                mv.getfield(cg.p(CompiledMethod.class), "staticScope", cg.ci(StaticScope.class));
+                // static scope
+                mv.aload(0); // jump target
+                mv.invokevirtual(cg.p(CallConfiguration.class), "pre", 
+                        cg.sig(void.class, 
+                        cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, Arity.class, String.class, IRubyObject[].class, Block.class, 
+                        StaticScope.class, JumpTarget.class)));
+                
+                // store null for result var
+                mv.aconst_null();
+                mv.astore(8);
+                    
+                Label tryBegin = new Label();
+                Label tryEnd = new Label();
+                Label tryFinally = new Label();
+                Label tryReturnJump = new Label();
+                Label tryRedoJump = new Label();
+                Label normalExit = new Label();
+                
+                mv.trycatch(tryBegin, tryEnd, tryReturnJump, cg.p(JumpException.ReturnJump.class));
+                mv.trycatch(tryBegin, tryEnd, tryRedoJump, cg.p(JumpException.RedoJump.class));
+                mv.trycatch(tryBegin, tryEnd, tryFinally, null);
+                mv.label(tryBegin);
+                
+                mv.aload(SCRIPT_INDEX);
+                mv.checkcast(typePath);
+                mv.aload(THREADCONTEXT_INDEX);
+                mv.aload(RECEIVER_INDEX);
+                mv.aload(ARGS_INDEX);
+                mv.aload(BLOCK_INDEX);
+                mv.invokevirtual(typePath, method, cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class)));
+                
+                // store result in temporary variable 8
+                mv.astore(8);
+
+                mv.label(tryEnd);
+
+                //call post method stuff (non-finally)
+                mv.label(normalExit);
+                mv.aload(0); // load method to get callconfig
+                mv.getfield(cg.p(DynamicMethod.class), "callConfig", cg.ci(CallConfiguration.class));
+                mv.aload(1);
+                mv.invokevirtual(cg.p(CallConfiguration.class), "post", cg.sig(void.class, cg.params(ThreadContext.class)));
+                // reload and return result
+                mv.aload(8);
                 mv.visitInsn(ARETURN);
+
+                // return jump handling
+                {
+                    mv.label(tryReturnJump);
+                    
+                    // dup return jump, get target, compare to this method object
+                    mv.dup();
+                    mv.invokevirtual(cg.p(JumpException.FlowControlException.class), "getTarget", cg.sig(Object.class));
+                    mv.aload(0);
+                    Label rethrow = new Label();
+                    mv.if_acmpne(rethrow);
+
+                    // this is the target, store return value and branch to normal exit
+                    mv.invokevirtual(cg.p(JumpException.FlowControlException.class), "getTarget", cg.sig(Object.class));
+                    mv.astore(8);
+                    mv.go_to(normalExit);
+
+                    // this is not the target, rethrow
+                    mv.label(rethrow);
+                    mv.go_to(tryFinally);
+                }
+
+                // redo jump handling
+                {
+                    mv.label(tryRedoJump);
+                    
+                    // clear the redo
+                    mv.pop();
+                    
+                    // get runtime, dup it
+                    mv.aload(1);
+                    mv.invokevirtual(cg.p(ThreadContext.class), "getRuntime", cg.sig(Ruby.class));
+                    mv.dup();
+                    
+                    // get nil
+                    mv.invokevirtual(cg.p(Ruby.class), "getNil", cg.sig(IRubyObject.class));
+                    
+                    // load "redo" under nil
+                    mv.ldc("redo");
+                    mv.swap();
+                    
+                    // load "unexpected redo" message
+                    mv.ldc("unexpected redo");
+                    
+                    mv.invokevirtual(cg.p(Ruby.class), "newLocalJumpError", cg.sig(RaiseException.class, cg.params(String.class, IRubyObject.class, String.class)));
+                    mv.go_to(tryFinally);
+                }
+
+                // finally handling for abnormal exit
+                {
+                    mv.label(tryFinally);
+
+                    //call post method stuff (exception raised)
+                    mv.aload(0); // load method to get callconfig
+                    mv.getfield(cg.p(DynamicMethod.class), "callConfig", cg.ci(CallConfiguration.class));
+                    mv.aload(1);
+                    mv.invokevirtual(cg.p(CallConfiguration.class), "post", cg.sig(void.class, cg.params(ThreadContext.class)));
+
+                    // rethrow exception
+                    mv.athrow(); // rethrow it
+                }
                 
                 c = endCall(implementationClass.getRuntime(), cw,mv,mname);
             }
             
-            return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class}).newInstance(new Object[]{implementationClass,arity,visibility});
+            return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class, StaticScope.class, scriptObject.getClass()}).newInstance(new Object[]{implementationClass,arity,visibility,scope,scriptObject});
         } catch(Exception e) {
             e.printStackTrace();
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
 
-    public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, StaticScope scope) {
-        return getCompleteMethod(implementationClass,type,method,arity,visibility,COMPILED_SUPER_CLASS);
+    public DynamicMethod getCompiledMethod(RubyModule implementationClass, String method, Arity arity, Visibility visibility, StaticScope scope, Object scriptObject) {
+        return getCompleteMethod(implementationClass,method,arity,visibility,scope, COMPILED_SUPER_CLASS, scriptObject);
     }
 }// DumpingInvocationMethodFactory

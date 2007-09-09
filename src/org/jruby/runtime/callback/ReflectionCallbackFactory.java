@@ -133,7 +133,7 @@ public class ReflectionCallbackFactory extends CallbackFactory {
             Arity.fixed(2), false);
     }
     
-    public CompiledBlockCallback getBlockCallback(String method) {
+    public CompiledBlockCallback getBlockCallback(String method, Object scriptObject) {
         throw new RuntimeException("not implemented");
     }
 

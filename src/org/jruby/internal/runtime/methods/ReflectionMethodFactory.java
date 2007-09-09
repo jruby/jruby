@@ -34,7 +34,7 @@ import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Visibility;
 
 public class ReflectionMethodFactory extends MethodFactory {
-    public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility, StaticScope scope) {
+    public DynamicMethod getCompiledMethod(RubyModule implementationClass, String methodName, Arity arity, Visibility visibility, StaticScope scope, Object scriptObject) {
         assert false: "Not yet implemented";
         return null;
     }

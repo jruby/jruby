@@ -163,10 +163,14 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, cg.p(Object.class),
                 new String[] { cg.p(CompiledBlockCallback.class) });
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", cg.ci(Object.class), null, null);
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", cg.sig(Void.TYPE, cg.params(Object.class)), null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, cg.p(Object.class), "<init>", "()V");
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitFieldInsn(PUTFIELD, namePath, "$scriptObject", cg.ci(Object.class));
         mv.visitInsn(RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
@@ -513,7 +517,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 RubyKernel.IRUBY_OBJECT }, false, true, Arity.fixed(2), false);
     }
 
-    public CompiledBlockCallback getBlockCallback(String method) {
+    public CompiledBlockCallback getBlockCallback(String method, Object scriptObject) {
+        Class type = scriptObject.getClass();
+        String typePath = cg.p(type);
         String mname = type.getName() + "Block" + method + "xx1";
         String mnamePath = typePath + "Block" + method + "xx1";
         synchronized (classLoader) {
@@ -522,21 +528,25 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 if (c == null) {
                     ClassWriter cw = createBlockCtor(mnamePath);
                     MethodVisitor mv = startBlockCall(cw);
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitFieldInsn(GETFIELD, mnamePath, "$scriptObject", cg.ci(Object.class));
+                    mv.visitTypeInsn(CHECKCAST, cg.p(type));
                     mv.visitVarInsn(ALOAD, 1);
                     mv.visitVarInsn(ALOAD, 2);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(
                             RubyKernel.IRUBY_OBJECT, cg.params(ThreadContext.class,
                                     RubyKernel.IRUBY_OBJECT, IRubyObject[].class)));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(2, 3);
                     c = endCall(cw, mv, mname);
                 }
-                CompiledBlockCallback ic = (CompiledBlockCallback) c.newInstance();
+                CompiledBlockCallback ic = (CompiledBlockCallback) c.getConstructor(Object.class).newInstance(scriptObject);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
             } catch (Exception e) {
+                e.printStackTrace();
                 throw new IllegalArgumentException(e.getMessage());
             }
         }

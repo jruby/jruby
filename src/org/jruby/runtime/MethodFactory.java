@@ -37,7 +37,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.util.JRubyClassLoader;
 
 public abstract class MethodFactory {
-    public abstract DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, StaticScope scope);
+    public abstract DynamicMethod getCompiledMethod(RubyModule implementationClass, String method, Arity arity, Visibility visibility, StaticScope scope, Object scriptObject);
 
     private static boolean reflection = false;
     private static boolean dumping = false;

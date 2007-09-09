@@ -55,7 +55,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private final static String COMPILED_SUPER_CLASS = CompiledMethod.class.getName().replace('.','/');
     private final static String COMPILED_CALL_SIG = cg.sig(IRubyObject.class,
             cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
-    private final static String COMPILED_SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ci(StaticScope.class) + ")V";
+    private final static String COMPILED_SUPER_SIG = cg.sig(Void.TYPE, cg.params(RubyModule.class, Arity.class, Visibility.class, StaticScope.class, Object.class));
 
     private JRubyClassLoader classLoader;
     
@@ -90,6 +90,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.visitVarInsn(ALOAD, 2);
         mv.visitVarInsn(ALOAD, 3);
         mv.visitVarInsn(ALOAD, 4);
+        mv.visitVarInsn(ALOAD, 5);
         mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", COMPILED_SUPER_SIG);
         mv.visitInsn(RETURN);
         mv.visitMaxs(0,0);
@@ -119,6 +120,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return classLoader.defineClass(name, code);
     }
     
+    public static final int SCRIPT_INDEX = 0;
     public static final int THREADCONTEXT_INDEX = 1;
     public static final int RECEIVER_INDEX = 2;
     public static final int CLASS_INDEX = 3;
@@ -126,11 +128,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public static final int ARGS_INDEX = 5;
     public static final int BLOCK_INDEX = 6;
 
-    private DynamicMethod getCompleteMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, StaticScope scope, String sup) {
-        String typePath = p(type);
-        String mname = type.getName() + "Invoker" + method + arity;
+    private DynamicMethod getCompleteMethod(RubyModule implementationClass, String method, Arity arity, Visibility visibility, StaticScope scope, String sup, Object scriptObject) {
+        Class scriptClass = scriptObject.getClass();
+        String typePath = p(scriptClass);
+        String mname = scriptClass.getName() + "Invoker" + method + arity;
         String mnamePath = typePath + "Invoker" + method + arity;
         Class c = tryClass(implementationClass.getRuntime(), mname);
+        
         try {
             if (c == null) {
                 ClassWriter cw = createCompiledCtor(mnamePath,sup);
@@ -174,12 +178,16 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 mv.trycatch(tryBegin, tryEnd, tryRedoJump, cg.p(JumpException.RedoJump.class));
                 mv.trycatch(tryBegin, tryEnd, tryFinally, null);
                 mv.label(tryBegin);
-                    
+                
+                mv.aload(0);
+                // FIXME we want to eliminate these type casts when possible
+                mv.getfield(mnamePath, "$scriptObject", cg.ci(Object.class));
+                mv.checkcast(typePath);
                 mv.aload(THREADCONTEXT_INDEX);
                 mv.aload(RECEIVER_INDEX);
                 mv.aload(ARGS_INDEX);
                 mv.aload(BLOCK_INDEX);
-                mv.invokestatic(typePath, method, cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class)));
+                mv.invokevirtual(typePath, method, cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class)));
                 
                 // store result in temporary variable 8
                 mv.astore(8);
@@ -260,14 +268,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 c = endCall(implementationClass.getRuntime(), cw,mv,mname);
             }
             
-            return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class, StaticScope.class}).newInstance(new Object[]{implementationClass,arity,visibility,scope});
+            return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class, StaticScope.class, Object.class}).newInstance(new Object[]{implementationClass,arity,visibility,scope,scriptObject});
         } catch(Exception e) {
             e.printStackTrace();
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
 
-    public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, StaticScope scope) {
-        return getCompleteMethod(implementationClass,type,method,arity,visibility,scope, COMPILED_SUPER_CLASS);
+    public DynamicMethod getCompiledMethod(RubyModule implementationClass, String method, Arity arity, Visibility visibility, StaticScope scope, Object scriptObject) {
+        return getCompleteMethod(implementationClass,method,arity,visibility,scope, COMPILED_SUPER_CLASS, scriptObject);
     }
 }

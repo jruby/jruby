@@ -72,7 +72,7 @@ public class CompiledSharedScopeBlock extends SharedScopeBlock {
         // since single vars will want that anyway
         try {
             IRubyObject[] realArgs = aValue ? 
-                    setupBlockArgs(context, args, self) : setupBlockArg(context, args, self); 
+                    setupBlockArgs(context, args, self) : setupBlockArg(context, args, self);
             pre(context, klass);
             return callback.call(context, self, realArgs);
         } finally {
@@ -114,8 +114,18 @@ public class CompiledSharedScopeBlock extends SharedScopeBlock {
         // since we can't do that just yet, it's disabled
             if (value == null) {
                 context.getRuntime().getWarnings().warn("multiple values for a block parameter (0 for 1)");
+                return new IRubyObject[] {context.getRuntime().getNil()};
             }
             return new IRubyObject[] {value};
         }
+    }
+
+    public Block cloneBlock() {
+        Block newBlock = new CompiledSharedScopeBlock(self, frame.duplicate(), visibility, klass, 
+                dynamicScope, arity, callback, hasMultipleArgsHead, argumentType);
+        
+        newBlock.isLambda = isLambda;
+        
+        return newBlock;
     }
 }

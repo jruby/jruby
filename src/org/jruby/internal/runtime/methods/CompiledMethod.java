@@ -38,12 +38,14 @@ import org.jruby.runtime.Block;
 public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
     protected Arity arity;
     protected StaticScope staticScope;
+    protected Object $scriptObject;
 //    private boolean needsImplementer;
     
-    public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope) {
+    public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, Object scriptObject) {
     	super(implementationClass, visibility, CallConfiguration.RUBY_FULL);
         this.arity = arity;
         this.staticScope = staticScope;
+        this.$scriptObject = scriptObject;
         
         // CompiledMethod will eventually need this logic, since it will eventually compile module methods with super in them
 //        if (implementationClass != null) {
