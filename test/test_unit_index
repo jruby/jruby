@@ -167,6 +167,7 @@ externals/mri/ruby/test_trace
 # For some reason test_variable only fails during ant test
 #externals/mri/ruby/test_variable
 externals/mri/ruby/test_whileuntil
+externals/mri/stringio/test_stringio
 
 # These tests run fine in isolation, but when running with ant test they fail.
 # FIXME: investigate and turn on

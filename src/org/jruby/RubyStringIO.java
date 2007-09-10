@@ -347,14 +347,19 @@ public class RubyStringIO extends RubyObject {
 
     public IRubyObject puts(IRubyObject[] obj) {
         internal.modify();
-        if (obj.length == 0) {
-            append(RubyString.newString(getRuntime(),NEWLINE_BL));
-        }
-        
+
+        if (obj.length == 0) append(RubyString.newString(getRuntime(),NEWLINE_BL));
+
+        ByteList list = internal.getByteList();
         for (int i=0,j=obj.length;i<j;i++) {
             append(obj[i]);
-            if (!internal.getByteList().subSequence((int)pos - NEWLINE_BL.length(), (int)pos).equals(NEWLINE_BL)) {
-              internal.getByteList().unsafeReplace((int)(pos++),0,NEWLINE_BL);
+
+            // Append a newline if there wasn't already one at the end of newest appended object.
+            int lastPossibleNewlineIndex = (int) (pos - NEWLINE_BL.length());
+            if (lastPossibleNewlineIndex == -1 || 
+                    !list.subSequence(lastPossibleNewlineIndex, (int) pos).equals(NEWLINE_BL)) {
+                // If we rewind/seek backwards write newline over existing, otherwise add
+                list.unsafeReplace((int)(pos++), list.length() > pos ? 1 : 0, NEWLINE_BL);
             }
         }
         return getRuntime().getNil();
@@ -362,36 +367,83 @@ public class RubyStringIO extends RubyObject {
 
     public IRubyObject read(IRubyObject[] args) {
         ByteList buf = null;
-        if (!(pos >= internal.getByteList().length() || eof)) {
-            if (args.length > 0 && !args[0].isNil()) {
-                int len = RubyNumeric.fix2int(args[0]);
-                int end = ((int)pos) + len;
-                if (end > internal.getByteList().length()) {
-                    buf = new ByteList(internal.getByteList(),(int)pos,internal.getByteList().length()-(int)pos);
-                } else {
-                    buf = new ByteList(internal.getByteList(),(int)pos,len);
+        int length = 0;
+        int oldLength = 0;
+        
+        switch (args.length) {
+        case 2:
+            buf = args[1].convertToString().getByteList();
+        case 1:
+            if (!args[0].isNil()) {
+                length = RubyNumeric.fix2int(args[0]);
+                oldLength = length;
+                
+                if (length < 0) {
+                    throw getRuntime().newArgumentError("negative length " + length + " given");
                 }
-            } else {
-                buf = new ByteList(internal.getByteList(),(int)pos,internal.getByteList().length()-(int)pos);
+                if (length > 0 && pos >= internal.getByteList().length()) {
+                    eof = true;
+                    if (buf != null) buf.realSize = 0;
+                    return getRuntime().getNil();
+                } else if (eof) {
+                    if (buf != null) buf.realSize = 0;
+                    return getRuntime().getNil();
+                }
+                break;
             }
-            pos+= buf.length();
+        case 0:
+            oldLength = -1;
+            length = internal.getByteList().length();
+            
+            if (length <= pos) {
+                eof = true;
+                if (buf == null) {
+                    buf = new ByteList();
+                } else {
+                    buf.realSize = 0;
+                }
+                
+                return getRuntime().newString(buf);
+            } else {
+                length -= pos;
+            }
+            break;
+        default:
+            getRuntime().newArgumentError(args.length, 0);
         }
-        IRubyObject ret = null;
+         
         if (buf == null) {
-            if (args.length > 0) {
-                return getRuntime().getNil();
+            int internalLength = internal.getByteList().length();
+         
+            if (internalLength > 0) {
+                if (internalLength >= pos + length) {
+                    buf = new ByteList(internal.getByteList(), (int) pos, length);  
+                } else {
+                    int rest = (int) (internal.getByteList().length() - pos);
+                    
+                    if (length > rest) length = rest;
+                    buf = new ByteList(internal.getByteList(), (int) pos, length);
+                }
             }
-            return getRuntime().newString("");
         } else {
-            if (args.length>1) {
-                ret = args[1].convertToString();
-								((RubyString)ret).setValue(buf);
-            } else {
-                ret = RubyString.newString(getRuntime(),buf);
-            }
+            int rest = (int) (internal.getByteList().length() - pos);
+            
+            if (length > rest) length = rest;
+            buf.realSize = length;
+            buf.replace((int) pos, length, internal.getByteList()); 
         }
-
-        return ret;
+        
+        if (buf == null) {
+            if (!eof) buf = new ByteList();
+            length = 0;
+        } else {
+            length = buf.length();
+            pos += length;
+        }
+        
+        if (oldLength < 0 || oldLength > length) eof = true;
+        
+        return getRuntime().newString(buf);
     }
 
     public IRubyObject readchar() {
@@ -403,7 +455,7 @@ public class RubyStringIO extends RubyObject {
     }
     
     public IRubyObject readlines(IRubyObject[] arg) {
-        List lns = new ArrayList();
+        List<IRubyObject> lns = new ArrayList<IRubyObject>();
         while (!(pos >= internal.getByteList().length() || eof)) {
             lns.add(gets(arg));
         }
