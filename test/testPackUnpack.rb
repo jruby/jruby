@@ -50,3 +50,4 @@ test_exception(TypeError){ [0].pack("H") }
 test_exception(ArgumentError){ ['test'].pack("d") }
 test_exception(TypeError){ [0].pack("h") }
 test_exception(TypeError){ [-1, 0, 1, 128].pack("m") }
+test_equal(["testingT"], "testing=54".unpack("M*"))

@@ -845,7 +845,6 @@ public class Pack {
                                 if (!encode.hasRemaining()) break;
                                 if (c1 == '\n') continue;
                                 byte c2 = safeGet(encode);
-                                if (!encode.hasRemaining()) break;
                                 byte value = (byte)(Character.digit((char)(c1 & 0xFF), 16) * 16 + Character.digit((char)(c2 & 0xFF), 16));
                                 lElem[index++] = value;
                             }
