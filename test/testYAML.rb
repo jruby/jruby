@@ -207,3 +207,14 @@ stack-bar-chart
 YAML
 
 test_equal text, YAML.load(YAML.dump(text))
+
+text = <<YAML
+valid_key:
+key1: value
+invalid_key
+akey: blah
+YAML
+
+test_exception(ArgumentError) do 
+  YAML.load(text)
+end

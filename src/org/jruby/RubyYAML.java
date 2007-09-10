@@ -59,6 +59,7 @@ import org.jvyamlb.ComposerImpl;
 import org.jvyamlb.Serializer;
 import org.jvyamlb.ResolverImpl;
 import org.jvyamlb.EmitterImpl;
+import org.jvyamlb.YAMLException;
 import org.jvyamlb.YAMLConfig;
 import org.jvyamlb.YAML;
 
@@ -211,16 +212,21 @@ public class RubyYAML {
     public static IRubyObject load(IRubyObject self, IRubyObject arg) {
         IRubyObject io = arg;
         Scanner scn = null;
-        if(io instanceof RubyString) {
-            scn = new ScannerImpl(((RubyString)io).getByteList());
-        } else {
-            scn = new ScannerImpl(new IOInputStream(io));
+        try {
+            if(io instanceof RubyString) {
+                scn = new ScannerImpl(((RubyString)io).getByteList());
+            } else {
+                scn = new ScannerImpl(new IOInputStream(io));
+            }
+            Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
+            if(ctor.checkData()) {
+                return JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData());
+            }
+            return self.getRuntime().getNil();
+        } catch(YAMLException e) {
+            if(self.getRuntime().getDebug().isTrue()) e.printStackTrace();
+            throw self.getRuntime().newArgumentError(e.getMessage());
         }
-        Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
-        if(ctor.checkData()) {
-            return JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData());
-        }
-        return self.getRuntime().getNil();
     }
 
     public static IRubyObject load_file(IRubyObject self, IRubyObject arg) {
@@ -235,32 +241,42 @@ public class RubyYAML {
         ThreadContext context = self.getRuntime().getCurrentContext();
         IRubyObject io = arg;
         Scanner scn = null;
-        if(io instanceof RubyString) {
-            scn = new ScannerImpl(((RubyString)io).getByteList());
-        } else {
-            scn = new ScannerImpl(new IOInputStream(io));
+        try {
+            if(io instanceof RubyString) {
+                scn = new ScannerImpl(((RubyString)io).getByteList());
+            } else {
+                scn = new ScannerImpl(new IOInputStream(io));
+            }
+            Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
+            while(ctor.checkData()) {
+                block.yield(context, JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
+            }
+            return self.getRuntime().getNil();
+        } catch(YAMLException e) {
+            if(self.getRuntime().getDebug().isTrue()) e.printStackTrace();
+            throw self.getRuntime().newArgumentError(e.getMessage());
         }
-        Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
-        while(ctor.checkData()) {
-            block.yield(context, JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
-        }
-        return self.getRuntime().getNil();
     }
 
     public static IRubyObject load_documents(IRubyObject self, IRubyObject arg, Block block) {
         ThreadContext context = self.getRuntime().getCurrentContext();
         IRubyObject io = arg;
         Scanner scn = null;
-        if(io instanceof RubyString) {
-            scn = new ScannerImpl(((RubyString)io).getByteList());
-        } else {
-            scn = new ScannerImpl(new IOInputStream(io));
+        try {
+            if(io instanceof RubyString) {
+                scn = new ScannerImpl(((RubyString)io).getByteList());
+            } else {
+                scn = new ScannerImpl(new IOInputStream(io));
+            }
+            Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
+            while(ctor.checkData()) {
+                block.yield(context, JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
+            }
+            return self.getRuntime().getNil();
+        } catch(YAMLException e) {
+            if(self.getRuntime().getDebug().isTrue()) e.printStackTrace();
+            throw self.getRuntime().newArgumentError(e.getMessage());
         }
-        Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
-        while(ctor.checkData()) {
-            block.yield(context, JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
-        }
-        return self.getRuntime().getNil();
     }
 
     public static IRubyObject load_stream(IRubyObject self, IRubyObject arg) {
@@ -268,19 +284,24 @@ public class RubyYAML {
         IRubyObject d = self.getRuntime().getNil();
         IRubyObject io = arg;
         Scanner scn = null;
-        if(io instanceof RubyString) {
-            scn = new ScannerImpl(((RubyString)io).getByteList());
-        } else {
-            scn = new ScannerImpl(new IOInputStream(io));
-        }
-        Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
-        while(ctor.checkData()) {
-            if(d.isNil()) {
-                d = self.getRuntime().getModule("YAML").getClass("Stream").callMethod(context,"new", d);
+        try {
+            if(io instanceof RubyString) {
+                scn = new ScannerImpl(((RubyString)io).getByteList());
+            } else {
+                scn = new ScannerImpl(new IOInputStream(io));
             }
-            d.callMethod(context,"add", JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
+            Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
+            while(ctor.checkData()) {
+                if(d.isNil()) {
+                    d = self.getRuntime().getModule("YAML").getClass("Stream").callMethod(context,"new", d);
+                }
+                d.callMethod(context,"add", JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
+            }
+            return d;
+        } catch(YAMLException e) {
+            if(self.getRuntime().getDebug().isTrue()) e.printStackTrace();
+            throw self.getRuntime().newArgumentError(e.getMessage());
         }
-        return d;
     }
 
     public static IRubyObject dump_stream(IRubyObject self, IRubyObject[] args) {
