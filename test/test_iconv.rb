@@ -86,4 +86,8 @@ class TestIconv < Test::Unit::TestCase
     str << iconv.iconv(nil)
     assert_equal( sjis, str )
   end
+  
+  def test_unknown_encoding
+  	assert_raise(Iconv::InvalidEncoding) { Iconv.iconv("utf-8", "X-UKNOWN", "heh") }
+  end
 end
