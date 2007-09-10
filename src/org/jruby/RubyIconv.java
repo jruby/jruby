@@ -95,8 +95,8 @@ public class RubyIconv extends RubyObject {
     }
     
     public static class RubyFailure extends RubyException {
-        private RubyString success;
-        private RubyString failed;
+        private IRubyObject success;
+        private IRubyObject failed;
 
         public static RubyFailure newInstance(Ruby runtime, RubyClass excptnClass, String msg) {
             return new RubyFailure(runtime, excptnClass, msg);
@@ -117,10 +117,10 @@ public class RubyIconv extends RubyObject {
         }
 
         public IRubyObject initialize(IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(getRuntime(), args, 3, 3);
+            Arity.checkArgumentCount(getRuntime(), args, 1, 3);
             super.initialize(args, block);
-            success = (RubyString) args[1];
-            failed = (RubyString) args[2];
+            success = args.length >= 2 ? args[1] : getRuntime().getNil();
+            failed = args.length == 3 ? args[2] : getRuntime().getNil();
 
             return this;
         }
@@ -293,6 +293,9 @@ public class RubyIconv extends RubyObject {
     // FIXME: We are assuming that original string will be raw bytes.  If -Ku is provided
     // this will not be true, but that is ok for now.  Deal with that when someone needs it.
     private static IRubyObject convert2(String fromEncoding, String toEncoding, RubyString original) {
+        // Don't bother to convert if it is already in toEncoding
+        if (fromEncoding.equals(toEncoding)) return original;
+        
         try {
             // Get all bytes from string and pretend they are not encoded in any way.
             ByteList bytes = original.getByteList();
