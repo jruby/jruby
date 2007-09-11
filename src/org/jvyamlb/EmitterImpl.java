@@ -72,7 +72,8 @@ public class EmitterImpl implements Emitter {
         public boolean allowSingleQuoted;
         public boolean allowDoubleQuoted;
         public boolean allowBlock;
-        public ScalarAnalysis(final ByteList scalar, final boolean empty, final boolean multiline, final boolean allowFlowPlain, final boolean allowBlockPlain, final boolean allowSingleQuoted, final boolean allowDoubleQuoted, final boolean allowBlock) {
+        public boolean specialCharacters;
+        public ScalarAnalysis(final ByteList scalar, final boolean empty, final boolean multiline, final boolean allowFlowPlain, final boolean allowBlockPlain, final boolean allowSingleQuoted, final boolean allowDoubleQuoted, final boolean allowBlock, final boolean specialCharacters) {
             this.scalar = scalar;
             this.empty = empty;
             this.multiline = multiline;
@@ -81,6 +82,7 @@ public class EmitterImpl implements Emitter {
             this.allowSingleQuoted = allowSingleQuoted;
             this.allowDoubleQuoted = allowDoubleQuoted;
             this.allowBlock = allowBlock;
+            this.specialCharacters = specialCharacters;
         }
     }
 
@@ -750,7 +752,7 @@ public class EmitterImpl implements Emitter {
             if((ev.getStyle() == 0 || ev.getStyle() == '\'') && (analysis.allowSingleQuoted && !(simpleKeyContext && analysis.multiline))) {
                 return '\'';
             }
-            if(analysis.multiline && !FIRST_SPACE.matcher(ev.getValue()).find()) {
+            if(analysis.multiline && !FIRST_SPACE.matcher(ev.getValue()).find() && !analysis.specialCharacters) {
                 return '|';
             }
 
@@ -1248,7 +1250,7 @@ public class EmitterImpl implements Emitter {
     private final static String FLOW_INDIC = ",?[]{}";
     static ScalarAnalysis analyzeScalar(final ByteList scalar) {
         if(scalar == null || scalar.realSize == 0) {
-            return new ScalarAnalysis(scalar,true,false,false,true,true,true,false);
+            return new ScalarAnalysis(scalar,true,false,false,true,true,true,false,false);
         }
         boolean blockIndicators = false;
         boolean flowIndicators = false;
@@ -1426,7 +1428,7 @@ public class EmitterImpl implements Emitter {
             allowBlockPlain = false;
         }
 
-        return new ScalarAnalysis(scalar,false,lineBreaks,allowFlowPlain,allowBlockPlain,allowSingleQuoted,allowDoubleQuoted,allowBlock);
+        return new ScalarAnalysis(scalar,false,lineBreaks,allowFlowPlain,allowBlockPlain,allowSingleQuoted,allowDoubleQuoted,allowBlock,specialCharacters);
     }
 
     static String determineChomp(final ByteList text) {
