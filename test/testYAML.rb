@@ -218,3 +218,9 @@ YAML
 test_exception(ArgumentError) do 
   YAML.load(text)
 end
+
+def roundtrip(text)
+  test_equal text, YAML.load(YAML.dump(text))
+end
+
+roundtrip("C VW\205\v\321XU\346")

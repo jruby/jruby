@@ -1312,7 +1312,7 @@ public class EmitterImpl implements Emitter {
                     blockIndicators = true;
                 }
             }
-            if(ceh == '\n' || '\u0085' == ceh) {
+            if(ceh == '\n') {
                 lineBreaks = true;
             }
             if(!(ceh == '\n' || ('\u0020' <= ceh && ceh <= '\u007E'))) {
