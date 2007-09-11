@@ -2365,7 +2365,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // ensure logic is both embedded in a method and not handling branching logic appropriately
             if (withinProtection) {
                 // This is only to fake out the verifier, which doesn't know returnJump will always raise an exception.
-                // Without it, it complains about there being an empty stack later on
+                // Without it, the verifier complains about there being an empty stack later on.
                 method.dup();
                 loadThreadContext();
                 invokeUtilityMethod("returnJump", cg.sig(void.class, cg.params(IRubyObject.class, ThreadContext.class)));
