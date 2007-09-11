@@ -2360,8 +2360,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void performReturn() {
-            // normal return for method body
-            method.areturn();
+            // normal return for method bod
+            // FIXME: JRUBY-1340...the use of an exception here is temporary, and only necessary because
+            // ensure logic is both embedded in a method and not handling branching logic appropriately
+            if (withinProtection) {
+                // This is only to fake out the verifier, which doesn't know returnJump will always raise an exception.
+                // Without it, it complains about there being an empty stack later on
+                method.dup();
+                loadThreadContext();
+                invokeUtilityMethod("returnJump", cg.sig(void.class, cg.params(IRubyObject.class, ThreadContext.class)));
+            } else {
+                method.areturn();
+            }
         }
 
         public void issueBreakEvent(ClosureCallback value) {

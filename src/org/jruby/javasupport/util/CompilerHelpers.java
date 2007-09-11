@@ -17,6 +17,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.EvaluationState;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -485,5 +486,9 @@ public class CompilerHelpers {
         System.arraycopy(array, 0, newArray, 0, array.length);
         newArray[array.length] = add;
         return newArray;
+    }
+    
+    public static void returnJump(IRubyObject result, ThreadContext context) {
+        throw new JumpException.ReturnJump(context.getFrameJumpTarget(), result);
     }
 }
