@@ -63,7 +63,6 @@ public class YAML {
         ESCAPE_REPLACEMENTS.put(new Character('\u001B'),"e");
         ESCAPE_REPLACEMENTS.put(new Character('"'),"\"");
         ESCAPE_REPLACEMENTS.put(new Character('\\'),"\\");
-        ESCAPE_REPLACEMENTS.put(new Character('\u0085'),"N");
         ESCAPE_REPLACEMENTS.put(new Character('\u00A0'),"_");
     }
     public static YAMLConfig config() {

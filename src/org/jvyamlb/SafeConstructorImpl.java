@@ -336,7 +336,7 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
     }    
 
     public static Object constructYamlBinary(final Constructor ctor, final Node node) {
-        final String[] values = ctor.constructScalar(node).toString().split("[\n\u0085]|(?:\r[^\n])");
+        final String[] values = ctor.constructScalar(node).toString().split("\n|(?:\r[^\n])");
         final StringBuffer vals = new StringBuffer();
         for(int i=0,j=values.length;i<j;i++) {
             vals.append(values[i].trim());
