@@ -868,27 +868,22 @@ public class EmitterImpl implements Emitter {
             }
 
             if((0 < ending && ending < (text.length()-1)) && (ch == ' ' || start >= ending) && (env.column+(ending-start)) > env.bestWidth && split) {
-                int offset=1;
                 if(start < ending) {
                     data = (ByteList)text.subSequence(start,ending);
                     data.append(' ');
                     data.append('\\');
-                    ending++;
-                    offset=0;
+                    start = ending+1;
                 } else {
                     data = ByteList.create("\\");
                 }
 
-                if(start < ending) {
-                    start = ending;
-                }
                 env.column += data.length();
                 stream.write(data.bytes,0,data.realSize);
                 writeIndent();
                 env.whitespace = false;
                 env.indentation = false;
 
-                if(ending < (text.length()+1) && text.charAt(ending+offset) == ' ') {
+                if(start < (text.length()+1) && text.charAt(start) == ' ') {
                     data = ByteList.create("\\");
                     stream.write(data.bytes,0,data.realSize);
                 }
