@@ -1391,7 +1391,7 @@ public class EmitterImpl implements Emitter {
         boolean allowBlock = true;
         
         if(leadingSpaces || leadingBreaks || trailingSpaces) {
-            allowFlowPlain = allowBlockPlain = allowBlock = false;
+            allowFlowPlain = allowBlockPlain = allowBlock = allowSingleQuoted = false;
         }
 
         if(trailingBreaks) {

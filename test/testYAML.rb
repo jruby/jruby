@@ -224,3 +224,4 @@ def roundtrip(text)
 end
 
 roundtrip("C VW\205\v\321XU\346")
+roundtrip("\n8 xwKmjHG")
