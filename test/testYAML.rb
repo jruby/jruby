@@ -228,3 +228,28 @@ roundtrip("\n8 xwKmjHG")
 roundtrip("1jq[\205qIB\ns")
 roundtrip("\rj\230fso\304\nEE")
 roundtrip("ks]qkYM\2073Un\317\nL\346Yp\204 CKMfFcRDFZ\vMNk\302fQDR<R\v \314QUa\234P\237s aLJnAu \345\262Wqm_W\241\277J\256ILKpPNsMPuok")
+
+def fuzz_roundtrip(str)
+  out = YAML.load(YAML.dump(str))
+  test_equal str, out
+end
+
+values = (1..255).to_a
+more = ('a'..'z').to_a + ('A'..'Z').to_a
+blanks = [' ', "\t", "\n"]
+
+types = [more*10 + blanks*2, values + more*10 + blanks*2, values + more*10 + blanks*20]
+sizes = [10, 81, 214]
+
+errors = []
+types.each do |t|
+  sizes.each do |s|
+    1000.times do |vv|
+      val = ""
+      s.times do 
+        val << t[rand(t.length)]
+      end
+      fuzz_roundtrip(val)
+    end      
+  end
+end
