@@ -225,3 +225,4 @@ end
 
 roundtrip("C VW\205\v\321XU\346")
 roundtrip("\n8 xwKmjHG")
+roundtrip("1jq[\205qIB\ns")
