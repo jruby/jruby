@@ -405,3 +405,10 @@ test_equal([2, 4, 6], compile_and_run("a = []; for b in [1, 2, 3]; a << b * 2; e
 # ensure blocks
 test_equal(1, compile_and_run("a = 2; begin; a = 3; ensure; a = 1; end; a"))
 test_equal(1, compile_and_run("$a = 2; def foo; return; ensure; $a = 1; end; foo; $a"))
+
+# op element assign
+test_equal([4, 4], compile_and_run("a = []; [a[0] ||= 4, a[0]]"))
+test_equal([4, 4], compile_and_run("a = [4]; [a[0] ||= 5, a[0]]"))
+test_equal([4, 4], compile_and_run("a = [1]; [a[0] += 3, a[0]]"))
+test_equal([1], compile_and_run("a = {}; a[0] ||= [1]; a[0]"))
+test_equal(2, compile_and_run("a = [1]; a[0] &&= 2; a[0]"))

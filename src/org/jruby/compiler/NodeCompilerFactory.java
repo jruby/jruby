@@ -109,6 +109,7 @@ import org.jruby.ast.FlipNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.SClassNode;
 import org.jruby.ast.ToAryNode;
 import org.jruby.ast.UndefNode;
@@ -309,7 +310,8 @@ public class NodeCompilerFactory {
             compileOpAsgnOr(node, context);
             break;
         case OPELEMENTASGNNODE:
-            throw new NotCompilableException("Operator element assignment at: " + node.getPosition());
+            compileOpElementAsgn(node, context);
+            break;
         case OPTNNODE:
             throw new NotCompilableException("Opt N at: " + node.getPosition());
         case ORNODE:
@@ -410,7 +412,8 @@ public class NodeCompilerFactory {
             compileSplatArguments(node, context);
             break;
         default:
-            throw new NotCompilableException("Can't compile argument node: " + node);
+            compile(node, context);
+            context.convertToJavaArray();
         }
     }
     
@@ -2410,6 +2413,23 @@ public class NodeCompilerFactory {
         context.pollThreadEvents();
     }
     
+    public static void compileOpElementAsgn(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode)node;
+        
+        compile(opElementAsgnNode.getReceiverNode(), context);
+        compileArguments(opElementAsgnNode.getArgsNode(), context);
+        
+        ClosureCallback valueArgsCallback = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                NodeCompilerFactory.compile(opElementAsgnNode.getValueNode(), context);
+            }
+        };
+        
+        context.getInvocationCompiler().opElementAsgn(valueArgsCallback, opElementAsgnNode.getOperatorName());
+    }
+    
     public static void compileOr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
@@ -2675,7 +2695,7 @@ public class NodeCompilerFactory {
         compile(argsCatNode.getSecondNode(), context);
         context.splatCurrentValue();
         context.concatArrays();
-        context.unwrapRubyArray();
+        context.convertToJavaArray();
     }
     
     public static void compileArgsPushArguments(Node node, MethodCompiler context) {
@@ -2685,7 +2705,7 @@ public class NodeCompilerFactory {
         compile(argsPushNode.getFirstNode(), context);
         compile(argsPushNode.getSecondNode(), context);
         context.appendToArray();
-        context.unwrapRubyArray();
+        context.convertToJavaArray();
     }
     
     public static void compileArrayArguments(Node node, MethodCompiler context) {
@@ -2711,7 +2731,7 @@ public class NodeCompilerFactory {
         
         compile(splatNode.getValue(), context);
         context.splatCurrentValue();
-        context.unwrapRubyArray();
+        context.convertToJavaArray();
     }
     
     /**

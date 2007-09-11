@@ -34,6 +34,8 @@ public interface InvocationCompiler {
      */
     public void invokeAttrAssign(String name);
     
+    public void opElementAsgn(ClosureCallback valueCallback, String operator);
+    
     /**
      * Invoke the block passed into this method, or throw an error if no block is present.
      * If arguments have been prepared for the block, specify true. Otherwise the default

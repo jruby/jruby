@@ -491,4 +491,11 @@ public class CompilerHelpers {
     public static void returnJump(IRubyObject result, ThreadContext context) {
         throw new JumpException.ReturnJump(context.getFrameJumpTarget(), result);
     }
+    
+    public static IRubyObject[] concatObjectArrays(IRubyObject[] array, IRubyObject[] add) {
+        IRubyObject[] newArray = new IRubyObject[array.length + add.length];
+        System.arraycopy(array, 0, newArray, 0, array.length);
+        System.arraycopy(add, 0, newArray, array.length, add.length);
+        return newArray;
+    }
 }

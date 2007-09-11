@@ -64,6 +64,71 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // pop result, use args[length - 1] captured above
         method.pop(); // [val]
     }
+        
+    public void opElementAsgn(ClosureCallback valueCallback, String operator) {
+        // FIXME: op element asgn is not yet using CallAdapter. Boo hoo.
+        
+        // receiver and args are already on the stack
+        methodCompiler.method.dup2();
+        
+        // invoke the [] operator and dup the result
+        invokeDynamic("[]", true, true, CallType.FUNCTIONAL, null, false);
+        methodCompiler.method.dup();
+        
+        // stack is now: .. receiver, args, result, result
+        Label end = new Label();
+        if (operator == "||") {
+            Label falseResult = new Label();
+            methodCompiler.invokeIRubyObject("isTrue", cg.sig(boolean.class)); // receiver, args, result, istrue
+            methodCompiler.method.ifeq(falseResult); // receiver, args, result
+            
+            // it's true, clear everything but the result
+            methodCompiler.method.dup_x2(); // result, receiver, args, result
+            methodCompiler.method.pop(); // result, receiver, args
+            methodCompiler.method.pop2(); // result
+            methodCompiler.method.go_to(end);
+            
+            // it's false, stuff the element in
+            methodCompiler.method.label(falseResult);
+            // START: .. receiver, args, result
+            methodCompiler.method.pop(); // receiver, args
+            valueCallback.compile(methodCompiler); // receiver, args, value
+            methodCompiler.appendToObjectArray(); // receiver, combinedArgs
+            invokeDynamic("[]=", true, true, CallType.FUNCTIONAL, null, false); // assignmentResult
+            
+            methodCompiler.method.label(end);
+        } else if (operator == "&&") {
+            // TODO: This is the reverse of the above logic, and could probably be abstracted better
+            Label falseResult = new Label();
+            methodCompiler.invokeIRubyObject("isTrue", cg.sig(boolean.class));
+            methodCompiler.method.ifeq(falseResult);
+            
+            // it's true, stuff the element in
+            // START: .. receiver, args, result
+            methodCompiler.method.pop(); // receiver, args
+            valueCallback.compile(methodCompiler); // receiver, args, value
+            methodCompiler.appendToObjectArray(); // receiver, combinedArgs
+            invokeDynamic("[]=", true, true, CallType.FUNCTIONAL, null, false); // assignmentResult
+            methodCompiler.method.go_to(end);
+            
+            // it's false, clear everything but the result
+            methodCompiler.method.label(falseResult);
+            methodCompiler.method.dup_x2();
+            methodCompiler.method.pop();
+            methodCompiler.method.pop2();
+            
+            methodCompiler.method.label(end);
+        } else {
+            // remove extra result, operate on it, and reassign with original args
+            methodCompiler.method.pop();
+            // START: .. receiver, args, result
+            valueCallback.compile(methodCompiler); // receiver, args, result, value
+            methodCompiler.createObjectArray(1);
+            invokeDynamic(operator, true, true, CallType.FUNCTIONAL, null, false); // receiver, args, newresult
+            methodCompiler.appendToObjectArray(); // receiver, newargs
+            invokeDynamic("[]=", true, true, CallType.FUNCTIONAL, null, false); // assignmentResult
+        }
+    }
 
     public void invokeDynamic(String name, ClosureCallback receiverCallback, ClosureCallback argsCallback, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
         String classname = methodCompiler.getScriptCompiler().getClassname();
