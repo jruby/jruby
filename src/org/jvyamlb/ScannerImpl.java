@@ -1026,8 +1026,9 @@ public class ScannerImpl implements Scanner {
 
     private ByteList scanFlowScalarBreaks() {
         final ByteList chunks = new ByteList();
+        boolean colz=true;
         for(;;) {
-            if(isEndOrStart()) {
+            if(colz && isEndOrStart()) {
                 throw new ScannerException("while scanning a quoted scalar","found unexpected document separator",null);
             }
             while(BLANK_T[peek()]) {
@@ -1035,9 +1036,11 @@ public class ScannerImpl implements Scanner {
             }
             if(FULL_LINEBR[peek()]) {
                 chunks.append(scanLineBreak());
+                colz = true;
             } else if('\\' == peek() && BLANK_T[peek(1)]) {
                 forward();
                 chunks.append(scanFlowScalarSpaces());
+                colz = false;
             } else {
                 return chunks;
             }            
