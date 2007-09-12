@@ -253,3 +253,7 @@ types.each do |t|
     end      
   end
 end
+
+test_no_exception do 
+  YAML.load_file("test/yaml/does_not_work.yml")
+end
