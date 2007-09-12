@@ -488,7 +488,7 @@ public class CompilerHelpers {
         return newArray;
     }
     
-    public static void returnJump(IRubyObject result, ThreadContext context) {
+    public static IRubyObject returnJump(IRubyObject result, ThreadContext context) {
         throw new JumpException.ReturnJump(context.getFrameJumpTarget(), result);
     }
     

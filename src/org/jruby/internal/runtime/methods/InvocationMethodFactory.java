@@ -216,7 +216,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.if_acmpne(rethrow);
 
                     // this is the target, store return value and branch to normal exit
-                    mv.invokevirtual(cg.p(JumpException.FlowControlException.class), "getTarget", cg.sig(Object.class));
+                    mv.invokevirtual(cg.p(JumpException.FlowControlException.class), "getValue", cg.sig(Object.class));
+                    
                     mv.astore(8);
                     mv.go_to(normalExit);
 

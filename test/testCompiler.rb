@@ -412,3 +412,6 @@ test_equal([4, 4], compile_and_run("a = [4]; [a[0] ||= 5, a[0]]"))
 test_equal([4, 4], compile_and_run("a = [1]; [a[0] += 3, a[0]]"))
 test_equal([1], compile_and_run("a = {}; a[0] ||= [1]; a[0]"))
 test_equal(2, compile_and_run("a = [1]; a[0] &&= 2; a[0]"))
+
+# non-local return
+test_equal(3, compile_and_run("def foo; loop {return 3}; return 4; end; foo"))

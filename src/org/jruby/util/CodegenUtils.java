@@ -79,7 +79,7 @@ public class CodegenUtils {
     /**
      * Create a method signature from the given param types and return values
      */
-    public String sig(Class retval, Class[] params) {
+    public String sig(Class retval, Class... params) {
         StringBuffer signature = new StringBuffer("(");
         
         for (int i = 0; i < params.length; i++) {
@@ -103,38 +103,8 @@ public class CodegenUtils {
     }
     
     // TODO: Wouldn't it be nice to replace this all with a single varargs?
-    public Class[] params() {
-        return new Class[0];
-    }
-    public Class[] params(Class a) {
-        return new Class[] {a};
-    }
-    public Class[] params(Class a, Class b) {
-        return new Class[] {a,b};
-    }
-    public Class[] params(Class a, Class b, Class c) {
-        return new Class[] {a,b,c};
-    }
-    public Class[] params(Class a, Class b, Class c, Class d) {
-        return new Class[] {a,b,c,d};
-    }
-    public Class[] params(Class a, Class b, Class c, Class d, Class e) {
-        return new Class[] {a,b,c,d,e};
-    }
-    public Class[] params(Class a, Class b, Class c, Class d, Class e, Class f) {
-        return new Class[] {a,b,c,d,e,f};
-    }
-    public Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g) {
-        return new Class[] {a,b,c,d,e,f,g};
-    }
-    public Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g, Class h) {
-        return new Class[] {a,b,c,d,e,f,g,h};
-    }
-    public Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g, Class h, Class i) {
-        return new Class[] {a,b,c,d,e,f,g,h,i}; 
-    }
-    public Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g, Class h, Class i, Class j) {
-        return new Class[] {a,b,c,d,e,f,g,h,i,j}; 
+    public Class[] params(Class... classes) {
+        return classes;
     }
     
     public String cleanJavaIdentifier(String name) {

@@ -175,29 +175,31 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             }
         }
         // adapter, tc, recv, args{0,1}, block{0,1}]
-        if (closureArg != null) {
-            // wrap with try/catch for block flow-control exceptions
-            // FIXME: for flow-control from containing blocks, but it's not working right;
-            // stack is not as expected for invoke calls below...
-            //method.trycatch(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
-        }
+        Label tryBegin = new Label();
+        Label tryEnd = new Label();
+        Label catchBreak = new Label();
+        
+//        if (closureArg != null) {
+//            // wrap with try/catch for return jumps
+//            method.trycatch(tryBegin, tryEnd, catchReturn, cg.p(JumpException.BreakJump.class));
+//        }
 
         method.invokevirtual(cg.p(CallAdapter.class), "call", signature);
 
-        if (closureArg != null) {
-            // no physical break, terminate loop and skip catch block
-            // FIXME: for flow-control from containing blocks, but it's not working right;
-            // stack is not as expected for invoke calls below...
-            //            Label normalEnd = new Label();
-            //            method.go_to(normalEnd);
-            //
-            //            method.label(tryCatch);
-            //            {
-            //                loadClosure();
-            //                invokeUtilityMethod("handleJumpException", cg.sig(IRubyObject.class, cg.params(JumpException.class, Block.class)));
-            //            }
-            //
-        }
+//        if (closureArg != null) {
+//            Label normalEnd = new Label();
+//            method.go_to(normalEnd);
+//
+//            method.label(catchReturn);
+//            {
+//                // if we get here, we're going to either continue raising the exception or do a normal return
+//                methodCompiler.loadThreadContext();
+//                methodCompiler.invokeUtilityMethod("handleReturnJump", cg.sig(IRubyObject.class, JumpException.ReturnJump.class, ThreadContext.class));
+//                methodCompiler.performReturn();
+//            }
+//            
+//            method.label(normalEnd);
+//        }
     }
 
     private void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign) {

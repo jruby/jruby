@@ -2170,7 +2170,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void performReturn() {
-            throw new NotCompilableException("Can\'t compile non-local return");
+            loadThreadContext();
+            invokeUtilityMethod("returnJump", cg.sig(IRubyObject.class, IRubyObject.class, ThreadContext.class));
         }
 
         public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args, ClosureCallback receiver, ASTInspector inspector) {
@@ -2368,11 +2369,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // FIXME: JRUBY-1340...the use of an exception here is temporary, and only necessary because
             // ensure logic is both embedded in a method and not handling branching logic appropriately
             if (withinProtection) {
-                // This is only to fake out the verifier, which doesn't know returnJump will always raise an exception.
-                // Without it, the verifier complains about there being an empty stack later on.
-                method.dup();
                 loadThreadContext();
-                invokeUtilityMethod("returnJump", cg.sig(void.class, cg.params(IRubyObject.class, ThreadContext.class)));
+                invokeUtilityMethod("returnJump", cg.sig(IRubyObject.class, IRubyObject.class, ThreadContext.class));
             } else {
                 method.areturn();
             }
