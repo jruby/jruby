@@ -88,13 +88,21 @@ class TestArray < Test::Unit::TestCase
     # this test fails under C Ruby
     # ruby 1.8.6 (2007-03-13 patchlevel 0) [i686-darwin8.9.1]
     assert_equal expected, PI(100)
-    
+
+    zero= BigDecimal("0")
     one = BigDecimal("1")
+    two = BigDecimal("2")
+    three = BigDecimal("3")
     
     assert_equal one * 1, one
     assert_equal one / 1, one
-    assert_equal one + 1, BigDecimal("2")
-    assert_equal one - 1, BigDecimal("0")
+    assert_equal one + 1, two
+    assert_equal one - 1, zero
+
+    assert_equal zero, one % 1
+    assert_equal one, three % two
+    assert_equal BigDecimal("0.2"), BigDecimal("2.2") % two
+    assert_equal BigDecimal("0.003"), BigDecimal("15.993") % BigDecimal("15.99")
     
     assert_equal 1*one, one
     assert_equal 1/one, one

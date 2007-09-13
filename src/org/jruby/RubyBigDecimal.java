@@ -297,9 +297,8 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public IRubyObject mod(IRubyObject arg) {
-        System.err.println("unimplemented: mod");
-        // TODO: implement
-        return this;
+        RubyBigDecimal val = getVpValue(arg,false);
+        return new RubyBigDecimal(getRuntime(),this.value.divideAndRemainder(val.value)[1]).setResult();
     }
 
     public IRubyObject mult(IRubyObject[] args) {
