@@ -541,25 +541,23 @@ public final class ThreadContext {
     }
     
     private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
-        StringBuffer sb = new StringBuffer(100);
-        ISourcePosition position = frame.getPosition();
-        
-        if(previousFrame != null && frame.getName() != null && previousFrame.getName() != null &&
+        if (frame.getName() != null && 
                 frame.getName().equals(previousFrame.getName()) &&
                 frame.getPosition().getFile().equals(previousFrame.getPosition().getFile()) &&
                 frame.getPosition().getEndLine() == previousFrame.getPosition().getEndLine()) {
             return;
         }
         
-        sb.append(position.getFile()).append(':').append(position.getEndLine() + 1);
+        StringBuffer buf = new StringBuffer(60);
+        buf.append(frame.getPosition().getFile()).append(':').append(frame.getPosition().getEndLine() + 1);
         
-        if (previousFrame != null && previousFrame.getName() != null) {
-            sb.append(":in `").append(previousFrame.getName()).append('\'');
-        } else if (previousFrame == null && frame.getName() != null) {
-            sb.append(":in `").append(frame.getName()).append('\'');
+        if (previousFrame.getName() != null) {
+            buf.append(":in `").append(previousFrame.getName()).append('\'');
+        } else if (frame.getName() != null) {
+            buf.append(":in `").append(frame.getName()).append('\'');
         }
         
-        backtrace.append(backtrace.getRuntime().newString(sb.toString()));
+        backtrace.append(backtrace.getRuntime().newString(buf.toString()));
     }
     
     /**
@@ -578,7 +576,7 @@ public final class ThreadContext {
         for (int i = traceSize - 1; i > 0; i--) {
             Frame frame = backtraceFrames[i];
             // We are in eval with binding break out early
-            if (frame != null && frame.isBindingFrame()) break;
+            if (frame.isBindingFrame()) break;
 
             addBackTraceElement(backtrace, frame, backtraceFrames[i - 1]);
         }

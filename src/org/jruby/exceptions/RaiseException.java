@@ -134,10 +134,6 @@ public class RaiseException extends JumpException {
         runtime.setStackTraces(runtime.getStackTraces() - 1);
     }
 
-    public Throwable fillInStackTrace() {
-        return originalFillInStackTrace();
-    }
-    
     public void printStackTrace() {
         printStackTrace(System.err);
     }
