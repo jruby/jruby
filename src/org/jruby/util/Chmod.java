@@ -61,7 +61,7 @@ public class Chmod {
         } else {
             // slow version
             try {
-                Process chmod = Runtime.getRuntime().exec("chmod " + mode + " " + file.getName());
+                Process chmod = Runtime.getRuntime().exec("/bin/chmod " + mode + " " + file.getAbsolutePath());
                 chmod.waitFor();
                 return chmod.exitValue();
             } catch (IOException ioe) {
