@@ -60,6 +60,16 @@ public class CompiledBlock extends Block {
         this.argumentType = argumentType;
     }
     
+    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        if (!isLambda && args.length == 1 && args[0] instanceof RubyArray) {
+            if (argumentType == MULTIPLE_ASSIGNMENT) {
+                args = ((RubyArray) args[0]).toJavaArray();
+            }
+        }
+
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
+    }
+    
     public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
         if (klass == null) {
             self = this.self;

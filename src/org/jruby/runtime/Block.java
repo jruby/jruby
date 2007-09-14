@@ -175,6 +175,14 @@ public class Block {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        if (!isLambda && args.length == 1 && args[0] instanceof RubyArray && iterNode != null) {
+            Node vNode = iterNode.getVarNode();
+            
+            if (vNode.nodeId == NodeType.MULTIPLEASGNNODE) {
+                args = ((RubyArray) args[0]).toJavaArray();
+            }
+        }
+
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
     }
     
