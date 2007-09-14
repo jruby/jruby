@@ -40,15 +40,16 @@
 package org.jruby;
 
 import com.sun.jna.Native;
-import com.sun.jna.NativeLibrary;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -107,11 +108,13 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.CacheMap.CacheSite;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.ByteList;
+import org.jruby.util.IOHandler;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.JRubyClassLoader;
@@ -126,10 +129,10 @@ import org.jruby.regexp.RegexpFactory;
 public final class Ruby {
     private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "yaml/syck", "jsignal" };
 
-    private CacheMap cacheMap = new CacheMap<DynamicMethod, CacheMap.CacheSite>();
+    private CacheMap<DynamicMethod, CacheSite> cacheMap = new CacheMap<DynamicMethod, CacheMap.CacheSite>();
     private MethodCache methodCache = new MethodCache();
     private ThreadService threadService = new ThreadService(this);
-    private Hashtable runtimeInformation;
+    private Hashtable<Object, Object> runtimeInformation;
     
     private static POSIX posix = loadPosix();
 
@@ -139,12 +142,12 @@ public final class Ruby {
 
     public final RubyFixnum[] fixnumCache = new RubyFixnum[256];
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable();
-    private Hashtable ioHandlers = new Hashtable();
+    private Hashtable<Integer, WeakReference<IOHandler>> ioHandlers = new Hashtable<Integer, WeakReference<IOHandler>>();
     private long randomSeed = 0;
     private long randomSeedSequence = 0;
     private Random random = new Random();
 
-    private List eventHooks = new LinkedList();
+    private List<EventHook> eventHooks = new LinkedList<EventHook>();
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
     private final boolean objectSpaceEnabled;
@@ -155,7 +158,7 @@ public final class Ruby {
             0 - strings from streams/environment/ARGV are tainted (default)
             1 - no dangerous operation by tainted value
             2 - process/file operations prohibited
-            3 - all genetated objects are tainted
+            3 - all generated objects are tainted
             4 - no global (non-tainted) variable modification/no direct output
     */
     private int safeLevel = 0;
@@ -199,7 +202,7 @@ public final class Ruby {
 
     // Contains a list of all blocks (as Procs) that should be called when
     // the runtime environment exits.
-    private Stack atExitBlocks = new Stack();
+    private Stack<RubyProc> atExitBlocks = new Stack<RubyProc>();
 
     private RubyModule kernelModule;
 
@@ -231,10 +234,10 @@ public final class Ruby {
     /**
      * A list of finalizers, weakly referenced, to be executed on tearDown
      */
-    private Map finalizers;
+    private Map<Finalizable, Object> finalizers;
 
     /**
-     * Create and initialize a new jruby Runtime.
+     * Create and initialize a new JRuby Runtime.
      */
     private Ruby(RubyInstanceConfig config) {
         this.config             = config;
@@ -345,10 +348,8 @@ public final class Ruby {
 
                     StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
                     NodeCompilerFactory.compileRoot(node, compiler, inspector);
-
-                    Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
-
-                    script = (Script)scriptClass.newInstance();
+                    script = (Script)compiler.loadClass(this.getJRubyClassLoader()).newInstance();
+                    
                     if (config.isJitLogging()) {
                         System.err.println("compiled: " + node.getPosition().getFile());
                     }
@@ -403,10 +404,7 @@ public final class Ruby {
             
             StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
             NodeCompilerFactory.compileRoot(node, compiler, inspector);
-
-            Class scriptClass = compiler.loadClass(this.getJRubyClassLoader());
-
-            Script script = (Script)scriptClass.newInstance();
+            Script script = (Script)compiler.loadClass(this.getJRubyClassLoader()).newInstance();
             
             try {
                 DynamicScope scope = ((RootNode)node).getScope();
@@ -646,7 +644,7 @@ public final class Ruby {
      *
      * @return the mappings of where cached methods have been stored
      */
-    public CacheMap getCacheMap() {
+    public CacheMap<DynamicMethod, CacheSite> getCacheMap() {
         return cacheMap;
     }
     
@@ -662,8 +660,8 @@ public final class Ruby {
     /**
      * @see org.jruby.Ruby#getRuntimeInformation
      */
-    public Map getRuntimeInformation() {
-        return runtimeInformation == null ? runtimeInformation = new Hashtable() : runtimeInformation;
+    public Map<Object, Object> getRuntimeInformation() {
+        return runtimeInformation == null ? runtimeInformation = new Hashtable<Object, Object>() : runtimeInformation;
     }
 
     /** rb_define_global_const
@@ -1374,8 +1372,7 @@ public final class Ruby {
     }
     
     public void callEventHooks(ThreadContext context, int event, String file, int line, String name, IRubyObject type) {
-        for (int i = 0; i < eventHooks.size(); i++) {
-            EventHook eventHook = (EventHook)eventHooks.get(i);
+        for (EventHook eventHook : eventHooks) {
             if (eventHook.isInterestedInEvent(event)) {
                 eventHook.event(context, event, file, line, name, type);
             }
@@ -1395,7 +1392,7 @@ public final class Ruby {
         this.globalVariables = globalVariables;
     }
 
-    public CallbackFactory callbackFactory(Class type) {
+    public CallbackFactory callbackFactory(Class<?> type) {
         return CallbackFactory.createFactory(this, type);
     }
 
@@ -1413,7 +1410,7 @@ public final class Ruby {
     public void addFinalizer(Finalizable finalizer) {
         synchronized (this) {
             if (finalizers == null) {
-                finalizers = new WeakHashMap();
+                finalizers = new WeakHashMap<Finalizable, Object>();
             }
         }
         
@@ -1440,14 +1437,14 @@ public final class Ruby {
      */
     public void tearDown() {
         while (!atExitBlocks.empty()) {
-            RubyProc proc = (RubyProc) atExitBlocks.pop();
+            RubyProc proc = atExitBlocks.pop();
 
             proc.call(IRubyObject.NULL_ARRAY);
         }
         if (finalizers != null) {
             synchronized (finalizers) {
-                for (Iterator finalIter = new ArrayList(finalizers.keySet()).iterator(); finalIter.hasNext();) {
-                    ((Finalizable) finalIter.next()).finalize();
+                for (Iterator<Finalizable> finalIter = new ArrayList<Finalizable>(finalizers.keySet()).iterator(); finalIter.hasNext();) {
+                    finalIter.next().finalize();
                     finalIter.remove();
                 }
             }
@@ -1484,7 +1481,7 @@ public final class Ruby {
         return RubyArray.newArrayNoCopyLight(this, objects);
     }
     
-    public RubyArray newArray(List list) {
+    public RubyArray newArray(List<IRubyObject> list) {
         return RubyArray.newArray(this, list);
     }
 
@@ -1753,7 +1750,7 @@ public final class Ruby {
         return objectSpace;
     }
 
-    public Hashtable getIoHandlers() {
+    public Hashtable<Integer, WeakReference<IOHandler>> getIoHandlers() {
         return ioHandlers;
     }
 
@@ -1789,20 +1786,20 @@ public final class Ruby {
         doNotReverseLookupEnabled = b;
     }
 
-    private ThreadLocal inspect = new ThreadLocal();
+    private ThreadLocal<Map<Object, Object>> inspect = new ThreadLocal<Map<Object, Object>>();
     public void registerInspecting(Object obj) {
-        java.util.Map val = (java.util.Map)inspect.get();
-        if (val == null) inspect.set(val = new java.util.IdentityHashMap());
+        Map<Object, Object> val = inspect.get();
+        if (val == null) inspect.set(val = new IdentityHashMap<Object, Object>());
         val.put(obj, null);
     }
 
     public boolean isInspecting(Object obj) {
-        java.util.Map val = (java.util.Map)inspect.get();
+        Map<Object, Object> val = inspect.get();
         return val == null ? false : val.containsKey(obj);
     }
 
     public void unregisterInspecting(Object obj) {
-        java.util.Map val = (java.util.Map)inspect.get();
+        Map<Object, Object> val = inspect.get();
         if (val != null ) val.remove(obj);
     }
 

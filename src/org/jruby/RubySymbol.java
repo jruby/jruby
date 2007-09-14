@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -35,7 +36,6 @@
 package org.jruby;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import org.jruby.anno.JRubyMethod;
 
@@ -46,8 +46,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 /**
- *
- * @author  jpetersen
+ * Represents a Ruby symbol (e.g. :bar)
  */
 public class RubySymbol extends RubyObject {
     private final String symbol;
@@ -103,12 +102,8 @@ public class RubySymbol extends RubyObject {
     	return true;
     }
     
-    public static String getSymbol(Ruby runtime, long id) {
-        RubySymbol result = runtime.getSymbolTable().lookup(id);
-        if (result != null) {
-            return result.symbol;
-        }
-        return null;
+    public static RubySymbol getSymbol(Ruby runtime, long id) {
+        return runtime.getSymbolTable().lookup(id);
     }
 
     /* Symbol class methods.
@@ -314,31 +309,24 @@ public class RubySymbol extends RubyObject {
     }
 
     public static class SymbolTable {
-       
-        private Map table = new HashMap();
+        private Map<String, RubySymbol> table = new HashMap<String, RubySymbol>();
         
-        public IRubyObject[] all_symbols() {
+        public RubySymbol[] all_symbols() {
             int length = table.size();
-            IRubyObject[] array = new IRubyObject[length];
+            RubySymbol[] array = new RubySymbol[length];
             System.arraycopy(table.values().toArray(), 0, array, 0, length);
             return array;
         }
         
         public RubySymbol lookup(long symbolId) {
-            Iterator iter = table.values().iterator();
-            while (iter.hasNext()) {
-                RubySymbol symbol = (RubySymbol) iter.next();
-                if (symbol != null) {
-                    if (symbol.id == symbolId) {
-                        return symbol;
-                    }
-                }
+            for (RubySymbol symbol : table.values()) {
+                if (symbol != null && symbol.id == symbolId) return symbol;
             }
             return null;
         }
         
         public RubySymbol lookup(String name) {
-            return (RubySymbol) table.get(name);
+            return table.get(name);
         }
         
         public void store(RubySymbol symbol) {

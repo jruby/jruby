@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -45,9 +46,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Convert;
 
-/** Implementation of the Fixnum class.
- *
- * @author jpetersen
+/** 
+ * Implementation of the Fixnum class.
  */
 public class RubyFixnum extends RubyInteger {
     
@@ -101,8 +101,8 @@ public class RubyFixnum extends RubyInteger {
         return ClassIndex.FIXNUM;
     }
     
-    /** short circuit for Fixnum key comparison
-     * 
+    /** 
+     * short circuit for Fixnum key comparison
      */
     public final boolean eql(IRubyObject other) {
         return other instanceof RubyFixnum && value == ((RubyFixnum)other).value;
@@ -112,7 +112,7 @@ public class RubyFixnum extends RubyInteger {
     	return true;
     }
 
-    public Class getJavaClass() {
+    public Class<?> getJavaClass() {
         return Long.TYPE;
     }
 
@@ -196,10 +196,10 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "id2name")
     public IRubyObject id2name() {
-        String symbol = RubySymbol.getSymbol(getRuntime(), value);
-        if (symbol != null) {
-            return getRuntime().newString(symbol);
-    }
+        RubySymbol symbol = RubySymbol.getSymbol(getRuntime(), value);
+        
+        if (symbol != null) return getRuntime().newString(symbol.asSymbol());
+
         return getRuntime().getNil();
     }
 
@@ -208,11 +208,9 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "to_sym")
     public IRubyObject to_sym() {
-        String symbol = RubySymbol.getSymbol(getRuntime(), value);
-        if (symbol != null) {
-            return RubySymbol.newSymbol(getRuntime(), symbol);
-    }
-        return getRuntime().getNil();
+        RubySymbol symbol = RubySymbol.getSymbol(getRuntime(), value);
+        
+        return symbol != null ? symbol : getRuntime().getNil(); 
     }
 
     /** fix_uminus
