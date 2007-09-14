@@ -1,0 +1,13 @@
+# BFTS working tests
+externals/bfts/test_array
+externals/bfts/test_comparable
+externals/bfts/test_exception
+externals/bfts/test_false_class
+#externals/bfts/test_file_test
+externals/bfts/test_hash
+externals/bfts/test_nil_class
+externals/bfts/test_range
+externals/bfts/test_string
+externals/bfts/test_struct
+externals/bfts/test_time
+externals/bfts/test_true_class

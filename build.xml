@@ -435,7 +435,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   
   <target name="run-junit-interpreted" description="runs junit tests">
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
-    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true">
+    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="256M" showoutput="true">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
         <path refid="build.classpath"/>
@@ -460,7 +460,11 @@ test/externals/rubinius/spec/parser"/></antcall>
 
       <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}"/>
       <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}"/>
-      <test name="org.jruby.test.TestUnitTestSuite" todir="${test.results.dir}"/>
+      <test name="org.jruby.test.BFTSTestSuite" todir="${test.results.dir}" />
+      <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" />
+      <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" />
+      <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" />
+      <test name="org.jruby.test.RubyTestTestSuite" todir="${test.results.dir}" />
       <test name="org.jvyamlb.YAMLLoadTest" todir="${test.results.dir}"/>
       <test name="org.jvyamlb.YAMLDumpTest" todir="${test.results.dir}"/>
     </junit>
@@ -468,7 +472,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   
   <target name="run-junit-compiled" description="runs junit tests">
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
-    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true">
+    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="256M" showoutput="true">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
         <path refid="build.classpath"/>
@@ -490,11 +494,15 @@ test/externals/rubinius/spec/parser"/></antcall>
       <jvmarg value="-ea"/>
 
       <formatter type="xml"/>
-      <formatter type="brief" usefile="false"/>
+      <formatter type="brief" usefile="false" />
 
       <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}"/>
       <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}"/>
-      <test name="org.jruby.test.TestUnitTestSuite" todir="${test.results.dir}"/>
+      <test name="org.jruby.test.BFTSTestSuite" todir="${test.results.dir}" />
+      <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" />
+      <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" />
+      <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" />
+      <test name="org.jruby.test.RubyTestTestSuite" todir="${test.results.dir}" />
       <test name="org.jvyamlb.YAMLLoadTest" todir="${test.results.dir}"/>
       <test name="org.jvyamlb.YAMLDumpTest" todir="${test.results.dir}"/>
     </junit>
