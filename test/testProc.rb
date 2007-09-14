@@ -25,3 +25,9 @@ abc_proc = proc { :abc }
 test_same_proc(abc_proc.__id__, &abc_proc)
 
 test_exception(ArgumentError) {Proc.new(1) {}}
+
+def foo(&block)
+  block.call([1, 2, 3])
+end
+
+foo { |a, b, c| test_equal(1, a) }
