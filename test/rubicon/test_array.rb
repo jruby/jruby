@@ -179,7 +179,7 @@ class TestArray < Test::Unit::TestCase
     # error cases
     assert_equal(nil, @cls[1,2,3] <=> @cls[1, "two", 3])
 
-    # FIXME: It would be really nice to be able to test this, but stack errors can't be safely handled
+    # FIXME: JRUBY-1354 SystemStackError is untestable, because it is unpredictable
     #a = @cls[1,2,3]
     #a.push(a)
     #assert_raise(SystemStackError) { a <=> a }

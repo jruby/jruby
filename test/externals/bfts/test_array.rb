@@ -1123,9 +1123,10 @@ class TestArray < RubiconTestCase
     # error cases
     assert_equal(nil, @cls[1,2,3] <=> @cls[1, "two", 3])
 
-    a = @cls[1,2,3]
-    a.push(a)
-    assert_raises(SystemStackError) { a <=> a }
+    # FIXME: JRUBY-1354 SystemStackError is untestable, because it is unpredictable
+    #a = @cls[1,2,3]
+    #a.push(a)
+    #assert_raises(SystemStackError) { a <=> a }
   end
 
   def test_times
