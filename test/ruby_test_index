@@ -307,7 +307,7 @@ externals/ruby_test/test/core/Range/instance/tc_begin
 externals/ruby_test/test/core/Range/instance/tc_equal
 externals/ruby_test/test/core/Range/instance/tc_threequals
 externals/ruby_test/test/core/String/class/tc_new
-#externals/ruby_test/test/core/String/instance/tc_aref
+externals/ruby_test/test/core/String/instance/tc_aref
 #externals/ruby_test/test/core/String/instance/tc_aset
 externals/ruby_test/test/core/String/instance/tc_capitalize
 externals/ruby_test/test/core/String/instance/tc_casecmp
@@ -325,7 +325,7 @@ externals/ruby_test/test/core/String/instance/tc_equality
 externals/ruby_test/test/core/String/instance/tc_format
 externals/ruby_test/test/core/String/instance/tc_hex
 externals/ruby_test/test/core/String/instance/tc_include
-#externals/ruby_test/test/core/String/instance/tc_index
+externals/ruby_test/test/core/String/instance/tc_index
 externals/ruby_test/test/core/String/instance/tc_insert
 externals/ruby_test/test/core/String/instance/tc_intern
 externals/ruby_test/test/core/String/instance/tc_length
@@ -334,11 +334,11 @@ externals/ruby_test/test/core/String/instance/tc_lstrip
 externals/ruby_test/test/core/String/instance/tc_match
 externals/ruby_test/test/core/String/instance/tc_replace
 externals/ruby_test/test/core/String/instance/tc_reverse
-#externals/ruby_test/test/core/String/instance/tc_rindex
+externals/ruby_test/test/core/String/instance/tc_rindex
 externals/ruby_test/test/core/String/instance/tc_rjust
 #externals/ruby_test/test/core/String/instance/tc_rstrip
 externals/ruby_test/test/core/String/instance/tc_scan
-#externals/ruby_test/test/core/String/instance/tc_slice
+externals/ruby_test/test/core/String/instance/tc_slice
 externals/ruby_test/test/core/String/instance/tc_split
 externals/ruby_test/test/core/String/instance/tc_squeeze
 #externals/ruby_test/test/core/String/instance/tc_strip
