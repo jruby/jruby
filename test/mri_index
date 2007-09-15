@@ -21,7 +21,7 @@ externals/mri/ruby/test_gc
 externals/mri/ruby/test_hash
 externals/mri/ruby/test_ifunless
 externals/mri/ruby/test_io
-#externals/mri/ruby/test_iterator
+externals/mri/ruby/test_iterator
 externals/mri/ruby/test_marshal
 externals/mri/ruby/test_math
 externals/mri/ruby/test_method

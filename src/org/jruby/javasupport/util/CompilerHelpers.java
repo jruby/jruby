@@ -492,6 +492,17 @@ public class CompilerHelpers {
         throw new JumpException.ReturnJump(context.getFrameJumpTarget(), result);
     }
     
+    public static IRubyObject breakJumpInWhile(JumpException.BreakJump bj, Block aBlock) {
+        // JRUBY-530, while case
+        if (bj.getTarget() == aBlock) {
+            bj.setTarget(null);
+
+            throw bj;
+        }
+
+        return (IRubyObject) bj.getValue();
+    }
+    
     public static IRubyObject[] concatObjectArrays(IRubyObject[] array, IRubyObject[] add) {
         IRubyObject[] newArray = new IRubyObject[array.length + add.length];
         System.arraycopy(array, 0, newArray, 0, array.length);

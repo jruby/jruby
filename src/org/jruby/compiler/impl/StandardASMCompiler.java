@@ -738,25 +738,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 method.go_to(conditionCheck);
 
                 // break jump
-                Label whileBreak = new Label();
                 {
                     method.label(catchBreak);
-                    method.dup();
-                    method.invokevirtual(cg.p(JumpException.BreakJump.class), "getTarget", cg.sig(Object.class));
-                    loadBlock();
-                    method.if_acmpeq(whileBreak);
-
-                    // else get result and break loop
-                    method.invokevirtual(cg.p(JumpException.BreakJump.class), "getValue", cg.sig(Object.class));
-                    method.checkcast(cg.p(IRubyObject.class));
+                    loadClosure();
+                    invokeUtilityMethod("breakJumpInWhile", cg.sig(IRubyObject.class, JumpException.BreakJump.class, Block.class));
                     method.go_to(done);
-
-                    // if break is intended for our block, clear target and rethrow
-                    method.label(whileBreak);
-                    method.dup();
-                    method.aconst_null();
-                    method.invokevirtual(cg.p(JumpException.BreakJump.class), "setTarget", cg.sig(Void.TYPE, cg.params(Object.class)));
-                    method.athrow();
                 }
 
                 // raised exception
