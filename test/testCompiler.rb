@@ -415,3 +415,14 @@ test_equal(2, compile_and_run("a = [1]; a[0] &&= 2; a[0]"))
 
 # non-local return
 test_equal(3, compile_and_run("def foo; loop {return 3}; return 4; end; foo"))
+
+# class var declaration
+test_equal(3, compile_and_run("class Foo; @@foo = 3; end"))
+test_equal(3, compile_and_run("class Bar; @@bar = 3; def self.bar; @@bar; end; end; Bar.bar"))
+
+# rescue
+test_no_exception {
+  test_equal(2, compile_and_run("x = begin; 1; raise; rescue; 2; end"))
+  test_equal(3, compile_and_run("x = begin; 1; raise; rescue TypeError; 2; rescue; 3; end"))
+  test_equal(4, compile_and_run("x = begin; 1; rescue; 2; else; 4; end"))
+}

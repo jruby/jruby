@@ -82,6 +82,8 @@ import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.RegexpNode;
+import org.jruby.ast.RescueBodyNode;
+import org.jruby.ast.RescueNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.SValueNode;
@@ -95,12 +97,14 @@ import org.jruby.ast.YieldNode;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.CaseNode;
 import org.jruby.ast.ClassNode;
+import org.jruby.ast.ClassVarDeclNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
@@ -176,7 +180,8 @@ public class NodeCompilerFactory {
             compileClassVarAsgn(node, context);
             break;
         case CLASSVARDECLNODE:
-            throw new NotCompilableException("Class var declaration at " + node.getPosition());
+            compileClassVarDecl(node, context);
+            break;
         case COLON2NODE:
             compileColon2(node, context);
             break;
@@ -328,7 +333,8 @@ public class NodeCompilerFactory {
         case RESCUEBODYNODE:
             throw new NotCompilableException("rescue body at: " + node.getPosition());
         case RESCUENODE:
-            throw new NotCompilableException("rescue at: " + node.getPosition());
+            compileRescue(node, context);
+            break;
         case RETRYNODE:
             throw new NotCompilableException("retry at: " + node.getPosition());
         case RETURNNODE:
@@ -901,6 +907,23 @@ public class NodeCompilerFactory {
         ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode)node;
         
         context.assignClassVariable(classVarAsgnNode.getName());
+    }
+
+    public static void compileClassVarDecl(Node node, MethodCompiler context) {
+        ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode)node;
+        
+        // FIXME: probably more efficient with a callback
+        compile(classVarDeclNode.getValueNode(), context);
+        
+        compileClassVarDeclAssignment(node, context);
+    }
+
+    public static void compileClassVarDeclAssignment(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode)node;
+        
+        context.declareClassVariable(classVarDeclNode.getName());
     }
     
     public static void compileConstDecl(Node node, MethodCompiler context) {
@@ -1652,7 +1675,11 @@ public class NodeCompilerFactory {
         if(ensureNode.getEnsureNode() != null) {
             context.protect(new BranchCallback() {
                     public void branch(MethodCompiler context) {
-                        compile(ensureNode.getBodyNode(), context);
+                        if (ensureNode.getBodyNode() != null) {
+                            compile(ensureNode.getBodyNode(), context);
+                        } else {
+                            context.loadNil();
+                        }
                     }
                 },
                 new BranchCallback() {
@@ -1662,7 +1689,11 @@ public class NodeCompilerFactory {
                     }
                 }, IRubyObject.class);
         } else {
-            compile(ensureNode.getBodyNode(), context);
+            if (ensureNode.getBodyNode() != null) {
+                compile(ensureNode.getBodyNode(), context);
+            } else {
+                context.loadNil();
+            }
         }
     }
 
@@ -2247,6 +2278,8 @@ public class NodeCompilerFactory {
         // TODO: add trace call?
         context.lineNumber(node.getPosition());
         
+        context.setPosition(node.getPosition());
+        
         NewlineNode newlineNode = (NewlineNode)node;
         
         compile(newlineNode.getNextNode(), context);
@@ -2470,6 +2503,86 @@ public class NodeCompilerFactory {
         }
 
         context.createNewRegexp(reNode.getValue(), reNode.getOptions(), lang);
+    }
+    
+    public static void compileRescue(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final RescueNode rescueNode = (RescueNode)node;
+        
+        BranchCallback body = new BranchCallback() {
+            public void branch(MethodCompiler context) {
+                if (rescueNode.getBodyNode() != null) {
+                    compile(rescueNode.getBodyNode(), context);
+                } else {
+                    context.loadNil();
+                }
+                
+                if (rescueNode.getElseNode() != null) {
+                    context.consumeCurrentValue();
+                    compile(rescueNode.getElseNode(), context);
+                }
+            }
+        };
+        
+        BranchCallback handler = new BranchCallback() {
+            public void branch(MethodCompiler context) {
+                context.loadException();
+                context.unwrapRaiseException();
+                context.assignGlobalVariable("$!");
+                context.consumeCurrentValue();
+                compileRescueBody(rescueNode.getRescueNode(), context);
+            }
+        };
+        
+        context.rescue(body, RaiseException.class, handler, IRubyObject.class);
+    }
+    
+    public static void compileRescueBody(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final RescueBodyNode rescueBodyNode = (RescueBodyNode)node;
+        
+        context.loadException();
+        context.unwrapRaiseException();
+        
+        Node exceptionList = rescueBodyNode.getExceptionNodes();
+        if (exceptionList == null) {
+            context.loadClass("StandardError");
+            context.createObjectArray(1);
+        } else {
+            compileArguments(exceptionList, context);
+        }
+        
+        context.checkIsExceptionHandled();
+        
+        BranchCallback trueBranch = new BranchCallback() {
+            public void branch(MethodCompiler context) {
+                if (rescueBodyNode.getBodyNode() != null) {
+                    compile(rescueBodyNode.getBodyNode(), context);
+                    context.loadNil();
+                    // FIXME: this should reset to what it was before
+                    context.assignGlobalVariable("$!");
+                    context.consumeCurrentValue();
+                } else {
+                    context.loadNil();
+                    // FIXME: this should reset to what it was before
+                    context.assignGlobalVariable("$!");
+                }
+            }
+        };
+        
+        BranchCallback falseBranch = new BranchCallback() {
+            public void branch(MethodCompiler context) {
+                if (rescueBodyNode.getOptRescueNode() != null) {
+                    compileRescueBody(rescueBodyNode.getOptRescueNode(), context);
+                } else {
+                    context.rethrowException();
+                }
+            }
+        };
+        
+        context.performBooleanBranch(trueBranch, falseBranch);
     }
     
     public static void compileReturn(Node node, MethodCompiler context) {

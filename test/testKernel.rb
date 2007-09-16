@@ -69,7 +69,6 @@ end
 test_no_exception { load Foo.new }
 test_exception(TypeError) { load Object.new }
 
-
 #Previously Kernel.raise, Kernel.sprintf, Kernel.iterator? & Kernel.exec were all made private
 #as they were aliased rather than defined. Checking that this is no longer the case
 test_exception(RuntimeError) { Kernel.raise }

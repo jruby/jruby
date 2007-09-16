@@ -75,6 +75,8 @@ public interface MethodCompiler {
     
     public void assignClassVariable(String name);
     
+    public void declareClassVariable(String name);
+    
     /**
      * Generate a new "Fixnum" value.
      */
@@ -483,4 +485,10 @@ public interface MethodCompiler {
     public void performBackref(char type);
     public void callZSuper(ClosureCallback closure);
     public void appendToObjectArray();
+    public void checkIsExceptionHandled();
+    public void rethrowException();
+    public void loadClass(String name);
+    public void unwrapRaiseException();
+    public void loadException();
+    public void setPosition(ISourcePosition position);
 }

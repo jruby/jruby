@@ -1,8 +1,5 @@
 package org.jruby.javasupport.util;
 
-import org.jruby.regexp.RegexpFactory;
-import org.jruby.regexp.RegexpPattern;
-import org.jruby.regexp.PatternSyntaxException;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -14,7 +11,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
-import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
@@ -26,6 +22,9 @@ import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
+import org.jruby.regexp.PatternSyntaxException;
+import org.jruby.regexp.RegexpFactory;
+import org.jruby.regexp.RegexpPattern;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -318,6 +317,17 @@ public class CompilerHelpers {
         return value;
     }
     
+    public static IRubyObject declareClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String name, IRubyObject value) {
+        // FIXME: This isn't quite right; it shouldn't evaluate the value if it's going to throw the error
+        RubyModule rubyClass = EvaluationState.getClassVariableBase(context, runtime);
+   
+        if (rubyClass == null) throw runtime.newTypeError("no class/module to define class variable");
+        
+        rubyClass.setClassVar(name, value);
+   
+        return value;
+    }
+    
     public static void raiseArgumentError(Ruby runtime, int given, int required, int opt, int rest) {
         if (opt == 0) {
             if (rest < 0) {
@@ -508,5 +518,16 @@ public class CompilerHelpers {
         System.arraycopy(array, 0, newArray, 0, array.length);
         System.arraycopy(add, 0, newArray, array.length, add.length);
         return newArray;
+    }
+    
+    public static IRubyObject isExceptionHandled(RubyException currentException, IRubyObject[] exceptions, Ruby runtime, ThreadContext context, IRubyObject self) {
+        for (int i = 0; i < exceptions.length; i++) {
+            if (!exceptions[i].isKindOf(runtime.getClass("Module"))) {
+                throw runtime.newTypeError("class or module required for rescue clause");
+            }
+            IRubyObject result = exceptions[i].callMethod(context, "===", currentException);
+            if (result.isTrue()) return result;
+        }
+        return runtime.getFalse();
     }
 }

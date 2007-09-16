@@ -394,20 +394,6 @@ public final class ThreadContext {
         sourcePosition = position;
     }
     
-//    public IRubyObject getBackref() {
-//        IRubyObject value = getCurrentScope().getBackRef();
-//        
-//        // DynamicScope does not preinitialize these values since they are virtually never used.
-//        return value == null ? runtime.getNil() : value;
-//    }
-//    
-//    public void setBackref(IRubyObject backref) {
-//        if (!(backref instanceof RubyMatchData) && !backref.isNil()) {
-//            throw runtime.newTypeError(backref, runtime.getClass("MatchData"));
-//        }
-//        getCurrentScope().setBackRef(backref);
-//    }
-    
     public Visibility getCurrentVisibility() {
         return getCurrentFrame().getVisibility();
     }

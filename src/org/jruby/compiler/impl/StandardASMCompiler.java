@@ -37,7 +37,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.jruby.regexp.RegexpPattern;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -63,19 +63,21 @@ import org.jruby.compiler.BranchCallback;
 import org.jruby.compiler.ClosureCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.MethodCompiler;
-import org.jruby.compiler.ScriptCompiler;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.compiler.ScriptCompiler;
 import org.jruby.compiler.VariableCompiler;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
-import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.regexp.RegexpPattern;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallAdapter;
@@ -465,6 +467,19 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.swap();
 
             invokeUtilityMethod("setClassVariable", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
+        }
+
+        public void declareClassVariable(String name) {
+            loadThreadContext();
+            method.swap();
+            loadRuntime();
+            method.swap();
+            loadSelf();
+            method.swap();
+            method.ldc(name);
+            method.swap();
+
+            invokeUtilityMethod("declareClassVariable", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
         }
 
         public void createNewFloat(double value) {
@@ -1343,7 +1358,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void protect(BranchCallback regularCode, BranchCallback protectedCode, Class ret) {
 
             String mname = getNewEnsureName();
-            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, mname, cg.sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}), null, null));
+            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, cg.sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}), null, null));
             SkinnyMethodAdapter old_method = null;
             SkinnyMethodAdapter var_old_method = null;
             SkinnyMethodAdapter inv_old_method = null;
@@ -1432,7 +1447,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void rescue(BranchCallback regularCode, Class exception, BranchCallback catchCode, Class ret) {
             String mname = getNewRescueName();
-            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, mname, cg.sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}), null, null));
+            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, cg.sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}), null, null));
             SkinnyMethodAdapter old_method = null;
             SkinnyMethodAdapter var_old_method = null;
             SkinnyMethodAdapter inv_old_method = null;
@@ -2031,6 +2046,45 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             
             invokeUtilityMethod("callZSuper", cg.sig(IRubyObject.class, cg.params(Ruby.class, ThreadContext.class, Block.class, IRubyObject.class)));
         }
+        
+        public void checkIsExceptionHandled() {
+            // ruby exception and list of exception types is on the stack
+            loadRuntime();
+            loadThreadContext();
+            loadSelf();
+            invokeUtilityMethod("isExceptionHandled", cg.sig(IRubyObject.class, RubyException.class, IRubyObject[].class, Ruby.class, ThreadContext.class, IRubyObject.class));
+        }
+        
+        public void rethrowException() {
+            loadException();
+            method.athrow();
+        }
+        
+        public void loadClass(String name) {
+            loadRuntime();
+            method.ldc(name);
+            invokeIRuby("getClass", cg.sig(RubyClass.class, String.class));
+        }
+        
+        public void unwrapRaiseException() {
+            // RaiseException is on stack, get RubyException out
+            method.invokevirtual(cg.p(RaiseException.class), "getException", cg.sig(RubyException.class));
+        }
+        
+        public void loadException() {
+            method.aload(EXCEPTION_INDEX);
+        }
+        
+        public void setPosition(ISourcePosition position) {
+            // FIXME: This is really, really slow because it's constructing a source position for every new line.
+            loadThreadContext();
+            method.newobj(cg.p(SimpleSourcePosition.class));
+            method.dup();
+            method.ldc(position.getFile());
+            method.ldc(position.getEndLine());
+            method.invokespecial(cg.p(SimpleSourcePosition.class), "<init>", cg.sig(void.class, String.class, int.class));
+            invokeThreadContext("setPosition", cg.sig(void.class, ISourcePosition.class));
+        }
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {
@@ -2042,7 +2096,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // declare the field
             getClassVisitor().visitField(ACC_PRIVATE, closureFieldName, cg.ci(CompiledBlockCallback.class), null, null);
             
-            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
+            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
             variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }
@@ -2233,7 +2287,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public ASMMethodCompiler(String friendlyName, ASTInspector inspector) {
             this.friendlyName = friendlyName;
 
-            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, METHOD_SIGNATURE, null, null));
+            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, friendlyName, METHOD_SIGNATURE, null, null));
             if (inspector == null || inspector.hasClosure() || inspector.hasScopeAwareMethods() || inspector.hasOptArgs() || inspector.hasBlockArg() || inspector.hasRestArg()) {
                 variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
             } else {

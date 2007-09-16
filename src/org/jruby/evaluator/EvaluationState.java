@@ -1487,8 +1487,14 @@ public class EvaluationState {
                     } else {
                         exceptionNodesList = (ListNode) exceptionNodes;
                     }
-                    
-                    if (isRescueHandled(runtime, context, raisedException, exceptionNodesList, self)) {
+
+                    IRubyObject[] exceptions;
+                    if (exceptionNodesList == null) {
+                        exceptions = new IRubyObject[] {runtime.getClass("StandardError")};
+                    } else {
+                        exceptions = setupArgs(runtime, context, exceptionNodes, self);
+                    }
+                    if (CompilerHelpers.isExceptionHandled(raisedException, exceptions, runtime, context, self).isTrue()) {
                         try {
                             return evalInternal(runtime,context, rescueNode, self, aBlock);
                         } catch (JumpException.RetryJump rj) {
@@ -2070,23 +2076,6 @@ public class EvaluationState {
         }
 
         return enclosingModule;
-    }
-
-    private static boolean isRescueHandled(Ruby runtime, ThreadContext context, RubyException currentException, ListNode exceptionNodes,
-            IRubyObject self) {
-        if (exceptionNodes == null) {
-            return currentException.isKindOf(runtime.getClass("StandardError"));
-        }
-
-        IRubyObject[] args = setupArgs(runtime, context, exceptionNodes, self);
-
-        for (int i = 0; i < args.length; i++) {
-            if (!args[i].isKindOf(runtime.getClass("Module"))) {
-                throw runtime.newTypeError("class or module required for rescue clause");
-            }
-            if (args[i].callMethod(context, "===", currentException).isTrue()) return true;
-        }
-        return false;
     }
 
     /**
