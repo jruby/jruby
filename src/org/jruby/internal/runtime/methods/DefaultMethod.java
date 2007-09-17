@@ -114,7 +114,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             try {
                 // FIXME: For some reason this wants (and works with) clazz instead of implementer,
                 // and needed it for compiled module method_function's called from outside the module. Why?
-                jitCallConfig.pre(context, self, clazz, getArity(), name, args, block, staticScope, this);
+                jitCallConfig.pre(context, self, implementer, getArity(), name, args, block, staticScope, this);
 
                 return jitCompiledScript.run(context, self, args, block);
             } catch (JumpException.ReturnJump rj) {

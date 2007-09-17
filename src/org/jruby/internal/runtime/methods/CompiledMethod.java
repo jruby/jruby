@@ -39,17 +39,18 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
     protected Arity arity;
     protected StaticScope staticScope;
     protected Object $scriptObject;
-    private boolean needsImplementer;
+    protected boolean needsImplementer;
     
     public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, Object scriptObject) {
     	super(implementationClass, visibility, CallConfiguration.RUBY_FULL);
         this.arity = arity;
         this.staticScope = staticScope;
         this.$scriptObject = scriptObject;
-        
-        // CompiledMethod will eventually need this logic, since it will eventually compile module methods with super in them
+    
         if (implementationClass != null) {
-            needsImplementer = !implementationClass.isClass();
+            // Classes don't need the implementer search because they're not included
+            // Kernel doesn't need the implementer class because it's always at the top of the hierarchy
+            needsImplementer = !implementationClass.isClass() && implementationClass != implementationClass.getRuntime().getModule("Kernel");
         }
     }
 

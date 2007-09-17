@@ -355,9 +355,9 @@ public class NodeCompilerFactory {
             compileStr(node, context);
             break;
         case SUPERNODE:
-            throw new NotCompilableException("super call at: " + node.getPosition());
-            //compileSuper(node, context);
-            //break;
+            //throw new NotCompilableException("super call at: " + node.getPosition());
+            compileSuper(node, context);
+            break;
         case SVALUENODE:
             compileSValue(node, context);
             break;

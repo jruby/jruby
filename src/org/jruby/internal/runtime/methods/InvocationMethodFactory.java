@@ -37,6 +37,7 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
+import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
@@ -148,7 +149,15 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 mv.getfield(cg.p(CompiledMethod.class), "callConfig", cg.ci(CallConfiguration.class));
                 mv.aload(THREADCONTEXT_INDEX); // tc
                 mv.aload(RECEIVER_INDEX); // self
+                
+                // determine the appropriate class, for super calls to work right
+                mv.aload(0);
+                mv.getfield(cg.p(CompiledMethod.class), "needsImplementer", cg.ci(boolean.class));
                 mv.aload(CLASS_INDEX); // klazz
+                mv.aload(0);
+                mv.invokevirtual(cg.p(CompiledMethod.class), "getImplementationClass", cg.sig(RubyModule.class));
+                mv.invokestatic(cg.p(CompilerHelpers.class), "findImplementerIfNecessary", cg.sig(RubyModule.class, boolean.class, RubyModule.class, RubyModule.class));
+                
                 mv.aload(0);
                 mv.getfield(cg.p(CompiledMethod.class), "arity", cg.ci(Arity.class)); // arity
                 mv.aload(NAME_INDEX); // name

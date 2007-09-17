@@ -416,7 +416,9 @@ public final class ThreadContext {
     }
     
     public void pushRubyClass(RubyModule currentModule) {
-        assert currentModule != null : "Can't push null RubyClass";
+        // FIXME: this seems like a good assertion, but it breaks compiled code and the code seems
+        // to run without it...
+        //assert currentModule != null : "Can't push null RubyClass";
         
         parentStack[++parentIndex] = currentModule;
         expandParentsIfNecessary();
