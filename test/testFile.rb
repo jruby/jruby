@@ -266,3 +266,5 @@ File.delete(filename)
 
 test_exception(IOError) { File.new(filename, File::CREAT) << 'b' }
 File.delete(filename)
+
+test_exception(Errno::EISDIR) { File.new(".", "w") }
