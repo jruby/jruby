@@ -130,6 +130,44 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         }
     }
 
+    public void invokeSuper(ClosureCallback argsCallback, ClosureCallback closureArg) {
+        methodCompiler.loadThreadContext();
+        methodCompiler.invokeUtilityMethod("checkSuperDisabled", cg.sig(void.class, ThreadContext.class));
+        
+        methodCompiler.loadSelf();
+
+        methodCompiler.loadThreadContext(); // [self, tc]
+        
+        // args
+        if (argsCallback == null) {
+            method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+            // block
+            if (closureArg == null) {
+                // no args, no block
+                methodCompiler.loadClosure();
+            } else {
+                // no args, with block
+                closureArg.compile(methodCompiler);
+            }
+        } else {
+            argsCallback.compile(methodCompiler);
+            // block
+            if (closureArg == null) {
+                // with args, no block
+                methodCompiler.loadClosure();
+            } else {
+                // with args, with block
+                closureArg.compile(methodCompiler);
+            }
+        }
+        
+        // ensureSuperBlock uses the parent (caller's) block if none given
+        methodCompiler.loadClosure();
+        methodCompiler.invokeUtilityMethod("ensureSuperBlock", cg.sig(Block.class, Block.class, Block.class));
+        
+        method.invokeinterface(cg.p(IRubyObject.class), "callSuper", cg.sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, Block.class));
+    }
+
     public void invokeDynamic(String name, ClosureCallback receiverCallback, ClosureCallback argsCallback, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
         String classname = methodCompiler.getScriptCompiler().getClassname();
         

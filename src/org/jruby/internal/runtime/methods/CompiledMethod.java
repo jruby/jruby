@@ -39,7 +39,7 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
     protected Arity arity;
     protected StaticScope staticScope;
     protected Object $scriptObject;
-//    private boolean needsImplementer;
+    private boolean needsImplementer;
     
     public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, Object scriptObject) {
     	super(implementationClass, visibility, CallConfiguration.RUBY_FULL);
@@ -48,9 +48,9 @@ public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
         this.$scriptObject = scriptObject;
         
         // CompiledMethod will eventually need this logic, since it will eventually compile module methods with super in them
-//        if (implementationClass != null) {
-//            needsImplementer = !implementationClass.isClass();
-//        }
+        if (implementationClass != null) {
+            needsImplementer = !implementationClass.isClass();
+        }
     }
 
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block);

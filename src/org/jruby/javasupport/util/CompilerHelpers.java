@@ -530,4 +530,31 @@ public class CompilerHelpers {
         }
         return runtime.getFalse();
     }
+    
+    public static void checkSuperDisabled(ThreadContext context) {
+        RubyModule klazz = context.getFrameKlazz();
+        
+        if (klazz == null) {
+            String name = context.getFrameName();
+            throw context.getRuntime().newNameError("Superclass method '" + name
+                    + "' disabled.", name);
+        }
+    }
+    
+    public static Block ensureSuperBlock(Block given, Block parent) {
+        if (!given.isGiven()) {
+            return parent;
+        }
+        return given;
+    }
+    
+    public static RubyModule findImplementerIfNecessary(boolean needsImplementer, RubyModule clazz, RubyModule implementationClass) {
+        if (needsImplementer) {
+            // modules are included with a shim class; we must find that shim to handle super() appropriately
+            return clazz.findImplementer(implementationClass);
+        } else {
+            // classes are directly in the hierarchy, so no special logic is necessary for implementer
+            return implementationClass;
+        }
+    }
 }

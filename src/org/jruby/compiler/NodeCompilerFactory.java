@@ -356,6 +356,8 @@ public class NodeCompilerFactory {
             break;
         case SUPERNODE:
             throw new NotCompilableException("super call at: " + node.getPosition());
+            //compileSuper(node, context);
+            //break;
         case SVALUENODE:
             compileSValue(node, context);
             break;
@@ -2644,6 +2646,35 @@ public class NodeCompilerFactory {
         StrNode strNode = (StrNode)node;
         
         context.createNewString(strNode.getValue());
+    }
+    
+    public static void compileSuper(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final SuperNode superNode = (SuperNode)node;
+        
+        ClosureCallback argsCallback = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                compileArguments(superNode.getArgsNode(), context);
+            }
+        };
+                
+        if (superNode.getIterNode() == null) {
+            // no block, go for simple version
+            if (superNode.getArgsNode() != null) {
+                context.getInvocationCompiler().invokeSuper(argsCallback, null);
+            } else {
+                context.getInvocationCompiler().invokeSuper(null, null);
+            }
+        } else {
+            ClosureCallback closureArg = getBlock(superNode.getIterNode());
+            
+            if (superNode.getArgsNode() != null) {
+                context.getInvocationCompiler().invokeSuper(argsCallback, closureArg);
+            } else {
+                context.getInvocationCompiler().invokeSuper(null, closureArg);
+            }
+        }
     }
     
     public static void compileSValue(Node node, MethodCompiler context) {

@@ -102,14 +102,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         assert args != null;
         
-        RubyModule implementer = null;
-        if (needsImplementer) {
-            // modules are included with a shim class; we must find that shim to handle super() appropriately
-            implementer = clazz.findImplementer(getImplementationClass());
-        } else {
-            // classes are directly in the hierarchy, so no special logic is necessary for implementer
-            implementer = getImplementationClass();
-        }
+        RubyModule implementer = CompilerHelpers.findImplementerIfNecessary(needsImplementer, clazz, getImplementationClass());
         
         Ruby runtime = context.getRuntime();
 

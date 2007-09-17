@@ -29,6 +29,8 @@ public interface InvocationCompiler {
     //public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign);
     public void invokeDynamic(String name, ClosureCallback receiverCallback, ClosureCallback argsCallback, CallType callType, ClosureCallback closureArg, boolean attrAssign);
     
+    public void invokeSuper(ClosureCallback argsCallback, ClosureCallback closureCallback);
+    
     /**
      * Attr assign calls have slightly different semantics that normal calls, so this method handles those additional semantics.
      */
