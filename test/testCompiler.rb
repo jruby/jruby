@@ -425,4 +425,5 @@ test_no_exception {
   test_equal(2, compile_and_run("x = begin; 1; raise; rescue; 2; end"))
   test_equal(3, compile_and_run("x = begin; 1; raise; rescue TypeError; 2; rescue; 3; end"))
   test_equal(4, compile_and_run("x = begin; 1; rescue; 2; else; 4; end"))
+  test_equal(4, compile_and_run("def foo; begin; return 4; rescue; end; return 3; end; foo"))
 }
