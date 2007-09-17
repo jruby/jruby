@@ -30,6 +30,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.File;
+import java.io.IOException;
+
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
@@ -47,6 +50,7 @@ public class RubyFileTest {
         fileTestModule.defineFastModuleFunction("readable?", callbackFactory.getFastSingletonMethod("readable_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastModuleFunction("readable_real?", callbackFactory.getFastSingletonMethod("readable_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastModuleFunction("size", callbackFactory.getFastSingletonMethod("size", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastModuleFunction("symlink?", callbackFactory.getFastSingletonMethod("symlink_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastModuleFunction("writable?", callbackFactory.getFastSingletonMethod("writable_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastModuleFunction("writable_real?", callbackFactory.getFastSingletonMethod("writable_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastModuleFunction("zero?", callbackFactory.getFastSingletonMethod("zero_p", RubyKernel.IRUBY_OBJECT));
@@ -59,6 +63,7 @@ public class RubyFileTest {
         fileTestModule.defineFastMethod("readable?", callbackFactory.getFastSingletonMethod("readable_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastMethod("readable_real?", callbackFactory.getFastSingletonMethod("readable_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastMethod("size", callbackFactory.getFastSingletonMethod("size", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastMethod("symlink?", callbackFactory.getFastSingletonMethod("symlink_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastMethod("writable?", callbackFactory.getFastSingletonMethod("writable_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastMethod("writable_real?", callbackFactory.getFastSingletonMethod("writable_p", RubyKernel.IRUBY_OBJECT));
         fileTestModule.defineFastMethod("zero?", callbackFactory.getFastSingletonMethod("zero_p", RubyKernel.IRUBY_OBJECT));
@@ -94,6 +99,32 @@ public class RubyFileTest {
         return filename.getRuntime().newFixnum(file.length());
     }
     
+    public static RubyBoolean symlink_p(IRubyObject recv, IRubyObject _filename) {
+        Ruby runtime = recv.getRuntime();
+        RubyString filename = RubyString.stringValue(_filename);
+        
+        JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), filename.toString());
+        
+        try {
+            // Only way to determine symlink is to compare canonical and absolute files
+            // However symlinks in containing path must not produce false positives, so we check that first
+            File absoluteParent = file.getAbsoluteFile().getParentFile();
+            File canonicalParent = file.getAbsoluteFile().getParentFile().getCanonicalFile();
+            
+            if (canonicalParent.getAbsolutePath().equals(absoluteParent.getAbsolutePath())) {
+                // parent doesn't change when canonicalized, compare absolute and canonical file directly
+                return file.getAbsolutePath().equals(file.getCanonicalPath()) ? runtime.getFalse() : runtime.getTrue();
+            }
+            
+            // directory itself has symlinks (canonical != absolute), so build new path with canonical parent and compare
+            file = JRubyFile.create(runtime.getCurrentDirectory(), canonicalParent.getAbsolutePath() + "/" + file.getName());
+            return file.getAbsolutePath().equals(file.getCanonicalPath()) ? runtime.getFalse() : runtime.getTrue();
+        } catch (IOException ioe) {
+            // problem canonicalizing the file; nothing we can do but return false
+            return runtime.getFalse();
+        }
+    }
+
     // We do both writable and writable_real through the same method because
     // in our java process effective and real userid will always be the same.
     public static RubyBoolean writable_p(IRubyObject recv, IRubyObject filename) {
