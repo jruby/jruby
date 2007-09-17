@@ -2078,12 +2078,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void setPosition(ISourcePosition position) {
             // FIXME: This is really, really slow because it's constructing a source position for every new line.
             loadThreadContext();
-            method.newobj(cg.p(SimpleSourcePosition.class));
-            method.dup();
             method.ldc(position.getFile());
             method.ldc(position.getEndLine());
-            method.invokespecial(cg.p(SimpleSourcePosition.class), "<init>", cg.sig(void.class, String.class, int.class));
-            invokeThreadContext("setPosition", cg.sig(void.class, ISourcePosition.class));
+            invokeThreadContext("setPosition", cg.sig(void.class, String.class, int.class));
         }
     }
 

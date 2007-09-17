@@ -43,6 +43,7 @@ import org.jruby.RubyThread;
 import org.jruby.ast.CommentNode;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.libraries.FiberLibrary.Fiber;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
@@ -392,6 +393,10 @@ public final class ThreadContext {
     
     public void setPosition(ISourcePosition position) {
         sourcePosition = position;
+    }
+    
+    public void setPosition(String file, int line) {
+        sourcePosition = new SimpleSourcePosition(file, line);
     }
     
     public Visibility getCurrentVisibility() {
