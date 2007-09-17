@@ -323,7 +323,7 @@ public class NodeCompilerFactory {
             compileOr(node, context);
             break;
         case POSTEXENODE:
-            throw new NotCompilableException("EXIT block at: " + node.getPosition());
+            throw new NotCompilableException("END block at: " + node.getPosition());
         case REDONODE:
             compileRedo(node, context);
             break;
