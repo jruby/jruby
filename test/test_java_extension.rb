@@ -248,5 +248,11 @@ class TestJavaExtension < Test::Unit::TestCase
       flunk "Exception raised: #{$!}"
     end
   end
+  
+  def test_map_interface_to_array
+    hash = {"one"=>"two","three"=>"four"}
+    map = java.util.HashMap.new(hash)
+    assert_equal hash.to_a, map.to_a
+  end
 end
 
