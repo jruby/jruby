@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -424,27 +423,7 @@ public class Java {
         }
     }
 
-    private static final IRubyObject[] EMPTY_ARGS = new IRubyObject[0];
-
-    private static final HashSet PACKAGE_MODULE_KEEP_METHODS = new HashSet();
-    static {
-        // keeping some methods we must have, and some others that are not strictly
-        // necessary, but won't collide with any potential package names. note that
-        // inspect, to_s and respond_to? are needed for console display; otherwise
-        // exceptions are raised.
-        final String[] methods = {
-                "<", "<=", "<=>", "==", "===", ">", ">=", "=~", "__id__", "__send__",
-                "autoload?", "class", "const_defined?", "const_missing", "eql?",
-                "equal?", "frozen?", "include?", "inspect", "instance_of?", "is_a?",
-                "kind_of?", "method_defined?", "method_missing", "nil?", "respond_to?",
-                "tainted?", "to_s"
-                };
-        for (int i = methods.length; --i >= 0; ) {
-            PACKAGE_MODULE_KEEP_METHODS.add(methods[i]);
-        }
-    }
-    
-    private static RubyModule createPackageModule(RubyModule parent, String name, String packageString) {
+    private static RubyModule createPackageModule(final RubyModule parent, final String name, final String packageString) {
         Ruby runtime = parent.getRuntime();
         RubyModule packageModule = (RubyModule)runtime.getJavaSupport()
                 .getPackageModuleTemplate().dup();
@@ -454,20 +433,6 @@ public class Java {
         // this is where we'll get connected when classes are opened using
         // package module syntax.
         packageModule.addClassProvider(JAVA_PACKAGE_CLASS_PROVIDER);
-
-        // undefined methods aren't carried over when the template is dup'ed
-        // (see JRUBY-948), so we'll undef them here.
-        // TODO: need to catch later additions to Object/Kernel. yuk. that's a lot
-        // of processing for method_added et al... 
-        RubyClass singleton = packageModule.getSingletonClass();
-        Object[] snglMeths = singleton.public_instance_methods(EMPTY_ARGS).toArray();
-        java.util.Arrays.sort(snglMeths);
-        for (int i = snglMeths.length; --i >= 0; ) {
-            String methodName = (String)snglMeths[i];
-            if (!PACKAGE_MODULE_KEEP_METHODS.contains(methodName)) {
-                singleton.undef(methodName);
-            }
-        }
 
         parent.const_set(runtime.newSymbol(name), packageModule);
         return packageModule;
