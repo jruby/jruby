@@ -93,8 +93,10 @@ public class RubyTCPSocket extends RubyIPSocket {
                 InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort);
                 channel = SocketChannel.open(addr);
             } else {
-                Socket socket = new Socket(remoteHost, remotePort, InetAddress.getByName(localHost), localPort);
-                channel = SocketChannel.open(socket.getRemoteSocketAddress());
+                channel = SocketChannel.open();
+                Socket socket = channel.socket();
+                socket.bind(new InetSocketAddress(InetAddress.getByName(localHost), localPort));
+                socket.connect(new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort));
             }
             channel.finishConnect();
             setChannel(channel);
