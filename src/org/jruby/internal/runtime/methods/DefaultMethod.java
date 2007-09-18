@@ -71,7 +71,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     private ArgsNode argsNode;
     private int callCount = 0;
     private Script jitCompiledScript;
-    private int expectedArgsCount;
+    private int requiredArgsCount;
     private int restArg;
     private boolean hasOptArgs;
     private boolean needsImplementer;
@@ -83,7 +83,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         this.body = body;
         this.staticScope = staticScope;
         this.argsNode = argsNode;
-        this.expectedArgsCount = argsNode.getArgsCount();
+        this.requiredArgsCount = argsNode.getArgsCount();
         this.restArg = argsNode.getRestArg();
         this.hasOptArgs = argsNode.getOptArgs() != null;
 		
@@ -220,13 +220,13 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     }
 
     private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject[] args) {
-        if (expectedArgsCount > args.length) {
-            throw runtime.newArgumentError("Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
+        if (requiredArgsCount > args.length) {
+            throw runtime.newArgumentError("Wrong # of arguments(" + args.length + " for " + requiredArgsCount + ")");
         }
 
         // Bind 'normal' parameter values to the local scope for this method.
-        if (expectedArgsCount > 0) {
-            context.getCurrentScope().setArgValues(args, expectedArgsCount);
+        if (requiredArgsCount > 0) {
+            context.getCurrentScope().setArgValues(args, requiredArgsCount);
         }
 
         // optArgs and restArgs require more work, so isolate them and ArrayList creation here
@@ -238,41 +238,43 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     }
 
     private IRubyObject[] prepareOptOrRestArgs(ThreadContext context, Ruby runtime, IRubyObject[] args) {
-        int localExpectedArgsCount = expectedArgsCount;
-        if (restArg == -1 && hasOptArgs) {
-            int opt = expectedArgsCount + argsNode.getOptArgs().size();
-
-            if (opt < args.length) {
-                throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for " + opt + ")");
+        // we know we've at least got the required count at this point, so start with that
+        int givenArgsCount = requiredArgsCount;
+        
+        // determine the maximum number of arguments
+        int maximumArgs = requiredArgsCount;
+        if (argsNode.getOptArgs() != null) {
+            maximumArgs += argsNode.getOptArgs().size();
+            
+            if (restArg == -1 && maximumArgs < args.length) {
+                throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for " + maximumArgs + ")");
             }
         }
         
-        int count = expectedArgsCount;
-        if (argsNode.getOptArgs() != null) {
-            count += argsNode.getOptArgs().size();
-        }
-
-        ArrayList allArgs = new ArrayList();
+        int totalArgsCount = maximumArgs;
+        if (restArg != -1) totalArgsCount = Math.max(maximumArgs, args.length);
+        int currentArgIndex = 0;
         
-        // Combine static and optional args into a single list allArgs
-        for (int i = 0; i < count && i < args.length; i++) {
-            allArgs.add(args[i]);
-        }
+        IRubyObject[] newArgs = new IRubyObject[totalArgsCount];
+        
+        // Combine required and given optional args into a single list allArgs
+        currentArgIndex += Math.min(maximumArgs, args.length);
+        System.arraycopy(args, 0, newArgs, 0, currentArgIndex);
         
         if (hasOptArgs) {
             ListNode optArgs = argsNode.getOptArgs();
    
+            // assign given optional arguments to their variables
             int j = 0;
-            for (int i = expectedArgsCount; i < args.length && j < optArgs.size(); i++, j++) {
+            for (int i = requiredArgsCount; i < args.length && j < optArgs.size(); i++, j++) {
                 // in-frame EvalState should already have receiver set as self, continue to use it
                 AssignmentVisitor.assign(runtime, context, context.getFrameSelf(), optArgs.get(j), args[i], Block.NULL_BLOCK, true);
-                localExpectedArgsCount++;
+                givenArgsCount++;
             }
    
             // assign the default values, adding to the end of allArgs
-            while (j < optArgs.size()) {
-                // in-frame EvalState should already have receiver set as self, continue to use it
-                allArgs.add(EvaluationState.eval(runtime, context, optArgs.get(j++), context.getFrameSelf(), Block.NULL_BLOCK));
+            for (int i = 0; j < optArgs.size(); i++, j++) {
+                newArgs[currentArgIndex++] = EvaluationState.eval(runtime, context, optArgs.get(j), context.getFrameSelf(), Block.NULL_BLOCK);
             }
         }
         
@@ -287,14 +289,13 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         // named restarg ==> >=0
         // anonymous restarg ==> -2
         if (restArg != -1) {
-            for (int i = localExpectedArgsCount; i < args.length; i++) {
-                allArgs.add(args[i]);
-            }
+            int restArgsCount = args.length - givenArgsCount;
+            System.arraycopy(args, givenArgsCount, newArgs, currentArgIndex, restArgsCount);
 
             // only set in scope if named
             if (restArg >= 0) {
-                RubyArray array = runtime.newArray(args.length - localExpectedArgsCount);
-                for (int i = localExpectedArgsCount; i < args.length; i++) {
+                RubyArray array = runtime.newArray(args.length - givenArgsCount);
+                for (int i = givenArgsCount; i < args.length; i++) {
                     array.append(args[i]);
                 }
 
@@ -302,8 +303,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             }
         }
         
-        args = (IRubyObject[])allArgs.toArray(new IRubyObject[allArgs.size()]);
-        return args;
+        return newArgs;
     }
 
     private void traceReturn(ThreadContext context, Ruby runtime, String name) {
