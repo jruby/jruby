@@ -1583,6 +1583,10 @@ public final class Ruby {
         return newRaiseException(getModule("Errno").getClass("ENOENT"), "File not found");
     }
 
+    public RaiseException newErrnoEISDirError() {
+        return newRaiseException(getModule("Errno").getClass("EISDIR"), "Is a directory");
+    }
+
     public RaiseException newErrnoESPIPEError() {
         return newRaiseException(getModule("Errno").getClass("ESPIPE"), "Illegal seek");
     }
