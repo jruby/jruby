@@ -448,6 +448,11 @@ public class RubyModule extends RubyObject {
     public boolean isClassVarDefined(String name) {
         return getModuleWithInstanceVar(name) != null;
     }
+    
+    // Fix for JRUBY-1339 - search hierarchy for constant
+    public boolean isConstantDefined(final String name) {
+        return getModuleWithInstanceVar(name) != null;
+    }
 
     /**
      * Set the named constant on this module. Also, if the value provided is another Module and
@@ -1590,7 +1595,8 @@ public class RubyModule extends RubyObject {
             throw wrongConstantNameError(name);
         }
         
-        return getRuntime().newBoolean(getInstanceVariable(name) != null);
+        // Fix for JRUBY-1339 - search hierarchy for constant
+        return getRuntime().newBoolean(isConstantDefined(name));
     }
 
     private RaiseException wrongConstantNameError(String name) {

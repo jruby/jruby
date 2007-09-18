@@ -487,18 +487,14 @@ public class ThreadContext {
     }
     
     public boolean getConstantDefined(String name) {
-        IRubyObject result = null;
-        IRubyObject undef = runtime.getUndef();
-        
         // flipped from while to do to search current class first
         for (SinglyLinkedList cbase = peekCRef(); cbase != null; cbase = cbase.getNext()) {
             RubyModule module = (RubyModule) cbase.getValue();
-            result = module.getInstanceVariable(name);
-            if (result == undef) {
-                module.removeInstanceVariable(name);
-                return runtime.getLoadService().autoload(module.getName() + "::" + name) != null;
-            }
-            if (result != null) return true;
+
+            // fix related to JRUBY-1339
+            //   - search hierarchy for constant (RubyModule#isConstantDefined)
+            //   - do NOT load autoloads, just return whether constant is defined
+            if (module.isConstantDefined(name)) return true;
         }
         
         return false;

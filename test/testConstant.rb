@@ -195,3 +195,29 @@ class Bar2
   end
 end
 test_equal("goodbye", Bar2.new.gobble)
+
+# Test fix for JRUBY-1339 ("Constants nested in a Module are not included")
+
+module Outer
+  class Inner
+  end
+end
+
+def const_from_name(name)
+  const = ::Object
+  name.sub(/\A::/, '').split('::').each do |const_str|
+    if const.const_defined?(const_str)
+      const = const.const_get(const_str)
+      next
+    end
+    return nil
+  end
+  const
+end
+
+include Outer
+
+test_equal(Outer::Inner, const_from_name("Inner"))
+test_equal("constant", defined?Inner)
+
+# End test fix for JRUBY-1339
