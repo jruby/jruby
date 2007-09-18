@@ -435,7 +435,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   
   <target name="run-junit-interpreted" description="runs junit tests">
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
-    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="256M" showoutput="true" timeout="60000">
+    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="256M" showoutput="true" timeout="180000">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
         <path refid="build.classpath"/>

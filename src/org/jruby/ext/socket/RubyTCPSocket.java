@@ -33,6 +33,7 @@ import java.io.IOException;
 
 import java.net.ConnectException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -78,10 +79,6 @@ public class RubyTCPSocket extends RubyIPSocket {
                 RubyNumeric.str2inum(getRuntime(), (RubyString) arg, 0, true) : arg);
     }
     
-    private InetAddress getAddress(String address) throws UnknownHostException {
-        return "localhost".equals(address) ? InetAddress.getLocalHost() : InetAddress.getByName(address);
-    }
-
     public IRubyObject initialize(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 2, 4);
         
@@ -91,17 +88,14 @@ public class RubyTCPSocket extends RubyIPSocket {
         int localPort = args.length == 4 ? getPortFrom(args[3]) : 0;
         
         try {
-            Socket socket;
-            if (localHost != null) {
-                // We do not getAddress of localhost because for some reason TCP libs seem to not
-                // like 'localhost' for local host field in MRI.
-                socket = new Socket(getAddress(remoteHost), remotePort, 
-                        InetAddress.getByName(localHost), localPort);
+            SocketChannel channel = null;
+            if(localHost == null) {
+                InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort);
+                channel = SocketChannel.open(addr);
             } else {
-                socket = new Socket(getAddress(remoteHost), remotePort); 
+                Socket socket = new Socket(remoteHost, remotePort, InetAddress.getByName(localHost), localPort);
+                channel = SocketChannel.open(socket.getRemoteSocketAddress());
             }
-                
-            SocketChannel channel = SocketChannel.open(socket.getRemoteSocketAddress());
             channel.finishConnect();
             setChannel(channel);
         } catch(ConnectException e) {
