@@ -477,7 +477,7 @@ public class EvaluationState {
         AttrAssignNode iVisited = (AttrAssignNode) node;
    
         IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
-        IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
+        IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self, aBlock);
         
         assert receiver.getMetaClass() != null : receiver.getClass().getName();
         
@@ -549,7 +549,7 @@ public class EvaluationState {
         CallNode iVisited = (CallNode) node;
 
         IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
-        IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
+        IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self, aBlock);
         
         assert receiver.getMetaClass() != null : receiver.getClass().getName();
 
@@ -988,7 +988,7 @@ public class EvaluationState {
     private static IRubyObject fCallNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         FCallNode iVisited = (FCallNode) node;
         
-        IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
+        IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self, aBlock);
         Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
 
         // No block provided lets look at fast path for STI dispatch.
@@ -1343,7 +1343,7 @@ public class EvaluationState {
         OpElementAsgnNode iVisited = (OpElementAsgnNode) node;
         IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
    
-        IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
+        IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self, aBlock);
    
         IRubyObject firstValue = receiver.callMethod(context, MethodIndex.AREF, "[]", args);
    
@@ -1492,7 +1492,7 @@ public class EvaluationState {
                     if (exceptionNodesList == null) {
                         exceptions = new IRubyObject[] {runtime.getClass("StandardError")};
                     } else {
-                        exceptions = setupArgs(runtime, context, exceptionNodes, self);
+                        exceptions = setupArgs(runtime, context, exceptionNodes, self, aBlock);
                     }
                     if (CompilerHelpers.isExceptionHandled(raisedException, exceptions, runtime, context, self).isTrue()) {
                         try {
@@ -1608,11 +1608,13 @@ public class EvaluationState {
             throw runtime.newNameError("Superclass method '" + name
                     + "' disabled.", name);
         }
-        IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
+        IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self, aBlock);
         Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
         
-        // If no explicit block passed to super, then use the one passed in.
-        if (!block.isGiven()) block = aBlock;
+        // If no explicit block passed to super, then use the one passed in, unless it's explicitly cleared with nil
+        if (iVisited.getIterNode() == null) {
+            if (!block.isGiven()) block = aBlock;
+        }
         
         return self.callSuper(context, args, block);
     }
@@ -2088,7 +2090,7 @@ public class EvaluationState {
         return runtime.hasEventHooks();
     }
 
-    private static IRubyObject[] setupArgs(Ruby runtime, ThreadContext context, Node node, IRubyObject self) {
+    private static IRubyObject[] setupArgs(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         if (node == null) return IRubyObject.NULL_ARRAY;
 
         if (node instanceof ArrayNode) {
@@ -2098,7 +2100,7 @@ public class EvaluationState {
             IRubyObject[] argsArray = new IRubyObject[size];
 
             for (int i = 0; i < size; i++) {
-                argsArray[i] = evalInternal(runtime,context, argsArrayNode.get(i), self, Block.NULL_BLOCK);
+                argsArray[i] = evalInternal(runtime,context, argsArrayNode.get(i), self, aBlock);
             }
 
             context.setPosition(position);
@@ -2106,7 +2108,7 @@ public class EvaluationState {
             return argsArray;
         }
 
-        return ArgsUtil.convertToJavaArray(evalInternal(runtime,context, node, self, Block.NULL_BLOCK));
+        return ArgsUtil.convertToJavaArray(evalInternal(runtime,context, node, self, aBlock));
     }
 
     public static RubyArray splatValue(Ruby runtime, IRubyObject value) {
