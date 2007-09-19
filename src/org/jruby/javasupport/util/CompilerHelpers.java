@@ -328,7 +328,7 @@ public class CompilerHelpers {
         return value;
     }
     
-    public static void raiseArgumentError(Ruby runtime, int given, int required, int opt, int rest) {
+    public static void handleArgumentSizes(ThreadContext context, Ruby runtime, int given, int required, int opt, int rest) {
         if (opt == 0) {
             if (rest < 0) {
                 // no opt, no rest, exact match
@@ -356,6 +356,10 @@ public class CompilerHelpers {
                 }
             }
         }
+        
+        int nonRestMax = required + opt;
+        if (rest != -1) nonRestMax = Math.max(given, nonRestMax);
+        context.setFrameArgs(new IRubyObject[nonRestMax]);
     }
     
     public static String getLocalJumpTypeOrRethrow(RaiseException re) {

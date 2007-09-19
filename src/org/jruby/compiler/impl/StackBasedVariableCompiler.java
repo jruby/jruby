@@ -36,6 +36,7 @@ import org.jruby.compiler.VariableCompiler;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Frame;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 import org.objectweb.asm.Label;
@@ -149,13 +150,14 @@ public class StackBasedVariableCompiler implements VariableCompiler {
 
     public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg) {
         // check arity
+        methodCompiler.loadThreadContext();
         methodCompiler.loadRuntime();
         method.aload(argsIndex);
         method.arraylength();
         method.ldc(new Integer(requiredArgs));
         method.ldc(new Integer(optArgs));
         method.ldc(new Integer(restArg));
-        methodCompiler.invokeUtilityMethod("raiseArgumentError", cg.sig(Void.TYPE, cg.params(Ruby.class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE)));
+        methodCompiler.invokeUtilityMethod("handleArgumentSizes", cg.sig(Void.TYPE, ThreadContext.class, Ruby.class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE));
 
         Label noArgs = new Label();
 

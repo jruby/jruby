@@ -161,10 +161,6 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             }
         }
         
-        // ensureSuperBlock uses the parent (caller's) block if none given
-        methodCompiler.loadClosure();
-        methodCompiler.invokeUtilityMethod("ensureSuperBlock", cg.sig(Block.class, Block.class, Block.class));
-        
         method.invokeinterface(cg.p(IRubyObject.class), "callSuper", cg.sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, Block.class));
     }
 

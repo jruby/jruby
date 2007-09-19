@@ -387,6 +387,7 @@ public class NodeCompilerFactory {
             break;
         case WHENNODE:
             assert false: "When nodes are handled by case node compilation.";
+            break;
         case XSTRNODE:
             compileXStr(node, context);
             break;
@@ -2658,6 +2659,7 @@ public class NodeCompilerFactory {
                 compileArguments(superNode.getArgsNode(), context);
             }
         };
+        
                 
         if (superNode.getIterNode() == null) {
             // no block, go for simple version
@@ -2667,6 +2669,10 @@ public class NodeCompilerFactory {
                 context.getInvocationCompiler().invokeSuper(null, null);
             }
         } else {
+            boolean blockExplicitlyCleared = 
+                    superNode.getIterNode().nodeId == NodeType.BLOCKPASSNODE &&
+                    ((BlockPassNode)superNode.getIterNode()).getBodyNode().nodeId == NodeType.NILNODE;
+            
             ClosureCallback closureArg = getBlock(superNode.getIterNode());
             
             if (superNode.getArgsNode() != null) {
