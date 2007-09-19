@@ -222,12 +222,12 @@ public class ShellLauncher {
         return aProcess;
     }
 
-    private static class StreamCopier extends Thread {
+    private static class StreamPumper extends Thread {
         private InputStream in;
         private OutputStream out;
         private boolean onlyIfAvailable;
         private boolean quit;
-        StreamCopier(InputStream in, OutputStream out, boolean avail) {
+        StreamPumper(InputStream in, OutputStream out, boolean avail) {
             this.in = in;
             this.out = out;
             this.onlyIfAvailable = avail;
@@ -248,6 +248,7 @@ public class ShellLauncher {
                         break;
                     }
                     out.write(buf, 0, numRead);
+                    out.flush();
                 }
             } catch (Exception e) {
             }
@@ -262,9 +263,9 @@ public class ShellLauncher {
         InputStream pErr = p.getErrorStream();
         OutputStream pIn = p.getOutputStream();
 
-        StreamCopier t1 = new StreamCopier(pOut, out, false);
-        StreamCopier t2 = new StreamCopier(pErr, err, false);
-        StreamCopier t3 = new StreamCopier(in, pIn, true);
+        StreamPumper t1 = new StreamPumper(pOut, out, false);
+        StreamPumper t2 = new StreamPumper(pErr, err, false);
+        StreamPumper t3 = new StreamPumper(in, pIn, true);
         t1.start();
         t2.start();
         t3.start();
