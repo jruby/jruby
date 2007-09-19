@@ -16,6 +16,7 @@ test_defined
 #test_digest2
 test_dup_clone_taint_freeze
 test_env
+test_file
 test_flip
 test_globals
 test_hash

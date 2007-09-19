@@ -12,8 +12,6 @@ testEval.rb
 testException.rb
 testException2.rb
 testExpressions.rb
-testFile.rb
-testFileTest.rb
 testFixnum.rb
 testFixnumBignumAutoconversion.rb
 testFloat.rb
