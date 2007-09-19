@@ -328,7 +328,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             String escaped = escapeSpecialChars(decoded.toString());
             ByteBuffer encoded = kcode.encoder().encode(CharBuffer.wrap(escaped));
             
-            return (RubyString)RubyString.newString(recv.getRuntime(), encoded.array()).infectBy(str);
+            return (RubyString)RubyString.newString(recv.getRuntime(),
+                    new ByteList(encoded.array(), encoded.arrayOffset(), encoded.limit() - encoded.arrayOffset())).infectBy(str);
         } catch (CharacterCodingException ex) {
             throw new RuntimeException(ex);
         }

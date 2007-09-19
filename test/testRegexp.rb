@@ -159,3 +159,11 @@ test_equal 0, "\034\015" =~ /^\034\015$/
 test_equal 0, /\0/ =~ "\0"
 test_equal 0, /\00/ =~ "\0"
 test_equal 0, /\00/ =~ "\0"
+
+# JRUBY-1372: Regexp.quoting
+old_kcode = $KCODE
+$KCODE = 'u'
+helpers_dir = "/my/happy/helpers"
+extract = /^#{Regexp.quote(helpers_dir)}\/?(.*)_helper.rb$/
+test_equal "/^\\/my\\/happy\\/helpers\\/?(.*)_helper.rb$/", extract.inspect
+$KCODE = old_kcode
