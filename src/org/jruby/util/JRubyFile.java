@@ -44,6 +44,9 @@ public class JRubyFile extends File {
     private static final long serialVersionUID = 435364547567567L;
 
     public static JRubyFile create(String cwd, String pathname) {
+        if (pathname == null || pathname.equals("")) {
+            return JRubyNonExistentFile.NOT_EXIST;
+        }
         File internal = new File(pathname);
         if(!internal.isAbsolute()) {
             internal = new File(cwd,pathname);
@@ -64,7 +67,7 @@ public class JRubyFile extends File {
         this(file.getAbsolutePath());
     }
 
-    private JRubyFile(String filename) {
+    protected JRubyFile(String filename) {
         super(filename);
     }
 

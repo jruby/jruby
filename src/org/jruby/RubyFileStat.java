@@ -121,10 +121,11 @@ public class RubyFileStat extends RubyObject {
 
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
         Ruby runtime = getRuntime();
-        JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(),fname.toString());
+        String filename = fname.toString();
+        JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), filename);
 
-        if(!file.exists()) {
-            throw runtime.newErrnoENOENTError("No such file or directory - " + file.getPath());
+        if (!file.exists()) {
+            throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
         }
 
         // We cannot determine, so always return 4096 (better than blowing up)
