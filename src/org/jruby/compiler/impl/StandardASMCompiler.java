@@ -2279,7 +2279,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void issueBreakEvent(ClosureCallback value) {
-            if (withinProtection || currentLoopLabels == null) {
+            if (withinProtection) {
+                throw new NotCompilableException("Can't compile break in ensure");
+            } else if (currentLoopLabels == null) {
                 method.newobj(cg.p(JumpException.BreakJump.class));
                 method.dup();
                 method.aconst_null();
@@ -2309,9 +2311,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void issueRedoEvent() {
-            if (withinProtection) {
-                throw new NotCompilableException("Can't compile redo in body with ensure");
-            }
             if (currentLoopLabels != null) {
                 issueLoopRedo();
             } else {
@@ -2457,7 +2456,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void issueBreakEvent(ClosureCallback value) {
-            if (withinProtection || currentLoopLabels == null) {
+            if(withinProtection) {
+                throw new NotCompilableException("Can't compile break within ensure yet");
+            }
+            if (currentLoopLabels != null) {
+                value.compile(this);
+                issueLoopBreak();
+            } else {
                 // in method body with no containing loop, issue jump error
                 
                 // load runtime
@@ -2474,14 +2479,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 // create and raise local jump error
                 invokeIRuby("newLocalJumpError", cg.sig(RaiseException.class, cg.params(String.class, IRubyObject.class, String.class)));
                 method.athrow();
-            } else {
-                value.compile(this);
-                issueLoopBreak();
-            } 
+            }
         }
 
         public void issueNextEvent(ClosureCallback value) {
-            if (withinProtection || currentLoopLabels != null) {
+            if (currentLoopLabels != null) {
+                value.compile(this);
+                issueLoopNext();
+            } else {
                 // in method body with no containing loop, issue jump error
                 
                 // load runtime
@@ -2498,14 +2503,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 // create and raise local jump error
                 invokeIRuby("newLocalJumpError", cg.sig(RaiseException.class, cg.params(String.class, IRubyObject.class, String.class)));
                 method.athrow();
-            } else {
-                value.compile(this);
-                issueLoopNext();
-            } 
+            }
         }
 
         public void issueRedoEvent() {
-            if (withinProtection || currentLoopLabels == null) {
+            if (currentLoopLabels != null) {
+                issueLoopRedo();
+            } else {
                 // in method body with no containing loop, issue jump error
                 
                 // load runtime
@@ -2522,9 +2526,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 // create and raise local jump error
                 invokeIRuby("newLocalJumpError", cg.sig(RaiseException.class, cg.params(String.class, IRubyObject.class, String.class)));
                 method.athrow();
-            } else {
-                issueLoopRedo();
-            } 
+            }
         }
     }
 
