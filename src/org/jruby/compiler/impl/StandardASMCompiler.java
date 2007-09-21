@@ -135,6 +135,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     int innerIndex = -1;
     
     Map<String, String> sourcePositions = new HashMap<String, String>();
+    Map<String, String> byteLists = new HashMap<String, String>();
     
     /** Creates a new instance of StandardCompilerContext */
     public StandardASMCompiler(String classname, String sourcename) {
@@ -544,10 +545,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void createNewString(ByteList value) {
             // FIXME: this is sub-optimal, storing string value in a java.lang.String again
+            String fieldName = cacheByteList(value.toString());
             loadRuntime();
-            method.ldc(value.toString());
+            method.getstatic(classname, fieldName, cg.ci(ByteList.class));
 
-            invokeIRuby("newString", cg.sig(RubyString.class, cg.params(String.class)));
+            invokeIRuby("newStringShared", cg.sig(RubyString.class, cg.params(ByteList.class)));
         }
 
         public void createNewSymbol(String name) {
@@ -2606,6 +2608,20 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             clinitMethod.ldc(line);
             clinitMethod.invokespecial(cg.p(SimpleSourcePosition.class), "<init>", cg.sig(void.class, String.class, int.class));
             clinitMethod.putstatic(classname, fieldName, cg.ci(ISourcePosition.class));
+        }
+        
+        return fieldName;
+    }
+    
+    public String cacheByteList(String contents) {
+        String fieldName = byteLists.get(contents);
+        if (fieldName == null) {
+            fieldName = getNewStaticConstant(cg.ci(ByteList.class), "byteList");
+            byteLists.put(contents, fieldName);
+
+            clinitMethod.ldc(contents);
+            clinitMethod.invokestatic(cg.p(ByteList.class), "create", cg.sig(ByteList.class, CharSequence.class));
+            clinitMethod.putstatic(classname, fieldName, cg.ci(ByteList.class));
         }
         
         return fieldName;
