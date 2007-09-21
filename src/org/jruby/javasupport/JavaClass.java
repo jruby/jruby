@@ -864,7 +864,7 @@ public class JavaClass extends JavaObject {
         applyProxyExtenders();
     }
 
-    public synchronized void addProxyExtender(final IRubyObject extender) {
+    public void addProxyExtender(final IRubyObject extender) {
         lockProxy();
         try {
             if (!extender.respondsTo("extend_proxy")) {
