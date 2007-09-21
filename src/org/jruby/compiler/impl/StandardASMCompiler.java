@@ -130,8 +130,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
     private ClassWriter classWriter;
     private SkinnyMethodAdapter initMethod;
+    private SkinnyMethodAdapter clinitMethod;
     int methodIndex = -1;
     int innerIndex = -1;
+    
+    Map<String, String> sourcePositions = new HashMap<String, String>();
     
     /** Creates a new instance of StandardCompilerContext */
     public StandardASMCompiler(String classname, String sourcename) {
@@ -192,6 +195,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         classWriter.visitSource(sourcename, null);
 
         beginInit();
+        beginClassInit();
     }
 
     public void endScript() {
@@ -237,6 +241,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         method.end();
         
         endInit();
+        endClassInit();
     }
 
     private void beginInit() {
@@ -248,8 +253,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         initMethod.invokespecial(cg.p(Object.class), "<init>", cg.sig(Void.TYPE));
         
         cv.visitField(ACC_PRIVATE | ACC_FINAL, "$class", cg.ci(Class.class), null, null);
-
-        // This is a little hacky...since clinit recurses, set a boolean so we don't continue trying to load class
+        
+        // FIXME: this really ought to be in clinit, but it doesn't matter much
         initMethod.aload(THIS);
         initMethod.ldc(cg.c(classname));
         initMethod.invokestatic(cg.p(Class.class), "forName", cg.sig(Class.class, cg.params(String.class)));
@@ -259,6 +264,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private void endInit() {
         initMethod.voidreturn();
         initMethod.end();
+    }
+
+    private void beginClassInit() {
+        ClassVisitor cv = getClassVisitor();
+
+        clinitMethod = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC | ACC_STATIC, "<clinit>", cg.sig(Void.TYPE), null, null));
+        clinitMethod.start();
+    }
+
+    private void endClassInit() {
+        clinitMethod.voidreturn();
+        clinitMethod.end();
     }
     
     public MethodCompiler startMethod(String friendlyName, ClosureCallback args, StaticScope scope, ASTInspector inspector) {
@@ -2078,11 +2095,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void setPosition(ISourcePosition position) {
-            // FIXME: This is really, really slow because it's constructing a source position for every new line.
+            // FIXME I'm still not happy with this additional overhead per line,
+            // nor about the extra script construction cost, but it will have to do for now.
             loadThreadContext();
-            method.ldc(position.getFile());
-            method.ldc(position.getEndLine());
-            invokeThreadContext("setPosition", cg.sig(void.class, String.class, int.class));
+            method.getstatic(classname, cachePosition(position.getFile(), position.getEndLine()), cg.ci(ISourcePosition.class));
+            invokeThreadContext("setPosition", cg.sig(void.class, ISourcePosition.class));
         }
     }
 
@@ -2544,9 +2561,22 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         cv.visitField(ACC_PRIVATE, realName, type, null, null).visitEnd();
         return realName;
     }
+
+    public String getNewStaticConstant(String type, String name_prefix) {
+        ClassVisitor cv = getClassVisitor();
+
+        String realName;
+        synchronized (this) {
+            realName = name_prefix + constants++;
+        }
+
+        // declare the field
+        cv.visitField(ACC_PRIVATE | ACC_STATIC, realName, type, null, null).visitEnd();
+        return realName;
+    }
     
     public String cacheCallAdapter(String name, CallType callType) {
-        String fieldname = getNewConstant(cg.ci(CallAdapter.class), cg.cleanJavaIdentifier(name));
+        String fieldName = getNewConstant(cg.ci(CallAdapter.class), cg.cleanJavaIdentifier(name));
         
         // retrieve call adapter
         initMethod.aload(THIS);
@@ -2558,8 +2588,26 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         } else if (callType.equals(CallType.VARIABLE)) {
             initMethod.invokestatic(cg.p(MethodIndex.class), "getVariableAdapter", cg.sig(CallAdapter.class, cg.params(String.class)));
         }
-        initMethod.putfield(classname, fieldname, cg.ci(CallAdapter.class));
+        initMethod.putfield(classname, fieldName, cg.ci(CallAdapter.class));
         
-        return fieldname;
+        return fieldName;
+    }
+    
+    public String cachePosition(String file, int line) {
+        String cleanName = cg.cleanJavaIdentifier(file + "$" + line);
+        String fieldName = sourcePositions.get(cleanName);
+        if (fieldName == null) {
+            fieldName = getNewStaticConstant(cg.ci(ISourcePosition.class), cleanName);
+            sourcePositions.put(cg.cleanJavaIdentifier(file + "$" + line), fieldName);
+
+            clinitMethod.newobj(cg.p(SimpleSourcePosition.class));
+            clinitMethod.dup();
+            clinitMethod.ldc(file);
+            clinitMethod.ldc(line);
+            clinitMethod.invokespecial(cg.p(SimpleSourcePosition.class), "<init>", cg.sig(void.class, String.class, int.class));
+            clinitMethod.putstatic(classname, fieldName, cg.ci(ISourcePosition.class));
+        }
+        
+        return fieldName;
     }
 }

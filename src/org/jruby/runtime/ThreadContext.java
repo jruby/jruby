@@ -395,10 +395,6 @@ public final class ThreadContext {
         sourcePosition = position;
     }
     
-    public void setPosition(String file, int line) {
-        sourcePosition = new SimpleSourcePosition(file, line);
-    }
-    
     public Visibility getCurrentVisibility() {
         return getCurrentFrame().getVisibility();
     }
