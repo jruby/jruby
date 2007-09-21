@@ -134,13 +134,14 @@ public abstract class CallAdapter {
                 try {
                     RubyClass selfType = self.getMetaClass();
 
+                    byte[] cTable = this.cachedTable;
                     DynamicMethod cMethod = this.cachedMethod;
                     RubyModule cType = this.cachedType;
 
-                    if (cType == selfType && cMethod != null) {
-                        if (cachedTable.length > methodID && cachedTable[methodID] != 0) {
+                    if (cType == selfType && cachedTable != null) {
+                        if (cTable.length > methodID && cTable[methodID] != 0) {
                             return selfType.getDispatcher().callMethod(context, self, selfType, methodID, methodName, args, callType, block);
-                        } else {
+                        } else if (cMethod != null) {
                             return cMethod.call(context, self, selfType, methodName, args, block);
                         }
                     }
