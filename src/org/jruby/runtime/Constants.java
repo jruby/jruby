@@ -44,6 +44,7 @@ public final class Constants {
     
     public static final String RUBY_MAJOR_VERSION;
     public static final String RUBY_VERSION;
+    public static final String RUBY_PATCHLEVEL;
     public static final String COMPILE_DATE;
     public static final String VERSION;
     public static final String BUILD;
@@ -69,6 +70,7 @@ public final class Constants {
         } else {
             REVISION = "unknown";
         }
+        RUBY_PATCHLEVEL = REVISION;
     }
     
     private Constants() {}

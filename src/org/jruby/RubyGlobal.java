@@ -104,6 +104,7 @@ public class RubyGlobal {
         IRubyObject platform = runtime.newString(Constants.PLATFORM).freeze();
 
         runtime.defineGlobalConstant("RUBY_VERSION", version);
+        runtime.defineGlobalConstant("RUBY_PATCHLEVEL", runtime.newString(Constants.RUBY_PATCHLEVEL).freeze());
         runtime.defineGlobalConstant("RUBY_RELEASE_DATE", release);
         runtime.defineGlobalConstant("RUBY_PLATFORM", platform);
 
