@@ -4,14 +4,8 @@ test_check "Anonymous Interface instantiation"
 if defined? Java
   require 'java'
 
-  # Tests unimplemented interface methods
-  if java.lang.Runnable.instance_of?(Module)
-    class A
-      include java.lang.Runnable
-    end
-  else 
-    class A < java.lang.Runnable
-    end
+  class A
+    include java.lang.Runnable
   end
   test_exception(NoMethodError) do
     A.new.run

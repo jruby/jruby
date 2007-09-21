@@ -17,6 +17,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -37,6 +38,7 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -46,16 +48,31 @@ import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 
 public class JavaSupport {
-    private Ruby runtime;
+    private final Ruby runtime;
 
-    private Map exceptionHandlers = new HashMap();
+    private final Map exceptionHandlers = new HashMap();
 
-    private JRubyClassLoader javaClassLoader;
+    private final JRubyClassLoader javaClassLoader;
 
-    private Map instanceCache = Collections.synchronizedMap(new WeakIdentityHashMap(100));
+    private final Map instanceCache = Collections.synchronizedMap(new WeakIdentityHashMap(100));
     
+    // There's not a compelling reason to keep JavaClass instances in a weak map
+    // (any proxies created are [were] kept in a non-weak map, so in most cases they will
+    // stick around anyway), and some good reasons not to (JavaClass creation is
+    // expensive, for one; many lookups are performed when passing parameters to/from
+    // methods; etc.).
+    // TODO: faster custom concurrent map
+    private final ConcurrentHashMap<Class,JavaClass> javaClassCache =
+        new ConcurrentHashMap<Class,JavaClass>(128);
+    
+    // FIXME: needs to be rethought
+    private final Map matchCache = Collections.synchronizedMap(new HashMap(128));
+
+    private Callback concreteProxyCallback;
+
     private RubyModule javaModule;
     private RubyModule javaUtilitiesModule;
     private RubyClass javaObjectClass;
@@ -67,11 +84,27 @@ public class JavaSupport {
     private RubyClass arrayProxyClass;
     private RubyClass concreteProxyClass;
     
+    
     public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
         this.javaClassLoader = ruby.getJRubyClassLoader();
     }
 
+    final synchronized void setConcreteProxyCallback(Callback concreteProxyCallback) {
+        if (this.concreteProxyCallback == null) {
+            this.concreteProxyCallback = concreteProxyCallback;
+        }
+    }
+    
+    final Callback getConcreteProxyCallback() {
+        return concreteProxyCallback;
+    }
+    
+    final Map getMatchCache() {
+        return matchCache;
+    }
+
+    
     public Class loadJavaClass(String className) {
         try {
             Class result = primitiveClass(className);
@@ -86,13 +119,11 @@ public class JavaSupport {
     }
 
     public JavaClass getJavaClassFromCache(Class clazz) {
-        WeakReference ref = (WeakReference) instanceCache.get(clazz);
-        
-        return ref == null ? null : (JavaClass) ref.get();
+        return javaClassCache.get(clazz);
     }
     
     public void putJavaClassIntoCache(JavaClass clazz) {
-        instanceCache.put(clazz.javaClass(), new WeakReference(clazz));
+        javaClassCache.put(clazz.javaClass(), clazz);
     }
     
     public void addToClasspath(URL url) {

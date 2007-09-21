@@ -39,4 +39,5 @@ import org.jruby.RubyModule;
 public interface ClassProvider {
 
     public RubyClass defineClassUnder(RubyModule module, String name, RubyClass superClazz);
+    public RubyModule defineModuleUnder(RubyModule module, String name);
 }

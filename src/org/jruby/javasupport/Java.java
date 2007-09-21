@@ -36,7 +36,6 @@ package org.jruby.javasupport;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -52,7 +51,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
@@ -65,10 +63,8 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassProvider;
-import org.jruby.util.collections.IntHashMap;
 
 public class Java {
     public static RubyModule createJavaModule(Ruby runtime) {
@@ -80,7 +76,6 @@ public class Java {
         javaModule.defineModuleFunction("java_to_ruby", callbackFactory.getSingletonMethod("java_to_ruby", IRubyObject.class));
         javaModule.defineModuleFunction("ruby_to_java", callbackFactory.getSingletonMethod("ruby_to_java", IRubyObject.class));
         javaModule.defineModuleFunction("new_proxy_instance", callbackFactory.getOptSingletonMethod("new_proxy_instance"));
-        javaModule.defineModuleFunction("set_deprecated_interface_syntax", callbackFactory.getSingletonMethod("set_deprecated_interface_syntax", IRubyObject.class));
 
         JavaObject.createJavaObjectClass(runtime, javaModule);
         JavaArray.createJavaArrayClass(runtime, javaModule);
@@ -103,9 +98,12 @@ public class Java {
         javaUtils.defineFastModuleFunction("get_package_module", callbackFactory.getFastSingletonMethod("get_package_module", IRubyObject.class));
         javaUtils.defineFastModuleFunction("get_package_module_dot_format", callbackFactory.getFastSingletonMethod("get_package_module_dot_format", IRubyObject.class));
         javaUtils.defineFastModuleFunction("get_proxy_class", callbackFactory.getFastSingletonMethod("get_proxy_class", IRubyObject.class));
+
+        // Note: deprecated
         javaUtils.defineFastModuleFunction("add_proxy_extender", callbackFactory.getFastSingletonMethod("add_proxy_extender", IRubyObject.class));
 
-        javaUtils.dataWrapStruct(new ProxyData(callbackFactory.getFastSingletonMethod("concrete_proxy_inherited", IRubyObject.class)));
+        runtime.getJavaSupport().setConcreteProxyCallback(
+                callbackFactory.getFastSingletonMethod("concrete_proxy_inherited", IRubyObject.class));
 
         JavaArrayUtilities.createJavaArrayUtilitiesModule(runtime);
         
@@ -116,24 +114,34 @@ public class Java {
         return javaModule;
     }
 
-    private static class JavaPackageClassProvider implements ClassProvider {
-        public RubyClass defineClassUnder(RubyModule pkg, String name, RubyClass superClazz) {
+
+    private static final ClassProvider JAVA_PACKAGE_CLASS_PROVIDER = new ClassProvider() {
+        public RubyClass defineClassUnder(final RubyModule pkg, final String name, final RubyClass superClazz) {
             // shouldn't happen, but if a superclass is specified, it's not ours
             if (superClazz != null) {
                 return null;
             }
-            IRubyObject packageName = pkg.getInstanceVariable("@package_name");
+            final IRubyObject packageName;
             // again, shouldn't happen. TODO: might want to throw exception instead.
-            if (packageName == null) return null;
+            if ((packageName = pkg.getInstanceVariable("@package_name")) == null) return null;
 
-            Ruby runtime = pkg.getRuntime();
-            String className = packageName.asSymbol() + name;
-            JavaClass javaClass = JavaClass.forName(runtime, className);
-            return (RubyClass)get_proxy_class(runtime.getJavaSupport().getJavaUtilitiesModule(), javaClass);
+            final Ruby runtime = pkg.getRuntime();
+            return (RubyClass)get_proxy_class(
+                    runtime.getJavaSupport().getJavaUtilitiesModule(),
+                    JavaClass.forName(runtime, packageName.asSymbol() + name));
         }
-    }
-    
-    private static final ClassProvider JAVA_PACKAGE_CLASS_PROVIDER = new JavaPackageClassProvider();
+        
+        public RubyModule defineModuleUnder(final RubyModule pkg, final String name) {
+            final IRubyObject packageName;
+            // again, shouldn't happen. TODO: might want to throw exception instead.
+            if ((packageName = pkg.getInstanceVariable("@package_name")) == null) return null;
+
+            final Ruby runtime = pkg.getRuntime();
+            return (RubyModule)get_interface_module(
+                    runtime.getJavaSupport().getJavaUtilitiesModule(),
+                    JavaClass.forName(runtime, packageName.asSymbol() + name));
+        }
+    };
         
     // JavaProxy
     public static IRubyObject new_instance_for(IRubyObject recv, IRubyObject java_object) {
@@ -147,47 +155,28 @@ public class Java {
         return recv.getInstanceVariable("@java_class");
     }
 
-    private final static class ProxyData {
-        public final IntHashMap classes = new IntHashMap();
-        public final IntHashMap interfaces = new IntHashMap();
-        public final List extenders = new ArrayList();
-        public final Map matchCache = new HashMap();
-        public final Callback callback;
-        public ProxyData(Callback c) { this.callback = c; };
-    }
-
     // JavaUtilities
     
     /**
      * Add a new proxy extender. This is used by JavaUtilities to allow adding methods
      * to a given type's proxy and all types descending from that proxy's Java class.
      */
-    public static IRubyObject add_proxy_extender(IRubyObject recv, IRubyObject extender) {
-        ProxyData pdata = ((ProxyData)recv.dataGetStruct());
-        pdata.extenders.add(extender);
-        ThreadContext tc = recv.getRuntime().getCurrentContext();
-        for(Iterator iter = pdata.classes.values().iterator(); iter.hasNext(); ) {
-            extender.callMethod(tc, "extend_proxy", (IRubyObject)iter.next());
+    @Deprecated
+    public static IRubyObject add_proxy_extender(final IRubyObject recv, final IRubyObject extender) {
+        // hacky workaround in case any users call this directly.
+        // most will have called JavaUtilities.extend_proxy instead.
+        recv.getRuntime().getWarnings().warn("JavaUtilities.add_proxy_extender is deprecated - use JavaUtilities.extend_proxy instead");
+        final IRubyObject javaClassVar = extender.getInstanceVariable("@java_class");
+        if (!(javaClassVar instanceof JavaClass)) {
+            throw recv.getRuntime().newArgumentError("extender does not have a valid @java_class");
         }
-        for(Iterator iter = pdata.interfaces.values().iterator(); iter.hasNext(); ) {
-            extender.callMethod(tc, "extend_proxy", (IRubyObject)iter.next());
-        }
+        ((JavaClass)javaClassVar).addProxyExtender(extender);
         return recv.getRuntime().getNil();
     }
     
-    private static boolean supportExtendableInterfaces = false;
-    private static boolean supportExtendableInterfaces() {
-        // TODO: some kind of user mechanism to enable this
-        return supportExtendableInterfaces;
-    }
-    public static IRubyObject set_deprecated_interface_syntax(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        supportExtendableInterfaces = object.isTrue();
-        return object;
-    }
-    
-    public static IRubyObject get_interface_module(IRubyObject recv, IRubyObject javaClassObject) {
-        Ruby runtime = recv.getRuntime();
-        JavaClass javaClass;
+    public static IRubyObject get_interface_module(final IRubyObject recv, final IRubyObject javaClassObject) {
+        final Ruby runtime = recv.getRuntime();
+        final JavaClass javaClass;
         if (javaClassObject instanceof RubyString) {
             javaClass = JavaClass.for_name(recv, javaClassObject);
         } else if (javaClassObject instanceof JavaClass) {
@@ -195,36 +184,30 @@ public class Java {
         } else  {
             throw runtime.newArgumentError("expected JavaClass, got " + javaClassObject);
         }
-        if ( !javaClass.javaClass().isInterface()) {
+        if (!javaClass.javaClass().isInterface()) {
             throw runtime.newArgumentError(javaClass.toString() + " is not an interface");
         }
-        int class_id = RubyNumeric.fix2int(javaClass.id());
-        ProxyData pdata = ((ProxyData)recv.dataGetStruct());
-        IntHashMap interfaces = pdata.interfaces;
         RubyModule interfaceModule;
-        synchronized(javaClass) {
-            if ((interfaceModule = (RubyModule)interfaces.get(class_id)) == null) {
+        if ((interfaceModule = javaClass.getProxyModule()) != null) {
+            return interfaceModule;
+        }
+        javaClass.lockProxy();
+        try {
+            if ((interfaceModule = javaClass.getProxyModule()) == null) {
                 interfaceModule = (RubyModule)runtime.getJavaSupport().getJavaInterfaceTemplate().dup();
                 interfaceModule.setInstanceVariable("@java_class",javaClass);
                 addToJavaPackageModule(interfaceModule,javaClass);
-                interfaces.put(class_id,interfaceModule);
                 javaClass.setupInterfaceModule(interfaceModule);
                 // include any interfaces we extend
-                Class[] extended = javaClass.javaClass().getInterfaces();
+                final Class[] extended = javaClass.javaClass().getInterfaces();
                 for (int i = extended.length; --i >= 0; ) {
-                    JavaClass extendedClass = JavaClass.get(runtime,extended[i]);
-                    RubyModule extModule;
-                    if ((extModule =
-                            (RubyModule)interfaces.get(RubyNumeric.fix2int(extendedClass.id()))) == null) {
-                        extModule = (RubyModule)get_interface_module(recv,extendedClass);
-                    }
+                    JavaClass extendedClass = JavaClass.get(runtime, extended[i]);
+                    RubyModule extModule = (RubyModule)get_interface_module(recv, extendedClass);
                     interfaceModule.includeModule(extModule);
                 }
-                for(Iterator iter = pdata.extenders.iterator(); iter.hasNext(); ) {
-                    ((IRubyObject)iter.next()).callMethod(
-                            runtime.getCurrentContext(), "extend_proxy", interfaceModule);
-                }
             }
+        } finally {
+            javaClass.unlockProxy();
         }
         return interfaceModule;
     }
@@ -232,131 +215,116 @@ public class Java {
     // Note: this isn't really all that deprecated, as it is used for
     // internal purposes, at least for now. But users should be discouraged
     // from calling this directly; eventually it will go away.
-    public static IRubyObject get_deprecated_interface_proxy(IRubyObject recv, IRubyObject java_class_object) {
-        Ruby runtime = recv.getRuntime();
-        JavaClass java_class;
-        if (java_class_object instanceof RubyString) {
-            java_class = JavaClass.for_name(recv, java_class_object);
-        } else if (java_class_object instanceof JavaClass) {
-            java_class = (JavaClass)java_class_object;
+    public static IRubyObject get_deprecated_interface_proxy(final IRubyObject recv, final IRubyObject javaClassObject) {
+        final Ruby runtime = recv.getRuntime();
+        final JavaClass javaClass;
+        if (javaClassObject instanceof RubyString) {
+            javaClass = JavaClass.for_name(recv, javaClassObject);
+        } else if (javaClassObject instanceof JavaClass) {
+            javaClass = (JavaClass)javaClassObject;
         } else  {
-            throw runtime.newArgumentError("expected JavaClass, got " + java_class_object);
+            throw runtime.newArgumentError("expected JavaClass, got " + javaClassObject);
         }
-        if (!java_class.javaClass().isInterface()) {
-            throw runtime.newArgumentError("expected Java interface class, got " + java_class_object);
+        if (!javaClass.javaClass().isInterface()) {
+            throw runtime.newArgumentError("expected Java interface class, got " + javaClassObject);
         }
-        int class_id = RubyNumeric.fix2int(java_class.id());
-        ProxyData pdata = ((ProxyData)recv.dataGetStruct());
-        IntHashMap proxy_classes = pdata.classes;
-        RubyClass proxy_class;
-        synchronized(java_class) {
-            if((proxy_class = (RubyClass)proxy_classes.get(class_id)) == null) {
-                RubyModule interfaceModule = (RubyModule)get_interface_module(recv,java_class);
-                proxy_class = createProxyClass(recv,runtime.getClass("InterfaceJavaProxy"),
-                        java_class,true,proxy_classes,class_id);
+        RubyClass proxyClass;
+        if ((proxyClass = javaClass.getProxyClass()) != null) {
+            return proxyClass;
+        }
+        javaClass.lockProxy();
+        try {
+            if((proxyClass = javaClass.getProxyClass()) == null) {
+                final RubyModule interfaceModule = (RubyModule)get_interface_module(recv, javaClass);
+                proxyClass = RubyClass.newClass(
+                        recv, new IRubyObject[]{ runtime.getClass("InterfaceJavaProxy") },
+                        Block.NULL_BLOCK, true);
+                proxyClass.callMethod(recv.getRuntime().getCurrentContext(), "java_class=", javaClass);
                 // including interface module so old-style interface "subclasses" will
                 // respond correctly to #kind_of?, etc.
-                proxy_class.includeModule(interfaceModule);
+                proxyClass.includeModule(interfaceModule);
+                javaClass.setupProxy(proxyClass);
                 // add reference to interface module
-                if (proxy_class.getConstantAt("Includable") == null) {
-                    proxy_class.const_set(runtime.newSymbol("Includable"),interfaceModule);
+                if (proxyClass.getConstantAt("Includable") == null) {
+                    proxyClass.setConstant("Includable", interfaceModule);
                 }
 
-                for(Iterator iter = pdata.extenders.iterator(); iter.hasNext(); ) {
-                    ((IRubyObject)iter.next()).callMethod(
-                            runtime.getCurrentContext(), "extend_proxy", proxy_class);
-                }
             }
+        } finally {
+            javaClass.unlockProxy();
         }
-        return proxy_class;
+        return proxyClass;
     }
 
-    public static IRubyObject get_proxy_class(IRubyObject recv, IRubyObject java_class_object) {
-        Ruby runtime = recv.getRuntime();
-        JavaClass java_class;
+    public static IRubyObject get_proxy_class(final IRubyObject recv, final IRubyObject java_class_object) {
+        final Ruby runtime = recv.getRuntime();
+        final JavaClass javaClass;
         if (java_class_object instanceof RubyString) {
-            java_class = JavaClass.for_name(recv, java_class_object);
+            javaClass = JavaClass.for_name(recv, java_class_object);
         } else if (java_class_object instanceof JavaClass) {
-            java_class = (JavaClass)java_class_object;
+            javaClass = (JavaClass)java_class_object;
         } else  {
             throw runtime.newArgumentError("expected JavaClass, got " + java_class_object);
         }
-        Class c;
-        if ((c = java_class.javaClass()).isInterface() && !supportExtendableInterfaces()) {
-            return get_interface_module(recv,java_class);
+        RubyClass proxyClass;
+        final Class c;
+        if ((c = javaClass.javaClass()).isInterface()) {
+            return get_interface_module(recv,javaClass);
         }
-        int class_id = RubyNumeric.fix2int(java_class.id());
-        ProxyData pdata = ((ProxyData)recv.dataGetStruct());
-        IntHashMap proxy_classes = pdata.classes;
-        RubyClass proxy_class;
-        synchronized(java_class) {
-            if((proxy_class = (RubyClass)proxy_classes.get(class_id)) == null) {
+        if ((proxyClass = javaClass.getProxyClass()) != null) {
+            return proxyClass;
+        }
+        javaClass.lockProxy();
+        try {
+            if((proxyClass = javaClass.getProxyClass()) == null) {
 
-                if(c.isInterface()) {
-                    RubyModule interfaceModule = (RubyModule)get_interface_module(recv,java_class);
-                    // backwards compatibility mode
-                    proxy_class = createProxyClass(recv,
-                            runtime.getClass("InterfaceJavaProxy"),
-                            java_class, true, proxy_classes, class_id);
-                    // including interface module so old-style interface "subclasses" will
-                    // respond correctly to #kind_of?, etc.
-                    proxy_class.includeModule(interfaceModule);
-                    // add reference to interface module
-                    if (proxy_class.getConstantAt("Includable") == null) {
-                        proxy_class.const_set(runtime.newSymbol("Includable"),interfaceModule);
-                    }
-                    
-                } else if(c.isArray()) {
-                    proxy_class = createProxyClass(recv,
+                if(c.isArray()) {
+                    proxyClass = createProxyClass(recv,
                             runtime.getJavaSupport().getArrayProxyClass(),
-                            java_class, true, proxy_classes, class_id);
+                            javaClass, true);
 
                 } else if (c.isPrimitive()) {
-                    proxy_class = createProxyClass(recv,
+                    proxyClass = createProxyClass(recv,
                             runtime.getJavaSupport().getConcreteProxyClass(),
-                            java_class, true, proxy_classes, class_id);
+                            javaClass, true);
 
                 } else if (c == Object.class) {
                     // java.lang.Object is added at root of java proxy classes
-                    proxy_class = createProxyClass(recv,
+                    proxyClass = createProxyClass(recv,
                             runtime.getJavaSupport().getConcreteProxyClass(),
-                            java_class, true, proxy_classes, class_id);
-                    proxy_class.getMetaClass().defineFastMethod("inherited", pdata.callback);
-                    addToJavaPackageModule(proxy_class, java_class);
+                            javaClass, true);
+                    proxyClass.getMetaClass().defineFastMethod("inherited",
+                            runtime.getJavaSupport().getConcreteProxyCallback());
+                    addToJavaPackageModule(proxyClass, javaClass);
 
                 } else {
                     // other java proxy classes added under their superclass' java proxy
-                    proxy_class = createProxyClass(recv,
+                    proxyClass = createProxyClass(recv,
                             get_proxy_class(recv,runtime.newString(c.getSuperclass().getName())),
-                            java_class, false, proxy_classes, class_id);
+                            javaClass, false);
 
                     // include interface modules into the proxy class
                     Class[] interfaces = c.getInterfaces();
                     for (int i = interfaces.length; --i >= 0; ) {
                         JavaClass ifc = JavaClass.get(runtime,interfaces[i]);
-                        proxy_class.includeModule(get_interface_module(recv,ifc));
+                        proxyClass.includeModule(get_interface_module(recv,ifc));
                     }
                     if (Modifier.isPublic(c.getModifiers())) {
-                        addToJavaPackageModule(proxy_class, java_class);
+                        addToJavaPackageModule(proxyClass, javaClass);
                     }
                 }
-                for(Iterator iter = pdata.extenders.iterator(); iter.hasNext(); ) {
-                    ((IRubyObject)iter.next()).callMethod(
-                            runtime.getCurrentContext(), "extend_proxy", proxy_class);
-                }
             }
+        } finally {
+            javaClass.unlockProxy();
         }
-        return proxy_class;
+        return proxyClass;
     }
     
-    private static RubyClass createProxyClass(IRubyObject recv, IRubyObject baseType,
-            JavaClass javaClass, boolean invokeInherited, IntHashMap proxyClasses, int classId ) {
-        RubyClass proxyClass = RubyClass.newClass(recv, new IRubyObject[]{ baseType },
+    private static RubyClass createProxyClass(final IRubyObject recv, final IRubyObject baseType,
+            final JavaClass javaClass, final boolean invokeInherited) {
+        final RubyClass proxyClass = RubyClass.newClass(recv, new IRubyObject[]{ baseType },
                 Block.NULL_BLOCK, invokeInherited);
         proxyClass.callMethod(recv.getRuntime().getCurrentContext(), "java_class=", javaClass);
-        proxyClasses.put(classId, proxyClass);
-        // We do not setup the proxy before we register it so that same-typed constants do
-        // not try and create a fresh proxy class and go into an infinite loop
         javaClass.setupProxy(proxyClass);
         return proxyClass;
     }
@@ -465,7 +433,7 @@ public class Java {
     
     
     public static IRubyObject matching_method(IRubyObject recv, IRubyObject methods, IRubyObject args) {
-        Map matchCache = ((ProxyData)recv.dataGetStruct()).matchCache;
+        Map matchCache = recv.getRuntime().getJavaSupport().getMatchCache();
 
         List arg_types = new ArrayList();
         int alen = ((RubyArray)args).getLength();
@@ -539,7 +507,7 @@ public class Java {
     }
 
     public static IRubyObject matching_method_internal(IRubyObject recv, IRubyObject methods, IRubyObject[] args, int start, int len) {
-        Map matchCache = ((ProxyData)recv.dataGetStruct()).matchCache;
+        Map matchCache = recv.getRuntime().getJavaSupport().getMatchCache();
 
         List arg_types = new ArrayList();
         int aend = start+len;

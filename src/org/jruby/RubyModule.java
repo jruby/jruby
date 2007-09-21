@@ -140,7 +140,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    private RubyClass searchClassProviders(String name, RubyClass superClazz) {
+    private RubyClass searchProvidersForClass(String name, RubyClass superClazz) {
         if (classProviders != null) {
             synchronized(classProviders) {
                 RubyClass clazz;
@@ -155,6 +155,20 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
+    private RubyModule searchProvidersForModule(String name) {
+        if (classProviders != null) {
+            synchronized(classProviders) {
+                RubyModule module;
+                for (Iterator iter = classProviders.iterator(); iter.hasNext(); ) {
+                    if ((module = ((ClassProvider)iter.next())
+                            .defineModuleUnder(this, name)) != null) {
+                        return module;
+                    }
+                }
+            }
+        }
+        return null;
+    }
     protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parent, String name) {
         this(runtime, metaClass, superClass, parent, name, runtime.isObjectSpaceEnabled());
     }
@@ -991,7 +1005,7 @@ public class RubyModule extends RubyObject {
         
         if (type == null || (type instanceof RubyUndef)) {
             if (classProviders != null) {
-                if ((type = searchClassProviders(name, superClazz)) != null) {
+                if ((type = searchProvidersForClass(name, superClazz)) != null) {
                     return (RubyClass)type;
                 }
             }
@@ -1031,6 +1045,11 @@ public class RubyModule extends RubyObject {
         IRubyObject type = getConstantAt(name);
 
         if (type == null) {
+            if (classProviders != null) {
+                if ((type = searchProvidersForModule(name)) != null) {
+                    return (RubyModule)type;
+                }
+            }
             return getRuntime().defineModuleUnder(name, this);
         }
 

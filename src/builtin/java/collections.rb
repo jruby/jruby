@@ -1,5 +1,5 @@
 # TODO java.util.Comparator support?
-JavaUtilities.extend_proxy('java.util.Map') {
+module java::util::Map
   include Enumerable
   def each(&block)
     entrySet.each { |pair| block.call([pair.key, pair.value]) }
@@ -11,17 +11,17 @@ JavaUtilities.extend_proxy('java.util.Map') {
     put(key,val)
     val
   end
-}
+end
   
-JavaUtilities.extend_proxy('java.lang.Comparable') {
+module java::lang::Comparable
   include Comparable
   def <=>(a)
     return nil if a.nil?
     compareTo(a)
   end
-}
+end
 
-JavaUtilities.extend_proxy('java.util.Collection') { 
+module java::util::Collection
   include Enumerable
   def each(&block)
     iter = iterator
@@ -46,9 +46,9 @@ JavaUtilities.extend_proxy('java.util.Collection') {
   def join(*args)
     self.to_a.join(*args)
   end
-}
+end
 
-JavaUtilities.extend_proxy('java.util.Enumeration') {
+module java::util::Enumeration
   include Enumerable
   
   def each
@@ -56,9 +56,9 @@ JavaUtilities.extend_proxy('java.util.Enumeration') {
       yield next_element
     end
   end
-}
+end
 
-JavaUtilities.extend_proxy('java.util.Iterator') {
+module java::util::Iterator
   include Enumerable
   
   def each
@@ -66,9 +66,9 @@ JavaUtilities.extend_proxy('java.util.Iterator') {
       yield self.next
     end
   end
-}
+end
 
-JavaUtilities.extend_proxy('java.util.List') {
+module java::util::List
   def [](ix)
     if ix < size
       get(ix)
@@ -84,11 +84,7 @@ JavaUtilities.extend_proxy('java.util.List') {
     val
   end
   def sort()
-    include_class 'java.util.ArrayList'
-    include_class 'java.util.Collections'
-    include_class 'java.util.Comparator'
-
-    comparator = Comparator.new
+    comparator = java::util::Comparator.new
 
     if block_given?
       class << comparator
@@ -100,17 +96,15 @@ JavaUtilities.extend_proxy('java.util.List') {
       end
     end
 
-    list = ArrayList.new
+    list = java::util::ArrayList.new
     list.addAll(self)
 
-    Collections.sort(list, comparator)
+    java::util::Collections.sort(list, comparator)
 
     list
   end
   def sort!()
-    include_class 'java.util.Collections'
-    include_class 'java.util.Comparator'
-    comparator = Comparator.new
+    comparator = java::util::Comparator.new
     if block_given?
       class << comparator
         def compare(o1, o2); yield(o1, o2); end
@@ -121,7 +115,7 @@ JavaUtilities.extend_proxy('java.util.List') {
       end
     end
 
-    Collections.sort(java_object, comparator)
+    java::util::Collections.sort(java_object, comparator)
 
     self
   end
@@ -129,4 +123,4 @@ JavaUtilities.extend_proxy('java.util.List') {
     p = yield(*args)
     p p
   end
-}
+end

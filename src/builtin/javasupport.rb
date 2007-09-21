@@ -41,7 +41,9 @@ require 'builtin/javasupport/proxy/interface'
 require 'builtin/javasupport/utilities/base'
 require 'builtin/javasupport/utilities/array'
 require 'builtin/javasupport/core_ext'
-require 'builtin/java/ast'
-require 'builtin/java/exceptions'
+# interface extenders need to load before concrete implementors
 require 'builtin/java/collections'
 require 'builtin/java/interfaces'
+require 'builtin/java/exceptions'
+# AST code pulls in concrete java.util.ArrayList
+require 'builtin/java/ast'

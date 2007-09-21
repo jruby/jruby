@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -451,18 +452,17 @@ public class JavaClass extends JavaObject {
 
     private static class ConstantField {
         static final int CONSTANT = Modifier.FINAL | Modifier.PUBLIC | Modifier.STATIC;
-        Field field;
+        final Field field;
         ConstantField(Field field) {
             this.field = field;
         }
-        void install(RubyModule proxy) {
+        void install(final RubyModule proxy) {
             if (proxy.getConstantAt(field.getName()) == null) {
-                JavaField javaField = new JavaField(proxy.getRuntime(),field);
-                RubyString name = javaField.name();
-                proxy.const_set(name,Java.java_to_ruby(proxy,javaField.static_value(),Block.NULL_BLOCK));
+                final JavaField javaField = new JavaField(proxy.getRuntime(),field);
+                proxy.const_set(javaField.name(),Java.java_to_ruby(proxy,javaField.static_value(),Block.NULL_BLOCK));
             }
         }
-        static boolean isConstant(Field field) {
+        static boolean isConstant(final Field field) {
             return (field.getModifiers() & CONSTANT) == CONSTANT &&
                 Character.isUpperCase(field.getName().charAt(0));
         }
@@ -478,6 +478,62 @@ public class JavaClass extends JavaObject {
     // caching constructors, as they're accessed for each new instance
     private RubyArray constructors;
     
+    private volatile ArrayList<IRubyObject> proxyExtenders;
+
+    // proxy module for interfaces
+    private volatile RubyModule proxyModule;
+    
+    // proxy class for concrete classes.  also used for
+    // "concrete" interfaces, which is why we have two fields
+    private volatile RubyClass proxyClass;
+
+    // readable only by thread building proxy, so don't need to be
+    // volatile. used to handle recursive calls to getProxyClass/Module
+    // while proxy is being constructed (usually when a constant
+    // defined by a class is of the same type as that class).
+    private RubyModule unfinishedProxyModule;
+    private RubyClass unfinishedProxyClass;
+    
+    private final ReentrantLock proxyLock = new ReentrantLock();
+    
+    public RubyModule getProxyModule() {
+        // allow proxy to be read without synchronization. if proxy
+        // is under construction, only the building thread can see it.
+        RubyModule proxy;
+        if ((proxy = proxyModule) != null) {
+            // proxy is complete, return it
+            return proxy;
+        } else if (proxyLock.isHeldByCurrentThread()) {
+            // proxy is under construction, building thread can
+            // safely read non-volatile value
+            return unfinishedProxyModule; 
+        }
+        return null;
+    }
+    
+    public RubyClass getProxyClass() {
+        // allow proxy to be read without synchronization. if proxy
+        // is under construction, only the building thread can see it.
+        RubyClass proxy;
+        if ((proxy = proxyClass) != null) {
+            // proxy is complete, return it
+            return proxy;
+        } else if (proxyLock.isHeldByCurrentThread()) {
+            // proxy is under construction, building thread can
+            // safely read non-volatile value
+            return unfinishedProxyClass; 
+        }
+        return null;
+    }
+    
+    public void lockProxy() {
+        proxyLock.lock();
+    }
+    
+    public void unlockProxy() {
+        proxyLock.unlock();
+    }
+
     protected Map getStaticAssignedNames() {
         return staticAssignedNames;
     }
@@ -620,15 +676,23 @@ public class JavaClass extends JavaObject {
         this.constantFields = constantFields;
     }
     
-    public void setupProxy(RubyClass proxy) {
+    public void setupProxy(final RubyClass proxy) {
+        assert proxyLock.isHeldByCurrentThread();
         proxy.defineFastMethod("__jsend!", __jsend_method);
-        Class javaClass = javaClass();
+        final Class javaClass = javaClass();
         if (javaClass.isInterface()) {
             setupInterfaceProxy(proxy);
             return;
-        } else if (javaClass.isArray() || javaClass.isPrimitive()) {
+        }
+        assert this.proxyClass == null;
+        this.unfinishedProxyClass = proxy;
+        if (javaClass.isArray() || javaClass.isPrimitive()) {
+            // see note below re: 2-field kludge
+            this.proxyClass = proxy;
+            this.proxyModule = proxy;
             return;
         }
+
         for (Iterator iter = constantFields.iterator(); iter.hasNext(); ) {
             ((ConstantField)iter.next()).install(proxy);
         }
@@ -657,15 +721,21 @@ public class JavaClass extends JavaObject {
                 
                 // Ignore bad constant named inner classes pending JRUBY-697
                 if (IdUtil.isConstant(simpleName) && proxy.getConstantAt(simpleName) == null) {
-                    proxy.const_set(getRuntime().newString(simpleName),
+                    proxy.setConstant(simpleName,
                         Java.get_proxy_class(JAVA_UTILITIES,get(getRuntime(),clazz)));
                 }
             }
         }
+        // FIXME: bit of a kludge here (non-interface classes assigned to both
+        // class and module fields). simplifies proxy extender code, will go away
+        // when JI is overhauled (and proxy extenders are deprecated).
+        this.proxyClass = proxy;
+        this.proxyModule = proxy;
+
+        applyProxyExtenders();
+
         // TODO: we can probably release our references to the constantFields
-        // array and static/instance callback hashes at this point. I don't see
-        // a case where the proxy would be GC'd and we'd have to reinitialize.
-        // I suppose we could keep a reference to the proxy just to be sure...
+        // array and static/instance callback hashes at this point. 
     }
 
     private static void assignAliases(MethodCallback callback, Map assignedNames) {
@@ -755,35 +825,27 @@ public class JavaClass extends JavaObject {
     }
     
     
-    public void setupInterfaceProxy(RubyClass proxy) {
-        Class javaClass = javaClass();
-        for (Iterator iter = constantFields.iterator(); iter.hasNext(); ){
-            ((ConstantField)iter.next()).install(proxy);
-        }
-        // setup constants for public inner classes
-        Class[] classes = javaClass.getClasses();
-        for (int i = classes.length; --i >= 0; ) {
-            if (javaClass == classes[i].getDeclaringClass()) {
-                Class clazz = classes[i];
-                String simpleName = getSimpleName(clazz);
-                if (simpleName.length() == 0) continue;
-                
-                // Ignore bad constant named inner classes pending JRUBY-697
-                if (IdUtil.isConstant(simpleName) && proxy.getConstantAt(simpleName) == null) {
-                    proxy.const_set(getRuntime().newString(simpleName),
-                        Java.get_proxy_class(JAVA_UTILITIES,get(getRuntime(),clazz)));
-                }
-            }
-        }
+    // old (quasi-deprecated) interface class
+    private void setupInterfaceProxy(final RubyClass proxy) {
+        assert javaClass().isInterface();
+        assert proxyLock.isHeldByCurrentThread();
+        assert this.proxyClass == null;
+        this.proxyClass = proxy;
+        // nothing else to here - the module version will be
+        // included in the class.
     }
     
-    public void setupInterfaceModule(RubyModule module) {
-        Class javaClass = javaClass();
+    public void setupInterfaceModule(final RubyModule module) {
+        assert javaClass().isInterface();
+        assert proxyLock.isHeldByCurrentThread();
+        assert this.proxyModule == null;
+        this.unfinishedProxyModule = module;
+        final Class javaClass = javaClass();
         for (Iterator iter = constantFields.iterator(); iter.hasNext(); ){
             ((ConstantField)iter.next()).install(module);
         }
         // setup constants for public inner classes
-        Class[] classes = javaClass.getClasses();
+        final Class[] classes = javaClass.getClasses();
         for (int i = classes.length; --i >= 0; ) {
             if (javaClass == classes[i].getDeclaringClass()) {
                 Class clazz = classes[i];
@@ -797,10 +859,51 @@ public class JavaClass extends JavaObject {
                 }
             }
         }
+        
+        this.proxyModule = module;
+        applyProxyExtenders();
     }
 
-    // unsynchronized, so create won't hold up get by other threads
-    public static JavaClass get(Ruby runtime, Class klass) {
+    public synchronized void addProxyExtender(final IRubyObject extender) {
+        lockProxy();
+        try {
+            if (!extender.respondsTo("extend_proxy")) {
+                throw getRuntime().newTypeError("proxy extender must have an extend_proxy method");
+            }
+            if (proxyModule == null) {
+                if (proxyExtenders == null) {
+                    proxyExtenders = new ArrayList<IRubyObject>();
+                }
+                proxyExtenders.add(extender);
+            } else {
+                getRuntime().getWarnings().warn(" proxy extender added after proxy class created for " + this);
+                extendProxy(extender);
+            }
+        } finally {
+            unlockProxy();
+        }
+    }
+    
+    private void applyProxyExtenders() {
+        ArrayList<IRubyObject> extenders;
+        if ((extenders = proxyExtenders) != null) {
+            for (IRubyObject extender : extenders) {
+                extendProxy(extender);
+            }
+            proxyExtenders = null;
+        }
+    }
+
+    private void extendProxy(final IRubyObject extender) {
+        extender.callMethod(getRuntime().getCurrentContext(), "extend_proxy", proxyModule);
+    }
+    
+    public IRubyObject extend_proxy(final IRubyObject extender) {
+        addProxyExtender(extender);
+        return getRuntime().getNil();
+    }
+    
+    public static JavaClass get(final Ruby runtime, final Class klass) {
         JavaClass javaClass = runtime.getJavaSupport().getJavaClassFromCache(klass);
         if (javaClass == null) {
             javaClass = createJavaClass(runtime,klass);
@@ -808,7 +911,7 @@ public class JavaClass extends JavaObject {
         return javaClass;
     }
 
-    private static synchronized JavaClass createJavaClass(Ruby runtime,Class klass) {
+    private static synchronized JavaClass createJavaClass(final Ruby runtime, final Class klass) {
         // double-check the cache now that we're synchronized
         JavaClass javaClass = runtime.getJavaSupport().getJavaClassFromCache(klass);
         if (javaClass == null) {
@@ -898,6 +1001,9 @@ public class JavaClass extends JavaObject {
                 callbackFactory.getFastMethod("declared_classes"));
         result.defineFastMethod("declared_method", 
                 callbackFactory.getFastOptMethod("declared_method"));
+
+        result.defineFastMethod("extend_proxy", 
+                callbackFactory.getFastMethod("extend_proxy", IRubyObject.class));
 
         result.getMetaClass().undefineMethod("new");
         result.getMetaClass().undefineMethod("allocate");
@@ -1276,4 +1382,5 @@ public class JavaClass extends JavaObject {
         }
         return JavaClass.get(getRuntime(), javaClass().getComponentType());
     }
+    
 }

@@ -1,6 +1,7 @@
 module JavaUtilities
   def JavaUtilities.extend_proxy(java_class_name, &block)
-	add_proxy_extender JavaInterfaceExtender.new(java_class_name, &block)
+    java_class = Java::JavaClass.for_name(java_class_name)
+    java_class.extend_proxy JavaInterfaceExtender.new(java_class_name, &block)
   end
 
   def JavaUtilities.setup_java_subclass(subclass, java_class)
