@@ -1112,15 +1112,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeUtilityMethod("ensureMultipleAssignableRubyArray", cg.sig(RubyArray.class, cg.params(Ruby.class, IRubyObject.class, boolean.class)));
         }
 
-        public void forEachInValueArray(int start, int count, Object source, ArrayCallback callback, ArrayCallback nilCallback) {
+        public void forEachInValueArray(int start, int count, Object source, ArrayCallback callback, ArrayCallback nilCallback, ClosureCallback argsCallback) {
             for (; start < count; start++) {
                 Label noMoreArrayElements = new Label();
                 Label doneWithElement = new Label();
+                
                 // confirm we're not past the end of the array
                 method.dup(); // dup the original array object
                 method.invokevirtual(cg.p(RubyArray.class), "getLength", cg.sig(Integer.TYPE));
                 method.ldc(new Integer(start));
                 method.if_icmple(noMoreArrayElements); // if length <= start, end loop
+                
                 // extract item from array
                 method.dup(); // dup the original array object
                 method.ldc(new Integer(start)); // index for the item
@@ -1135,6 +1137,32 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 // end of this element
                 method.label(doneWithElement);
                 // normal assignment leaves the value; pop it.
+                method.pop();
+            }
+            
+            if (argsCallback != null) {
+                Label emptyArray = new Label();
+                Label readyForArgs = new Label();
+                // confirm we're not past the end of the array
+                method.dup(); // dup the original array object
+                method.invokevirtual(cg.p(RubyArray.class), "getLength", cg.sig(Integer.TYPE));
+                method.ldc(new Integer(start));
+                method.if_icmple(emptyArray); // if length <= start, end loop
+                
+                // assign remaining elements as an array for rest args
+                method.dup(); // dup the original array object
+                method.ldc(start);
+                invokeUtilityMethod("createSubarray", cg.sig(RubyArray.class, RubyArray.class, int.class));
+                method.go_to(readyForArgs);
+                
+                // create empty array
+                method.label(emptyArray);
+                createEmptyArray();
+                
+                // assign rest args
+                method.label(readyForArgs);
+                argsCallback.compile(this);
+                //consume leftover assigned value
                 method.pop();
             }
         }

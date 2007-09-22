@@ -561,4 +561,8 @@ public class CompilerHelpers {
             return implementationClass;
         }
     }
+    
+    public static RubyArray createSubarray(RubyArray input, int start) {
+        return (RubyArray)input.subseqLight(start, input.size() - start);
+    }
 }

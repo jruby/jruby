@@ -115,6 +115,7 @@ import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.SClassNode;
+import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
 import org.jruby.ast.UndefNode;
 import org.jruby.ast.UntilNode;
@@ -2216,63 +2217,59 @@ public class NodeCompilerFactory {
     public static void compileMultipleAsgnAssignment(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
-        MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)node;
+        final MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)node;
         
         context.ensureMultipleAssignableRubyArray(multipleAsgnNode.getHeadNode() != null);
         
-        if (multipleAsgnNode.getHeadNode() != null) {
-            // normal items at the "head" of the masgn
-            ArrayCallback headAssignCallback = new ArrayCallback() {
-                public void nextValue(MethodCompiler context, Object sourceArray,
-                                      int index) {
-                    ListNode headNode = (ListNode)sourceArray;
-                    Node assignNode = headNode.get(index);
-                    
-                    // perform assignment for the next node
-                    compileAssignment(assignNode, context);
-                }
-            };
-            
-            // head items for which we've run out of assignable elements
-            ArrayCallback headNilCallback = new ArrayCallback() {
-                public void nextValue(MethodCompiler context, Object sourceArray,
-                                      int index) {
-                    ListNode headNode = (ListNode)sourceArray;
-                    Node assignNode = headNode.get(index);
-                    
-                    // perform assignment for the next node
-                    context.loadNil();
-                    compileAssignment(assignNode, context);
-                }
-            };
+        // normal items at the "head" of the masgn
+        ArrayCallback headAssignCallback = new ArrayCallback() {
+            public void nextValue(MethodCompiler context, Object sourceArray,
+                                  int index) {
+                ListNode headNode = (ListNode)sourceArray;
+                Node assignNode = headNode.get(index);
 
-            context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, headNilCallback);
-        }
-        
-        // FIXME: This needs to fit in somewhere
-        //if (callAsProc && iter.hasNext()) {
-        //    throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
-        //}
-        
-        { // "args node" handling
-            Node argsNode = multipleAsgnNode.getArgsNode();
-            if (argsNode != null) {
-                throw new NotCompilableException("Can't compile multiple assignment with special args");
-//                if (argsNode instanceof StarNode) {
-//                    // no check for '*'
-//                } else {
-//                    BranchCallback trueBranch = new BranchCallback() {
-//                        public void branch(MethodCompiler context) {
-//                            
-//                        }
-//                    };
-//                    
-//                    // check if the number of variables is exceeded by the number of values in the array
-//                    // the number of values
-//                    context.loadRubyArraySize();
-//                    context.loadInteger(varLen);
-//                    //context.performLTBranch(trueBranch, falseBranch);
-//                } 
+                // perform assignment for the next node
+                compileAssignment(assignNode, context);
+            }
+        };
+
+        // head items for which we've run out of assignable elements
+        ArrayCallback headNilCallback = new ArrayCallback() {
+            public void nextValue(MethodCompiler context, Object sourceArray,
+                                  int index) {
+                ListNode headNode = (ListNode)sourceArray;
+                Node assignNode = headNode.get(index);
+
+                // perform assignment for the next node
+                context.loadNil();
+                compileAssignment(assignNode, context);
+            }
+        };
+
+        ClosureCallback argsCallback = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                Node argsNode = multipleAsgnNode.getArgsNode();
+                if (argsNode instanceof StarNode) {
+                    // done processing args
+                    context.loadNil();
+                } else {
+                    // assign to appropriate variable
+                    NodeCompilerFactory.compileAssignment(argsNode, context);
+                }
+            }
+        };
+
+        if (multipleAsgnNode.getHeadNode() == null) {
+            if (multipleAsgnNode.getArgsNode() == null) {
+                throw new NotCompilableException("Something's wrong, multiple assignment with no head or args at: " + multipleAsgnNode.getPosition());
+            } else {
+                context.forEachInValueArray(0, 0, null, null, null, argsCallback);
+            }
+        } else {
+            if (multipleAsgnNode.getArgsNode() == null) {
+                context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, headNilCallback, null);
+            } else {
+                context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, headNilCallback, argsCallback);
             }
         }
     }

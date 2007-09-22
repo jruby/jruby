@@ -194,15 +194,19 @@ test_no_exception {
   test_equal([1], compile_and_run("[[1]].each {|@a|}; @a"))
 }
 
+# blocks with tail (rest) arguments
+test_no_exception {
+  test_equal([2,3], compile_and_run("[[1,2,3]].each {|x,*y| break y}"))
+  test_equal([], compile_and_run("1.times {|x,*y| break y}"))
+  test_no_exception { compile_and_run("1.times {|x,*|}")}
+}
+
 # blocks with unsupported arg layouts should still raise error
 test_exception {
   compile_and_run("1.times {|@@a|}")
 }
 test_exception {
   compile_and_run("1.times {|a[0]|}")
-}
-test_exception {
-  compile_and_run("1.times {|*x|}")
 }
 
 class_string = <<EOS
