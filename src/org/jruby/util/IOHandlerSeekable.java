@@ -306,7 +306,6 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
      */
     public void sync() throws IOException {
         flushWrite();
-        channel.force(false);
     }
 
     public ByteList sysread(int number) throws IOException, BadDescriptorException {
