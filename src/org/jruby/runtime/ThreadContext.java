@@ -298,13 +298,13 @@ public final class ThreadContext {
     }
     
     private void pushCallFrame(RubyModule clazz, String name, 
-                               IRubyObject self, IRubyObject[] args, int req, Block block, JumpTarget jumpTarget) {
-        pushFrame(clazz, name, self, args, req, block, jumpTarget);        
+                               IRubyObject self, Block block, JumpTarget jumpTarget) {
+        pushFrame(clazz, name, self, block, jumpTarget);        
     }
 
     private void pushFrame(RubyModule clazz, String name, 
-                               IRubyObject self, IRubyObject[] args, int req, Block block, JumpTarget jumpTarget) {
-        frameStack[++frameIndex].updateFrame(clazz, self, name, args, req, block, getPosition(), jumpTarget);
+                               IRubyObject self, Block block, JumpTarget jumpTarget) {
+        frameStack[++frameIndex].updateFrame(clazz, self, name, block, getPosition(), jumpTarget);
         expandFramesIfNecessary();
     }
     
@@ -341,14 +341,6 @@ public final class ThreadContext {
     
     public String getFrameName() {
         return getCurrentFrame().getName();
-    }
-    
-    public IRubyObject[] getFrameArgs() {
-        return getCurrentFrame().getArgs();
-    }
-    
-    public void setFrameArgs(IRubyObject[] args) {
-        getCurrentFrame().setArgs(args);
     }
     
     public IRubyObject getFrameSelf() {
@@ -655,7 +647,7 @@ public final class ThreadContext {
     public void preMethodCall(RubyModule implementationClass, RubyModule clazz,  IRubyObject self, String name, IRubyObject[] args,
             int req, Block block, JumpTarget jumpTarget) {
         pushRubyClass(implementationClass);
-        pushCallFrame(clazz, name, self, args, req, block, jumpTarget);
+        pushCallFrame(clazz, name, self, block, jumpTarget);
     }
     
     public void postMethodCall() {
@@ -670,7 +662,7 @@ public final class ThreadContext {
         if (implementationClass == null) {
             implementationClass = clazz;
         }
-        pushCallFrame(clazz, name, self, args, req, block, jumpTarget);
+        pushCallFrame(clazz, name, self, block, jumpTarget);
         pushScope(new DynamicScope(staticScope));
         pushRubyClass(implementationClass);
     }
@@ -684,7 +676,7 @@ public final class ThreadContext {
     public void preJavaMethodFull(RubyModule klazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block,
             JumpTarget jumpTarget) {
         pushRubyClass(klazz);
-        pushCallFrame(klazz, name, self, args, req, block, jumpTarget);
+        pushCallFrame(klazz, name, self, block, jumpTarget);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     
@@ -707,7 +699,7 @@ public final class ThreadContext {
     
     public void preNodeEval(RubyModule rubyClass, IRubyObject self) {
         pushRubyClass(rubyClass);
-        pushCallFrame(null, null, self, IRubyObject.NULL_ARRAY, 0, Block.NULL_BLOCK, null);
+        pushCallFrame(null, null, self, Block.NULL_BLOCK, null);
         // set visibility to private, since toplevel of scripts always started out private
         setCurrentVisibility(Visibility.PRIVATE);
     }
@@ -726,7 +718,7 @@ public final class ThreadContext {
         StaticScope sScope = new BlockStaticScope(scope.getStaticScope());
         sScope.setModule(executeUnderClass);
         pushScope(new DynamicScope(sScope, scope));
-        pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), frame.getArgs(), frame.getRequiredArgCount(), block, frame.getJumpTarget());
+        pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), block, frame.getJumpTarget());
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     

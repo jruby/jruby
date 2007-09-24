@@ -81,9 +81,9 @@ public class ArgsNode extends Node {
         if (getRestArg() == -2) {
             arity = Arity.optional();
         } else if (getOptArgs() != null || getRestArg() >= 0) {
-            arity = Arity.required(getArgsCount());
+            arity = Arity.required(getRequiredArgsCount());
         } else {   
-            arity = Arity.createArity(getArgsCount());
+            arity = Arity.createArity(getRequiredArgsCount());
         }
     }
     
@@ -106,8 +106,12 @@ public class ArgsNode extends Node {
         return arity;
     }
     
-    public int getArgsCount() {
+    public int getRequiredArgsCount() {
         return arguments == null ? 0 : arguments.size();
+    }
+    
+    public int getOptionalArgsCount() {
+        return optArgs == null ? 0 : optArgs.size();
     }
 
     /**

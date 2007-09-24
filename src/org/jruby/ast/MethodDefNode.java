@@ -43,11 +43,16 @@ public abstract class MethodDefNode extends Node implements INameNode {
 
 	public MethodDefNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
 	        StaticScope scope, Node bodyNode, NodeType id) {
-		super(position, id);
-		this.nameNode = nameNode;
-		this.argsNode = argsNode;
-		this.scope = scope;
-		this.bodyNode = bodyNode;
+            super(position, id);
+            this.nameNode = nameNode;
+            this.argsNode = argsNode;
+            this.scope = scope;
+            this.bodyNode = bodyNode;
+
+            // store argument count information into scope
+            scope.setRequiredArgs(argsNode.getRequiredArgsCount());
+            scope.setOptionalArgs(argsNode.getOptionalArgsCount());
+            scope.setRestArg(argsNode.getRestArg());
 	}
 
 	/**

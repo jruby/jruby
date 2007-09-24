@@ -399,9 +399,8 @@ public class NodeCompilerFactory {
             compileZArray(node, context);
             break;
         case ZSUPERNODE:
-            throw new NotCompilableException("no-arg super call at: " + node.getPosition());
-//            compileZSuper(node, context);
-//            break;
+            compileZSuper(node, context);
+            break;
         default:
             assert false: "Unknown node encountered in compiler: " + node;
         }
@@ -1520,7 +1519,7 @@ public class NodeCompilerFactory {
     public static void compileArgs(Node node, MethodCompiler context) {
         ArgsNode argsNode = (ArgsNode)node;
         
-        int required = argsNode.getArgsCount();
+        int required = argsNode.getRequiredArgsCount();
         int restArg = argsNode.getRestArg();
         boolean hasOptArgs = argsNode.getOptArgs() != null;
         Arity arity = argsNode.getArity();
@@ -2896,7 +2895,7 @@ public class NodeCompilerFactory {
             // indicies. A skipped index means there's a hidden local var/arg like b above
             // and so we shouldn't try to compile.
             if (argsNode.getOptArgs() != null && argsNode.getOptArgs().size() > 0) {
-                int index = argsNode.getArgsCount() - 1;
+                int index = argsNode.getRequiredArgsCount() - 1;
                 
                 for (int i = 0; i < argsNode.getOptArgs().size(); i++) {
                     int newIndex = ((LocalAsgnNode)argsNode.getOptArgs().get(i)).getIndex();

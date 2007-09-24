@@ -3149,7 +3149,7 @@ case 452:
 case 453:
 					// line 1663 "DefaultRubyParser.y"
   {
-                  ((Token)yyVals[0+yyTop]).setValue(new Integer(-2));
+                  ((Token)yyVals[0+yyTop]).setValue(new Integer(support.getCurrentScope().getLocalScope().addVariable("*")));
                   yyVal = ((Token)yyVals[0+yyTop]);
               }
   break;

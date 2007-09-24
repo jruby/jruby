@@ -83,7 +83,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         this.body = body;
         this.staticScope = staticScope;
         this.argsNode = argsNode;
-        this.requiredArgsCount = argsNode.getArgsCount();
+        this.requiredArgsCount = argsNode.getRequiredArgsCount();
         this.restArg = argsNode.getRestArg();
         this.hasOptArgs = argsNode.getOptArgs() != null;
 		
@@ -231,13 +231,11 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
         // optArgs and restArgs require more work, so isolate them and ArrayList creation here
         if (hasOptArgs || restArg != -1) {
-            args = prepareOptOrRestArgs(context, runtime, args);
+            prepareOptOrRestArgs(context, runtime, args);
         }
-        
-        context.setFrameArgs(args);
     }
 
-    private IRubyObject[] prepareOptOrRestArgs(ThreadContext context, Ruby runtime, IRubyObject[] args) {
+    private void prepareOptOrRestArgs(ThreadContext context, Ruby runtime, IRubyObject[] args) {
         // we know we've at least got the required count at this point, so start with that
         int givenArgsCount = requiredArgsCount;
         
@@ -250,16 +248,6 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                 throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for " + maximumArgs + ")");
             }
         }
-        
-        int totalArgsCount = maximumArgs;
-        if (restArg != -1) totalArgsCount = Math.max(maximumArgs, args.length);
-        int currentArgIndex = 0;
-        
-        IRubyObject[] newArgs = new IRubyObject[totalArgsCount];
-        
-        // Combine required and given optional args into a single list allArgs
-        currentArgIndex += Math.min(maximumArgs, args.length);
-        System.arraycopy(args, 0, newArgs, 0, currentArgIndex);
         
         if (hasOptArgs) {
             ListNode optArgs = argsNode.getOptArgs();
@@ -274,7 +262,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
    
             // assign the default values, adding to the end of allArgs
             for (int i = 0; j < optArgs.size(); i++, j++) {
-                newArgs[currentArgIndex++] = EvaluationState.eval(runtime, context, optArgs.get(j), context.getFrameSelf(), Block.NULL_BLOCK);
+                EvaluationState.eval(runtime, context, optArgs.get(j), context.getFrameSelf(), Block.NULL_BLOCK);
             }
         }
         
@@ -289,9 +277,6 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         // named restarg ==> >=0
         // anonymous restarg ==> -2
         if (restArg != -1) {
-            int restArgsCount = args.length - givenArgsCount;
-            System.arraycopy(args, givenArgsCount, newArgs, currentArgIndex, restArgsCount);
-
             // only set in scope if named
             if (restArg >= 0) {
                 RubyArray array = runtime.newArray(args.length - givenArgsCount);
@@ -302,8 +287,6 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                 context.getCurrentScope().setValue(restArg, array, 0);
             }
         }
-        
-        return newArgs;
     }
 
     private void traceReturn(ThreadContext context, Ruby runtime, String name) {

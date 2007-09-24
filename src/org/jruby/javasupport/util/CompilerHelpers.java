@@ -356,10 +356,6 @@ public class CompilerHelpers {
                 }
             }
         }
-        
-        int nonRestMax = required + opt;
-        if (rest != -1) nonRestMax = Math.max(given, nonRestMax);
-        context.setFrameArgs(new IRubyObject[nonRestMax]);
     }
     
     public static String getLocalJumpTypeOrRethrow(RaiseException re) {
@@ -491,8 +487,7 @@ public class CompilerHelpers {
         // Has the method that is calling super received a block argument
         if (!block.isGiven()) block = context.getCurrentFrame().getBlock(); 
         
-        context.getCurrentScope().getArgValues(context.getFrameArgs(),context.getCurrentFrame().getRequiredArgCount());
-        return self.callSuper(context, context.getFrameArgs(), block);
+        return self.callSuper(context, context.getCurrentScope().getArgValues(), block);
     }
     
     public static IRubyObject[] appendToObjectArray(IRubyObject[] array, IRubyObject add) {

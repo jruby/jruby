@@ -1183,16 +1183,8 @@ public class RubyModule extends RubyObject {
             if (this == method.getImplementationClass()) {
                 method.setVisibility(visibility);
             } else {
-                addMethod(name, new FullFunctionCallbackMethod(this, new Callback() {
-                    public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                        ThreadContext tc = self.getRuntime().getCurrentContext();
-                        return self.callSuper(tc, tc.getFrameArgs(), block);
-                    }
-
-                    public Arity getArity() {
-                        return Arity.optional();
-                    }
-                }, visibility));
+                // FIXME: Why was this using a FullFunctionCallbackMethod before that did callSuper?
+                addMethod(name, new WrapperMethod(this, method, visibility));
             }
         }
     }
@@ -1249,6 +1241,11 @@ public class RubyModule extends RubyObject {
             proc.getBlock().isLambda = true;
             proc.getBlock().getFrame().setKlazz(this);
             proc.getBlock().getFrame().setName(name);
+            
+            // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
+            proc.getBlock().getDynamicScope().getStaticScope().setArgumentScope(true);
+            // just using required is broken...but no more broken than before zsuper refactoring
+            proc.getBlock().getDynamicScope().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
 
             newMethod = new ProcMethod(this, proc, visibility);
         } else if (args[1].isKindOf(getRuntime().getClass("Method"))) {

@@ -63,6 +63,18 @@ public abstract class StaticScope implements Serializable {
     // Our name holder (offsets are assigned as variables are added
     private String[] variableNames;
     
+    // number of variables in this scope representing required arguments
+    private int requiredArgs = 0;
+    
+    // number of variables in this scope representing optional arguments
+    private int optionalArgs = 0;
+    
+    // index of variable that represents a "rest" arg
+    private int restArg = -1;
+    
+    // Whether this scope is used as the "argument scope" for e.g. zsuper
+    private boolean isArgumentScope = false;
+    
     protected StaticScope(StaticScope enclosingScope) {
         this.enclosingScope = enclosingScope;
     }
@@ -245,5 +257,37 @@ public abstract class StaticScope implements Serializable {
         }
         
         return cref;
+    }
+
+    public int getOptionalArgs() {
+        return optionalArgs;
+    }
+
+    public void setOptionalArgs(int optionalArgs) {
+        this.optionalArgs = optionalArgs;
+    }
+
+    public int getRequiredArgs() {
+        return requiredArgs;
+    }
+
+    public void setRequiredArgs(int requiredArgs) {
+        this.requiredArgs = requiredArgs;
+    }
+
+    public int getRestArg() {
+        return restArg;
+    }
+
+    public void setRestArg(int restArg) {
+        this.restArg = restArg;
+    }
+    
+    public boolean isArgumentScope() {
+        return isArgumentScope;
+    }
+    
+    public void setArgumentScope(boolean isArgumentScope) {
+        this.isArgumentScope = isArgumentScope;
     }
 }

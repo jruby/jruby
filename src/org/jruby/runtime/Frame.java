@@ -66,14 +66,6 @@ public final class Frame implements JumpTarget {
      * and do not have a name.
      */
     private String name;
-    
-    /**
-     * The arguments passed into the method of this frame.   The frame captures arguments
-     * so that they can be reused for things like super/zsuper.
-     */
-    private IRubyObject[] args;
-
-    private int requiredArgCount;
 
     /**
      * The block that was passed in for this frame (as either a block or a &amp;block argument).
@@ -114,21 +106,13 @@ public final class Frame implements JumpTarget {
     private ISourcePosition position;
 
     public void updateFrame(ISourcePosition position) {
-        updateFrame(null, null, null, IRubyObject.NULL_ARRAY, 0, Block.NULL_BLOCK, position, null); 
+        updateFrame(null, null, null, Block.NULL_BLOCK, position, null); 
     }
 
     public void updateFrame(Frame frame) {
         assert frame.block != null : "Block uses null object pattern.  It should NEVER be null";
-        
-        if (frame.args.length != 0) {
-            args = new IRubyObject[frame.args.length];
-            System.arraycopy(frame.args, 0, args, 0, frame.args.length);
-        } else {
-        	args = frame.args;
-        }
 
         this.self = frame.self;
-        this.requiredArgCount = frame.requiredArgCount;
         this.name = frame.name;
         this.klazz = frame.klazz;
         this.position = frame.position;
@@ -141,12 +125,10 @@ public final class Frame implements JumpTarget {
     }
 
     public void updateFrame(RubyModule klazz, IRubyObject self, String name,
-                 IRubyObject[] args, int requiredArgCount, Block block, ISourcePosition position, JumpTarget jumpTarget) {
+                 Block block, ISourcePosition position, JumpTarget jumpTarget) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
 
         this.self = self;
-        this.args = args;
-        this.requiredArgCount = requiredArgCount;
         this.name = name;
         this.klazz = klazz;
         this.position = position;
@@ -180,24 +162,6 @@ public final class Frame implements JumpTarget {
 
     public void setLastLine(IRubyObject lastline) {
         this.lastline = lastline;
-    }
-
-    /** Getter for property args.
-     * @return Value of property args.
-     */
-    IRubyObject[] getArgs() {
-        return args;
-    }
-
-    /** Setter for property args.
-     * @param args New value of property args.
-     */
-    void setArgs(IRubyObject[] args) {
-        this.args = args;
-    }
-
-    public int getRequiredArgCount() {
-        return requiredArgCount;
     }
 
     /**

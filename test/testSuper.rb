@@ -146,8 +146,8 @@ class Test9Base
   end
 
   def gar(a, b="bad", *rest)
-  	test_equal(2, b)
-  	test_equal([3, 4], rest)
+    test_equal(2, b)
+    test_equal([3, 4], rest)
   end
 
   def har(a="bad", b="bad", c="bad")
@@ -346,6 +346,53 @@ class Bar111 < Foo111
     super
   end
 end
+
+class Parent
+  def m(x, y, z) 
+    [x,y,z] 
+  end
+end
+
+class Child < Parent
+  def m(x, y = 2, *z) 
+    before = [x,y,z] 
+    x = 5 
+    y = 5 
+    z = 5 
+    after = super
+    [before, after]
+  end
+end
+test_equal([[1, 2, [3, 4]], [5, 5, 5]], Child.new.m(1, 2, 3, 4))
+
+class Child < Parent
+  def m(x, y = 2, *z) 
+    [x,y,z] 
+    x = 5 
+    y = 5 
+    z = [5,5] 
+    super 
+  end
+end
+test_exception(ArgumentError) {Child.new.m(1,2,3,4)}
+
+class Child < Parent
+  def m(x, y = (
+        w = true 
+        2), *z) 
+    before = [x,y,z] 
+    x = 5
+    y = 6 
+    z = 5 
+    after = super 
+    [before, after] 
+  end;
+end
+# TODO: The below line is due to a weird bug in MRI where the embedded optional arg
+# ends up pushing the other args forward, knocking the rest arg off the list and not
+# passing it to zsuper; since I'm not sure what the correct logic should be, and since
+# we can't (or won't) emulate buggy behavior, disabling this test for now
+#test_equal([[1, 2, [3, 4]], [5, nil, 6]], Child.new.m(1, 2, 3, 4))
 
 #This is a bug, we should support this:
 =begin

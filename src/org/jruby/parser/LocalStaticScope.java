@@ -46,6 +46,9 @@ public class LocalStaticScope extends StaticScope {
 
     public LocalStaticScope(StaticScope enclosingScope, String[] names) {
         super(enclosingScope, names);
+        
+        // local scopes are argument scopes by default
+        setArgumentScope(true);
     }
 
     public StaticScope getLocalScope() {
@@ -95,5 +98,4 @@ public class LocalStaticScope extends StaticScope {
         
         return new VCallNode(position, name);
     }
-
 }

@@ -1,5 +1,7 @@
 package org.jruby.runtime;
 
+import org.jruby.RubyArray;
+import org.jruby.evaluator.EvaluationState;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -86,8 +88,8 @@ public class DynamicScope {
             return parent.getValue(offset, depth - 1);
         }
         lazy();
-        assert variableValues != null : "No variables in getValue for Off: " + offset + ", Dep: " + depth;
-        assert offset < variableValues.length : "Index to big for getValue Off: " + offset + ", Dep: " + depth + ", O: " + this;
+        assert variableValues != null : "No variables in getValue for off: " + offset + ", Dep: " + depth;
+        assert offset < variableValues.length : "Index to big for getValue off: " + offset + ", Dep: " + depth + ", O: " + this;
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         return variableValues[offset];
@@ -137,10 +139,33 @@ public class DynamicScope {
     /**
      * Copy variable values back for ZSuper call.
      */
-    public void getArgValues(IRubyObject[] args, int size) {
+    public IRubyObject[] getArgValues() {
+        // if we're not the "argument scope" for zsuper, try our parent
+        if (!staticScope.isArgumentScope()) {
+            return parent.getArgValues();
+        }
         lazy();
-        if(variableValues != null && args != null && variableValues.length>=(size)) {
-            System.arraycopy(variableValues, 0, args, 0, size);
+        int totalArgs = staticScope.getRequiredArgs() + staticScope.getOptionalArgs();
+        
+        // copy and splat arguments out of the scope to use for zsuper call
+        if (staticScope.getRestArg() < 0) {
+            // required and optional only
+            IRubyObject[] argValues = new IRubyObject[totalArgs];
+            System.arraycopy(variableValues, 0, argValues, 0, totalArgs);
+            
+            return argValues;
+        } else {
+            // rest arg must be splatted
+            IRubyObject restArg = getValue(staticScope.getRestArg(), 0);
+            assert restArg != null;
+            
+            // FIXME: not very efficient
+            RubyArray splattedArgs = EvaluationState.splatValue(restArg.getRuntime(), restArg);            
+            IRubyObject[] argValues = new IRubyObject[totalArgs + splattedArgs.size()];
+            System.arraycopy(variableValues, 0, argValues, 0, totalArgs);
+            System.arraycopy(splattedArgs.toJavaArray(), 0, argValues, totalArgs, splattedArgs.size());
+            
+            return argValues;
         }
     }
 
