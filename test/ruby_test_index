@@ -224,7 +224,7 @@ externals/ruby_test/test/core/Integer/instance/tc_upto
 externals/ruby_test/test/core/Math/class/tc_acos
 externals/ruby_test/test/core/Math/class/tc_acosh
 externals/ruby_test/test/core/Math/class/tc_asin
-#externals/ruby_test/test/core/Math/class/tc_asinh
+externals/ruby_test/test/core/Math/class/tc_asinh
 externals/ruby_test/test/core/Math/class/tc_atan
 externals/ruby_test/test/core/Math/class/tc_atan2
 #externals/ruby_test/test/core/Math/class/tc_atanh
