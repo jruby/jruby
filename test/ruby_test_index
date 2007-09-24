@@ -341,7 +341,7 @@ externals/ruby_test/test/core/String/instance/tc_scan
 externals/ruby_test/test/core/String/instance/tc_slice
 externals/ruby_test/test/core/String/instance/tc_split
 externals/ruby_test/test/core/String/instance/tc_squeeze
-#externals/ruby_test/test/core/String/instance/tc_strip
+externals/ruby_test/test/core/String/instance/tc_strip
 externals/ruby_test/test/core/String/instance/tc_succ
 externals/ruby_test/test/core/String/instance/tc_sum
 externals/ruby_test/test/core/String/instance/tc_swapcase
