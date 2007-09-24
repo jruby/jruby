@@ -257,7 +257,7 @@ externals/ruby_test/test/core/NilClass/instance/tc_to_s
 externals/ruby_test/test/core/NilClass/instance/tc_xor
 externals/ruby_test/test/core/Numeric/instance/tc_abs
 externals/ruby_test/test/core/Numeric/instance/tc_ceil
-#externals/ruby_test/test/core/Numeric/instance/tc_coerce
+externals/ruby_test/test/core/Numeric/instance/tc_coerce
 externals/ruby_test/test/core/Numeric/instance/tc_divmod
 externals/ruby_test/test/core/Numeric/instance/tc_eql
 externals/ruby_test/test/core/Numeric/instance/tc_floor

@@ -492,8 +492,8 @@ public class RubyNumeric extends RubyObject {
         if (getMetaClass() == other.getMetaClass()) {
             return getRuntime().newArray(other, this);
         } 
-        
-        return getRuntime().newArray(other.convertToFloat(), convertToFloat());
+
+        return getRuntime().newArray(RubyKernel.new_float(this, other), RubyKernel.new_float(this, this));
     }
 
     /** num_uplus
