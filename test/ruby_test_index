@@ -336,7 +336,7 @@ externals/ruby_test/test/core/String/instance/tc_replace
 externals/ruby_test/test/core/String/instance/tc_reverse
 externals/ruby_test/test/core/String/instance/tc_rindex
 externals/ruby_test/test/core/String/instance/tc_rjust
-#externals/ruby_test/test/core/String/instance/tc_rstrip
+externals/ruby_test/test/core/String/instance/tc_rstrip
 externals/ruby_test/test/core/String/instance/tc_scan
 externals/ruby_test/test/core/String/instance/tc_slice
 externals/ruby_test/test/core/String/instance/tc_split
