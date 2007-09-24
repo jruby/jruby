@@ -2893,9 +2893,10 @@ public class RubyString extends RubyObject {
     public IRubyObject rstrip_bang() {
         if (value.realSize == 0) return getRuntime().getNil();
         int i=value.realSize - 1;
-        
+
+        while (i >= 0 && value.bytes[value.begin+i] == 0) i--;
         while (i >= 0 && WHITESPACE[value.bytes[value.begin+i]+128]) i--;
-        
+
         if (i < value.realSize - 1) {
             view(0, i + 1);
             return this;
