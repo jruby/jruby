@@ -37,6 +37,7 @@ import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
+import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -168,5 +169,15 @@ public class GlobalVariables {
             globalVariables.put(name, variable);
         }
         return variable;
+    }
+
+    private IRubyObject defaultSeparator;
+
+    public IRubyObject getDefaultSeparator() {
+        return defaultSeparator;
+    }
+
+    public void setDefaultSeparator(IRubyObject defaultSeparator) {
+        this.defaultSeparator = defaultSeparator;    
     }
 }

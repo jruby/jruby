@@ -406,6 +406,25 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
             }
     }
 
+    public boolean startsWith(ByteList other, int toffset) {
+        byte[]ta = bytes;
+        int to = begin + toffset;
+        byte[]pa = other.bytes;
+        int po = other.begin;
+        int pc = other.realSize;
+
+        while (--pc >= 0) if (ta[to++] != pa[po++]) return false;
+        return true;
+    }
+
+    public boolean startsWith(ByteList other) {
+        return startsWith(other, 0);
+    }
+
+    public boolean endsWith(ByteList other) {
+        return startsWith(other, realSize - other.realSize);
+    }
+
     public boolean equals(Object other) {
         if (other instanceof ByteList) return equal((ByteList)other);
         return false;

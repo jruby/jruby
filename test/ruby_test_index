@@ -312,7 +312,7 @@ externals/ruby_test/test/core/String/instance/tc_aref
 externals/ruby_test/test/core/String/instance/tc_capitalize
 externals/ruby_test/test/core/String/instance/tc_casecmp
 externals/ruby_test/test/core/String/instance/tc_center
-#externals/ruby_test/test/core/String/instance/tc_chomp
+externals/ruby_test/test/core/String/instance/tc_chomp
 externals/ruby_test/test/core/String/instance/tc_chop
 externals/ruby_test/test/core/String/instance/tc_count
 externals/ruby_test/test/core/String/instance/tc_crypt

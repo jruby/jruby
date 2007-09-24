@@ -118,7 +118,9 @@ public class RubyGlobal {
         GlobalVariable kcodeGV = new KCodeGlobalVariable(runtime, "$KCODE", runtime.newString("NONE"));
         runtime.defineVariable(kcodeGV);
         runtime.defineVariable(new GlobalVariable.Copy(runtime, "$-K", kcodeGV));
-        runtime.defineVariable(new StringGlobalVariable(runtime, "$/", runtime.newString("\n").freeze()));
+        IRubyObject defaultRS = runtime.newString("\n").freeze();
+        runtime.defineVariable(new StringGlobalVariable(runtime, "$/", defaultRS));
+        runtime.getGlobalVariables().setDefaultSeparator(defaultRS);
         runtime.defineVariable(new StringGlobalVariable(runtime, "$\\", runtime.getNil()));
         runtime.defineVariable(new StringGlobalVariable(runtime, "$,", runtime.getNil()));
 

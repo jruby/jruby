@@ -66,9 +66,6 @@ import org.jruby.util.Sprintf;
  * @author  jpetersen
  */
 public class RubyString extends RubyObject {
-    // Default record seperator
-    private static final String DEFAULT_RS = "\n";
-
     // nothing shared, string is independent 
     private static final int SHARED_BUFFER_STR_F = 1 << 9;
     // string doesn't have it's own ByteList (values)
@@ -2700,61 +2697,79 @@ public class RubyString extends RubyObject {
      * @param args See method description.
      */
     public IRubyObject chomp_bang(IRubyObject[] args) {
-        if (isEmpty()) {
+        IRubyObject rsObj;
+
+        if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 0) {
+            int len = value.length();
+            if (len == 0) return getRuntime().getNil();
+            byte[]buff = value.bytes;
+
+            rsObj = getRuntime().getGlobalVariables().get("$/");
+
+            if (rsObj == getRuntime().getGlobalVariables().getDefaultSeparator()) {
+                int realSize = value.realSize;
+                if ((buff[len - 1] & 0xFF) == '\n') {
+                    realSize--;
+                    if (realSize > 0 && (buff[realSize - 1] & 0xFF) == '\r') realSize--;
+                    view(0, realSize);
+                } else if ((buff[len - 1] & 0xFF) == '\r') {
+                    realSize--;
+                    view(0, realSize);
+                } else {
+                    modifyCheck();
+                    return getRuntime().getNil();
+                }
+                return this;                
+            }
+        } else {
+            rsObj = args[0];
+        }
+
+        if (rsObj.isNil()) return getRuntime().getNil();
+
+        RubyString rs = rsObj.convertToString();
+        int len = value.realSize;
+        if (len == 0) return getRuntime().getNil();
+        byte[]buff = value.bytes;
+        int rslen = rs.value.realSize;
+
+        if (rslen == 0) {
+            while (len > 0 && (buff[len - 1] & 0xFF) == '\n') {
+                len--;
+                if (len > 0 && (buff[len - 1] & 0xFF) == '\r') len--;
+            }
+            if (len < value.realSize) {
+                view(0, len);
+                return this;
+            }
             return getRuntime().getNil();
         }
 
-        // Separator (a.k.a. $/) can be overriden by the -0 (zero) command line option
-        String separator = (args.length == 0) ?
-            getRuntime().getGlobalVariables().get("$/").asSymbol() : args[0].asSymbol();
+        if (rslen > len) return getRuntime().getNil();
+        int newline = rs.value.bytes[rslen - 1] & 0xFF;
 
-        if (separator.equals(DEFAULT_RS)) {
-            int end = value.realSize - 1;
-            int removeCount = 0;
-
-            if (end < 0) {
+        if (rslen == 1 && newline == '\n') {
+            buff = value.bytes;
+            int realSize = value.realSize;
+            if ((buff[len - 1] & 0xFF) == '\n') {
+                realSize--;
+                if (realSize > 0 && (buff[realSize - 1] & 0xFF) == '\r') realSize--;
+                view(0, realSize);
+            } else if ((buff[len - 1] & 0xFF) == '\r') {
+                realSize--;
+                view(0, realSize);
+            } else {
+                modifyCheck();
                 return getRuntime().getNil();
             }
-
-            if ((value.get(end) & 0xFF) == '\n') {
-                removeCount++;
-                if (end > 0 && (value.get(end-1) & 0xFF) == '\r') {
-                    removeCount++;
-                }
-            } else if ((value.get(end) & 0xFF) == '\r') {
-                removeCount++;
-            }
-
-            if (removeCount == 0) {
-                return getRuntime().getNil();
-            }
-
-            view(0, end - removeCount + 1);
-            return this;
+            return this;                
         }
 
-        if (separator.length() == 0) {
-            int end = value.realSize - 1;
-            int removeCount = 0;
-            while(end - removeCount >= 0 && (value.get(end - removeCount) & 0xFF) == '\n') {
-                removeCount++;
-                if (end - removeCount >= 0 && (value.get(end - removeCount) & 0xFF) == '\r') {
-                    removeCount++;
-                }
-            }
-            if (removeCount == 0) {
-                return getRuntime().getNil();
-            }
-
-            view(0, end - removeCount + 1);
-            return this;
+        if ((buff[len - 1] & 0xFF) == newline && rslen <= 1 || value.endsWith(rs.value)) {
+            view(0, value.realSize - rslen);
+            return this;            
         }
 
-        // Uncommon case of str.chomp!("xxx")
-        if (toString().endsWith(separator)) {
-            view(0, value.realSize - separator.length());
-            return this;
-        }
         return getRuntime().getNil();
     }
 
