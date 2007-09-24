@@ -339,6 +339,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void loadNil() {
             method.aload(NIL_INDEX);
         }
+        
+        public void loadNull() {
+            method.aconst_null();
+        }
 
         public void loadSymbol(String symbol) {
             loadRuntime();
@@ -2130,6 +2134,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadThreadContext();
             method.getstatic(classname, cachePosition(position.getFile(), position.getEndLine()), cg.ci(ISourcePosition.class));
             invokeThreadContext("setPosition", cg.sig(void.class, ISourcePosition.class));
+        }
+        
+        public void checkWhenWithSplat() {
+            loadThreadContext();
+            invokeUtilityMethod("isWhenTriggered", cg.sig(RubyBoolean.class, IRubyObject.class, IRubyObject.class, ThreadContext.class));
         }
     }
 

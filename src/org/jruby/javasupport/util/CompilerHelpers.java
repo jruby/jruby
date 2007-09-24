@@ -3,6 +3,7 @@ package org.jruby.javasupport.util;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyLocalJumpError;
@@ -33,6 +34,7 @@ import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.CompiledSharedScopeBlock;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -559,5 +561,20 @@ public class CompilerHelpers {
     
     public static RubyArray createSubarray(RubyArray input, int start) {
         return (RubyArray)input.subseqLight(start, input.size() - start);
+    }
+    
+    public static RubyBoolean isWhenTriggered(IRubyObject expression, IRubyObject expressionsObject, ThreadContext context) {
+        RubyArray expressions = EvaluationState.splatValue(context.getRuntime(), expressionsObject);
+        for (int j = 0,k = expressions.getLength(); j < k; j++) {
+            IRubyObject condition = expressions.eltInternal(j);
+
+            if ((expression != null && condition.callMethod(context, MethodIndex.OP_EQQ, "===", expression)
+                    .isTrue())
+                    || (expression == null && condition.isTrue())) {
+                return context.getRuntime().getTrue();
+            }
+        }
+        
+        return context.getRuntime().getFalse();
     }
 }

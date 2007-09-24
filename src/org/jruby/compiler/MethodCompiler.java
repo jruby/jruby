@@ -276,6 +276,8 @@ public interface MethodCompiler {
      */
     public void loadNil();
     
+    public void loadNull();
+    
     /**
      * Load the given string as a symbol on to the top of the stack.
      * 
@@ -491,4 +493,5 @@ public interface MethodCompiler {
     public void unwrapRaiseException();
     public void loadException();
     public void setPosition(ISourcePosition position);
+    public void checkWhenWithSplat();
 }

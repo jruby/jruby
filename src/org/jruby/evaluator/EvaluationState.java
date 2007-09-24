@@ -604,8 +604,9 @@ public class EvaluationState {
                     // Ruby grammar has nested whens in a case body because of
                     // productions case_body and when_args.
                     if (tag instanceof WhenNode) {
-                        RubyArray expressions = (RubyArray) evalInternal(runtime,context, ((WhenNode) tag)
+                        IRubyObject expressionsObject = evalInternal(runtime,context, ((WhenNode) tag)
                                         .getExpressionNodes(), self, aBlock);
+                        RubyArray expressions = splatValue(runtime, expressionsObject);
 
                         for (int j = 0,k = expressions.getLength(); j < k; j++) {
                             IRubyObject condition = expressions.eltInternal(j);

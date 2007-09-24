@@ -85,6 +85,7 @@ public class RubyParserResult {
     	if (beginNodes.isEmpty()) return;
 
         BlockNode n;
+        System.out.println(getAST());
     	if (getAST() != null) {
     		n = new BlockNode(getAST().getPosition());
     	} else {

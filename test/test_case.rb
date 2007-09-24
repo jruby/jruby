@@ -68,4 +68,12 @@ class TestCase < Test::Unit::TestCase
     end
     assert_equal("GOOD", x)
   end
+  
+  def test_case_when_splats_single
+    assert_nothing_raised {
+      case 1
+      when *1
+      end
+    }
+  end
 end

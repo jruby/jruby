@@ -754,39 +754,32 @@ public class NodeCompilerFactory {
         Node tag = expressionsNode.get(conditionIndex);
 
         // need to add in position stuff some day :)
-        //context.setPosition(tag.getPosition());
+        context.setPosition(tag.getPosition());
 
-        // Ruby grammar has nested whens in a case body because of
-        // productions case_body and when_args.
+        // reduce the when cases to a true or false ruby value for the branch below
         if (tag instanceof WhenNode) {
-            throw new NotCompilableException("Can't compile nested when nodes at " + tag.getPosition());
-            //RubyArray expressions = (RubyArray) evalInternal(runtime,context, ((WhenNode) tag)
-            //                .getExpressionNodes(), self, aBlock);
+            // prepare to handle the when logic
+            if (hasCase) {
+                context.duplicateCurrentValue();
+            } else {
+                context.loadNull();
+            }
+            compile(((WhenNode)tag).getExpressionNodes(), context);
+            context.checkWhenWithSplat();
+        } else {
+            if (hasCase) {
+                context.duplicateCurrentValue();
+            }
+            
+            // evaluate the when argument
+            compile(tag, context);
 
-            //for (int j = 0,k = expressions.getLength(); j < k; j++) {
-            //    IRubyObject condition = expressions.eltInternal(j);
-
-            //    if ((expression != null && condition.callMethod(context, MethodIndex.OP_EQQ, "===", expression)
-            //            .isTrue())
-            //            || (expression == null && condition.isTrue())) {
-            //        node = ((WhenNode) firstWhenNode).getBodyNode();
-            //        return evalInternal(runtime, context, node, self, aBlock);
-            //    }
-            //}
-            //continue;
-        }
-
-        if (hasCase) {
-            context.duplicateCurrentValue();
-        }
-        // evaluate the when argument
-        compile(tag, context);
-
-        if (hasCase) {
-            // we have a case value, call === on the condition value passing the case value
-            context.swapValues();
-            context.createObjectArray(1);
-            context.getInvocationCompiler().invokeEqq();
+            if (hasCase) {
+                // we have a case value, call === on the condition value passing the case value
+                context.swapValues();
+                context.createObjectArray(1);
+                context.getInvocationCompiler().invokeEqq();
+            }
         }
 
         // check if the condition result is true, branch appropriately
