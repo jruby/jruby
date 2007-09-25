@@ -782,11 +782,11 @@ public final class ThreadContext {
         popRubyClass();
     }
     
-    public void preRootNode(DynamicScope scope) {
+    public void preScopedBody(DynamicScope scope) {
         pushScope(scope);
     }
     
-    public void postRootNode() {
+    public void postScopedBody() {
         popScope();
     }
     

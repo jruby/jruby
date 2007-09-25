@@ -89,6 +89,7 @@ import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.PostExeNode;
+import org.jruby.ast.PreExeNode;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
@@ -353,7 +354,7 @@ stmt          : kALIAS fitem {
                   }
 		  support.pushLocalScope();
               } tLCURLY compstmt tRCURLY {
-                  support.getResult().addBeginNode(support.getCurrentScope(), $4);
+                  support.getResult().addBeginNode(new PreExeNode(getPosition($4), support.getCurrentScope(), $4));
                   support.popCurrentScope();
                   $$ = null; //XXX 0;
               }
@@ -361,8 +362,7 @@ stmt          : kALIAS fitem {
                   if (support.isInDef() || support.isInSingle()) {
                       yyerror("END in method; use at_exit");
                   }
-
-                  $$ = new PostExeNode(getPosition($1), $3);
+                  $$ = new PostExeNode(getPosition($3), $3);
               }
               | lhs '=' command_call {
                   support.checkExpression($3);

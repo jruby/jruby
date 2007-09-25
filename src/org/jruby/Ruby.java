@@ -371,11 +371,11 @@ public final class Ruby {
                     }
                     
                     // Each root node has a top-level scope that we need to push
-                    getCurrentContext().preRootNode(scope);
+                    getCurrentContext().preScopedBody(scope);
                     
                     return script.run(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
                 } finally {
-                    getCurrentContext().postRootNode();
+                    getCurrentContext().postScopedBody();
                 }
             } else {
                 return eval(node);
@@ -415,11 +415,11 @@ public final class Ruby {
                 }
 
                 // Each root node has a top-level scope that we need to push
-                getCurrentContext().preRootNode(scope);
+                getCurrentContext().preScopedBody(scope);
 
                 return script.run(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
             } finally {
-                getCurrentContext().postRootNode();
+                getCurrentContext().postScopedBody();
             }
         } catch (NotCompilableException nce) {
             System.err.println("Error -- Not compileable: " + nce.getMessage());

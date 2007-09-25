@@ -99,6 +99,7 @@ import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
+import org.jruby.ast.PreExeNode;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
@@ -553,6 +554,11 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
+    public Instruction visitPreExeNode(PreExeNode iVisited) {
+        iVisited.accept(_Payload);
+        return null;
+    }
+    
 	public Instruction visitRedoNode(RedoNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;

@@ -114,6 +114,7 @@ import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
+import org.jruby.ast.PreExeNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.RescueNode;
@@ -338,6 +339,8 @@ public class EvaluationState {
                 return optNNode(runtime, context, node, self, aBlock);
             case ORNODE:
                 return orNode(runtime, context, node, self, aBlock);
+            case PREEXENODE:
+                return preExeNode(runtime, context, node, self, aBlock);
             case POSTEXENODE:
                 return postExeNode(runtime, context, node, self, aBlock);
             case REDONODE: 
@@ -1410,12 +1413,28 @@ public class EvaluationState {
     private static IRubyObject postExeNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         PostExeNode iVisited = (PostExeNode) node;
         
-        // FIXME: I use a for block to implement END node because we need a proc which captures
-        // its enclosing scope.   ForBlock now represents these node and should be renamed.
         Block block = SharedScopeBlock.createSharedScopeBlock(context, iVisited, context.getCurrentScope(), self);
         
         runtime.pushExitBlock(runtime.newProc(true, block));
         
+        return runtime.getNil();
+    }
+
+    private static IRubyObject preExeNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
+        PreExeNode iVisited = (PreExeNode) node;
+        
+        DynamicScope scope = new DynamicScope(iVisited.getScope());
+        // Each root node has a top-level scope that we need to push
+        context.preScopedBody(scope);
+
+        // FIXME: I use a for block to implement END node because we need a proc which captures
+        // its enclosing scope.   ForBlock now represents these node and should be renamed.
+        Block block = Block.createBlock(context, iVisited, context.getCurrentScope(), self);
+        
+        block.yield(context, null);
+        
+        context.postScopedBody();
+
         return runtime.getNil();
     }
 
@@ -1550,7 +1569,7 @@ public class EvaluationState {
         StaticScope staticScope = scope.getStaticScope();
         
         // Each root node has a top-level scope that we need to push
-        context.preRootNode(scope);
+        context.preScopedBody(scope);
         
         if (staticScope.getModule() == null) {
             staticScope.setModule(runtime.getObject());
@@ -1559,7 +1578,7 @@ public class EvaluationState {
         try {
             return evalInternal(runtime, context, iVisited.getBodyNode(), self, aBlock);
         } finally {
-            context.postRootNode();
+            context.postScopedBody();
         }
     }
 

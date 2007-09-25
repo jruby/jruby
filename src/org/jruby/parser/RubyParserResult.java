@@ -34,9 +34,9 @@ package org.jruby.parser;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jruby.ast.BlockNode;
 import org.jruby.ast.CommentNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.PreExeNode;
 import org.jruby.runtime.DynamicScope;
 
 /**
@@ -76,27 +76,12 @@ public class RubyParserResult {
         commentNodes.add(node);
     }
     
-    public void addBeginNode(StaticScope scope, Node node) {
-        // FIXME: We need to add BEGIN nodes properly
+    public void addBeginNode(PreExeNode node) {
     	beginNodes.add(node);
     }
     
-    public void addAppendBeginNodes() {
-    	if (beginNodes.isEmpty()) return;
-
-        BlockNode n;
-        System.out.println(getAST());
-    	if (getAST() != null) {
-    		n = new BlockNode(getAST().getPosition());
-    	} else {
-    		n = new BlockNode(((Node) beginNodes.get(0)).getPosition());
-    	}
-    	for (int i = 0; i < beginNodes.size(); i++) {
-    		n.add((Node) beginNodes.get(i));
-    	}
-    	if (getAST() != null) n.add(getAST());
-
-    	setAST(n);
+    public List<Node> getBeginNodes() {
+        return beginNodes;
     }
     
     public boolean isEndSeen() {

@@ -126,8 +126,6 @@ public class Parser {
             result.getScope().growIfNeeded();
         }
 
-        // FIXME: We should move this into ParserSupport.addRootNode since actual parser should do this.
-        result.addAppendBeginNodes();
         return result.getAST();
     }
 }

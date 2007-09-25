@@ -249,11 +249,11 @@ public class YARVMachine {
         try {
             IRubyObject self = context.getRuntime().getObject();
             
-            context.preRootNode(new DynamicScope(scope));
+            context.preScopedBody(new DynamicScope(scope));
             
             return exec(context, self, bytecodes);
         } finally {
-            context.postRootNode();
+            context.postScopedBody();
         }
     }
     

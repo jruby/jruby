@@ -12,10 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2007 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,20 +31,18 @@ package org.jruby.ast;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 
 /**
- * Captures END statements (END {...})
+ * A pre-execution construction (BEGIN { ... }).
  */
-public class PostExeNode extends IterNode {
-    public PostExeNode(ISourcePosition position, Node body) {
-        super(position, null, null, body, NodeType.POSTEXENODE);
+public class PreExeNode extends IterNode {
+    public PreExeNode(ISourcePosition position, StaticScope scope, Node body) {
+        super(position, null, scope, body, NodeType.PREEXENODE);
     }
 
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
+    @Override
     public Instruction accept(NodeVisitor iVisitor) {
-        return iVisitor.visitPostExeNode(this);
+        return iVisitor.visitPreExeNode(this);
     }
 }

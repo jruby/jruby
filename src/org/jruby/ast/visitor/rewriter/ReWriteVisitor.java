@@ -1184,7 +1184,13 @@ public class ReWriteVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public Instruction visitRedoNode(RedoNode iVisited) {
+    public Instruction visitPreExeNode(PreExeNode iVisited) {
+        // this node contains nothing but an empty list, so we don't have to
+        // process anything
+        return null;
+    }
+
+    public Instruction visitRedoNode(RedoNode iVisited) {
 		print("redo");
 		return null;
 	}
