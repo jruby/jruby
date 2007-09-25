@@ -431,3 +431,8 @@ test_no_exception {
   test_equal(4, compile_and_run("x = begin; 1; rescue; 2; else; 4; end"))
   test_equal(4, compile_and_run("def foo; begin; return 4; rescue; end; return 3; end; foo"))
 }
+
+# break in a while in an ensure
+test_no_exception {
+  test_equal(5, compile_and_run("begin; x = while true; break 5; end; ensure; end"))
+}

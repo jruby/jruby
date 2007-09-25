@@ -531,7 +531,7 @@ public class EvaluationState {
    
         IRubyObject result = runtime.getNil();
         for (int i = 0; i < iVisited.size(); i++) {
-            result = evalInternal(runtime,context, (Node) iVisited.get(i), self, aBlock);
+            result = evalInternal(runtime,context, iVisited.get(i), self, aBlock);
         }
    
         return result;

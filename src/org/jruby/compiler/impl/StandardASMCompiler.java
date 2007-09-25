@@ -710,7 +710,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // FIXME: handle next/continue, break, etc
             Label tryBegin = new Label();
             Label tryEnd = new Label();
-            Label tryCatch = new Label();
             Label catchRedo = new Label();
             Label catchNext = new Label();
             Label catchBreak = new Label();
@@ -765,15 +764,19 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // catch logic for flow-control exceptions
             {
                 // redo jump
-                method.label(catchRedo);
-                method.pop();
-                method.go_to(topOfBody);
+                {
+                    method.label(catchRedo);
+                    method.pop();
+                    method.go_to(topOfBody);
+                }
 
                 // next jump
-                method.label(catchNext);
-                method.pop();
-                // exceptionNext target is for a next that doesn't push a new value, like this one
-                method.go_to(conditionCheck);
+                {
+                    method.label(catchNext);
+                    method.pop();
+                    // exceptionNext target is for a next that doesn't push a new value, like this one
+                    method.go_to(conditionCheck);
+                }
 
                 // break jump
                 {
@@ -1442,31 +1445,32 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
                 mv.astore(VARS_ARRAY_INDEX);
 
-                Label l0 = new Label();
-                Label l1 = new Label();
-                Label l2 = new Label();
-                method.visitTryCatchBlock(l0, l1, l2, null);
-                Label l3 = new Label();
-                method.visitTryCatchBlock(l2, l3, l2, null);
-                method.visitLabel(l0);
+                Label codeBegin = new Label();
+                Label codeEnd = new Label();
+                Label ensureBegin = new Label();
+                Label ensureEnd = new Label();
+                method.visitLabel(codeBegin);
 
                 regularCode.branch(this);
 
-                method.visitLabel(l1);
+                method.visitLabel(codeEnd);
 
                 protectedCode.branch(this);
 
                 Label l4 = new Label();
                 method.visitJumpInsn(GOTO, l4);
-                method.visitLabel(l2);
+                method.visitLabel(ensureBegin);
                 method.visitVarInsn(ASTORE, EXCEPTION_INDEX);
-                method.visitLabel(l3);
+                method.visitLabel(ensureEnd);
 
                 protectedCode.branch(this);
 
                 method.visitVarInsn(ALOAD, EXCEPTION_INDEX);
                 method.visitInsn(ATHROW);
                 method.visitLabel(l4);
+                
+                method.visitTryCatchBlock(codeBegin, codeEnd, ensureBegin, null);
+                method.visitTryCatchBlock(ensureBegin, ensureEnd, ensureBegin, null);
 
                 mv.areturn();
                 mv.visitMaxs(1, 1);
@@ -2335,9 +2339,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void issueBreakEvent(ClosureCallback value) {
-            if (withinProtection) {
-                throw new NotCompilableException("Can't compile break in ensure");
-            } else if (currentLoopLabels == null) {
+            if (withinProtection || currentLoopLabels == null) {
                 method.newobj(cg.p(JumpException.BreakJump.class));
                 method.dup();
                 method.aconst_null();
@@ -2513,9 +2515,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void issueBreakEvent(ClosureCallback value) {
             if(withinProtection) {
-                throw new NotCompilableException("Can't compile break within ensure yet");
-            }
-            if (currentLoopLabels != null) {
+                method.newobj(cg.p(JumpException.BreakJump.class));
+                method.dup();
+                method.aconst_null();
+                value.compile(this);
+                method.invokespecial(cg.p(JumpException.BreakJump.class), "<init>", cg.sig(Void.TYPE, cg.params(Object.class, Object.class)));
+
+                method.athrow();
+                //throw new NotCompilableException("Can't compile break within ensure yet");
+            } else if (currentLoopLabels != null) {
                 value.compile(this);
                 issueLoopBreak();
             } else {

@@ -507,7 +507,7 @@ public class CompilerHelpers {
         // JRUBY-530, while case
         if (bj.getTarget() == aBlock) {
             bj.setTarget(null);
-
+            
             throw bj;
         }
 

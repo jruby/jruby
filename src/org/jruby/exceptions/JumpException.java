@@ -91,9 +91,9 @@ public class JumpException extends RuntimeException {
      *
      * @see Throwable#fillInStackTrace()
      */
-    public Throwable fillInStackTrace() {
-        return this;
-    }
+//    public Throwable fillInStackTrace() {
+//        return this;
+//    }
     
     protected Throwable originalFillInStackTrace() {
         return super.fillInStackTrace();

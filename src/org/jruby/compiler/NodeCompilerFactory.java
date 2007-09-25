@@ -623,8 +623,12 @@ public class NodeCompilerFactory {
                 }
             }
         };
-        
-        context.issueBreakEvent(valueCallback);
+        try {
+            context.issueBreakEvent(valueCallback);
+        } catch (RuntimeException re) {
+            re.printStackTrace();
+            System.out.println(breakNode.getPosition());
+        }
     }
     
     public static void compileCall(Node node, MethodCompiler context) {
