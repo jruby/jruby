@@ -577,4 +577,8 @@ public class CompilerHelpers {
         
         return context.getRuntime().getFalse();
     }
+    
+    public static IRubyObject setConstantInModule(IRubyObject module, IRubyObject value, String name, ThreadContext context) {
+        return context.setConstantInModule(name, (RubyModule)module, value);
+    }
 }

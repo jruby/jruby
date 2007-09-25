@@ -436,3 +436,8 @@ test_no_exception {
 test_no_exception {
   test_equal(5, compile_and_run("begin; x = while true; break 5; end; ensure; end"))
 }
+
+# JRUBY-1388, Foo::Bar broke in the compiler
+test_no_exception {
+  test_equal(5, compile_and_run("module Foo2; end; Foo2::Foo3 = 5; Foo2::Foo3"))
+}

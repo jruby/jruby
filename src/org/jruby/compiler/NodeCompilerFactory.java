@@ -936,12 +936,14 @@ public class NodeCompilerFactory {
         context.lineNumber(node.getPosition());
         
         ConstDeclNode constDeclNode = (ConstDeclNode)node;
+        Node constNode = constDeclNode.getConstNode();
         
         if (constDeclNode.getConstNode() == null) {
             compile(constDeclNode.getValueNode(), context);
         
             context.assignConstantInCurrent(constDeclNode.getName());
-        } else if (constDeclNode.nodeId == NodeType.COLON2NODE) {
+        } else if (constNode.nodeId == NodeType.COLON2NODE) {
+            compile(((Colon2Node)constNode).getLeftNode(), context);
             compile(constDeclNode.getValueNode(), context);
             
             context.assignConstantInModule(constDeclNode.getName());

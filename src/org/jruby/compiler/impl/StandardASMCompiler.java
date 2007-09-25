@@ -442,10 +442,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void assignConstantInModule(String name) {
-            loadThreadContext();
             method.ldc(name);
-            method.swap2();
-            invokeThreadContext("setConstantInCurrent", cg.sig(IRubyObject.class, cg.params(String.class, RubyModule.class, IRubyObject.class)));
+            loadThreadContext();
+            invokeUtilityMethod("setConstantInModule", cg.sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, String.class, ThreadContext.class));
         }
 
         public void assignConstantInObject(String name) {
