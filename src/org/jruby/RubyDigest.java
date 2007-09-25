@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -46,8 +47,7 @@ public class RubyDigest {
 
     public static void createDigest(Ruby runtime) {
         try {
-            Class c = Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
-            provider = (Provider)c.newInstance();
+            provider = (Provider) Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider").newInstance();
         } catch(Exception e) {
             // provider is not available
         }

@@ -61,10 +61,11 @@ public class RubyNumeric extends RubyObject {
                 RubyKernel.IRUBY_OBJECT));
 
         numeric.kindOf = new RubyModule.KindOf() {
-                public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                    return obj instanceof RubyNumeric;
-                }
-            };
+            @Override
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof RubyNumeric;
+            }
+        };
 
         numeric.includeModule(runtime.getModule("Comparable"));
 
@@ -157,7 +158,19 @@ public class RubyNumeric extends RubyObject {
         throw arg.getRuntime().newRangeError("integer " + num + " too " + s + " to convert to `int'");
     }
 
-    // TODO: Find all consumers and convert to correct conversion protocol <- done
+    /**
+     * NUM2CHR
+     */
+    public static byte num2chr(IRubyObject arg) {
+        if (arg instanceof RubyString) {
+            String value = ((RubyString) arg).toString();
+
+            if (value != null && value.length() > 0) return (byte) value.charAt(0);
+        } 
+
+        return (byte) num2int(arg);
+    }
+
     /** rb_num2long and FIX2LONG (numeric.c)
      * 
      */
@@ -716,7 +729,7 @@ public class RubyNumeric extends RubyObject {
             } else {
                 cmp = MethodIndex.OP_LT;
             }
-            cmpString = (String)MethodIndex.NAMES.get(cmp);
+            cmpString = MethodIndex.NAMES.get(cmp);
 
             while (true) {
                 if (i.callMethod(context, cmp, cmpString, to).isTrue()) {
@@ -741,6 +754,7 @@ public class RubyNumeric extends RubyObject {
     /** num_equal
      *
      */
+    @Override
     public IRubyObject equal(IRubyObject other) {
         if (this == other) { // it won't hurt fixnums
             return getRuntime().getTrue();

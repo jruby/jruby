@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -48,8 +49,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 /**
- *
- * @author  jpetersen
+  * A representation of a float object
  */
 public class RubyFloat extends RubyNumeric {
 
@@ -135,7 +135,7 @@ public class RubyFloat extends RubyNumeric {
         this.value = value;
     }
 
-    public Class getJavaClass() {
+    public Class<?> getJavaClass() {
         return Double.TYPE;
     }
 

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -39,7 +40,6 @@ package org.jruby;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
-import java.util.Iterator;
 
 import org.jruby.ast.Node;
 import org.jruby.exceptions.JumpException;
@@ -204,8 +204,7 @@ public class Main {
             if (!Ruby.isSecurityRestricted() && !runtime.getRuntimeInformation().isEmpty()) {
                 System.err.println("Runtime information dump:");
 
-                for (Iterator iter = runtime.getRuntimeInformation().keySet().iterator(); iter.hasNext();) {
-                    Object key = iter.next();
+                for (Object key: runtime.getRuntimeInformation().keySet()) {
                     System.err.println("[" + key + "]: " + runtime.getRuntimeInformation().get(key));
                 }
             }
@@ -275,9 +274,8 @@ public class Main {
         runtime.getGlobalVariables().define("$0", d);
 
         runtime.getLoadService().init(commandline.loadPaths());
-        Iterator iter = commandline.requiredLibraries().iterator();
-        while (iter.hasNext()) {
-            String scriptName = (String) iter.next();
+        
+        for (String scriptName : commandline.requiredLibraries()) {
             RubyKernel.require(runtime.getTopSelf(), runtime.newString(scriptName), Block.NULL_BLOCK);
         }
     }

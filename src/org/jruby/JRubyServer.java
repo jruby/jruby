@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -115,7 +116,7 @@ public class JRubyServer extends JRubyService {
     }
 
     protected static String[] intoCommandArguments(String str) {
-        List args = new ArrayList();
+        List<String> args = new ArrayList<String>();
         boolean inSingle = false;
         int contentStart = -1;
 
