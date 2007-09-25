@@ -43,7 +43,6 @@ testModule.rb
 testNesting.rb
 testNoMethodError.rb
 testNumber.rb
-testNumeric.rb
 testObject.rb
 testObjectSpace.rb
 testPackUnpack.rb
