@@ -1661,7 +1661,7 @@ f_rest_arg    : restarg_mark tIDENTIFIER {
                   $$ = $1;
               }
               | restarg_mark {
-                  $1.setValue(new Integer(-2));
+                  $1.setValue(new Integer(support.getCurrentScope().getLocalScope().addVariable("*")));
                   $$ = $1;
               }
 
