@@ -43,7 +43,6 @@ import org.jruby.RubyThread;
 import org.jruby.ast.CommentNode;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.libraries.FiberLibrary.Fiber;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
@@ -438,21 +437,19 @@ public final class ThreadContext {
     }
     
     public boolean getConstantDefined(String name) {
-        IRubyObject result = null;
+        IRubyObject result;
         IRubyObject undef = runtime.getUndef();
         
         // flipped from while to do to search current class first
         for (StaticScope scope = getCurrentScope().getStaticScope(); scope != null; scope = scope.getPreviousCRefScope()) {
             RubyModule module = scope.getModule();
-            result = module.getInstanceVariable(name);
-            if (result == undef) {
-                module.removeInstanceVariable(name);
-                return runtime.getLoadService().autoload(module.getName() + "::" + name) != null;
+            if ((result = module.getInstanceVariable(name)) != null) {
+                if (result != undef) return true;
+                return runtime.getLoadService().autoloadFor(module.getName() + "::" + name) != null;
             }
-            if (result != null) return true;
         }
         
-        return false;
+        return getCurrentScope().getStaticScope().getModule().isConstantDefined(name);
     }
     
     /**
