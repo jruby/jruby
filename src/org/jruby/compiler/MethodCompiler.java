@@ -404,6 +404,8 @@ public interface MethodCompiler {
     public void issueNextEvent(ClosureCallback value);
     
     public void issueRedoEvent();
+    
+    public void issueRetryEvent();
 
     public void asString();
 

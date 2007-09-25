@@ -1505,19 +1505,25 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             SkinnyMethodAdapter old_method = null;
             SkinnyMethodAdapter var_old_method = null;
             SkinnyMethodAdapter inv_old_method = null;
+            Label beforeMethodBody = new Label();
+            Label afterMethodBody = new Label();
+            Label catchRetry = new Label();
+            Label exitRescue = new Label();
             boolean oldWithinProtection = withinProtection;
             withinProtection = true;
             try {
                 old_method = this.method;
-                var_old_method = getVariableCompiler().getMethodAdapter();;
-                inv_old_method = getInvocationCompiler().getMethodAdapter();;
+                var_old_method = getVariableCompiler().getMethodAdapter();
+                inv_old_method = getInvocationCompiler().getMethodAdapter();
                 this.method = mv;
                 getVariableCompiler().setMethodAdapter(mv);
                 getInvocationCompiler().setMethodAdapter(mv);
 
                 mv.visitCode();
-                // set up a local IRuby variable
+                
+                mv.label(beforeMethodBody);
 
+                // set up a local IRuby variable
                 mv.aload(THREADCONTEXT_INDEX);
                 mv.dup();
                 mv.invokevirtual(cg.p(ThreadContext.class), "getRuntime", cg.sig(Ruby.class));
@@ -1534,27 +1540,35 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
                 mv.astore(VARS_ARRAY_INDEX);
 
-                Label l0 = new Label();
-                Label l1 = new Label();
-                Label l2 = new Label();
-                mv.visitTryCatchBlock(l0, l1, l2, cg.p(exception));
-                mv.visitLabel(l0);
+                Label beforeBody = new Label();
+                Label afterBody = new Label();
+                Label catchBlock = new Label();
+                mv.visitTryCatchBlock(beforeBody, afterBody, catchBlock, cg.p(exception));
+                mv.visitLabel(beforeBody);
 
                 regularCode.branch(this);
 
-                mv.visitLabel(l1);
-                Label l3 = new Label();
-                mv.visitJumpInsn(GOTO, l3);
-                mv.visitLabel(l2);
-                mv.visitVarInsn(ASTORE, EXCEPTION_INDEX);
+                mv.label(afterBody);
+                mv.go_to(exitRescue);
+                mv.label(catchBlock);
+                mv.astore(EXCEPTION_INDEX);
 
                 catchCode.branch(this);
-
-                mv.visitLabel(l3);
+                
+                mv.label(afterMethodBody);
+                mv.go_to(exitRescue);
+                
+                mv.trycatch(beforeMethodBody, afterMethodBody, catchRetry, cg.p(JumpException.RetryJump.class));
+                mv.label(catchRetry);
+                mv.pop();
+                mv.go_to(beforeMethodBody);
+                
+                mv.label(exitRescue);
                 mv.areturn();
                 mv.visitMaxs(1, 1);
                 mv.visitEnd();
             } finally {
+                withinProtection = oldWithinProtection;
                 this.method = old_method;
                 getVariableCompiler().setMethodAdapter(var_old_method);
                 getInvocationCompiler().setMethodAdapter(inv_old_method);
@@ -2143,6 +2157,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadThreadContext();
             invokeUtilityMethod("isWhenTriggered", cg.sig(RubyBoolean.class, IRubyObject.class, IRubyObject.class, ThreadContext.class));
         }
+        
+        public void issueRetryEvent() {
+            invokeUtilityMethod("retryJump", cg.sig(IRubyObject.class));
+        }
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {
@@ -2408,6 +2426,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeThreadContext("getRuntime", cg.sig(Ruby.class));
             method.dup();
             method.astore(RUNTIME_INDEX);
+            
             
             // grab nil for local variables
             invokeIRuby("getNil", cg.sig(IRubyObject.class));

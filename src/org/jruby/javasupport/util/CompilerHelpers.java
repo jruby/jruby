@@ -581,4 +581,8 @@ public class CompilerHelpers {
     public static IRubyObject setConstantInModule(IRubyObject module, IRubyObject value, String name, ThreadContext context) {
         return context.setConstantInModule(name, (RubyModule)module, value);
     }
+    
+    public static IRubyObject retryJump() {
+        throw new JumpException.RetryJump(null, null);
+    }
 }

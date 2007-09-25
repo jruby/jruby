@@ -337,7 +337,8 @@ public class NodeCompilerFactory {
             compileRescue(node, context);
             break;
         case RETRYNODE:
-            throw new NotCompilableException("retry at: " + node.getPosition());
+            compileRetry(node, context);
+            break;
         case RETURNNODE:
             compileReturn(node, context);
             break;
@@ -2621,6 +2622,14 @@ public class NodeCompilerFactory {
         };
         
         context.performBooleanBranch(trueBranch, falseBranch);
+    }
+    
+    public static void compileRetry(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        context.pollThreadEvents();
+        
+        context.issueRetryEvent();
     }
     
     public static void compileReturn(Node node, MethodCompiler context) {

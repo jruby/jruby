@@ -177,6 +177,8 @@ public abstract class CallAdapter {
                     }
 
                     return (IRubyObject)bj.getValue();
+                } catch (JumpException.RetryJump rj) {
+                    // do nothing, let loop run again
                 } catch (StackOverflowError soe) {
                     throw context.getRuntime().newSystemStackError("stack level too deep");
                 }
