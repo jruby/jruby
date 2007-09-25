@@ -437,6 +437,12 @@ public class NodeCompilerFactory {
         case CLASSVARASGNNODE:
             compileClassVarAsgn(node, context);
             break;
+        case CONSTDECLNODE:
+            compileConstDeclAssignment(node, context);
+            break;
+        case GLOBALASGNNODE:
+            compileGlobalAsgnAssignment(node, context);
+            break;
         case INSTASGNNODE:
             compileInstAsgnAssignment(node, context);
             break;
@@ -933,13 +939,25 @@ public class NodeCompilerFactory {
             context.assignConstantInCurrent(constDeclNode.getName());
         } else if (constDeclNode.nodeId == NodeType.COLON2NODE) {
             compile(constDeclNode.getValueNode(), context);
-        
-            compile(constDeclNode.getValueNode(), context);
             
             context.assignConstantInModule(constDeclNode.getName());
         } else {// colon3, assign in Object
             compile(constDeclNode.getValueNode(), context);
             
+            context.assignConstantInObject(constDeclNode.getName());
+        }
+    }
+    
+    public static void compileConstDeclAssignment(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        ConstDeclNode constDeclNode = (ConstDeclNode)node;
+        
+        if (constDeclNode.getConstNode() == null) {
+            context.assignConstantInCurrent(constDeclNode.getName());
+        } else if (constDeclNode.nodeId == NodeType.COLON2NODE) {
+            context.assignConstantInModule(constDeclNode.getName());
+        } else {// colon3, assign in Object
             context.assignConstantInObject(constDeclNode.getName());
         }
     }
@@ -1946,7 +1964,6 @@ public class NodeCompilerFactory {
         compile(globalAsgnNode.getValueNode(), context);
                 
         if (globalAsgnNode.getName().length() == 2) {
-            // FIXME: This is not aware of lexical scoping
             switch (globalAsgnNode.getName().charAt(1)) {
             case '_':
                 context.getVariableCompiler().assignLastLine();
@@ -1954,6 +1971,29 @@ public class NodeCompilerFactory {
             case '~':
                 assert false: "Parser shouldn't allow assigning to $~";
                 return;
+            default:
+                // fall off the end, handle it as a normal global
+            }
+        }
+        
+        context.assignGlobalVariable(globalAsgnNode.getName());
+    }
+    
+    public static void compileGlobalAsgnAssignment(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode)node;
+                
+        if (globalAsgnNode.getName().length() == 2) {
+            switch (globalAsgnNode.getName().charAt(1)) {
+            case '_':
+                context.getVariableCompiler().assignLastLine();
+                return;
+            case '~':
+                assert false: "Parser shouldn't allow assigning to $~";
+                return;
+            default:
+                // fall off the end, handle it as a normal global
             }
         }
         
