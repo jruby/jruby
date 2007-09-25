@@ -456,16 +456,13 @@ public class RubyFloat extends RubyNumeric {
      */
     public IRubyObject truncate() {
         double f = value;
-        if (f > 0.0) {
-            f = Math.floor(f);
-            }
-        if (f > 0.0) {
-            f = Math.ceil(f);
-        }
+        if (f > 0.0) f = Math.floor(f);
+        if (f < 0.0) f = Math.ceil(f);
+
         return dbl2num(getRuntime(), f);
-        }
+    }
         
-    /** loor
+    /** floor
      * 
      */
     public IRubyObject floor() {
