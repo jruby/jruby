@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -50,11 +51,11 @@ public class CommandlineParser {
     private final String[] arguments;
     private Main main;
 
-    private ArrayList loadPaths = new ArrayList();
+    private ArrayList<String> loadPaths = new ArrayList<String>();
     private StringBuffer inlineScript = new StringBuffer();
     private boolean hasInlineScript = false;
     private String scriptFileName = null;
-    private ArrayList requiredLibraries = new ArrayList();
+    private ArrayList<String> requiredLibraries = new ArrayList<String>();
     private boolean benchmarking = false;
     private boolean assumeLoop = false;
     private boolean assumePrinting = false;
@@ -244,11 +245,11 @@ public class CommandlineParser {
         }
     }
 
-    public List requiredLibraries() {
+    public List<String> requiredLibraries() {
         return requiredLibraries;
     }
 
-    public List loadPaths() {
+    public List<String> loadPaths() {
         return loadPaths;
     }
 
