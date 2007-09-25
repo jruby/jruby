@@ -154,6 +154,9 @@ public class RubyRange extends RubyObject {
 
         result.defineMethod("include?", callbackFactory.getMethod("include_p", RubyKernel.IRUBY_OBJECT));
         // We override Enumerable#member? since ranges in 1.8.1 are continuous.
+        //        result.defineMethod("member?", callbackFactory.getMethod("include_p", RubyKernel.IRUBY_OBJECT));
+        //        result.defineMethod("===", callbackFactory.getMethod("include_p", RubyKernel.IRUBY_OBJECT));
+
         result.defineAlias("member?", "include?");
         result.defineAlias("===", "include?");
         
@@ -482,17 +485,18 @@ public class RubyRange extends RubyObject {
     }
 
     public RubyBoolean include_p(IRubyObject obj, Block block) {
+        RubyBoolean val = getRuntime().getFalse();
         if(r_le(begin,obj)) {
             if(isExclusive) {
                 if(r_lt(obj,end)) {
-                    return getRuntime().getTrue();
+                    val = getRuntime().getTrue();
                 }
             } else {
                 if(r_le(obj,end)) {
-                    return getRuntime().getTrue();
+                    val = getRuntime().getTrue();
                 }
             }
         }
-        return getRuntime().getFalse();
+        return val;
     }
 }

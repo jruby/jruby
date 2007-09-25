@@ -810,6 +810,22 @@ public class RubyModule extends RubyObject {
     }
     }
 
+    private DynamicMethod searchMethodWithoutCache(String name) {
+        for (RubyModule searchModule = this; searchModule != null; searchModule = searchModule.getSuperClass()) {
+            // included modules use delegates methods for we need to synchronize on result of getMethods
+            synchronized(searchModule.getMethods()) {
+                // See if current class has method or if it has been cached here already
+                DynamicMethod method = (DynamicMethod) searchModule.getMethods().get(name);
+                
+                if (method != null) {
+                    return method;
+                }
+            }
+        }
+
+        return UndefinedMethod.getInstance();
+    }
+
     /**
      * Search through this module and supermodules for method definitions. Cache superclass definitions in this class.
      * 
@@ -837,7 +853,6 @@ public class RubyModule extends RubyObject {
                         addCachedMethod(name, method);
                     }
                     */
-
                     return method;
                 }
             }
@@ -1005,6 +1020,7 @@ public class RubyModule extends RubyObject {
             getRuntime().secure(4);
         }
         DynamicMethod method = searchMethod(oldName);
+        DynamicMethod oldMethod = searchMethodWithoutCache(name);
         if (method.isUndefined()) {
             if (isModule()) {
                 method = getRuntime().getObject().searchMethod(oldName);
@@ -1017,6 +1033,9 @@ public class RubyModule extends RubyObject {
         }
         getRuntime().getMethodCache().removeMethod(name);
         getRuntime().getCacheMap().remove(name, method);
+        getRuntime().getCacheMap().remove(name, oldMethod);
+        getRuntime().getCacheMap().remove(name, oldMethod.getRealMethod());
+        
         putMethod(name, new AliasMethod(this, method, oldName));
     }
 

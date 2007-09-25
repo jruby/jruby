@@ -28,3 +28,51 @@ class TestMethods < Test::Unit::TestCase
     end
   end
 end
+
+class TestCaching < Test::Unit::TestCase
+  module Foo
+    def the_method
+      $THE_METHOD = 'Foo'
+    end
+  end
+
+  def setup
+    $a = Class.new do 
+      def the_method
+        $THE_METHOD = 'A'
+      end
+    end.new
+  end
+  
+  def test_extend
+    40.times do 
+      $a.the_method
+      assert_equal "A", $THE_METHOD
+    end
+
+    $a.extend Foo
+
+    40.times do 
+      $a.the_method
+      assert_equal "Foo", $THE_METHOD
+    end
+  end
+
+  def test_alias
+    40.times do 
+      $a.the_method
+      assert_equal "A", $THE_METHOD
+    end
+
+    $a.class.class_eval do 
+      def the_bar_method
+        $THE_METHOD = "Bar"
+      end
+
+      alias_method :the_method, :the_bar_method
+    end
+    
+    $a.the_method
+    assert_equal "Bar", $THE_METHOD
+  end
+end
