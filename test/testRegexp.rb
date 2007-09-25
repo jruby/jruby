@@ -167,3 +167,8 @@ helpers_dir = "/my/happy/helpers"
 extract = /^#{Regexp.quote(helpers_dir)}\/?(.*)_helper.rb$/
 test_equal "/^\\/my\\/happy\\/helpers\\/?(.*)_helper.rb$/", extract.inspect
 $KCODE = old_kcode
+
+# JRUBY-1385: String.match shouldn't return the same object
+pattern = /\w/
+ext = ["foo", "bar"].map {|e| e.match(pattern) }
+test_ok ext[0] != ext[1]

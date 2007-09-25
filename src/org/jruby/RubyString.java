@@ -726,18 +726,25 @@ public class RubyString extends RubyObject {
      * @param pattern Regexp or String
      */
     public IRubyObject match3(IRubyObject pattern) {
-        if (pattern instanceof RubyRegexp) return ((RubyRegexp)pattern).search2(toString(), this);
-        if (pattern instanceof RubyString) {
+        IRubyObject res = null;
+        if (pattern instanceof RubyRegexp) {
+            res = ((RubyRegexp)pattern).search2(toString(), this);
+        } else if (pattern instanceof RubyString) {
             RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) pattern, 0, null);
-            return regexp.search2(toString(), this);
+            res = regexp.search2(toString(), this);
         } else if (pattern.respondsTo("to_str")) {
             // FIXME: is this cast safe?
             RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) pattern.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY), 0, null);
-            return regexp.search2(toString(), this);
+            res = regexp.search2(toString(), this);
+        } else {
+            // not regexp and not string, can't convert
+            throw getRuntime().newTypeError("wrong argument type " + pattern.getMetaClass().getBaseName() + " (expected Regexp)");
         }
-
-        // not regexp and not string, can't convert
-        throw getRuntime().newTypeError("wrong argument type " + pattern.getMetaClass().getBaseName() + " (expected Regexp)");
+        
+        if(res instanceof RubyMatchData) {
+            ((RubyMatchData)res).use();
+        }
+        return res;
     }
 
     /** rb_str_capitalize
