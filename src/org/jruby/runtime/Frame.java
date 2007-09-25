@@ -222,7 +222,7 @@ public final class Frame implements JumpTarget {
      * 
      * @param self is the new value of self
      */
-    void setSelf(IRubyObject self) {
+    public void setSelf(IRubyObject self) {
         this.self = self;
     }
     

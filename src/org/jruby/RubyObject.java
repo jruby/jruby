@@ -844,7 +844,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     private IRubyObject yieldUnder(RubyModule under, IRubyObject[] args, Block block) {
-        final IRubyObject selfInYield = this;
         return under.executeUnder(new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                 ThreadContext context = getRuntime().getCurrentContext();
@@ -862,7 +861,14 @@ public class RubyObject implements Cloneable, IRubyObject {
                         valueInYield = RubyArray.newArray(getRuntime(), args);
                         aValue = true;
                     }
-                    return block.yield(context, valueInYield, selfInYield, context.getRubyClass(), aValue);
+                    
+                    // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
+                    block = block.cloneBlock();
+                    block.setSelf(RubyObject.this);
+                    block.getFrame().setSelf(RubyObject.this);
+                    // end hack
+                    
+                    return block.yield(context, valueInYield, RubyObject.this, context.getRubyClass(), aValue);
                     //TODO: Should next and return also catch here?
                 } catch (JumpException.BreakJump bj) {
                         return (IRubyObject) bj.getValue();

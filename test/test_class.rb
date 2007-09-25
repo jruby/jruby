@@ -277,4 +277,24 @@ class TestClass < Test::Unit::TestCase
       M7A.module_eval { include C7 }
     end
   end
+
+  class Foo
+    def self.action(name, &block)
+      define_method(name) {
+        instance_eval &block
+      }
+    end
+
+    action(:boo) { baz }
+
+    protected
+    def baz
+      'here'
+    end
+  end
+
+  # JRUBY-1381
+  def test_define_method_with_instance_eval_has_correct_self
+    assert_equal('here', Foo.new.boo)
+  end
 end
