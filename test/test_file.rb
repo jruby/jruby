@@ -258,13 +258,14 @@ class TestFile < Test::Unit::TestCase
 
   def test_truncate
     # JRUBY-1025: negative int passed to truncate should raise EINVAL
-    tmp = ENV['TEMP'] || ENV['TMPDIR'] || ENV['TMP'] || '/tmp'
+    filename = "__truncate_test_file"
     assert_raises(Errno::EINVAL) {
-      File.open("#{tmp}/truncate_test_file", 'w').truncate(-1)
+      File.open(filename, 'w').truncate(-1)
     }
     assert_raises(Errno::EINVAL) {
-      File.truncate("#{tmp}/truncate_test_file", -1)
+      File.truncate(filename, -1)
     }
+    File.delete(filename)
   end
 
   def test_file_create
@@ -286,5 +287,14 @@ class TestFile < Test::Unit::TestCase
   def test_file_test
     assert(FileTest.file?('test/test_file.rb'))
     assert(! FileTest.file?('test'))
+  end
+
+  def test_flock
+    filename = '__lock_test__'
+    file = File.open(filename,'w')
+    file.flock(File::LOCK_EX | File::LOCK_NB)
+    assert_equal(0, file.flock(File::LOCK_UN | File::LOCK_NB))
+    file.close
+    File.delete(filename)
   end
 end

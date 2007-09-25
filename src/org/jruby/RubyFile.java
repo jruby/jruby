@@ -305,6 +305,7 @@ public class RubyFile extends RubyIO {
         try {
 			switch(lockMode) {
 			case LOCK_UN:
+            case LOCK_UN | LOCK_NB:
 				if (currentLock != null) {
 					currentLock.release();
 					currentLock = null;
