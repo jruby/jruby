@@ -449,11 +449,6 @@ public class RubyModule extends RubyObject {
         return getModuleWithInstanceVar(name) != null;
     }
     
-    // Fix for JRUBY-1339 - search hierarchy for constant
-    public boolean isConstantDefined(final String name) {
-        return getModuleWithInstanceVar(name) != null;
-    }
-
     /**
      * Set the named constant on this module. Also, if the value provided is another Module and
      * that module has not yet been named, assign it the specified name.
@@ -905,6 +900,29 @@ public class RubyModule extends RubyObject {
         
         removeInstanceVariable(name);
         return getRuntime().getLoadService().autoload(getName() + "::" + name);
+    }
+
+    // Fix for JRUBY-1339 - search hierarchy for constant
+    /** rb_const_defined_at
+     * 
+     */
+    public boolean isConstantDefined(String name) {
+        boolean isObject = this == getRuntime().getObject();
+        Object undef = getRuntime().getUndef();
+
+        RubyModule module = this;
+
+        do {
+            Object value;
+            if ((value = module.getInstanceVariable(name)) != null) {
+                if (value != undef) return true;
+                return getRuntime().getLoadService().autoloadFor(
+                        module.getName() + "::" + name) != null;
+            }
+
+        } while (isObject && (module = module.getSuperClass()) != null );
+
+        return false;
     }
 
     /** rb_alias
