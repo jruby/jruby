@@ -205,12 +205,12 @@ public class Dir {
     }
 
 
-    public static List push_glob(String cwd, byte[] str, int p, int pend, int flags) {
+    public static List<ByteList> push_glob(String cwd, byte[] str, int p, int pend, int flags) {
         int buf;
         int nest, maxnest;
         int status = 0;
         boolean noescape = (flags & FNM_NOESCAPE) != 0;
-        List ary = new ArrayList();
+        List<ByteList> ary = new ArrayList<ByteList>();
         
         while(p < pend) {
             nest = maxnest = 0;
@@ -254,12 +254,13 @@ public class Dir {
     private static class GlobArgs {
         GlobFunc func;
         int c = -1;
-        List v;
+        List<ByteList> v;
     }
 
     public final static GlobFunc push_pattern = new GlobFunc() {
+            @SuppressWarnings("unchecked")
             public int call(byte[] ptr, int p, int len, Object ary) {
-                ((List)ary).add(new ByteList(ptr, p, len));
+                ((List) ary).add(new ByteList(ptr, p, len));
                 return 0;
             }
         };
@@ -271,7 +272,7 @@ public class Dir {
             }
         };
 
-    private static int push_braces(String cwd, List ary, byte[] str, int _s, int slen, int flags) {
+    private static int push_braces(String cwd, List<ByteList> ary, byte[] str, int _s, int slen, int flags) {
         ByteList buf = new ByteList(20);
         int s, p, t, lbrace, rbrace;
         int nest = 0;
@@ -328,11 +329,11 @@ public class Dir {
         return status;
     }
 
-    private static int push_globs(String cwd, List ary, byte[] str, int s, int slen, int flags) {
+    private static int push_globs(String cwd, List<ByteList> ary, byte[] str, int s, int slen, int flags) {
         return rb_glob2(cwd, str, s, slen, flags, push_pattern, ary);
     }
 
-    private static int rb_glob2(String cwd, byte[] _path, int path, int plen, int flags, GlobFunc func, List arg) {
+    private static int rb_glob2(String cwd, byte[] _path, int path, int plen, int flags, GlobFunc func, List<ByteList> arg) {
         GlobArgs args = new GlobArgs();
         args.func = func;
         args.v = arg;
@@ -434,10 +435,8 @@ public class Dir {
     private static int glob_helper(String cwd, byte[] _path, int path, int plen, int sub, int flags, GlobFunc func, GlobArgs arg) {
         int p,m;
         int status = 0;
-        ByteList buf = new ByteList(20);
         byte[] newpath = null;
         File st;
-        List link = new ArrayList();
         p = sub != -1 ? sub : path;
         if(!has_magic(_path, p, -1, plen, flags)) {
             if(DOSISH || (flags & FNM_NOESCAPE) == 0) {
@@ -465,6 +464,8 @@ public class Dir {
 
             return status;
         }
+        ByteList buf = new ByteList(20);
+        List<ByteList> link = new ArrayList<ByteList>();
         mainLoop: while(p != -1 && status == 0) {
             if(_path[p] == '/') {
                 p++;
@@ -551,7 +552,7 @@ public class Dir {
                     }
                 } while(false);
                 if(link.size() > 0) {
-                    for(Iterator iter = link.iterator();iter.hasNext();) {
+                    for(Iterator<ByteList> iter = link.iterator(); iter.hasNext();) {
                         if(status == 0) {
                             ByteList b = (ByteList)iter.next();
                             if(b.bytes[0] == '/'  || (DOSISH && 2<b.realSize && b.bytes[1] == ':' && isdirsep(b.bytes[2]))) {

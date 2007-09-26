@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2006 Ryan Bell <ryan.l.bell@gmail.com>
+ * Copyright (C) 2007 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -56,7 +57,7 @@ public class RubyStringIO extends RubyObject {
         
         stringIOClass.getMetaClass().defineMethod("open", callbackFactory.getOptSingletonMethod("open"));
         stringIOClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        stringIOClass.defineFastMethod("<<", callbackFactory.getFastMethod("append",RubyKernel.IRUBY_OBJECT));
+        stringIOClass.defineFastMethod("<<", callbackFactory.getFastMethod("append", IRubyObject.class));
         stringIOClass.defineFastMethod("binmode", callbackFactory.getFastMethod("binmode"));
         stringIOClass.defineFastMethod("close", callbackFactory.getFastMethod("close"));
         stringIOClass.defineFastMethod("closed?", callbackFactory.getFastMethod("closed_p"));
@@ -80,47 +81,40 @@ public class RubyStringIO extends RubyObject {
         stringIOClass.defineFastMethod("tty?", callbackFactory.getFastMethod("tty_p"));
         stringIOClass.defineFastMethod("length", callbackFactory.getFastMethod("length"));
         stringIOClass.defineFastMethod("lineno", callbackFactory.getFastMethod("lineno"));
-        stringIOClass.defineFastMethod("lineno=", callbackFactory.getFastMethod("set_lineno", RubyFixnum.class));
+        stringIOClass.defineFastMethod("lineno=", callbackFactory.getFastMethod("set_lineno", IRubyObject.class));
         stringIOClass.defineFastMethod("path", callbackFactory.getFastMethod("path"));
         stringIOClass.defineFastMethod("pid", callbackFactory.getFastMethod("pid"));
         stringIOClass.defineFastMethod("pos", callbackFactory.getFastMethod("pos"));
         // FIXME: this should probably be an alias?
         stringIOClass.defineFastMethod("tell", callbackFactory.getFastMethod("tell"));
-        stringIOClass.defineFastMethod("pos=", callbackFactory.getFastMethod("set_pos", RubyFixnum.class));
+        stringIOClass.defineFastMethod("pos=", callbackFactory.getFastMethod("set_pos", IRubyObject.class));
         stringIOClass.defineFastMethod("print", callbackFactory.getFastOptMethod("print"));
         stringIOClass.defineFastMethod("printf", callbackFactory.getFastOptMethod("printf"));
-        stringIOClass.defineFastMethod("putc", callbackFactory.getFastMethod("putc", RubyKernel.IRUBY_OBJECT));
+        stringIOClass.defineFastMethod("putc", callbackFactory.getFastMethod("putc", IRubyObject.class));
         stringIOClass.defineFastMethod("puts", callbackFactory.getFastOptMethod("puts"));
         stringIOClass.defineFastMethod("read", callbackFactory.getFastOptMethod("read"));
         stringIOClass.defineFastMethod("readchar", callbackFactory.getFastMethod("readchar"));
         stringIOClass.defineFastMethod("readline", callbackFactory.getFastOptMethod("readline"));
         stringIOClass.defineFastMethod("readlines", callbackFactory.getFastOptMethod("readlines"));
-        stringIOClass.defineFastMethod("reopen", callbackFactory.getFastMethod("reopen", RubyKernel.IRUBY_OBJECT));
+        stringIOClass.defineFastMethod("reopen", callbackFactory.getFastOptMethod("reopen"));
         stringIOClass.defineFastMethod("rewind", callbackFactory.getFastMethod("rewind"));
         stringIOClass.defineFastMethod("seek", callbackFactory.getFastOptMethod("seek"));
         stringIOClass.defineFastMethod("size", callbackFactory.getFastMethod("size"));
         stringIOClass.defineFastMethod("string", callbackFactory.getFastMethod("string"));
-        stringIOClass.defineFastMethod("string=", callbackFactory.getFastMethod("set_string",RubyString.class));
+        stringIOClass.defineFastMethod("string=", callbackFactory.getFastMethod("set_string", IRubyObject.class));
         stringIOClass.defineFastMethod("sync", callbackFactory.getFastMethod("sync"));
-        stringIOClass.defineFastMethod("sync=", callbackFactory.getFastMethod("set_sync", RubyKernel.IRUBY_OBJECT));
-        stringIOClass.defineFastMethod("syswrite", callbackFactory.getFastMethod("syswrite", RubyKernel.IRUBY_OBJECT));
-        stringIOClass.defineFastMethod("truncate", callbackFactory.getFastMethod("truncate", RubyFixnum.class));
-        stringIOClass.defineFastMethod("ungetc", callbackFactory.getFastMethod("ungetc", RubyFixnum.class));
-        stringIOClass.defineFastMethod("write", callbackFactory.getFastMethod("write", RubyKernel.IRUBY_OBJECT));
+        stringIOClass.defineFastMethod("sync=", callbackFactory.getFastMethod("set_sync", IRubyObject.class));
+        stringIOClass.defineFastMethod("sysread", callbackFactory.getFastOptMethod("sysread"));
+        stringIOClass.defineFastMethod("syswrite", callbackFactory.getFastMethod("syswrite", IRubyObject.class));
+        stringIOClass.defineFastMethod("truncate", callbackFactory.getFastMethod("truncate", IRubyObject.class));
+        stringIOClass.defineFastMethod("ungetc", callbackFactory.getFastMethod("ungetc", IRubyObject.class));
+        stringIOClass.defineFastMethod("write", callbackFactory.getFastMethod("write", IRubyObject.class));
 
         return stringIOClass;
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyString str = recv.getRuntime().newString("");
-        IRubyObject mode = recv.getRuntime().getNil();
-        if (args.length > 0) {
-            str = args[0].convertToString();
-            if (args.length > 1) {
-                mode = args[1];
-            }
-        }
-        RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(new IRubyObject[]{str,mode}, Block.NULL_BLOCK);
+        RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(args, Block.NULL_BLOCK);
         IRubyObject val = strio;
         ThreadContext tc = recv.getRuntime().getCurrentContext();
         
@@ -142,73 +136,104 @@ public class RubyStringIO extends RubyObject {
     private int lineno = 0;
     private boolean eof = false;
     private RubyString internal;
+    // FIXME: Replace these with common IOModes instance and make IOModes work for this and IO.
     private boolean closedRead = false;
     private boolean closedWrite = false;
+    private boolean append = false;
 
+    @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (Arity.checkArgumentCount(getRuntime(), args, 0, 2) > 0) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 2);
+
+        if (args.length > 0) {
             // Share bytelist since stringio is acting on this passed-in string.
             internal = args[0].convertToString();
+            if (args.length > 1) {
+                if (args[1] instanceof RubyFixnum) {
+                    int numericModes = RubyNumeric.fix2int(args[1]);
+                    
+                }
+                String modes = args[1].convertToString().toString();
+                
+                setupModes(modes);
+            }
         } else {
-            internal = getRuntime().newString("");;
+            internal = getRuntime().newString("");
         }
+        
         return this;
     }
 
     public IRubyObject append(IRubyObject obj) {
-        internal.modify();
+        checkWritable();
+        checkFrozen();
+
         RubyString val = ((RubyString)obj.callMethod(obj.getRuntime().getCurrentContext(),MethodIndex.TO_S, "to_s"));
-        int left = internal.getByteList().length()-(int)pos;
-        internal.getByteList().replace((int)pos,Math.min(val.getByteList().length(),left),val.getByteList());
-        pos += val.getByteList().length();
+        internal.modify();
+        if (append) {
+            internal.getByteList().append(val.getByteList());
+        } else {
+            int left = internal.getByteList().length()-(int)pos;
+            internal.getByteList().replace((int)pos,Math.min(val.getByteList().length(),left),val.getByteList());
+            pos += val.getByteList().length();
+        }
+
         return this;
     }
 
     public IRubyObject binmode() {
-        return getRuntime().getTrue();
+        return this;
     }
     
     public IRubyObject close() {
         closedRead = true;
         closedWrite = true;
+        
         return getRuntime().getNil();
     }
 
     public IRubyObject closed_p() {
-        return (closedRead && closedWrite) ? getRuntime().getTrue() : getRuntime().getFalse();
+        return getRuntime().newBoolean(closedRead && closedWrite);
     }
 
     public IRubyObject close_read() {
         closedRead = true;
+        
         return getRuntime().getNil();
     }
 
     public IRubyObject closed_read_p() {
-        return closedRead ? getRuntime().getTrue() : getRuntime().getFalse();
+        return getRuntime().newBoolean(closedRead);
     }
 
     public IRubyObject close_write() {
         closedWrite = true;
+        
         return getRuntime().getNil();
     }
 
     public IRubyObject closed_write_p() {
-        return closedWrite ? getRuntime().getTrue() : getRuntime().getFalse();
+        return getRuntime().newBoolean(closedWrite);
     }
 
    public IRubyObject each(IRubyObject[] args, Block block) {
        IRubyObject line = gets(args);
        ThreadContext context = getRuntime().getCurrentContext();
+       
        while (!line.isNil()) {
            block.yield(context, line);
            line = gets(args);
        }
+       
        return this;
    }
 
     public IRubyObject each_byte(Block block) {
+        checkReadable();
+        
         RubyString.newString(getRuntime(),new ByteList(internal.getByteList(), (int)pos, internal.getByteList().length())).each_byte(block);
-        return this;
+        
+        return getRuntime().getNil();
     }
 
     public IRubyObject each_line(Block block) {
@@ -240,6 +265,9 @@ public class RubyStringIO extends RubyObject {
     }
 
     public IRubyObject getc() {
+        if (pos >= internal.getByteList().length()) {
+            return getRuntime().getNil();
+        }
         return getRuntime().newFixnum(internal.getByteList().get((int)pos++) & 0xFF);
     }
 
@@ -271,19 +299,22 @@ public class RubyStringIO extends RubyObject {
     }
 
     public IRubyObject gets(IRubyObject[] args) {
+        checkReadable();
+
         IRubyObject result = internalGets(args);
         if (!result.isNil()) {
             getRuntime().getCurrentContext().getCurrentFrame().setLastLine(result);
         }
+        
         return result;
     }
 
     public IRubyObject isatty() {
-        return getRuntime().getNil();
+        return getRuntime().getFalse();
     }
 
     public IRubyObject tty_p() {
-        return getRuntime().getNil();
+        return getRuntime().getFalse();
     }
 
     public IRubyObject length() {
@@ -294,8 +325,9 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().newFixnum(lineno);
     }
 
-    public IRubyObject set_lineno(RubyFixnum val) {
-        lineno = (int)val.getLongValue();
+    public IRubyObject set_lineno(IRubyObject arg) {
+        lineno = RubyNumeric.fix2int(arg);
+        
         return getRuntime().getNil();
     }
 
@@ -315,8 +347,9 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().newFixnum(pos);
     }
 
-    public IRubyObject set_pos(RubyFixnum val) {
-        pos = (int)val.getLongValue();
+    public IRubyObject set_pos(IRubyObject arg) {
+        pos = RubyNumeric.fix2int(arg);
+        
         return getRuntime().getNil();
     }
 
@@ -339,40 +372,60 @@ public class RubyStringIO extends RubyObject {
     }
 
     public IRubyObject putc(IRubyObject obj) {
-        append(obj);
+        checkWritable();
+        byte c = RubyNumeric.num2chr(obj);
+        checkFrozen();
+
+        internal.modify();
+        if (append) {
+            pos = internal.getByteList().length();
+            internal.getByteList().append(c);
+        } else {
+            if (pos >= internal.getByteList().length()) {
+                internal.getByteList().append(c);
+            } else {
+                internal.getByteList().set((int) pos, c);
+            }
+            pos++;
+        }
+
         return obj;
     }
 
     private static final ByteList NEWLINE_BL = new ByteList(new byte[]{10},false);
 
     public IRubyObject puts(IRubyObject[] obj) {
-        internal.modify();
+        checkWritable();
 
         if (obj.length == 0) append(RubyString.newString(getRuntime(),NEWLINE_BL));
 
-        ByteList list = internal.getByteList();
         for (int i=0,j=obj.length;i<j;i++) {
             append(obj[i]);
 
             // Append a newline if there wasn't already one at the end of newest appended object.
             int lastPossibleNewlineIndex = (int) (pos - NEWLINE_BL.length());
-            if (lastPossibleNewlineIndex == -1 || 
-                    !list.subSequence(lastPossibleNewlineIndex, (int) pos).equals(NEWLINE_BL)) {
-                // If we rewind/seek backwards write newline over existing, otherwise add
-                list.unsafeReplace((int)(pos++), list.length() > pos ? 1 : 0, NEWLINE_BL);
+            if (lastPossibleNewlineIndex == -1 ||
+                !internal.getByteList().subSequence(lastPossibleNewlineIndex, (int) pos).equals(NEWLINE_BL)) {
+                    // If we rewind/seek backwards write newline over existing, otherwise add
+                    internal.getByteList().unsafeReplace((int) pos++, internal.getByteList().length() > pos ? 1 : 0, NEWLINE_BL);
             }
         }
         return getRuntime().getNil();
     }
 
+    @SuppressWarnings("fallthrough")
     public IRubyObject read(IRubyObject[] args) {
+        checkReadable();
+
         ByteList buf = null;
         int length = 0;
         int oldLength = 0;
+        RubyString originalString = null;
         
         switch (args.length) {
         case 2:
-            buf = args[1].convertToString().getByteList();
+            originalString = args[1].convertToString();
+            buf = originalString.getByteList();
         case 1:
             if (!args[0].isNil()) {
                 length = RubyNumeric.fix2int(args[0]);
@@ -429,8 +482,10 @@ public class RubyStringIO extends RubyObject {
             int rest = (int) (internal.getByteList().length() - pos);
             
             if (length > rest) length = rest;
+
+            // Yow...this is ugly
             buf.realSize = length;
-            buf.replace((int) pos, length, internal.getByteList()); 
+            buf.replace(0, length, internal.getByteList().bytes, (int) pos, length);
         }
         
         if (buf == null) {
@@ -443,18 +498,28 @@ public class RubyStringIO extends RubyObject {
         
         if (oldLength < 0 || oldLength > length) eof = true;
         
-        return getRuntime().newString(buf);
+        return originalString != null ? originalString : getRuntime().newString(buf);
     }
 
     public IRubyObject readchar() {
-        return getc();
+        IRubyObject c = getc();
+        
+        if (c.isNil()) throw getRuntime().newEOFError();
+        
+        return c;
     }
 
     public IRubyObject readline(IRubyObject[] args) {
-        return gets(args);
+        IRubyObject line = gets(args);
+        
+        if (line.isNil()) throw getRuntime().newEOFError();
+        
+        return line;
     }
     
     public IRubyObject readlines(IRubyObject[] arg) {
+        checkReadable();
+        
         List<IRubyObject> lns = new ArrayList<IRubyObject>();
         while (!(pos >= internal.getByteList().length() || eof)) {
             lns.add(gets(arg));
@@ -462,7 +527,10 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().newArray(lns);
     }
     
-    public IRubyObject reopen(IRubyObject str) {
+    public IRubyObject reopen(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
+        
+        IRubyObject str = args[0];
         if (str instanceof RubyStringIO) {
             pos = ((RubyStringIO)str).pos;
             lineno = ((RubyStringIO)str).lineno;
@@ -478,6 +546,11 @@ public class RubyStringIO extends RubyObject {
             closedWrite = false;
             internal = str.convertToString();
         }
+        
+        if (args.length == 2) {
+            setupModes(args[1].convertToString().toString());
+        }
+        
         return this;
     }
 
@@ -488,21 +561,36 @@ public class RubyStringIO extends RubyObject {
     }
 
     public IRubyObject seek(IRubyObject[] args) {
-        long amount = ((RubyNumeric)args[0]).getLongValue();
+        long amount = RubyNumeric.fix2long(args[0]);
         int whence = IOHandler.SEEK_SET;
-        if (args.length > 1) {
-            whence = (int)(((RubyNumeric)args[1]).getLongValue());
-        }
+        long newPosition = pos;
+
+        if (args.length > 1 && !args[0].isNil()) whence = RubyNumeric.fix2int(args[1]);
+
         if (whence == IOHandler.SEEK_CUR) {
-            pos += amount;
+            newPosition += amount;
         } else if (whence == IOHandler.SEEK_END) {
-            pos = internal.getByteList().length() + amount;
+            newPosition = internal.getByteList().length() + amount;
         } else {
-            pos = amount;
+            newPosition = amount;
         }
+
+        if (newPosition < 0) throw getRuntime().newErrnoEINVALError();
+
+        pos = newPosition;
+        eof = false;
+        
         return RubyFixnum.zero(getRuntime());
     }
 
+    public IRubyObject set_string(IRubyObject arg) {
+        return reopen(new IRubyObject[] { arg });
+    }
+
+    public IRubyObject set_sync(IRubyObject args) {
+        return args;
+    }
+    
     public IRubyObject size() {
         return getRuntime().newFixnum(internal.getByteList().length());
     }
@@ -511,38 +599,76 @@ public class RubyStringIO extends RubyObject {
         return internal;
     }
 
-    public IRubyObject set_string(RubyString arg) {
-        return reopen(arg);
-    }
-
     public IRubyObject sync() {
         return getRuntime().getTrue();
     }
-
-    public IRubyObject set_sync(IRubyObject args) {
-        return args;
+    
+    public IRubyObject sysread(IRubyObject[] args) {
+        IRubyObject obj = read(args);
+        
+        if (obj.isNil() || ((RubyString) obj).getByteList().length() == 0) throw getRuntime().newEOFError();
+        
+        return obj; 
     }
+
 
     public IRubyObject syswrite(IRubyObject args) {
         return write(args);
     }
 
-    public IRubyObject truncate(RubyFixnum args) {
-        int len = (int) args.getLongValue();
+    public IRubyObject truncate(IRubyObject arg) {
+        checkWritable();
+        
+        int len = RubyFixnum.fix2int(arg);
         internal.modify();
         internal.getByteList().length(len);
-        return RubyFixnum.zero(getRuntime());
+        return getRuntime().newFixnum(len);
     }
 
-    public IRubyObject ungetc(RubyFixnum args) {
+    public IRubyObject ungetc(IRubyObject arg) {
+        checkReadable();
+        
+        int c = RubyNumeric.num2int(arg);
+        if (pos == 0) return getRuntime().getNil();
         internal.modify();
-        internal.getByteList().insert((int)pos,(int)args.getLongValue());
+        pos--;
+        internal.getByteList().set((int) pos, c);
+        
         return getRuntime().getNil();
     }
 
-    public IRubyObject write(IRubyObject args) {
-        String obj = args.toString();
-        append(args);
+    public IRubyObject write(IRubyObject arg) {
+        checkWritable();
+        String obj = arg.toString();
+        append(arg);
         return getRuntime().newFixnum(obj.length());
+    }
+
+    /* rb: check_modifiable */
+    @Override
+    protected void checkFrozen() {
+        if (internal.isFrozen()) throw getRuntime().newIOError("not modifiable string");
+    }
+    
+    /* rb: readable */
+    private void checkReadable() {
+        if (closedRead) throw getRuntime().newIOError("not opened for reading");
+    }
+
+    /* rb: writable */
+    private void checkWritable() {
+        if (closedWrite) throw getRuntime().newIOError("not opened for writing");
+
+        // Tainting here if we ever want it. (secure 4)
+    }
+
+    private void setupModes(String modes) {
+        closedWrite = false;
+        closedRead = false;
+        append = false;
+        
+        if (modes.contains("r")) closedWrite = true;
+        if (modes.contains("w")) closedRead = true;
+        if (modes.contains("a")) append = true;
     }
 }

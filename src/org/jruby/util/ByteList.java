@@ -74,7 +74,7 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     public ByteList(byte[] wrap, boolean copy) {
         if (wrap == null) throw new NullPointerException("Invalid argument: constructing with null array");
         if(copy) {
-            bytes = (byte[])wrap.clone();
+            bytes = wrap.clone();
         } else {
             bytes = wrap;
         }
@@ -140,6 +140,7 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
         return this;
     }
 
+    @Override
     public Object clone() {
         return dup();
     }
@@ -532,11 +533,12 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
         int newSize = realSize + increaseRequested;
         if (bytes.length < newSize) {
             byte[] newBytes = new byte[(int) (newSize * FACTOR)];
-            System.arraycopy(bytes,0,newBytes,0,realSize);
+            if (bytes.length != 0) System.arraycopy(bytes, 0, newBytes, 0, realSize);
             bytes = newBytes;
         }
     }
 
+    @Override
     public int hashCode() {
         if (validHash) return hash;
 
@@ -557,6 +559,7 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
      * 
      * @return an ISO-8859-1 representation of the byte list
      */    
+    @Override
     public String toString() {
         try {
             if (stringValue == null) stringValue = toString("ISO-8859-1");

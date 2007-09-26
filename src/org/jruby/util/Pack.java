@@ -1278,6 +1278,7 @@ public class Pack {
      * use a platform-independent size. Spaces are ignored in the template string.
      * @see RubyString#unpack
      **/
+    @SuppressWarnings("fallthrough")
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
         ByteBuffer format = ByteBuffer.wrap(formatString.unsafeBytes(), formatString.begin(), formatString.length());
         StringBuffer result = new StringBuffer();
@@ -1291,10 +1292,21 @@ public class Pack {
         mainLoop: while (next != 0) {
             type = next;
             next = safeGet(format);
-            while (Character.isWhitespace((char)(type&0xFF))) { // skip all spaces
+            
+            // Skip all whitespace in pack format string
+            while (Character.isWhitespace((char)(type&0xFF))) {
                 if (next == 0) break mainLoop;
                 type = next;
                 next = safeGet(format);
+            }
+            
+            // Skip embedded comments in pack format string
+            if (type == '#') {
+                while (type != '\n') { 
+                    if (next == 0) break mainLoop;
+                    type = next;
+                    next = safeGet(format);
+                }
             }
 
             if (next == '!' || next == '_') {
@@ -1349,11 +1361,13 @@ public class Pack {
                             throw runtime.newArgumentError(sTooFew);
                         }
 
-                        IRubyObject from = (IRubyObject) list.eltInternal(idx++);
+                        IRubyObject from = list.eltInternal(idx++);
                         lCurElemString = from == runtime.getNil() ? "" : from.convertToString().toString();
 
                         if (isStar) {
                             occurrences = lCurElemString.length();
+                            // 'Z' adds extra null pad (versus 'a')
+                            if (type == 'Z') occurrences++;
                         }
 
                         switch (type) {
@@ -1367,18 +1381,25 @@ public class Pack {
                                     //string filled with a given char with a given length but I couldn't find it
                                     result.append(lCurElemString);
                                     occurrences -= lCurElemString.length();
-                                    grow(result, (type == 'a') ? sNil10 : sSp10, occurrences);
+                                    
+                                    switch (type) {
+                                      case 'a':
+                                      case 'Z':
+                                          grow(result, sNil10, occurrences);
+                                          break;
+                                      default:
+                                          grow(result, sSp10, occurrences);
+                                          break;
+                                    }
                                 }
                             break;
-
-                            //I believe there is a bug in the b and B case we skip a char too easily
                             case 'b' :
                                 {
                                     int currentByte = 0;
                                     int padLength = 0;
 
                                     if (occurrences > lCurElemString.length()) {
-                                        padLength = occurrences - lCurElemString.length();
+                                        padLength = (occurrences - lCurElemString.length()) / 2 + occurrences % 2;
                                         occurrences = lCurElemString.length();
                                     }
 
@@ -1412,7 +1433,7 @@ public class Pack {
                                     int padLength = 0;
 
                                     if (occurrences > lCurElemString.length()) {
-                                        padLength = occurrences - lCurElemString.length();
+                                        padLength = (occurrences - lCurElemString.length()) / 2 + occurrences % 2;
                                         occurrences = lCurElemString.length();
                                     }
 
@@ -1538,9 +1559,10 @@ public class Pack {
                         if (listSize-- <= 0) {
                             throw runtime.newArgumentError(sTooFew);
                         }
-                        IRubyObject from = (IRubyObject) list.eltInternal(idx++);
+                        IRubyObject from = list.eltInternal(idx++);
                         lCurElemString = from == runtime.getNil() ? "" : from.convertToString().toString();
                         occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
+                        if ("".equals(lCurElemString)) break;
 
                         for (;;) {
                             encodes(runtime, result, lCurElemString, occurrences, (char)type);
@@ -1559,7 +1581,7 @@ public class Pack {
                            throw runtime.newArgumentError(sTooFew);
                        }
 
-                       IRubyObject from = (IRubyObject) list.eltInternal(idx++);
+                       IRubyObject from = list.eltInternal(idx++);
                        lCurElemString = from == runtime.getNil() ? "" : from.asString().toString();
 
                        if (occurrences <= 1) {
@@ -1577,7 +1599,7 @@ public class Pack {
                            throw runtime.newArgumentError(sTooFew);
                         }
 
-                        IRubyObject from = (IRubyObject) list.eltInternal(idx++);
+                        IRubyObject from = list.eltInternal(idx++);
                         long l = from == runtime.getNil() ? 0 : RubyNumeric.num2long(from);
 
                         c[cIndex] = (char) l;
@@ -1591,7 +1613,7 @@ public class Pack {
                     }
                     break;
                 case 'w' :
-                    IRubyObject from = (IRubyObject) list.eltInternal(idx++);
+                    IRubyObject from = list.eltInternal(idx++);
                     String stringVal = from == runtime.getNil() ? "0" : from.asString().toString();
                     BigInteger bigInt = new BigInteger(stringVal);
                     

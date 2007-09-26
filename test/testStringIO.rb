@@ -73,21 +73,16 @@ s.close_read
 test_equal(false, s.closed?)
 s.close_write
 test_equal(true, s.closed?)
-s.reopen("B")
-test_equal(false, s.closed?)
+test_exception(IOError) { s.puts("HEH") }
+test_exception(IOError) { s.putc('a') }
+s.seek(0)
+test_equal("A", s.string)
 
 # JRUBY-214: reopen's arg 0 should have to_str called if not String, else TypeError is thrown
 s = StringIO.open("A")
 s.close_read
 s.close_write
 test_exception(TypeError) { s.reopen(Object.new) }
-class Foo
-  def to_str
-    "abc"
-  end
-end
-test_no_exception { s.reopen(Foo.new) }
-test_equal("abc", s.read(3))
 
 ###### fcntl ######
 test_exception(NotImplementedError) { StringIO.new("").fcntl() }
@@ -176,3 +171,16 @@ test_equal("HEH\n", buf)
 n = StringIO.new
 n.puts "test\n"
 test_equal("test\n",n.string)
+
+class Foo
+  def to_int
+    65
+  end
+end
+
+s = StringIO.new("abc")
+s.putc(Foo.new)
+test_equal("Abc", s.string)
+test_exception(TypeError) { s.putc('') }
+test_exception(Errno::EINVAL) { s.seek(-40) }
+
