@@ -2138,4 +2138,15 @@ public class EvaluationState {
 
         return arrayValue(runtime, value);
     }
+
+    // Used by the compiler to simplify arg processing
+    public static RubyArray splatValue(IRubyObject value, Ruby runtime) {
+        return splatValue(runtime, value);
+    }
+    public static IRubyObject aValueSplat(IRubyObject value, Ruby runtime) {
+        return aValueSplat(runtime, value);
+    }
+    public static IRubyObject aryToAry(IRubyObject value, Ruby runtime) {
+        return aryToAry(runtime, value);
+    }
 }

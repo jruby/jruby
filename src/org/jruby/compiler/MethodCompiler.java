@@ -306,28 +306,11 @@ public interface MethodCompiler {
     public void assignInstanceVariable(String name);
     
     /**
-     * Assign the value from incoming block args instance variable with the specified name
-     * on the current "self".
-     * 
-     * @param index The index in the incoming arguments from which to get the ivar value
-     * @param name The name of the ivar to assign.
-     */
-    public void assignInstanceVariableBlockArg(int index, String name);
-    
-    /**
      * Assign the top of the stack to the global variable with the specified name.
      * 
      * @param name The name of the global variable.
      */
     public void assignGlobalVariable(String name);
-    
-    /**
-     * Assign the value from incoming block args to the global variable with the specified name.
-     * 
-     * @param index The index in the incoming arguments from which to get the gvar value
-     * @param name The name of the global variable.
-     */
-    public void assignGlobalVariableBlockArg(int index, String name);
     
     /**
      * Retrieve the global variable with the specified name to the top of the stack.
@@ -371,33 +354,6 @@ public interface MethodCompiler {
      * Ensures that the present value is an IRubyObject[] by wrapping it with one or coercing it if it is not.
      */
     public void ensureMultipleAssignableRubyArray(boolean masgnHasHead);
-    
-    /**
-     * Load an integer value suitable for numeric comparisons
-     */
-    public void loadInteger(int value);
-    
-    /**
-     * Perform a greater-than-or-equal test and branch, given the provided true and false branches.
-     */
-    public void performGEBranch(BranchCallback trueBranch, BranchCallback falseBranch);
-    
-    /**
-     * Perform a greater-than test and branch, given the provided true and false branches.
-     */
-    public void performGTBranch(BranchCallback trueBranch, BranchCallback falseBranch);
-    
-    /**
-     * Perform a greater-than-or-equal test and branch, given the provided true and false branches.
-     */
-    public void performLEBranch(BranchCallback trueBranch, BranchCallback falseBranch);
-    
-    /**
-     * Perform a greater-than test and branch, given the provided true and false branches.
-     */
-    public void performLTBranch(BranchCallback trueBranch, BranchCallback falseBranch);
-    
-    public void loadRubyArraySize();
     
     public void issueBreakEvent(ClosureCallback value);
     
@@ -473,7 +429,6 @@ public interface MethodCompiler {
     public void getFrameKlazz(); 
     public void superClass();
     public void ifNotSuperMethodBound(Object token);
-    public void debug(String str);
     public void isInstanceOf(Class clazz, BranchCallback trueBranch, BranchCallback falseBranch);
     public void isCaptured(int number, BranchCallback trueBranch, BranchCallback falseBranch);
     public void concatArrays();

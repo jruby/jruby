@@ -281,19 +281,20 @@ public class HeapBasedVariableCompiler implements VariableCompiler {
 
     public void processRestArg(int startIndex, int restArg) {
         methodCompiler.loadRuntime();
-        method.aload(varsIndex);
-        method.ldc(new Integer(restArg));
         method.aload(argsIndex);
         method.ldc(new Integer(startIndex));
 
-        methodCompiler.invokeUtilityMethod("processRestArg", cg.sig(void.class, cg.params(Ruby.class, IRubyObject[].class, int.class, IRubyObject[].class, int.class)));
+        methodCompiler.invokeUtilityMethod("processRestArg", cg.sig(IRubyObject.class, cg.params(Ruby.class, IRubyObject[].class, int.class)));
+        assignLocalVariable(restArg);
+        method.pop();
     }
 
     public void processBlockArgument(int index) {
         methodCompiler.loadRuntime();
-        methodCompiler.loadThreadContext();
         method.aload(closureIndex);
-        method.ldc(Integer.valueOf(index));
-        methodCompiler.invokeUtilityMethod("processBlockArgument", cg.sig(Void.TYPE, cg.params(Ruby.class, ThreadContext.class, Block.class, int.class)));
+        
+        methodCompiler.invokeUtilityMethod("processBlockArgument", cg.sig(IRubyObject.class, cg.params(Ruby.class, Block.class)));
+        assignLocalVariable(index);
+        method.pop();
     }
 }

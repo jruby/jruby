@@ -134,7 +134,10 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             try {
                 callConfig.pre(context, self, implementer, getArity(), name, args, block, staticScope, this);
                 if (argsNode.getBlockArgNode() != null) {
-                    CompilerHelpers.processBlockArgument(runtime, context, block, argsNode.getBlockArgNode().getCount());
+                    context.getCurrentScope().setValue(
+                            argsNode.getBlockArgNode().getCount(),
+                            CompilerHelpers.processBlockArgument(runtime, block),
+                            0);
                 }
 
                 getArity().checkArity(runtime, args);
@@ -199,7 +202,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     Class sourceClass = compiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
                     
                     // if we're not doing any of the operations that still need a scope, use the scopeless config
-                    if (!(inspector.hasClosure() || inspector.hasScopeAwareMethods() || inspector.hasBlockArg() || inspector.hasOptArgs() || inspector.hasRestArg())) {
+                    if (!(inspector.hasClosure() || inspector.hasScopeAwareMethods())) {
                         // switch to a slightly faster call config
                         jitCallConfig = CallConfiguration.JAVA_FULL;
                     } else {

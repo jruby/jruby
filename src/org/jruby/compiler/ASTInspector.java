@@ -178,7 +178,10 @@ public class ASTInspector {
         case ARGSNODE:
             ArgsNode argsNode = (ArgsNode)node;
             if (argsNode.getBlockArgNode() != null) hasBlockArg = true;
-            if (argsNode.getOptArgs() != null) hasOptArgs = true;
+            if (argsNode.getOptArgs() != null) {
+                hasOptArgs = true;
+                inspect(argsNode.getOptArgs());
+            }
             if (argsNode.getRestArg() == -2 || argsNode.getRestArg() >= 0) hasRestArg = true;
             break;
         case ASSIGNABLENODE:

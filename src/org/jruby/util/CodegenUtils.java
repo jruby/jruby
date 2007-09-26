@@ -9,6 +9,8 @@
 
 package org.jruby.util;
 
+import java.util.Arrays;
+
 /**
  *
  * @author headius
@@ -102,8 +104,20 @@ public class CodegenUtils {
         return signature.toString();
     }
     
-    // TODO: Wouldn't it be nice to replace this all with a single varargs?
     public Class[] params(Class... classes) {
+        return classes;
+    }
+    
+    public Class[] params(Class cls, int times) {
+        Class[] classes = new Class[times];
+        Arrays.fill(classes, cls);
+        return classes;
+    }
+    
+    public Class[] params(Class cls1, Class clsFill, int times) {
+        Class[] classes = new Class[times + 1];
+        Arrays.fill(classes, clsFill);
+        classes[0] = cls1;
         return classes;
     }
     

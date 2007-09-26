@@ -6,12 +6,14 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.RubyHash;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
@@ -19,6 +21,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.ReOptions;
@@ -374,10 +378,9 @@ public class CompilerHelpers {
         throw re;
     }
     
-    public static void processBlockArgument(Ruby runtime, ThreadContext context, Block block, int index) {
+    public static IRubyObject processBlockArgument(Ruby runtime, Block block) {
         if (!block.isGiven()) {
-            context.getCurrentScope().setValue(index, runtime.getNil(), 0);
-            return;
+            return runtime.getNil();
         }
         
         RubyProc blockArg;
@@ -388,15 +391,15 @@ public class CompilerHelpers {
             blockArg = runtime.newProc(false, block);
             blockArg.getBlock().isLambda = block.isLambda;
         }
-        // We pass depth zero since we know this only applies to newly created local scope
-        context.getCurrentScope().setValue(index, blockArg, 0);
+        
+        return blockArg;
     }
         
-    public static void processRestArg(Ruby runtime, IRubyObject[] scope, int restArg, IRubyObject[] args, int start) {
+    public static IRubyObject processRestArg(Ruby runtime, IRubyObject[] args, int start) {
         if (args.length <= start) {
-            scope[restArg] = RubyArray.newArray(runtime, 0);
+            return RubyArray.newArray(runtime, 0);
         } else {
-            scope[restArg] = RubyArray.newArrayNoCopy(runtime, args, start);
+            return RubyArray.newArrayNoCopy(runtime, args, start);
         }
     }
     
@@ -584,5 +587,83 @@ public class CompilerHelpers {
     
     public static IRubyObject retryJump() {
         throw new JumpException.RetryJump(null, null);
+    }
+    
+    public static ISourcePosition constructPosition(String file, int line) {
+        return new SimpleSourcePosition(file, line);
+    }
+    
+    public static final int MAX_SPECIFIC_ARITY_OBJECT_ARRAY = 5;
+    
+    public static IRubyObject[] constructObjectArray(IRubyObject one) {
+        return new IRubyObject[] {one};
+    }
+    
+    public static IRubyObject[] constructObjectArray(IRubyObject one, IRubyObject two) {
+        return new IRubyObject[] {one, two};
+    }
+    
+    public static IRubyObject[] constructObjectArray(IRubyObject one, IRubyObject two, IRubyObject three) {
+        return new IRubyObject[] {one, two, three};
+    }
+    
+    public static IRubyObject[] constructObjectArray(IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four) {
+        return new IRubyObject[] {one, two, three, four};
+    }
+    
+    public static IRubyObject[] constructObjectArray(IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four, IRubyObject five) {
+        return new IRubyObject[] {one, two, three, four, five};
+    }
+    
+    public static final int MAX_SPECIFIC_ARITY_HASH = 3;
+    
+    public static RubyHash constructHash(Ruby runtime, IRubyObject key1, IRubyObject value1) {
+        RubyHash hash = RubyHash.newHash(runtime);
+        hash.put(key1, value1);
+        return hash;
+    }
+    
+    public static RubyHash constructHash(Ruby runtime, IRubyObject key1, IRubyObject value1, IRubyObject key2, IRubyObject value2) {
+        RubyHash hash = RubyHash.newHash(runtime);
+        hash.put(key1, value1);
+        hash.put(key2, value2);
+        return hash;
+    }
+    
+    public static RubyHash constructHash(Ruby runtime, IRubyObject key1, IRubyObject value1, IRubyObject key2, IRubyObject value2, IRubyObject key3, IRubyObject value3) {
+        RubyHash hash = RubyHash.newHash(runtime);
+        hash.put(key1, value1);
+        hash.put(key2, value2);
+        hash.put(key3, value3);
+        return hash;
+    }
+    
+    public static IRubyObject defineAlias(ThreadContext context, String newName, String oldName) {
+        Ruby runtime = context.getRuntime();
+
+        RubyModule module = context.getRubyClass();
+   
+        if (module == null) throw runtime.newTypeError("no class to make alias");
+        
+        module.defineAlias(newName, oldName);
+        module.callMethod(context, "method_added", runtime.newSymbol(newName));
+   
+        return runtime.getNil();
+    }
+    
+    public static IRubyObject getInstanceVariable(Ruby runtime, IRubyObject self, String name) {
+        IRubyObject result = self.getInstanceVariable(name);
+        if (result == null) return runtime.getNil();
+        return result;
+    }
+    
+    public static IRubyObject negate(IRubyObject value, Ruby runtime) {
+        if (value.isTrue()) return runtime.getFalse();
+        return runtime.getTrue();
+    }
+    
+    public static IRubyObject stringOrNil(String value, Ruby runtime, IRubyObject nil) {
+        if (value == null) return nil;
+        return RubyString.newString(runtime, value);
     }
 }

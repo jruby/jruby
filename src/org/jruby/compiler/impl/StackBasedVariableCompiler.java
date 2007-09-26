@@ -35,6 +35,7 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.VariableCompiler;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -50,12 +51,14 @@ public class StackBasedVariableCompiler implements VariableCompiler {
     private SkinnyMethodAdapter method;
     private StandardASMCompiler.AbstractMethodCompiler methodCompiler;
     private int argsIndex; // the index where an IRubyObject[] representing incoming arguments can be found
+    private int closureIndex; // the index of the block parameter
     private Arity arity;
 
-    public StackBasedVariableCompiler(StandardASMCompiler.AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method, int argsIndex) {
+    public StackBasedVariableCompiler(StandardASMCompiler.AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method, int argsIndex, int closureIndex) {
         this.methodCompiler = methodCompiler;
         this.method = method;
         this.argsIndex = argsIndex;
+        this.closureIndex = closureIndex;
     }
     
     public SkinnyMethodAdapter getMethodAdapter() {
@@ -84,6 +87,7 @@ public class StackBasedVariableCompiler implements VariableCompiler {
     }
 
     public void beginClosure(ClosureCallback argsCallback, StaticScope scope) {
+        // FIXME: This is not yet active, but it could be made to work
         // load args[0] which will be the IRubyObject representing block args
         method.aload(argsIndex);
         method.ldc(new Integer(0));
@@ -169,22 +173,58 @@ public class StackBasedVariableCompiler implements VariableCompiler {
         method.aload(argsIndex);
         method.arraylength();
         method.ifeq(noArgs);
-        
+
         if (requiredArgs + optArgs == 0 && restArg == 0) {
             // only restarg, just jump to noArgs and it will be processed separately
             method.go_to(noArgs);
-        } else {
-            // load args array
-            method.aload(argsIndex);
+        } else if (requiredArgs + optArgs > 0) {
+            // assign all given, non-rest args to local variables
 
-            // test whether total args count or actual args given is lower, for copying to dynamic scope
-            for (int i = 0; i < requiredArgs; i++) {
-                method.dup();
-                method.ldc(new Integer(i));
-                method.arrayload();
-                method.astore(10 + i);
+            // test whether total args count or actual args given is lower, for optional args
+            Label useArgsLength = new Label();
+            Label setArgValues = new Label();
+            method.aload(argsIndex);
+            method.arraylength();
+            method.ldc(new Integer(requiredArgs + optArgs));
+            method.if_icmplt(useArgsLength);
+
+            // total args is lower, use that
+            method.ldc(new Integer(requiredArgs + optArgs));
+            method.go_to(setArgValues);
+
+            // args length is lower, use that
+            method.label(useArgsLength);
+            method.aload(argsIndex);
+            method.arraylength();
+
+            // do the dew
+            method.label(setArgValues);
+
+            Label defaultLabel = new Label();
+            Label[] labels = new Label[requiredArgs + optArgs];
+
+            for (int i = 0; i < requiredArgs + optArgs; i++) {
+                labels[i] = new Label();
             }
-            method.pop();
+
+            method.tableswitch(1, requiredArgs + optArgs, defaultLabel, labels);
+
+            for (int i = requiredArgs + optArgs; i >= 1; i--) {
+                method.label(labels[i - 1]);
+                
+                // load provided arg
+                method.aload(argsIndex);
+                method.ldc(i - 1);
+                method.arrayload();
+                
+                // assign it
+                assignLocalVariable(i - 1);
+                
+                // pop extra copy
+                method.pop();
+            }
+            
+            method.label(defaultLabel);
         }
 
         method.label(noArgs);
@@ -197,39 +237,43 @@ public class StackBasedVariableCompiler implements VariableCompiler {
         // NOTE: By the time we're here, arity should have already been checked. We proceed without boundschecking.
         // opt args are handled with a switch; the key is how many args we have coming in, and the cases are
         // each opt arg index. The cases fall-through, so remaining opt args are handled.
-        throw new NotCompilableException("Stack-based local variables are not applicable to optional arguments (yet)");
+        method.aload(argsIndex);
+        method.arraylength();
         
-//        method.aload(argsIndex);
-//        method.arraylength();
-//
-//        Label defaultLabel = new Label();
-//        Label[] labels = new Label[size];
-//
-//        for (int i = 0; i < size; i++) {
-//            labels[i] = new Label();
-//        }
-//
-//        method.tableswitch(expectedArgsCount, expectedArgsCount + size - 1, defaultLabel, labels);
-//
-//        for (int i = 0; i < size; i++) {
-//            method.label(labels[i]);
-//            optEval.nextValue(methodCompiler, object, i);
-//            method.pop();
-//        }
-//
-//        method.label(defaultLabel);
+        Label defaultLabel = new Label();
+        Label[] labels = new Label[size];
+
+        for (int i = 0; i < size; i++) {
+            labels[i] = new Label();
+        }
+
+        method.tableswitch(expectedArgsCount, expectedArgsCount + size - 1, defaultLabel, labels);
+
+        for (int i = 0; i < size; i++) {
+            method.label(labels[i]);
+            optEval.nextValue(methodCompiler, object, i);
+            method.pop();
+        }
+
+        method.label(defaultLabel);
     }
 
     public void processRestArg(int startIndex, int restArg) {
-        throw new NotCompilableException("Stack-based local variables are not applicable to rest arguments (yet)");
-//        methodCompiler.loadRuntime();
-//        method.aload(argsIndex);
-//        method.ldc(new Integer(startIndex));
-//
-//        methodCompiler.invokeUtilityMethod("processRestArg", cg.sig(void.class, cg.params(Ruby.class, IRubyObject[].class, int.class, IRubyObject[].class, int.class)));
+        methodCompiler.loadRuntime();
+        method.aload(argsIndex);
+        method.ldc(new Integer(startIndex));
+
+        methodCompiler.invokeUtilityMethod("processRestArg", cg.sig(IRubyObject.class, cg.params(Ruby.class, IRubyObject[].class, int.class)));
+        assignLocalVariable(restArg);
+        method.pop();
     }
 
     public void processBlockArgument(int index) {
-        throw new NotCompilableException("block args do not compile yet");
+        methodCompiler.loadRuntime();
+        method.aload(closureIndex);
+        
+        methodCompiler.invokeUtilityMethod("processBlockArgument", cg.sig(IRubyObject.class, cg.params(Ruby.class, Block.class)));
+        assignLocalVariable(index);
+        method.pop();
     }
 }

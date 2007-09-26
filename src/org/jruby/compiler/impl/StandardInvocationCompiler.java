@@ -208,32 +208,10 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                 signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
             }
         }
-        // adapter, tc, recv, args{0,1}, block{0,1}]
-        Label tryBegin = new Label();
-        Label tryEnd = new Label();
-        Label catchBreak = new Label();
         
-//        if (closureArg != null) {
-//            // wrap with try/catch for return jumps
-//            method.trycatch(tryBegin, tryEnd, catchReturn, cg.p(JumpException.BreakJump.class));
-//        }
+        // adapter, tc, recv, args{0,1}, block{0,1}]
 
         method.invokevirtual(cg.p(CallAdapter.class), "call", signature);
-
-//        if (closureArg != null) {
-//            Label normalEnd = new Label();
-//            method.go_to(normalEnd);
-//
-//            method.label(catchReturn);
-//            {
-//                // if we get here, we're going to either continue raising the exception or do a normal return
-//                methodCompiler.loadThreadContext();
-//                methodCompiler.invokeUtilityMethod("handleReturnJump", cg.sig(IRubyObject.class, JumpException.ReturnJump.class, ThreadContext.class));
-//                methodCompiler.performReturn();
-//            }
-//            
-//            method.label(normalEnd);
-//        }
     }
 
     private void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
@@ -346,13 +324,6 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             // empty args
             method.aconst_null();
         }
-
-//        if (unwrap) {
-//            method.checkcast(cg.p(RubyArray.class));
-//            method.invokevirtual(cg.p(RubyArray.class), "toJavaArray", cg.sig(IRubyObject[].class));
-//        } else {
-//            methodCompiler.createObjectArray(1);
-//        }
 
         method.aconst_null();
         method.aconst_null();

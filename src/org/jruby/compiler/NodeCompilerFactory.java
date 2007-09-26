@@ -453,6 +453,8 @@ public class NodeCompilerFactory {
         case MULTIPLEASGNNODE:
             compileMultipleAsgnAssignment(node, context);
             break;
+        case ZEROARGNODE:
+            throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
         default:    
             throw new NotCompilableException("Can't compile assignment node: " + node);
         }
@@ -2013,7 +2015,6 @@ public class NodeCompilerFactory {
         GlobalVarNode globalVarNode = (GlobalVarNode)node;
                 
         if (globalVarNode.getName().length() == 2) {
-            // FIXME: This is not aware of lexical scoping
             switch (globalVarNode.getName().charAt(1)) {
             case '_':
                 context.getVariableCompiler().retrieveLastLine();
@@ -2134,7 +2135,7 @@ public class NodeCompilerFactory {
         }
         
         NodeType argsNodeId = null;
-        if (iterNode.getVarNode() != null) {
+        if (iterNode.getVarNode() != null && iterNode.getVarNode().nodeId != NodeType.ZEROARGNODE) {
             argsNodeId = iterNode.getVarNode().nodeId;
         }
         
@@ -2884,7 +2885,7 @@ public class NodeCompilerFactory {
         
         compileArguments(argsCatNode.getFirstNode(), context);
         // arguments compilers always create IRubyObject[], but we want to use RubyArray.concat here;
-        // FIXME: as a result, this is NOT efficient, since it creates and then later unwraps an interface
+        // FIXME: as a result, this is NOT efficient, since it creates and then later unwraps an array
         context.createNewArray(true);
         compile(argsCatNode.getSecondNode(), context);
         context.splatCurrentValue();
@@ -2954,9 +2955,6 @@ public class NodeCompilerFactory {
                     index = newIndex;
                 }
             }
-            
-            // Also do not compile anything with a block argument or "rest" argument
-            //if (argsNode.getBlockArgNode() != null) throw new NotCompilableException("Can't compile def with block arg at: " + node.getPosition());
             break;
         }
     }
