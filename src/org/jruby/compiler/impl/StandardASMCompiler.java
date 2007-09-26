@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -95,10 +96,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.util.CheckClassAdapter;
 
 /**
  *
@@ -160,6 +163,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         String fullname = classname + ".class";
         String filename = null;
         String path = null;
+        
+        // verify the class
+        byte[] bytecode = writer.toByteArray();
+        CheckClassAdapter.verify(new ClassReader(bytecode), false, new PrintWriter(System.err));
+        
         if (fullname.lastIndexOf("/") == -1) {
             filename = fullname;
             path = "";
@@ -173,7 +181,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         FileOutputStream out = new FileOutputStream(new File(pathfile, filename));
 
-        out.write(writer.toByteArray());
+        out.write(bytecode);
     }
 
     public String getClassname() {
