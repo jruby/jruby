@@ -136,6 +136,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private SkinnyMethodAdapter clinitMethod;
     int methodIndex = -1;
     int innerIndex = -1;
+    int fieldIndex = 0;
+    int rescueNumber = 1;
     
     Map<String, String> sourcePositions = new HashMap<String, String>();
     Map<String, String> byteLists = new HashMap<String, String>();
@@ -1449,8 +1451,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.invokevirtual(classname, mname, cg.sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}));
         }
 
-        private int rescueNumber = 1;
-
         protected String getNewRescueName() {
             return "__rescue_" + (rescueNumber++);
         }
@@ -2596,7 +2596,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         String realName;
         synchronized (this) {
-            realName = name_prefix + constants++;
+            realName = "_" + constants++;
         }
 
         // declare the field
@@ -2609,7 +2609,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         String realName;
         synchronized (this) {
-            realName = name_prefix + constants++;
+            realName = "__" + constants++;
         }
 
         // declare the field
