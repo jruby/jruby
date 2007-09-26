@@ -307,6 +307,13 @@ class TestKernel < Test::Unit::TestCase
     end
   end
   
+  def test_test
+    assert "Test file existence", test(?f, "README")
+    assert "Test file non-existence", !test(?f, "READMEaewertsert45t4w5tgrsfdgrf")
+    # Make sure that absolute paths work for testing
+    assert "Test should handle absolute paths", test(?f, File.expand_path("README"))
+  end
+  
 #  test
 #  trace_var
 #  trap

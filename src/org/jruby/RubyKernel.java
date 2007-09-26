@@ -1059,8 +1059,8 @@ public class RubyKernel {
             break;
         }
         
-        File pwd = new File(runtime.getCurrentDirectory());
-        File file1 = new File(pwd,args[1].convertToString().toString());
+        String cwd = runtime.getCurrentDirectory();
+        File file1 = org.jruby.util.JRubyFile.create(cwd, args[1].convertToString().toString());
         File file2 = null;
         Calendar calendar = null;
                 
@@ -1087,21 +1087,21 @@ public class RubyKernel {
             return runtime.newBoolean(file1.exists() && file1.length() == 0);
         case '=': // ?=  | boolean | True if the modification times of file1
                   //     |         | and file2 are equal
-            file2 = new File(pwd, args[2].convertToString().toString());
+            file2 = org.jruby.util.JRubyFile.create(cwd, args[2].convertToString().toString());
             
             return runtime.newBoolean(file1.lastModified() == file2.lastModified());
         case '<': // ?<  | boolean | True if the modification time of file1
                   //     |         | is prior to that of file2
-            file2 = new File(pwd, args[2].convertToString().toString());
+            file2 = org.jruby.util.JRubyFile.create(cwd, args[2].convertToString().toString());
             
             return runtime.newBoolean(file1.lastModified() < file2.lastModified());
         case '>': // ?>  | boolean | True if the modification time of file1
                   //     |         | is after that of file2
-            file2 = new File(pwd, args[2].convertToString().toString());
+            file2 = org.jruby.util.JRubyFile.create(cwd, args[2].convertToString().toString());
             
             return runtime.newBoolean(file1.lastModified() > file2.lastModified());
         case '-': // ?-  | boolean | True if file1 and file2 are identical
-            file2 = new File(pwd, args[2].convertToString().toString());
+            file2 = org.jruby.util.JRubyFile.create(cwd, args[2].convertToString().toString());
 
             return runtime.newBoolean(file1.equals(file2));
         default:
