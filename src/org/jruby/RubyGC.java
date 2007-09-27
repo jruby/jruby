@@ -48,12 +48,24 @@ public class RubyGC {
         
         result.defineFastModuleFunction("start", callbackFactory.getFastSingletonMethod("start"));
         result.defineFastModuleFunction("garbage_collect", callbackFactory.getFastSingletonMethod("start"));
+        result.defineFastModuleFunction("enable", callbackFactory.getFastSingletonMethod("enable"));
+        result.defineFastModuleFunction("disable", callbackFactory.getFastSingletonMethod("disable"));
         
         return result;        
     }
 
     public static IRubyObject start(IRubyObject recv) {
         System.gc();
+        return recv.getRuntime().getNil();
+    }
+
+    public static IRubyObject enable(IRubyObject recv) {
+        recv.getRuntime().getWarnings().warn("GC#enable will not work on JRuby");
+        return recv.getRuntime().getNil();
+    }
+
+    public static IRubyObject disable(IRubyObject recv) {
+        recv.getRuntime().getWarnings().warn("GC#disable will not work on JRuby");
         return recv.getRuntime().getNil();
     }
 }
