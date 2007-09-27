@@ -87,6 +87,18 @@ public class UnmarshalStream extends BufferedInputStream {
         cache.register(newObject);
     }
 
+    public static RubyModule getModuleFromPath(Ruby runtime, String path) {
+        RubyModule value = runtime.getClassFromPath(path);
+        if (!value.isModule()) throw runtime.newArgumentError(path + " does not refer module");
+        return value;
+    }
+
+    public static RubyClass getClassFromPath(Ruby runtime, String path) {
+        RubyModule value = runtime.getClassFromPath(path);
+        if (!value.isClass()) throw runtime.newArgumentError(path + " does not refer class");
+        return (RubyClass)value;
+    }
+
     private IRubyObject unmarshalObjectDirectly(int type) throws IOException {
     	IRubyObject rubyObj = null;
         switch (type) {
@@ -248,7 +260,7 @@ public class UnmarshalStream extends BufferedInputStream {
 
         RubyClass type = null;
         try {
-            type = (RubyClass)runtime.getClassFromPath(className.asSymbol());
+            type = getClassFromPath(runtime, className.toString());
         } catch (RaiseException e) {
             if (e.getException().isKindOf(runtime.getModule("NameError"))) {
                 throw runtime.newArgumentError("undefined class/module " + className.asSymbol());

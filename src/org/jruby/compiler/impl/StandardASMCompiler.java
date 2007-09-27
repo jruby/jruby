@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -1823,7 +1824,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void superClass() {
             method.invokevirtual(cg.p(RubyModule.class), "getSuperClass", cg.sig(RubyClass.class));
         }
-        
+        public void attached() {
+            method.visitTypeInsn(CHECKCAST, cg.p(MetaClass.class));
+            method.invokevirtual(cg.p(MetaClass.class), "getAttached", cg.sig(IRubyObject.class));
+        }
         public void ifNotSuperMethodBound(Object token) {
             method.swap();
             method.iconst_0();
@@ -1992,8 +1996,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
                     methodCompiler.method.ldc(name);
 
-                    // FIXME: This logic is a little different from that in EvaluationState for modules
-                    methodCompiler.method.invokevirtual(cg.p(RubyModule.class), "defineModuleUnder", cg.sig(RubyModule.class, cg.params(String.class)));
+                    methodCompiler.method.invokevirtual(cg.p(RubyModule.class), "defineOrGetModuleUnder", cg.sig(RubyModule.class, cg.params(String.class)));
 
                     // set self to the class
                     methodCompiler.method.dup();

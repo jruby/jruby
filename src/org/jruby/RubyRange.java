@@ -62,6 +62,7 @@ public class RubyRange extends RubyObject {
 
     public RubyRange(Ruby runtime, RubyClass impl) {
         super(runtime, impl);
+        begin = end = runtime.getNil();
     }
 
     public void init(IRubyObject aBegin, IRubyObject aEnd, RubyBoolean aIsExclusive) {
@@ -84,25 +85,26 @@ public class RubyRange extends RubyObject {
             return new RubyRange(runtime, klass);
         }
     };
-
-    public IRubyObject doClone(){
-        return RubyRange.newRange(getRuntime(), begin, end, isExclusive);
+    
+    protected void copySpecialInstanceVariables(IRubyObject clone) {
+        RubyRange range = (RubyRange)clone;
+        range.begin = begin;
+        range.end = end;
+        range.isExclusive = isExclusive;
     }
 
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             RubyRange range = (RubyRange)obj;
-            
             // FIXME: This is a pretty inefficient way to do this, but we need child class
             // ivars and begin/end together
             Map iVars = new HashMap(range.getInstanceVariables());
-            
+
             // add our "begin" and "end" instance vars to the collection
             iVars.put("begin", range.begin);
             iVars.put("end", range.end);
             iVars.put("excl", range.isExclusive? runtime.getTrue() : runtime.getFalse());
-            
             marshalStream.dumpInstanceVars(iVars);
         }
 
@@ -124,6 +126,7 @@ public class RubyRange extends RubyObject {
     
     public static RubyClass createRangeClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
+        runtime.setRange(result);
         result.kindOf = new RubyModule.KindOf() {
                 public boolean isKindOf(IRubyObject obj, RubyModule type) {
                     return obj instanceof RubyRange;
@@ -134,7 +137,7 @@ public class RubyRange extends RubyObject {
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyRange.class);
         
-        result.includeModule(runtime.getModule("Enumerable"));
+        result.includeModule(runtime.getEnumerable());
 
         result.defineMethod("==", callbackFactory.getMethod("equal", RubyKernel.IRUBY_OBJECT));
         result.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
@@ -272,7 +275,7 @@ public class RubyRange extends RubyObject {
     }    
 
     public static RubyRange newRange(Ruby runtime, IRubyObject begin, IRubyObject end, boolean isExclusive) {
-        RubyRange range = new RubyRange(runtime, runtime.getClass("Range"));
+        RubyRange range = new RubyRange(runtime, runtime.getRange());
         range.init(begin, end, isExclusive ? runtime.getTrue() : runtime.getFalse());
         return range;
     }
@@ -313,20 +316,27 @@ public class RubyRange extends RubyObject {
     private static byte[] DOTDOTDOT = "...".getBytes();
     private static byte[] DOTDOT = "..".getBytes();
 
-    private IRubyObject asString(String stringMethod) {
-        ThreadContext context = getRuntime().getCurrentContext();
-        RubyString begStr = (RubyString) begin.callMethod(context, stringMethod);
-        RubyString endStr = (RubyString) end.callMethod(context, stringMethod);
-
-        return begStr.cat(isExclusive ? DOTDOTDOT : DOTDOT).concat(endStr);
-    }
-    
     public IRubyObject inspect(Block block) {
-        return asString("inspect");
+        ThreadContext context = getRuntime().getCurrentContext();        
+        RubyString str = RubyString.objAsString(begin.callMethod(context, "inspect")).strDup();
+        RubyString str2 = RubyString.objAsString(end.callMethod(context, "inspect"));
+
+        str.cat(isExclusive ? DOTDOTDOT : DOTDOT);
+        str.concat(str2);
+        str.infectBy(str2);
+        return str;
     }
     
     public IRubyObject to_s(Block block) {
-        return asString("to_s");
+        ThreadContext context = getRuntime().getCurrentContext();        
+        RubyString str = RubyString.objAsString(begin).strDup();
+        RubyString str2 = RubyString.objAsString(end);
+
+        str.cat(isExclusive ? DOTDOTDOT : DOTDOT);
+        str.concat(str2);
+        str.infectBy(str2);
+        return str;
+
     }
 
     public RubyBoolean exclude_end_p() {
@@ -398,7 +408,7 @@ public class RubyRange extends RubyObject {
             }
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).upto(end, isExclusive, block);
-        } else if (begin.isKindOf(getRuntime().getClass("Numeric"))) {
+        } else if (begin.isKindOf(getRuntime().getNumeric())) {
             if (!isExclusive) {
                 end = end.callMethod(context, MethodIndex.OP_PLUS, "+", RubyFixnum.one(getRuntime()));
             }

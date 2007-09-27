@@ -46,6 +46,7 @@ public class RubyObjectSpace {
      */
     public static RubyModule createObjectSpaceModule(Ruby runtime) {
         RubyModule objectSpaceModule = runtime.defineModule("ObjectSpace");
+        runtime.setObjectSpaceModule(objectSpaceModule);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyObjectSpace.class);
         objectSpaceModule.defineModuleFunction("each_object", callbackFactory.getOptSingletonMethod("each_object"));
         objectSpaceModule.defineFastModuleFunction("garbage_collect", callbackFactory.getFastSingletonMethod("garbage_collect"));
@@ -65,7 +66,7 @@ public class RubyObjectSpace {
             if(args[1] instanceof RubyProc) {
                 proc = (RubyProc)args[1];
             } else {
-                proc = (RubyProc)args[1].convertToType(runtime.getClass("Proc"), 0, "to_proc", true);
+                proc = (RubyProc)args[1].convertToType(runtime.getProc(), 0, "to_proc", true);
             }
         } else {
             proc = runtime.newProc(false, block);
@@ -111,7 +112,7 @@ public class RubyObjectSpace {
         ThreadContext context = runtime.getCurrentContext();
         Iterator iter;
         int count = 0;
-        if (rubyClass != runtime.getClass("Class")) {
+        if (rubyClass != runtime.getClassClass()) {
             if (!runtime.isObjectSpaceEnabled()) {
                 runtime.getWarnings().warn("ObjectSpace is disabled; each_object will only work with Class");
             }

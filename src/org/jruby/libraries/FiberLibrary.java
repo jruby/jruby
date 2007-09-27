@@ -57,7 +57,7 @@ public class FiberLibrary implements Library {
         
         public static Fiber newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             Fiber result = new Fiber(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args, block);
+            result.initialize(args, block);
             return result;
         }
         

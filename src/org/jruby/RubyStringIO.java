@@ -141,7 +141,6 @@ public class RubyStringIO extends RubyObject {
     private boolean closedWrite = false;
     private boolean append = false;
 
-    @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 2);
 

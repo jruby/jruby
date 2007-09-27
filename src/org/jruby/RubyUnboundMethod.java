@@ -42,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyUnboundMethod extends RubyMethod {
     protected RubyUnboundMethod(Ruby runtime) {
-        super(runtime, runtime.getClass("UnboundMethod"));
+        super(runtime, runtime.getUnboundMethod());
     }
 
     public static RubyUnboundMethod newUnboundMethod(
@@ -65,7 +65,8 @@ public class RubyUnboundMethod extends RubyMethod {
     public static RubyClass defineUnboundMethodClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         RubyClass newClass = 
-        	runtime.defineClass("UnboundMethod", runtime.getClass("Method"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        	runtime.defineClass("UnboundMethod", runtime.getMethod(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        runtime.setUnboundMethod(newClass);
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyUnboundMethod.class);
         newClass.defineMethod("[]", callbackFactory.getOptMethod("call"));

@@ -64,6 +64,7 @@ public class RubyBinding extends RubyObject {
     
     public static RubyClass createBindingClass(Ruby runtime) {
         RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), BINDING_ALLOCATOR);
+        runtime.setBinding(bindingClass);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBinding.class);   
         
         bindingClass.getMetaClass().defineMethod("of_caller", callbackFactory.getSingletonMethod("of_caller"));
@@ -78,7 +79,7 @@ public class RubyBinding extends RubyObject {
     // Proc class
     
     public static RubyBinding newBinding(Ruby runtime, Block block) {
-        return new RubyBinding(runtime, runtime.getClass("Binding"), block);
+        return new RubyBinding(runtime, runtime.getBinding(), block);
     }
 
     public static RubyBinding newBinding(Ruby runtime) {
@@ -88,7 +89,7 @@ public class RubyBinding extends RubyObject {
         Frame frame = context.getCurrentFrame();
         Block bindingBlock = Block.createBinding(frame, context.getCurrentScope());
         
-        return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock);
+        return new RubyBinding(runtime, runtime.getBinding(), bindingBlock);
     }
 
     /**
@@ -119,7 +120,7 @@ public class RubyBinding extends RubyObject {
         
         Block bindingBlock = Block.createBinding(previousFrame, context.getCurrentScope());
         
-        return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock);
+        return new RubyBinding(runtime, runtime.getBinding(), bindingBlock);
     }
 
     public static RubyBinding newBindingOfCaller(Ruby runtime) {
@@ -129,7 +130,7 @@ public class RubyBinding extends RubyObject {
         Frame frame = context.getPreviousFrame();
         Block bindingBlock = Block.createBinding(frame, context.getPreviousScope());
         
-        return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock);
+        return new RubyBinding(runtime, runtime.getBinding(), bindingBlock);
     }
     
     public static IRubyObject of_caller(IRubyObject recv, Block aBlock) {

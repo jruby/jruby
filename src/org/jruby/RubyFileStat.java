@@ -66,7 +66,8 @@ public class RubyFileStat extends RubyObject {
 
     public static RubyClass createFileStatClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        final RubyClass fileStatClass = runtime.getClass("File").defineClassUnder("Stat",runtime.getObject(), ALLOCATOR);
+        final RubyClass fileStatClass = runtime.getFile().defineClassUnder("Stat",runtime.getObject(), ALLOCATOR);
+        runtime.setFileStat(fileStatClass);
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
 
         fileStatClass.defineFastMethod("initialize",callbackFactory.getMethod("initialize", RubyKernel.IRUBY_OBJECT));

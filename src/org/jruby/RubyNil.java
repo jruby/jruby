@@ -62,6 +62,7 @@ public class RubyNil extends RubyObject {
     
     public static RubyClass createNilClass(Ruby runtime) {
         RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), NIL_ALLOCATOR);
+        runtime.setNilClass(nilClass);
         nilClass.index = ClassIndex.NIL;
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNil.class);
@@ -94,11 +95,15 @@ public class RubyNil extends RubyObject {
 //    public RubyClass getMetaClass() {
 //        return runtime.getNilClass();
 //    }
-    
+
     public boolean isImmediate() {
         return true;
     }
-    
+
+    public RubyClass getSingletonClass() {
+        return metaClass;
+    }
+
     public boolean safeHasInstanceVariables() {
         return false;
     }
@@ -145,7 +150,7 @@ public class RubyNil extends RubyObject {
      *
      */
     public static RubyClass type(IRubyObject recv) {
-        return recv.getRuntime().getClass("NilClass");
+        return recv.getRuntime().getNilClass();
     }
     
     /** nil_and

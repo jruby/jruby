@@ -45,6 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyComparable {
     public static RubyModule createComparable(Ruby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");
+        runtime.setComparable(comparableModule);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyComparable.class);
         comparableModule.defineFastMethod("==", callbackFactory.getFastSingletonMethod("equal", RubyKernel.IRUBY_OBJECT));
         comparableModule.defineFastMethod(">", callbackFactory.getFastSingletonMethod("op_gt", RubyKernel.IRUBY_OBJECT));

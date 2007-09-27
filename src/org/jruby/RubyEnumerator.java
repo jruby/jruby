@@ -62,7 +62,7 @@ public class RubyEnumerator extends RubyObject {
         kernel.defineMethod("to_enum", callbackFactory.getOptSingletonMethod("obj_to_enum"));
         kernel.defineMethod("enum_for", callbackFactory.getOptSingletonMethod("obj_to_enum"));
 
-        RubyModule enm = runtime.getEnumerable();
+        RubyModule enm = runtime.getClassFromPath("Enumerable");
         enm.defineFastMethod("enum_with_index", callbackFactory.getFastSingletonMethod("each_with_index"));
         enm.defineMethod("each_slice", callbackFactory.getSingletonMethod("each_slice", IRubyObject.class));
         enm.defineFastMethod("enum_slice", callbackFactory.getFastSingletonMethod("enum_slice", IRubyObject.class));

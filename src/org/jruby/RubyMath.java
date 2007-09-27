@@ -40,6 +40,7 @@ public class RubyMath {
      */
     public static RubyModule createMathModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("Math");
+        runtime.setMath(result);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMath.class);
         
         result.defineConstant("E", RubyFloat.newFloat(runtime, Math.E));

@@ -164,12 +164,80 @@ public final class Ruby {
     private int safeLevel = 0;
 
     // Default classes/objects
+    private IRubyObject undef;
+
+    private RubyClass objectClass;
+    private RubyClass moduleClass;
+    private RubyClass classClass;
+
+    private RubyModule kernelModule;
+    
+    private RubyClass nilClass;
+    private RubyClass trueClass;
+    private RubyClass falseClass;
+    
+    private RubyModule comparableModule;
+    
+    private RubyClass numericClass;
+    private RubyClass floatClass;
+    private RubyClass integerClass;
+    private RubyClass fixnumClass;
+
+    private RubyModule enumerableModule;    
+    private RubyClass arrayClass;
+    private RubyClass hashClass;
+    private RubyClass rangeClass;
+    
+    private RubyClass stringClass;
+    private RubyClass symbolClass;
+    
     private IRubyObject nilObject;
     private RubyBoolean trueObject;
     private RubyBoolean falseObject;
-    private RubyClass objectClass;
-    private RubyClass stringClass;
-    private RubyModule enumerableModule;
+    
+    private RubyClass procClass;
+    private RubyClass bindingClass;
+    private RubyClass methodClass;
+    private RubyClass unboundMethodClass;
+
+    private RubyClass matchDataClass;
+    private RubyClass regexpClass;
+
+    private RubyClass timeClass;
+
+    private RubyModule mathModule;
+
+    private RubyModule marshalModule;
+
+    private RubyClass bignumClass;
+
+    private RubyClass dirClass;
+
+    private RubyClass fileClass;
+    private RubyClass fileStatClass;
+    private RubyModule fileTestModule;
+    private RubyClass statClass;
+
+    private RubyClass ioClass;
+
+    private RubyClass threadClass;
+    private RubyClass threadGroupClass;
+
+    private RubyClass continuationClass;
+
+    private RubyClass structClass;
+    private IRubyObject tmsStruct;
+
+    private RubyModule gcModule;
+    private RubyModule objectSpaceModule;
+
+    private RubyModule processModule;
+    private RubyClass procStatusClass;
+
+    private RubyModule precisionModule;
+
+    private RubyClass exceptionClass;
+
     private RubyClass systemCallError = null;
     private RubyModule errnoModule = null;
     private IRubyObject topSelf;
@@ -203,20 +271,6 @@ public final class Ruby {
     // Contains a list of all blocks (as Procs) that should be called when
     // the runtime environment exits.
     private Stack<RubyProc> atExitBlocks = new Stack<RubyProc>();
-
-    private RubyModule kernelModule;
-
-    private RubyClass nilClass;
-
-    private RubyClass fixnumClass;
-    
-    private RubyClass arrayClass;
-    
-    private RubyClass hashClass;    
-
-    private IRubyObject tmsStruct;
-    
-    private IRubyObject undef;
 
     private Profile profile;
 
@@ -462,42 +516,105 @@ public final class Ruby {
     void setRespondToMethod(Object rtm) {
         this.respondToMethod = rtm;
     }
-
-    public RubyClass getObject() {
-        return objectClass;
-    }
     
     public IRubyObject getUndef() {
         return undef;
     }
 
+    public RubyClass getObject() {
+        return objectClass;
+    }
+
+    public RubyClass getModule() {
+        return moduleClass;
+    }
+
+    public RubyClass getClassClass() {
+        return classClass;
+    }
+    
     public RubyModule getKernel() {
         return kernelModule;
     }
+    void setKernel(RubyModule kernelModule) {
+        this.kernelModule = kernelModule;
+    }    
+
+    public RubyModule getComparable() {
+        return comparableModule;
+    }
+    void setComparable(RubyModule comparableModule) {
+        this.comparableModule = comparableModule;
+    }    
+
+    public RubyClass getNumeric() {
+        return numericClass;
+    }
+    void setNumeric(RubyClass numericClass) {
+        this.numericClass = numericClass;
+    }    
+
+    public RubyClass getFloat() {
+        return floatClass;
+    }
+    void setFloat(RubyClass floatClass) {
+        this.floatClass = floatClass;
+    }
     
+    public RubyClass getInteger() {
+        return integerClass;
+    }
+    void setInteger(RubyClass integerClass) {
+        this.integerClass = integerClass;
+    }    
+    
+    public RubyClass getFixnum() {
+        return fixnumClass;
+    }
+    void setFixnum(RubyClass fixnumClass) {
+        this.fixnumClass = fixnumClass;
+    }    
+
     public RubyModule getEnumerable() {
         return enumerableModule;
     }
-    
+    void setEnumerable(RubyModule enumerableModule) {
+        this.enumerableModule = enumerableModule;
+    }      
 
     public RubyClass getString() {
         return stringClass;
-    }
+    }    
+    void setString(RubyClass stringClass) {
+        this.stringClass = stringClass;
+    }    
 
-    public RubyClass getFixnum() {
-        return fixnumClass;
+    public RubyClass getSymbol() {
+        return symbolClass;
+    }
+    void setSymbol(RubyClass symbolClass) {
+        this.symbolClass = symbolClass;
+    }   
+
+    public RubyClass getArray() {
+        return arrayClass;
+    }    
+    void setArray(RubyClass arrayClass) {
+        this.arrayClass = arrayClass;
     }
 
     public RubyClass getHash() {
         return hashClass;
-    }    
-    
-    public RubyClass getArray() {
-        return arrayClass;
-    }    
+    }
+    void setHash(RubyClass hashClass) {
+        this.hashClass = hashClass;
+    }
 
-    public IRubyObject getTmsStruct() {
-        return tmsStruct;
+    public RubyClass getRange() {
+        return rangeClass;
+    }
+    void setRange(RubyClass rangeClass) {
+        this.rangeClass = rangeClass;
     }
 
     /** Returns the "true" instance from the instance pool.
@@ -524,6 +641,212 @@ public final class Ruby {
     public RubyClass getNilClass() {
         return nilClass;
     }
+    void setNilClass(RubyClass nilClass) {
+        this.nilClass = nilClass;
+    }
+
+    public RubyClass getTrueClass() {
+        return trueClass;
+    }
+    void setTrueClass(RubyClass trueClass) {
+        this.trueClass = trueClass;
+    }
+
+    public RubyClass getFalseClass() {
+        return falseClass;
+    }
+    void setFalseClass(RubyClass falseClass) {
+        this.falseClass = falseClass;
+    }
+
+    public RubyClass getProc() {
+        return procClass;
+    }
+    void setProc(RubyClass procClass) {
+        this.procClass = procClass;
+    }
+
+    public RubyClass getBinding() {
+        return bindingClass;
+    }
+    void setBinding(RubyClass bindingClass) {
+        this.bindingClass = bindingClass;
+    }
+
+    public RubyClass getMethod() {
+        return methodClass;
+    }
+    void setMethod(RubyClass methodClass) {
+        this.methodClass = methodClass;
+    }    
+
+    public RubyClass getUnboundMethod() {
+        return unboundMethodClass;
+    }
+    void setUnboundMethod(RubyClass unboundMethodClass) {
+        this.unboundMethodClass = unboundMethodClass;
+    }    
+
+    public RubyClass getMatchData() {
+        return matchDataClass;
+    }
+    void setMatchData(RubyClass matchDataClass) {
+        this.matchDataClass = matchDataClass;
+    }    
+
+    public RubyClass getRegexp() {
+        return regexpClass;
+    }
+    void setRegexp(RubyClass regexpClass) {
+        this.regexpClass = regexpClass;
+    }    
+
+    public RubyClass getTime() {
+        return timeClass;
+    }
+    void setTime(RubyClass timeClass) {
+        this.timeClass = timeClass;
+    }    
+
+    public RubyModule getMath() {
+        return mathModule;
+    }
+    void setMath(RubyModule mathModule) {
+        this.mathModule = mathModule;
+    }    
+
+    public RubyModule getMarshal() {;
+        return marshalModule;
+    }
+    void setMarshal(RubyModule marshalModule) {
+        this.marshalModule = marshalModule;
+    }    
+
+    public RubyClass getBignum() {
+        return bignumClass;
+    }
+    void setBignum(RubyClass bignumClass) {
+        this.bignumClass = bignumClass;
+    }    
+
+    public RubyClass getDir() {
+        return dirClass;
+    }
+    void setDir(RubyClass dirClass) {
+        this.dirClass = dirClass;
+    }    
+
+    public RubyClass getFile() {
+        return fileClass;
+    }
+    void setFile(RubyClass fileClass) {
+        this.fileClass = fileClass;
+    }    
+
+    public RubyClass getFileStat() {
+        return fileStatClass;
+    }
+    void setFileStat(RubyClass fileStatClass) {
+        this.fileStatClass = fileStatClass;
+    }    
+
+    public RubyModule getFileTest() {
+        return fileTestModule;
+    }
+    void setFileTest(RubyModule fileTestModule) {
+        this.fileTestModule = fileTestModule;
+    }    
+
+    public RubyClass getStat() {
+        return statClass;
+    }
+    void setStat(RubyClass statClass) {
+        this.statClass = statClass;
+    }    
+
+    public RubyClass getIO() {
+        return ioClass;
+    }
+    void setIO(RubyClass ioClass) {
+        this.ioClass = ioClass;
+    }    
+
+    public RubyClass getThread() {
+        return threadClass;
+    }
+    void setThread(RubyClass threadClass) {
+        this.threadClass = threadClass;
+    }    
+
+    public RubyClass getThreadGroup() {
+        return threadGroupClass;
+    }
+    void setThreadGroup(RubyClass threadGroupClass) {
+        this.threadGroupClass = threadGroupClass;
+    }    
+
+    public RubyClass getContinuation() {
+        return continuationClass;
+    }
+    void setContinuation(RubyClass continuationClass) {
+        this.continuationClass = continuationClass;
+    }    
+
+    public RubyClass getStructClass() {
+        return structClass;
+    }
+    void setStructClass(RubyClass structClass) {
+        this.structClass = structClass;
+    }    
+
+    public IRubyObject getTmsStruct() {
+        return tmsStruct;
+    }
+    void setTmsStruct(RubyClass tmsStruct) {
+        this.tmsStruct = tmsStruct;
+    }    
+
+    public RubyModule getGC() {
+        return gcModule;
+    }
+    void setGC(RubyModule gcModule) {
+        this.gcModule = gcModule;
+    }    
+
+    public RubyModule getObjectSpaceModule() {
+        return objectSpaceModule;
+    }
+    void setObjectSpaceModule(RubyModule objectSpaceModule) {
+        this.objectSpaceModule = objectSpaceModule;
+    }    
+
+    public RubyModule getProcess() {
+        return processModule;
+    }
+    void setProcess(RubyModule processModule) {
+        this.processModule = processModule;
+    }    
+
+    public RubyClass getProcStatus() {
+        return procStatusClass; 
+    }
+    void setProcStatus(RubyClass procStatusClass) {
+        this.procStatusClass = procStatusClass;
+    }    
+
+    public RubyModule getPrecision() {
+        return precisionModule;
+    }
+    void setPrecision(RubyModule precisionModule) {
+        this.precisionModule = precisionModule;
+    }    
+
+    public RubyClass getException() {
+        return exceptionClass;
+    }
+    void setException(RubyClass exceptionClass) {
+        this.exceptionClass = exceptionClass;
+    }    
 
     public RubyModule getModule(String name) {
         return (RubyModule) objectClass.getConstantAt(name);
@@ -542,35 +865,74 @@ public final class Ruby {
         }
     }
 
-    /** Define a new class with name 'name' and super class 'superClass'.
-     *
-     * MRI: rb_define_class / rb_define_class_id
+    /** rb_define_class
      *
      */
     public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator) {
-        return defineClassUnder(name, superClass, allocator, objectClass);
+        IRubyObject classObj = objectClass.getConstantAt(name);
+
+        if (classObj != null) {
+            if (!(classObj instanceof RubyClass)) throw newTypeError(name + " is not a class");
+            RubyClass klazz = (RubyClass)classObj;
+            if (klazz.getSuperClass().getRealClass() != superClass) throw newNameError(name + " is already defined", name);
+            return klazz;
+        }
+
+        if (superClass == null) {
+            warnings.warn("no super class for `" + name + "', Object assumed");
+            superClass = objectClass;
+        }
+
+        return RubyClass.newClass(this, superClass, name, allocator, objectClass, false);
     }
 
-    public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, 
-            RubyModule parent) {
-        if (superClass == null) superClass = objectClass;
+    /** rb_define_class_under
+    *
+    */
+    public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, RubyModule parent) {
+        IRubyObject classObj = parent.getConstantAt(name);
 
-        return superClass.newSubClass(name, allocator, parent, true);
+        if (classObj != null) {
+            if (!(classObj instanceof RubyClass)) throw newTypeError(name + " is not a class");
+            RubyClass klazz = (RubyClass)classObj;
+            if (klazz.getSuperClass().getRealClass() != superClass) throw newNameError(name + " is already defined", name);
+            return klazz;
+        }
+
+        if (superClass == null) {
+            warnings.warn("no super class for `" + parent.getName() + "::" + name + "', Object assumed");
+            superClass = objectClass;
+        }
+
+        return RubyClass.newClass(this, superClass, name, allocator, parent, true);
     }
 
-    /** rb_define_module / rb_define_module_id
+    /** rb_define_module
      *
      */
     public RubyModule defineModule(String name) {
-        return defineModuleUnder(name, objectClass);
+        IRubyObject moduleObj = objectClass.getConstantAt(name);
+
+        if (moduleObj != null ) {
+            if (moduleObj.isModule()) return (RubyModule)moduleObj;
+            throw newTypeError(moduleObj.getMetaClass().getName() + " is not a module");
+        }
+
+        return RubyModule.newModule(this, name, objectClass, false);
     }
 
+    /** rb_define_module_under
+    *
+    */
     public RubyModule defineModuleUnder(String name, RubyModule parent) {
-        RubyModule newModule = RubyModule.newModule(this, name, parent);
+        IRubyObject moduleObj = parent.getConstantAt(name);
 
-        parent.setConstant(name, newModule);
+        if (moduleObj != null ) {
+            if (moduleObj.isModule()) return (RubyModule)moduleObj;
+            throw newTypeError(parent.getName() + "::" + moduleObj.getMetaClass().getName() + " is not a module");
+        }
 
-        return newModule;
+        return RubyModule.newModule(this, name, parent, true);
     }
 
     /**
@@ -579,12 +941,11 @@ public final class Ruby {
      */
     public RubyModule getOrCreateModule(String name) {
         IRubyObject module = objectClass.getConstantAt(name);
-        
         if (module == null) {
             module = defineModule(name);
         } else if (getSafeLevel() >= 4) {
             throw newSecurityError("Extending module prohibited.");
-        } else if (!(module instanceof RubyModule)) {
+        } else if (!module.isModule()) {
             throw newTypeError(name + " is not a Module");
         }
 
@@ -791,45 +1152,38 @@ public final class Ruby {
     private void initCoreClasses() {
         undef = new RubyUndef();
 
-        RubyClass objectMetaClass = RubyClass.createBootstrapMetaClass(this, "Object", null, RubyObject.OBJECT_ALLOCATOR, null);
-        RubyObject.createObjectClass(this, objectMetaClass);
+        objectClass = RubyClass.createBootstrapClass(this, "Object", null, RubyObject.OBJECT_ALLOCATOR);
+        moduleClass = RubyClass.createBootstrapClass(this, "Module", objectClass, RubyModule.MODULE_ALLOCATOR);
+        classClass = RubyClass.createBootstrapClass(this, "Class", moduleClass, RubyClass.CLASS_ALLOCATOR);
 
-        objectClass = objectMetaClass;
-        objectClass.setConstant("Object", objectClass);
-        RubyClass moduleClass = RubyClass.createBootstrapMetaClass(this, "Module", objectClass, RubyModule.MODULE_ALLOCATOR, objectClass);
-        objectClass.setConstant("Module", moduleClass);
-        RubyClass classClass = RubyClass.newClassClass(this, moduleClass);
-        objectClass.setConstant("Class", classClass);
-        
-        classClass.setMetaClass(classClass);
-        moduleClass.setMetaClass(classClass);
         objectClass.setMetaClass(classClass);
+        moduleClass.setMetaClass(classClass);
+        classClass.setMetaClass(classClass);
 
-        // I don't think the containment is correct here (parent cref)
-        RubyClass metaClass = objectClass.makeMetaClass(classClass, objectMetaClass);
-        metaClass = moduleClass.makeMetaClass(metaClass, objectMetaClass);
-        metaClass = classClass.makeMetaClass(metaClass, objectMetaClass);
-
+        RubyClass metaClass; 
+        metaClass = objectClass.makeMetaClass(classClass);
+        metaClass = moduleClass.makeMetaClass(metaClass);
+        metaClass = classClass.makeMetaClass(metaClass);
+        
+        RubyObject.createObjectClass(this, objectClass);
         RubyModule.createModuleClass(this, moduleClass);
+        RubyClass.createClassClass(this, classClass);
 
-        kernelModule = RubyKernel.createKernelModule(this);
+        RubyKernel.createKernelModule(this);
         objectClass.includeModule(kernelModule);
 
-        RubyClass.createClassClass(classClass);
-
-        nilClass = RubyNil.createNilClass(this);
-
         // Pre-create the core classes we know we will get referenced by starting up the runtime.
+        RubyNil.createNilClass(this);
         RubyBoolean.createFalseClass(this);
         RubyBoolean.createTrueClass(this);
         
         nilObject = new RubyNil(this);
-        trueObject = new RubyBoolean(this, true);
         falseObject = new RubyBoolean(this, false);
-        
+        trueObject = new RubyBoolean(this, true);
+
         RubyComparable.createComparable(this);
-        enumerableModule = RubyEnumerable.createEnumerableModule(this);
-        stringClass = RubyString.createStringClass(this);
+        RubyEnumerable.createEnumerableModule(this);
+        RubyString.createStringClass(this);
         RubySymbol.createSymbolClass(this);
         
         if (profile.allowClass("ThreadGroup")) RubyThreadGroup.createThreadGroupClass(this);
@@ -838,15 +1192,15 @@ public final class Ruby {
         if (profile.allowModule("Precision")) RubyPrecision.createPrecisionModule(this);
         if (profile.allowClass("Numeric")) RubyNumeric.createNumericClass(this);
         if (profile.allowClass("Integer")) RubyInteger.createIntegerClass(this);
-        if (profile.allowClass("Fixnum")) fixnumClass = RubyFixnum.createFixnumClass(this);
-        if (profile.allowClass("Hash")) hashClass = RubyHash.createHashClass(this);
+        if (profile.allowClass("Fixnum")) RubyFixnum.createFixnumClass(this);
+        if (profile.allowClass("Hash")) RubyHash.createHashClass(this);
+        if (profile.allowClass("Array")) RubyArray.createArrayClass(this);
+        if (profile.allowClass("Float")) RubyFloat.createFloatClass(this);
+        if (profile.allowClass("Bignum")) RubyBignum.createBignumClass(this);
+
+        ioClass = RubyIO.createIOClass(this);        
         
-        RubyIO.createIOClass(this);
-
-        if (profile.allowClass("Array")) arrayClass = RubyArray.createArrayClass(this);
-
-        RubyClass structClass = null;
-        if (profile.allowClass("Struct")) structClass = RubyStruct.createStructClass(this);
+        if (profile.allowClass("Struct")) RubyStruct.createStructClass(this);
 
         if (profile.allowClass("Tms")) {
             tmsStruct = RubyStruct.newInstance(structClass,
@@ -854,8 +1208,6 @@ public final class Ruby {
                         newSymbol("cutime"), newSymbol("cstime")}, Block.NULL_BLOCK);
         }
 
-        if (profile.allowClass("Float")) RubyFloat.createFloatClass(this);
-        if (profile.allowClass("Bignum")) RubyBignum.createBignumClass(this);
         if (profile.allowClass("Binding")) RubyBinding.createBindingClass(this);
         // Math depends on all numeric types
         if (profile.allowModule("Math")) RubyMath.createMathModule(this); 
@@ -871,6 +1223,7 @@ public final class Ruby {
         if (profile.allowModule("FileTest")) RubyFileTest.createFileTestModule(this);
         // depends on IO, FileTest
         if (profile.allowClass("File")) RubyFile.createFileClass(this);
+        if (profile.allowClass("File::Stat")) RubyFileStat.createFileStatClass(this);
         if (profile.allowModule("Process")) RubyProcess.createProcessModule(this);
         if (profile.allowClass("Time")) RubyTime.createTimeClass(this);
         if (profile.allowClass("UnboundMethod")) RubyUnboundMethod.defineUnboundMethodClass(this);
@@ -1179,7 +1532,7 @@ public final class Ruby {
 
             IRubyObject cc = c.getConstant(str);
             if(!(cc instanceof RubyModule)) {
-                throw newTypeError("" + str + " does not refer to class/module");
+                throw newTypeError("" + path + " does not refer to class/module");
             }
             c = (RubyModule)cc;
         }
@@ -1494,7 +1847,7 @@ public final class Ruby {
     }
 
     public RubyFileStat newRubyFileStat(String file) {
-        return (RubyFileStat)getClass("File").getClass("Stat").callMethod(getCurrentContext(),"new",newString(file));
+        return (RubyFileStat)fileStatClass.callMethod(getCurrentContext(),"new",newString(file));
     }
 
     public RubyFixnum newFixnum(long value) {
@@ -1700,7 +2053,7 @@ public final class Ruby {
 
     public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType) {
         return newRaiseException(getClass("TypeError"), "wrong argument type " +
-                receivedObject.getMetaClass() + " (expected " + expectedType + ")");
+                receivedObject.getMetaClass().getRealClass() + " (expected " + expectedType + ")");
     }
 
     public RaiseException newEOFError() {

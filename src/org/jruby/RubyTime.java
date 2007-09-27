@@ -97,10 +97,11 @@ public class RubyTime extends RubyObject {
     
     public static RubyClass createTimeClass(Ruby runtime) {
         RubyClass timeClass = runtime.defineClass("Time", runtime.getObject(), TIME_ALLOCATOR);
+        runtime.setTime(timeClass);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyTime.class);
         RubyClass timeMetaClass = timeClass.getMetaClass();
         
-        timeClass.includeModule(runtime.getModule("Comparable"));
+        timeClass.includeModule(runtime.getComparable());
         
         timeMetaClass.defineAlias("now","new");
         timeMetaClass.defineFastMethod("at", callbackFactory.getFastOptSingletonMethod("new_at"));
@@ -185,7 +186,7 @@ public class RubyTime extends RubyObject {
     
     public static RubyTime newTime(Ruby runtime, long milliseconds) {
         Calendar cal = Calendar.getInstance(); 
-        RubyTime time = new RubyTime(runtime, runtime.getClass("Time"), cal);
+        RubyTime time = new RubyTime(runtime, runtime.getTime(), cal);
         
         cal.setTimeInMillis(milliseconds);
         
@@ -193,7 +194,7 @@ public class RubyTime extends RubyObject {
     }
     
     public static RubyTime newTime(Ruby runtime, Calendar cal) {
-        RubyTime time = new RubyTime(runtime, runtime.getClass("Time"), cal);
+        RubyTime time = new RubyTime(runtime, runtime.getTime(), cal);
         
         return time;
     }

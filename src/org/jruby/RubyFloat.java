@@ -54,17 +54,21 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 public class RubyFloat extends RubyNumeric {
 
     public static RubyClass createFloatClass(Ruby runtime) {
-        RubyClass floatc = runtime.defineClass("Float", runtime.getClass("Numeric"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass floatc = runtime.defineClass("Float", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        runtime.setFloat(floatc);
         floatc.index = ClassIndex.FLOAT;
+        floatc.kindOf = new RubyModule.KindOf() {
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof RubyFloat;
+            }
+        };        
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFloat.class);
-        floatc.getSingletonClass().undefineMethod("allocate");
         floatc.getSingletonClass().undefineMethod("new");
 
         floatc.getMetaClass().defineFastMethod("induced_from", callbackFactory.getFastSingletonMethod(
                 "induced_from", RubyKernel.IRUBY_OBJECT));
-        floatc.includeModule(runtime.getModule("Precision"));
+        floatc.includeModule(runtime.getPrecision());
 
         // Java Doubles are 64 bit long:            
         floatc.defineConstant("ROUNDS", RubyFixnum.newFixnum(runtime, 1));
@@ -131,7 +135,7 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public RubyFloat(Ruby runtime, double value) {
-        super(runtime, runtime.getClass("Float"));
+        super(runtime, runtime.getFloat());
         this.value = value;
     }
 

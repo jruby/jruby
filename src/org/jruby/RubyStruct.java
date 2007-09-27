@@ -67,16 +67,17 @@ public class RubyStruct extends RubyObject {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR may be ok here, but it's unclear how Structs
         // work with marshalling. Confirm behavior and ensure we're doing this correctly. JRUBY-415
         RubyClass structClass = runtime.defineClass("Struct", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        runtime.setStructClass(structClass);
         structClass.index = ClassIndex.STRUCT;
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyStruct.class);
-        structClass.includeModule(runtime.getModule("Enumerable"));
+        structClass.includeModule(runtime.getEnumerable());
 
         structClass.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
 
         structClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         structClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", RubyKernel.IRUBY_OBJECT));
-        structClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
+        structClass.defineMethod("clone", callbackFactory.getFastMethod("rbClone"));
 
         structClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
         structClass.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
@@ -105,7 +106,7 @@ public class RubyStruct extends RubyObject {
     }
     
     private static IRubyObject getInstanceVariable(RubyClass type, String name) {
-        RubyClass structClass = type.getRuntime().getClass("Struct");
+        RubyClass structClass = type.getRuntime().getStructClass();
 
         while (type != null && type != structClass) {
             IRubyObject variable = type.getInstanceVariable(name);
@@ -205,18 +206,21 @@ public class RubyStruct extends RubyObject {
         RubyClass superClass = (RubyClass)recv;
 
         if (name == null || nilName) {
-            newStruct = new RubyClass(superClass, STRUCT_INSTANCE_ALLOCATOR);
+            newStruct = RubyClass.newClass(runtime, superClass); 
+            newStruct.setAllocator(STRUCT_INSTANCE_ALLOCATOR);
+            newStruct.makeMetaClass(superClass.getMetaClass());
+            newStruct.inherit(superClass);
         } else {
             if (!IdUtil.isConstant(name)) {
                 throw runtime.newNameError("identifier " + name + " needs to be constant", name);
             }
 
             IRubyObject type = superClass.getConstantAt(name);
-
             if (type != null) {
                 runtime.getWarnings().warn(runtime.getCurrentContext().getFramePosition(), "redefining constant Struct::" + name);
+                superClass.remove_const(runtime.newString(name));
             }
-            newStruct = superClass.newSubClass(name, STRUCT_INSTANCE_ALLOCATOR, superClass, false);
+            newStruct = superClass.defineClassUnder(name, superClass, STRUCT_INSTANCE_ALLOCATOR);
         }
 
         newStruct.index = ClassIndex.STRUCT;
@@ -340,16 +344,11 @@ public class RubyStruct extends RubyObject {
         throw notStructMemberError(name);
     }
 
-    public IRubyObject rbClone(Block block) {
-        RubyStruct clone = new RubyStruct(getRuntime(), getMetaClass());
-
-        clone.values = new IRubyObject[values.length];
-        System.arraycopy(values, 0, clone.values, 0, values.length);
-
-        clone.setFrozen(this.isFrozen());
-        clone.setTaint(this.isTaint());
-
-        return clone;
+    
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        RubyStruct struct = (RubyStruct)clone;
+        struct.values = new IRubyObject[values.length];
+        System.arraycopy(values, 0, struct.values, 0, values.length);
     }
 
     public IRubyObject equal(IRubyObject other) {

@@ -48,7 +48,7 @@ public class RubyBigDecimal extends RubyNumeric {
     };
     
     public static RubyClass createBigDecimal(Ruby runtime) {
-        RubyClass result = runtime.defineClass("BigDecimal",runtime.getClass("Numeric"), BIGDECIMAL_ALLOCATOR);
+        RubyClass result = runtime.defineClass("BigDecimal",runtime.getNumeric(), BIGDECIMAL_ALLOCATOR);
 
         result.setConstant("ROUND_DOWN",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_DOWN));
         result.setConstant("SIGN_POSITIVE_INFINITE",RubyNumeric.int2fix(runtime,3));
@@ -75,7 +75,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBigDecimal.class);
 
-        runtime.getModule("Kernel").defineModuleFunction("BigDecimal",callbackFactory.getOptSingletonMethod("newBigDecimal"));
+        runtime.getKernel().defineModuleFunction("BigDecimal",callbackFactory.getOptSingletonMethod("newBigDecimal"));
         result.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
         result.getMetaClass().defineFastMethod("ver", callbackFactory.getFastSingletonMethod("ver"));
         result.getMetaClass().defineMethod("_load", callbackFactory.getSingletonMethod("_load",RubyKernel.IRUBY_OBJECT));
@@ -266,7 +266,13 @@ public class RubyBigDecimal extends RubyNumeric {
             return newInstance(getRuntime().getClass("BigDecimal"),new IRubyObject[]{getRuntime().newString(s)}, Block.NULL_BLOCK);
         }
         if(must) {
-            throw getRuntime().newTypeError(trueFalseNil(v.getMetaClass().getName() + " can't be coerced into BigDecimal"));
+            String err;
+            if (isImmediate()) {
+                err = RubyString.objAsString(callMethod(getRuntime().getCurrentContext(), "inspect")).toString();
+            } else {
+                err = getMetaClass().getBaseName();
+            }
+            throw getRuntime().newTypeError(err + " can't be coerced into BigDecimal");
         }
         return null;
     }

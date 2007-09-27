@@ -182,7 +182,7 @@ public class RubyIO extends RubyObject {
     }
 
     public RubyIO(Ruby runtime, OutputStream outputStream) {
-        super(runtime, runtime.getClass("IO"));
+        super(runtime, runtime.getIO());
         
         // We only want IO objects with valid streams (better to error now). 
         if (outputStream == null) {
@@ -200,7 +200,7 @@ public class RubyIO extends RubyObject {
     }
     
     public RubyIO(Ruby runtime, InputStream inputStream) {
-        super(runtime, runtime.getClass("IO"));
+        super(runtime, runtime.getIO());
         
         if (inputStream == null) {
             throw runtime.newIOError("Opening invalid stream");
@@ -218,7 +218,7 @@ public class RubyIO extends RubyObject {
     }
     
     public RubyIO(Ruby runtime, Channel channel) {
-        super(runtime, runtime.getClass("IO"));
+        super(runtime, runtime.getIO());
         
         // We only want IO objects with valid streams (better to error now). 
         if (channel == null) {
@@ -236,7 +236,7 @@ public class RubyIO extends RubyObject {
     }
 
     public RubyIO(Ruby runtime, Process process) {
-    	super(runtime, runtime.getClass("IO"));
+    	super(runtime, runtime.getIO());
 
         modes = new IOModes(runtime, "w+");
 
@@ -251,7 +251,7 @@ public class RubyIO extends RubyObject {
     }
     
     public RubyIO(Ruby runtime, int descriptor) {
-        super(runtime, runtime.getClass("IO"));
+        super(runtime, runtime.getIO());
 
         try {
             handler = new IOHandlerUnseekable(runtime, descriptor);
@@ -279,7 +279,7 @@ public class RubyIO extends RubyObject {
                 }
             };
 
-        ioClass.includeModule(runtime.getModule("Enumerable"));
+        ioClass.includeModule(runtime.getEnumerable());
         
         // TODO: Implement tty? and isatty.  We have no real capability to
         // determine this from java, but if we could set tty status, then
@@ -415,7 +415,7 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newArgumentError("wrong number of arguments");
     	}
     	
-        if (args[0].isKindOf(getRuntime().getClass("IO"))) {
+        if (args[0].isKindOf(getRuntime().getIO())) {
             RubyIO ios = (RubyIO) args[0];
 
             int keepFileno = handler.getFileno();

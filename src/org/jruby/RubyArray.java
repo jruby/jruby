@@ -67,6 +67,7 @@ public class RubyArray extends RubyObject implements List {
 
     public static RubyClass createArrayClass(Ruby runtime) {
         RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
+        runtime.setArray(arrayc);
         arrayc.index = ClassIndex.ARRAY;
         arrayc.kindOf = new RubyModule.KindOf() {
                 public boolean isKindOf(IRubyObject obj, RubyModule type) {
@@ -75,7 +76,7 @@ public class RubyArray extends RubyObject implements List {
             };
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyArray.class);
 
-        arrayc.includeModule(runtime.getModule("Enumerable"));
+        arrayc.includeModule(runtime.getEnumerable());
         arrayc.getMetaClass().defineMethod("[]", callbackFactory.getOptSingletonMethod("create"));
 
         arrayc.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));

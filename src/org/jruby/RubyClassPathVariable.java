@@ -42,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyClassPathVariable extends RubyObject {
     public static void createClassPathVariable(Ruby runtime) {
         RubyClassPathVariable self = new RubyClassPathVariable(runtime);
-        runtime.getModule("Enumerable").extend_object(self);
+        runtime.getEnumerable().extend_object(self);
         runtime.defineReadonlyVariable("$CLASSPATH", self);
         
         CallbackFactory cf = runtime.callbackFactory(RubyClassPathVariable.class);

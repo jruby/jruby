@@ -78,130 +78,17 @@ import org.jruby.runtime.MethodIndex;
  * @author  jpetersen
  */
 public class RubyModule extends RubyObject {
-    private static final String CVAR_TAINT_ERROR =
-        "Insecure: can't modify class variable";
-    private static final String CVAR_FREEZE_ERROR = "class/module";
-
-    // superClass may be null.
-    private RubyClass superClass;
-
-    public int index;
     
-    public Dispatcher dispatcher = Dispatcher.DEFAULT_DISPATCHER;
-
-    public static class KindOf {
-        public static final KindOf DEFAULT_KIND_OF = new KindOf();
-        public boolean isKindOf(IRubyObject obj, RubyModule type) {
-            return obj.getMetaClass().hasModuleInHierarchy(type);
-        }
-    }
-
-    public KindOf kindOf = KindOf.DEFAULT_KIND_OF;
-
-    public final int id;
-
-    // Containing class...The parent of Object is null. Object should always be last in chain.
-    public RubyModule parent;
-
-    // ClassId is the name of the class/module sans where it is located.
-    // If it is null, then it an anonymous class.
-    private String classId;
-
-    // All methods and all CACHED methods for the module.  The cached methods will be removed
-    // when appropriate (e.g. when method is removed by source class or a new method is added
-    // with same name by one of its subclasses).
-    private Map methods = new HashMap();
-    
-    
-    // FIXME: I'm not sure what the serialization/marshalling implications
-    // might be of defining this here. We could keep a hash in JavaSupport
-    // (or elsewhere) instead, but then RubyModule might need a reference to 
-    // JavaSupport code, which I've tried to avoid...
-    private transient List classProviders;
-    
-    // synchronized method per JRUBY-1173 (unsafe Double-Checked Locking)
-    public synchronized void addClassProvider(ClassProvider provider) {
-        if (classProviders == null) {
-            List cp = Collections.synchronizedList(new ArrayList());
-            cp.add(provider);
-            classProviders = cp;
-        } else {
-            synchronized(classProviders) {
-                if (!classProviders.contains(provider)) {
-                    classProviders.add(provider);
-                }
-            }
-        }
-    }
-
-    public void removeClassProvider(ClassProvider provider) {
-        if (classProviders != null) {
-            classProviders.remove(provider);
-        }
-    }
-
-    private RubyClass searchProvidersForClass(String name, RubyClass superClazz) {
-        if (classProviders != null) {
-            synchronized(classProviders) {
-                RubyClass clazz;
-                for (Iterator iter = classProviders.iterator(); iter.hasNext(); ) {
-                    if ((clazz = ((ClassProvider)iter.next())
-                            .defineClassUnder(this, name, superClazz)) != null) {
-                        return clazz;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    private RubyModule searchProvidersForModule(String name) {
-        if (classProviders != null) {
-            synchronized(classProviders) {
-                RubyModule module;
-                for (Iterator iter = classProviders.iterator(); iter.hasNext(); ) {
-                    if ((module = ((ClassProvider)iter.next())
-                            .defineModuleUnder(this, name)) != null) {
-                        return module;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-    protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parent, String name) {
-        this(runtime, metaClass, superClass, parent, name, runtime.isObjectSpaceEnabled());
-    }
-
-    protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parent, String name, boolean useObjectSpace) {
-        super(runtime, metaClass, useObjectSpace);
-
-        this.superClass = superClass;
-
-        setBaseName(name);
-
-        // If no parent is passed in, it is safe to assume Object.
-        if (parent == null) {
-            if (runtime.getObject() != null) {
-                parent = runtime.getObject();
-            }
-        }
-        this.parent = parent;
-
-        runtime.moduleLastId++;
-        this.id = runtime.moduleLastId;
-    }
-
     public static RubyClass createModuleClass(Ruby runtime, RubyClass moduleClass) {
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyModule.class);   
-        RubyClass moduleMetaClass = moduleClass.getMetaClass();
         moduleClass.index = ClassIndex.MODULE;
         moduleClass.kindOf = new RubyModule.KindOf() {
-                public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                    return obj instanceof RubyModule;
-                }
-            };
-
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof RubyModule;
+            }
+        };
+        
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyModule.class);            
+            
         moduleClass.defineFastMethod("===", callbackFactory.getFastMethod("op_eqq", IRubyObject.class));
         moduleClass.defineFastMethod("<=>", callbackFactory.getFastMethod("op_cmp", IRubyObject.class));
         moduleClass.defineFastMethod("<", callbackFactory.getFastMethod("op_lt", IRubyObject.class));
@@ -219,7 +106,7 @@ public class RubyModule extends RubyObject {
         moduleClass.defineFastMethod("include?", callbackFactory.getFastMethod("include_p", IRubyObject.class));
         moduleClass.defineFastMethod("included", callbackFactory.getFastMethod("included", IRubyObject.class));
         moduleClass.defineFastMethod("included_modules", callbackFactory.getFastMethod("included_modules"));
-        moduleClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        moduleClass.defineMethod("initialize", callbackFactory.getMethod("initialize"));
         moduleClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", IRubyObject.class));
         moduleClass.defineFastMethod("instance_method", callbackFactory.getFastMethod("instance_method", IRubyObject.class));
         moduleClass.defineFastMethod("instance_methods",callbackFactory.getFastOptMethod("instance_methods"));
@@ -262,6 +149,7 @@ public class RubyModule extends RubyObject {
         moduleClass.defineFastPrivateMethod("remove_method", callbackFactory.getFastOptMethod("remove_method"));
         moduleClass.defineFastPrivateMethod("undef_method", callbackFactory.getFastOptMethod("undef_method"));
         
+        RubyClass moduleMetaClass = moduleClass.getMetaClass();
         moduleMetaClass.defineMethod("nesting", callbackFactory.getSingletonMethod("nesting"));
         
         moduleClass.dispatcher = callbackFactory.createDispatcher(moduleClass);
@@ -275,14 +163,157 @@ public class RubyModule extends RubyObject {
     
     static ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return RubyModule.newModule(runtime, klass, null);
+            return new RubyModule(runtime, klass);
         }
     };
     
     public int getNativeTypeIndex() {
         return ClassIndex.MODULE;
     }
+
+    public boolean isModule() {
+        return true;
+    }
+
+    public boolean isClass() {
+        return false;
+    }
+
+    public boolean isSingleton() {
+        return false;
+    }    
     
+    private static final String CVAR_TAINT_ERROR = "Insecure: can't modify class variable";
+    private static final String CVAR_FREEZE_ERROR = "class/module";
+
+    // superClass may be null.
+    protected RubyClass superClass;
+
+    public int index;
+    
+    public Dispatcher dispatcher = Dispatcher.DEFAULT_DISPATCHER;
+
+    public static class KindOf {
+        public static final KindOf DEFAULT_KIND_OF = new KindOf();
+        public boolean isKindOf(IRubyObject obj, RubyModule type) {
+            return obj.getMetaClass().hasModuleInHierarchy(type);
+        }
+    }
+
+    public KindOf kindOf = KindOf.DEFAULT_KIND_OF;
+
+    public final int id;
+
+    // Containing class...The parent of Object is null. Object should always be last in chain.
+    public RubyModule parent;
+
+    // ClassId is the name of the class/module sans where it is located.
+    // If it is null, then it an anonymous class.
+    private String classId;
+
+    // All methods and all CACHED methods for the module.  The cached methods will be removed
+    // when appropriate (e.g. when method is removed by source class or a new method is added
+    // with same name by one of its subclasses).
+    private Map methods = new HashMap();
+    
+    
+    // FIXME: I'm not sure what the serialization/marshalling implications
+    // might be of defining this here. We could keep a hash in JavaSupport
+    // (or elsewhere) instead, but then RubyModule might need a reference to 
+    // JavaSupport code, which I've tried to avoid...
+    private transient List classProviders;
+
+    /** separate path for MetaClass construction
+     * 
+     */
+    protected RubyModule(Ruby runtime, RubyClass metaClass, boolean objectSpace) {
+        super(runtime, metaClass, objectSpace);
+        id = ++runtime.moduleLastId;
+        // if (parent == null) parent = runtime.getObject();
+    }
+    
+    /** used by MODULE_ALLOCATOR and RubyClass constructors
+     * 
+     */
+    protected RubyModule(Ruby runtime, RubyClass metaClass) {
+        this(runtime, metaClass, runtime.isObjectSpaceEnabled());
+    }
+    
+    /** standard path for Module construction
+     * 
+     */
+    protected RubyModule(Ruby runtime) {
+        this(runtime, runtime.getModule());
+    }
+
+    /** rb_module_new
+     * 
+     */
+    public static RubyModule newModule(Ruby runtime) {
+        return new RubyModule(runtime);
+    }
+    
+    /** rb_module_new/rb_define_module_id/rb_name_class/rb_set_class_path
+     * 
+     */
+    public static RubyModule newModule(Ruby runtime, String name, RubyModule parent, boolean setParent) {
+        RubyModule module = newModule(runtime);
+        module.setBaseName(name);
+        if (setParent) module.setParent(parent);
+        parent.setConstant(name, module);
+        return module;
+    }
+    
+    // synchronized method per JRUBY-1173 (unsafe Double-Checked Locking)
+    public synchronized void addClassProvider(ClassProvider provider) {
+        if (classProviders == null) {
+            List cp = Collections.synchronizedList(new ArrayList());
+            cp.add(provider);
+            classProviders = cp;
+        } else {
+            synchronized(classProviders) {
+                if (!classProviders.contains(provider)) {
+                    classProviders.add(provider);
+                }
+            }
+        }
+    }
+
+    public void removeClassProvider(ClassProvider provider) {
+        if (classProviders != null) {
+            classProviders.remove(provider);
+        }
+    }
+
+    private RubyClass searchProvidersForClass(String name, RubyClass superClazz) {
+        if (classProviders != null) {
+            synchronized(classProviders) {
+                RubyClass clazz;
+                for (Iterator iter = classProviders.iterator(); iter.hasNext(); ) {
+                    if ((clazz = ((ClassProvider)iter.next())
+                            .defineClassUnder(this, name, superClazz)) != null) {
+                        return clazz;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private RubyModule searchProvidersForModule(String name) {
+        if (classProviders != null) {
+            synchronized(classProviders) {
+                RubyModule module;
+                for (Iterator iter = classProviders.iterator(); iter.hasNext(); ) {
+                    if ((module = ((ClassProvider)iter.next()).defineModuleUnder(this, name)) != null) {
+                        return module;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     public Dispatcher getDispatcher() {
         return dispatcher;
     }
@@ -316,17 +347,6 @@ public class RubyModule extends RubyObject {
         getMethods().put(name, method);
     }
 
-    public boolean isModule() {
-        return true;
-    }
-
-    public boolean isClass() {
-        return false;
-    }
-
-    public boolean isSingleton() {
-        return false;
-    }
 
     /**
      * Is this module one that in an included one (e.g. an IncludedModuleWrapper). 
@@ -715,7 +735,7 @@ public class RubyModule extends RubyObject {
             RubyModule c = this;
 
             if (c.isSingleton()) {
-                IRubyObject obj = getInstanceVariable("__attached__");
+                IRubyObject obj = ((MetaClass)c).getAttached();
 
                 if (obj != null && obj instanceof RubyModule) {
                     c = (RubyModule) obj;
@@ -730,7 +750,7 @@ public class RubyModule extends RubyObject {
         addMethod(name, UndefinedMethod.getInstance());
         
         if(isSingleton()){
-            IRubyObject singleton = getInstanceVariable("__attached__"); 
+            IRubyObject singleton = ((MetaClass)this).getAttached(); 
             singleton.callMethod(runtime.getCurrentContext(), "singleton_method_undefined", getRuntime().newSymbol(name));
         }else{
             callMethod(runtime.getCurrentContext(), "method_undefined", getRuntime().newSymbol(name));
@@ -738,8 +758,8 @@ public class RubyModule extends RubyObject {
     }
     
     public IRubyObject include_p(IRubyObject arg) {
-        if (!((arg instanceof RubyModule) && ((RubyModule)arg).isModule())){
-            throw getRuntime().newTypeError(arg, getRuntime().getClass("Module"));
+        if (!arg.isModule()) {
+            throw getRuntime().newTypeError(arg, getRuntime().getModule());
         }
         
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
@@ -803,7 +823,7 @@ public class RubyModule extends RubyObject {
         }
         
         if(isSingleton()){
-            IRubyObject singleton = getInstanceVariable("__attached__"); 
+            IRubyObject singleton = ((MetaClass)this).getAttached(); 
             singleton.callMethod(getRuntime().getCurrentContext(), "singleton_method_removed", getRuntime().newSymbol(name));
         }else{
             callMethod(getRuntime().getCurrentContext(), "method_removed", getRuntime().newSymbol(name));
@@ -1039,67 +1059,73 @@ public class RubyModule extends RubyObject {
         putMethod(name, new AliasMethod(this, method, oldName));
     }
 
+    /** this method should be used only by interpreter or compiler 
+     * 
+     */
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz) {
         // This method is intended only for defining new classes in Ruby code,
         // so it uses the allocator of the specified superclass or default to
         // the Object allocator. It should NOT be used to define classes that require a native allocator.
-        IRubyObject type = getInstanceVariable(name);
-        
-        if (type == null || (type instanceof RubyUndef)) {
-            if (classProviders != null) {
-                if ((type = searchProvidersForClass(name, superClazz)) != null) {
-                    return (RubyClass)type;
-                }
-            }
-            ObjectAllocator allocator = superClazz == null ? getRuntime().getObject().getAllocator() : superClazz.getAllocator();
-            return getRuntime().defineClassUnder(name, superClazz, allocator, this);
-        } 
 
-        if (!(type instanceof RubyClass)) {
-            throw getRuntime().newTypeError(name + " is not a class.");
-        } else if (superClazz != null && ((RubyClass) type).getSuperClass().getRealClass() != superClazz) {
-            throw getRuntime().newTypeError("superclass mismatch for class " + name);
+        Ruby runtime = getRuntime();
+        IRubyObject classObj = getConstantAt(name);
+        RubyClass clazz;
+
+        if (classObj != null) {
+            if (!(classObj instanceof RubyClass)) throw runtime.newTypeError(name + " is not a class");
+            clazz = (RubyClass)classObj;
+
+            if (superClazz != null) {
+                RubyClass tmp = clazz.getSuperClass();
+                while (tmp != null && tmp.isIncluded()) tmp = tmp.getSuperClass(); // need to skip IncludedModuleWrappers
+                if (tmp != null) tmp = tmp.getRealClass();
+                if (tmp != superClazz) throw runtime.newTypeError("superclass mismatch for class " + name);
+                // superClazz = null;
+            }
+
+            if (runtime.getSafeLevel() >= 4) throw runtime.newTypeError("extending class prohibited");
+        } else if (classProviders != null && (clazz = searchProvidersForClass(name, superClazz)) != null) {
+            // reopen a java class
+        } else {
+            if (superClazz == null) superClazz = runtime.getObject();
+            clazz = RubyClass.newClass(runtime, superClazz, name, superClazz.getAllocator(), this, true);
         }
 
-        return (RubyClass) type;
+        return clazz;
+    }
+
+    /** this method should be used only by interpreter or compiler 
+     * 
+     */
+    public RubyModule defineOrGetModuleUnder(String name) {
+        // This method is intended only for defining new modules in Ruby code
+        Ruby runtime = getRuntime();
+        IRubyObject moduleObj = getConstantAt(name);
+        RubyModule module;
+        if (moduleObj != null) {
+            if (!moduleObj.isModule()) throw runtime.newTypeError(name + " is not a module");
+            if (runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("extending module prohibited");
+            module = (RubyModule)moduleObj;
+        } else if (classProviders != null && (module = searchProvidersForModule(name)) != null) {
+            // reopen a java module
+        } else {
+            module = RubyModule.newModule(runtime, name, this, true); 
+        }
+        return module;
     }
 
     /** rb_define_class_under
-     *
+     *  this method should be used only as an API to define/open nested classes 
      */
-    public RubyClass defineClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator) {
-        IRubyObject type = getInstanceVariable(name);
-
-        if (type == null) {
-            return getRuntime().defineClassUnder(name, superClazz, allocator, this);
-        }
-
-        if (!(type instanceof RubyClass)) {
-            throw getRuntime().newTypeError(name + " is not a class.");
-        } else if (((RubyClass) type).getSuperClass().getRealClass() != superClazz) {
-            throw getRuntime().newNameError(name + " is already defined.", name);
-        }
-
-        return (RubyClass) type;
+    public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator) {
+        return getRuntime().defineClassUnder(name, superClass, allocator, this);
     }
 
+    /** rb_define_module_under
+     *  this method should be used only as an API to define/open nested module
+     */
     public RubyModule defineModuleUnder(String name) {
-        IRubyObject type = getConstantAt(name);
-
-        if (type == null) {
-            if (classProviders != null) {
-                if ((type = searchProvidersForModule(name)) != null) {
-                    return (RubyModule)type;
-                }
-            }
-            return getRuntime().defineModuleUnder(name, this);
-        }
-
-        if (!(type instanceof RubyModule)) {
-            throw getRuntime().newTypeError(name + " is not a module.");
-        }
-
-        return (RubyModule) type;
+        return getRuntime().defineModuleUnder(name, this);
     }
 
     /** rb_define_const
@@ -1108,7 +1134,7 @@ public class RubyModule extends RubyObject {
     public void defineConstant(String name, IRubyObject value) {
         assert value != null;
 
-        if (this == getRuntime().getClass("Class")) {
+        if (this == getRuntime().getClassClass()) {
             getRuntime().secure(4);
         }
 
@@ -1275,7 +1301,7 @@ public class RubyModule extends RubyObject {
 
         if (visibility.isModuleFunction()) visibility = Visibility.PRIVATE;
 
-        if (args.length == 1 || args[1].isKindOf(getRuntime().getClass("Proc"))) {
+        if (args.length == 1 || args[1].isKindOf(getRuntime().getProc())) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = (args.length == 1) ? getRuntime().newProc(false, block) : (RubyProc)args[1];
             body = proc;
@@ -1290,7 +1316,7 @@ public class RubyModule extends RubyObject {
             proc.getBlock().getDynamicScope().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
 
             newMethod = new ProcMethod(this, proc, visibility);
-        } else if (args[1].isKindOf(getRuntime().getClass("Method"))) {
+        } else if (args[1].isKindOf(getRuntime().getMethod())) {
             RubyMethod method = (RubyMethod)args[1];
             body = method;
 
@@ -1309,7 +1335,7 @@ public class RubyModule extends RubyObject {
         }
 
         if(isSingleton()){
-            IRubyObject singleton = getInstanceVariable("__attached__"); 
+            IRubyObject singleton = ((MetaClass)this).getAttached(); 
             singleton.callMethod(context, "singleton_method_added", symbol);
         }else{
         callMethod(context, "method_added", symbol);
@@ -1328,26 +1354,6 @@ public class RubyModule extends RubyObject {
         } finally {
             context.postExecuteUnder();
         }
-    }
-
-    // Methods of the Module Class (rb_mod_*):
-
-    public static RubyModule newModule(Ruby runtime, String name) {
-        return newModule(runtime, runtime.getClass("Module"), name, null);
-    }
-
-    public static RubyModule newModule(Ruby runtime, RubyClass type, String name) {
-        return newModule(runtime, type, name, null);
-    }
-
-    public static RubyModule newModule(Ruby runtime, String name, RubyModule parent) {
-        return newModule(runtime, runtime.getClass("Module"), name, parent);
-    }
-
-    public static RubyModule newModule(Ruby runtime, RubyClass type, String name, RubyModule parent) {
-        RubyModule module = new RubyModule(runtime, type, null, parent, name);
-        
-        return module;
     }
 
     public RubyString name() {
@@ -1435,35 +1441,22 @@ public class RubyModule extends RubyObject {
         return clone;
     }
 
-    protected IRubyObject doClone() {
-        return RubyModule.newModule(getRuntime(), null, parent);
-    }
-
     /** rb_mod_init_copy
      * 
      */
     public IRubyObject initialize_copy(IRubyObject original) {
-        assert original instanceof RubyModule;
-        
-        RubyModule originalModule = (RubyModule)original;
-        
-        super.initialize_copy(originalModule);
-        
-        if (!getMetaClass().isSingleton()) {
-            setMetaClass(originalModule.getSingletonClassClone());
-        }
+        super.initialize_copy(original);
 
+        RubyModule originalModule = (RubyModule)original;
+
+        if (!getMetaClass().isSingleton()) setMetaClass(originalModule.getSingletonClassClone());
         setSuperClass(originalModule.getSuperClass());
-        
-        if (originalModule.instanceVariables != null){
-            setInstanceVariables(new HashMap(originalModule.getInstanceVariables()));
-        }
-        
-        // no __classpath__ and __classid__ stuff in JRuby here (yet?)        
+
+        if (originalModule.safeHasInstanceVariables()) setInstanceVariables(new HashMap(originalModule.getInstanceVariables()));
 
         originalModule.cloneMethods(this);
-        
-        return this;        
+
+        return this;
     }
 
     /** rb_mod_included_modules
@@ -1527,7 +1520,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject to_s() {
         if(isSingleton()){            
-            IRubyObject attached = getInstanceVariable("__attached__");
+            IRubyObject attached = ((MetaClass)this).getAttached();
             StringBuffer buffer = new StringBuffer("#<Class:");
             if(attached instanceof RubyClass || attached instanceof RubyModule){
                 buffer.append(attached.inspect());
@@ -1623,20 +1616,20 @@ public class RubyModule extends RubyObject {
        return false;
    }
 
-   public boolean isSame(RubyModule module) {
+   protected boolean isSame(RubyModule module) {
        return this == module;
    }
 
     /** rb_mod_initialize
      *
      */
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
+    public IRubyObject initialize(Block block) {
         if (block.isGiven()) {
             // class and module bodies default to public, so make the block's visibility public. JRUBY-1185.
             block.setVisibility(Visibility.PUBLIC);
             block.yield(getRuntime().getCurrentContext(), null, this, this, false);
         }
-        
+
         return getRuntime().getNil();
     }
 
@@ -1796,7 +1789,7 @@ public class RubyModule extends RubyObject {
         ArrayList constantNames = new ArrayList();
         RubyModule objectClass = getRuntime().getObject();
 
-        if (getRuntime().getClass("Module") == this) {
+        if (getRuntime().getModule() == this) {
             for (Iterator vars = objectClass.instanceVariableNames();
                  vars.hasNext();) {
                 String name = (String) vars.next();
@@ -1893,7 +1886,7 @@ public class RubyModule extends RubyObject {
     public RubyModule append_features(IRubyObject module) {
         if (!(module instanceof RubyModule)) {
             // MRI error message says Class, even though Module is ok 
-            throw getRuntime().newTypeError(module,getRuntime().getClass("Class"));
+            throw getRuntime().newTypeError(module,getRuntime().getClassClass());
         }
         ((RubyModule) module).includeModule(this);
         return this;
@@ -1914,10 +1907,8 @@ public class RubyModule extends RubyObject {
         ThreadContext context = getRuntime().getCurrentContext();
         // MRI checks all types first:
         for (int i = modules.length; --i >= 0; ) {
-            IRubyObject obj;
-            if (!(((obj = modules[i]) instanceof RubyModule) && ((RubyModule)obj).isModule())){
-                throw getRuntime().newTypeError(obj,getRuntime().getClass("Module"));
-            }
+            IRubyObject obj = modules[i];
+            if (!obj.isModule()) throw getRuntime().newTypeError(obj,getRuntime().getModule());
         }
         for (int i = modules.length - 1; i >= 0; i--) {
             modules[i].callMethod(context, "append_features", this);
@@ -2067,16 +2058,12 @@ public class RubyModule extends RubyObject {
     }
 
     public static void marshalTo(RubyModule module, MarshalStream output) throws java.io.IOException {
-        output.writeString(module.name().toString());
+        output.writeString(MarshalStream.getPathFromClass(module));
     }
 
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = RubyString.byteListToString(input.unmarshalString());
-        Ruby runtime = input.getRuntime();
-        RubyModule result = runtime.getClassFromPath(name);
-        if (result == null) {
-            throw runtime.newNameError("uninitialized constant " + name, name);
-        }
+        RubyModule result = UnmarshalStream.getModuleFromPath(input.getRuntime(), name);
         input.registerLinkTarget(result);
         return result;
     }

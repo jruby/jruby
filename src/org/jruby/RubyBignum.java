@@ -50,8 +50,9 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  */
 public class RubyBignum extends RubyInteger {
     public static RubyClass createBignumClass(Ruby runtime) {
-        RubyClass bignum = runtime.defineClass("Bignum", runtime.getClass("Integer"),
+        RubyClass bignum = runtime.defineClass("Bignum", runtime.getInteger(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        runtime.setBignum(bignum);
         bignum.index = ClassIndex.BIGNUM;
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBignum.class);
 
@@ -98,7 +99,7 @@ public class RubyBignum extends RubyInteger {
     private final BigInteger value;
 
     public RubyBignum(Ruby runtime, BigInteger value) {
-        super(runtime, runtime.getClass("Bignum"));
+        super(runtime, runtime.getBignum());
         this.value = value;
     }
     

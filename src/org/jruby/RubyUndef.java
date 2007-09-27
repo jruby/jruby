@@ -248,6 +248,14 @@ public class RubyUndef implements IRubyObject {
         return false;
     }
 
+    public boolean isModule() {
+        return false;
+    }
+
+    public boolean isClass() {
+        return false;
+    }
+
     public boolean isSingleton() {
         return false;
     }
@@ -260,7 +268,7 @@ public class RubyUndef implements IRubyObject {
         return false;
     }
 
-    public IRubyObject rbClone(Block unusedBlock) {
+    public IRubyObject rbClone() {
         return null;
     }
 

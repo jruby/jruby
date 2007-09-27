@@ -87,6 +87,7 @@ public class RubyString extends RubyObject {
     
     public static RubyClass createStringClass(Ruby runtime) {
         RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
+        runtime.setString(stringClass);
         stringClass.index = ClassIndex.STRING;
         stringClass.kindOf = new RubyModule.KindOf() {
                 public boolean isKindOf(IRubyObject obj, RubyModule type) {
@@ -95,8 +96,8 @@ public class RubyString extends RubyObject {
             };
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyString.class);
         
-        stringClass.includeModule(runtime.getModule("Comparable"));
-        stringClass.includeModule(runtime.getModule("Enumerable"));
+        stringClass.includeModule(runtime.getComparable());
+        stringClass.includeModule(runtime.getEnumerable());
         
         stringClass.defineFastMethod("<=>", callbackFactory.getFastMethod("op_cmp", RubyKernel.IRUBY_OBJECT));
         stringClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));

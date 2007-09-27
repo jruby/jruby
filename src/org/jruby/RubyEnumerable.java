@@ -47,6 +47,7 @@ public class RubyEnumerable {
 
     public static RubyModule createEnumerableModule(Ruby runtime) {
         RubyModule enm = runtime.defineModule("Enumerable");
+        runtime.setEnumerable(enm);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyEnumerable.class);
 
         enm.defineFastMethod("to_a", callbackFactory.getFastSingletonMethod("to_a"));
@@ -321,7 +322,7 @@ public class RubyEnumerable {
 
     public static IRubyObject each_with_index(IRubyObject self, Block block) {
         ThreadContext context = self.getRuntime().getCurrentContext();
-        self.callMethod(context, "each", new CallBlock(self, self.getRuntime().getModule("Enumerable"), 
+        self.callMethod(context, "each", new CallBlock(self, self.getRuntime().getEnumerable(), 
                 Arity.noArguments(), new EachWithIndex(context, block), context));
         
         return self;

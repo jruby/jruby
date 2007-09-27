@@ -53,7 +53,7 @@ public class RubySymbol extends RubyObject {
     private final int id;
     
     private RubySymbol(Ruby runtime, String symbol) {
-        super(runtime, runtime.getClass("Symbol"), false);
+        super(runtime, runtime.getSymbol(), false);
         this.symbol = symbol;
 
         runtime.symbolLastId++;
@@ -62,6 +62,7 @@ public class RubySymbol extends RubyObject {
     
     public static RubyClass createSymbolClass(Ruby runtime) {
         RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        runtime.setSymbol(symbolClass);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubySymbol.class);   
         RubyClass symbolMetaClass = symbolClass.getMetaClass();
         symbolClass.index = ClassIndex.SYMBOL;
@@ -101,7 +102,11 @@ public class RubySymbol extends RubyObject {
     public boolean isImmediate() {
     	return true;
     }
-    
+
+    public RubyClass getSingletonClass() {
+        throw getRuntime().newTypeError("can't define singleton");
+    }
+
     public static RubySymbol getSymbol(Ruby runtime, long id) {
         return runtime.getSymbolTable().lookup(id);
     }

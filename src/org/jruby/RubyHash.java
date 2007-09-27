@@ -65,6 +65,7 @@ public class RubyHash extends RubyObject implements Map {
     
     public static RubyClass createHashClass(Ruby runtime) {
         RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), HASH_ALLOCATOR);
+        runtime.setHash(hashc);
         hashc.index = ClassIndex.HASH;
         hashc.kindOf = new RubyModule.KindOf() {
                 public boolean isKindOf(IRubyObject obj, RubyModule type) {
@@ -73,7 +74,7 @@ public class RubyHash extends RubyObject implements Map {
             };
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyHash.class);
 
-        hashc.includeModule(runtime.getModule("Enumerable"));
+        hashc.includeModule(runtime.getEnumerable());
         hashc.getMetaClass().defineMethod("[]", callbackFactory.getOptSingletonMethod("create"));
 
         hashc.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));

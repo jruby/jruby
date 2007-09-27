@@ -37,6 +37,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyKernel;
@@ -47,6 +48,8 @@ import org.jruby.RubyObject;
 import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
+import org.jruby.RubyUndef;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
@@ -652,24 +655,30 @@ public class EvaluationState {
 
     private static IRubyObject classNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         ClassNode iVisited = (ClassNode) node;
-        Node superNode = iVisited.getSuperNode();
-        RubyClass superClass = null;
-        if(superNode != null) {
-            IRubyObject _super = evalInternal(runtime,context, superNode, self, aBlock);
-            if(!(_super instanceof RubyClass)) {
-                throw runtime.newTypeError("superclass must be a Class (" + RubyObject.trueFalseNil(_super) + ") given");
-            }
-            superClass = (RubyClass)_super;
-        }
         Node classNameNode = iVisited.getCPath();
-        String name = ((INameNode) classNameNode).getName();
+
         RubyModule enclosingClass = getEnclosingModule(runtime, context, classNameNode, self, aBlock);
-        RubyClass rubyClass = enclosingClass.defineOrGetClassUnder(name, superClass);
-        
+
+        if (enclosingClass == null) throw runtime.newTypeError("no outer class/module");
+
+        Node superNode = iVisited.getSuperNode();
+
+        RubyClass superClass = null;
+
+        if (superNode != null) {
+            IRubyObject superObj = evalInternal(runtime, context, superNode, self, aBlock);
+            RubyClass.checkInheritable(superObj);
+            superClass = (RubyClass)superObj;
+        }
+
+        String name = ((INameNode) classNameNode).getName();        
+
+        RubyClass clazz = enclosingClass.defineOrGetClassUnder(name, superClass);
+
         StaticScope scope = iVisited.getScope();
-        scope.setModule(rubyClass);
-   
-        return evalClassDefinitionBody(runtime, context, scope, iVisited.getBodyNode(), rubyClass, self, aBlock);
+        scope.setModule(clazz);
+
+        return evalClassDefinitionBody(runtime, context, scope, iVisited.getBodyNode(), clazz, self, aBlock);
     }
 
     private static IRubyObject classVarAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -784,7 +793,11 @@ public class EvaluationState {
         if (containingClass == runtime.getObject() && name == "initialize") {
             runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
         }
-   
+
+        if (name == "__id__" || name == "__send__") {
+            runtime.getWarnings().warn("redefining `" + name + "' may cause serious problem"); 
+        }
+
         Visibility visibility = context.getCurrentVisibility();
         if (name == "initialize" || visibility.isModuleFunction()) {
             visibility = Visibility.PRIVATE;
@@ -808,7 +821,7 @@ public class EvaluationState {
    
         // 'class << state.self' and 'class << obj' uses defn as opposed to defs
         if (containingClass.isSingleton()) {
-            ((MetaClass) containingClass).getAttachedObject().callMethod(
+            ((MetaClass) containingClass).getAttached().callMethod(
                     context, "singleton_method_added", runtime.newSymbol(iVisited.getName()));
         } else {
             containingClass.callMethod(context, "method_added", runtime.newSymbol(name));
@@ -820,45 +833,33 @@ public class EvaluationState {
     private static IRubyObject defsNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         DefsNode iVisited = (DefsNode) node;
         IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
-   
-        RubyClass rubyClass;
-   
-        if (receiver.isNil()) {
-            rubyClass = runtime.getNilClass();
-        } else if (receiver == runtime.getTrue()) {
-            rubyClass = runtime.getClass("TrueClass");
-        } else if (receiver == runtime.getFalse()) {
-            rubyClass = runtime.getClass("FalseClass");
-        } else {
-            if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-                throw runtime.newSecurityError("Insecure; can't define singleton method.");
-            }
-            if (receiver.isFrozen()) {
-                throw runtime.newFrozenError("object");
-            }
-            if (receiver.getMetaClass() == runtime.getFixnum() || receiver.getMetaClass() == runtime.getClass("Symbol")) {
-                throw runtime.newTypeError("can't define singleton method \"" + iVisited.getName()
-                                           + "\" for " + receiver.getType());
-            }
-   
-            rubyClass = receiver.getSingletonClass();
+        String name = iVisited.getName();
+
+        if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
+            throw runtime.newSecurityError("Insecure; can't define singleton method.");
         }
-   
-        if (runtime.getSafeLevel() >= 4) {
-            Object method = rubyClass.getMethods().get(iVisited.getName());
-            if (method != null) {
-                throw runtime.newSecurityError("Redefining method prohibited.");
-            }
+
+        if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
+          throw runtime.newTypeError("can't define singleton method \"" + name
+          + "\" for " + receiver.getMetaClass().getBaseName());
         }
-        
+
+        if (receiver.isFrozen()) throw runtime.newFrozenError("object");
+
+        RubyClass rubyClass = receiver.getSingletonClass();
+
+        if (runtime.getSafeLevel() >= 4 && rubyClass.getMethods().get(name) != null) {
+            throw runtime.newSecurityError("redefining method prohibited.");
+        }
+
         StaticScope scope = iVisited.getScope();
         scope.determineModule();
       
         DefaultMethod newMethod = new DefaultMethod(rubyClass, scope, iVisited.getBodyNode(), 
                 (ArgsNode) iVisited.getArgsNode(), Visibility.PUBLIC);
    
-        rubyClass.addMethod(iVisited.getName(), newMethod);
-        receiver.callMethod(context, "singleton_method_added", runtime.newSymbol(iVisited.getName()));
+        rubyClass.addMethod(name, newMethod);
+        receiver.callMethod(context, "singleton_method_added", runtime.newSymbol(name));
    
         return runtime.getNil();
     }
@@ -1217,23 +1218,18 @@ public class EvaluationState {
     private static IRubyObject moduleNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         ModuleNode iVisited = (ModuleNode) node;
         Node classNameNode = iVisited.getCPath();
-        String name = ((INameNode) classNameNode).getName();
+
         RubyModule enclosingModule = getEnclosingModule(runtime, context, classNameNode, self, aBlock);
-   
-        if (enclosingModule == null) {
-            throw runtime.newTypeError("no outer class/module");
-        }
-   
-        RubyModule module;
-        if (enclosingModule == runtime.getObject()) {
-            module = runtime.getOrCreateModule(name);
-        } else {
-            module = enclosingModule.defineModuleUnder(name);
-        }
-        
+
+        if (enclosingModule == null) throw runtime.newTypeError("no outer class/module");
+
+        String name = ((INameNode) classNameNode).getName();        
+
+        RubyModule module = enclosingModule.defineOrGetModuleUnder(name);
+
         StaticScope scope = iVisited.getScope();
         scope.setModule(module);        
-        
+
         return evalClassDefinitionBody(runtime, context, scope, iVisited.getBodyNode(), module, self, aBlock);
     }
 
@@ -1588,13 +1584,7 @@ public class EvaluationState {
 
         RubyClass singletonClass;
 
-        if (receiver.isNil()) {
-            singletonClass = runtime.getNilClass();
-        } else if (receiver == runtime.getTrue()) {
-            singletonClass = runtime.getClass("TrueClass");
-        } else if (receiver == runtime.getFalse()) {
-            singletonClass = runtime.getClass("FalseClass");
-        } else if (receiver.getMetaClass() == runtime.getFixnum() || receiver.getMetaClass() == runtime.getClass("Symbol")) {
+        if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
             throw runtime.newTypeError("no virtual class for " + receiver.getMetaClass().getBaseName());
         } else {
             if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
@@ -1967,9 +1957,11 @@ public class EvaluationState {
             } else if (module.isClassVarDefined(iVisited.getName())) {
                 return "class variable";
             } 
-            IRubyObject attached =  module.getInstanceVariable("__attached__");
+            IRubyObject attached = null;
+            if (module.isSingleton()) attached = ((MetaClass)module).getAttached();
             if (attached instanceof RubyModule) {
                 module = (RubyModule)attached;
+
                 if (module.isClassVarDefined(iVisited.getName())) return "class variable"; 
             }
 

@@ -44,6 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyGC {
     public static RubyModule createGCModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("GC");
+        runtime.setGC(result);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyGC.class);
         
         result.defineFastModuleFunction("start", callbackFactory.getFastSingletonMethod("start"));

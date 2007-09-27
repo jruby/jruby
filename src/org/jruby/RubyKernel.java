@@ -76,6 +76,7 @@ public class RubyKernel {
 
     public static RubyModule createKernelModule(Ruby runtime) {
         RubyModule module = runtime.defineModule("Kernel");
+        runtime.setKernel(module);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyKernel.class);
         CallbackFactory objectCallbackFactory = runtime.callbackFactory(RubyObject.class);
 
@@ -176,7 +177,7 @@ public class RubyKernel {
         module.defineFastPublicModuleFunction("class", objectCallbackFactory.getFastMethod("type"));
         module.defineFastPublicModuleFunction("inspect", objectCallbackFactory.getFastMethod("inspect"));
         module.defineFastPublicModuleFunction("=~", objectCallbackFactory.getFastMethod("match", IRUBY_OBJECT));
-        module.definePublicModuleFunction("clone", objectCallbackFactory.getMethod("rbClone"));
+        module.definePublicModuleFunction("clone", objectCallbackFactory.getFastMethod("rbClone"));
         module.defineFastPublicModuleFunction("display", objectCallbackFactory.getFastOptMethod("display"));
         module.defineFastPublicModuleFunction("extend", objectCallbackFactory.getFastOptMethod("extend"));
         module.defineFastPublicModuleFunction("freeze", objectCallbackFactory.getFastMethod("freeze"));
@@ -361,7 +362,7 @@ public class RubyKernel {
             }
         } 
 
-        return RubyFile.open(runtime.getClass("File"), args, block);
+        return RubyFile.open(runtime.getFile(), args, block);
     }
 
     public static IRubyObject gets(IRubyObject recv, IRubyObject[] args) {
@@ -405,7 +406,7 @@ public class RubyKernel {
         }else if(object.isNil()){
             throw recv.getRuntime().newTypeError("can't convert nil into Float");
         } else {
-            RubyFloat rFloat = (RubyFloat)object.convertToType(recv.getRuntime().getClass("Float"), MethodIndex.TO_F, "to_f");
+            RubyFloat rFloat = (RubyFloat)object.convertToType(recv.getRuntime().getFloat(), MethodIndex.TO_F, "to_f");
             if (Double.isNaN(rFloat.getDoubleValue())) throw recv.getRuntime().newArgumentError("invalid value for Float()");
             return rFloat;
         }
@@ -423,7 +424,7 @@ public class RubyKernel {
             return RubyNumeric.str2inum(recv.getRuntime(),(RubyString)object,0,true);
         }
         
-        IRubyObject tmp = object.convertToType(recv.getRuntime().getClass("Integer"), MethodIndex.TO_INT, "to_int", false);
+        IRubyObject tmp = object.convertToType(recv.getRuntime().getInteger(), MethodIndex.TO_INT, "to_int", false);
         if (tmp.isNil()) return object.convertToInteger(MethodIndex.TO_I, "to_i");
         return tmp;
     }
@@ -794,7 +795,7 @@ public class RubyKernel {
     public static IRubyObject callcc(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         runtime.getWarnings().warn("Kernel#callcc: Continuations are not implemented in JRuby and will not work");
-        IRubyObject cc = runtime.getClass("Continuation").callMethod(runtime.getCurrentContext(),"new");
+        IRubyObject cc = runtime.getContinuation().callMethod(runtime.getCurrentContext(),"new");
         cc.dataWrapStruct(block);
         return block.yield(runtime.getCurrentContext(),cc);
     }
@@ -853,7 +854,7 @@ public class RubyKernel {
         Ruby runtime = recv.getRuntime();
         if (!runtime.getGlobalVariables().get("$VERBOSE").isNil()) {
             IRubyObject out = runtime.getObject().getConstant("STDERR");
-            RubyIO io = (RubyIO) out.convertToType(runtime.getClass("IO"), 0, "to_io", true); 
+            RubyIO io = (RubyIO) out.convertToType(runtime.getIO(), 0, "to_io", true); 
             io.puts(new IRubyObject[] { message });
         }
         return recv.getRuntime().getNil();
@@ -888,7 +889,7 @@ public class RubyKernel {
             proc = RubyProc.newProc(recv.getRuntime(), block, false);
         }
         if (args.length == 2) {
-            proc = (RubyProc)args[1].convertToType(recv.getRuntime().getClass("Proc"), 0, "to_proc", true);
+            proc = (RubyProc)args[1].convertToType(recv.getRuntime().getProc(), 0, "to_proc", true);
         }
         
         recv.getRuntime().getGlobalVariables().setTraceVar(var, proc);

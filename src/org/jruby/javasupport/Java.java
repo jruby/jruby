@@ -236,9 +236,12 @@ public class Java {
         try {
             if((proxyClass = javaClass.getProxyClass()) == null) {
                 final RubyModule interfaceModule = (RubyModule)get_interface_module(recv, javaClass);
-                proxyClass = RubyClass.newClass(
-                        recv, new IRubyObject[]{ runtime.getClass("InterfaceJavaProxy") },
-                        Block.NULL_BLOCK, true);
+                RubyClass interfaceJavaProxy = runtime.getClass("InterfaceJavaProxy");
+                proxyClass = RubyClass.newClass(runtime, interfaceJavaProxy);
+                proxyClass.setAllocator(interfaceJavaProxy.getAllocator());
+                proxyClass.makeMetaClass(interfaceJavaProxy.getMetaClass());
+                // parent.setConstant(name, proxyClass); // where the name should come from ?
+                proxyClass.inherit(interfaceJavaProxy);                
                 proxyClass.callMethod(recv.getRuntime().getCurrentContext(), "java_class=", javaClass);
                 // including interface module so old-style interface "subclasses" will
                 // respond correctly to #kind_of?, etc.
@@ -319,11 +322,17 @@ public class Java {
         }
         return proxyClass;
     }
-    
+
     private static RubyClass createProxyClass(final IRubyObject recv, final IRubyObject baseType,
             final JavaClass javaClass, final boolean invokeInherited) {
-        final RubyClass proxyClass = RubyClass.newClass(recv, new IRubyObject[]{ baseType },
-                Block.NULL_BLOCK, invokeInherited);
+        // this needs to be split, since conditional calling #inherited doesn't fit standard ruby semantics
+        RubyClass.checkInheritable(baseType);
+        RubyClass superClass = (RubyClass)baseType;
+        RubyClass proxyClass = RubyClass.newClass(recv.getRuntime(), superClass);
+        proxyClass.makeMetaClass(superClass.getMetaClass());
+        proxyClass.setAllocator(superClass.getAllocator());
+        if (invokeInherited) proxyClass.inherit(superClass);
+
         proxyClass.callMethod(recv.getRuntime().getCurrentContext(), "java_class=", javaClass);
         javaClass.setupProxy(proxyClass);
         return proxyClass;

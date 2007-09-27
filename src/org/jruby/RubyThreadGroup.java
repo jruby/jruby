@@ -51,6 +51,7 @@ public class RubyThreadGroup extends RubyObject {
     // ENEBO: Can these be fast?
     public static RubyClass createThreadGroupClass(Ruby runtime) {
         RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        runtime.setThreadGroup(threadGroupClass);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThreadGroup.class);
         
         threadGroupClass.defineMethod("add", callbackFactory.getMethod("add", RubyThread.class));

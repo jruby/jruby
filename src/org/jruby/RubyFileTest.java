@@ -40,6 +40,7 @@ import org.jruby.util.JRubyFile;
 public class RubyFileTest {
     public static RubyModule createFileTestModule(Ruby runtime) {
         RubyModule fileTestModule = runtime.defineModule("FileTest");
+        runtime.setFileTest(fileTestModule);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileTest.class);
 
         fileTestModule.defineFastModuleFunction("file?", callbackFactory.getFastSingletonMethod("file_p", RubyKernel.IRUBY_OBJECT));

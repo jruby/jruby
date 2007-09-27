@@ -68,12 +68,15 @@ public class RubyProc extends RubyObject implements JumpTarget {
 
     public static RubyClass createProcClass(Ruby runtime) {
         RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), PROC_ALLOCATOR);
+        runtime.setProc(procClass);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyProc.class);
         
         procClass.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
         procClass.defineFastMethod("binding", callbackFactory.getFastMethod("binding"));
         procClass.defineMethod("call", callbackFactory.getOptMethod("call"));
         procClass.defineAlias("[]", "call");
+        procClass.defineFastMethod("clone", callbackFactory.getFastMethod("rbClone"));
+        procClass.defineFastMethod("dup", callbackFactory.getFastMethod("dup"));
         procClass.defineFastMethod("to_proc", callbackFactory.getFastMethod("to_proc"));
         procClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
 
@@ -89,10 +92,10 @@ public class RubyProc extends RubyObject implements JumpTarget {
     // Proc class
 
     public static RubyProc newProc(Ruby runtime, boolean isLambda) {
-        return new RubyProc(runtime, runtime.getClass("Proc"), isLambda);
+        return new RubyProc(runtime, runtime.getProc(), isLambda);
     }
     public static RubyProc newProc(Ruby runtime, Block block, boolean isLambda) {
-        RubyProc proc = new RubyProc(runtime, runtime.getClass("Proc"), isLambda);
+        RubyProc proc = new RubyProc(runtime, runtime.getProc(), isLambda);
         proc.callInit(NULL_ARRAY, block);
         
         return proc;
@@ -115,12 +118,17 @@ public class RubyProc extends RubyObject implements JumpTarget {
         return this;
     }
     
-    protected IRubyObject doClone() {
-    	RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getClass("Proc"), isLambda);
-    	
+    public IRubyObject rbClone() {
+    	RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), isLambda);
     	newProc.block = getBlock();
-    	
+    	// TODO: CLONE_SETUP here
     	return newProc;
+    }
+
+    public IRubyObject dup() {
+        RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), isLambda);
+        newProc.block = getBlock();
+        return newProc;
     }
     
     /**

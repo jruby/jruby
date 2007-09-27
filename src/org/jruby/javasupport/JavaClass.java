@@ -1270,7 +1270,7 @@ public class JavaClass extends JavaObject {
                 IRubyObject dimensionLength = (IRubyObject)list.get(i);
                 if ( !(dimensionLength instanceof RubyInteger) ) {
                     throw getRuntime()
-                        .newTypeError(dimensionLength, getRuntime().getClass("Integer"));
+                        .newTypeError(dimensionLength, getRuntime().getInteger());
                 }
                 dimensions[i] = (int) ((RubyInteger) dimensionLength).getLongValue();
             }

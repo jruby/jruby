@@ -14,7 +14,7 @@ public class MockRubyObject extends RubyObject {
 
 		protected TestMeta(Ruby runtime) {
             // This null doesn't feel right
-			super(runtime, runtime.getObject(), null);
+			super(runtime, runtime.getObject(), runtime.isObjectSpaceEnabled());
 		}
 	}
 	

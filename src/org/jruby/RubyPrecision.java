@@ -42,6 +42,7 @@ public class RubyPrecision {
     
     public static RubyModule createPrecisionModule(Ruby runtime) {
         RubyModule precisionModule = runtime.defineModule("Precision");
+        runtime.setPrecision(precisionModule);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyPrecision.class);
         precisionModule.getSingletonClass().defineMethod("append_features", callbackFactory.getSingletonMethod("append_features", RubyKernel.IRUBY_OBJECT));
         precisionModule.defineMethod("prec", callbackFactory.getSingletonMethod("prec", RubyKernel.IRUBY_OBJECT));
@@ -68,10 +69,10 @@ public class RubyPrecision {
     }
 
     public static IRubyObject prec_i(IRubyObject receiver, Block block) {
-        return receiver.getRuntime().getClass("Integer").callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
+        return receiver.getRuntime().getInteger().callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
     }
 
     public static IRubyObject prec_f(IRubyObject receiver, Block block) {
-        return receiver.getRuntime().getClass("Float").callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
+        return receiver.getRuntime().getFloat().callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
     }
 }

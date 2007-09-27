@@ -29,25 +29,29 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class MetaClass extends RubyClass {
+public final class MetaClass extends RubyClass {
+    
+    private IRubyObject attached; 
 
-    public MetaClass(Ruby runtime, RubyClass superClass, ObjectAllocator allocator, 
-            RubyModule parent) {
-        super(runtime, runtime.getClass("Class"), superClass, allocator, parent, null, false);
-        
-        this.index = ClassIndex.CLASS;
+    /** NEWOBJ (in RubyObject#getSingletonClassClone()) 
+     * 
+     */
+    public MetaClass(Ruby runtime) {
+        super(runtime, null, false);
+    }
+    
+    /** rb_class_boot (for MetaClasses) (in makeMetaClass(RubyClass))
+     * 
+     */
+    public MetaClass(Ruby runtime, RubyClass superClass) {
+        super(runtime, superClass, false);
+        index = superClass.index; // use same ClassIndex as metaclass, since we're technically still of that type
     }
  
     public boolean isSingleton() {
         return true;
-    }
-
-    protected RubyClass subclass() {
-        throw getRuntime().newTypeError("can't make subclass of virtual class");
     }
 
     /**
@@ -55,20 +59,23 @@ public class MetaClass extends RubyClass {
      * metaclass and not the one that get injected as a result of 'class << obj'.
      */
     public RubyClass getRealClass() {
-        return getSuperClass().getRealClass();
+        return superClass.getRealClass();
     }
     
-    public void methodAdded(RubySymbol symbol) {
-        getAttachedObject().callMethod(getRuntime().getCurrentContext(), "singleton_method_added", symbol);
-    }
-
-    public IRubyObject getAttachedObject() {
-    	// Though it may not be obvious, attachToObject is always called just after instance
-    	// creation.  Kind of a brittle arrangement here...
-        return getInstanceVariable("__attached__");
-    }
-
-    public IRubyObject allocateObject() {
+    public final IRubyObject allocate(){
         throw getRuntime().newTypeError("can't create instance of virtual class");
     }
+
+    public void methodAdded(RubySymbol symbol) {
+        attached.callMethod(getRuntime().getCurrentContext(), "singleton_method_added", symbol);
+    }
+
+    public IRubyObject getAttached() {
+        return attached;
+    }
+
+    public void setAttached(IRubyObject attached) {
+        this.attached = attached;
+    }
+
 }

@@ -49,7 +49,7 @@ import org.objectweb.asm.ClassReader;
  */
 public class RubyJRuby {
     public static RubyModule createJRuby(Ruby runtime) {
-        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
+        runtime.getKernel().callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
         RubyModule jrubyModule = runtime.defineModule("JRuby");
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
@@ -74,7 +74,7 @@ public class RubyJRuby {
     }
 
     public static RubyModule createJRubyExt(Ruby runtime) {
-        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
+        runtime.getKernel().callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
         RubyModule mJRubyExt = runtime.getOrCreateModule("JRuby").defineModuleUnder("Extensions");
         CallbackFactory cf = runtime.callbackFactory(RubyJRuby.class);
 

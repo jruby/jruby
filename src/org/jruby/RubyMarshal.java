@@ -60,6 +60,7 @@ public class RubyMarshal {
 
     public static RubyModule createMarshalModule(Ruby runtime) {
         RubyModule module = runtime.defineModule("Marshal");
+        runtime.setMarshal(module);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMarshal.class);
 
         module.getSingletonClass().defineMethod("dump", callbackFactory.getOptSingletonMethod("dump"));

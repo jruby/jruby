@@ -123,7 +123,7 @@ public class RubiniusMachine {
                 }
     
                 if (clzz.isSingleton()) {
-                    ((MetaClass) clzz).getAttachedObject().callMethod(
+                    ((MetaClass) clzz).getAttached().callMethod(
                             context, "singleton_method_added", literals[val]);
                 } else {
                     clzz.callMethod(context, "method_added", literals[val]);

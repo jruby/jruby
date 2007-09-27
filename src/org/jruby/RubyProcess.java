@@ -43,9 +43,11 @@ public class RubyProcess {
 
     public static RubyModule createProcessModule(Ruby runtime) {
         RubyModule process = runtime.defineModule("Process");
+        runtime.setProcess(process);
         
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        RubyModule process_status = process.defineClassUnder("Status", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR); 
+        RubyClass process_status = process.defineClassUnder("Status", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        runtime.setProcStatus(process_status);
 
         CallbackFactory processCallbackFactory = runtime.callbackFactory(RubyProcess.class);
         CallbackFactory process_statusCallbackFactory = runtime.callbackFactory(RubyProcess.RubyStatus.class);
@@ -126,7 +128,7 @@ public class RubyProcess {
         }
         
         public static RubyStatus newProcessStatus(Ruby runtime, long status) {
-            return new RubyStatus(runtime, runtime.getModule("Process").getClass("Status"), status);
+            return new RubyStatus(runtime, runtime.getProcStatus(), status);
         }
         
         public IRubyObject exitstatus(Block block) {

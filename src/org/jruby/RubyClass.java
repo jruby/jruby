@@ -36,12 +36,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -53,184 +54,21 @@ import org.jruby.util.collections.WeakHashSet;
  */
 public class RubyClass extends RubyModule {
 	
-    private final Ruby runtime;
-    
-    // the default allocator
-    private final ObjectAllocator allocator;
-    
-    private ObjectMarshal marshal;
-    
-    private Set subclasses;
-    
-    private static final ObjectMarshal DEFAULT_OBJECT_MARSHAL = new ObjectMarshal() {
-        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
-                              MarshalStream marshalStream) throws IOException {
-            IRubyObject object = (IRubyObject)obj;
-            
-            Map iVars = object.getInstanceVariablesSnapshot();
-            
-            marshalStream.dumpInstanceVars(iVars);
-        }
-
-        public Object unmarshalFrom(Ruby runtime, RubyClass type,
-                                    UnmarshalStream unmarshalStream) throws IOException {
-            IRubyObject result = type.allocate();
-            
-            unmarshalStream.registerLinkTarget(result);
-
-            unmarshalStream.defaultInstanceVarsUnmarshal(result);
-
-            return result;
-        }
-    };
-
-    /**
-     * @mri rb_boot_class
-     */
-    
-    /**
-     * @mri rb_boot_class
-     */
-    
-    /**
-     * @mri rb_boot_class
-     */
-    
-    /**
-     * @mri rb_boot_class
-     */
-    protected RubyClass(RubyClass superClass, ObjectAllocator allocator) {
-        this(superClass.getRuntime(), superClass.getRuntime().getClass("Class"), superClass, allocator, null, null);
-
-        infectBy(superClass);
-    }
-
-    protected RubyClass(Ruby runtime, RubyClass superClass, ObjectAllocator allocator, boolean useObjectSpace) {
-        this(runtime, null, superClass, allocator, null, null, useObjectSpace);
-    }
-    
-    protected RubyClass(Ruby runtime, RubyClass superClass, ObjectAllocator allocator) {
-        this(runtime, null, superClass, allocator, null, null);
-    }
-
-    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator) {
-        this(runtime, metaClass, superClass, allocator, null, null);
-    }
-    
-    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, RubyModule parent, String name) {
-        this (runtime, metaClass, superClass, allocator, parent, name, runtime.isObjectSpaceEnabled());
-    }
-    
-    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, RubyModule parent, String name, boolean useObjectSpace) {
-        super(runtime, metaClass, superClass, parent, name, useObjectSpace);
-        this.allocator = allocator;
-        this.runtime = runtime;
-        
-        // use parent's marshal, or default object marshal by default
-        if (superClass != null) {
-            this.marshal = superClass.getMarshal();
-            if (this.isClass()) {
-                superClass.addSubclass(this);
-            }
-        } else {
-            this.marshal = DEFAULT_OBJECT_MARSHAL;
-        }
-    }
-    
-    public synchronized void addSubclass(RubyClass subclass) {
-        if (subclasses == null) subclasses = new WeakHashSet();
-        subclasses.add(subclass);
-    }
-    
-    /**
-     * Create an initial Object meta class before Module and Kernel dependencies have
-     * squirreled themselves together.
-     * 
-     * @param runtime we need it
-     * @return a half-baked meta class for object
-     */
-    public static RubyClass createBootstrapMetaClass(Ruby runtime, String className, 
-            RubyClass superClass, ObjectAllocator allocator, RubyModule parent) {
-        RubyClass objectClass = new RubyClass(runtime, null, superClass, allocator, parent, className);
-        
-        return objectClass;
-    }
-    
-    public int getNativeTypeIndex() {
-        return ClassIndex.CLASS;
-    }
-
-    public final IRubyObject allocate() {
-        return getAllocator().allocate(getRuntime(), this);
-    }
-    
-    public final ObjectMarshal getMarshal() {
-        return marshal;
-    }
-    
-    public final void setMarshal(ObjectMarshal marshal) {
-        this.marshal = marshal;
-    }
-    
-    public final void marshal(Object obj, MarshalStream marshalStream) throws IOException {
-        getMarshal().marshalTo(getRuntime(), obj, this, marshalStream);
-    }
-    
-    public final Object unmarshal(UnmarshalStream unmarshalStream) throws IOException {
-        return getMarshal().unmarshalFrom(getRuntime(), this, unmarshalStream);
-    }
-    
-    public static RubyClass newClassClass(Ruby runtime, RubyClass moduleClass) {
-        ObjectAllocator defaultAllocator = new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                IRubyObject instance = new RubyObject(runtime, klass);
-                instance.setMetaClass(klass);
-
-                return instance;
+    public static void createClassClass(Ruby runtime, RubyClass classClass) {
+        classClass.index = ClassIndex.CLASS;
+        classClass.kindOf = new RubyModule.KindOf() {
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof RubyClass;
             }
         };
         
-        RubyClass classClass = new RubyClass(
-                runtime,
-                null /* FIXME: should be something else? */,
-                moduleClass,
-                defaultAllocator,
-                null,
-                "Class");
-        
-        classClass.index = ClassIndex.CLASS;
-        
-        return classClass;
-    }
-    
-    /* (non-Javadoc)
-	 * @see org.jruby.RubyObject#getRuntime()
-	 */
-	public Ruby getRuntime() {
-		return runtime;
-	}
-
-    public boolean isModule() {
-        return false;
-    }
-
-    public boolean isClass() {
-        return true;
-    }
-
-    public static void createClassClass(RubyClass classClass) {
-        classClass.kindOf = new RubyModule.KindOf() {
-                public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                    return obj instanceof RubyClass;
-                }
-            };
-        CallbackFactory callbackFactory = classClass.getRuntime().callbackFactory(RubyClass.class);
-        classClass.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newClass"));
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyClass.class);
         classClass.defineFastMethod("allocate", callbackFactory.getFastMethod("allocate"));
         classClass.defineMethod("new", callbackFactory.getOptMethod("newInstance"));
-        classClass.defineMethod("superclass", callbackFactory.getMethod("superclass"));
+        classClass.defineFastMethod("superclass", callbackFactory.getFastMethod("superclass"));
+        classClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         classClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", RubyKernel.IRUBY_OBJECT));
-        classClass.defineMethod("inherited", callbackFactory.getSingletonMethod("inherited", RubyKernel.IRUBY_OBJECT));
+        classClass.defineFastMethod("inherited", callbackFactory.getFastSingletonMethod("inherited", RubyKernel.IRUBY_OBJECT));
         classClass.undefineMethod("module_function");
         classClass.undefineMethod("append_features");
         classClass.undefineMethod("extend_object");
@@ -241,6 +79,180 @@ public class RubyClass extends RubyModule {
         // FIXME: for some reason this dispatcher causes a VerifyError...
         //classClass.dispatcher = callbackFactory.createDispatcher(classClass);
     }
+    
+    public static final ObjectAllocator CLASS_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            RubyClass clazz = new RubyClass(runtime);
+            clazz.allocator = ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR; // Class.allocate object is not allocatable before it is initialized
+            return clazz;
+        }
+    };
+
+    public ObjectAllocator getAllocator() {
+        return allocator;
+    }
+
+    public void setAllocator(ObjectAllocator allocator) {
+        this.allocator = allocator;
+    }
+
+    public IRubyObject allocate() {
+        if (superClass == null) throw runtime.newTypeError("can't instantiate uninitialized class");
+        IRubyObject obj = allocator.allocate(runtime, this);
+        if (obj.getMetaClass().getRealClass() != getRealClass()) throw runtime.newTypeError("wrong instance allocation");
+        return obj;
+    }    
+
+    public int getNativeTypeIndex() {
+        return ClassIndex.CLASS;
+    }
+    
+    public boolean isModule() {
+        return false;
+    }
+
+    public boolean isClass() {
+        return true;
+    }
+
+    public boolean isSingleton() {
+        return false;
+    }
+
+    /** boot_defclass
+     * Create an initial Object meta class before Module and Kernel dependencies have
+     * squirreled themselves together.
+     * 
+     * @param runtime we need it
+     * @return a half-baked meta class for object
+     */
+    public static RubyClass createBootstrapClass(Ruby runtime, String name, RubyClass superClass, ObjectAllocator allocator) {
+        RubyClass obj;
+
+        if (superClass == null ) {  // boot the Object class 
+            obj = new RubyClass(runtime);
+            obj.marshal = DEFAULT_OBJECT_MARSHAL;
+            obj.setConstant(name, obj);
+        } else {                    // boot the Module and Class classes
+            obj = new RubyClass(runtime, superClass);
+            runtime.getObject().setConstant(name, obj);
+        }
+        obj.setAllocator(allocator);
+        obj.setBaseName(name);
+        return obj;
+    }
+
+    private final Ruby runtime;
+    private ObjectAllocator allocator; // the default allocator
+    protected ObjectMarshal marshal;
+    private Set subclasses;
+
+    /** separate path for MetaClass and IncludedModuleWrapper construction
+     *  (rb_class_boot version for MetaClasses)
+     *  no marshal, allocator initialization and addSubclass(this) here!
+     */
+    protected RubyClass(Ruby runtime, RubyClass superClass, boolean objectSpace) {
+        super(runtime, runtime.getClassClass(), objectSpace);
+        this.runtime = runtime;
+        this.superClass = superClass; // this is the only case it might be null here (in MetaClass construction)
+    }
+    
+    /** used by CLASS_ALLOCATOR (any Class' class will be a Class!)
+     *  also used to bootstrap Object class
+     */
+    protected RubyClass(Ruby runtime) {
+        super(runtime, runtime.getClassClass());
+        this.runtime = runtime;
+        index = ClassIndex.CLASS;
+    }
+    
+    /** rb_class_boot (for plain Classes)
+     *  also used to bootstrap Module and Class classes 
+     */
+    protected RubyClass(Ruby runtime, RubyClass superClazz) {
+        this(runtime);
+        superClass = superClazz;
+        marshal = superClazz.marshal; // use parent's marshal
+        superClazz.addSubclass(this);
+        
+        infectBy(superClass);        
+    }
+
+    /** rb_class_new
+     * 
+     */
+    public static RubyClass newClass(Ruby runtime, RubyClass superClass) {
+        if (superClass == runtime.getClassClass()) throw runtime.newTypeError("can't make subclass of Class");
+        if (superClass.isSingleton()) throw runtime.newTypeError("can't make subclass of virtual class");
+        return new RubyClass(runtime, superClass);        
+    }
+
+    /** rb_class_new/rb_define_class_id/rb_name_class/rb_set_class_path
+     * 
+     */
+    public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent) {
+        RubyClass clazz = newClass(runtime, superClass);
+        clazz.setBaseName(name);
+        clazz.setAllocator(allocator);
+        clazz.makeMetaClass(superClass.getMetaClass());
+        if (setParent) clazz.setParent(parent);
+        parent.setConstant(name, clazz);
+        clazz.inherit(superClass);
+        return clazz;
+    }
+
+    /** rb_class_new_instance
+    *
+    */
+   public IRubyObject newInstance(IRubyObject[] args, Block block) {
+       IRubyObject obj = allocate();
+       obj.callMethod(getRuntime().getCurrentContext(), "initialize", args, block);
+       return obj;
+   }
+
+   /** rb_class_initialize
+    * 
+    */
+   public IRubyObject initialize(IRubyObject[] args, Block block) {
+       if (superClass != null) throw getRuntime().newTypeError("already initialized class");
+
+       IRubyObject superObject;
+       if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 0) {
+           superObject = getRuntime().getObject();
+       } else {
+           superObject = args[0];
+           checkInheritable(superObject);
+       }
+
+       RubyClass superClazz = (RubyClass) superObject;
+
+       superClass = superClazz;
+       allocator = superClazz.allocator;
+       makeMetaClass(superClazz.getMetaClass());
+       
+       marshal = superClazz.marshal;
+       
+       superClazz.addSubclass(this);
+       
+       super.initialize(block);
+       
+       inherit(superClazz);
+
+       return this;        
+   }    
+
+   /** rb_class_init_copy
+    * 
+    */
+   public IRubyObject initialize_copy(IRubyObject original){
+       if (superClass != null) throw runtime.newTypeError("already initialized class");
+       if (original instanceof MetaClass) throw getRuntime().newTypeError("can't copy singleton class");        
+       
+       super.initialize_copy(original);
+       allocator = ((RubyClass)original).allocator; 
+       return this;        
+   }
+    
     
     public IRubyObject subclasses(IRubyObject[] args) {
         boolean recursive = false;
@@ -270,187 +282,105 @@ public class RubyClass extends RubyModule {
         }
     }
     
-    public static IRubyObject inherited(IRubyObject recv, IRubyObject arg, Block block) {
-        return recv.getRuntime().getNil();
+    public synchronized void addSubclass(RubyClass subclass) {
+        if (subclasses == null) subclasses = new WeakHashSet();
+        subclasses.add(subclass);
     }
-
-    /** Invokes if  a class is inherited from an other  class.
-     * 
-     * MRI: rb_class_inherited
-     * 
-     * @since Ruby 1.6.7
-     * 
-     */
-    public void inheritedBy(RubyClass superType) {
-        if (superType == null) {
-            superType = getRuntime().getObject();
-        }
-        superType.callMethod(getRuntime().getCurrentContext(), "inherited", this);
-    }
-
-    public boolean isSingleton() {
-        return false;
-    }
-
-//    public RubyClass getMetaClass() {
-//        RubyClass type = super.getMetaClass();
-//
-//        return type != null ? type : getRuntime().getClass("Class");
-//    }
+    
+	public Ruby getRuntime() {
+		return runtime;
+	}
 
     public RubyClass getRealClass() {
         return this;
+    }    
+
+    public static IRubyObject inherited(IRubyObject recv, IRubyObject arg) {
+        return recv.getRuntime().getNil();
     }
 
-    public static RubyClass newClass(Ruby runtime, RubyClass superClass, RubyModule parent, String name) {
-        return new RubyClass(runtime, runtime.getClass("Class"), superClass, superClass.getAllocator(), parent, name);
-    }
-
-    public static RubyClass cloneClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, RubyModule parent, String name) {
-        return new RubyClass(runtime, metaClass, superClass, allocator, parent, name);
-    }
-
-    /** Create a new subclass of this class.
-     * @return the new sublass
-     * @throws TypeError if this is class `Class'
-     * @mri rb_class_new
+    /** rb_class_inherited (reversed semantics!)
+     * 
      */
-    protected RubyClass subclass() {
-        if (this == getRuntime().getClass("Class")) {
-            throw getRuntime().newTypeError("can't make subclass of Class");
-        }
-        return new RubyClass(this, getAllocator());
+    public void inherit(RubyClass superClazz) {
+        if (superClazz == null) superClazz = getRuntime().getObject();        
+        superClazz.callMethod(getRuntime().getCurrentContext(), "inherited", this);
     }
 
-    /** rb_class_new_instance
-     *
-     */
-    public IRubyObject newInstance(IRubyObject[] args, Block block) {
-        IRubyObject obj = (IRubyObject) allocate();
-        obj.callMethod(getRuntime().getCurrentContext(), "initialize", args, block);
-        return obj;
-    }
-    
-    public ObjectAllocator getAllocator() {
-        return allocator;
-    }
-
-    /** rb_class_s_new
-     *
-     */
-    public static RubyClass newClass(IRubyObject recv, IRubyObject[] args, Block block, boolean invokeInherited) {
-        final Ruby runtime = recv.getRuntime();
-
-        RubyClass superClass;
-        if (args.length > 0) {
-            if (args[0] instanceof RubyClass) {
-                superClass = (RubyClass) args[0];
-            } else {
-                throw runtime.newTypeError(
-                    "wrong argument type " + args[0].getType().getName() + " (expected Class)");
-            }
-        } else {
-            superClass = runtime.getObject();
-        }
-
-        ThreadContext tc = runtime.getCurrentContext();
-        // use allocator of superclass, since this will be a pure Ruby class
-        RubyClass newClass = superClass.newSubClass(null, superClass.getAllocator(), 
-                tc.getCurrentScope().getStaticScope().getModule(), invokeInherited, true);
-
-        // call "initialize" method
-        newClass.callInit(args, block);
-
-		if (block.isGiven()) block.yield(tc, null, newClass, newClass, false);
-
-		return newClass;
-    }
-    public static RubyClass newClass(IRubyObject recv, IRubyObject[] args, Block block) {
-        return newClass(recv,args,block,true);
-    }
     /** Return the real super class of this class.
      * 
      * rb_class_superclass
      *
      */
-    public IRubyObject superclass(Block block) {
-        RubyClass superClass = getSuperClass();
-        while (superClass != null && superClass.isIncluded()) {
-            superClass = superClass.getSuperClass();
-        }
+    public IRubyObject superclass() {
+        RubyClass superClazz = superClass;
 
-        return superClass != null ? superClass : getRuntime().getNil();
-    }
-
-    /** rb_class_s_inherited
-     *
-     */
-    public static IRubyObject inherited(RubyClass recv) {
-        throw recv.getRuntime().newTypeError("can't make subclass of Class");
-    }
-
-    public static void marshalTo(RubyClass clazz, MarshalStream output) throws java.io.IOException {
-        String name = clazz.getName();
-        if(name.length() > 0 && name.charAt(0) == '#') {
-            throw clazz.getRuntime().newTypeError("can't dump anonymous " + (clazz instanceof RubyClass ? "class" : "module") + " " + name);
-        }
-        output.writeString(name);
-    }
-
-    public static RubyModule unmarshalFrom(UnmarshalStream output) throws java.io.IOException {
-        return (RubyClass) RubyModule.unmarshalFrom(output);
-    }
-
-    public RubyClass newSubClass(String name, ObjectAllocator allocator,
-            RubyModule parent, boolean invokeInherited, boolean warnOnRedefinition) {
-        RubyClass classClass = runtime.getClass("Class");
+        if (superClazz == null) throw runtime.newTypeError("uninitialized class");
         
-        // Cannot subclass 'Class' or metaclasses
-        if (this == classClass) {
-            throw runtime.newTypeError("can't make subclass of Class");
-        } else if (this instanceof MetaClass) {
-            throw runtime.newTypeError("can't make subclass of virtual class");
-        }
+        if(isSingleton()) superClazz = metaClass;
+        while (superClazz != null && superClazz.isIncluded()) superClazz = superClazz.superClass;
 
-        RubyClass newClass = new RubyClass(runtime, classClass, this, allocator, parent, name);
-
-        newClass.makeMetaClass(getMetaClass(), newClass);
-        
-        if (invokeInherited) {
-            newClass.inheritedBy(this);
-        }
-
-        if(null != name) {
-            if (warnOnRedefinition) {
-                parent.setConstant(name, newClass);
-            } else {
-                parent.setInstanceVariable(name, newClass);
-            }
-        }
-
-        return newClass;
+        return superClazz != null ? superClazz : getRuntime().getNil();
     }
-    public RubyClass newSubClass(String name, ObjectAllocator allocator, 
-            RubyModule parent, boolean warnOnRedefinition) {
-        return newSubClass(name, allocator, parent, true, warnOnRedefinition);
-    }
-    
-    
-    protected IRubyObject doClone() {
-    	return RubyClass.cloneClass(getRuntime(), getMetaClass(), getSuperClass(), getAllocator(), null/*FIXME*/, null);
-    }
-    
-    /** rb_class_init_copy
+
+    /** rb_check_inheritable
      * 
      */
-    public IRubyObject initialize_copy(IRubyObject original){
-
-        if (((RubyClass) original).isSingleton()){
-            throw getRuntime().newTypeError("can't copy singleton class");
+    public static void checkInheritable(IRubyObject superClass) {
+        if (!(superClass instanceof RubyClass)) {
+            throw superClass.getRuntime().newTypeError("superclass must be a Class (" + superClass.getMetaClass() + " given)"); 
         }
-        
-        super.initialize_copy(original);
-        
-        return this;        
-    }    
+        if (superClass.isSingleton()) {
+            throw superClass.getRuntime().newTypeError("can't make subclass of virtual class");
+        }        
+    }
+
+    public final ObjectMarshal getMarshal() {
+        return marshal;
+    }
+    
+    public final void setMarshal(ObjectMarshal marshal) {
+        this.marshal = marshal;
+    }
+    
+    public final void marshal(Object obj, MarshalStream marshalStream) throws IOException {
+        getMarshal().marshalTo(getRuntime(), obj, this, marshalStream);
+    }
+    
+    public final Object unmarshal(UnmarshalStream unmarshalStream) throws IOException {
+        return getMarshal().unmarshalFrom(getRuntime(), this, unmarshalStream);
+    }
+    
+    public static void marshalTo(RubyClass clazz, MarshalStream output) throws java.io.IOException {
+        output.writeString(MarshalStream.getPathFromClass(clazz));
+    }
+
+    public static RubyClass unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+        String name = RubyString.byteListToString(input.unmarshalString());
+        RubyClass result = UnmarshalStream.getClassFromPath(input.getRuntime(), name);
+        input.registerLinkTarget(result);
+        return result;
+    }
+
+    protected static final ObjectMarshal DEFAULT_OBJECT_MARSHAL = new ObjectMarshal() {
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
+                              MarshalStream marshalStream) throws IOException {
+            IRubyObject object = (IRubyObject)obj;
+            
+            Map iVars = object.getInstanceVariablesSnapshot();
+            
+            marshalStream.dumpInstanceVars(iVars);
+        }
+
+        public Object unmarshalFrom(Ruby runtime, RubyClass type,
+                                    UnmarshalStream unmarshalStream) throws IOException {
+            IRubyObject result = type.allocate();
+            
+            unmarshalStream.registerLinkTarget(result);
+
+            unmarshalStream.defaultInstanceVarsUnmarshal(result);
+
+            return result;
+        }
+    };    
 }

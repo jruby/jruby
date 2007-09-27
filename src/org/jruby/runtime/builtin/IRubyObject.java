@@ -367,18 +367,28 @@ public interface IRubyObject {
      * RubyMethod rbClone.
      * @return IRubyObject
      */
-    IRubyObject rbClone(Block unusedBlock);
-    
+    IRubyObject rbClone();
+
+    /**
+     * @return true if an object is Ruby Module instance (note that it will return false for Ruby Classes).
+     * If is_a? semantics is required, use <code>(someObject instanceof RubyModule)</code> instead.
+     */
+    boolean isModule();    
     
     /**
-     *
-     * @return
+     * @return true if an object is Ruby Class instance (note that it will return false for Ruby singleton classes). 
+     * If is_a? semantics is required, use <code>(someObject instanceof RubyClass/MetaClass)</code> instead.
+     */
+    boolean isClass();
+
+    /**
+     * @return true if an object is a Ruby singleton class  
      */
     boolean isSingleton();
     
     /**
      *
-     * @return
+     * @return 
      */
     Iterator instanceVariableNames();
     

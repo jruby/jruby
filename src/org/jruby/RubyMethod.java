@@ -68,6 +68,7 @@ public class RubyMethod extends RubyObject {
     public static RubyClass createMethodClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        runtime.setMethod(methodClass);
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMethod.class);
         
@@ -90,7 +91,7 @@ public class RubyMethod extends RubyObject {
         DynamicMethod method,
         IRubyObject receiver) {
         Ruby runtime = implementationModule.getRuntime();
-        RubyMethod newMethod = new RubyMethod(runtime, runtime.getClass("Method"));
+        RubyMethod newMethod = new RubyMethod(runtime, runtime.getMethod());
 
         newMethod.implementationModule = implementationModule;
         newMethod.methodName = methodName;

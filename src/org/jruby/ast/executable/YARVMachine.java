@@ -297,8 +297,8 @@ public class YARVMachine {
                 } else if (!rubyClass.isSingleton()) {
                     push(rubyClass.getClassVar(name));
                 } else {
-                    RubyModule module = (RubyModule) rubyClass.getInstanceVariable("__attached__");
-    
+                    RubyModule module = (RubyModule)(((MetaClass)rubyClass).getAttached());
+
                     if (module != null) {
                         push(module.getClassVar(name));
                     } else {
@@ -313,7 +313,7 @@ public class YARVMachine {
                 if (rubyClass == null) {
                     rubyClass = self.getMetaClass();
                 } else if (rubyClass.isSingleton()) {
-                    rubyClass = (RubyModule) rubyClass.getInstanceVariable("__attached__");
+                    rubyClass = (RubyModule)(((MetaClass)rubyClass).getAttached());
                 }
     
                 rubyClass.setClassVar(bytecodes[ip].s_op0, pop());
@@ -415,7 +415,7 @@ public class YARVMachine {
                 }
                 
                 if (containingClass.isSingleton()) {
-                    IRubyObject attachedObject = ((MetaClass) containingClass).getAttachedObject();
+                    IRubyObject attachedObject = ((MetaClass) containingClass).getAttached();
                     
                     if (attachedObject.getMetaClass() == runtime.getFixnum() || attachedObject.getMetaClass() == runtime.getClass("Symbol")) {
                         throw runtime.newTypeError("can't define singleton method \"" + 
@@ -437,7 +437,7 @@ public class YARVMachine {
     
                 // 'class << state.self' and 'class << obj' uses defn as opposed to defs
                 if (containingClass.isSingleton()) {
-                    ((MetaClass) containingClass).getAttachedObject().callMethod(context, 
+                    ((MetaClass) containingClass).getAttached().callMethod(context, 
                             "singleton_method_added", runtime.newSymbol(mname));
                 } else {
                     containingClass.callMethod(context, "method_added", runtime.newSymbol(mname));

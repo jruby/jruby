@@ -90,6 +90,7 @@ public class MarshalStream extends FilterOutputStream {
         if (depth > depthLimit) {
             throw runtime.newArgumentError("exceed depth limit");
         }
+       
         
         if (!shouldBeRegistered(value)) {
             writeDirectly(value);
@@ -165,7 +166,23 @@ public class MarshalStream extends FilterOutputStream {
             dumpInstanceVars(instanceVariables);
         }
     }
+    
+    public static String getPathFromClass(RubyModule clazz) {
+        String path = clazz.getName();
+        
+        if (path.charAt(0) == '#') {
+            String classOrModule = clazz.isClass() ? "class" : "module";
+            throw clazz.getRuntime().newTypeError("can't dump anonymous " + classOrModule + " " + path);
+        }
+        
+        RubyModule real = clazz.isModule() ? clazz : ((RubyClass)clazz).getRealClass();
 
+        if (clazz.getRuntime().getClassFromPath(path) != real) {
+            throw clazz.getRuntime().newTypeError(path + " can't be referred");
+        }
+        return path;
+    }
+    
     private void writeObjectData(IRubyObject value) throws IOException {
         // switch on the object's *native type*. This allows use-defined
         // classes that have extended core native types to piggyback on their
@@ -196,6 +213,7 @@ public class MarshalStream extends FilterOutputStream {
             RubyBignum.marshalTo((RubyBignum)value, this);
             break;
         case ClassIndex.CLASS:
+            if (value.isSingleton()) throw runtime.newTypeError("singleton class can't be dumped");
             write('c');
             RubyClass.marshalTo((RubyClass)value, this);
             break;
@@ -226,7 +244,7 @@ public class MarshalStream extends FilterOutputStream {
             break;
         case ClassIndex.OBJECT:
             dumpDefaultObjectHeader(value.getMetaClass());
-            value.getMetaClass().marshal(value, this);
+            value.getMetaClass().getRealClass().marshal(value, this);
             break;
         case ClassIndex.REGEXP:
             write('/');
@@ -249,7 +267,7 @@ public class MarshalStream extends FilterOutputStream {
             break;
         default:
             dumpDefaultObjectHeader(value.getMetaClass());
-            value.getMetaClass().marshal(value, this);
+            value.getMetaClass().getRealClass().marshal(value, this);
         }
         
     }
@@ -301,7 +319,7 @@ public class MarshalStream extends FilterOutputStream {
     	
     	// w_unique
     	if (type.getName().charAt(0) == '#') {
-            throw obj.getRuntime().newTypeError("Can't dump anonymous class");
+            throw obj.getRuntime().newTypeError("can't dump anonymous class " + type.getName());
     	}
     	
     	// w_symbol
@@ -335,7 +353,7 @@ public class MarshalStream extends FilterOutputStream {
      */
     private RubyClass dumpExtended(RubyClass type) throws IOException {
         if(type.isSingleton()) {
-            if(hasSingletonMethods(type) || type.getInstanceVariables().size() > 1) {
+            if (hasSingletonMethods(type) || type.safeHasInstanceVariables()) { // any ivars, since we don't have __attached__ ivar now
                 throw type.getRuntime().newTypeError("singleton can't be dumped");
             }
             type = type.getSuperClass();
@@ -355,7 +373,7 @@ public class MarshalStream extends FilterOutputStream {
     public void dumpDefaultObjectHeader(char tp, RubyClass type) throws IOException {
         dumpExtended(type);
         write(tp);
-        RubySymbol classname = RubySymbol.newSymbol(runtime, type.getRealClass().getName());
+        RubySymbol classname = RubySymbol.newSymbol(runtime, getPathFromClass(type.getRealClass()));
         dumpObject(classname);
     }
 

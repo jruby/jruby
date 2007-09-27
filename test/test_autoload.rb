@@ -23,10 +23,11 @@ class TestAutoload < Test::Unit::TestCase
   end
   
   def test_overwrite_autoload
-    Object.class_eval <<-EOS
-      autoload :SomeClass, 'somefile'
-      class SomeClass; def foo; true; end; end
-    EOS
-    assert(Object::SomeClass.new.foo)
+    assert_raise(LoadError) do
+      Object.class_eval <<-EOS
+        autoload :SomeClass, 'somefile'
+        class SomeClass; def foo; true; end; end
+      EOS
+    end
   end
 end

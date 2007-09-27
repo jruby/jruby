@@ -52,8 +52,9 @@ import org.jruby.util.Convert;
 public class RubyFixnum extends RubyInteger {
     
     public static RubyClass createFixnumClass(Ruby runtime) {
-        RubyClass fixnum = runtime.defineClass("Fixnum", runtime.getClass("Integer"),
+        RubyClass fixnum = runtime.defineClass("Fixnum", runtime.getInteger(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        runtime.setFixnum(fixnum);
         fixnum.index = ClassIndex.FIXNUM;
         fixnum.kindOf = new RubyModule.KindOf() {
                 public boolean isKindOf(IRubyObject obj, RubyModule type) {
@@ -62,7 +63,7 @@ public class RubyFixnum extends RubyInteger {
             };
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFixnum.class);
 
-        fixnum.includeModule(runtime.getModule("Precision"));
+        fixnum.includeModule(runtime.getPrecision());
         
         fixnum.defineAnnotatedMethods(RubyFixnum.class, callbackFactory);
         
@@ -110,6 +111,10 @@ public class RubyFixnum extends RubyInteger {
     
     public boolean isImmediate() {
     	return true;
+    }
+    
+    public RubyClass getSingletonClass() {
+        throw getRuntime().newTypeError("can't define singleton");
     }
 
     public Class<?> getJavaClass() {

@@ -49,6 +49,7 @@ public abstract class RubyMatchData extends RubyObject {
     public static RubyClass createMatchDataClass(Ruby runtime) {
         // TODO: Is NOT_ALLOCATABLE_ALLOCATOR ok here, since you can't actually instantiate MatchData directly?
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        runtime.setMatchData(matchDataClass);
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
         matchDataClass.kindOf = new RubyModule.KindOf() {
                 public boolean isKindOf(IRubyObject obj, RubyModule type) {
@@ -84,7 +85,7 @@ public abstract class RubyMatchData extends RubyObject {
     public RegexpMatcher matcher;
 
     public RubyMatchData(Ruby runtime, RegexpMatcher matcher) {
-        super(runtime, runtime.getClass("MatchData"));
+        super(runtime, runtime.getMatchData());
         this.matcher = matcher;
     }
 

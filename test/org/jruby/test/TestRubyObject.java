@@ -62,7 +62,7 @@ public class TestRubyObject extends TestCase {
     }
 
     public void testClone() {
-        assertTrue(rubyObject.rbClone(Block.NULL_BLOCK).getType() == rubyObject.getType());
+        assertTrue(rubyObject.rbClone().getType() == rubyObject.getType());
     }
 
     public void testDup() {

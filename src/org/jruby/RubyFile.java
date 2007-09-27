@@ -106,7 +106,7 @@ public class RubyFile extends RubyIO {
     }
     
     private RubyFile(Ruby runtime, String path, InputStream in) {
-        super(runtime, runtime.getClass("File"));
+        super(runtime, runtime.getFile());
         this.path = path;
         try {
             this.handler = new IOHandlerUnseekable(runtime, in, null);
@@ -128,7 +128,8 @@ public class RubyFile extends RubyIO {
     };
     
     public static RubyClass createFileClass(Ruby runtime) {
-        RubyClass fileClass = runtime.defineClass("File", runtime.getClass("IO"), FILE_ALLOCATOR);
+        RubyClass fileClass = runtime.defineClass("File", runtime.getIO(), FILE_ALLOCATOR);
+        runtime.setFile(fileClass);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFile.class);   
         RubyClass fileMetaClass = fileClass.getMetaClass();
         RubyString separator = runtime.newString("/");
@@ -215,7 +216,7 @@ public class RubyFile extends RubyIO {
         // TODO Singleton methods: pipe?, readlink, setgid?, setuid?, socket?,
         // TODO Singleton methods: stat, sticky?, symlink?, umask
         
-        runtime.getModule("FileTest").extend_object(fileClass);
+        runtime.getFileTest().extend_object(fileClass);
         
         fileMetaClass.defineFastMethod("basename", callbackFactory.getFastOptSingletonMethod("basename"));
         fileMetaClass.defineFastMethod("chmod", callbackFactory.getFastOptSingletonMethod("chmod"));
@@ -255,8 +256,6 @@ public class RubyFile extends RubyIO {
         fileClass.defineFastMethod("stat", callbackFactory.getFastMethod("stat"));
         fileClass.defineFastMethod("truncate", callbackFactory.getFastMethod("truncate", IRubyObject.class));
         fileClass.defineFastMethod("flock", callbackFactory.getFastMethod("flock", IRubyObject.class));
-        
-        RubyFileStat.createFileStatClass(runtime);
         
         fileClass.dispatcher = callbackFactory.createDispatcher(fileClass);
         

@@ -6,6 +6,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
@@ -14,6 +15,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
@@ -82,7 +84,11 @@ public class CompilerHelpers {
         if (containingClass == runtime.getObject() && name == "initialize") {
             runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
         }
-        
+
+        if (name == "__id__" || name == "__send__") {
+            runtime.getWarnings().warn("redefining `" + name + "' may cause serious problem"); 
+        }
+
         StaticScope scope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), scopeNames);
         scope.determineModule();
         
@@ -110,7 +116,7 @@ public class CompilerHelpers {
         
         // 'class << state.self' and 'class << obj' uses defn as opposed to defs
         if (containingClass.isSingleton()) {
-            ((MetaClass) containingClass).getAttachedObject().callMethod(
+            ((MetaClass) containingClass).getAttached().callMethod(
                     context, "singleton_method_added", runtime.newSymbol(name));
         } else {
             containingClass.callMethod(context, "method_added", runtime.newSymbol(name));
@@ -124,33 +130,21 @@ public class CompilerHelpers {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
         
-        RubyClass rubyClass;
-        if (receiver.isNil()) {
-            rubyClass = runtime.getNilClass();
-        } else if (receiver == runtime.getTrue()) {
-            rubyClass = runtime.getClass("TrueClass");
-        } else if (receiver == runtime.getFalse()) {
-            rubyClass = runtime.getClass("FalseClass");
-        } else {
-            if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-                throw runtime.newSecurityError("Insecure; can't define singleton method.");
-            }
-            if (receiver.isFrozen()) {
-                throw runtime.newFrozenError("object");
-            }
-            if (receiver.getMetaClass() == runtime.getFixnum() || receiver.getMetaClass() == runtime.getClass("Symbol")) {
-                throw runtime.newTypeError("can't define singleton method \"" + name
-                                           + "\" for " + receiver.getType());
-            }
-   
-            rubyClass = receiver.getSingletonClass();
+        if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
+            throw runtime.newSecurityError("Insecure; can't define singleton method.");
         }
-   
-        if (runtime.getSafeLevel() >= 4) {
-            Object method = rubyClass.getMethods().get(name);
-            if (method != null) {
-                throw runtime.newSecurityError("Redefining method prohibited.");
-            }
+
+        if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
+          throw runtime.newTypeError("can't define singleton method \"" + name
+          + "\" for " + receiver.getMetaClass().getBaseName());
+        }
+
+        if (receiver.isFrozen()) throw runtime.newFrozenError("object");
+
+        RubyClass rubyClass = receiver.getSingletonClass();
+
+        if (runtime.getSafeLevel() >= 4 && rubyClass.getMethods().get(name) != null) {
+            throw runtime.newSecurityError("redefining method prohibited.");
         }
         
         StaticScope scope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), scopeNames);
@@ -171,27 +165,17 @@ public class CompilerHelpers {
     }
     
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
-        RubyClass singletonClass;
-
-        if (receiver.isNil()) {
-            singletonClass = runtime.getNilClass();
-        } else if (receiver == runtime.getTrue()) {
-            singletonClass = runtime.getClass("TrueClass");
-        } else if (receiver == runtime.getFalse()) {
-            singletonClass = runtime.getClass("FalseClass");
-        } else if (receiver.getMetaClass() == runtime.getFixnum() || receiver.getMetaClass() == runtime.getClass("Symbol")) {
+        if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
             throw runtime.newTypeError("no virtual class for " + receiver.getMetaClass().getBaseName());
         } else {
             if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
                 throw runtime.newSecurityError("Insecure: can't extend object.");
             }
 
-            singletonClass = receiver.getSingletonClass();
+            return receiver.getSingletonClass();
         }
-        
-        return singletonClass;
     }
-    
+
     public static IRubyObject doAttrAssign(IRubyObject receiver, IRubyObject[] args, 
             ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
         if (receiver == caller) callType = CallType.VARIABLE;
@@ -277,10 +261,7 @@ public class CompilerHelpers {
     }
     
     public static RubyClass prepareSuperClass(Ruby runtime, IRubyObject rubyClass) {
-        if (!(rubyClass instanceof RubyClass)) {
-            throw runtime.newTypeError("superclass must be a Class (" + 
-                    RubyObject.trueFalseNil(rubyClass) + ") given");
-        }
+        RubyClass.checkInheritable(rubyClass); // use the same logic as in EvaluationState
         return (RubyClass)rubyClass;
     }
     
@@ -431,7 +412,7 @@ public class CompilerHelpers {
 
         // If not already a proc then we should try and make it one.
         if (!(proc instanceof RubyProc)) {
-            proc = proc.convertToType(runtime.getClass("Proc"), 0, "to_proc", false);
+            proc = proc.convertToType(runtime.getProc(), 0, "to_proc", false);
 
             if (!(proc instanceof RubyProc)) {
                 throw runtime.newTypeError("wrong argument type "
@@ -526,7 +507,7 @@ public class CompilerHelpers {
     
     public static IRubyObject isExceptionHandled(RubyException currentException, IRubyObject[] exceptions, Ruby runtime, ThreadContext context, IRubyObject self) {
         for (int i = 0; i < exceptions.length; i++) {
-            if (!exceptions[i].isKindOf(runtime.getClass("Module"))) {
+            if (!exceptions[i].isKindOf(runtime.getModule())) {
                 throw runtime.newTypeError("class or module required for rescue clause");
             }
             IRubyObject result = exceptions[i].callMethod(context, "===", currentException);

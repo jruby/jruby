@@ -98,6 +98,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.MetaClass;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsPushNode;
@@ -1291,7 +1292,8 @@ public class NodeCompilerFactory {
         case CLASSVARNODE: {
             ClassVarNode iVisited = (ClassVarNode) node;
             final Object ending = context.getNewEnding();
-            Object failure = context.getNewEnding();
+            final Object failure = context.getNewEnding();
+            final Object singleton = context.getNewEnding();
             Object second = context.getNewEnding();
             Object third = context.getNewEnding();
             
@@ -1324,7 +1326,12 @@ public class NodeCompilerFactory {
                                           public void branch(MethodCompiler context) {
                                           }});
             context.setEnding(third); //[RubyClass]
-            context.getInstanceVariable("__attached__");  //[RubyClass]
+            context.duplicateCurrentValue(); //[RubyClass, RubyClass]
+            context.ifSingleton(singleton); //[RubyClass]
+            context.consumeCurrentValue();//[]
+            context.go(failure);
+            context.setEnding(singleton);
+            context.attached();//[RubyClass]
             context.notIsModuleAndClassVarDefined(iVisited.getName(), failure); //[]
             context.pushString("class variable");
             context.go(ending);

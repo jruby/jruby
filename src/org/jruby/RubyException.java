@@ -116,6 +116,7 @@ public class RubyException extends RubyObject {
 
     public static RubyClass createExceptionClass(Ruby runtime) {
         RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
+        runtime.setException(exceptionClass);
 
         exceptionClass.setMarshal(EXCEPTION_MARSHAL);
         
@@ -178,7 +179,7 @@ public class RubyException extends RubyObject {
                 if(args[0] == this) {
                     return this;
                 }
-                RubyException ret = (RubyException)rbClone(Block.NULL_BLOCK);
+                RubyException ret = (RubyException)rbClone();
                 ret.initialize(args, Block.NULL_BLOCK); // This looks wrong, but it's the way MRI does it.
                 return ret;
             default :
@@ -244,13 +245,5 @@ public class RubyException extends RubyObject {
         }
             
         return true;
-    }
-
-    protected IRubyObject doClone() {
-        IRubyObject newObject = new RubyException(getRuntime(),getMetaClass().getRealClass());
-        if (newObject.getType() != getMetaClass().getRealClass()) {
-            throw getRuntime().newTypeError("wrong instance allocation");
-        }
-        return newObject;
     }
 }

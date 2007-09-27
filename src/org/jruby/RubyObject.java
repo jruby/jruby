@@ -162,21 +162,19 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
     
     public static RubyClass createObjectClass(Ruby runtime, RubyClass objectClass) {
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyObject.class);   
         objectClass.index = ClassIndex.OBJECT;
         
-        objectClass.definePrivateMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        objectClass.definePrivateMethod("inherited", callbackFactory.getMethod("inherited", IRubyObject.class));
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyObject.class);
+        //objectClass.definePrivateMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        objectClass.defineFastPrivateMethod("initialize", callbackFactory.getFastMethod("initialize"));
+        // objectClass.definePrivateMethod("inherited", callbackFactory.getMethod("inherited", IRubyObject.class));
         
         return objectClass;
     }
     
-    public static ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
+    public static final ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            IRubyObject instance = new RubyObject(runtime, klass);
-            instance.setMetaClass(klass);
-
-            return instance;
+            return new RubyObject(runtime, klass);
         }
     };
 
@@ -191,7 +189,19 @@ public class RubyObject implements Cloneable, IRubyObject {
     public int getNativeTypeIndex() {
         return ClassIndex.OBJECT;
     }
+
+    public boolean isModule() {
+        return false;
+    }
     
+    public boolean isClass() {
+        return false;
+    }
+    
+    public boolean isSingleton() {
+        return false;
+    }    
+
     /*
      *  Is object immediate (def: Fixnum, Symbol, true, false, nil?).
      */
@@ -199,31 +209,23 @@ public class RubyObject implements Cloneable, IRubyObject {
     	return false;
     }
 
-    /**
-     * Create a new meta class.
+    /** rb_make_metaclass
      *
-     * @since Ruby 1.6.7
      */
-    public RubyClass makeMetaClass(RubyClass superClass, RubyModule parent) {
-        RubyClass klass = new MetaClass(getRuntime(), superClass, getMetaClass().getAllocator(), parent);
+    public RubyClass makeMetaClass(RubyClass superClass) {
+        MetaClass klass = new MetaClass(getRuntime(), superClass); // rb_class_boot
         setMetaClass(klass);
-		
-        klass.setInstanceVariable("__attached__", this);
 
-        if (this instanceof RubyClass && isSingleton()) { // could be pulled down to RubyClass in future
+        klass.setAttached(this);
+
+        if (isSingleton()) { // could be pulled down to RubyClass in future
             klass.setMetaClass(klass);
             klass.setSuperClass(((RubyClass)this).getSuperClass().getRealClass().getMetaClass());
         } else {
             klass.setMetaClass(superClass.getRealClass().getMetaClass());
         }
-        
-        // use same ClassIndex as metaclass, since we're technically still of that type 
-        klass.index = superClass.index;
+
         return klass;
-    }
-        
-    public boolean isSingleton() {
-        return false;
     }
 
     public Class getJavaClass() {
@@ -323,7 +325,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             flags |= FROZEN_F;
         } else {
             flags &= ~FROZEN_F;
-    }
+        }
     }
 
     /** rb_frozen_class_p
@@ -384,19 +386,19 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     /** rb_singleton_class
-     *
+     *  Note: this method is specialized for RubyFixnum, RubySymbol, RubyNil and RubyBoolean
      */    
     public RubyClass getSingletonClass() {
         RubyClass klass;
         
-        if (getMetaClass().isSingleton() && getMetaClass().getInstanceVariable("__attached__") == this) {
+        if (getMetaClass().isSingleton() && ((MetaClass)getMetaClass()).getAttached() == this) {
             klass = getMetaClass();            
         } else {
-            klass = makeMetaClass(getMetaClass(), getMetaClass());
+            klass = makeMetaClass(getMetaClass());
         }
         
         klass.setTaint(isTaint());
-        klass.setFrozen(isFrozen());
+        if (isFrozen()) klass.setFrozen(true);
         
         return klass;
     }
@@ -404,30 +406,27 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_singleton_class_clone
      *
      */
-    public RubyClass getSingletonClassClone() {
+    protected RubyClass getSingletonClassClone() {
        RubyClass klass = getMetaClass();
 
-       if (!klass.isSingleton()) {
-           return klass;
-		}
-       
-       MetaClass clone = new MetaClass(getRuntime(), klass.getSuperClass(), getMetaClass().getAllocator(), getMetaClass());
-       clone.setFrozen(klass.isFrozen());
-       clone.setTaint(klass.isTaint());
+       if (!klass.isSingleton()) return klass;
+
+       MetaClass clone = new MetaClass(getRuntime());
+       clone.flags = flags;
 
        if (this instanceof RubyClass) {
            clone.setMetaClass(clone);
        } else {
            clone.setMetaClass(klass.getSingletonClassClone());
        }
-       
-       if (klass.safeHasInstanceVariables()) {
-           clone.setInstanceVariables(new HashMap(klass.getInstanceVariables()));
-       }
+
+       clone.setSuperClass(klass.getSuperClass());
+
+       if (klass.safeHasInstanceVariables()) clone.setInstanceVariables(new HashMap(klass.getInstanceVariables()));
 
        klass.cloneMethods(clone);
 
-       clone.getMetaClass().setInstanceVariable("__attached__", clone);
+       ((MetaClass)clone.getMetaClass()).setAttached(clone);
 
        return clone;
     }
@@ -435,14 +434,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** init_copy
      * 
      */
-    public static void initCopy(IRubyObject clone, IRubyObject original) {
-        assert original != null;
+    private static void initCopy(IRubyObject clone, RubyObject original) {
         assert !clone.isFrozen() : "frozen object (" + clone.getMetaClass().getName() + ") allocated";
 
-        if (original.safeHasInstanceVariables()) {
-            clone.setInstanceVariables(new HashMap(original.getInstanceVariables()));
-        }
-        
+        original.copySpecialInstanceVariables(clone);
+        if (original.safeHasInstanceVariables()) clone.setInstanceVariables(new HashMap(original.getInstanceVariables()));
         /* FIXME: finalizer should be dupped here */
         clone.callMethod(clone.getRuntime().getCurrentContext(), "initialize_copy", original);
     }
@@ -451,8 +447,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject infectBy(IRubyObject obj) {
-        setTaint(isTaint() || obj.isTaint());
-
+        if (obj.isTaint()) setTaint(true);
         return this;
     }
 
@@ -665,21 +660,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         throw getRuntime().newTypeError(inspect().toString() + " is not a symbol");
     }
 
-    public static String trueFalseNil(IRubyObject v) {
-        return trueFalseNil(v.getMetaClass().getRealClass().getName());
-    }
-
-    public static String trueFalseNil(String v) {
-        if("TrueClass".equals(v)) {
-            return "true";
-        } else if("FalseClass".equals(v)) {
-            return "false";
-        } else if("NilClass".equals(v)) {
-            return "nil";
-        }
-        return v;
-    }
-
     public RubyArray convertToArray() {
         return (RubyArray) convertToType(getRuntime().getArray(), MethodIndex.TO_ARY, "to_ary");
     }
@@ -689,7 +669,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
     
     public RubyFloat convertToFloat() {
-        return (RubyFloat) convertToType(getRuntime().getClass("Float"), MethodIndex.TO_F, "to_f");
+        return (RubyFloat) convertToType(getRuntime().getFloat(), MethodIndex.TO_F, "to_f");
     }
 
     public RubyInteger convertToInteger() {
@@ -697,7 +677,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public RubyInteger convertToInteger(int convertMethodIndex, String convertMethod) {
-        IRubyObject val = convertToType(getRuntime().getClass("Integer"), convertMethodIndex, convertMethod, true);
+        IRubyObject val = convertToType(getRuntime().getInteger(), convertMethodIndex, convertMethod, true);
         if (!(val instanceof RubyInteger)) throw getRuntime().newTypeError(getMetaClass().getName() + "#" + convertMethod + " should return Integer");
         return (RubyInteger)val;
     }
@@ -994,11 +974,10 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
 	public IRubyObject initialize_copy(IRubyObject original) {
 	    if (this == original) return this;
-	    
 	    checkFrozen();
-        
+
         if (getMetaClass().getRealClass() != original.getMetaClass().getRealClass()) {
-	            throw getRuntime().newTypeError("initialize_copy should take same class object");
+            throw getRuntime().newTypeError("initialize_copy should take same class object");
 	    }
 
 	    return this;
@@ -1063,25 +1042,39 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_clone
      *  should be overriden only by: Proc, Method, UnboundedMethod, Binding
      */
-    public IRubyObject rbClone(Block unusedBlock) {
-        if (isImmediate()) { // rb_special_const_p(obj) equivalent
-            throw getRuntime().newTypeError("can't clone " + getMetaClass().getName());
-        }
+    public IRubyObject rbClone() {
+        if (isImmediate()) throw getRuntime().newTypeError("can't clone " + getMetaClass().getName());
         
-        IRubyObject clone = doClone();
+        IRubyObject clone = getMetaClass().getRealClass().allocate();
         clone.setMetaClass(getSingletonClassClone());
-        clone.setTaint(isTaint());
+        if (isTaint()) clone.setTaint(true);
+
         initCopy(clone, this);
-        clone.setFrozen(isFrozen());
+
+        if (isFrozen()) clone.setFrozen(true);
         return clone;
     }
 
-    // Hack: allow RubyModule and RubyClass to override the allocation and return the the correct Java instance
-    // Cloning a class object doesn't work otherwise and I don't really understand why --sma
-    protected IRubyObject doClone() {
-        RubyClass realClass = getMetaClass().getRealClass();
-    	return realClass.getAllocator().allocate(getRuntime(), realClass);
+    /** rb_obj_dup
+     *  should be overriden only by: Proc
+     */
+    public IRubyObject dup() {
+        if (isImmediate()) throw getRuntime().newTypeError("can't dup " + getMetaClass().getName());
+
+        IRubyObject dup = getMetaClass().getRealClass().allocate();
+        if (isTaint()) dup.setTaint(true);
+
+        initCopy(dup, this);
+
+        return dup;
     }
+    
+    /** Lots of MRI objects keep their state in non-lookupable ivars (e:g. Range, Struct, etc)
+     *  This method is responsible for dupping our java field equivalents 
+     * 
+     */
+    protected void copySpecialInstanceVariables(IRubyObject clone) {
+    }    
 
     public IRubyObject display(IRubyObject[] args) {
         IRubyObject port = args.length == 0
@@ -1090,25 +1083,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         port.callMethod(getRuntime().getCurrentContext(), "write", this);
 
         return getRuntime().getNil();
-    }
-
-    /** rb_obj_dup
-     *  should be overriden only by: Proc
-     */
-    public IRubyObject dup() {
-        if (isImmediate()) {
-            throw getRuntime().newTypeError("can't dup " + getMetaClass().getName());
-        }        
-        
-        IRubyObject dup = doClone();    
-
-        dup.setMetaClass(type());
-        dup.setFrozen(false);
-        dup.setTaint(isTaint());
-        
-        initCopy(dup, this);
-
-        return dup;
     }
 
     /** rb_obj_tainted
@@ -1192,7 +1166,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 // TYPE(obj) == T_OBJECT
                 !(this instanceof RubyClass) &&
                 this != runtime.getObject() &&
-                this != runtime.getClass("Module") &&
+                this != runtime.getModule() &&
                 !(this instanceof RubyModule) &&
                 safeHasInstanceVariables()) {
 
@@ -1246,7 +1220,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         // TODO: Generalize this type-checking code into IRubyObject helper.
         if (!(type instanceof RubyModule)) {
             // TODO: newTypeError does not offer enough for ruby error string...
-            throw getRuntime().newTypeError(type, getRuntime().getClass("Module"));
+            throw getRuntime().newTypeError(type, getRuntime().getModule());
         }
 
         return getRuntime().newBoolean(isKindOf((RubyModule)type));
@@ -1351,14 +1325,30 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public IRubyObject instance_eval(IRubyObject[] args, Block block) {
-        return specificEval(getSingletonClass(), args, block);
+        RubyModule klazz;
+        if (isImmediate()) {
+            klazz = getRuntime().getCurrentContext().getPreviousFrame().getKlazz();
+            if (klazz == null) klazz = getRuntime().getObject();
+        } else {
+            klazz = getSingletonClass();
+        }
+        return specificEval(klazz, args, block);
     }
 
     public IRubyObject instance_exec(IRubyObject[] args, Block block) {
         if (!block.isGiven()) {
             throw getRuntime().newArgumentError("block not supplied");
         }
-        return yieldUnder(getSingletonClass(), args, block);
+
+        RubyModule klazz;
+        if (isImmediate()) {
+            klazz = getRuntime().getCurrentContext().getPreviousFrame().getKlazz();
+            if (klazz == null) klazz = getRuntime().getObject();            
+        } else {
+            klazz = getSingletonClass();
+        }
+
+        return yieldUnder(klazz, args, block);
     }
 
     public IRubyObject extend(IRubyObject[] args) {
@@ -1366,10 +1356,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         // Make sure all arguments are modules before calling the callbacks
         for (int i = 0; i < args.length; i++) {
-            IRubyObject obj;
-            if (!(((obj = args[i]) instanceof RubyModule) && ((RubyModule)obj).isModule())){
-                throw getRuntime().newTypeError(obj,getRuntime().getClass("Module"));
-            }
+            if (!args[i].isModule()) throw getRuntime().newTypeError(args[i], getRuntime().getModule()); 
         }
 
         for (int i = 0; i < args.length; i++) {
@@ -1379,13 +1366,8 @@ public class RubyObject implements Cloneable, IRubyObject {
         return this;
     }
 
-    public IRubyObject inherited(IRubyObject arg, Block block) {
-    	return getRuntime().getNil();
-    }
-    
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 0);
-    	return getRuntime().getNil();
+    public IRubyObject initialize() {
+        return getRuntime().getNil();
     }
 
     /**

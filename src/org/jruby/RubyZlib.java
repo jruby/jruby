@@ -80,7 +80,7 @@ public class RubyZlib {
         
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
         RubyClass gzreader = result.defineClassUnder("GzipReader", gzfile, RubyGzipReader.GZIPREADER_ALLOCATOR);
-        gzreader.includeModule(runtime.getModule("Enumerable"));
+        gzreader.includeModule(runtime.getEnumerable());
         CallbackFactory callbackFactory2 = runtime.callbackFactory(RubyGzipReader.class);
         gzreader.getMetaClass().defineMethod("open", callbackFactory2.getSingletonMethod("open", RubyString.class));
         gzreader.getMetaClass().defineMethod("new", classCB.getOptMethod("newInstance"));
@@ -230,7 +230,7 @@ public class RubyZlib {
         defl.defineFastMethod("flush",deflcb.getFastOptMethod("flush"));
         defl.defineFastMethod("deflate",deflcb.getFastOptMethod("deflate"));
 
-        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require",runtime.newString("stringio"));
+        runtime.getKernel().callMethod(runtime.getCurrentContext(),"require",runtime.newString("stringio"));
 
         return result;
     }
@@ -723,7 +723,7 @@ public class RubyZlib {
             IRubyObject proc = block.isGiven() ? runtime.newProc(false, block) : runtime.getNil();
             RubyGzipReader io = newInstance(
                     recv,
-                    new IRubyObject[]{ runtime.getClass("File").callMethod(
+                    new IRubyObject[]{ runtime.getFile().callMethod(
                             runtime.getCurrentContext(),
                             "open",
                             new IRubyObject[]{filename, runtime.newString("rb")})},
@@ -959,7 +959,7 @@ public class RubyZlib {
             IRubyObject proc = block.isGiven() ? runtime.newProc(false, block) : runtime.getNil();
             RubyGzipWriter io = newGzipWriter(
                     recv,
-                    new IRubyObject[]{ runtime.getClass("File").callMethod(
+                    new IRubyObject[]{ runtime.getFile().callMethod(
                             runtime.getCurrentContext(),
                             "open",
                             new IRubyObject[]{args[0],runtime.newString("wb")}),level,strategy},block);

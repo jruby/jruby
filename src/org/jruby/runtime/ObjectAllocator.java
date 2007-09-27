@@ -22,7 +22,7 @@ public interface ObjectAllocator {
     
     public static final ObjectAllocator NOT_ALLOCATABLE_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            throw runtime.newTypeError("Ruby \"" + klass.getName() + "\" object can not be allocated");
+            throw runtime.newTypeError("allocator undefined for " + klass.getName());
         }
     };
 }
