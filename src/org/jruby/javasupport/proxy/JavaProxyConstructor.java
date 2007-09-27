@@ -147,6 +147,8 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
         Arity.checkArgumentCount(getRuntime(), args, 2, 2);
 
         final IRubyObject self = args[0];
+        final Ruby runtime = self.getRuntime();
+        final RubyModule javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
         RubyArray constructor_args = (RubyArray) args[1];
         Class[] parameterTypes = getParameterTypes();
         int count = (int) constructor_args.length().getLongValue();
@@ -160,16 +162,21 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
 
         JavaProxyInvocationHandler handler = new JavaProxyInvocationHandler() {
             public Object invoke(Object proxy, JavaProxyMethod m, Object[] nargs) throws Throwable {
-                Ruby runtime = self.getRuntime();
                 String name = m.getName();
                 DynamicMethod method = self.getMetaClass().searchMethod(name);
                 int v = method.getArity().getValue();
-                IRubyObject[] newArgs = JavaUtil.convertJavaArrayToRuby(runtime, nargs);
+                IRubyObject[] newArgs = new IRubyObject[nargs.length];
+                for (int i = nargs.length; --i >= 0; ) {
+                    newArgs[i] = Java.java_to_ruby(
+                            javaUtilities,
+                            JavaObject.wrap(runtime, nargs[i]),
+                            Block.NULL_BLOCK);
+                }
                 
                 if (v < 0 || v == (newArgs.length)) {
-                    return JavaUtil.convertRubyToJava(self.callMethod(runtime.getCurrentContext(), name, newArgs, CallType.FUNCTIONAL, Block.NULL_BLOCK));
+                    return JavaUtil.convertRubyToJava(self.callMethod(runtime.getCurrentContext(), name, newArgs, CallType.FUNCTIONAL, Block.NULL_BLOCK), m.getReturnType());
                 } else {
-                    return JavaUtil.convertRubyToJava(self.callMethod(runtime.getCurrentContext(),self.getMetaClass().getSuperClass(), name, newArgs, CallType.SUPER, Block.NULL_BLOCK));
+                    return JavaUtil.convertRubyToJava(self.callMethod(runtime.getCurrentContext(),self.getMetaClass().getSuperClass(), name, newArgs, CallType.SUPER, Block.NULL_BLOCK), m.getReturnType());
                 }
             }
         };
