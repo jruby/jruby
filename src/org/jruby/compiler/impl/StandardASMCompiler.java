@@ -139,6 +139,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     int innerIndex = -1;
     int fieldIndex = 0;
     int rescueNumber = 1;
+    int ensureNumber = 1;
     
     Map<String, String> sourcePositions = new HashMap<String, String>();
     Map<String, String> byteLists = new HashMap<String, String>();
@@ -703,7 +704,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void performLogicalAnd(BranchCallback longBranch) {
-            Label afterJmp = new Label();
             Label falseJmp = new Label();
 
             // dup it since we need to return appropriately if it's false
@@ -1360,8 +1360,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // inside a loop, jump to body
             method.go_to(currentLoopLabels[1]);
         }
-
-        private int ensureNumber = 1;
 
         protected String getNewEnsureName() {
             return "__ensure_" + (ensureNumber++);
@@ -2135,6 +2133,56 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void issueRetryEvent() {
             invokeUtilityMethod("retryJump", cg.sig(IRubyObject.class));
         }
+
+        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args, ClosureCallback receiver, ASTInspector inspector) {
+            // TODO: build arg list based on number of args, optionals, etc
+            ++methodIndex;
+            String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;
+
+            MethodCompiler methodCompiler = startMethod(methodName, args, scope, inspector);
+
+            // callbacks to fill in method body
+            body.compile(methodCompiler);
+
+            methodCompiler.endMethod();
+
+            // prepare to call "def" utility method to handle def logic
+            loadThreadContext();
+
+            loadSelf();
+            
+            if (receiver != null) receiver.compile(this);
+            
+            // script object
+            method.aload(THIS);
+
+            method.ldc(name);
+
+            method.ldc(methodName);
+
+            buildStaticScopeNames(method, scope);
+
+            method.ldc(scope.getArity().getValue());
+            
+            // arities
+            method.ldc(scope.getRequiredArgs());
+            method.ldc(scope.getOptionalArgs());
+            method.ldc(scope.getRestArg());
+            
+            if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                method.getstatic(cg.p(CallConfiguration.class), "RUBY_FULL", cg.ci(CallConfiguration.class));
+            } else {
+                method.getstatic(cg.p(CallConfiguration.class), "JAVA_FULL", cg.ci(CallConfiguration.class));
+            }
+            
+            if (receiver != null) {
+                invokeUtilityMethod("defs", cg.sig(IRubyObject.class, 
+                        cg.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, int.class, int.class, int.class, int.class, CallConfiguration.class)));
+            } else {
+                invokeUtilityMethod("def", cg.sig(IRubyObject.class, 
+                        cg.params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, int.class, int.class, int.class, int.class, CallConfiguration.class)));
+            }
+        }
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {
@@ -2184,62 +2232,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.label(scopeEnd);
             method.go_to(doReturn);
             
-            // handle redo jumps occuring within the closure body
-//            method.label(redoJump);
-//            method.pop();
-//            method.go_to(scopeStart);
-            
-            // handle redo LocalJumpErrors...primarily these are bubbling out of other methods and out of eval
-//            Label catchRaised = new Label();
-//            {
-//                // only while loops seem to have this RaiseException magic
-//                method.label(catchRaised);
-//                //Label raiseRedo = new Label();
-//                Label raiseRethrow = new Label();
-//                method.dup();
-//                invokeUtilityMethod("getLocalJumpTypeOrRethrow", cg.sig(String.class, cg.params(RaiseException.class)));
-//                // if we get here we have a RaiseException we know is a local jump error and an error type
-//
-//                // is it break?
-//                method.dup(); // dup string
-//                method.ldc("break");
-//                method.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
-//                method.ifeq(raiseNext);
-//                // pop the extra string, get the break value, and end the loop
-//                method.pop();
-//                method.invokevirtual(cg.p(RaiseException.class), "getException", cg.sig(RubyException.class));
-//                method.checkcast(cg.p(RubyLocalJumpError.class));
-//                method.invokevirtual(cg.p(RubyLocalJumpError.class), "exitValue", cg.sig(IRubyObject.class));
-//                method.go_to(doReturn);
-
-                // is it next?
-//                method.label(raiseNext);
-//                method.dup();
-//                method.ldc("next");
-//                method.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
-//                method.ifeq(raiseRedo);
-//                // pop the extra string and the exception, jump to the condition
-//                method.pop2();
-//                method.go_to(exceptionNext);
-
-//                // is it redo?
-//                //method.label(raiseRedo);
-//                method.dup();
-//                method.ldc("redo");
-//                method.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
-//                method.ifeq(raiseRethrow);
-//                // pop the extra string and the exception, jump to the body
-//                method.pop2();
-//                method.go_to(scopeStart);
-//                
-//                // just rethrow it
-//                method.label(raiseRethrow);
-//                method.pop(); // pop extra string
-//                method.athrow();
-//            }
-//            method.trycatch(scopeStart, scopeEnd, redoJump, cg.p(JumpException.RedoJump.class));
-//            method.trycatch(scopeStart, scopeEnd, catchRaised, cg.p(RaiseException.class));
-            
             method.label(doReturn);
             method.areturn();
             method.end();
@@ -2262,51 +2254,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void performReturn() {
             loadThreadContext();
             invokeUtilityMethod("returnJump", cg.sig(IRubyObject.class, IRubyObject.class, ThreadContext.class));
-        }
-
-        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args, ClosureCallback receiver, ASTInspector inspector) {
-            // TODO: build arg list based on number of args, optionals, etc
-            ++methodIndex;
-            String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;
-
-            MethodCompiler methodCompiler = startMethod(methodName, args, scope, inspector);
-
-            // callbacks to fill in method body
-            body.compile(methodCompiler);
-
-            methodCompiler.endMethod();
-
-            // prepare to call "def" utility method to handle def logic
-            loadThreadContext();
-
-            loadSelf();
-            
-            if (receiver != null) receiver.compile(this);
-            
-            // script object
-            method.aload(THIS);
-
-            method.ldc(name);
-
-            method.ldc(methodName);
-
-            buildStaticScopeNames(method, scope);
-
-            method.ldc(new Integer(0));
-            
-            if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
-                method.getstatic(cg.p(CallConfiguration.class), "RUBY_FULL", cg.ci(CallConfiguration.class));
-            } else {
-                method.getstatic(cg.p(CallConfiguration.class), "JAVA_FULL", cg.ci(CallConfiguration.class));
-            }
-            
-            if (receiver != null) {
-                invokeUtilityMethod("defs", cg.sig(IRubyObject.class, 
-                        cg.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, Integer.TYPE, CallConfiguration.class)));
-            } else {
-                invokeUtilityMethod("def", cg.sig(IRubyObject.class, 
-                        cg.params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, Integer.TYPE, CallConfiguration.class)));
-            }
         }
 
         public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg) {
@@ -2439,51 +2386,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.label(end);
 
             method.end();
-        }
-
-        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args, ClosureCallback receiver, ASTInspector inspector) {
-            // TODO: build arg list based on number of args, optionals, etc
-            ++methodIndex;
-            String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;
-
-            MethodCompiler methodCompiler = startMethod(methodName, args, scope, inspector);
-
-            // callbacks to fill in method body
-            body.compile(methodCompiler);
-
-            methodCompiler.endMethod();
-
-            // prepare to call "def" utility method to handle def logic
-            loadThreadContext();
-
-            loadSelf();
-            
-            if (receiver != null) receiver.compile(this);
-            
-            // script object
-            method.aload(THIS);
-
-            method.ldc(name);
-
-            method.ldc(methodName);
-
-            buildStaticScopeNames(method, scope);
-
-            method.ldc(new Integer(0));
-            
-            if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
-                method.getstatic(cg.p(CallConfiguration.class), "RUBY_FULL", cg.ci(CallConfiguration.class));
-            } else {
-                method.getstatic(cg.p(CallConfiguration.class), "JAVA_FULL", cg.ci(CallConfiguration.class));
-            }
-            
-            if (receiver != null) {
-                invokeUtilityMethod("defs", cg.sig(IRubyObject.class, 
-                        cg.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, Integer.TYPE, CallConfiguration.class)));
-            } else {
-                invokeUtilityMethod("def", cg.sig(IRubyObject.class, 
-                        cg.params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, Integer.TYPE, CallConfiguration.class)));
-            }
         }
         
         public void performReturn() {

@@ -70,6 +70,6 @@ public abstract class MethodFactory {
         if (reflection) return new ReflectionMethodFactory();
         if (dumping) return new DumpingInvocationMethodFactory(dumpingPath);
 
-        return new InvocationMethodFactory((JRubyClassLoader)classLoader);
+        return new InvocationMethodFactory(classLoader);
     }
 }

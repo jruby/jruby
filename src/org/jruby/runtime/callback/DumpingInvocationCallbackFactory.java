@@ -28,12 +28,11 @@
 package org.jruby.runtime.callback;
 
 import org.jruby.Ruby;
-import org.jruby.util.JRubyClassLoader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 
 public class DumpingInvocationCallbackFactory extends InvocationCallbackFactory {
-    public DumpingInvocationCallbackFactory(Ruby runtime, Class type, JRubyClassLoader classLoader) {
+    public DumpingInvocationCallbackFactory(Ruby runtime, Class type, ClassLoader classLoader) {
         super(runtime, type, classLoader);
     }
 

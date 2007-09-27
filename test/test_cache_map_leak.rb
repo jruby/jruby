@@ -6,7 +6,7 @@ class TestMe; end
 class TestCacheMapLeak < Test::Unit::TestCase
 
   def setup
-    @num = 10000
+    @num = 100
     @num.times { class << TestMe.new; def foo; end; end }
     
     sleep 1

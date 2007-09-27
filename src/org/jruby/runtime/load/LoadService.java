@@ -218,6 +218,9 @@ public class LoadService {
     }
 
     public boolean smartLoad(String file) {
+        if (file.equals("")) {
+            throw runtime.newLoadError("No such file to load -- " + file);
+        }
         if(firstLineLoadedFeatures.contains(file)) {
             return false;
         }
@@ -275,8 +278,15 @@ public class LoadService {
         Script script = null;
         if (library == null) {
             String className = file;
-            if (file.lastIndexOf(".") > file.lastIndexOf("/")) {
-                className = file.substring(file.lastIndexOf(".") + 1);
+            if (file.lastIndexOf(".") != -1) className = file.substring(0, file.lastIndexOf("."));
+            className = className.replace('-', '_').replace('.', '_');
+            int lastSlashIndex = className.lastIndexOf('/');
+            if (!Character.isJavaIdentifierStart(className.charAt(lastSlashIndex + 1))) {
+                if (lastSlashIndex == -1) {
+                    className = "_" + className;
+                } else {
+                    className = className.substring(0, lastSlashIndex + 1) + "_" + className.substring(lastSlashIndex + 1);
+                }
             }
             className = className.replace('/', '.');
             try {

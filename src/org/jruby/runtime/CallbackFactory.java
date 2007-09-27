@@ -170,10 +170,10 @@ public abstract class CallbackFactory {
         if(reflection) {
             return new ReflectionCallbackFactory(type);
         } else if(dumping) {
-            return new DumpingInvocationCallbackFactory(runtime, type, (JRubyClassLoader)classLoader);
+            return new DumpingInvocationCallbackFactory(runtime, type, classLoader);
         } else {
             // FIXME: No, I don't like it.
-            return new InvocationCallbackFactory(runtime, type, (JRubyClassLoader)classLoader);
+            return new InvocationCallbackFactory(runtime, type, classLoader);
         }
     }
 }

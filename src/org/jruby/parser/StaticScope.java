@@ -34,6 +34,7 @@ import org.jruby.RubyModule;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
 
 /**
@@ -289,5 +290,25 @@ public abstract class StaticScope implements Serializable {
     
     public void setArgumentScope(boolean isArgumentScope) {
         this.isArgumentScope = isArgumentScope;
+    }
+    
+    public Arity getArity() {
+        if (optionalArgs > 0) {
+            if (restArg >= 0) {
+                return Arity.optional();
+            }
+            return Arity.required(requiredArgs);
+        } else {
+            if (restArg >= 0) {
+                return Arity.optional();
+            }
+            return Arity.fixed(requiredArgs);
+        }
+    }
+    
+    public void setArities(int required, int optional, int rest) {
+        this.requiredArgs = required;
+        this.optionalArgs = optional;
+        this.restArg = rest;
     }
 }

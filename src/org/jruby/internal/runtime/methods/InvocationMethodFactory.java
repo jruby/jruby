@@ -63,8 +63,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public InvocationMethodFactory() {
     }
     
-    public InvocationMethodFactory(JRubyClassLoader classLoader) {
-        this.classLoader = classLoader;
+    public InvocationMethodFactory(ClassLoader classLoader) {
+        if (classLoader instanceof JRubyClassLoader) {
+            this.classLoader = (JRubyClassLoader)classLoader;
+        } else {
+           this.classLoader = new JRubyClassLoader(classLoader);
+        }
     }
     
     /**

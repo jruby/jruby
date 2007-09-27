@@ -81,9 +81,13 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private static final int METHOD_ARGS_INDEX = 2;
 
-    public InvocationCallbackFactory(Ruby runtime, Class type, JRubyClassLoader classLoader) {
+    public InvocationCallbackFactory(Ruby runtime, Class type, ClassLoader classLoader) {
         this.type = type;
-        this.classLoader = classLoader;
+        if (classLoader instanceof JRubyClassLoader) {
+            this.classLoader = (JRubyClassLoader)classLoader;
+        } else {
+           this.classLoader = new JRubyClassLoader(classLoader);
+        }
         this.typePath = cg.p(type);
         this.runtime = runtime;
     }

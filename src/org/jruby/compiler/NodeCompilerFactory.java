@@ -471,25 +471,6 @@ public class NodeCompilerFactory {
         final AliasNode alias = (AliasNode)node;
         
         context.defineAlias(alias.getNewName(),alias.getOldName());
-        
-        ClosureCallback receiverCallback = new ClosureCallback() {
-            public void compile(MethodCompiler context) {
-                context.retrieveSelfClass();
-            }
-        };
-        
-        ClosureCallback argsCallback = new ClosureCallback() {
-            public void compile(MethodCompiler context) {
-                context.createObjectArray(new Object[] {alias.getNewName()}, new ArrayCallback() {
-                    public void nextValue(MethodCompiler context, Object sourceArray,
-                                          int index) {
-                        context.loadSymbol(alias.getNewName());
-                    }
-                });
-            }
-        };
-        
-        context.getInvocationCompiler().invokeDynamic("method_added", receiverCallback, argsCallback, CallType.FUNCTIONAL, null, false);
     }
     
     public static void compileAnd(Node node, MethodCompiler context) {
@@ -627,12 +608,8 @@ public class NodeCompilerFactory {
                 }
             }
         };
-        try {
-            context.issueBreakEvent(valueCallback);
-        } catch (RuntimeException re) {
-            re.printStackTrace();
-            System.out.println(breakNode.getPosition());
-        }
+        
+        context.issueBreakEvent(valueCallback);
     }
     
     public static void compileCall(Node node, MethodCompiler context) {
@@ -2298,7 +2275,6 @@ public class NodeCompilerFactory {
                 Node argsNode = multipleAsgnNode.getArgsNode();
                 if (argsNode instanceof StarNode) {
                     // done processing args
-                    context.loadNil();
                 } else {
                     // assign to appropriate variable
                     NodeCompilerFactory.compileAssignment(argsNode, context);
