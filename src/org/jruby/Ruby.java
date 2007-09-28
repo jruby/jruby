@@ -463,7 +463,7 @@ public final class Ruby {
         if (compile || !yarvCompile) {
             script = tryCompile(scriptNode);
             if (compile && script == null) {
-                // terminate; tryCompile will have printed out an error and we're done
+                System.err.println("Error, could not compile; pass -J-Djruby.jit.logging.verbose=true for more details");
                 return getNil();
             }
         } else if (yarvCompile) {
@@ -501,13 +501,21 @@ public final class Ruby {
                 System.err.println("compiled: " + node.getPosition().getFile());
             }
         } catch (NotCompilableException nce) {
-            System.err.println("Error -- Not compileable: " + nce.getMessage());
+            if (config.isJitLoggingVerbose()) {
+                System.err.println("Error -- Not compileable: " + nce.getMessage());
+            }
         } catch (ClassNotFoundException e) {
-            System.err.println("Error -- Not compileable: " + e.getMessage());
+            if (config.isJitLoggingVerbose()) {
+                System.err.println("Error -- Not compileable: " + e.getMessage());
+            }
         } catch (InstantiationException e) {
-            System.err.println("Error -- Not compileable: " + e.getMessage());
+            if (config.isJitLoggingVerbose()) {
+                System.err.println("Error -- Not compileable: " + e.getMessage());
+            }
         } catch (IllegalAccessException e) {
-            System.err.println("Error -- Not compileable: " + e.getMessage());
+            if (config.isJitLoggingVerbose()) {
+                System.err.println("Error -- Not compileable: " + e.getMessage());
+            }
         } catch (Throwable t) {
             if (config.isJitLoggingVerbose()) {
                 System.err.println("coult not compile: " + node.getPosition().getFile() + " because of: \"" + t.getMessage() + "\"");
