@@ -574,53 +574,7 @@ public class RubyModule extends RubyObject {
 
         infectBy(module);
 
-        RubyModule p, c;
-        boolean changed = false;
-        boolean skip = false;
-
-        c = this;
-        while (module != null) {
-            if (getNonIncludedClass() == module.getNonIncludedClass()) {
-                throw getRuntime().newArgumentError("cyclic include detected");
-            }
-
-            boolean superclassSeen = false;
-            for (p = getSuperClass(); p != null; p = p.getSuperClass()) {
-                if (p instanceof IncludedModuleWrapper) {
-                    if (p.getNonIncludedClass() == module.getNonIncludedClass()) {
-                        if (!superclassSeen) {
-                            c = p;
-                        }
-                        skip = true;
-                        break;
-                    }
-                } else {
-                    superclassSeen = true;
-                }
-            }
-            if (!skip) {
-                // In the current logic, if we get here we know that module is not an 
-                // IncludedModuleWrapper, so there's no need to fish out the delegate. But just 
-                // in case the logic should change later, let's do it anyway:
-                c.setSuperClass(new IncludedModuleWrapper(getRuntime(), c.getSuperClass(),
-                        module.getNonIncludedClass()));
-                c = c.getSuperClass();
-                changed = true;
-            }
-
-            module = module.getSuperClass();
-            skip = false;
-        }
-
-        if (changed) {
-            getRuntime().getMethodCache().clearCache();
-            
-            // MRI seems to blow away its cache completely after an include; is
-            // what we're doing here really safe?
-            // CON: clearing the whole cache now, though it's pretty inefficient
-            getRuntime().getCacheMap().clear();
-        }
-
+        doIncludeModule(module);
     }
 
     public void defineMethod(String name, Callback method) {
@@ -855,7 +809,7 @@ public class RubyModule extends RubyObject {
     public DynamicMethod searchMethod(String name) {
         MethodCache cache = getRuntime().getMethodCache();
         MethodCache.CacheEntry entry = cache.getMethod(this, name);
-        if (entry.klass == this && name.equals(entry.mid)) {
+        if (entry.klass == this && name.equals(entry.methodName)) {
             return entry.method;
         }
         
@@ -2085,4 +2039,56 @@ public class RubyModule extends RubyObject {
         
         return result;
     }
+
+    private void doIncludeModule(RubyModule includedModule) {
+
+        boolean changed = false;
+        boolean skip = false;
+
+        RubyModule currentModule = this;
+        while (includedModule != null) {
+
+            if (getNonIncludedClass() == includedModule.getNonIncludedClass()) {
+                throw getRuntime().newArgumentError("cyclic include detected");
+            }
+
+            boolean superclassSeen = false;
+
+            // scan class hierarchy for module
+            for (RubyModule superClass = this.getSuperClass(); superClass != null; superClass = superClass.getSuperClass()) {
+                if (superClass instanceof IncludedModuleWrapper) {
+                    if (superClass.getNonIncludedClass() == includedModule.getNonIncludedClass()) {
+                        if (!superclassSeen) {
+                            currentModule = superClass;
+                        }
+                        skip = true;
+                        break;
+                    }
+                } else {
+                    superclassSeen = true;
+                }
+            }
+
+            if (!skip) {
+
+                // blow away caches for any methods that are redefined by module
+                getRuntime().getCacheMap().moduleIncluded(currentModule, includedModule);
+                
+                // In the current logic, if we get here we know that module is not an
+                // IncludedModuleWrapper, so there's no need to fish out the delegate. But just
+                // in case the logic should change later, let's do it anyway:
+                currentModule.setSuperClass(new IncludedModuleWrapper(getRuntime(), currentModule.getSuperClass(),
+                        includedModule.getNonIncludedClass()));
+                currentModule = currentModule.getSuperClass();
+                changed = true;
+            }
+
+            includedModule = includedModule.getSuperClass();
+            skip = false;
+        }
+        if (changed) {
+            getRuntime().getMethodCache().clearCacheForModule(this);
+        }
+    }
+
 }

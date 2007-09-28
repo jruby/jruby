@@ -61,8 +61,11 @@ public abstract class CallAdapter {
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
-    
-    public static class DefaultCallAdapter extends CallAdapter implements CacheMap.CacheSite {
+
+    public abstract void removeCachedMethod();
+
+
+    public static class DefaultCallAdapter extends CallAdapter {
         byte[] cachedTable;
         DynamicMethod cachedMethod;
         RubyClass cachedType;
@@ -185,7 +188,7 @@ public abstract class CallAdapter {
             }
         }
 
-        public void removeCachedMethod(String name) {
+        public void removeCachedMethod() {
             cachedType = null;
             cachedMethod = null;
         }

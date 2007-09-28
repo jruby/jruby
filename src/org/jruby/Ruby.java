@@ -93,22 +93,11 @@ import org.jruby.ext.Generator;
 import org.jruby.ext.JavaBasedPOSIX;
 import org.jruby.ext.POSIX;
 import org.jruby.ext.Readline;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.libraries.FiberLibrary;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CacheMap;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.EventHook;
-import org.jruby.runtime.GlobalVariable;
-import org.jruby.runtime.IAccessor;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ObjectSpace;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.CacheMap.CacheSite;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
@@ -129,7 +118,7 @@ import org.jruby.regexp.RegexpFactory;
 public final class Ruby {
     private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "yaml/syck", "jsignal" };
 
-    private CacheMap<DynamicMethod, CacheSite> cacheMap = new CacheMap<DynamicMethod, CacheMap.CacheSite>();
+    private CacheMap cacheMap = new CacheMap();
     private MethodCache methodCache = new MethodCache();
     private ThreadService threadService = new ThreadService(this);
     private Hashtable<Object, Object> runtimeInformation;
@@ -976,7 +965,7 @@ public final class Ruby {
      *
      * @return the mappings of where cached methods have been stored
      */
-    public CacheMap<DynamicMethod, CacheSite> getCacheMap() {
+    public CacheMap getCacheMap() {
         return cacheMap;
     }
     

@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.util.collections.WeakHashSet;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.RubyModule;
 
 /**
  * This class represents mappings between methods that have been cached and the classes which
@@ -49,12 +51,8 @@ import org.jruby.util.collections.WeakHashSet;
  * we are going to rely on synchronization further upstream.  RubyModule methods that directly
  * call this is responsible for synchronization.
  */
-public class CacheMap<K, V extends CacheMap.CacheSite> {
-    private final Map<K, Set<V>> mappings = new WeakHashMap<K, Set<V>>();
-    
-    public interface CacheSite {
-        public void removeCachedMethod(String name);
-    }
+public class CacheMap {
+    private final Map<DynamicMethod, Set<CallAdapter>> mappings = new WeakHashMap<DynamicMethod, Set<CallAdapter>>();
     
     /**
      * Add another class to the list of classes which are caching the method.
@@ -62,11 +60,11 @@ public class CacheMap<K, V extends CacheMap.CacheSite> {
      * @param method which is cached
      * @param module which is caching method
      */
-    public synchronized void add(K method, V site) {
-        Set<V> siteList = mappings.get(method);
+    public synchronized void add(DynamicMethod method, CallAdapter site) {
+        Set<CallAdapter> siteList = mappings.get(method);
         
         if (siteList == null) {
-            siteList = new WeakHashSet<V>();
+            siteList = new WeakHashSet<CallAdapter>();
             synchronized (mappings) {
                 mappings.put(method, siteList);
             }
@@ -85,41 +83,40 @@ public class CacheMap<K, V extends CacheMap.CacheSite> {
      * @param name of the method to remove
      * @param method to remove all caches of
      */
-    public synchronized void remove(String name, K method) {
-        Set<V> siteList = mappings.remove(method);
+    public synchronized void remove(String name, DynamicMethod method) {
+        Set<CallAdapter> siteList = mappings.remove(method);
         
         // Removed method has never been used so it has not been cached
         if (siteList == null) {
             return;
         }
         synchronized (siteList) {
-            for(Iterator<V> iter = siteList.iterator(); iter.hasNext();) {
-                V site = iter.next();
+            for(Iterator<CallAdapter> iter = siteList.iterator(); iter.hasNext();) {
+                CallAdapter site = iter.next();
                 if (site != null) {
-                    site.removeCachedMethod(name);
+                    site.removeCachedMethod();
                 }
             }
         }
     }
     
     /**
-     * Remove all method caches associated with all methods.
+     * Remove method caches for all methods in a module 
      */
-    public void clear() {
+    public void moduleIncluded(RubyModule targetModule, RubyModule includedModule) {
         synchronized (mappings) {
-            for (Iterator<Map.Entry<K,Set<V>>> mapIter = mappings.entrySet().iterator(); mapIter.hasNext();) {
-                Map.Entry<K,Set<V>> mapEntry = mapIter.next();
-                Set<V> siteList = mapEntry.getValue();
+            for (Iterator i = includedModule.getMethods().keySet().iterator(); i.hasNext(); ) {
+                String methodName = (String) i.next();
 
-                // Removed method has never been used so it has not been cached
-                if (siteList == null) {
-                    return;
-                }
-                synchronized(siteList) {
-                    for(Iterator<V> iter = siteList.iterator(); iter.hasNext();) {
-                        V site = iter.next();
-                        if (site != null) {
-                            site.removeCachedMethod(null);
+                for(RubyModule current = targetModule; current != null; current = current.getSuperClass()) {
+                    if (current == includedModule) continue;
+                    DynamicMethod method = (DynamicMethod)current.getMethods().get(methodName);
+                    if (method != null) {
+                        Set<CallAdapter> adapters = mappings.remove(method);
+                        if (adapters != null) {
+                            for(CallAdapter adapter : adapters) {
+                                adapter.removeCachedMethod();
+                            }
                         }
                     }
                 }

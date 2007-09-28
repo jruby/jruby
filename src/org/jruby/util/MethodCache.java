@@ -33,53 +33,61 @@ import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
 public class MethodCache {
-    private static int CACHE_SIZE = 0x800;
-    private static int CACHE_MASK = 0x7ff;
-    
+
+    public static class CacheEntry {
+        public RubyModule klass = null;
+        public String methodName = null;
+        public DynamicMethod method = null;
+
+        void put(RubyModule klass, String methodName, DynamicMethod method) {
+            this.klass = klass;
+            this.methodName = methodName;
+            this.method = method;
+        }
+
+        void clear() {
+            this.klass = null;
+            this.methodName = null;
+            this.method = null;
+        }
+    }
+
+
+    private final static int CACHE_SIZE = 0x800;
+    private final static int CACHE_MASK = 0x7ff;
+
+    private final CacheEntry[] cache = new CacheEntry[CACHE_SIZE];
     private boolean initialized;
-    
-    private CacheEntry[] cache;
-    
+
     public MethodCache() {
         initialized = false;
-        
-        cache = new CacheEntry[CACHE_SIZE];
-        clearAllEntries();
+
+        for (int i = 0; i < CACHE_SIZE; i++ ) {
+            cache[i] = new CacheEntry();
+        }
     }
     
     public void initialized() {
         initialized = true;
     }
     
-    public void clearCache() {
+    public void clearCacheForModule(RubyModule module) {
         if (!initialized) {
             return;
         }
-        
-        clearAllEntries();
-    }
-
-    private void clearAllEntries() {
-        for (int i = CACHE_SIZE; --i >= 0; ) {
-            cache[i] = new CacheEntry();
+        for (int i = 0; i < CACHE_SIZE; i++ ) {
+            if (cache[i].klass == module) {
+                cache[i].clear();
+            }
         }
     }
-    
-    private int cacheIndex(RubyModule c, String id) {        
-        return (((c.hashCode() >> 3) ^ (id.hashCode())) & CACHE_MASK);
+
+    public CacheEntry getMethod(RubyModule klass, String methodName) {       
+        return cache[cacheIndex(klass, methodName)];
     }
     
-    public CacheEntry getMethod(RubyModule c, String id) {       
-        return cache[cacheIndex(c, id)];
-    }
-    
-    public void putMethod(RubyModule c, String id, DynamicMethod m) {
-        CacheEntry entry = new CacheEntry();
-        entry.klass = c;
-        entry.mid = id;
-        entry.method = m;
-        
-        cache[cacheIndex(c, id)] = entry;
+    public void putMethod(RubyModule klass, String methodName, DynamicMethod method) {
+        cache[cacheIndex(klass, methodName)].put(klass, methodName, method);
     }
     
     public void removeMethod(RubyClass c, String id) { 
@@ -89,41 +97,40 @@ public class MethodCache {
         
         for (int i = CACHE_SIZE; --i >= 0; ) {
             CacheEntry entry = cache[i];
-            if (c == entry.klass && id.equals(entry.mid)) {
-                entry.mid = null;
+            if (c == entry.klass && id.equals(entry.methodName)) {
+                entry.methodName = null;
             }
         }
     }
     
-    public void removeMethod(String id) { 
+    public void removeMethod(String methodName) {
         if (!initialized) {
             return;
         }
         
         for (int i = CACHE_SIZE; --i >= 0; ) {
             CacheEntry entry = cache[i];
-            if (id.equals(entry.mid)) {
-                entry.mid = null;
+            if (methodName.equals(entry.methodName)) {
+                entry.methodName = null;
             }
         }
     }
     
-    public void removeClass(RubyClass c) {  
+    public void removeClass(RubyClass klass) {
         if (!initialized) {
             return;
         }
         
         for (int i = CACHE_SIZE; --i >= 0; ) {
             CacheEntry entry = cache[i]; 
-            if (entry.klass == c) {
-                entry.mid = null;
+            if (entry.klass == klass) {
+                entry.methodName = null;
             }
         }
     }
-    
-    public static class CacheEntry {
-        public RubyModule klass;
-        public String mid;
-        public DynamicMethod method;
+
+    private int cacheIndex(RubyModule klass, String methodName) {
+        return (((klass.hashCode() >> 3) ^ (methodName.hashCode())) & CACHE_MASK);
     }
+
 }
