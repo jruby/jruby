@@ -552,8 +552,8 @@ public class CompilerHelpers {
         return given;
     }
     
-    public static RubyModule findImplementerIfNecessary(boolean needsImplementer, RubyModule clazz, RubyModule implementationClass) {
-        if (needsImplementer) {
+    public static RubyModule findImplementerIfNecessary(RubyModule clazz, RubyModule implementationClass) {
+        if (implementationClass != null && implementationClass.needsImplementer()) {
             // modules are included with a shim class; we must find that shim to handle super() appropriately
             return clazz.findImplementer(implementationClass);
         } else {

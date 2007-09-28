@@ -230,6 +230,7 @@ public class RubyModule extends RubyObject {
         super(runtime, metaClass, objectSpace);
         id = ++runtime.moduleLastId;
         // if (parent == null) parent = runtime.getObject();
+        setFlag(USER7_F, !isClass());
     }
     
     /** used by MODULE_ALLOCATOR and RubyClass constructors
@@ -246,6 +247,10 @@ public class RubyModule extends RubyObject {
         this(runtime, runtime.getModule());
     }
 
+    public boolean needsImplementer() {
+        return getFlag(USER7_F);
+    }
+    
     /** rb_module_new
      * 
      */

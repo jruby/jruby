@@ -207,6 +207,7 @@ public class RubyKernel {
         runtime.setRespondToMethod(module.searchMethod("respond_to?"));
         
         runtime.getObject().dispatcher = objectCallbackFactory.createDispatcher(runtime.getObject());
+        module.setFlag(RubyObject.USER7_F, false); //Kernel is the only Module that doesn't need an implementor
 
         return module;
     }

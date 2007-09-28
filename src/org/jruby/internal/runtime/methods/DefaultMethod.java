@@ -74,7 +74,6 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     private int requiredArgsCount;
     private int restArg;
     private boolean hasOptArgs;
-    private boolean needsImplementer;
     private CallConfiguration jitCallConfig;
 
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
@@ -88,12 +87,6 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         this.hasOptArgs = argsNode.getOptArgs() != null;
 		
         assert argsNode != null;
-    
-        if (implementationClass != null) {
-            // Classes don't need the implementer search because they're not included
-            // Kernel doesn't need the implementer class because it's always at the top of the hierarchy
-            needsImplementer = !implementationClass.isClass() && implementationClass != implementationClass.getRuntime().getModule("Kernel");
-        }
     }
 
     /**
@@ -101,8 +94,8 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
      */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         assert args != null;
-        
-        RubyModule implementer = CompilerHelpers.findImplementerIfNecessary(needsImplementer, clazz, getImplementationClass());
+
+        RubyModule implementer = CompilerHelpers.findImplementerIfNecessary(clazz, getImplementationClass());
         
         Ruby runtime = context.getRuntime();
 
