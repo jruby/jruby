@@ -59,6 +59,7 @@ import java.util.Stack;
 import java.util.WeakHashMap;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
+import org.jruby.ast.executable.RubiniusRunner;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.YARVCompiledRunner;
 import org.jruby.common.RubyWarnings;
@@ -111,6 +112,7 @@ import org.jruby.util.KCode;
 import org.jruby.util.MethodCache;
 import org.jruby.util.NormalizedFile;
 import org.jruby.regexp.RegexpFactory;
+import org.jruby.util.CommandlineParser;
 
 /**
  * The jruby runtime.
@@ -367,58 +369,112 @@ public final class Ruby {
         Reader reader = new StringReader(script);
         Node node = parseInline(reader, filename, null);
         
-        return compileOrFallbackAndRun(node);
+        return runNormally(node, false, false);
     }
     
-    public IRubyObject compileOrFallbackAndRun(Node node) {
-        try {
-            ThreadContext tc = getCurrentContext();
-            
-            // do the compile if JIT is enabled
-            if (config.isJitEnabled() && !hasEventHooks()) {
-                Script script = null;
-                try {
-                    String filename = node.getPosition().getFile();
-                    String classname;
-                    if (filename.equals("-e")) {
-                        classname = "__dash_e__";
-                    } else {
-                        classname = filename.replace('\\', '/').replaceAll(".rb", "");
-                    }
-        
-                    ASTInspector inspector = new ASTInspector();
-                    inspector.inspect(node);
-
-                    StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
-                    NodeCompilerFactory.compileRoot(node, compiler, inspector);
-                    script = (Script)compiler.loadClass(this.getJRubyClassLoader()).newInstance();
-                    
-                    if (config.isJitLogging()) {
-                        System.err.println("compiled: " + node.getPosition().getFile());
-                    }
-                } catch (Throwable t) {
-                    if (config.isJitLoggingVerbose()) {
-                        System.err.println("coult not compile: " + node.getPosition().getFile() + " because of: \"" + t.getMessage() + "\"");
-                    }
-                    return eval(node);
-                }
-            
-                // FIXME: Pass something better for args and block here?
-                return script.load(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    public void runFromMain(Reader sourceReader, String filename, CommandlineParser commandLine) {
+        if(commandLine.isYARVEnabled()) {
+            new YARVCompiledRunner(this,sourceReader,filename).run();
+        } else if(commandLine.isRubiniusEnabled()) {
+            new RubiniusRunner(this,sourceReader,filename).run();
+        } else {
+            Node scriptNode;
+            if (commandLine.isInlineScript()) {
+                scriptNode = parseInline(sourceReader, filename, getCurrentContext().getCurrentScope());
             } else {
-                return eval(node);
+                scriptNode = parseFile(sourceReader, filename, getCurrentContext().getCurrentScope());
             }
-        } catch (JumpException.ReturnJump rj) {
-            return (IRubyObject) rj.getValue();
+            
+            if (commandLine.isAssumePrinting() || commandLine.isAssumeLoop()) {
+                runWithGetsLoop(scriptNode, commandLine.isAssumePrinting(), commandLine.isProcessLineEnds(),
+                        commandLine.isSplit(), commandLine.isCompilerEnabled(), commandLine.isYARVCompileEnabled());
+            } else {
+                runNormally(scriptNode, commandLine.isCompilerEnabled(), commandLine.isYARVCompileEnabled());
+            }
+        }
+    }
+    
+    public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split, boolean compile, boolean yarvCompile) {
+        ThreadContext context = getCurrentContext();
+        
+        Script script = null;
+        YARVCompiledRunner runner = null;
+        if (compile || !yarvCompile) {
+            script = tryCompile(scriptNode);
+            if (compile && script == null) {
+                // terminate; tryCompile will have printed out an error and we're done
+                return getNil();
+            }
+        } else if (yarvCompile) {
+            runner = tryCompileYarv(scriptNode);
         }
         
+        if (processLineEnds) {
+            getGlobalVariables().set("$\\", getGlobalVariables().get("$/"));
+        }
+        
+        IRubyObject result = null;
+        outerLoop: while (RubyKernel.gets(getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
+            loop: while (true) { // Used for the 'redo' command
+                try {
+                    if (processLineEnds) {
+                        getGlobalVariables().get("$_").callMethod(context, "chop!");
+                    }
+                    
+                    if (split) {
+                        getGlobalVariables().set("$F", getGlobalVariables().get("$_").callMethod(context, "split"));
+                    }
+                    
+                    if (script != null) {
+                        result = runScript(script);
+                    } else if (runner != null) {
+                        result = runYarv(runner);
+                    } else {
+                        result = runInterpreter(scriptNode);
+                    }
+                    
+                    if (printing) RubyKernel.print(getKernel(), new IRubyObject[] {getGlobalVariables().get("$_")});
+                    break loop;
+                } catch (JumpException.RedoJump rj) {
+                    // do nothing, this iteration restarts
+                } catch (JumpException.NextJump nj) {
+                    // recheck condition
+                    break loop;
+                } catch (JumpException.BreakJump bj) {
+                    // end loop
+                    return (IRubyObject) bj.getValue();
+                }
+            }
+        }
+        
+        return getNil();
     }
-
-    public IRubyObject compileAndRun(Node node) {
+    
+    public IRubyObject runNormally(Node scriptNode, boolean compile, boolean yarvCompile) {
+        Script script = null;
+        YARVCompiledRunner runner = null;
+        if (compile || !yarvCompile) {
+            script = tryCompile(scriptNode);
+            if (compile && script == null) {
+                // terminate; tryCompile will have printed out an error and we're done
+                return getNil();
+            }
+        } else if (yarvCompile) {
+            runner = tryCompileYarv(scriptNode);
+        }
+        
+        if (script != null) {
+            return runScript(script);
+        } else if (runner != null) {
+            return runYarv(runner);
+        } else {
+            return runInterpreter(scriptNode);
+        }
+    }
+    
+    private Script tryCompile(Node node) {
+        Script script = null;
         try {
-            ThreadContext tc = getCurrentContext();
-            
-            // do the compile
             String filename = node.getPosition().getFile();
             String classname;
             if (filename.equals("-e")) {
@@ -426,33 +482,35 @@ public final class Ruby {
             } else {
                 classname = filename.replace('\\', '/').replaceAll(".rb", "");
             }
-        
+
             ASTInspector inspector = new ASTInspector();
             inspector.inspect(node);
-            
+
             StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
             NodeCompilerFactory.compileRoot(node, compiler, inspector);
-            Script script = (Script)compiler.loadClass(this.getJRubyClassLoader()).newInstance();
-            
-            return script.load(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            script = (Script)compiler.loadClass(this.getJRubyClassLoader()).newInstance();
+
+            if (config.isJitLogging()) {
+                System.err.println("compiled: " + node.getPosition().getFile());
+            }
         } catch (NotCompilableException nce) {
             System.err.println("Error -- Not compileable: " + nce.getMessage());
-            return null;
-        } catch (JumpException.ReturnJump rj) {
-            return (IRubyObject) rj.getValue();
         } catch (ClassNotFoundException e) {
             System.err.println("Error -- Not compileable: " + e.getMessage());
-            return null;
         } catch (InstantiationException e) {
             System.err.println("Error -- Not compileable: " + e.getMessage());
-            return null;
         } catch (IllegalAccessException e) {
             System.err.println("Error -- Not compileable: " + e.getMessage());
-            return null;
+        } catch (Throwable t) {
+            if (config.isJitLoggingVerbose()) {
+                System.err.println("coult not compile: " + node.getPosition().getFile() + " because of: \"" + t.getMessage() + "\"");
+            }
         }
+        
+        return script;
     }
-
-    public IRubyObject ycompileAndRun(Node node) {
+    
+    private YARVCompiledRunner tryCompileYarv(Node node) {
         try {
             StandardYARVCompiler compiler = new StandardYARVCompiler(this);
             NodeCompilerFactory.getYARVCompiler().compile(node, compiler);
@@ -460,10 +518,38 @@ public final class Ruby {
             if(p == null && node instanceof org.jruby.ast.RootNode) {
                 p = ((org.jruby.ast.RootNode)node).getBodyNode().getPosition();
             }
-            return new YARVCompiledRunner(this,compiler.getInstructionSequence("<main>",p.getFile(),"toplevel")).run();
+            return new YARVCompiledRunner(this,compiler.getInstructionSequence("<main>",p.getFile(),"toplevel"));
         } catch (NotCompilableException nce) {
             System.err.println("Error -- Not compileable: " + nce.getMessage());
             return null;
+        } catch (JumpException.ReturnJump rj) {
+            return null;
+        }
+    }
+    
+    private IRubyObject runScript(Script script) {
+        ThreadContext context = getCurrentContext();
+        
+        try {
+            return script.load(getCurrentContext(), context.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        } catch (JumpException.ReturnJump rj) {
+            return (IRubyObject) rj.getValue();
+        }
+    }
+    
+    private IRubyObject runYarv(YARVCompiledRunner runner) {
+        try {
+            return runner.run();
+        } catch (JumpException.ReturnJump rj) {
+            return (IRubyObject) rj.getValue();
+        }
+    }
+    
+    private IRubyObject runInterpreter(Node scriptNode) {
+        ThreadContext context = getCurrentContext();
+        
+        try {
+            return EvaluationState.eval(this, context, scriptNode, getTopSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }

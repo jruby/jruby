@@ -1295,7 +1295,7 @@ public class EvaluationState {
         return RubyRegexp.nth_match(((NthRefNode)node).getMatchNumber(), context.getCurrentFrame().getBackRef());
     }
     
-    private static IRubyObject pollAndReturn(ThreadContext context, IRubyObject result) {
+    public static IRubyObject pollAndReturn(ThreadContext context, IRubyObject result) {
         context.pollThreadEvents();
         return result;
     }

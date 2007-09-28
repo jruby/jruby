@@ -214,20 +214,7 @@ public class Main {
     private void runInterpreter(Ruby runtime, Reader reader, String filename) {
         try {
             initializeRuntime(runtime, filename);
-            if(commandline.isYARVEnabled()) {
-                new YARVCompiledRunner(runtime,reader,filename).run();
-            } else if(commandline.isRubiniusEnabled()) {
-                new RubiniusRunner(runtime,reader,filename).run();
-            } else {
-                Node parsedScript = getParsedScript(runtime, reader, filename);
-                if (commandline.isCompilerEnabled()) {
-                    runtime.compileAndRun(parsedScript);
-                } else if(commandline.isYARVCompileEnabled()) {
-                    runtime.ycompileAndRun(parsedScript);
-                } else {
-                    runtime.compileOrFallbackAndRun(parsedScript);
-                }
-            }
+            runtime.runFromMain(reader, filename, commandline);
         } finally {
             runtime.tearDown();
         }
@@ -242,12 +229,6 @@ public class Main {
             result = runtime.parseFile(reader, filename, runtime.getCurrentContext().getCurrentScope());
         }
         
-        if (commandline.isAssumePrinting()) {
-            result = new ParserSupport().appendPrintToBlock(result);
-        }
-        if (commandline.isAssumeLoop()) {
-            result = new ParserSupport().appendWhileLoopToBlock(result, commandline.isProcessLineEnds(), commandline.isSplit());
-        }
         return result;
     }
 
