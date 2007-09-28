@@ -182,8 +182,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     String cleanName = CodegenUtils.cg.cleanJavaIdentifier(name);
                     // FIXME: not handling empty bodies correctly...
                     StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), body.getPosition().getFile());
-                    compiler.startScript();
-                    
+                    compiler.startScript(staticScope);
         
                     ClosureCallback args = new ClosureCallback() {
                         public void compile(MethodCompiler context) {

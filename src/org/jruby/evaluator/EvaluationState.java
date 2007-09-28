@@ -408,6 +408,7 @@ public class EvaluationState {
 
     private static IRubyObject aliasNode(Ruby runtime, ThreadContext context, Node node) {
         AliasNode iVisited = (AliasNode) node;
+        CompilerHelpers.defineAlias(context, iVisited.getNewName(), iVisited.getOldName());
         RubyModule module = context.getRubyClass();
    
         if (module == null) throw runtime.newTypeError("no class to make alias");

@@ -6,4 +6,5 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public interface Script {
     public IRubyObject run(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
+    public IRubyObject load(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
 }

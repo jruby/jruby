@@ -45,7 +45,7 @@ public interface ScriptCompiler {
      * Begin compilation for a script, preparing all necessary context and code
      * to support this script's compiled representation.
      */
-    public void startScript();
+    public void startScript(StaticScope scope);
     
     /**
      * End compilation for the current script, closing all context and structures

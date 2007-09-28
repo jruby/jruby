@@ -114,7 +114,8 @@ public final class ThreadContext {
         
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
-        pushScope(new DynamicScope(new LocalStaticScope(null), null));
+        StaticScope topStaticScope = new LocalStaticScope(null);
+        pushScope(new DynamicScope(topStaticScope, null));
             
         for (int i = 0; i < frameStack.length; i++) {
             frameStack[i] = new Frame();

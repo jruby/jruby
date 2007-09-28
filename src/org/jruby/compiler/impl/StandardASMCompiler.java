@@ -140,6 +140,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     int fieldIndex = 0;
     int rescueNumber = 1;
     int ensureNumber = 1;
+    StaticScope topLevelScope;
     
     Map<String, String> sourcePositions = new HashMap<String, String>();
     Map<String, String> byteLists = new HashMap<String, String>();
@@ -200,12 +201,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return classWriter;
     }
 
-    public void startScript() {
+    public void startScript(StaticScope scope) {
         classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
         // Create the class with the appropriate class name and source file
         classWriter.visit(V1_4, ACC_PUBLIC + ACC_SUPER, classname, null, cg.p(Object.class), new String[]{cg.p(Script.class)});
         classWriter.visitSource(sourcename, null);
+        
+        topLevelScope = scope;
 
         beginInit();
         beginClassInit();
@@ -213,7 +216,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
     public void endScript() {
         // add Script#run impl, used for running this script with a specified threadcontext and self
-        // root method of a script is always in __load__ method
+        // root method of a script is always in __file__ method
         String methodName = "__file__";
         SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "run", METHOD_SIGNATURE, null, null));
         method.start();
@@ -227,6 +230,40 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
         method.areturn();
+        
+        method.end();
+        
+        // the load method is used for loading as a top-level script, and prepares appropriate scoping around the code
+        method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "load", METHOD_SIGNATURE, null, null));
+        method.start();
+
+        // invoke __file__ with threadcontext, self, args (null), and block (null)
+        Label tryBegin = new Label();
+        Label tryFinally = new Label();
+        
+        method.label(tryBegin);
+        method.aload(THREADCONTEXT_INDEX);
+        buildStaticScopeNames(method, topLevelScope);
+        method.invokestatic(cg.p(CompilerHelpers.class), "preLoad", cg.sig(void.class, ThreadContext.class, String[].class));
+        
+        method.aload(THIS);
+        method.aload(THREADCONTEXT_INDEX);
+        method.aload(SELF_INDEX);
+        method.aload(ARGS_INDEX);
+        method.aload(CLOSURE_INDEX);
+
+        method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
+        method.aload(THREADCONTEXT_INDEX);
+        method.invokestatic(cg.p(CompilerHelpers.class), "postLoad", cg.sig(void.class, ThreadContext.class));
+        method.areturn();
+        
+        method.label(tryFinally);
+        method.aload(THREADCONTEXT_INDEX);
+        method.invokestatic(cg.p(CompilerHelpers.class), "postLoad", cg.sig(void.class, ThreadContext.class));
+        method.athrow();
+        
+        method.trycatch(tryBegin, tryFinally, tryFinally, null);
+        
         method.end();
 
         // add main impl, used for detached or command-line execution of this script with a new runtime
@@ -255,6 +292,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         endInit();
         endClassInit();
+    }
+
+    public void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {
+        // construct static scope list of names
+        method.ldc(new Integer(scope.getNumberOfVariables()));
+        method.anewarray(cg.p(String.class));
+        for (int i = 0; i < scope.getNumberOfVariables(); i++) {
+            method.dup();
+            method.ldc(new Integer(i));
+            method.ldc(scope.getVariables()[i]);
+            method.arraystore();
+        }
     }
 
     private void beginInit() {
@@ -965,18 +1014,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             invokeUtilityMethod("createSharedScopeBlock", cg.sig(CompiledSharedScopeBlock.class,
                     cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE)));
-        }
-
-        public void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {
-            // construct static scope list of names
-            method.ldc(new Integer(scope.getNumberOfVariables()));
-            method.anewarray(cg.p(String.class));
-            for (int i = 0; i < scope.getNumberOfVariables(); i++) {
-                method.dup();
-                method.ldc(new Integer(i));
-                method.ldc(scope.getVariables()[i]);
-                method.arraystore();
-            }
         }
 
         private void getCallbackFactory() {
@@ -1935,7 +1972,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     methodCompiler.method.swap();
 
                     // static scope
-                    methodCompiler.buildStaticScopeNames(methodCompiler.method, staticScope);
+                    buildStaticScopeNames(methodCompiler.method, staticScope);
                     methodCompiler.invokeThreadContext("preCompiledClass", cg.sig(Void.TYPE, cg.params(RubyModule.class, String[].class)));
                 }
             };
@@ -2005,7 +2042,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     methodCompiler.method.swap();
 
                     // static scope
-                    methodCompiler.buildStaticScopeNames(methodCompiler.method, staticScope);
+                    buildStaticScopeNames(methodCompiler.method, staticScope);
 
                     methodCompiler.invokeThreadContext("preCompiledClass", cg.sig(Void.TYPE, cg.params(RubyModule.class, String[].class)));
                 }

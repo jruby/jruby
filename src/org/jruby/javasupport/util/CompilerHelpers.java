@@ -623,11 +623,10 @@ public class CompilerHelpers {
     
     public static IRubyObject defineAlias(ThreadContext context, String newName, String oldName) {
         Ruby runtime = context.getRuntime();
-
         RubyModule module = context.getRubyClass();
    
         if (module == null) throw runtime.newTypeError("no class to make alias");
-        
+   
         module.defineAlias(newName, oldName);
         module.callMethod(context, "method_added", runtime.newSymbol(newName));
    
@@ -648,5 +647,18 @@ public class CompilerHelpers {
     public static IRubyObject stringOrNil(String value, Ruby runtime, IRubyObject nil) {
         if (value == null) return nil;
         return RubyString.newString(runtime, value);
+    }
+    
+    public static void preLoad(ThreadContext context, String[] varNames) {
+        StaticScope staticScope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), varNames);
+        staticScope.setModule(context.getRuntime().getObject());
+        DynamicScope scope = new DynamicScope(staticScope);
+        
+        // Each root node has a top-level scope that we need to push
+        context.preScopedBody(scope);
+    }
+    
+    public static void postLoad(ThreadContext context) {
+        context.postScopedBody();
     }
 }

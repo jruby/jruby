@@ -2633,7 +2633,7 @@ public class NodeCompilerFactory {
     public static void compileRoot(Node node, ScriptCompiler context, ASTInspector inspector) {
         RootNode rootNode = (RootNode)node;
         
-        context.startScript();
+        context.startScript(rootNode.getStaticScope());
         
         // create method for toplevel of script
         MethodCompiler methodCompiler = context.startMethod("__file__", null, rootNode.getStaticScope(), inspector);

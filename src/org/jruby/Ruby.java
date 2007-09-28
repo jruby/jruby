@@ -376,7 +376,7 @@ public final class Ruby {
      */
     public IRubyObject executeScript(String script, String filename) {
         Reader reader = new StringReader(script);
-        Node node = parseInline(reader, filename, getCurrentContext().getCurrentScope());
+        Node node = parseInline(reader, filename, null);
         
         return compileOrFallbackAndRun(node);
     }
@@ -387,7 +387,7 @@ public final class Ruby {
             
             // do the compile if JIT is enabled
             if (config.isJitEnabled() && !hasEventHooks()) {
-            Script script = null;
+                Script script = null;
                 try {
                     String filename = node.getPosition().getFile();
                     String classname;
@@ -415,22 +415,7 @@ public final class Ruby {
                 }
             
                 // FIXME: Pass something better for args and block here?
-                try {
-                    DynamicScope scope = new DynamicScope(((RootNode)node).getStaticScope());
-
-                    StaticScope staticScope = scope.getStaticScope();
-
-                    if (staticScope.getModule() == null) {
-                        staticScope.setModule(getObject());
-                    }
-                    
-                    // Each root node has a top-level scope that we need to push
-                    getCurrentContext().preScopedBody(scope);
-                    
-                    return script.run(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-                } finally {
-                    getCurrentContext().postScopedBody();
-                }
+                return script.load(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
             } else {
                 return eval(node);
             }
@@ -460,21 +445,7 @@ public final class Ruby {
             NodeCompilerFactory.compileRoot(node, compiler, inspector);
             Script script = (Script)compiler.loadClass(this.getJRubyClassLoader()).newInstance();
             
-            try {
-                DynamicScope scope = ((RootNode)node).getScope();
-                StaticScope staticScope = scope.getStaticScope();
-
-                if (staticScope.getModule() == null) {
-                    staticScope.setModule(getObject());
-                }
-
-                // Each root node has a top-level scope that we need to push
-                getCurrentContext().preScopedBody(scope);
-
-                return script.run(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-            } finally {
-                getCurrentContext().postScopedBody();
-            }
+            return script.load(getCurrentContext(), tc.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         } catch (NotCompilableException nce) {
             System.err.println("Error -- Not compileable: " + nce.getMessage());
             return null;
@@ -1065,6 +1036,9 @@ public final class Ruby {
         tc.preInitCoreClasses();
 
         initCoreClasses();
+        
+        // core classes are initialized, ensure top scope has Object as cref
+        tc.getCurrentScope().getStaticScope().setModule(objectClass);
 
         verbose = falseObject;
         debug = falseObject;
@@ -1659,8 +1633,8 @@ public final class Ruby {
             secure(4); /* should alter global state */
 
             context.preNodeEval(objectClass, self);
-
-            script.run(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            
+            script.load(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return;
         } finally {
