@@ -175,6 +175,8 @@
         <zipfileset src="${lib.dir}/asm-3.0.jar"/>
         <zipfileset src="${lib.dir}/asm-commons-3.0.jar"/>
         <zipfileset src="${lib.dir}/asm-util-3.0.jar"/>
+        <zipfileset src="${lib.dir}/asm-analysis-3.0.jar"/>
+        <zipfileset src="${lib.dir}/asm-tree-3.0.jar"/>
         <zipfileset src="${lib.dir}/jline-0.9.91.jar"/>
       	<zipfileset src="${lib.dir}/backport-util-concurrent.jar"/>
         <zipfileset src="${lib.dir}/jna.jar"/>
