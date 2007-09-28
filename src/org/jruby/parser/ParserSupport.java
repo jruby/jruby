@@ -80,7 +80,6 @@ import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NthRefNode;
-import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RootNode;
@@ -152,24 +151,6 @@ public class ParserSupport {
             return secondNode;
         }
         return firstNode;
-    }
-
-    public Node appendPrintToBlock(Node block) {
-    	ISourcePosition position = block.getPosition();
-        return appendToBlock(block, new FCallNode(position, "print", 
-            new ArrayNode(position).add(new GlobalVarNode(position, "$_"))));
-    }
-
-    public Node appendWhileLoopToBlock(Node block, boolean chop, boolean split) {
-    	ISourcePosition position = block.getPosition();
-        if (split) {
-            block = appendToBlock(new GlobalAsgnNode(position, "$F", 
-                new CallNode(position, new GlobalVarNode(position, "$_"), "split", null)), block);
-        }
-        if (chop) {
-            block = appendToBlock(new CallNode(position, new GlobalVarNode(position, "$_"), "chop!", null), block);
-        }
-        return new OptNNode(position, block);
     }
 
     /**

@@ -41,7 +41,6 @@ import org.jruby.ast.ArrayNode;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.OptNNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.visitor.rewriter.ReWriteVisitor;
@@ -73,10 +72,6 @@ public class TestReWriteVisitor extends TestCase {
 
     private ReWriteVisitor getVisitor() {
         return new ReWriteVisitor(new StringWriter(), "");
-    }
-
-    public void testVisitOptNNode() {
-        assertNull(getVisitor().visitOptNNode(new OptNNode(emptyPosition, null)));
     }
 
     public void testVisitPostExeNode() {

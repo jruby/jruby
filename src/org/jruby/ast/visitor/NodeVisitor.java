@@ -96,7 +96,6 @@ import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OpElementAsgnNode;
-import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
@@ -202,7 +201,6 @@ public interface NodeVisitor {
     public Instruction visitOpAsgnNode(OpAsgnNode iVisited);
     public Instruction visitOpAsgnAndNode(OpAsgnAndNode iVisited);
     public Instruction visitOpAsgnOrNode(OpAsgnOrNode iVisited);
-    public Instruction visitOptNNode(OptNNode iVisited);
     public Instruction visitOrNode(OrNode iVisited);
     public Instruction visitPreExeNode(PreExeNode iVisited);
     public Instruction visitPostExeNode(PostExeNode iVisited);

@@ -1158,12 +1158,6 @@ public class ReWriteVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public Instruction visitOptNNode(OptNNode iVisited) {
-		// this node is never used in the parser, only here:
-		// org.jruby/src/org/jruby/Main.java
-		return null;
-	}
-
 	public Instruction visitOrNode(OrNode iVisited) {
 		enterCall();
 		visitNode(iVisited.getFirstNode());

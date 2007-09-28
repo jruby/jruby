@@ -96,7 +96,6 @@ import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OpElementAsgnNode;
-import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
@@ -533,12 +532,6 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 
 	public Instruction visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
 		iVisited.accept(_Payload);
-		return null;
-	}
-
-	public Instruction visitOptNNode(OptNNode iVisited) {
-		iVisited.accept(_Payload);
-		iVisited.getBodyNode().accept(this);
 		return null;
 	}
 

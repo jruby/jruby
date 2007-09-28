@@ -98,7 +98,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.MetaClass;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsPushNode;
@@ -321,8 +320,6 @@ public class NodeCompilerFactory {
         case OPELEMENTASGNNODE:
             compileOpElementAsgn(node, context);
             break;
-        case OPTNNODE:
-            throw new NotCompilableException("Opt N should be handled outside compiler at: " + node.getPosition());
         case ORNODE:
             compileOr(node, context);
             break;
@@ -2737,10 +2734,6 @@ public class NodeCompilerFactory {
                 context.getInvocationCompiler().invokeSuper(null, null);
             }
         } else {
-            boolean blockExplicitlyCleared = 
-                    superNode.getIterNode().nodeId == NodeType.BLOCKPASSNODE &&
-                    ((BlockPassNode)superNode.getIterNode()).getBodyNode().nodeId == NodeType.NILNODE;
-            
             ClosureCallback closureArg = getBlock(superNode.getIterNode());
             
             if (superNode.getArgsNode() != null) {

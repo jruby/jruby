@@ -55,7 +55,6 @@ import org.jruby.ast.OrNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.IArgumentNode;
 import org.jruby.ast.HashNode;
-import org.jruby.ast.OptNNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.RootNode;
@@ -514,17 +513,12 @@ public class StandardYARVCompiler {
                     ADD_INSN1(ret, nd_line(node), YARVInstructions.PUTOBJECT, iVisited.getFixnum(runtime));
                 }
                 break compileLoop;
-            case OPTNNODE:
             case WHILENODE:
             case UNTILNODE:{
                 Label next_label = NEW_LABEL(nd_line(node));	/* next  */
                 Label redo_label = NEW_LABEL(nd_line(node));	/* redo  */
                 Label break_label = NEW_LABEL(nd_line(node));	/* break */
                 Label end_label = NEW_LABEL(nd_line(node));
-
-                if(node instanceof OptNNode) {
-                    ADD_INSNL(ret, nd_line(node), YARVInstructions.JUMP, next_label);
-                }
 
                 ADD_LABEL(ret, redo_label);
 
@@ -533,8 +527,6 @@ public class StandardYARVCompiler {
                     body = ((WhileNode)node).getBodyNode();
                 } else if(node instanceof UntilNode) {
                     body = ((UntilNode)node).getBodyNode();
-                } else if(node instanceof OptNNode) {
-                    body = ((OptNNode)node).getBodyNode();
                 }
                 COMPILE_POPED(ret, "while body", body);
                 ADD_LABEL(ret, next_label);	/* next */

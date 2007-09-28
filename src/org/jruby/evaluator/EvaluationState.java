@@ -40,7 +40,6 @@ import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
-import org.jruby.RubyKernel;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
@@ -49,7 +48,6 @@ import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.RubyUndef;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
@@ -114,7 +112,6 @@ import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OpElementAsgnNode;
-import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
@@ -338,8 +335,6 @@ public class EvaluationState {
                 return opAsgnOrNode(runtime, context, node, self, aBlock);
             case OPELEMENTASGNNODE:
                 return opElementAsgnNode(runtime, context, node, self, aBlock);
-            case OPTNNODE:
-                return optNNode(runtime, context, node, self, aBlock);
             case ORNODE:
                 return orNode(runtime, context, node, self, aBlock);
             case PREEXENODE:
@@ -1367,32 +1362,6 @@ public class EvaluationState {
         System.arraycopy(args, 0, expandedArgs, 0, args.length);
         expandedArgs[expandedArgs.length - 1] = firstValue;
         return receiver.callMethod(context, MethodIndex.ASET, "[]=", expandedArgs);
-    }
-
-    private static IRubyObject optNNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        OptNNode iVisited = (OptNNode) node;
-   
-        IRubyObject result = runtime.getNil();
-        outerLoop: while (RubyKernel.gets(runtime.getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
-            loop: while (true) { // Used for the 'redo' command
-                try {
-                    result = evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
-                    break;
-                } catch (JumpException.RedoJump rj) {
-                    // do nothing, this iteration restarts
-                    break;
-                } catch (JumpException.NextJump nj) {
-                    // recheck condition
-                    break loop;
-                } catch (JumpException.BreakJump bj) {
-                    // end loop
-                    result = (IRubyObject) bj.getValue();
-                    break outerLoop;
-                }
-            }
-        }
-        
-        return pollAndReturn(context, result);
     }
 
     private static IRubyObject orNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
