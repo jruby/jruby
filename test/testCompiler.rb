@@ -441,3 +441,5 @@ test_no_exception {
 test_no_exception {
   test_equal(5, compile_and_run("module Foo2; end; Foo2::Foo3 = 5; Foo2::Foo3"))
 }
+
+test_equal(5, compile_and_run("def foo; yield; end; x = false; foo { break 5 if x; begin; ensure; x = true; redo; end; break 6}"))

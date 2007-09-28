@@ -1442,30 +1442,27 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 Label codeEnd = new Label();
                 Label ensureBegin = new Label();
                 Label ensureEnd = new Label();
-                method.visitLabel(codeBegin);
+                method.label(codeBegin);
 
                 regularCode.branch(this);
 
-                method.visitLabel(codeEnd);
+                method.label(codeEnd);
 
                 protectedCode.branch(this);
-
-                Label l4 = new Label();
-                method.visitJumpInsn(GOTO, l4);
-                method.visitLabel(ensureBegin);
-                method.visitVarInsn(ASTORE, EXCEPTION_INDEX);
-                method.visitLabel(ensureEnd);
-
-                protectedCode.branch(this);
-
-                method.visitVarInsn(ALOAD, EXCEPTION_INDEX);
-                method.visitInsn(ATHROW);
-                method.visitLabel(l4);
-                
-                method.visitTryCatchBlock(codeBegin, codeEnd, ensureBegin, null);
-                method.visitTryCatchBlock(ensureBegin, ensureEnd, ensureBegin, null);
-
                 mv.areturn();
+
+                method.label(ensureBegin);
+                method.astore(EXCEPTION_INDEX);
+                method.label(ensureEnd);
+
+                protectedCode.branch(this);
+
+                method.aload(EXCEPTION_INDEX);
+                method.athrow();
+                
+                method.trycatch(codeBegin, codeEnd, ensureBegin, null);
+                method.trycatch(ensureBegin, ensureEnd, ensureBegin, null);
+
                 mv.visitMaxs(1, 1);
                 mv.visitEnd();
             } finally {
@@ -2265,12 +2262,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void endMethod() {
             // end of scoping for closure's vars
             scopeEnd = new Label();
-            Label doReturn = new Label();
-            method.label(scopeEnd);
-            method.go_to(doReturn);
-            
-            method.label(doReturn);
             method.areturn();
+            method.label(scopeEnd);
+            
+            // handle redos by restarting the block
+            method.pop();
+            method.go_to(scopeStart);
+            
+            method.trycatch(scopeStart, scopeEnd, scopeEnd, cg.p(JumpException.RedoJump.class));
             method.end();
         }
 
@@ -2345,7 +2344,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void issueRedoEvent() {
             // FIXME: This isn't right for within ensured/rescued code
-            if (currentLoopLabels != null) {
+            if (withinProtection) {
+                method.newobj(cg.p(JumpException.RedoJump.class));
+                method.dup();
+                method.aconst_null();
+                method.aconst_null();
+                method.invokespecial(cg.p(JumpException.RedoJump.class), "<init>", cg.sig(Void.TYPE, cg.params(Object.class, Object.class)));
+
+                method.athrow();
+            } else if (currentLoopLabels != null) {
                 issueLoopRedo();
             } else {
                 // jump back to the top of the main body of this closure
