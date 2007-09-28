@@ -29,7 +29,6 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -66,7 +65,7 @@ public abstract class CallAdapter {
 
 
     public static class DefaultCallAdapter extends CallAdapter {
-        byte[] cachedTable;
+        byte[] cachedSwitchTable;
         DynamicMethod cachedMethod;
         RubyClass cachedType;
         
@@ -137,27 +136,22 @@ public abstract class CallAdapter {
                 try {
                     RubyClass selfType = self.getMetaClass();
 
-                    byte[] cTable = this.cachedTable;
-                    DynamicMethod cMethod = this.cachedMethod;
-                    RubyModule cType = this.cachedType;
-
-                    if (cType == selfType && cachedTable != null) {
-                        if (cTable.length > methodID && cTable[methodID] != 0) {
+                    if (cachedType == selfType) {
+                        if (cachedSwitchTable.length > methodID && cachedSwitchTable[methodID] != 0) {
                             return selfType.getDispatcher().callMethod(context, self, selfType, methodID, methodName, args, callType, block);
-                        } else if (cMethod != null) {
-                            return cMethod.call(context, self, selfType, methodName, args, block);
+                        } else if (cachedMethod != null) {
+                            return cachedMethod.call(context, self, selfType, methodName, args, block);
                         }
                     }
 
-                    byte[] table = selfType.getDispatcher().switchTable;
-                    if (table.length > methodID && table[methodID] != 0) {
-                        cachedTable = table;
+                    byte[] switchTable = selfType.getDispatcher().switchTable;
+                    if (switchTable.length > methodID && switchTable[methodID] != 0) {
+                        cachedSwitchTable = switchTable;
                         cachedType = selfType;
                         return selfType.getDispatcher().callMethod(context, self, selfType, methodID, methodName, args, callType, block);
                     }
-                    DynamicMethod method = null;
-                    method = selfType.searchMethod(methodName);
 
+                    DynamicMethod method = selfType.searchMethod(methodName);
 
                     if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
                         return RubyObject.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, block);
@@ -165,7 +159,7 @@ public abstract class CallAdapter {
 
                     cachedMethod = method;
                     cachedType = selfType;
-                    cachedTable = table;
+                    cachedSwitchTable = switchTable;
 
                     selfType.getRuntime().getCacheMap().add(method, this);
 
