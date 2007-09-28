@@ -62,6 +62,23 @@ public class CompilerHelpers {
                 new DynamicScope(staticScope, context.getCurrentScope()), callback, hasMultipleArgsHead, argsNodeType);
     }
     
+    public static IRubyObject runBeginBlock(ThreadContext context, IRubyObject self, String[] staticScopeNames, CompiledBlockCallback callback) {
+        StaticScope staticScope = 
+            new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
+        staticScope.determineModule();
+        
+        context.preScopedBody(new DynamicScope(staticScope, context.getCurrentScope()));
+        
+        Block block = new CompiledBlock(context, self, Arity.createArity(0), 
+                context.getCurrentScope(), callback, false, Block.ZERO_ARGS);
+        
+        block.yield(context, null);
+        
+        context.postScopedBody();
+        
+        return context.getRuntime().getNil();
+    }
+    
     public static CompiledSharedScopeBlock createSharedScopeBlock(ThreadContext context, IRubyObject self, int arity, 
             CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeType) {
         
@@ -660,5 +677,9 @@ public class CompilerHelpers {
     
     public static void postLoad(ThreadContext context) {
         context.postScopedBody();
+    }
+    
+    public static void registerEndBlock(CompiledSharedScopeBlock block, Ruby runtime) {
+        runtime.pushExitBlock(runtime.newProc(true, block));
     }
 }

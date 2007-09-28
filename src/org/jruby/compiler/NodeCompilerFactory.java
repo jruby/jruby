@@ -115,6 +115,8 @@ import org.jruby.ast.ForNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.OpElementAsgnNode;
+import org.jruby.ast.PostExeNode;
+import org.jruby.ast.PreExeNode;
 import org.jruby.ast.SClassNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
@@ -320,12 +322,16 @@ public class NodeCompilerFactory {
             compileOpElementAsgn(node, context);
             break;
         case OPTNNODE:
-            throw new NotCompilableException("Opt N at: " + node.getPosition());
+            throw new NotCompilableException("Opt N should be handled outside compiler at: " + node.getPosition());
         case ORNODE:
             compileOr(node, context);
             break;
         case POSTEXENODE:
-            throw new NotCompilableException("END block at: " + node.getPosition());
+            compilePostExe(node, context);
+            break;
+        case PREEXENODE:
+            compilePreExe(node, context);
+            break;
         case REDONODE:
             compileRedo(node, context);
             break;
@@ -333,7 +339,7 @@ public class NodeCompilerFactory {
             compileRegexp(node, context);
             break;
         case RESCUEBODYNODE:
-            throw new NotCompilableException("rescue body at: " + node.getPosition());
+            throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
         case RESCUENODE:
             compileRescue(node, context);
             break;
@@ -358,7 +364,6 @@ public class NodeCompilerFactory {
             compileStr(node, context);
             break;
         case SUPERNODE:
-            //throw new NotCompilableException("super call at: " + node.getPosition());
             compileSuper(node, context);
             break;
         case SVALUENODE:
@@ -2502,6 +2507,42 @@ public class NodeCompilerFactory {
         context.performLogicalOr(longCallback);
     }
     
+    public static void compilePostExe(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final PostExeNode postExeNode = (PostExeNode)node;
+
+        // create the closure class and instantiate it
+        final ClosureCallback closureBody = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                if (postExeNode.getBodyNode() != null) {
+                    NodeCompilerFactory.compile(postExeNode.getBodyNode(), context);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+        context.createNewEndBlock(closureBody);
+    }
+    
+    public static void compilePreExe(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+        
+        final PreExeNode preExeNode = (PreExeNode)node;
+
+        // create the closure class and instantiate it
+        final ClosureCallback closureBody = new ClosureCallback() {
+            public void compile(MethodCompiler context) {
+                if (preExeNode.getBodyNode() != null) {
+                    NodeCompilerFactory.compile(preExeNode.getBodyNode(), context);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+        context.runBeginBlock(preExeNode.getScope(), closureBody);
+    }
+    
     public static void compileRedo(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         
@@ -2638,7 +2679,6 @@ public class NodeCompilerFactory {
         // create method for toplevel of script
         MethodCompiler methodCompiler = context.startMethod("__file__", null, rootNode.getStaticScope(), inspector);
 
-        // try to compile the script's body
         try {
             Node nextNode = rootNode.getBodyNode();
             if (nextNode != null) {

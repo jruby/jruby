@@ -443,3 +443,9 @@ test_no_exception {
 }
 
 test_equal(5, compile_and_run("def foo; yield; end; x = false; foo { break 5 if x; begin; ensure; x = true; redo; end; break 6}"))
+
+# END block
+test_no_exception { compile_and_run("END {}") }
+
+# BEGIN block
+test_equal(5, compile_and_run("BEGIN { $begin = 5 }; $begin"))

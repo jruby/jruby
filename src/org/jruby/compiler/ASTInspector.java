@@ -74,6 +74,7 @@ import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
+import org.jruby.ast.PreExeNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.SValueNode;
@@ -402,6 +403,14 @@ public class ASTInspector {
             hasScopeAwareMethods = true;
             inspect(postExeNode.getBodyNode());
             inspect(postExeNode.getVarNode());
+            break;
+        case PREEXENODE:
+            PreExeNode preExeNode = (PreExeNode)node;
+            hasClosure = true;
+            hasFrameAwareMethods = true;
+            hasScopeAwareMethods = true;
+            inspect(preExeNode.getBodyNode());
+            inspect(preExeNode.getVarNode());
             break;
         case REDONODE:
             break;

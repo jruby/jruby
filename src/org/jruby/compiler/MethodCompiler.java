@@ -452,4 +452,6 @@ public interface MethodCompiler {
     public void loadException();
     public void setPosition(ISourcePosition position);
     public void checkWhenWithSplat();
+    public void createNewEndBlock(ClosureCallback body);
+    public void runBeginBlock(StaticScope scope, ClosureCallback body);
 }
