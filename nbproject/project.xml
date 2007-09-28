@@ -5,17 +5,20 @@
         <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
             <!-- Do not use Project Properties customizer when editing this file manually. -->
             <name>JRuby</name>
-            <properties/>
+            <properties>
+                <property-file>build.properties</property-file>
+                <property-file>default.build.properties</property-file>
+            </properties>
             <folders>
                 <source-folder>
-                    <label>src</label>
+                    <label>Sources</label>
                     <type>java</type>
-                    <location>src</location>
+                    <location>${src.dir}</location>
                 </source-folder>
                 <source-folder>
-                    <label>test</label>
+                    <label>Tests</label>
                     <type>java</type>
-                    <location>test</location>
+                    <location>${test.dir}</location>
                 </source-folder>
             </folders>
             <ide-actions>
@@ -39,12 +42,12 @@
             <view>
                 <items>
                     <source-folder style="packages">
-                        <label>src</label>
-                        <location>src</location>
+                        <label>Sources</label>
+                        <location>${src.dir}</location>
                     </source-folder>
                     <source-folder style="packages">
-                        <label>test</label>
-                        <location>test</location>
+                        <label>Tests</label>
+                        <location>${test.dir}</location>
                     </source-folder>
                     <source-file>
                         <location>build.xml</location>
@@ -62,14 +65,18 @@
         </general-data>
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
             <compilation-unit>
-                <package-root>src</package-root>
-                <classpath mode="compile">lib/bsf.jar:lib/junit.jar:lib/jline-0.9.91.jar:lib/backport-util-concurrent.jar:lib/ant.jar:lib/asm-3.0.jar:lib/asm-commons-3.0.jar:lib/asm-util-3.0.jar:lib/jna.jar</classpath>
+                <package-root>${src.dir}</package-root>
+                <classpath mode="compile">${lib.dir}/bsf.jar:${lib.dir}/junit.jar:${lib.dir}/jline-0.9.91.jar:${lib.dir}/backport-util-concurrent.jar:${lib.dir}/ant.jar:${lib.dir}/asm-3.0.jar:${lib.dir}/asm-commons-3.0.jar:${lib.dir}/asm-util-3.0.jar:${lib.dir}/jna.jar</classpath>
+                <built-to>${jruby.classes.dir}</built-to>
+                <built-to>${lib.dir}/jruby.jar</built-to>
+                <javadoc-built-to>${api.docs.dir}</javadoc-built-to>
                 <source-level>1.5</source-level>
             </compilation-unit>
             <compilation-unit>
-                <package-root>test</package-root>
+                <package-root>${test.dir}</package-root>
                 <unit-tests/>
-                <classpath mode="compile">lib/bsf.jar:lib/junit.jar:src</classpath>
+                <classpath mode="compile">${lib.dir}/bsf.jar:${lib.dir}/junit.jar:${jruby.classes.dir}</classpath>
+                <built-to>${test.classes.dir}</built-to>
                 <source-level>1.5</source-level>
             </compilation-unit>
         </java-data>
