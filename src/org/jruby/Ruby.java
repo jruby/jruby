@@ -145,7 +145,8 @@ public final class Ruby {
     private long randomSeedSequence = 0;
     private Random random = new Random();
 
-    private List<EventHook> eventHooks = new LinkedList<EventHook>();
+    private ArrayList<EventHook> eventHooks = new ArrayList<EventHook>();
+    private boolean hasEventHooks;  
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
     private final boolean objectSpaceEnabled;
@@ -1771,10 +1772,12 @@ public final class Ruby {
     
     public void addEventHook(EventHook hook) {
         eventHooks.add(hook);
+        hasEventHooks = true;
     }
     
     public void removeEventHook(EventHook hook) {
         eventHooks.remove(hook);
+        hasEventHooks = !eventHooks.isEmpty();
     }
 
     public void setTraceFunction(RubyProc traceFunction) {
@@ -1797,7 +1800,7 @@ public final class Ruby {
     }
     
     public boolean hasEventHooks() {
-        return !eventHooks.isEmpty();
+        return hasEventHooks;
     }
     
     public GlobalVariables getGlobalVariables() {
