@@ -944,14 +944,14 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject equal(IRubyObject other) {
         if(this == other || callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==",other).isTrue()){
             return getRuntime().getTrue();
-	}
+        }
  
         return getRuntime().getFalse();
     }
     
-    public final IRubyObject equalInternal(final ThreadContext context, final IRubyObject other){
-        if (this == other) return getRuntime().getTrue();
-        return callMethod(context, MethodIndex.EQUALEQUAL, "==", other);
+    protected static IRubyObject equalInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
+        if (that == other) return that.getRuntime().getTrue();
+        return that.callMethod(context, MethodIndex.EQUALEQUAL, "==", other);
     }
 
     /** rb_eql
@@ -964,9 +964,9 @@ public class RubyObject implements Cloneable, IRubyObject {
         return callMethod(getRuntime().getCurrentContext(), MethodIndex.EQL_P, "eql?", other).isTrue();
     }
 
-    public final boolean eqlInternal(final ThreadContext context, final IRubyObject other){
-        if (this == other) return true;
-        return callMethod(context, MethodIndex.EQL_P, "eql?", other).isTrue();
+    protected static boolean eqlInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
+        if (that == other) return true;
+        return that.callMethod(context, MethodIndex.EQL_P, "eql?", other).isTrue();
     }
 
     /** rb_obj_init_copy

@@ -359,13 +359,11 @@ public class RubyStruct extends RubyObject {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         RubyStruct otherStruct = (RubyStruct)other;
-            for (int i = 0; i < values.length; i++) {
-            if (!values[i].equalInternal(context, otherStruct.values[i]).isTrue()) {
-                return runtime.getFalse();
-                }
-            }
-        return runtime.getTrue();
+        for (int i = 0; i < values.length; i++) {
+            if (!equalInternal(context, values[i], otherStruct.values[i]).isTrue()) return runtime.getFalse();
         }
+        return runtime.getTrue();
+    }
     
     public IRubyObject eql_p(IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
@@ -376,9 +374,7 @@ public class RubyStruct extends RubyObject {
         ThreadContext context = runtime.getCurrentContext();
         RubyStruct otherStruct = (RubyStruct)other;
         for (int i = 0; i < values.length; i++) {
-            if (!values[i].eqlInternal(context, otherStruct.values[i])) {
-                return runtime.getFalse();
-    }
+            if (!eqlInternal(context, values[i], otherStruct.values[i])) return runtime.getFalse();
         }
         return runtime.getTrue();        
     }

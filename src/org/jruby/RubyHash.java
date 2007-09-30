@@ -884,7 +884,7 @@ public class RubyHash extends RubyObject implements Map {
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
                 for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
-                    if (entry.value.equalInternal(context, value).isTrue()) return runtime.getTrue();
+                    if (equalInternal(context, entry.value, value).isTrue()) return runtime.getTrue();
                 }
             }
         } finally {postIter();}
@@ -992,7 +992,7 @@ public class RubyHash extends RubyObject implements Map {
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
                 for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
-                    if (entry.value.equalInternal(context, value).isTrue()) return entry.key;
+                    if (equalInternal(context, entry.value, value).isTrue()) return entry.key;
                 }
             }
         } finally {postIter();}
@@ -1062,7 +1062,7 @@ public class RubyHash extends RubyObject implements Map {
         if (this == other ) return getRuntime().getTrue();
         if (!(other instanceof RubyHash)) {
             if (!other.respondsTo("to_hash")) return getRuntime().getFalse();
-            return other.equalInternal(getRuntime().getCurrentContext(), this);
+            return equalInternal(getRuntime().getCurrentContext(), other, this);
         }
 
         RubyHash otherHash = (RubyHash)other;
@@ -1072,7 +1072,7 @@ public class RubyHash extends RubyObject implements Map {
         ThreadContext context = runtime.getCurrentContext();
 
         if (EQUAL_CHECK_DEFAULT_VALUE) {
-            if (!ifNone.equalInternal(context, otherHash.ifNone).isTrue() &&
+            if (!equalInternal(context, ifNone, otherHash.ifNone).isTrue() &&                    
                (flags & PROCDEFAULT_HASH_F) != (otherHash.flags & PROCDEFAULT_HASH_F)) return runtime.getFalse();
             }
 
@@ -1083,7 +1083,7 @@ public class RubyHash extends RubyObject implements Map {
                 for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     IRubyObject value = otherHash.internalGet(entry.key);
                     if (value == null) return runtime.getFalse();
-                    if (!entry.value.equalInternal(context, value).isTrue()) return runtime.getFalse();
+                    if (!equalInternal(context, entry.value, value).isTrue()) return runtime.getFalse();
                 }
             }
         } finally {postIter();}        
@@ -1385,7 +1385,7 @@ public class RubyHash extends RubyObject implements Map {
             RubyHashEntry[]ltable = table;
             for (int i = 0; i < ltable.length; i++) {
                 for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
-                    if (entry.value.equalInternal(context, element).isTrue()) return true;
+                    if (equalInternal(context, entry.value, element).isTrue()) return true;
                 }
             }
         } finally {postIter();}        

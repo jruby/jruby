@@ -420,12 +420,7 @@ public interface IRubyObject {
     
     public IRubyObject equal(IRubyObject other); 
 
-    IRubyObject equalInternal(final ThreadContext context, final IRubyObject other);
-
-
     public boolean eql(IRubyObject other);
-
-    public boolean eqlInternal(final ThreadContext context, final IRubyObject other);
 
     public void addFinalizer(RubyProc finalizer);
 

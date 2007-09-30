@@ -551,7 +551,7 @@ public class RubyArray extends RubyObject implements List {
         int begin = this.begin;
         
         for (int i = begin; i < begin + realLength; i++) {
-            if (values[i].equalInternal(context,item ).isTrue()) return true;
+            if (equalInternal(context, values[i], item).isTrue()) return true;
     	}
         
         return false;
@@ -1364,7 +1364,7 @@ public class RubyArray extends RubyObject implements List {
             if (!obj.respondsTo("to_ary")) {
                 return getRuntime().getFalse();
             } else {
-                return obj.equalInternal(getRuntime().getCurrentContext(), this);
+                return equalInternal(getRuntime().getCurrentContext(), obj, this);
             }
         }
 
@@ -1374,7 +1374,7 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
         for (long i = 0; i < realLength; i++) {
-            if (!elt(i).equalInternal(context, ary.elt(i)).isTrue()) return runtime.getFalse();
+            if (!equalInternal(context, elt(i), ary.elt(i)).isTrue()) return runtime.getFalse();            
         }
         return runtime.getTrue();
     }
@@ -1393,7 +1393,7 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
         for (int i = 0; i < realLength; i++) {
-            if (!elt(i).eqlInternal(context, ary.elt(i))) return runtime.getFalse();
+            if (!eqlInternal(context, elt(i), ary.elt(i))) return runtime.getFalse();
         }
         return runtime.getTrue();
     }
@@ -1536,7 +1536,7 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
         for (int i = begin; i < begin + realLength; i++) {
-            if (values[i].equalInternal(context, obj).isTrue()) return runtime.newFixnum(i - begin);
+            if (equalInternal(context, values[i], obj).isTrue()) return runtime.newFixnum(i - begin);            
         }
 
         return runtime.getNil();
@@ -1556,9 +1556,7 @@ public class RubyArray extends RubyObject implements List {
                 i = realLength;
                 continue;
             }
-            if (values[begin + i].equalInternal(context, obj).isTrue()) {
-                return getRuntime().newFixnum(i);
-            }
+            if (equalInternal(context, values[begin + i], obj).isTrue()) return getRuntime().newFixnum(i);
         }
 
         return runtime.getNil();
@@ -1668,7 +1666,7 @@ public class RubyArray extends RubyObject implements List {
         final ThreadContext context = runtime.getCurrentContext();
         for (int i1 = 0; i1 < realLength; i1++) {
             IRubyObject e = values[begin + i1];
-            if (e.equalInternal(context, item).isTrue()) continue;
+            if (equalInternal(context, e, item).isTrue()) continue;
             if (i1 != i2) store(i2, e);
             i2++;
         }
@@ -1858,7 +1856,7 @@ public class RubyArray extends RubyObject implements List {
         for (int i = begin; i < begin + realLength; i++) {
             IRubyObject v = values[i];
             if (v instanceof RubyArray && ((RubyArray) v).realLength > 0
-                    && ((RubyArray) v).values[0].equalInternal(context, key).isTrue()) {
+                && equalInternal(context, ((RubyArray) v).values[0], key).isTrue()) {
                 return v;
             }
         }
@@ -1875,7 +1873,7 @@ public class RubyArray extends RubyObject implements List {
         for (int i = begin; i < begin + realLength; i++) {
             IRubyObject v = values[i];
             if (v instanceof RubyArray && ((RubyArray) v).realLength > 1
-                    && ((RubyArray) v).values[1].equalInternal(context, value).isTrue()) {
+                    && equalInternal(context, ((RubyArray) v).values[1], value).isTrue()) {
                 return v;
             }
         }
