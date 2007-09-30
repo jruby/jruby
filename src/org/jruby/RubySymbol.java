@@ -130,16 +130,14 @@ public class RubySymbol extends RubyObject {
         return result;
     }
 
-    @JRubyMethod(name = "==", required = 1)
-    public IRubyObject equal(IRubyObject other) {
-        // Symbol table ensures only one instance for every name,
-        // so object identity is enough to compare symbols.
-        return RubyBoolean.newBoolean(getRuntime(), this == other);
-    }
-
-    @JRubyMethod(name = "to_i", alias = "to_int")
+    @JRubyMethod(name = "to_i")
     public RubyFixnum to_i() {
         return getRuntime().newFixnum(id);
+    }
+
+    @JRubyMethod(name = "to_int")
+    public RubyFixnum to_int() {
+        return to_i();
     }
 
     @JRubyMethod(name = "inspect")
@@ -148,12 +146,21 @@ public class RubySymbol extends RubyObject {
             (isSymbolName(symbol) ? symbol : getRuntime().newString(symbol).dump().toString())); 
     }
 
-    @JRubyMethod(name = "to_s", alias = "id2name")
+    @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
         return getRuntime().newString(symbol);
     }
 
-    @JRubyMethod(name = "hash")
+    @JRubyMethod(name = "id2name")
+    public IRubyObject id2name() {
+        return to_s();
+    }
+
+    @JRubyMethod(name = "===", required = 1)
+    public IRubyObject obj_equal(IRubyObject other) {
+        return super.obj_equal(other);
+    }
+
     public RubyFixnum hash() {
         return getRuntime().newFixnum(hashCode());
     }
@@ -171,12 +178,10 @@ public class RubySymbol extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "freeze")
     public IRubyObject freeze() {
         return this;
     }
 
-    @JRubyMethod(name = "taint")
     public IRubyObject taint() {
         return this;
     }
