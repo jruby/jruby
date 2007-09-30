@@ -698,7 +698,7 @@ public final class Ruby {
     /** Returns the "nil" singleton instance.
      * @return "nil"
      */
-    public RubyNil getNil() {
+    public IRubyObject getNil() {
         return nilObject;
     }
 

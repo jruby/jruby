@@ -53,7 +53,7 @@ public class TestRubyNil extends TestCase {
     
     public void setUp() {
         runtime = Ruby.getDefaultInstance();
-        rubyNil = runtime.getNil();
+        rubyNil = (RubyNil)runtime.getNil();
     }
     
     public void testIsNil() {

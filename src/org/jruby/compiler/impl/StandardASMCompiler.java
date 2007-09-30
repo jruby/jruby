@@ -1527,7 +1527,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.astore(RUNTIME_INDEX);
             
                 // grab nil for local variables
-                mv.invokevirtual(cg.p(Ruby.class), "getNil", cg.sig(RubyNil.class));
+                mv.invokevirtual(cg.p(Ruby.class), "getNil", cg.sig(IRubyObject.class));
                 mv.astore(NIL_INDEX);
             
                 mv.invokevirtual(cg.p(ThreadContext.class), "getCurrentScope", cg.sig(DynamicScope.class));
@@ -1618,7 +1618,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.astore(RUNTIME_INDEX);
             
                 // grab nil for local variables
-                mv.invokevirtual(cg.p(Ruby.class), "getNil", cg.sig(RubyNil.class));
+                mv.invokevirtual(cg.p(Ruby.class), "getNil", cg.sig(IRubyObject.class));
                 mv.astore(NIL_INDEX);
             
                 mv.invokevirtual(cg.p(ThreadContext.class), "getCurrentScope", cg.sig(DynamicScope.class));
@@ -2341,7 +2341,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.astore(RUNTIME_INDEX);
             
             // grab nil for local variables
-            invokeIRuby("getNil", cg.sig(RubyNil.class));
+            invokeIRuby("getNil", cg.sig(IRubyObject.class));
             method.astore(NIL_INDEX);
             
             variableCompiler.beginClosure(args, scope);
@@ -2485,7 +2485,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             
             
             // grab nil for local variables
-            invokeIRuby("getNil", cg.sig(RubyNil.class));
+            invokeIRuby("getNil", cg.sig(IRubyObject.class));
             method.astore(NIL_INDEX);
             
             variableCompiler.beginMethod(args, scope);
@@ -2507,7 +2507,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.astore(RUNTIME_INDEX);
             
             // grab nil for local variables
-            invokeIRuby("getNil", cg.sig(RubyNil.class));
+            invokeIRuby("getNil", cg.sig(IRubyObject.class));
             method.astore(NIL_INDEX);
             
             variableCompiler.beginClass(bodyPrep, scope);
