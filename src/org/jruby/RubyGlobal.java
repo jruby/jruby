@@ -162,7 +162,7 @@ public class RubyGlobal {
         runtime.defineVariable(new PreMatchGlobalVariable(runtime, "$`"));
         runtime.defineVariable(new PostMatchGlobalVariable(runtime, "$'"));
         runtime.defineVariable(new LastMatchGlobalVariable(runtime, "$+"));
-        runtime.defineVariable(new LastMatchInfoGlobalVariable(runtime, "$~"));
+        runtime.defineVariable(new BackRefGlobalVariable(runtime, "$~"));
 
         // This is not the actual OS process id, but it is a valid JRuby runtime identifier within
         // the same virtual machine.  So this is a minor incompatibility.  External job control with
@@ -267,8 +267,8 @@ public class RubyGlobal {
         }
     }
 
-    private static class LastMatchInfoGlobalVariable extends GlobalVariable {
-        public LastMatchInfoGlobalVariable(Ruby runtime, String name) {
+    private static class BackRefGlobalVariable extends GlobalVariable {
+        public BackRefGlobalVariable(Ruby runtime, String name) {
             super(runtime, name, runtime.getNil());
         }
         

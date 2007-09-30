@@ -1107,24 +1107,6 @@ public class EvaluationState {
     private static IRubyObject globalVarNode(Ruby runtime, ThreadContext context, Node node) {
         GlobalVarNode iVisited = (GlobalVarNode) node;
         
-        if (iVisited.getName().length() == 2) {
-            IRubyObject value = null;
-            switch (iVisited.getName().charAt(1)) {
-            case '_':
-                value = context.getCurrentFrame().getLastLine();
-                if (value == null) {
-                    return runtime.getNil();
-                }
-                return value;
-            case '~':
-                value = context.getCurrentFrame().getBackRef();
-                if (value == null) {
-                    return runtime.getNil();
-                }
-                return value;
-            }
-        }
-        
         return runtime.getGlobalVariables().get(iVisited.getName());
     }
 
