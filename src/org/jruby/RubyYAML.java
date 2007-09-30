@@ -68,7 +68,7 @@ import org.jvyamlb.YAML;
  */
 public class RubyYAML {
     public static RubyModule createYAMLModule(Ruby runtime) {
-        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require", runtime.newString("date"));
+        runtime.getKernel().callMethod(runtime.getCurrentContext(),"require", runtime.newString("date"));
         RubyModule result = runtime.defineModule("YAML");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyYAML.class);
 
@@ -83,24 +83,24 @@ public class RubyYAML {
         result.defineModuleFunction("quick_emit_node",callbackFactory.getOptSingletonMethod("quick_emit_node"));
         result.defineFastModuleFunction("quick_emit",callbackFactory.getFastOptSingletonMethod("quick_emit"));
 
-        RubyClass obj = runtime.getClass("Object");
-        RubyClass clazz = runtime.getClass("Class");
-        RubyClass hash = runtime.getClass("Hash");
-        RubyClass array = runtime.getClass("Array");
-        RubyClass struct = runtime.getClass("Struct");
-        RubyClass exception = runtime.getClass("Exception");
-        RubyClass string = runtime.getClass("String");
-        RubyClass symbol = runtime.getClass("Symbol");
-        RubyClass range = runtime.getClass("Range");
-        RubyClass regexp = runtime.getClass("Regexp");
-        RubyClass time = runtime.getClass("Time");
+        RubyClass obj = runtime.getObject();
+        RubyClass clazz = runtime.getClassClass();
+        RubyClass hash = runtime.getHash();
+        RubyClass array = runtime.getArray();
+        RubyClass struct = runtime.getStructClass();
+        RubyClass exception = runtime.getException();
+        RubyClass string = runtime.getString();
+        RubyClass symbol = runtime.getSymbol();
+        RubyClass range = runtime.getRange();
+        RubyClass regexp = runtime.getRegexp();
+        RubyClass time = runtime.getTime();
         RubyClass date = runtime.getClass("Date"); 
-        RubyClass fixnum = runtime.getClass("Fixnum"); 
-        RubyClass bignum = runtime.getClass("Bignum"); 
-        RubyClass flt = runtime.getClass("Float"); 
-        RubyClass trueClass = runtime.getClass("TrueClass"); 
-        RubyClass falseClass = runtime.getClass("FalseClass"); 
-        RubyClass nilClass = runtime.getClass("NilClass"); 
+        RubyClass fixnum = runtime.getFixnum(); 
+        RubyClass bignum = runtime.getBignum(); 
+        RubyClass flt = runtime.getFloat(); 
+        RubyClass trueClass = runtime.getTrueClass(); 
+        RubyClass falseClass = runtime.getFalseClass(); 
+        RubyClass nilClass = runtime.getNilClass(); 
 
         clazz.defineFastMethod("to_yaml",callbackFactory.getFastOptSingletonMethod("class_to_yaml"));
         
@@ -184,7 +184,7 @@ public class RubyYAML {
         YAMLConfig cfg = YAML.config().version("1.0");
         IOOutputStream iox = null;
         if(null == io) {
-            self.getRuntime().getModule("Kernel").callMethod(context,"require", self.getRuntime().newString("stringio"));
+            self.getRuntime().getKernel().callMethod(context,"require", self.getRuntime().newString("stringio"));
             io2 = self.getRuntime().getClass("StringIO").callMethod(context, "new");
             iox = new IOOutputStream(io2);
         } else {
@@ -231,7 +231,7 @@ public class RubyYAML {
 
     public static IRubyObject load_file(IRubyObject self, IRubyObject arg) {
         ThreadContext context = self.getRuntime().getCurrentContext();
-        IRubyObject io = self.getRuntime().getClass("File").callMethod(context,"open", new IRubyObject[]{arg,self.getRuntime().newString("r")});
+        IRubyObject io = self.getRuntime().getFile().callMethod(context,"open", new IRubyObject[]{arg,self.getRuntime().newString("r")});
         IRubyObject val = self.callMethod(context,"load", io);
         io.callMethod(context, "close");
         return val;
@@ -499,7 +499,7 @@ public class RubyYAML {
         self = self.dup();
         if(!self.callMethod(context, "utc?").isTrue()) {
             IRubyObject utc_same_instant = self.callMethod(context, "utc");
-            IRubyObject utc_same_writing = self.getRuntime().getClass("Time").callMethod(context,"utc", new IRubyObject[]{
+            IRubyObject utc_same_writing = self.getRuntime().getTime().callMethod(context,"utc", new IRubyObject[]{
                     self.callMethod(context, "year"),self.callMethod(context, "month"),self.callMethod(context, "day"),self.callMethod(context, "hour"),
                     self.callMethod(context, "min"),self.callMethod(context, "sec"),self.callMethod(context, "usec")});
             IRubyObject difference_to_utc = utc_same_writing.callMethod(context,MethodIndex.OP_MINUS, "-", utc_same_instant);

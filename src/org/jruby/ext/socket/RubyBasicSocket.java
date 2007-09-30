@@ -56,7 +56,7 @@ public class RubyBasicSocket extends RubyIO {
     };
 
     static void createBasicSocket(Ruby runtime) {
-        RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getClass("IO"), BASICSOCKET_ALLOCATOR);
+        RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), BASICSOCKET_ALLOCATOR);
 
         CallbackFactory cfact = runtime.callbackFactory(RubyBasicSocket.class);
         rb_cBasicSocket.defineFastMethod("send", cfact.getFastOptMethod("write_send"));

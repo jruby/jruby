@@ -95,7 +95,7 @@ public class TestObjectSpace extends TestCase {
         assertSame(o4, strings.next());
         assertNull(strings.next());
 
-        Iterator numerics = target.iterator(runtime.getClass("Numeric"));
+        Iterator numerics = target.iterator(runtime.getNumeric());
         for (int i = 0; i < 3; i++) {
             Object item = numerics.next();
             assertTrue(storedFixnums.contains(item));

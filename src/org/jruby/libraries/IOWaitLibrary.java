@@ -39,7 +39,7 @@ import org.jruby.runtime.load.Library;
  */
 public class IOWaitLibrary implements Library {
     public void load(Ruby runtime) {
-        RubyClass ioClass = runtime.getClass("IO");
+        RubyClass ioClass = runtime.getIO();
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyIO.class);
         ioClass.defineFastMethod("ready?", callbackFactory.getFastMethod("ready"));
         ioClass.defineFastMethod("wait", callbackFactory.getFastMethod("io_wait"));

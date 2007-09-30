@@ -89,7 +89,7 @@ public class FiberLibrary implements Library {
         }
 
         public static void setup(Ruby runtime) {
-            RubyClass cFiber = runtime.defineClass("Fiber", runtime.getClass("Object"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+            RubyClass cFiber = runtime.defineClass("Fiber", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
             CallbackFactory cb = runtime.callbackFactory(Fiber.class);
             cFiber.getMetaClass().defineMethod("new", cb.getOptSingletonMethod("newInstance"));
             cFiber.defineFastMethod("resume", cb.getFastOptMethod("resume"));

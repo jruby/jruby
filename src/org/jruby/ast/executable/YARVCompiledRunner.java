@@ -68,7 +68,7 @@ public class YARVCompiledRunner {
                 throw new RuntimeException("File is not a compiled YARV file");
             }
             RubyFile f = new RubyFile(runtime,filename,reader);
-            IRubyObject arr = runtime.getModule("Marshal").callMethod(runtime.getCurrentContext(),"load",f);
+            IRubyObject arr = runtime.getMarshal().callMethod(runtime.getCurrentContext(),"load",f);
             iseq = transformIntoSequence(arr);
         } catch(IOException e) {
             throw new RuntimeException("Couldn't read from source",e);

@@ -94,7 +94,7 @@ public class ThreadService {
     private WeakReference adoptCurrentThread() {
         Thread current = Thread.currentThread();
         
-        RubyThread.adopt(runtime.getClass("Thread"), current);
+        RubyThread.adopt(runtime.getThread(), current);
         
         return (WeakReference) localContext.get();
     }

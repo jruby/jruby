@@ -57,7 +57,7 @@ public class Generator {
 
     public static void createGenerator(Ruby runtime) throws IOException {
         RubyClass cGen = runtime.defineClass("Generator",runtime.getObject(), runtime.getObject().getAllocator());
-        cGen.includeModule(runtime.getModule("Enumerable"));
+        cGen.includeModule(runtime.getEnumerable());
 
         CallbackFactory callbackFactory = runtime.callbackFactory(Generator.class);
 

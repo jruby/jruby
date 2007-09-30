@@ -73,7 +73,7 @@ public class ThreadLibrary implements Library {
         }
 
         public static void setup(Ruby runtime) {
-            RubyClass cMutex = runtime.defineClass("Mutex", runtime.getClass("Object"), new ObjectAllocator() {
+            RubyClass cMutex = runtime.defineClass("Mutex", runtime.getObject(), new ObjectAllocator() {
                 public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new Mutex(runtime, klass);
                 }
@@ -156,7 +156,7 @@ public class ThreadLibrary implements Library {
         }
 
         public static void setup(Ruby runtime) {
-            RubyClass cConditionVariable = runtime.defineClass("ConditionVariable", runtime.getClass("Object"), new ObjectAllocator() {
+            RubyClass cConditionVariable = runtime.defineClass("ConditionVariable", runtime.getObject(), new ObjectAllocator() {
                 public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new ConditionVariable(runtime, klass);
                 }
@@ -214,7 +214,7 @@ public class ThreadLibrary implements Library {
         }
 
         public static void setup(Ruby runtime) {
-            RubyClass cQueue = runtime.defineClass("Queue", runtime.getClass("Object"), new ObjectAllocator() {
+            RubyClass cQueue = runtime.defineClass("Queue", runtime.getObject(), new ObjectAllocator() {
                 public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new Queue(runtime, klass);
                 }

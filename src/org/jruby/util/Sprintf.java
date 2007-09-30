@@ -579,7 +579,7 @@ public class Sprintf {
                             arg = RubyNumeric.str2inum(arg.getRuntime(),(RubyString)arg,0,true);
                             break;
                         default:
-                            arg = arg.convertToType(arg.getRuntime().getClass("Integer"), MethodIndex.TO_I, "to_i", true);
+                            arg = arg.convertToType(arg.getRuntime().getInteger(), MethodIndex.TO_I, "to_i", true);
                             break;
                         }
                         type = arg.getMetaClass().index;

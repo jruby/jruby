@@ -7,6 +7,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.MetaClass;
+import org.jruby.RubySymbol;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.runtime.CallAdapter;
@@ -417,7 +418,7 @@ public class YARVMachine {
                 if (containingClass.isSingleton()) {
                     IRubyObject attachedObject = ((MetaClass) containingClass).getAttached();
                     
-                    if (attachedObject.getMetaClass() == runtime.getFixnum() || attachedObject.getMetaClass() == runtime.getClass("Symbol")) {
+                    if (attachedObject instanceof RubyFixnum || attachedObject instanceof RubySymbol) {
                         throw runtime.newTypeError("can't define singleton method \"" + 
                                 mname + "\" for " + attachedObject.getType());
                     }
