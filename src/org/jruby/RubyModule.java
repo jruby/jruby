@@ -590,8 +590,8 @@ public class RubyModule extends RubyObject {
     }
     
     public void defineAnnotatedMethods(Class clazz, CallbackFactory callbackFactory) {
-        Method[] methods = clazz.getDeclaredMethods();
-        for (Method method: methods) {
+        Method[] declaredMethods = clazz.getDeclaredMethods();
+        for (Method method: declaredMethods) {
             JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
             
             if (jrubyMethod == null) continue;
@@ -600,48 +600,15 @@ public class RubyModule extends RubyObject {
             RubyModule module = this;
             if (jrubyMethod.singleton()) module = getMetaClass();
 
-            if (jrubyMethod.optional() != 0) {
-                if (Modifier.isStatic(method.getModifiers())) {
-                    module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastOptSingletonMethod(method.getName()));
-                } else {
-                    module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastOptMethod(method.getName()));
-                }
+            Callback callback = callbackFactory.getMethod(method);
+            
+            if (jrubyMethod.frame() || jrubyMethod.scope()) {
+                module.defineMethod(jrubyMethod.name(), callback);
             } else {
-                switch (jrubyMethod.required()) {
-                case 0:
-                    if (Modifier.isStatic(method.getModifiers())) {
-                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastSingletonMethod(method.getName()));
-                    } else {
-                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastMethod(method.getName()));
-                    }
-                    break;
-                case 1:
-                    if (Modifier.isStatic(method.getModifiers())) {
-                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastSingletonMethod(method.getName(), IRubyObject.class));
-                    } else {
-                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastMethod(method.getName(), IRubyObject.class));
-                    }
-                    break;
-                case 2:
-                    if (Modifier.isStatic(method.getModifiers())) {
-                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastSingletonMethod(method.getName(), IRubyObject.class, IRubyObject.class));
-                    } else {
-                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastMethod(method.getName(), IRubyObject.class, IRubyObject.class));
-                    }
-                    break;
-                case 3:
-                    if (Modifier.isStatic(method.getModifiers())) {
-                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastSingletonMethod(method.getName(), IRubyObject.class, IRubyObject.class, IRubyObject.class));
-                    } else {
-                        module.defineFastMethod(jrubyMethod.name(), callbackFactory.getFastMethod(method.getName(), IRubyObject.class, IRubyObject.class, IRubyObject.class));
-                    }
-                    break;
-                default:
-                    throw new RuntimeException("Invalid number of required args for annotated method");
-                }
+                module.defineFastMethod(jrubyMethod.name(), callback);
             }
             
-            if (jrubyMethod.alias() != "") {
+            if (!jrubyMethod.alias().equals("")) {
                 module.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
             }
         }

@@ -34,6 +34,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.CallNode;
@@ -84,11 +85,21 @@ public final class Arity implements Serializable {
         return newArity(value);
     }
     
+    public static Arity fromAnnotation(JRubyMethod anno) {
+        if (anno.rest()) {
+            return OPTIONAL;
+        }
+        if (anno.optional() > 0) {
+            return createArity(-(anno.required() + 1));
+        }
+        return createArity(anno.required());
+    }
+    
     private static Arity newArity(int value) {
         Integer integerValue = new Integer(value);
         Arity result;
         synchronized (arities) {
-            result = (Arity) arities.get(integerValue);
+            result = arities.get(integerValue);
             if (result == null) {
                 result = new Arity(value);
                 arities.put(integerValue, result);

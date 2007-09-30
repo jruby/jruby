@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +41,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.anno.JRubyMethod;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -247,6 +250,79 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         cw.visitEnd();
         byte[] code = cw.toByteArray();
         return classLoader.defineClass(name, code);
+    }
+    
+    public Callback getMethod(Method method) {
+        JRubyMethod methodAnno = method.getAnnotation(JRubyMethod.class);
+        String javaMethodName = method.getName();
+        
+        String generatedClassName = type.getName() + "Invoker$" + javaMethodName + "_" + methodAnno.required() + "_" + methodAnno.optional();
+        String generatedClassPath = typePath + "Invoker$" + javaMethodName + "_" + methodAnno.required() + "_" + methodAnno.optional();
+        synchronized (runtime.getJRubyClassLoader()) {
+            Class c = tryClass(generatedClassName);
+            try {
+                Class[] signature = method.getParameterTypes();
+                if (c == null) {
+                    Class ret = method.getReturnType();
+                    ClassWriter cw;
+                    MethodVisitor mv;
+                    boolean fast = !(methodAnno.frame() || methodAnno.scope());
+                    boolean getsBlock = signature.length > 0 && signature[signature.length - 1] == Block.class;
+                    if (!fast) {
+                        cw = createCtor(generatedClassPath);
+                        
+                        if (Modifier.isStatic(method.getModifiers())) {
+                            mv = startCallS(cw);
+                        } else {
+                            mv = startCall(cw);
+                        }
+                    } else {
+                        cw = createCtorFast(generatedClassPath);
+                        
+                        if (Modifier.isStatic(method.getModifiers())) {
+                            mv = startCallSFast(cw);
+                        } else {
+                            mv = startCallFast(cw);
+                        }
+                    }
+                    
+                    // load args
+                    if (methodAnno.optional() == 0) {
+                        // only required args
+                        loadArguments(mv, METHOD_ARGS_INDEX, methodAnno.required(), signature);
+                    } else {
+                        // load args as-is
+                        mv.visitVarInsn(ALOAD, METHOD_ARGS_INDEX);
+                    }
+                    
+                    // load block if it accepts block
+                    if (getsBlock) {
+                        mv.visitVarInsn(ALOAD, 3);
+                    }
+                    
+                    if (Modifier.isStatic(method.getModifiers())) {
+                        // static invocation
+                        mv.visitMethodInsn(INVOKESTATIC, typePath, javaMethodName, cg.sig(ret, signature));
+                    } else {
+                        // virtual invocation
+                        mv.visitMethodInsn(INVOKEVIRTUAL, typePath, javaMethodName, cg.sig(ret, signature));
+                    }
+                        
+                    mv.visitInsn(ARETURN);
+                    mv.visitMaxs(1, 1);
+                    c = endCall(cw, mv, generatedClassName);
+                }
+                InvocationCallback ic = (InvocationCallback) c.newInstance();
+                ic.setArity(Arity.fromAnnotation(methodAnno));
+                ic.setJavaName(javaMethodName);
+                ic.setArgumentTypes(signature);
+                return ic;
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new IllegalArgumentException(e);
+            }
+        }
     }
 
     public Callback getMethod(String method) {

@@ -44,6 +44,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.util.Locale;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.regexp.RegexpMatcher;
 import org.jruby.regexp.RegexpPattern;
 import org.jruby.runtime.Arity;
@@ -134,7 +135,6 @@ public class RubyString extends RubyObject {
         stringClass.defineFastMethod("downcase", callbackFactory.getFastMethod("downcase"));
         stringClass.defineFastMethod("downcase!", callbackFactory.getFastMethod("downcase_bang"));
         stringClass.defineFastMethod("dump", callbackFactory.getFastMethod("dump"));
-        stringClass.defineMethod("each_line", callbackFactory.getOptMethod("each_line"));
         stringClass.defineMethod("each_byte", callbackFactory.getMethod("each_byte"));
         stringClass.defineFastMethod("empty?", callbackFactory.getFastMethod("empty"));
         stringClass.defineMethod("gsub", callbackFactory.getOptMethod("gsub"));
@@ -188,7 +188,6 @@ public class RubyString extends RubyObject {
         stringClass.defineMethod("upto", callbackFactory.getMethod("upto", RubyKernel.IRUBY_OBJECT));
         
         stringClass.defineAlias("<<", "concat");
-        stringClass.defineAlias("each", "each_line");
         stringClass.defineAlias("intern", "to_sym");
         stringClass.defineAlias("next", "succ");
         stringClass.defineAlias("next!", "succ!");
@@ -196,6 +195,8 @@ public class RubyString extends RubyObject {
         stringClass.defineAlias("slice", "[]");
         
         stringClass.dispatcher = callbackFactory.createDispatcher(stringClass);
+        
+        stringClass.defineAnnotatedMethods(RubyString.class, callbackFactory);
         
         return stringClass;
     }
@@ -3178,6 +3179,7 @@ public class RubyString extends RubyObject {
     /** rb_str_each_line
      *
      */
+    @JRubyMethod(name = "each_line", required = 0, optional = 1, frame = true, alias = "each")
     public IRubyObject each_line(IRubyObject[] args, Block block) {
         int strLen = value.length();
         if (strLen == 0) {

@@ -24,6 +24,9 @@ public @interface JRubyMethod {
     String name();
     int required() default 0;
     int optional() default 0;
+    boolean rest() default false;
     String alias() default "";
     boolean singleton() default false;
+    boolean frame() default false;
+    boolean scope() default false;
 }
