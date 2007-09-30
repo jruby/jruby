@@ -59,10 +59,6 @@ set _RUNJAVA="%JAVA_HOME%\bin\java"
 
 rem ----- Set Up The Runtime Classpath ----------------------------------------
 
-rem --- reverting this fix for JRUBY-1347 pending a better solution
-rem for %%i in ("%JRUBY_HOME%\lib"*.jar) do @call "%~dp0_jrubysetcp" %%i
-rem
-
 for %%i in ("%JRUBY_HOME%\lib\*.jar") do @call "%~dp0_jrubysetcp" %%i
 
 if not "%CLASSPATH%" == "" goto gotCP
