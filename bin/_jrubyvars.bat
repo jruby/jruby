@@ -63,7 +63,7 @@ rem --- reverting this fix for JRUBY-1347 pending a better solution
 rem for %%i in ("%JRUBY_HOME%\lib"*.jar) do @call "%~dp0_jrubysetcp" %%i
 rem
 
-for /r "%JRUBY_HOME%\lib" %%i in (*.jar) do @call "%~dp0_jrubysetcp" %%i
+for %%i in ("%JRUBY_HOME%\lib\*.jar") do @call "%~dp0_jrubysetcp" %%i
 
 if not "%CLASSPATH%" == "" goto gotCP
 set CLASSPATH=%CP%
