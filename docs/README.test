@@ -9,7 +9,8 @@
    which use an antiquated testing framework);
 
    c) org.jruby.test.TestUnitTestSuite, which runs a suite of files named
-   one-per-line in test/test_unit_index (note: some are currently commented).
+   one-per-line in test/jruby_index (and other test/*_index files).
+   Note: some are commented out.
 
 2. If you'd like to contribute new tests, we'd prefer you write them in
 Test::Unit and add to the test/test_unit_index file.
