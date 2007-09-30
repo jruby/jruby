@@ -172,12 +172,10 @@ public class RubyObject implements Cloneable, IRubyObject {
     
     public static RubyClass createObjectClass(Ruby runtime, RubyClass objectClass) {
         objectClass.index = ClassIndex.OBJECT;
-        
+
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyObject.class);
-        //objectClass.definePrivateMethod("initialize", callbackFactory.getOptMethod("initialize"));
         objectClass.defineFastPrivateMethod("initialize", callbackFactory.getFastMethod("initialize"));
-        // objectClass.definePrivateMethod("inherited", callbackFactory.getMethod("inherited", IRubyObject.class));
-        
+
         return objectClass;
     }
     
