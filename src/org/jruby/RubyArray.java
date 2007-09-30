@@ -421,6 +421,13 @@ public class RubyArray extends RubyObject implements List {
     }    
 
     /** rb_ary_make_shared
+    *
+    */
+    private final RubyArray makeShared(int beg, int len, RubyClass klass) {
+        return makeShared(beg, len, klass, klass.getRuntime().isObjectSpaceEnabled());
+    }    
+    
+    /** rb_ary_make_shared
      *
      */
     private final RubyArray makeShared(int beg, int len, RubyClass klass, boolean objectSpace) {
@@ -891,7 +898,7 @@ public class RubyArray extends RubyObject implements List {
         
         if (len == 0) return new RubyArray(getRuntime(), getMetaClass(), 0);
 
-        return makeShared(begin + (int) beg, (int) len, getMetaClass(), true);
+        return makeShared(begin + (int) beg, (int) len, getMetaClass());
     }
 
     /** rb_ary_subseq
@@ -1186,7 +1193,7 @@ public class RubyArray extends RubyObject implements List {
             throw getRuntime().newArgumentError("negative array size (or size too big)");
     	}
     	
-        return makeShared(begin, (int) n, getRuntime().getArray(), true);
+        return makeShared(begin, (int) n, getRuntime().getArray());
     }
 
     /** rb_ary_last
@@ -1207,7 +1214,7 @@ public class RubyArray extends RubyObject implements List {
             throw getRuntime().newArgumentError("negative array size (or size too big)");
         }
 
-        return makeShared(begin + realLength - (int) n, (int) n, getRuntime().getArray(), true);
+        return makeShared(begin + realLength - (int) n, (int) n, getRuntime().getArray());
     }
 
     /** rb_ary_each
@@ -1329,7 +1336,7 @@ public class RubyArray extends RubyObject implements List {
      */
     public RubyArray to_a() {
         if(getMetaClass() != getRuntime().getArray()) {
-            RubyArray dup = new RubyArray(getRuntime(), true);
+            RubyArray dup = new RubyArray(getRuntime(), getRuntime().isObjectSpaceEnabled());
 
             flags |= SHARED_ARR_F;
             dup.flags |= SHARED_ARR_F;

@@ -66,11 +66,11 @@ import org.jruby.util.Sprintf;
  * @author  jpetersen
  */
 public class RubyString extends RubyObject {
-    // nothing shared, string is independent 
+    // string doesn't have it's own ByteList (values) 
     private static final int SHARED_BUFFER_STR_F = 1 << 9;
-    // string doesn't have it's own ByteList (values)
+    // string has it's own ByteList, but it's pointing to a shared buffer (byte[])
     private static final int SHARED_BYTELIST_STR_F = 1 << 10;
-    // string has it's own ByteList, but it's pointing to a shared buffer (byte[])  
+    // string has either ByteList or buffer shared  
     private static final int SHARED_STR_F = SHARED_BUFFER_STR_F | SHARED_BYTELIST_STR_F;  
 
     private ByteList value;
@@ -207,29 +207,29 @@ public class RubyString extends RubyObject {
         return other instanceof RubyString && value.equal(((RubyString)other).value);
     }
 
-    private RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value, boolean objectSpace) {
-        super(runtime, rubyClass, objectSpace);
-
+    private RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
+        super(runtime, rubyClass);
         assert value != null;
-
         this.value = new ByteList(ByteList.plain(value),false);
     }
 
-    private RubyString(Ruby runtime, RubyClass rubyClass, byte[] value, boolean objectSpace) {
-        super(runtime, rubyClass, objectSpace);
-
+    private RubyString(Ruby runtime, RubyClass rubyClass, byte[] value) {
+        super(runtime, rubyClass);
         assert value != null;
-
         this.value = new ByteList(value);
     }
 
-    private RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, boolean objectSpace) {
-        super(runtime, rubyClass, objectSpace);
-
+    private RubyString(Ruby runtime, RubyClass rubyClass, ByteList value) {
+        super(runtime, rubyClass);
         assert value != null;
-
         this.value = value;
     }
+    
+    private RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, boolean objectSpace) {
+        super(runtime, rubyClass, objectSpace);
+        assert value != null;
+        this.value = value;
+    }    
 
     public int getNativeTypeIndex() {
         return ClassIndex.STRING;
@@ -256,7 +256,7 @@ public class RubyString extends RubyObject {
 
     private final RubyString strDup(RubyClass clazz) {
         flags |= SHARED_BYTELIST_STR_F;
-        RubyString dup = new RubyString(getRuntime(), clazz, value, true);
+        RubyString dup = new RubyString(getRuntime(), clazz, value);
         dup.flags |= SHARED_BYTELIST_STR_F;
 
         dup.infectBy(this);
@@ -267,7 +267,7 @@ public class RubyString extends RubyObject {
         if (len == 0) return newEmptyString(getRuntime(), getMetaClass());
         
         if ((flags & SHARED_STR_F) == 0) flags |= SHARED_BUFFER_STR_F;
-        RubyString shared = new RubyString(getRuntime(), getMetaClass(), value.makeShared(index, len), true);
+        RubyString shared = new RubyString(getRuntime(), getMetaClass(), value.makeShared(index, len));
         shared.flags |= SHARED_BUFFER_STR_F;
 
         shared.infectBy(this);
@@ -533,7 +533,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString newString(CharSequence s) {
-        return new RubyString(getRuntime(), getType(), s, true);
+        return new RubyString(getRuntime(), getType(), s);
     }
 
     /** Create a new String which uses the same Ruby runtime and the same
@@ -543,7 +543,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString newString(ByteList s) {
-        return new RubyString(getRuntime(), getMetaClass(), s, true);
+        return new RubyString(getRuntime(), getMetaClass(), s);
     }
 
     // Methods of the String class (rb_str_*):
@@ -552,33 +552,33 @@ public class RubyString extends RubyObject {
      *
      */
     public static RubyString newString(Ruby runtime, CharSequence str) {
-        return new RubyString(runtime, runtime.getString(), str, true);
+        return new RubyString(runtime, runtime.getString(), str);
     }
     
     private static RubyString newEmptyString(Ruby runtime, RubyClass metaClass) {
-        RubyString empty = new RubyString(runtime, metaClass, ByteList.EMPTY_BYTELIST, true);
+        RubyString empty = new RubyString(runtime, metaClass, ByteList.EMPTY_BYTELIST);
         empty.flags |= SHARED_BYTELIST_STR_F;
         return empty;
     }
 
     public static RubyString newUnicodeString(Ruby runtime, String str) {
         try {
-            return new RubyString(runtime, runtime.getString(), new ByteList(str.getBytes("UTF8"), false), true);
+            return new RubyString(runtime, runtime.getString(), new ByteList(str.getBytes("UTF8"), false));
         } catch (UnsupportedEncodingException uee) {
-            return new RubyString(runtime, runtime.getString(), str, true);
+            return new RubyString(runtime, runtime.getString(), str);
         }
     }
 
     public static RubyString newString(Ruby runtime, RubyClass clazz, CharSequence str) {
-        return new RubyString(runtime, clazz, str, true);
+        return new RubyString(runtime, clazz, str);
     }
 
     public static RubyString newString(Ruby runtime, byte[] bytes) {
-        return new RubyString(runtime, runtime.getString(), bytes, true);
+        return new RubyString(runtime, runtime.getString(), bytes);
     }
 
     public static RubyString newString(Ruby runtime, ByteList bytes) {
-        return new RubyString(runtime, runtime.getString(), bytes, true);
+        return new RubyString(runtime, runtime.getString(), bytes);
     }
 
     public static RubyString newStringLight(Ruby runtime, ByteList bytes) {
@@ -587,13 +587,13 @@ public class RubyString extends RubyObject {
 
     public static RubyString newStringShared(Ruby runtime, RubyString orig) {
         orig.flags |= SHARED_BYTELIST_STR_F;
-        RubyString str = new RubyString(runtime, runtime.getString(), orig.value, true);
+        RubyString str = new RubyString(runtime, runtime.getString(), orig.value);
         str.flags |= SHARED_BYTELIST_STR_F;
         return str;
     }       
     
     public static RubyString newStringShared(Ruby runtime, ByteList bytes) {
-        RubyString str = new RubyString(runtime, runtime.getString(), bytes, true);
+        RubyString str = new RubyString(runtime, runtime.getString(), bytes);
         str.flags |= SHARED_BYTELIST_STR_F;
         return str;
     }    
@@ -601,7 +601,7 @@ public class RubyString extends RubyObject {
     public static RubyString newString(Ruby runtime, byte[] bytes, int start, int length) {
         byte[] bytes2 = new byte[length];
         System.arraycopy(bytes, start, bytes2, 0, length);
-        return new RubyString(runtime, runtime.getString(), bytes2, true);
+        return new RubyString(runtime, runtime.getString(), new ByteList(bytes2, false));
     }
 
     public IRubyObject doClone(){
@@ -662,7 +662,7 @@ public class RubyString extends RubyObject {
         
         while (src >= 0) buf.set(dst++, value.get(src--));
 
-        RubyString rev = new RubyString(getRuntime(), getMetaClass(), buf, true);
+        RubyString rev = new RubyString(getRuntime(), getMetaClass(), buf);
         rev.infectBy(this);
         return rev;
     }
@@ -1894,7 +1894,7 @@ public class RubyString extends RubyObject {
             if (tainted) setTaint(true);
             return this;
         } else {
-            RubyString destStr = new RubyString(runtime, getMetaClass(), dest, true);
+            RubyString destStr = new RubyString(runtime, getMetaClass(), dest);
             destStr.infectBy(this);
             if (tainted) destStr.setTaint(true);
             return destStr;
@@ -2547,7 +2547,7 @@ public class RubyString extends RubyObject {
     private final RubyString substr(Ruby runtime, String str, int beg, int len, boolean utf8) {
         if (utf8) {
             if (len == 0) return newEmptyString(runtime, getMetaClass());
-            return new RubyString(runtime, getMetaClass(), toUTF(str.substring(beg, beg + len)), true);
+            return new RubyString(runtime, getMetaClass(), new ByteList(toUTF(str.substring(beg, beg + len)), false));
         } else {
             return makeShared(beg, len);
         }
@@ -2638,7 +2638,7 @@ public class RubyString extends RubyObject {
             
         }
         
-        RubyString resStr = new RubyString(runtime, getMetaClass(), res, true);
+        RubyString resStr = new RubyString(runtime, getMetaClass(), res);
         resStr.infectBy(this);
         if (flen > 0) resStr.infectBy(pad);
         return resStr;

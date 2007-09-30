@@ -146,15 +146,24 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
     }
 
+    /** standard path for object creation 
+     * 
+     */
     public RubyObject(Ruby runtime, RubyClass metaClass) {
-        this(runtime, metaClass, true);
+        this(runtime, metaClass, runtime.isObjectSpaceEnabled());
     }
 
+    /** path for objects who want to decide whether they want to be in ObjectSpace
+     *  regardless of it being turned on or off
+     *  (notably used by objects being considered immediate, they'll always pass false here)
+     */
     protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         this.metaClass = metaClass;
 
-        // Do not store any immediate objects into objectspace.
-        if (useObjectSpace && runtime.isObjectSpaceEnabled()) runtime.getObjectSpace().add(this);
+        if (useObjectSpace) {
+            assert runtime.isObjectSpaceEnabled();
+            runtime.getObjectSpace().add(this);
+        }
 
         // FIXME are there objects who shouldn't be tainted?
         // (mri: OBJSETUP)
