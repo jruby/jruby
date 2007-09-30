@@ -1082,24 +1082,8 @@ public class EvaluationState {
         GlobalAsgnNode iVisited = (GlobalAsgnNode) node;
    
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
-        
-        if (iVisited.getName().length() == 2) {
-            switch (iVisited.getName().charAt(1)) {
-            case '_':
-                context.getCurrentFrame().setLastLine(result);
-                return result;
-            case '~':
-                context.getCurrentFrame().setBackRef(result);
-                return result;
-            }
-        }
    
         runtime.getGlobalVariables().set(iVisited.getName(), result);
-   
-        // FIXME: this should be encapsulated along with the set above
-        if (iVisited.getName() == "$KCODE") {
-            runtime.setKCode(KCode.create(runtime, result.toString()));
-        }
    
         return result;
     }
