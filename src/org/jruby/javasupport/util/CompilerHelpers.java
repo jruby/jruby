@@ -566,6 +566,10 @@ public class CompilerHelpers {
         return (RubyArray)input.subseqLight(start, input.size() - start);
     }
     
+    public static RubyArray createSubarray(IRubyObject[] input, Ruby runtime, int start) {
+        return RubyArray.newArrayNoCopy(runtime, input, start);
+    }
+    
     public static RubyBoolean isWhenTriggered(IRubyObject expression, IRubyObject expressionsObject, ThreadContext context) {
         RubyArray expressions = EvaluationState.splatValue(context.getRuntime(), expressionsObject);
         for (int j = 0,k = expressions.getLength(); j < k; j++) {

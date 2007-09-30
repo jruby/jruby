@@ -46,27 +46,12 @@ import org.objectweb.asm.Label;
  *
  * @author headius
  */
-public class StackBasedVariableCompiler implements VariableCompiler {
-    private static final CodegenUtils cg = CodegenUtils.cg;
-    private SkinnyMethodAdapter method;
-    private StandardASMCompiler.AbstractMethodCompiler methodCompiler;
+public class StackBasedVariableCompiler extends AbstractVariableCompiler {
     private int argsIndex; // the index where an IRubyObject[] representing incoming arguments can be found
     private int closureIndex; // the index of the block parameter
-    private Arity arity;
 
     public StackBasedVariableCompiler(StandardASMCompiler.AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method, int argsIndex, int closureIndex) {
-        this.methodCompiler = methodCompiler;
-        this.method = method;
-        this.argsIndex = argsIndex;
-        this.closureIndex = closureIndex;
-    }
-    
-    public SkinnyMethodAdapter getMethodAdapter() {
-        return this.method;
-    }
-
-    public void setMethodAdapter(SkinnyMethodAdapter sma) {
-        this.method = sma;
+        super(methodCompiler, method, argsIndex, closureIndex);
     }
 
     public void beginMethod(ClosureCallback argsCallback, StaticScope scope) {

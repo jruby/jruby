@@ -814,6 +814,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 
                 currentLoopLabels = new Label[] {endOfBody, topOfBody, done};
                 
+                // FIXME: if we terminate immediately, this appears to break while in method arguments
+                // we need to push a nil for the cases where we will never enter the body
                 if (checkFirst) {
                     method.go_to(conditionCheck);
                 }
@@ -2610,7 +2612,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 method.invokespecial(cg.p(JumpException.RedoJump.class), "<init>", cg.sig(Void.TYPE, cg.params(Object.class, Object.class)));
 
                 method.athrow();
-            } else if (currentLoopLabels == null) {
+            } else if (currentLoopLabels != null) {
                 issueLoopRedo();
             } else {
                 // in method body with no containing loop, issue jump error

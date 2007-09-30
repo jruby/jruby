@@ -31,8 +31,15 @@ public interface VariableCompiler {
     public void retrieveBackRef();
     public void assignLocalVariable(int index, int depth);
     public void retrieveLocalVariable(int index, int depth);
-    public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg);
-    public void assignOptionalArgs(Object object, int expectedArgsCount, int size, ArrayCallback optEval);
-    public void processRestArg(int startIndex, int restArg);
-    public void processBlockArgument(int index);
+    public void checkMethodArity(int requiredArgs, int optArgs, int restArg);
+    public void assignMethodArguments(
+            Object requiredArgs,
+            int requiredArgsCount,
+            Object optArgs,
+            int optArgsCount,
+            ArrayCallback requiredAssignment,
+            ArrayCallback optGivenAssignment,
+            ArrayCallback optNotGivenAssignment,
+            ClosureCallback restAssignment,
+            ClosureCallback blockAssignment);
 }

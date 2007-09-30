@@ -160,21 +160,18 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
     private void runJIT(Ruby runtime, ThreadContext context, String name) {
         if (callCount >= 0) {
-            String className = null;
-            if (runtime.getInstanceConfig().isJitLogging()) {
-                className = getImplementationClass().getBaseName();
-                if (className == null) {
-                    className = "<anon class>";
-                }
-            }
-            
             try {
                 callCount++;
 
                 if (callCount >= runtime.getInstanceConfig().getJitThreshold()) {
                     String cleanName = CodegenUtils.cg.cleanJavaIdentifier(name);
-                    // FIXME: not handling empty bodies correctly...
-                    StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), body.getPosition().getFile());
+                    String filename = "__eval__";
+                    if (body != null) {
+                        filename = body.getPosition().getFile();
+                    } else if (argsNode != null) {
+                        filename = argsNode.getPosition().getFile();
+                    }
+                    StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), filename);
                     compiler.startScript(staticScope);
         
                     ClosureCallback args = new ClosureCallback() {
@@ -187,14 +184,28 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     inspector.inspect(body);
                     inspector.inspect(argsNode);
                     
-                    MethodCompiler methodCompiler = compiler.startMethod("__file__", args, staticScope, inspector);
-                    NodeCompilerFactory.compile(body, methodCompiler);
+                    MethodCompiler methodCompiler;
+                    if (body != null) {
+                        // we have a body, do a full-on method
+                        methodCompiler = compiler.startMethod("__file__", args, staticScope, inspector);
+                        NodeCompilerFactory.compile(body, methodCompiler);
+                    } else {
+                        // If we don't have a body, check for opt args; if no opt args, there's no logic in this method so don't do anything
+                        if (argsNode != null && argsNode.getOptArgs() != null) {
+                            methodCompiler = compiler.startMethod("__file__", args, staticScope, inspector);
+                            methodCompiler.loadNil();
+                        } else {
+                            methodCompiler = compiler.startMethod("__file__", null, staticScope, inspector);
+                            methodCompiler.loadNil();
+                            jitCallConfig = CallConfiguration.JAVA_FAST;
+                        }
+                    }
                     methodCompiler.endMethod();
                     compiler.endScript();
                     Class sourceClass = compiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
                     
                     // if we're not doing any of the operations that still need a scope, use the scopeless config
-                    if (!(inspector.hasClosure() || inspector.hasScopeAwareMethods())) {
+                    if (jitCallConfig == null && !(inspector.hasClosure() || inspector.hasScopeAwareMethods())) {
                         // switch to a slightly faster call config
                         jitCallConfig = CallConfiguration.JAVA_FULL;
                     } else {
@@ -204,11 +215,23 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     // finally, grab the script
                     jitCompiledScript = (Script)sourceClass.newInstance();
                     
-                    if (runtime.getInstanceConfig().isJitLogging()) System.err.println("compiled: " + className + "." + name);
+                    if (runtime.getInstanceConfig().isJitLogging()) {
+                        String className = getImplementationClass().getBaseName();
+                        if (className == null) {
+                            className = "<anon class>";
+                        }
+                        System.err.println("compiled: " + className + "." + name);
+                    }
                     callCount = -1;
                 }
             } catch (Exception e) {
-                if (runtime.getInstanceConfig().isJitLoggingVerbose()) System.err.println("could not compile: " + className + "." + name + " because of: \"" + e.getMessage() + '"');
+                if (runtime.getInstanceConfig().isJitLoggingVerbose()) {
+                    String className = getImplementationClass().getBaseName();
+                    if (className == null) {
+                        className = "<anon class>";
+                    }
+                    System.err.println("could not compile: " + className + "." + name + " because of: \"" + e.getMessage() + '"');
+                }
                 callCount = -1;
              }
         }

@@ -201,13 +201,8 @@ test_no_exception {
   test_no_exception { compile_and_run("1.times {|x,*|}")}
 }
 
-# blocks with unsupported arg layouts should still raise error
-test_exception {
-  compile_and_run("1.times {|@@a|}")
-}
-test_exception {
-  compile_and_run("1.times {|a[0]|}")
-}
+compile_and_run("1.times {|@@a|}")
+compile_and_run("a = []; 1.times {|a[0]|}")
 
 class_string = <<EOS
 class CompiledClass1
@@ -258,9 +253,9 @@ test_equal([1, 1], compile_and_run("foo(1)"))
 test_equal([1, 2], compile_and_run("foo(1, 2)"))
 test_exception { compile_and_run("foo(1, 2, 3)") }
 
-# we do not compile opt args that cause other vars to be assigned, as in def (a=(b=1))
-test_exception { compile_and_run("def foo(a=(b=1)); end")}
-test_exception { compile_and_run("def foo(a, b=(c=1)); end")}
+# opt args that cause other vars to be assigned, as in def (a=(b=1))
+compile_and_run("def foo(a=(b=1)); end")
+compile_and_run("def foo(a, b=(c=1)); end")
 
 class CoercibleToArray
   def to_ary
@@ -449,3 +444,8 @@ test_no_exception { compile_and_run("END {}") }
 
 # BEGIN block
 test_equal(5, compile_and_run("BEGIN { $begin = 5 }; $begin"))
+
+# nothing at all!
+test_no_exception {
+  test_equal(nil, compile_and_run(""))
+}

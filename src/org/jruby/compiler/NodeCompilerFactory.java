@@ -101,6 +101,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsPushNode;
+import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.CaseNode;
 import org.jruby.ast.ClassNode;
@@ -133,6 +134,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class NodeCompilerFactory {
     public static void compile(Node node, MethodCompiler context) {
+        if (node == null) {
+            context.loadNil();
+            return;
+        }
         switch (node.nodeId) {
         case ALIASNODE:
             compileAlias(node, context);
@@ -439,7 +444,10 @@ public class NodeCompilerFactory {
             compileDAsgnAssignment(node, context);
             break;
         case CLASSVARASGNNODE:
-            compileClassVarAsgn(node, context);
+            compileClassVarAsgnAssignment(node, context);
+            break;
+        case CLASSVARDECLNODE:
+            compileClassVarDeclAssignment(node, context);
             break;
         case CONSTDECLNODE:
             compileConstDeclAssignment(node, context);
@@ -1523,57 +1531,73 @@ public class NodeCompilerFactory {
     }
     
     public static void compileArgs(Node node, MethodCompiler context) {
-        ArgsNode argsNode = (ArgsNode)node;
+        final ArgsNode argsNode = (ArgsNode)node;
         
-        int required = argsNode.getRequiredArgsCount();
-        int restArg = argsNode.getRestArg();
-        boolean hasOptArgs = argsNode.getOptArgs() != null;
-        Arity arity = argsNode.getArity();
+        final int required = argsNode.getRequiredArgsCount();
+        final int opt = argsNode.getOptionalArgsCount();
+        final int rest = argsNode.getRestArg();
         
-        NodeCompilerFactory.confirmNodeIsSafe(argsNode);
+        ArrayCallback requiredAssignment = null;
+        ArrayCallback optionalGiven = null;
+        ArrayCallback optionalNotGiven = null;
+        ClosureCallback restAssignment = null;
+        ClosureCallback blockAssignment = null;
+        
+        if (required > 0) {
+            requiredAssignment = new ArrayCallback() {
+                public void nextValue(MethodCompiler context, Object object, int index) {
+                    // FIXME: Somehow I'd feel better if this could get the appropriate var index from the ArgumentNode
+                    context.getVariableCompiler().assignLocalVariable(index);
+                }
+            };
+        }
+        
+        if (opt > 0) {
+            optionalGiven = new ArrayCallback() {
+                public void nextValue(MethodCompiler context, Object object, int index) {
+                    Node optArg = ((ListNode)object).get(index);
+
+                    compileAssignment(optArg, context);
+                }
+            };
+            optionalNotGiven = new ArrayCallback() {
+                public void nextValue(MethodCompiler context, Object object, int index) {
+                    Node optArg = ((ListNode)object).get(index);
+
+                    compile(optArg, context);
+                }
+            };
+        }
+            
+        if (rest > -1) {
+            restAssignment = new ClosureCallback() {
+                public void compile(MethodCompiler context) {
+                    context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg());
+                }
+            };
+        }
+        
+        if (argsNode.getBlockArgNode() != null) {
+            blockAssignment = new ClosureCallback() {
+                public void compile(MethodCompiler context) {
+                    context.getVariableCompiler().assignLocalVariable(argsNode.getBlockArgNode().getCount());
+                }
+            };
+        }
 
         context.lineNumber(argsNode.getPosition());
         
-        final ArrayCallback evalOptionalValue = new ArrayCallback() {
-            public void nextValue(MethodCompiler context, Object object, int index) {
-                ListNode optArgs = (ListNode)object;
-                
-                Node node = optArgs.get(index);
-
-                compile(node, context);
-            }
-        };
-
-        if (argsNode.getBlockArgNode() != null) {
-            context.getVariableCompiler().processBlockArgument(argsNode.getBlockArgNode().getCount());
-        }
-
-        if (hasOptArgs) {
-            if (restArg > -1) {
-                int opt = argsNode.getOptArgs().size();
-                context.getVariableCompiler().processRequiredArgs(arity, required, opt, restArg);
-
-                ListNode optArgs = argsNode.getOptArgs();
-                context.getVariableCompiler().assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
-
-                context.getVariableCompiler().processRestArg(required + opt, restArg);
-            } else {
-                int opt = argsNode.getOptArgs().size();
-                context.getVariableCompiler().processRequiredArgs(arity, required, opt, restArg);
-
-                ListNode optArgs = argsNode.getOptArgs();
-                context.getVariableCompiler().assignOptionalArgs(optArgs, required, opt, evalOptionalValue);
-            }
-        } else {
-            if (restArg > -1) {
-                context.getVariableCompiler().processRequiredArgs(arity, required, 0, restArg);
-
-                context.getVariableCompiler().processRestArg(required, restArg);
-            } else {
-                context.getVariableCompiler().processRequiredArgs(arity, required, 0, restArg);
-            }
-        }
-        
+        context.getVariableCompiler().checkMethodArity(required, opt, rest);
+        context.getVariableCompiler().assignMethodArguments(
+                argsNode.getArgs(),
+                argsNode.getRequiredArgsCount(),
+                argsNode.getOptArgs(),
+                argsNode.getOptionalArgsCount(),
+                requiredAssignment,
+                optionalGiven,
+                optionalNotGiven,
+                restAssignment,
+                blockAssignment);
     }
     
     public static void compileDot(Node node, MethodCompiler context) {
@@ -2676,14 +2700,11 @@ public class NodeCompilerFactory {
         // create method for toplevel of script
         MethodCompiler methodCompiler = context.startMethod("__file__", null, rootNode.getStaticScope(), inspector);
 
-        try {
-            Node nextNode = rootNode.getBodyNode();
-            if (nextNode != null) {
-                compile(nextNode, methodCompiler);
-            }
-        } catch (NotCompilableException nce) {
-            // TODO: recover somehow? build a pure eval method?
-            throw nce;
+        Node nextNode = rootNode.getBodyNode();
+        if (nextNode != null) {
+            compile(nextNode, methodCompiler);
+        } else {
+            methodCompiler.loadNil();
         }
         
         methodCompiler.endMethod();
@@ -2841,9 +2862,9 @@ public class NodeCompilerFactory {
             public void branch(MethodCompiler context) {
                 if (whileNode.getBodyNode() == null) {
                     context.loadNil();
-                    return;
+                } else {
+                    compile(whileNode.getBodyNode(), context);
                 }
-                compile(whileNode.getBodyNode(), context);
             }
         };
         
