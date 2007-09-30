@@ -76,14 +76,13 @@ public class RubyBigDecimal extends RubyNumeric {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBigDecimal.class);
 
         runtime.getKernel().defineModuleFunction("BigDecimal",callbackFactory.getOptSingletonMethod("newBigDecimal"));
-        result.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        result.getMetaClass().defineMethod("new", callbackFactory.getFastOptSingletonMethod("newInstance"));
         result.getMetaClass().defineFastMethod("ver", callbackFactory.getFastSingletonMethod("ver"));
         result.getMetaClass().defineMethod("_load", callbackFactory.getSingletonMethod("_load",RubyKernel.IRUBY_OBJECT));
         result.getMetaClass().defineFastMethod("double_fig", callbackFactory.getFastSingletonMethod("double_fig"));
         result.getMetaClass().defineFastMethod("limit", callbackFactory.getFastSingletonMethod("limit", RubyKernel.IRUBY_OBJECT));
         result.getMetaClass().defineFastMethod("mode", callbackFactory.getFastOptSingletonMethod("mode"));
 
-        result.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         result.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));        
         result.defineFastMethod("%", callbackFactory.getFastMethod("mod",RubyKernel.IRUBY_OBJECT));
         result.defineFastMethod("modulo", callbackFactory.getFastMethod("mod",RubyKernel.IRUBY_OBJECT));
@@ -155,18 +154,8 @@ public class RubyBigDecimal extends RubyNumeric {
         this.value = value;
     }
 
-    public static RubyBigDecimal newInstance(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        RubyClass klass = (RubyClass)recv;
-        
-        RubyBigDecimal result = (RubyBigDecimal) klass.allocate();
-        
-        result.callInit(args, Block.NULL_BLOCK);
-        
-        return result;
-    }
-
     public static RubyBigDecimal newBigDecimal(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return newInstance(recv.getRuntime().getClass("BigDecimal"), args, Block.NULL_BLOCK);
+        return newInstance(recv.getRuntime().getClass("BigDecimal"), args);
     }
 
     public static IRubyObject ver(IRubyObject recv) {
@@ -266,7 +255,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return (RubyBigDecimal)v;
         } else if(v instanceof RubyFixnum || v instanceof RubyBignum) {
             String s = v.toString();
-            return newInstance(getRuntime().getClass("BigDecimal"),new IRubyObject[]{getRuntime().newString(s)}, Block.NULL_BLOCK);
+            return newInstance(getRuntime().getClass("BigDecimal"),new IRubyObject[]{getRuntime().newString(s)});
         }
         if(must) {
             String err;
@@ -280,16 +269,18 @@ public class RubyBigDecimal extends RubyNumeric {
         return null;
     }
 
-    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        String ss = args[0].convertToString().toString();
-        
-        try {
-        this.value = new BigDecimal(ss);
-        } catch(NumberFormatException e) {
-            this.value = new BigDecimal("0");
+    public static RubyBigDecimal newInstance(IRubyObject recv, IRubyObject[] args) {
+        BigDecimal decimal;
+        if (Arity.checkArgumentCount(recv.getRuntime(), args, 1, 2) == 0) { 
+            decimal = new BigDecimal(0);
+        } else {
+            try {
+                decimal = new BigDecimal(args[0].convertToString().toString());
+            } catch(NumberFormatException e) {
+                decimal = new BigDecimal(0);
+            }
         }
-
-        return this;
+        return new RubyBigDecimal(recv.getRuntime(), decimal);
     }
 
     private RubyBigDecimal setResult() {
