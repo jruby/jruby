@@ -84,16 +84,19 @@ public class RubyBigDecimal extends RubyNumeric {
         result.getMetaClass().defineFastMethod("mode", callbackFactory.getFastOptSingletonMethod("mode"));
 
         result.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        result.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));        
         result.defineFastMethod("%", callbackFactory.getFastMethod("mod",RubyKernel.IRUBY_OBJECT));
         result.defineFastMethod("modulo", callbackFactory.getFastMethod("mod",RubyKernel.IRUBY_OBJECT));
-        result.defineFastMethod("*", callbackFactory.getFastOptMethod("mult"));
-        result.defineFastMethod("mult", callbackFactory.getFastOptMethod("mult"));
+        result.defineFastMethod("*", callbackFactory.getFastMethod("mult", RubyKernel.IRUBY_OBJECT));
+        result.defineFastMethod("mult", callbackFactory.getFastMethod("mult2", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
         result.defineFastMethod("**", callbackFactory.getFastMethod("power",RubyKernel.IRUBY_OBJECT));
         result.defineFastMethod("power", callbackFactory.getFastMethod("power",RubyKernel.IRUBY_OBJECT));
-        result.defineFastMethod("+", callbackFactory.getFastOptMethod("add"));
-        result.defineFastMethod("add", callbackFactory.getFastOptMethod("add"));
-        result.defineFastMethod("-", callbackFactory.getFastOptMethod("sub"));
-        result.defineFastMethod("sub", callbackFactory.getFastOptMethod("sub"));
+        result.defineFastMethod("+", callbackFactory.getFastMethod("add", RubyKernel.IRUBY_OBJECT));
+        result.defineFastMethod("add", callbackFactory.getFastMethod("add2", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        result.defineFastMethod("+@", callbackFactory.getFastMethod("uplus"));
+        result.defineFastMethod("-", callbackFactory.getFastMethod("sub", RubyKernel.IRUBY_OBJECT));
+        result.defineFastMethod("sub", callbackFactory.getFastMethod("sub2", RubyKernel.IRUBY_OBJECT,  RubyKernel.IRUBY_OBJECT));
+        result.defineFastMethod("-@", callbackFactory.getFastMethod("uminus"));
         result.defineFastMethod("/", callbackFactory.getFastOptMethod("div"));
         result.defineFastMethod("div", callbackFactory.getFastOptMethod("div"));
         result.defineFastMethod("quo", callbackFactory.getFastOptMethod("div"));
@@ -107,13 +110,13 @@ public class RubyBigDecimal extends RubyNumeric {
         result.defineFastMethod(">", callbackFactory.getFastMethod("gt",RubyKernel.IRUBY_OBJECT));
         result.defineFastMethod(">=", callbackFactory.getFastMethod("ge",RubyKernel.IRUBY_OBJECT));
         result.defineFastMethod("abs", callbackFactory.getFastMethod("abs"));
-        result.defineFastMethod("ceil", callbackFactory.getFastMethod("ceil",RubyKernel.IRUBY_OBJECT));
+        result.defineFastMethod("ceil", callbackFactory.getFastOptMethod("ceil"));
         result.defineFastMethod("coerce", callbackFactory.getFastMethod("coerce",RubyKernel.IRUBY_OBJECT));
         result.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod",RubyKernel.IRUBY_OBJECT)); 
         result.defineFastMethod("exponent", callbackFactory.getFastMethod("exponent"));
         result.defineFastMethod("finite?", callbackFactory.getFastMethod("finite_p"));
         result.defineFastMethod("fix", callbackFactory.getFastMethod("fix"));
-        result.defineFastMethod("floor", callbackFactory.getFastMethod("floor",RubyKernel.IRUBY_OBJECT));
+        result.defineFastMethod("floor", callbackFactory.getFastOptMethod("floor"));
         result.defineFastMethod("frac", callbackFactory.getFastMethod("frac"));
         result.defineFastMethod("infinite?", callbackFactory.getFastMethod("infinite_p"));
         result.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
@@ -124,7 +127,7 @@ public class RubyBigDecimal extends RubyNumeric {
         result.defineFastMethod("round", callbackFactory.getFastOptMethod("round"));
         result.defineFastMethod("sign", callbackFactory.getFastMethod("sign"));
         result.defineFastMethod("split", callbackFactory.getFastMethod("split"));
-        result.defineFastMethod("sqrt", callbackFactory.getFastOptMethod("sqrt"));
+        result.defineFastMethod("sqrt", callbackFactory.getFastMethod("sqrt", RubyKernel.IRUBY_OBJECT));
         result.defineFastMethod("to_f", callbackFactory.getFastMethod("to_f"));
         result.defineFastMethod("to_i", callbackFactory.getFastMethod("to_i"));
         result.defineFastMethod("to_int", callbackFactory.getFastMethod("to_int"));
@@ -301,21 +304,34 @@ public class RubyBigDecimal extends RubyNumeric {
         }
         return this;
     }
+    
+    public RubyFixnum hash() {
+        return getRuntime().newFixnum(value.hashCode());
+    }
 
     public IRubyObject mod(IRubyObject arg) {
         RubyBigDecimal val = getVpValue(arg,false);
         return new RubyBigDecimal(getRuntime(),this.value.divideAndRemainder(val.value)[1]).setResult();
     }
 
-    public IRubyObject mult(IRubyObject[] args) {
-        RubyBigDecimal val = getVpValue(args[0],false);
+    public IRubyObject mult(IRubyObject arg) {
+        RubyBigDecimal val = getVpValue(arg, false);
         if(val == null) {
-            return callCoerced("*",args[0]);
+            return callCoerced("*", arg);
         }
 
         return new RubyBigDecimal(getRuntime(),value.multiply(val.value)).setResult();
     }
 
+    public IRubyObject mult2(IRubyObject b, IRubyObject n) {
+        RubyBigDecimal val = getVpValue(b,false);
+        if(val == null) {
+            return callCoerced("*",b);
+        }
+
+        return new RubyBigDecimal(getRuntime(),value.multiply(val.value)).setResult();
+    }
+    
     public IRubyObject power(IRubyObject arg) {
         if (!(arg instanceof RubyFixnum)) {
             throw getRuntime().newTypeError("wrong argument type " + arg.getMetaClass() + " (expected Fixnum)");
@@ -347,22 +363,46 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(getRuntime(),result).setResult();
     }
 
-    public IRubyObject add(IRubyObject[] args) {
-        RubyBigDecimal val = getVpValue(args[0],false);
+    public IRubyObject add(IRubyObject arg) {
+        RubyBigDecimal val = getVpValue(arg, false);
         if(val == null) {
-            return callCoerced("+",args[0]);
+            return callCoerced("+", arg);
         }
         return new RubyBigDecimal(getRuntime(),value.add(val.value)).setResult();
     }
 
-    public IRubyObject sub(IRubyObject[] args) {
-        RubyBigDecimal val = getVpValue(args[0],false);
+    public IRubyObject add2(IRubyObject b, IRubyObject n) {
+        RubyBigDecimal val = getVpValue(b, false);
         if(val == null) {
-            return callCoerced("-",args[0]);
+            return callCoerced("+", b);
+        }
+        return new RubyBigDecimal(getRuntime(),value.add(val.value)).setResult();
+    }
+    
+    public IRubyObject uplus() {
+        return this;
+    }
+    
+    public IRubyObject sub(IRubyObject arg) {
+        RubyBigDecimal val = getVpValue(arg, false);
+        if(val == null) {
+            return callCoerced("-", arg);
         }
         return new RubyBigDecimal(getRuntime(),value.subtract(val.value)).setResult();
     }
 
+    public IRubyObject sub2(IRubyObject b, IRubyObject n) {
+        RubyBigDecimal val = getVpValue(b, false);
+        if(val == null) {
+            return callCoerced("-", b);
+        }
+        return new RubyBigDecimal(getRuntime(),value.subtract(val.value)).setResult();
+    }
+    
+    public IRubyObject uminus() {
+        return new RubyBigDecimal(getRuntime(), value.negate());
+    }
+    
     public IRubyObject div(IRubyObject[] args) {
         int scale = 0;
         if(Arity.checkArgumentCount(getRuntime(), args,1,2) == 2) {
@@ -437,7 +477,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(getRuntime(),value.abs()).setResult();
     }
 
-    public IRubyObject ceil(IRubyObject arg) {
+    public IRubyObject ceil(IRubyObject[] args) {
         System.err.println("unimplemented: ceil");
         // TODO: implement correctly
         return this;
@@ -457,15 +497,15 @@ public class RubyBigDecimal extends RubyNumeric {
     public long getLongValue() { return value.longValue(); }
 
     public RubyNumeric multiplyWith(RubyInteger value) { 
-        return (RubyNumeric)mult(new IRubyObject[]{value});
+        return (RubyNumeric)mult(value);
     }
 
     public RubyNumeric multiplyWith(RubyFloat value) { 
-        return (RubyNumeric)mult(new IRubyObject[]{value});
+        return (RubyNumeric)mult(value);
     }
 
     public RubyNumeric multiplyWith(RubyBignum value) { 
-        return (RubyNumeric)mult(new IRubyObject[]{value});
+        return (RubyNumeric)mult(value);
     }
 
     public IRubyObject divmod(IRubyObject arg) {
@@ -494,7 +534,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return this;
     }
 
-    public IRubyObject floor(IRubyObject arg) {
+    public IRubyObject floor(IRubyObject[]args) {
         System.err.println("unimplemented: floor");
         // TODO: implement correctly
         return this;
@@ -577,7 +617,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return getRuntime().getNil();
     }
 
-    public IRubyObject sqrt(IRubyObject[] args) {
+    public IRubyObject sqrt(IRubyObject arg) {
         System.err.println("unimplemented: sqrt");
         // TODO: implement correctly
         return new RubyBigDecimal(getRuntime(),new BigDecimal(Math.sqrt(value.doubleValue()))).setResult();
