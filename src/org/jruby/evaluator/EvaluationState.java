@@ -162,6 +162,7 @@ import org.jruby.regexp.PatternSyntaxException;
 
 public class EvaluationState {
     public static IRubyObject eval(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
+        assert self != null : "self during eval must never be null";
         try {
             return evalInternal(runtime, context, node, self, block);
         } catch (StackOverflowError sfe) {

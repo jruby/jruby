@@ -28,20 +28,30 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jruby.RubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.Dispatcher;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReflectionCallbackFactory extends CallbackFactory {
-	
-	private final Class type;
-	
-	public ReflectionCallbackFactory(Class type) {
-		this.type = type;
-	}
+
+    private final Class type;
+
+    public ReflectionCallbackFactory(Class type) {
+            this.type = type;
+    }
+    
+    public Callback getMethod(Method method) {
+        return new ReflectionCallback(method);
+    }
 	
     public Callback getMethod(String method) {
         return new ReflectionCallback(type, method, NULL_CLASS_ARRAY, false, false, Arity.noArguments(), false);
@@ -133,8 +143,25 @@ public class ReflectionCallbackFactory extends CallbackFactory {
             Arity.fixed(2), false);
     }
     
-    public CompiledBlockCallback getBlockCallback(String method, Object scriptObject) {
-        throw new RuntimeException("not implemented");
+    public CompiledBlockCallback getBlockCallback(String method, final Object scriptObject) {
+        try {
+            final Method blockMethod = scriptObject.getClass().getMethod(method, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class});
+            return new CompiledBlockCallback() {
+                public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+                    try {
+                        return (IRubyObject)blockMethod.invoke(scriptObject, new Object[]{context, self, args});
+                    } catch (IllegalAccessException ex) {
+                        throw new RuntimeException(ex);
+                    } catch (IllegalArgumentException ex) {
+                        throw new RuntimeException(ex);
+                    } catch (InvocationTargetException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            };
+        } catch (NoSuchMethodException nsme) {
+            throw new RuntimeException(nsme);
+        }
     }
 
     public Callback getOptSingletonMethod(String method) {

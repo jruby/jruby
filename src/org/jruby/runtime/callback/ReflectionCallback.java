@@ -33,6 +33,8 @@ package org.jruby.runtime.callback;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -70,6 +72,24 @@ public class ReflectionCallback implements Callback {
         assert arity != null;
         
         loadMethod(fast);
+    }
+    
+    public ReflectionCallback(Method method) {
+        JRubyMethod methodAnno = method.getAnnotation(JRubyMethod.class);
+        
+        this.arity = Arity.fromAnnotation(methodAnno);
+        this.type = method.getDeclaringClass();
+    	this.methodName = method.getName();
+    	this.argumentTypes = method.getParameterTypes();
+        this.isRestArgs = methodAnno.rest();
+        this.isStaticMethod = methodAnno.singleton();
+        this.fast = !(methodAnno.frame() || methodAnno.scope());
+    	
+        assert type != null;
+        assert methodName != null;
+        assert arity != null;
+        
+        this.method = method;
     }
     
     private void loadMethod(boolean fast) {
@@ -138,10 +158,10 @@ public class ReflectionCallback implements Callback {
         Object[] methodArgs = oargs;
         
     	if (isRestArgs) {
-    		methodArgs = packageRestArgumentsForReflection(methodArgs);
+            methodArgs = packageRestArgumentsForReflection(methodArgs);
     	}
         try {
-        	IRubyObject receiver = recv;
+            IRubyObject receiver = recv;
             if (isStaticMethod) {
                 Object[] args = new Object[methodArgs.length + (fast ? 1 : 2)];
                 System.arraycopy(methodArgs, 0, args, 1, methodArgs.length);
