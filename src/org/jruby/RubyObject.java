@@ -1017,9 +1017,12 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getRuntime().newFixnum(getRuntime().getObjectSpace().idOf(this));
     }
 
+    /** rb_obj_id_obsolete
+     * 
+     */
     public synchronized RubyFixnum id_deprecated() {
         getRuntime().getWarnings().warn("Object#id will be deprecated; use Object#object_id");
-        return getRuntime().newFixnum(getRuntime().getObjectSpace().idOf(this));
+        return id();
     }
     
     public RubyFixnum hash() {

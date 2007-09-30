@@ -45,7 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 */
 public class TestRubyNil extends TestCase {
     private Ruby runtime;
-    private IRubyObject rubyNil;
+    private RubyNil rubyNil;
 
     public TestRubyNil(String name) {
         super(name);
@@ -81,7 +81,7 @@ public class TestRubyNil extends TestCase {
     }
 
     public void testType() {
-        assertEquals("NilClass", RubyNil.type(rubyNil).name().toString());
+        assertEquals("NilClass", rubyNil.type().name().toString());
     }
 
     public void testOpAnd() {

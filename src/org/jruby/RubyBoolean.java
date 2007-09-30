@@ -73,17 +73,7 @@ public class RubyBoolean extends RubyObject {
     public Class<?> getJavaClass() {
         return Boolean.TYPE;
     }
-    
-//    public RubyClass getMetaClass() {
-//        return isTrue
-//                ? getRuntime().getClass("TrueClass")
-//                : getRuntime().getClass("FalseClass");
-//    }
-    
-    public RubyFixnum id() {
-        return getRuntime().newFixnum((flags & FALSE_F) == 0 ? 2 : 0);
-    }
-    
+
     public static RubyClass createFalseClass(Ruby runtime) {
         RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setFalseClass(falseClass);
@@ -91,11 +81,9 @@ public class RubyBoolean extends RubyObject {
         
         CallbackFactory fact = runtime.callbackFactory(RubyBoolean.class);
         
-        falseClass.defineFastMethod("type", fact.getFastMethod("type"));
         falseClass.defineFastMethod("&", fact.getFastMethod("false_and", RubyKernel.IRUBY_OBJECT));
         falseClass.defineFastMethod("|", fact.getFastMethod("false_or", RubyKernel.IRUBY_OBJECT));
         falseClass.defineFastMethod("^", fact.getFastMethod("false_xor", RubyKernel.IRUBY_OBJECT));
-        falseClass.defineFastMethod("id", fact.getFastMethod("false_id"));
         falseClass.defineFastMethod("to_s", fact.getFastMethod("false_to_s"));
         falseClass.getMetaClass().undefineMethod("new");
         
@@ -111,11 +99,9 @@ public class RubyBoolean extends RubyObject {
         
         CallbackFactory fact = runtime.callbackFactory(RubyBoolean.class);
         
-        trueClass.defineFastMethod("type", fact.getFastMethod("type"));
         trueClass.defineFastMethod("&", fact.getFastMethod("true_and", RubyKernel.IRUBY_OBJECT));
         trueClass.defineFastMethod("|", fact.getFastMethod("true_or", RubyKernel.IRUBY_OBJECT));
         trueClass.defineFastMethod("^", fact.getFastMethod("true_xor", RubyKernel.IRUBY_OBJECT));
-        trueClass.defineFastMethod("id", fact.getFastMethod("true_id"));
         trueClass.defineFastMethod("to_s", fact.getFastMethod("true_to_s"));
         trueClass.getMetaClass().undefineMethod("new");
         
@@ -126,14 +112,6 @@ public class RubyBoolean extends RubyObject {
     
     public static RubyBoolean newBoolean(Ruby runtime, boolean value) {
         return value ? runtime.getTrue() : runtime.getFalse();
-    }
-    
-    /** false_type
-     *  true_type
-     *
-     */
-    public RubyClass type() {
-        return getMetaClass();
     }
     
     public IRubyObject false_and(IRubyObject oth) {
@@ -148,10 +126,14 @@ public class RubyBoolean extends RubyObject {
         return oth.isTrue() ? getRuntime().getTrue() : this;
     }
     
-    public IRubyObject false_id() {
-        return RubyFixnum.zero(getRuntime());
+    public RubyFixnum id() {
+        if ((flags & FALSE_F) == 0) {
+            return RubyFixnum.newFixnum(getRuntime(), 2);
+        } else {
+            return RubyFixnum.zero(getRuntime());
+        }
     }
-    
+
     public IRubyObject false_to_s() {
         return getRuntime().newString("false");
     }
@@ -166,10 +148,6 @@ public class RubyBoolean extends RubyObject {
     
     public IRubyObject true_xor(IRubyObject oth) {
         return oth.isTrue() ? getRuntime().getFalse() : this;
-    }
-    
-    public IRubyObject true_id() {
-        return getRuntime().newFixnum(2);
     }
     
     public IRubyObject true_to_s() {

@@ -190,7 +190,7 @@ public final class Ruby {
     private RubyClass stringClass;
     private RubyClass symbolClass;
     
-    private IRubyObject nilObject;
+    private RubyNil nilObject;
     private RubyBoolean trueObject;
     private RubyBoolean falseObject;
     
@@ -698,7 +698,7 @@ public final class Ruby {
     /** Returns the "nil" singleton instance.
      * @return "nil"
      */
-    public IRubyObject getNil() {
+    public RubyNil getNil() {
         return nilObject;
     }
 

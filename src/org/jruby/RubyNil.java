@@ -66,7 +66,6 @@ public class RubyNil extends RubyObject {
         nilClass.index = ClassIndex.NIL;
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNil.class);
-        nilClass.defineFastMethod("type", callbackFactory.getFastSingletonMethod("type"));
         nilClass.defineFastMethod("to_i", callbackFactory.getFastSingletonMethod("to_i"));
         nilClass.defineFastMethod("to_s", callbackFactory.getFastSingletonMethod("to_s"));
         nilClass.defineFastMethod("to_a", callbackFactory.getFastSingletonMethod("to_a"));
@@ -77,9 +76,6 @@ public class RubyNil extends RubyObject {
         nilClass.defineFastMethod("|", callbackFactory.getFastSingletonMethod("op_or", RubyKernel.IRUBY_OBJECT));
         nilClass.defineFastMethod("^", callbackFactory.getFastSingletonMethod("op_xor", RubyKernel.IRUBY_OBJECT));
         nilClass.defineFastMethod("nil?", callbackFactory.getFastMethod("nil_p"));
-        nilClass.defineFastMethod("id", callbackFactory.getFastSingletonMethod("id"));
-        nilClass.defineFastMethod("taint", callbackFactory.getFastMethod("taint"));
-        nilClass.defineFastMethod("freeze", callbackFactory.getFastMethod("freeze"));
         
         nilClass.getMetaClass().undefineMethod("new");
         
@@ -173,11 +169,7 @@ public class RubyNil extends RubyObject {
     public static RubyBoolean op_xor(IRubyObject recv, IRubyObject obj) {
         return recv.getRuntime().newBoolean(obj.isTrue());
     }
-    
-    public static RubyFixnum id(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(4);
-    }
-    
+
     public IRubyObject freeze() {
         return this;
     }
