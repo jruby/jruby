@@ -90,6 +90,8 @@ public class RubyModule extends RubyObject {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyModule.class);            
             
         moduleClass.defineFastMethod("===", callbackFactory.getFastMethod("op_eqq", IRubyObject.class));
+        moduleClass.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
+        moduleClass.defineFastMethod("freeze", callbackFactory.getFastMethod("freeze"));        
         moduleClass.defineFastMethod("<=>", callbackFactory.getFastMethod("op_cmp", IRubyObject.class));
         moduleClass.defineFastMethod("<", callbackFactory.getFastMethod("op_lt", IRubyObject.class));
         moduleClass.defineFastMethod("<=", callbackFactory.getFastMethod("op_le", IRubyObject.class));
@@ -1464,6 +1466,18 @@ public class RubyModule extends RubyObject {
      */
     public RubyBoolean op_eqq(IRubyObject obj) {
         return getRuntime().newBoolean(obj.isKindOf(this));
+    }
+
+    public IRubyObject op_equal(IRubyObject other) {
+        return super.obj_equal(other);
+    }
+
+    /** rb_mod_freeze
+     *
+     */   
+    public IRubyObject freeze() {
+        to_s();
+        return super.freeze();
     }
 
     /** rb_mod_le
