@@ -1,4 +1,6 @@
 # Our own test/unit-based tests
+# NOTE: test_globals comes first here because it has tests that $? be nil
+test_globals
 test_array
 test_array_subclass_behavior
 test_autoload
@@ -18,7 +20,6 @@ test_dup_clone_taint_freeze
 test_env
 test_file
 test_flip
-test_globals
 test_hash
 test_higher_javasupport
 test_iconv

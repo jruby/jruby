@@ -217,7 +217,8 @@ public class RubyGlobal {
         }
         
         public IRubyObject get() {
-            return runtime.getCurrentContext().getLastExitStatus();
+            IRubyObject lastExitStatus = runtime.getCurrentContext().getLastExitStatus();
+            return lastExitStatus == null ? runtime.getNil() : lastExitStatus;
         }
         
         public IRubyObject set(IRubyObject lastExitStatus) {

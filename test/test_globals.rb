@@ -101,13 +101,21 @@ class TestGlobals < Test::Unit::TestCase
   end
   
   def test_english_ignore_case
-      alias $IGNORECASE $=
-      assert_not_nil($IGNORECASE)
-      assert_equal($=, $IGNORECASE)
-      assert_nil("fOo" =~ /foo/)
-      assert("fOo" =~ /foo/i)
-      $= = true
-      assert("fOo" =~ /foo/)
-      $= = false
-   end
+    alias $IGNORECASE $=
+    assert_not_nil($IGNORECASE)
+    assert_equal($=, $IGNORECASE)
+    assert_nil("fOo" =~ /foo/)
+    assert("fOo" =~ /foo/i)
+    $= = true
+    assert("fOo" =~ /foo/)
+    $= = false
+  end
+
+  # JRUBY-1396, $? was returning Java null instead of nil when uninitialized
+  def test_last_exit_status_as_param
+    assert_nothing_raised {'foo' == $?}
+  end
+  def test_that_last_exit_status_is_nil
+    assert_nil $?
+  end
 end
