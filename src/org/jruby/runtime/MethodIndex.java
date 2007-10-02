@@ -76,7 +76,7 @@ public class MethodIndex {
     public static final int DEFAULT = getIndex("default");
     
     public synchronized static int getIndex(String methodName) {
-        Integer index = (Integer)NUMBERS.get(methodName);
+        Integer index = NUMBERS.get(methodName);
         
         if (index == null) {
             index = new Integer(NAMES.size());
@@ -84,42 +84,18 @@ public class MethodIndex {
             NAMES.add(methodName);
         }
         
-        return index.intValue();
+        return index;
     }
     
     public synchronized static CallAdapter getCallAdapter(String name) {
-        int index = getIndex(name);
-        CallAdapter callAdapter = (CallAdapter)CALL_ADAPTERS.get(new Integer(index));
-        
-        if (callAdapter == null) {
-            callAdapter = new CallAdapter.DefaultCallAdapter(name, CallType.NORMAL);
-            CALL_ADAPTERS.put(new Integer(index), callAdapter);
-        }
-        
-        return callAdapter;
+        return new CallAdapter.DefaultCallAdapter(name, CallType.NORMAL);
     }
     
     public synchronized static CallAdapter getFunctionAdapter(String name) {
-        int index = getIndex(name);
-        CallAdapter callAdapter = (CallAdapter)FUNCTION_ADAPTERS.get(new Integer(index));
-        
-        if (callAdapter == null) {
-            callAdapter = new CallAdapter.DefaultCallAdapter(name, CallType.FUNCTIONAL);
-            FUNCTION_ADAPTERS.put(new Integer(index), callAdapter);
-        }
-        
-        return callAdapter;
+        return new CallAdapter.DefaultCallAdapter(name, CallType.FUNCTIONAL);
     }
     
     public synchronized static CallAdapter getVariableAdapter(String name) {
-        int index = getIndex(name);
-        CallAdapter callAdapter = (CallAdapter)VARIABLE_ADAPTERS.get(new Integer(index));
-        
-        if (callAdapter == null) {
-            callAdapter = new CallAdapter.DefaultCallAdapter(name, CallType.VARIABLE);
-            VARIABLE_ADAPTERS.put(new Integer(index), callAdapter);
-        }
-        
-        return callAdapter;
+        return new CallAdapter.DefaultCallAdapter(name, CallType.VARIABLE);
     }
 }
