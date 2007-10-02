@@ -2702,7 +2702,25 @@ public class ASTCompiler {
 
         Node nextNode = rootNode.getBodyNode();
         if (nextNode != null) {
-            compile(nextNode, methodCompiler);
+            if (nextNode.nodeId == NodeType.BLOCKNODE) {
+                // it's a multiple-statement body, iterate over all elements in turn and chain if it get too long
+                BlockNode blockNode = (BlockNode)nextNode;
+                
+                for (int i = 0; i < blockNode.size(); i++) {
+                    if ((i + 1) % 500 == 0) {
+                        methodCompiler = methodCompiler.chainToMethod("__file__from_line_" + (i + 1), inspector);
+                    }
+                    compile(blockNode.get(i), methodCompiler);
+            
+                    if (i + 1 < blockNode.size()) {
+                        // clear result from previous line
+                        methodCompiler.consumeCurrentValue();
+                    }
+                }
+            } else {
+                // single-statement body, just compile it
+                compile(nextNode, methodCompiler);
+            }
         } else {
             methodCompiler.loadNil();
         }

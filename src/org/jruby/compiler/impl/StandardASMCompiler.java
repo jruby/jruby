@@ -365,6 +365,27 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public abstract void endMethod();
         
+        public MethodCompiler chainToMethod(String methodName, ASTInspector inspector) {
+            // chain to the next segment of this giant method
+            method.aload(THIS);
+            loadThreadContext();
+            loadSelf();
+            method.aload(ARGS_INDEX);
+            if(this instanceof ASMClosureCompiler) {
+                pushNull();
+            } else {
+                loadBlock();
+            }
+            method.invokevirtual(classname, methodName, cg.sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}));
+            endMethod();
+
+            ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, inspector);
+
+            methodCompiler.beginChainedMethod();
+
+            return methodCompiler;
+        }
+        
         public StandardASMCompiler getScriptCompiler() {
             return StandardASMCompiler.this;
         }
@@ -2433,6 +2454,24 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 variableCompiler = new StackBasedVariableCompiler(this, method, ARGS_INDEX, CLOSURE_INDEX);
             }
             invocationCompiler = new StandardInvocationCompiler(this, method);
+        }
+        
+        public void beginChainedMethod() {
+            method.aload(THREADCONTEXT_INDEX);
+            method.dup();
+            method.invokevirtual(cg.p(ThreadContext.class), "getRuntime", cg.sig(Ruby.class));
+            method.dup();
+            method.astore(RUNTIME_INDEX);
+
+            // grab nil for local variables
+            method.invokevirtual(cg.p(Ruby.class), "getNil", cg.sig(IRubyObject.class));
+            method.astore(NIL_INDEX);
+
+            method.invokevirtual(cg.p(ThreadContext.class), "getCurrentScope", cg.sig(DynamicScope.class));
+            method.dup();
+            method.astore(DYNAMIC_SCOPE_INDEX);
+            method.invokevirtual(cg.p(DynamicScope.class), "getValues", cg.sig(IRubyObject[].class));
+            method.astore(VARS_ARRAY_INDEX);
         }
 
         public void beginMethod(ClosureCallback args, StaticScope scope) {
