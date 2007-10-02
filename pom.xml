@@ -151,8 +151,8 @@
               <include>build.xml</include>
               <include>test/**/*.rb</include>
               <include>test/**/*.txt</include>
-              <include>test/test_index</include>
-              <include>test/test_unit_index</include>
+              <include>test/*index</include>
+              <include>test/**/*.yml</include>
               <include>test/RubyInitTest.jar</include>
               <include>test/requireTarget.jar</include>
             </includes>
@@ -220,6 +220,7 @@
         <javac.version>${java.specification.version}</javac.version>
         <os.arch>${os.arch}</os.arch>
         <java.specification.version>${java.specification.version}</java.specification.version>
+        <jruby.launch.memory>384m</jruby.launch.memory>
       </properties>
     </profile>
     <profile>
