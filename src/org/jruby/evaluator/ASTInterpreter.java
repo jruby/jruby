@@ -43,7 +43,6 @@ import org.jruby.RubyHash;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -157,10 +156,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.KCode;
 import org.jruby.regexp.PatternSyntaxException;
 
-public class EvaluationState {
+public class ASTInterpreter {
     public static IRubyObject eval(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
         assert self != null : "self during eval must never be null";
         try {
@@ -1911,7 +1909,7 @@ public class EvaluationState {
             try {
                 IRubyObject left = runtime.getObject();
                 if (iVisited instanceof Colon2Node) {
-                    left = EvaluationState.eval(runtime, context, ((Colon2Node) iVisited).getLeftNode(), self, aBlock);
+                    left = ASTInterpreter.eval(runtime, context, ((Colon2Node) iVisited).getLeftNode(), self, aBlock);
                 }
 
                 if (left instanceof RubyModule &&
@@ -2001,7 +1999,7 @@ public class EvaluationState {
         }
         default:
             try {
-                EvaluationState.eval(runtime, context, node, self, aBlock);
+                ASTInterpreter.eval(runtime, context, node, self, aBlock);
                 return "expression";
             } catch (JumpException jumpExcptn) {}
         }

@@ -1,7 +1,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyArray;
-import org.jruby.evaluator.EvaluationState;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -160,7 +160,7 @@ public class DynamicScope {
             assert restArg != null;
             
             // FIXME: not very efficient
-            RubyArray splattedArgs = EvaluationState.splatValue(restArg.getRuntime(), restArg);            
+            RubyArray splattedArgs = ASTInterpreter.splatValue(restArg.getRuntime(), restArg);            
             IRubyObject[] argValues = new IRubyObject[totalArgs + splattedArgs.size()];
             System.arraycopy(variableValues, 0, argValues, 0, totalArgs);
             System.arraycopy(splattedArgs.toJavaArray(), 0, argValues, totalArgs, splattedArgs.size());

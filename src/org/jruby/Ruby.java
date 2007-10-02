@@ -67,7 +67,7 @@ import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.compiler.yarv.StandardYARVCompiler;
-import org.jruby.evaluator.EvaluationState;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
@@ -354,7 +354,7 @@ public final class Ruby {
         try {
             ThreadContext tc = getCurrentContext();
 
-            return EvaluationState.eval(this, tc, node, tc.getFrameSelf(), Block.NULL_BLOCK);
+            return ASTInterpreter.eval(this, tc, node, tc.getFrameSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             throw newLocalJumpError("return", (IRubyObject)rj.getValue(), "unexpected return");
         } catch (JumpException.BreakJump bj) {
@@ -567,7 +567,7 @@ public final class Ruby {
         ThreadContext context = getCurrentContext();
         
         try {
-            return EvaluationState.eval(this, context, scriptNode, getTopSelf(), Block.NULL_BLOCK);
+            return ASTInterpreter.eval(this, context, scriptNode, getTopSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }
@@ -1710,7 +1710,7 @@ public final class Ruby {
             context.preNodeEval(objectClass, self);
 
             Node node = parseFile(source, scriptName, null);
-            EvaluationState.eval(this, context, node, self, Block.NULL_BLOCK);
+            ASTInterpreter.eval(this, context, node, self, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return;
         } finally {

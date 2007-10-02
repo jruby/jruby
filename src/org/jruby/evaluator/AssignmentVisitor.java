@@ -101,7 +101,7 @@ public class AssignmentVisitor {
     private static void attrAssignNode(Ruby runtime, ThreadContext context, IRubyObject self, Node node, IRubyObject value, Block block) {
         AttrAssignNode iVisited = (AttrAssignNode) node;
         
-        IRubyObject receiver = EvaluationState.eval(runtime, context, iVisited.getReceiverNode(), self, block);
+        IRubyObject receiver = ASTInterpreter.eval(runtime, context, iVisited.getReceiverNode(), self, block);
         
         // If reciever is self then we do the call the same way as vcall
         CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
@@ -109,7 +109,7 @@ public class AssignmentVisitor {
         if (iVisited.getArgsNode() == null) { // attribute set.
             receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, callType);
         } else { // element set
-            RubyArray args = (RubyArray)EvaluationState.eval(runtime, context, iVisited.getArgsNode(), self, block);
+            RubyArray args = (RubyArray)ASTInterpreter.eval(runtime, context, iVisited.getArgsNode(), self, block);
             args.append(value);
             receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), callType);
         }
@@ -118,12 +118,12 @@ public class AssignmentVisitor {
     private static void callNode(Ruby runtime, ThreadContext context, IRubyObject self, Node node, IRubyObject value, Block block) {
         CallNode iVisited = (CallNode)node;
         
-        IRubyObject receiver = EvaluationState.eval(runtime, context, iVisited.getReceiverNode(), self, block);
+        IRubyObject receiver = ASTInterpreter.eval(runtime, context, iVisited.getReceiverNode(), self, block);
 
         if (iVisited.getArgsNode() == null) { // attribute set.
             receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
         } else { // element set
-            RubyArray args = (RubyArray)EvaluationState.eval(runtime, context, iVisited.getArgsNode(), self, block);
+            RubyArray args = (RubyArray)ASTInterpreter.eval(runtime, context, iVisited.getArgsNode(), self, block);
             args.append(value);
             receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
         }
@@ -131,7 +131,7 @@ public class AssignmentVisitor {
 
     private static void classVarAsgnNode(ThreadContext context, Node node, IRubyObject value) {
         ClassVarAsgnNode iVisited = (ClassVarAsgnNode)node;
-        RubyModule rubyClass = EvaluationState.getClassVariableBase(context, context.getRuntime());
+        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, context.getRuntime());
         rubyClass.setClassVar(iVisited.getName(), value);
     }
 
@@ -142,7 +142,7 @@ public class AssignmentVisitor {
             runtime.getWarnings().warn(iVisited.getPosition(),
                     "Declaring singleton class variable.");
         }
-        RubyModule rubyClass = EvaluationState.getClassVariableBase(context, context.getRuntime());
+        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, context.getRuntime());
         rubyClass.setClassVar(iVisited.getName(), value);
     }
 
@@ -160,7 +160,7 @@ public class AssignmentVisitor {
                 throw runtime.newTypeError("no class/module to define constant");
             }
         } else if (constNode instanceof Colon2Node) {
-            module = EvaluationState.eval(runtime, context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, block);
+            module = ASTInterpreter.eval(runtime, context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, block);
         } else { // Colon3
             module = runtime.getObject();
         } 

@@ -38,7 +38,7 @@
 package org.jruby;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.jruby.evaluator.EvaluationState;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -837,7 +837,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             Node node = 
                 getRuntime().parseEval(src.toString(), file, blockOfBinding.getDynamicScope(), lineNumber);
 
-            return EvaluationState.eval(getRuntime(), context, node, newSelf, blockOfBinding);
+            return ASTInterpreter.eval(getRuntime(), context, node, newSelf, blockOfBinding);
         } catch (JumpException.BreakJump bj) {
             throw getRuntime().newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
         } catch (JumpException.RedoJump rj) {
@@ -863,7 +863,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         try {
             Node node = getRuntime().parseEval(src.toString(), file, context.getCurrentScope(), 0);
             
-            return EvaluationState.eval(getRuntime(), context, node, this, Block.NULL_BLOCK);
+            return ASTInterpreter.eval(getRuntime(), context, node, this, Block.NULL_BLOCK);
         } catch (JumpException.BreakJump bj) {
             throw getRuntime().newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
         } finally {

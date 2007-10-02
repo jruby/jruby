@@ -46,7 +46,7 @@ import org.jruby.compiler.MethodCompiler;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.EvaluationState;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -141,7 +141,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     traceCall(context, runtime, name);
                 }
 
-                return EvaluationState.eval(runtime, context, body, self, block);
+                return ASTInterpreter.eval(runtime, context, body, self, block);
             } catch (JumpException.ReturnJump rj) {
                 if (rj.getTarget() == this) {
                     return (IRubyObject) rj.getValue();
@@ -280,7 +280,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
    
             // assign the default values, adding to the end of allArgs
             for (int i = 0; j < optArgs.size(); i++, j++) {
-                EvaluationState.eval(runtime, context, optArgs.get(j), context.getFrameSelf(), Block.NULL_BLOCK);
+                ASTInterpreter.eval(runtime, context, optArgs.get(j), context.getFrameSelf(), Block.NULL_BLOCK);
             }
         }
         

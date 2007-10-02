@@ -42,7 +42,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.EvaluationState;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -230,7 +230,7 @@ public class Block {
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    return EvaluationState.eval(context.getRuntime(), context, iterNode.getBodyNode(), self, NULL_BLOCK);
+                    return ASTInterpreter.eval(context.getRuntime(), context, iterNode.getBodyNode(), self, NULL_BLOCK);
                 } catch (JumpException.RedoJump rj) {
                     context.pollThreadEvents();
                     // do nothing, allow loop to redo
