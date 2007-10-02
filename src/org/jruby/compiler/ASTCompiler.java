@@ -132,7 +132,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author headius
  */
-public class NodeCompilerFactory {
+public class ASTCompiler {
     public static void compile(Node node, MethodCompiler context) {
         if (node == null) {
             context.loadNil();
@@ -612,7 +612,7 @@ public class NodeCompilerFactory {
         ClosureCallback valueCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (breakNode.getValueNode() != null) {
-                    NodeCompilerFactory.compile(breakNode.getValueNode(), context);
+                    ASTCompiler.compile(breakNode.getValueNode(), context);
                 } else {
                     context.loadNil();
                 }
@@ -629,7 +629,7 @@ public class NodeCompilerFactory {
         
         ClosureCallback receiverCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
-                NodeCompilerFactory.compile(callNode.getReceiverNode(), context);
+                ASTCompiler.compile(callNode.getReceiverNode(), context);
             }
         };
         
@@ -725,7 +725,7 @@ public class NodeCompilerFactory {
                     }
 
                     if (currentWhen.getBodyNode() != null) {
-                        NodeCompilerFactory.compile(currentWhen.getBodyNode(), context);
+                        ASTCompiler.compile(currentWhen.getBodyNode(), context);
                     } else {
                         context.loadNil();
                     }
@@ -735,7 +735,7 @@ public class NodeCompilerFactory {
             BranchCallback falseBranch = new BranchCallback() {
                 public void branch(MethodCompiler context) {
                     // proceed to the next when
-                    NodeCompilerFactory.compileWhen(currentWhen.getNextCase(), context, hasCase);
+                    ASTCompiler.compileWhen(currentWhen.getNextCase(), context, hasCase);
                 }
             };
 
@@ -792,7 +792,7 @@ public class NodeCompilerFactory {
                 }
 
                 if (whenNode.getBodyNode() != null) {
-                    NodeCompilerFactory.compile(whenNode.getBodyNode(), context);
+                    ASTCompiler.compile(whenNode.getBodyNode(), context);
                 } else {
                     context.loadNil();
                 }
@@ -802,7 +802,7 @@ public class NodeCompilerFactory {
         BranchCallback falseBranch = new BranchCallback() {
             public void branch(MethodCompiler context) {
                 // proceed to the next when
-                NodeCompilerFactory.compileMultiArgWhen(whenNode, expressionsNode, conditionIndex + 1, context, hasCase);
+                ASTCompiler.compileMultiArgWhen(whenNode, expressionsNode, conditionIndex + 1, context, hasCase);
             }
         };
 
@@ -820,7 +820,7 @@ public class NodeCompilerFactory {
         
         ClosureCallback superCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
-                NodeCompilerFactory.compile(superNode, context);
+                ASTCompiler.compile(superNode, context);
             }
         };
         if (superNode == null) {
@@ -830,7 +830,7 @@ public class NodeCompilerFactory {
         ClosureCallback bodyCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (classNode.getBodyNode() != null) {
-                    NodeCompilerFactory.compile(classNode.getBodyNode(), context);
+                    ASTCompiler.compile(classNode.getBodyNode(), context);
                 } else {
                     context.loadNil();
                 }
@@ -842,7 +842,7 @@ public class NodeCompilerFactory {
                 if (cpathNode instanceof Colon2Node) {
                     Node leftNode = ((Colon2Node)cpathNode).getLeftNode();
                     if (leftNode != null) {
-                        NodeCompilerFactory.compile(leftNode, context);
+                        ASTCompiler.compile(leftNode, context);
                     } else {
                         context.loadNil();
                     }
@@ -864,14 +864,14 @@ public class NodeCompilerFactory {
         
         ClosureCallback receiverCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
-                NodeCompilerFactory.compile(sclassNode.getReceiverNode(), context);
+                ASTCompiler.compile(sclassNode.getReceiverNode(), context);
             }
         };
         
         ClosureCallback bodyCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (sclassNode.getBodyNode() != null) {
-                    NodeCompilerFactory.compile(sclassNode.getBodyNode(), context);
+                    ASTCompiler.compile(sclassNode.getBodyNode(), context);
                 } else {
                     context.loadNil();
                 }
@@ -979,7 +979,7 @@ public class NodeCompilerFactory {
         } else {
             final ClosureCallback receiverCallback = new ClosureCallback() {
                 public void compile(MethodCompiler context) {
-                    NodeCompilerFactory.compile(iVisited.getLeftNode(), context);
+                    ASTCompiler.compile(iVisited.getLeftNode(), context);
                 }
             };
             
@@ -1199,7 +1199,7 @@ public class NodeCompilerFactory {
                     public void branch(MethodCompiler context){
                         if(iVisited instanceof Colon2Node) {
                             final Node leftNode = ((Colon2Node)iVisited).getLeftNode();
-                            NodeCompilerFactory.compile(leftNode, context);
+                            ASTCompiler.compile(leftNode, context);
                         } else {
                             context.loadObject();
                         }
@@ -1222,17 +1222,16 @@ public class NodeCompilerFactory {
                 };
             context.isConstantBranch(setup, isConstant, isMethod, none, name);
         }
-            break;
         case CALLNODE: {
             final CallNode iVisited = (CallNode) node;
             Object isnull = context.getNewEnding();
             Object ending = context.getNewEnding();
-            NodeCompilerFactory.compileGetDefinition(iVisited.getReceiverNode(), context);
+            ASTCompiler.compileGetDefinition(iVisited.getReceiverNode(), context);
             context.ifNull(isnull);
 
             context.rescue(new BranchCallback() {
                     public void branch(MethodCompiler context) {
-                        NodeCompilerFactory.compile(iVisited.getReceiverNode(), context); //[IRubyObject]
+                        ASTCompiler.compile(iVisited.getReceiverNode(), context); //[IRubyObject]
                         context.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
                         context.metaclass(); //[IRubyObject, RubyClass]
                         context.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
@@ -1275,7 +1274,6 @@ public class NodeCompilerFactory {
             context.pushNull();
             context.setEnding(ending); 
         }
-            break;
         case CLASSVARNODE: {
             ClassVarNode iVisited = (ClassVarNode) node;
             final Object ending = context.getNewEnding();
@@ -1385,12 +1383,12 @@ public class NodeCompilerFactory {
             final AttrAssignNode iVisited = (AttrAssignNode) node;
             Object isnull = context.getNewEnding();
             Object ending = context.getNewEnding();
-            NodeCompilerFactory.compileGetDefinition(iVisited.getReceiverNode(), context);
+            ASTCompiler.compileGetDefinition(iVisited.getReceiverNode(), context);
             context.ifNull(isnull);
 
             context.rescue(new BranchCallback() {
                     public void branch(MethodCompiler context) {
-                        NodeCompilerFactory.compile(iVisited.getReceiverNode(), context); //[IRubyObject]
+                        ASTCompiler.compile(iVisited.getReceiverNode(), context); //[IRubyObject]
                         context.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
                         context.metaclass(); //[IRubyObject, RubyClass]
                         context.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
@@ -1431,11 +1429,10 @@ public class NodeCompilerFactory {
             context.pushNull();
             context.setEnding(ending); 
         }
-            break;
         default:
             context.rescue(new BranchCallback(){
                     public void branch(MethodCompiler context){
-                        NodeCompilerFactory.compile(node, context);
+                        ASTCompiler.compile(node, context);
                         context.consumeCurrentValue();
                         context.pushNull();
                     }
@@ -1473,7 +1470,7 @@ public class NodeCompilerFactory {
         ClosureCallback body = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (defnNode.getBodyNode() != null) {
-                    NodeCompilerFactory.compile(defnNode.getBodyNode(), context);
+                    ASTCompiler.compile(defnNode.getBodyNode(), context);
                 } else {
                     context.loadNil();
                 }
@@ -1502,14 +1499,14 @@ public class NodeCompilerFactory {
         
         ClosureCallback receiver = new ClosureCallback() {
             public void compile(MethodCompiler context) {
-                NodeCompilerFactory.compile(defsNode.getReceiverNode(), context);
+                ASTCompiler.compile(defsNode.getReceiverNode(), context);
             }
         };
         
         ClosureCallback body = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (defsNode.getBodyNode() != null) {
-                    NodeCompilerFactory.compile(defsNode.getBodyNode(), context);
+                    ASTCompiler.compile(defsNode.getBodyNode(), context);
                 } else {
                     context.loadNil();
                 }
@@ -1621,7 +1618,7 @@ public class NodeCompilerFactory {
                 ArrayCallback dstrCallback = new ArrayCallback() {
                 public void nextValue(MethodCompiler context, Object sourceArray,
                                       int index) {
-                        NodeCompilerFactory.compile(dregexpNode.get(index), context);
+                        ASTCompiler.compile(dregexpNode.get(index), context);
                     }
                 };
                 context.createNewString(dstrCallback,dregexpNode.size());
@@ -1785,7 +1782,7 @@ public class NodeCompilerFactory {
 
             return new ClosureCallback() {
                 public void compile(MethodCompiler context) {
-                    NodeCompilerFactory.compile(iterNode, context);
+                    ASTCompiler.compile(iterNode, context);
                 }
             };
         case BLOCKPASSNODE:
@@ -1793,7 +1790,7 @@ public class NodeCompilerFactory {
 
             return new ClosureCallback() {
                 public void compile(MethodCompiler context) {
-                    NodeCompilerFactory.compile(blockPassNode.getBodyNode(), context);
+                    ASTCompiler.compile(blockPassNode.getBodyNode(), context);
                     context.unwrapPassedBlock();
                 }
             };
@@ -1917,7 +1914,7 @@ public class NodeCompilerFactory {
         
         ClosureCallback receiverCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
-                NodeCompilerFactory.compile(forNode.getIterNode(), context);
+                ASTCompiler.compile(forNode.getIterNode(), context);
             }
         };
            
@@ -1939,7 +1936,7 @@ public class NodeCompilerFactory {
         final ClosureCallback closureBody = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (forNode.getBodyNode() != null) {
-                    NodeCompilerFactory.compile(forNode.getBodyNode(), context);
+                    ASTCompiler.compile(forNode.getBodyNode(), context);
                 } else {
                     context.loadNil();
                 }
@@ -2123,7 +2120,7 @@ public class NodeCompilerFactory {
         final ClosureCallback closureBody = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (iterNode.getBodyNode() != null) {
-                    NodeCompilerFactory.compile(iterNode.getBodyNode(), context);
+                    ASTCompiler.compile(iterNode.getBodyNode(), context);
                 } else {
                     context.loadNil();
                 }
@@ -2227,7 +2224,7 @@ public class NodeCompilerFactory {
         ClosureCallback bodyCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (moduleNode.getBodyNode() != null) {
-                    NodeCompilerFactory.compile(moduleNode.getBodyNode(), context);
+                    ASTCompiler.compile(moduleNode.getBodyNode(), context);
                 }
                 context.loadNil();
             }
@@ -2238,7 +2235,7 @@ public class NodeCompilerFactory {
                 if (cpathNode instanceof Colon2Node) {
                     Node leftNode = ((Colon2Node)cpathNode).getLeftNode();
                     if (leftNode != null) {
-                        NodeCompilerFactory.compile(leftNode, context);
+                        ASTCompiler.compile(leftNode, context);
                     } else {
                         context.loadNil();
                     }
@@ -2303,7 +2300,7 @@ public class NodeCompilerFactory {
                     // done processing args
                 } else {
                     // assign to appropriate variable
-                    NodeCompilerFactory.compileAssignment(argsNode, context);
+                    ASTCompiler.compileAssignment(argsNode, context);
                 }
             }
         };
@@ -2342,7 +2339,7 @@ public class NodeCompilerFactory {
         ClosureCallback valueCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (nextNode.getValueNode() != null) {
-                    NodeCompilerFactory.compile(nextNode.getValueNode(), context);
+                    ASTCompiler.compile(nextNode.getValueNode(), context);
                 } else {
                     context.loadNil();
                 }
@@ -2434,7 +2431,7 @@ public class NodeCompilerFactory {
         
         final ClosureCallback receiverCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
-                NodeCompilerFactory.compile(opAsgnNode.getReceiverNode(), context); // [recv]
+                ASTCompiler.compile(opAsgnNode.getReceiverNode(), context); // [recv]
                 context.duplicateCurrentValue(); // [recv, recv]
             }
         };
@@ -2505,7 +2502,7 @@ public class NodeCompilerFactory {
         
         ClosureCallback valueArgsCallback = new ClosureCallback() {
             public void compile(MethodCompiler context) {
-                NodeCompilerFactory.compile(opElementAsgnNode.getValueNode(), context);
+                ASTCompiler.compile(opElementAsgnNode.getValueNode(), context);
             }
         };
         
@@ -2537,7 +2534,7 @@ public class NodeCompilerFactory {
         final ClosureCallback closureBody = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (postExeNode.getBodyNode() != null) {
-                    NodeCompilerFactory.compile(postExeNode.getBodyNode(), context);
+                    ASTCompiler.compile(postExeNode.getBodyNode(), context);
                 } else {
                     context.loadNil();
                 }
@@ -2555,7 +2552,7 @@ public class NodeCompilerFactory {
         final ClosureCallback closureBody = new ClosureCallback() {
             public void compile(MethodCompiler context) {
                 if (preExeNode.getBodyNode() != null) {
-                    NodeCompilerFactory.compile(preExeNode.getBodyNode(), context);
+                    ASTCompiler.compile(preExeNode.getBodyNode(), context);
                 } else {
                     context.loadNil();
                 }

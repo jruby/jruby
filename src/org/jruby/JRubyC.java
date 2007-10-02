@@ -16,7 +16,7 @@ import java.io.StringReader;
 
 import org.jruby.ast.Node;
 import org.jruby.compiler.ASTInspector;
-import org.jruby.compiler.NodeCompilerFactory;
+import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.StandardASMCompiler;
 
@@ -67,7 +67,7 @@ public class JRubyC {
                 String classDotted = classPath.replace('/', '.').replace('\\', '.');
                 StandardASMCompiler compiler = new StandardASMCompiler(classPath, filename);
                 System.out.println("Compiling file \"" + filename + "\" as class \"" + classDotted + "\"");
-                NodeCompilerFactory.compileRoot(scriptNode, compiler, inspector);
+                ASTCompiler.compileRoot(scriptNode, compiler, inspector);
 
                 compiler.writeClass(destfile);
             }

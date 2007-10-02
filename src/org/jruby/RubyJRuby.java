@@ -40,7 +40,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 
 import org.jruby.ast.Node;
 import org.jruby.compiler.ASTInspector;
-import org.jruby.compiler.NodeCompilerFactory;
+import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.objectweb.asm.ClassReader;
 
@@ -154,7 +154,7 @@ public class RubyJRuby {
         inspector.inspect(node);
             
         StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
-        NodeCompilerFactory.compileRoot(node, compiler, inspector);
+        ASTCompiler.compileRoot(node, compiler, inspector);
         byte[] bts = compiler.getClassByteArray();
 
         IRubyObject compiledScript = ((RubyModule)recv).getConstant("CompiledScript").callMethod(recv.getRuntime().getCurrentContext(),"new");

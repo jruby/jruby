@@ -43,7 +43,7 @@ import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ClosureCallback;
 import org.jruby.compiler.MethodCompiler;
-import org.jruby.compiler.NodeCompilerFactory;
+import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluationState;
@@ -176,7 +176,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
                     ClosureCallback args = new ClosureCallback() {
                         public void compile(MethodCompiler context) {
-                            NodeCompilerFactory.compileArgs(argsNode, context);
+                            ASTCompiler.compileArgs(argsNode, context);
                         }
                     };
         
@@ -188,7 +188,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     if (body != null) {
                         // we have a body, do a full-on method
                         methodCompiler = compiler.startMethod("__file__", args, staticScope, inspector);
-                        NodeCompilerFactory.compile(body, methodCompiler);
+                        ASTCompiler.compile(body, methodCompiler);
                     } else {
                         // If we don't have a body, check for opt args; if no opt args, there's no logic in this method so don't do anything
                         if (argsNode != null && argsNode.getOptArgs() != null) {

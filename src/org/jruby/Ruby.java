@@ -63,7 +63,7 @@ import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.YARVCompiledRunner;
 import org.jruby.common.RubyWarnings;
 import org.jruby.compiler.ASTInspector;
-import org.jruby.compiler.NodeCompilerFactory;
+import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.compiler.yarv.StandardYARVCompiler;
@@ -497,7 +497,7 @@ public final class Ruby {
             inspector.inspect(node);
 
             StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
-            NodeCompilerFactory.compileRoot(node, compiler, inspector);
+            ASTCompiler.compileRoot(node, compiler, inspector);
             script = (Script)compiler.loadClass(this.getJRubyClassLoader()).newInstance();
 
             if (config.isJitLogging()) {
@@ -531,7 +531,7 @@ public final class Ruby {
     private YARVCompiledRunner tryCompileYarv(Node node) {
         try {
             StandardYARVCompiler compiler = new StandardYARVCompiler(this);
-            NodeCompilerFactory.getYARVCompiler().compile(node, compiler);
+            ASTCompiler.getYARVCompiler().compile(node, compiler);
             org.jruby.lexer.yacc.ISourcePosition p = node.getPosition();
             if(p == null && node instanceof org.jruby.ast.RootNode) {
                 p = ((org.jruby.ast.RootNode)node).getBodyNode().getPosition();
