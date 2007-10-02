@@ -3,7 +3,7 @@ require 'java'
 require 'test/minirunit'
 
 StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
-NodeCompilerFactory = org.jruby.compiler.NodeCompilerFactory
+ASTCompiler = org.jruby.compiler.ASTCompiler
 ASTInspector = org.jruby.compiler.ASTInspector
 Block = org.jruby.runtime.Block
 IRubyObject = org.jruby.runtime.builtin.IRubyObject
@@ -15,7 +15,7 @@ def compile_to_class(src)
   inspector = ASTInspector.new
   inspector.inspect(node)
   context = StandardASMCompiler.new(classname, filename)
-  NodeCompilerFactory.compileRoot(node, context, inspector)
+  ASTCompiler.compileRoot(node, context, inspector)
 
   context.loadClass(JRuby.runtime.getJRubyClassLoader)
 end
