@@ -35,6 +35,16 @@
       <artifactId>asm-util</artifactId>
       <version>3.0</version>
     </dependency>
+    <dependency>
+      <groupId>asm</groupId>
+      <artifactId>asm-analysis</artifactId>
+      <version>3.0</version>
+    </dependency>
+    <dependency>
+      <groupId>asm</groupId>
+      <artifactId>asm-tree</artifactId>
+      <version>3.0</version>
+    </dependency>
     <!-- TODO: replace this JNA system dependency with a real one -->
     <dependency>
       <groupId>com.sun.jna</groupId>

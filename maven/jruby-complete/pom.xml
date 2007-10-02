@@ -45,6 +45,18 @@
       <version>3.0</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>asm</groupId>
+      <artifactId>asm-analysis</artifactId>
+      <version>3.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>asm</groupId>
+      <artifactId>asm-tree</artifactId>
+      <version>3.0</version>
+      <scope>provided</scope>
+    </dependency>
     <!-- TODO: replace this JNA system dependency with a real one -->
     <dependency>
       <groupId>com.sun.jna</groupId>
@@ -82,6 +94,16 @@
                 <artifactItem>
                   <groupId>asm</groupId>
                   <artifactId>asm-util</artifactId>
+                  <version>3.0</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>asm</groupId>
+                  <artifactId>asm-analysis</artifactId>
+                  <version>3.0</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>asm</groupId>
+                  <artifactId>asm-tree</artifactId>
                   <version>3.0</version>
                 </artifactItem>
                 <artifactItem>
