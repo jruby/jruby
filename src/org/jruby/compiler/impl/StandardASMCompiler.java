@@ -886,9 +886,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     method.ifeq(raiseNext);
                     // pop the extra string, get the break value, and end the loop
                     method.pop();
-                    method.invokevirtual(cg.p(RaiseException.class), "getException", cg.sig(RubyException.class));
-                    method.checkcast(cg.p(RubyLocalJumpError.class));
-                    method.invokevirtual(cg.p(RubyLocalJumpError.class), "exitValue", cg.sig(IRubyObject.class));
+                    invokeUtilityMethod("unwrapLocalJumpErrorValue", cg.sig(IRubyObject.class, cg.params(RaiseException.class)));
                     method.go_to(done);
 
                     // is it next?

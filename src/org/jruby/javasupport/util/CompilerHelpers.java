@@ -444,6 +444,10 @@ public class CompilerHelpers {
         throw re;
     }
     
+    public static IRubyObject unwrapLocalJumpErrorValue(RaiseException re) {
+        return ((RubyLocalJumpError)re.getException()).exitValue();
+    }
+    
     public static IRubyObject processBlockArgument(Ruby runtime, Block block) {
         if (!block.isGiven()) {
             return runtime.getNil();
