@@ -74,7 +74,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.javasupport.util.CompilerHelpers;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
@@ -243,7 +243,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         method.label(tryBegin);
         method.aload(THREADCONTEXT_INDEX);
         buildStaticScopeNames(method, topLevelScope);
-        method.invokestatic(cg.p(CompilerHelpers.class), "preLoad", cg.sig(void.class, ThreadContext.class, String[].class));
+        method.invokestatic(cg.p(RuntimeHelpers.class), "preLoad", cg.sig(void.class, ThreadContext.class, String[].class));
         
         method.aload(THIS);
         method.aload(THREADCONTEXT_INDEX);
@@ -253,12 +253,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
         method.aload(THREADCONTEXT_INDEX);
-        method.invokestatic(cg.p(CompilerHelpers.class), "postLoad", cg.sig(void.class, ThreadContext.class));
+        method.invokestatic(cg.p(RuntimeHelpers.class), "postLoad", cg.sig(void.class, ThreadContext.class));
         method.areturn();
         
         method.label(tryFinally);
         method.aload(THREADCONTEXT_INDEX);
-        method.invokestatic(cg.p(CompilerHelpers.class), "postLoad", cg.sig(void.class, ThreadContext.class));
+        method.invokestatic(cg.p(RuntimeHelpers.class), "postLoad", cg.sig(void.class, ThreadContext.class));
         method.athrow();
         
         method.trycatch(tryBegin, tryFinally, tryFinally, null);
@@ -423,7 +423,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
          * necessary.  All of these live in CompilerHelpers.
          */
         public void invokeUtilityMethod(String methodName, String signature) {
-            method.invokestatic(cg.p(CompilerHelpers.class), methodName, signature);
+            method.invokestatic(cg.p(RuntimeHelpers.class), methodName, signature);
         }
 
         public void invokeThreadContext(String methodName, String signature) {
@@ -658,7 +658,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         private void buildObjectArray(String type, Object[] sourceArray, ArrayCallback callback) {
             if (sourceArray.length == 0) {
                 method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
-            } else if (sourceArray.length < CompilerHelpers.MAX_SPECIFIC_ARITY_OBJECT_ARRAY) {
+            } else if (sourceArray.length < RuntimeHelpers.MAX_SPECIFIC_ARITY_OBJECT_ARRAY) {
                 // if we have a specific-arity helper to construct an array for us, use that
                 for (int i = 0; i < sourceArray.length; i++) {
                     callback.nextValue(this, sourceArray, i);
@@ -689,7 +689,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void createNewHash(Object elements, ArrayCallback callback, int keyCount) {
             loadRuntime();
             
-            if (keyCount < CompilerHelpers.MAX_SPECIFIC_ARITY_HASH) {
+            if (keyCount < RuntimeHelpers.MAX_SPECIFIC_ARITY_HASH) {
                 // we have a specific-arity method we can use to construct, so use that
                 for (int i = 0; i < keyCount; i++) {
                     callback.nextValue(this, elements, i);
@@ -2621,7 +2621,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             clinitMethod.ldc(file);
             clinitMethod.ldc(line);
-            clinitMethod.invokestatic(cg.p(CompilerHelpers.class), "constructPosition", cg.sig(ISourcePosition.class, String.class, int.class));
+            clinitMethod.invokestatic(cg.p(RuntimeHelpers.class), "constructPosition", cg.sig(ISourcePosition.class, String.class, int.class));
             clinitMethod.putstatic(classname, fieldName, cg.ci(ISourcePosition.class));
         }
         

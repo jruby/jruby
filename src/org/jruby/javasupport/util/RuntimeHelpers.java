@@ -12,7 +12,6 @@ import org.jruby.RubyKernel;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -52,7 +51,7 @@ import org.jruby.util.ByteList;
  * generated code does call these so don't remove them thinking they are dead code. 
  *
  */
-public class CompilerHelpers {
+public class RuntimeHelpers {
     public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, 
             String[] staticScopeNames, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeType) {
         StaticScope staticScope = 

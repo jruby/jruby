@@ -49,7 +49,7 @@ import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.JumpTarget;
-import org.jruby.javasupport.util.CompilerHelpers;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -95,7 +95,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         assert args != null;
 
-        RubyModule implementer = CompilerHelpers.findImplementerIfNecessary(clazz, getImplementationClass());
+        RubyModule implementer = RuntimeHelpers.findImplementerIfNecessary(clazz, getImplementationClass());
         
         Ruby runtime = context.getRuntime();
 
@@ -129,7 +129,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                 if (argsNode.getBlockArgNode() != null) {
                     context.getCurrentScope().setValue(
                             argsNode.getBlockArgNode().getCount(),
-                            CompilerHelpers.processBlockArgument(runtime, block),
+                            RuntimeHelpers.processBlockArgument(runtime, block),
                             0);
                 }
 

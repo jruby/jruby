@@ -59,7 +59,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.jruby.ast.Node;
-import org.jruby.javasupport.util.CompilerHelpers;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 
@@ -523,7 +523,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         
 
         if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-            return CompilerHelpers.callMethodMissing(context, this, method, name, args, context.getFrameSelf(), callType, block);
+            return RuntimeHelpers.callMethodMissing(context, this, method, name, args, context.getFrameSelf(), callType, block);
         }
 
         return method.call(context, this, rubyclass, name, args, block);

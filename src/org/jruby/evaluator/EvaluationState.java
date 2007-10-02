@@ -143,7 +143,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
-import org.jruby.javasupport.util.CompilerHelpers;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
@@ -404,7 +404,7 @@ public class EvaluationState {
 
     private static IRubyObject aliasNode(Ruby runtime, ThreadContext context, Node node) {
         AliasNode iVisited = (AliasNode) node;
-        CompilerHelpers.defineAlias(context, iVisited.getNewName(), iVisited.getOldName());
+        RuntimeHelpers.defineAlias(context, iVisited.getNewName(), iVisited.getOldName());
         RubyModule module = context.getRubyClass();
    
         if (module == null) throw runtime.newTypeError("no class to make alias");
@@ -494,7 +494,7 @@ public class EvaluationState {
         DynamicMethod method = module.searchMethod(name);
 
         if (method.isUndefined() || (!method.isCallableFrom(self, callType))) {
-            return CompilerHelpers.callMethodMissing(context, receiver, method, name, args, self, callType, Block.NULL_BLOCK);
+            return RuntimeHelpers.callMethodMissing(context, receiver, method, name, args, self, callType, Block.NULL_BLOCK);
         }
 
         method.call(context, receiver, module, name, args, Block.NULL_BLOCK);
@@ -1447,7 +1447,7 @@ public class EvaluationState {
                     } else {
                         exceptions = setupArgs(runtime, context, exceptionNodes, self, aBlock);
                     }
-                    if (CompilerHelpers.isExceptionHandled(raisedException, exceptions, runtime, context, self).isTrue()) {
+                    if (RuntimeHelpers.isExceptionHandled(raisedException, exceptions, runtime, context, self).isTrue()) {
                         try {
                             return evalInternal(runtime,context, rescueNode, self, aBlock);
                         } catch (JumpException.RetryJump rj) {
@@ -1720,7 +1720,7 @@ public class EvaluationState {
     
     private static IRubyObject zsuperNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         Block block = getBlock(runtime, context, self, aBlock, ((ZSuperNode) node).getIterNode());
-        return CompilerHelpers.callZSuper(runtime, context, block, self);
+        return RuntimeHelpers.callZSuper(runtime, context, block, self);
     }
 
     public static IRubyObject aValueSplat(Ruby runtime, IRubyObject value) {
@@ -1793,7 +1793,7 @@ public class EvaluationState {
             BlockPassNode blockPassNode = (BlockPassNode) blockNode;
             IRubyObject proc = evalInternal(runtime,context, blockPassNode.getBodyNode(), self, currentBlock);
             
-            return CompilerHelpers.getBlockFromBlockPassBody(proc, currentBlock);
+            return RuntimeHelpers.getBlockFromBlockPassBody(proc, currentBlock);
         }
          
         assert false: "Trying to get block from something which cannot deliver";
