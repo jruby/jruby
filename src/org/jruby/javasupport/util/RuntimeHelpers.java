@@ -779,4 +779,12 @@ public class RuntimeHelpers {
     public static void registerEndBlock(CompiledSharedScopeBlock block, Ruby runtime) {
         runtime.pushExitBlock(runtime.newProc(true, block));
     }
+    
+    public static IRubyObject match3(RubyRegexp regexp, IRubyObject value, ThreadContext context) {
+        if (value instanceof RubyString) {
+            return regexp.match(value);
+        } else {
+            return value.callMethod(context, "=~", regexp);
+        }
+    }
 }

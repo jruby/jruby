@@ -1310,27 +1310,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void match3() {
-            // FIXME: more efficient with a callback?
-            method.dup();
-            method.instance_of(cg.p(RubyString.class));
-
-            Label isNotString = new Label();
-            method.ifeq(isNotString);
-
-            method.invokevirtual(cg.p(RubyRegexp.class), "match", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
-
-            Label doneWithMatch = new Label();
-            method.go_to(doneWithMatch);
-            method.label(isNotString);
-
-            method.swap();
             loadThreadContext();
-            method.swap();
-            method.ldc("=~");
-            method.swap();
-
-            method.invokeinterface(cg.p(IRubyObject.class), "callMethod", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, String.class, IRubyObject.class)));
-            method.label(doneWithMatch);
+            invokeUtilityMethod("match3", cg.sig(IRubyObject.class, RubyRegexp.class, IRubyObject.class, ThreadContext.class));
         }
 
         public void createNewRegexp(final ByteList value, final int options, final String lang) {

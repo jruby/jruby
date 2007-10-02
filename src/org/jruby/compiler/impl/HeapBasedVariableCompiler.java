@@ -10,21 +10,10 @@
 package org.jruby.compiler.impl;
 
 import java.util.Arrays;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.ClosureCallback;
-import org.jruby.compiler.NotCompilableException;
-import org.jruby.compiler.VariableCompiler;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Frame;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
-import org.objectweb.asm.Label;
 
 /**
  *

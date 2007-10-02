@@ -1221,6 +1221,7 @@ public class ASTCompiler {
                     }
                 };
             context.isConstantBranch(setup, isConstant, isMethod, none, name);
+            break;
         }
         case CALLNODE: {
             final CallNode iVisited = (CallNode) node;
@@ -1272,7 +1273,8 @@ public class ASTCompiler {
             context.go(ending);
             context.setEnding(isnull);            
             context.pushNull();
-            context.setEnding(ending); 
+            context.setEnding(ending);
+            break;
         }
         case CLASSVARNODE: {
             ClassVarNode iVisited = (ClassVarNode) node;
@@ -1427,7 +1429,8 @@ public class ASTCompiler {
             context.go(ending);
             context.setEnding(isnull);            
             context.pushNull();
-            context.setEnding(ending); 
+            context.setEnding(ending);
+            break;
         }
         default:
             context.rescue(new BranchCallback(){
