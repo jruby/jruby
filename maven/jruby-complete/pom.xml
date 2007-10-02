@@ -167,7 +167,7 @@
               <tasks>
                 <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
                   classpath="${project.basedir}/../../lib/jarjar-0.7.jar"/>
-                <java jar="${project.build.directory}/${project.build.finalName}.jar" fork="true" maxmemory="256m" failonerror="true">
+                <java jar="${project.build.directory}/${project.build.finalName}.jar" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
                   <sysproperty key="jruby.home" value="${project.build.outputDirectory}/META-INF/jruby.home"/>
                   <arg value="--command"/>
                   <arg value="gem"/>
@@ -232,11 +232,24 @@
                   <sysproperty key="jruby.home" value="${basedir}/../.."/>
                   <sysproperty key="jruby.base" value="${basedir}/../.."/>
                   <sysproperty key="jruby.lib" value="${basedir}/../../lib"/>
-                  <test name="org.jruby.test.MainTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
-                  <test name="org.jruby.test.ScriptTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
-                  <test name="org.jruby.test.TestUnitTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
-                  <test name="org.jvyamlb.YAMLLoadTest" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
-                  <test name="org.jvyamlb.YAMLDumpTest" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
+                  <test name="org.jruby.test.MainTestSuite" unless="maven.test.skip"
+                      todir="${project.build.directory}/surefire-reports"/>
+                  <test name="org.jruby.test.ScriptTestSuite" unless="maven.test.skip"
+                      todir="${project.build.directory}/surefire-reports"/>
+                  <test name="org.jruby.test.BFTSTestSuite" unless="maven.test.skip"
+                      todir="${project.build.directory}/surefire-reports" />
+                  <test name="org.jruby.test.JRubyTestSuite" unless="maven.test.skip"
+                      todir="${project.build.directory}/surefire-reports" />
+                  <test name="org.jruby.test.MRITestSuite" unless="maven.test.skip"
+                      todir="${project.build.directory}/surefire-reports" />
+                  <test name="org.jruby.test.RubiconTestSuite" unless="maven.test.skip"
+                      todir="${project.build.directory}/surefire-reports" />
+                  <test name="org.jruby.test.RubyTestTestSuite" unless="maven.test.skip"
+                      todir="${project.build.directory}/surefire-reports" />
+                  <test name="org.jvyamlb.YAMLLoadTest" unless="maven.test.skip"
+                      todir="${project.build.directory}/surefire-reports"/>
+                  <test name="org.jvyamlb.YAMLDumpTest" unless="maven.test.skip"
+                      todir="${project.build.directory}/surefire-reports"/>
                 </junit>
               </tasks>
             </configuration>
