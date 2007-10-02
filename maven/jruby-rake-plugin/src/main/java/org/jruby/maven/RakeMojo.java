@@ -38,7 +38,7 @@ public class RakeMojo extends AbstractJRubyMojo {
         outputDirectory.mkdirs();
         ensureGem("rake");
         List allArgs = new ArrayList();
-        allArgs.add("--command");
+        allArgs.add("-S");
         allArgs.add("rake");
         if (script != null) {
             File scriptFile = new File(outputDirectory, "rake_script.rb");

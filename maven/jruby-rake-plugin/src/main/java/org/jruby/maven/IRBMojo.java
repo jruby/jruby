@@ -11,7 +11,7 @@ public class IRBMojo extends JRubyMojo {
     }
 
     public void execute() throws MojoExecutionException {
-        String commandString = "--command irb";
+        String commandString = "-S irb";
         if (args != null) {
             commandString += " " + args;
         }

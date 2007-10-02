@@ -7,7 +7,7 @@ import org.apache.maven.plugin.MojoExecutionException;
  */
 public class GemMojo extends JRubyMojo {
     public void execute() throws MojoExecutionException {
-        String commandString = "--command gem";
+        String commandString = "-S gem";
         if (args != null) {
             commandString += " " + args;
         }

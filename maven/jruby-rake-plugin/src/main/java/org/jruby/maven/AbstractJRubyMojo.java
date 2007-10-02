@@ -47,6 +47,13 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
     protected String jrubyHome;
 
     /**
+     * The amount of memory to use when forking JRuby. Default is "384m".
+     *
+     * @parameter expression="${jruby.launch.memory}"
+     */
+     protected String jrubyLaunchMemory = "384m";
+
+    /**
      * The project compile classpath.
      *
      * @parameter default-value="${project.compileClasspathElements}"
@@ -85,7 +92,7 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
             java.setDir(launchDirectory);
 
             arg = java.createJvmarg();
-            arg.setValue("-Xmx256m");
+            arg.setValue("-Xmx" + jrubyLaunchMemory);
             Variable classpath = new Variable();
 
             Path p = new Path(java.getProject());
