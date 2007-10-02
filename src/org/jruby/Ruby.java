@@ -461,7 +461,7 @@ public final class Ruby {
     public IRubyObject runNormally(Node scriptNode, boolean compile, boolean yarvCompile) {
         Script script = null;
         YARVCompiledRunner runner = null;
-        if (compile || !yarvCompile) {
+        if (compile || (config.isJitEnabled() && !yarvCompile)) {
             script = tryCompile(scriptNode);
             if (compile && script == null) {
                 System.err.println("Error, could not compile; pass -J-Djruby.jit.logging.verbose=true for more details");
