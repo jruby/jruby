@@ -52,7 +52,6 @@ import org.jruby.RubyHash;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
-import org.jruby.RubyNil;
 import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -77,7 +76,6 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
 import org.jruby.regexp.RegexpPattern;
@@ -2412,13 +2410,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         public void issueBreakEvent(ClosureCallback value) {
             if (withinProtection || currentLoopLabels == null) {
-                method.newobj(cg.p(JumpException.BreakJump.class));
-                method.dup();
-                method.aconst_null();
                 value.compile(this);
-                method.invokespecial(cg.p(JumpException.BreakJump.class), "<init>", cg.sig(Void.TYPE, cg.params(Object.class, Object.class)));
-
-                method.athrow();
+                invokeUtilityMethod("breakJump", cg.sig(IRubyObject.class, IRubyObject.class));
             } else {
                 value.compile(this);
                 issueLoopBreak();
@@ -2427,13 +2420,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void issueNextEvent(ClosureCallback value) {
             if (withinProtection || currentLoopLabels == null) {
-                method.newobj(cg.p(JumpException.NextJump.class));
-                method.dup();
-                method.aconst_null();
                 value.compile(this);
-                method.invokespecial(cg.p(JumpException.NextJump.class), "<init>", cg.sig(Void.TYPE, cg.params(Object.class, Object.class)));
-
-                method.athrow();
+                invokeUtilityMethod("nextJump", cg.sig(IRubyObject.class, IRubyObject.class));
             } else {
                 value.compile(this);
                 issueLoopNext();
@@ -2443,13 +2431,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void issueRedoEvent() {
             // FIXME: This isn't right for within ensured/rescued code
             if (withinProtection) {
-                method.newobj(cg.p(JumpException.RedoJump.class));
-                method.dup();
-                method.aconst_null();
-                method.aconst_null();
-                method.invokespecial(cg.p(JumpException.RedoJump.class), "<init>", cg.sig(Void.TYPE, cg.params(Object.class, Object.class)));
-
-                method.athrow();
+                invokeUtilityMethod("redoJump", cg.sig(IRubyObject.class));
             } else if (currentLoopLabels != null) {
                 issueLoopRedo();
             } else {
@@ -2542,96 +2524,46 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void issueBreakEvent(ClosureCallback value) {
             if (withinProtection) {
-                method.newobj(cg.p(JumpException.BreakJump.class));
-                method.dup();
-                method.aconst_null();
                 value.compile(this);
-                method.invokespecial(cg.p(JumpException.BreakJump.class), "<init>", cg.sig(Void.TYPE, cg.params(Object.class, Object.class)));
-
-                method.athrow();
+                invokeUtilityMethod("breakJump", cg.sig(IRubyObject.class, IRubyObject.class));
             } else if (currentLoopLabels != null) {
                 value.compile(this);
                 issueLoopBreak();
             } else {
                 // in method body with no containing loop, issue jump error
-                
-                // load runtime
+                // load runtime and value, issue jump error
                 loadRuntime();
-                
-                // load "break" jump error type
-                method.ldc("break");
-                
                 value.compile(this);
-                
-                // load break jump error message
-                method.ldc("unexpected break");
-                
-                // create and raise local jump error
-                invokeIRuby("newLocalJumpError", cg.sig(RaiseException.class, cg.params(String.class, IRubyObject.class, String.class)));
-                method.athrow();
+                invokeUtilityMethod("breakLocalJumpError", cg.sig(IRubyObject.class, Ruby.class, IRubyObject.class));
             }
         }
 
         public void issueNextEvent(ClosureCallback value) {
             if (withinProtection) {
-                method.newobj(cg.p(JumpException.NextJump.class));
-                method.dup();
-                method.aconst_null();
                 value.compile(this);
-                method.invokespecial(cg.p(JumpException.NextJump.class), "<init>", cg.sig(Void.TYPE, cg.params(Object.class, Object.class)));
-
-                method.athrow();
+                invokeUtilityMethod("nextJump", cg.sig(IRubyObject.class, IRubyObject.class));
             } else if (currentLoopLabels != null) {
                 value.compile(this);
                 issueLoopNext();
             } else {
                 // in method body with no containing loop, issue jump error
-                
-                // load runtime
+                // load runtime and value, issue jump error
                 loadRuntime();
-                
-                // load "next" jump error type
-                method.ldc("next");
-                
                 value.compile(this);
-                
-                // load next jump error message
-                method.ldc("unexpected next");
-                
-                // create and raise local jump error
-                invokeIRuby("newLocalJumpError", cg.sig(RaiseException.class, cg.params(String.class, IRubyObject.class, String.class)));
-                method.athrow();
+                invokeUtilityMethod("nextLocalJumpError", cg.sig(IRubyObject.class, Ruby.class, IRubyObject.class));
             }
         }
 
         public void issueRedoEvent() {
             if (withinProtection) {
-                method.newobj(cg.p(JumpException.RedoJump.class));
-                method.dup();
-                method.aconst_null();
-                method.aconst_null();
-                method.invokespecial(cg.p(JumpException.RedoJump.class), "<init>", cg.sig(Void.TYPE, cg.params(Object.class, Object.class)));
-
-                method.athrow();
+                invokeUtilityMethod("redoJump", cg.sig(IRubyObject.class));
             } else if (currentLoopLabels != null) {
                 issueLoopRedo();
             } else {
                 // in method body with no containing loop, issue jump error
-                
-                // load runtime
+                // load runtime and value, issue jump error
                 loadRuntime();
-                
-                // load "redo" jump error type
-                method.ldc("redo");
-                
-                loadNil();
-                
-                // load break jump error message
-                method.ldc("unexpected redo");
-                
-                // create and raise local jump error
-                invokeIRuby("newLocalJumpError", cg.sig(RaiseException.class, cg.params(String.class, IRubyObject.class, String.class)));
-                method.athrow();
+                invokeUtilityMethod("redoLocalJumpError", cg.sig(IRubyObject.class, Ruby.class));
             }
         }
     }

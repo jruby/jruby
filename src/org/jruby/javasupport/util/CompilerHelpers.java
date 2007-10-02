@@ -583,6 +583,14 @@ public class CompilerHelpers {
         return (IRubyObject) bj.getValue();
     }
     
+    public static IRubyObject breakJump(IRubyObject value) {
+        throw new JumpException.BreakJump(null, value);
+    }
+    
+    public static IRubyObject breakLocalJumpError(Ruby runtime, IRubyObject value) {
+        throw runtime.newLocalJumpError("break", value, "unexpected break");
+    }
+    
     public static IRubyObject[] concatObjectArrays(IRubyObject[] array, IRubyObject[] add) {
         IRubyObject[] newArray = new IRubyObject[array.length + add.length];
         System.arraycopy(array, 0, newArray, 0, array.length);
@@ -656,7 +664,23 @@ public class CompilerHelpers {
     }
     
     public static IRubyObject retryJump() {
-        throw new JumpException.RetryJump(null, null);
+        throw JumpException.RETRY_JUMP;
+    }
+    
+    public static IRubyObject redoJump() {
+        throw JumpException.REDO_JUMP;
+    }
+    
+    public static IRubyObject redoLocalJumpError(Ruby runtime) {
+        throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
+    }
+    
+    public static IRubyObject nextJump(IRubyObject value) {
+        throw new JumpException.NextJump(value);
+    }
+    
+    public static IRubyObject nextLocalJumpError(Ruby runtime, IRubyObject value) {
+        throw runtime.newLocalJumpError("next", value, "unexpected next");
     }
     
     public static ISourcePosition constructPosition(String file, int line) {

@@ -1239,7 +1239,7 @@ public class EvaluationState {
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
         // now used as an interpreter event
-        throw new JumpException.NextJump(iVisited, result);
+        throw new JumpException.NextJump(result);
     }
 
     private static IRubyObject nilNode(Ruby runtime, ThreadContext context) {
@@ -1375,7 +1375,7 @@ public class EvaluationState {
         context.pollThreadEvents();
    
         // now used as an interpreter event
-        throw new JumpException.RedoJump(null, null);
+        throw JumpException.REDO_JUMP;
     }
 
     private static IRubyObject regexpNode(Ruby runtime, Node node) {
@@ -1477,7 +1477,7 @@ public class EvaluationState {
     private static IRubyObject retryNode(ThreadContext context) {
         context.pollThreadEvents();
    
-        throw new JumpException.RetryJump(null, null);
+        throw JumpException.RETRY_JUMP;
     }
     
     private static IRubyObject returnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
