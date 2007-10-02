@@ -59,6 +59,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.jruby.ast.Node;
+import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 
@@ -522,75 +523,10 @@ public class RubyObject implements Cloneable, IRubyObject {
         
 
         if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-            return callMethodMissing(context, this, method, name, args, context.getFrameSelf(), callType, block);
+            return CompilerHelpers.callMethodMissing(context, this, method, name, args, context.getFrameSelf(), callType, block);
         }
 
         return method.call(context, this, rubyclass, name, args, block);
-    }
-
-    /**
-     * Used by the compiler to ease calling indexed methods, also to handle visibility.
-     * NOTE: THIS IS NOT THE SAME AS THE SWITCHVALUE VERSIONS.
-     */
-    public IRubyObject compilerCallMethodWithIndex(ThreadContext context, int methodIndex, String name, IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
-        RubyModule module = getMetaClass();
-        
-        if (module.index != 0) {
-            return callMethod(context, module, methodIndex, name, args, callType, block);
-        }
-        
-        return compilerCallMethod(context, name, args, self, callType, block);
-    }
-    
-    /**
-     * Used by the compiler to handle visibility
-     */
-    public IRubyObject compilerCallMethod(ThreadContext context, String name,
-            IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
-        assert args != null;
-        DynamicMethod method = null;
-        RubyModule rubyclass = getMetaClass();
-        method = rubyclass.searchMethod(name);
-        
-        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(self, callType))) {
-            return callMethodMissing(context, this, method, name, args, self, callType, block);
-        }
-
-        return method.call(context, this, rubyclass, name, args, block);
-    }
-    
-    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, int methodIndex,
-                                                IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
-        // store call information so method_missing impl can use it            
-        context.setLastCallStatus(callType);            
-        context.setLastVisibility(method.getVisibility());
-
-        if (methodIndex == MethodIndex.METHOD_MISSING) {
-            return RubyKernel.method_missing(self, args, block);
-        }
-
-        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-        System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = RubySymbol.newSymbol(self.getRuntime(), name);
-
-        return receiver.callMethod(context, "method_missing", newArgs, block);
-    }
-
-    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
-                                                IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
-        // store call information so method_missing impl can use it            
-        context.setLastCallStatus(callType);            
-        context.setLastVisibility(method.getVisibility());
-
-        if (name.equals("method_missing")) {
-            return RubyKernel.method_missing(self, args, block);
-        }
-
-        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-        System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = RubySymbol.newSymbol(self.getRuntime(), name);
-
-        return receiver.callMethod(context, "method_missing", newArgs, block);
     }
 
     public IRubyObject instance_variable_get(IRubyObject var) {

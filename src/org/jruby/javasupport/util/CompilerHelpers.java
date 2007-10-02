@@ -8,6 +8,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
+import org.jruby.RubyKernel;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
@@ -200,7 +201,7 @@ public class CompilerHelpers {
         if (receiver == caller) callType = CallType.VARIABLE;
         
         try {
-            return receiver.compilerCallMethod(context, name, args, caller, callType, block);
+            return compilerCallMethod(context, receiver, name, args, caller, callType, block);
         } catch (StackOverflowError sfe) {
             throw context.getRuntime().newSystemStackError("stack level too deep");
         }
@@ -212,7 +213,7 @@ public class CompilerHelpers {
         if (receiver == caller) callType = CallType.VARIABLE;
         
         try {
-            return receiver.compilerCallMethodWithIndex(context, methodIndex, name, args, caller, 
+            return compilerCallMethodWithIndex(context, receiver, methodIndex, name, args, caller, 
                     callType, block);
         } catch (StackOverflowError sfe) {
             throw context.getRuntime().newSystemStackError("stack level too deep");
@@ -222,7 +223,7 @@ public class CompilerHelpers {
     public static IRubyObject doInvokeDynamic(IRubyObject receiver, IRubyObject[] args, 
             ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
         try {
-            return receiver.compilerCallMethod(context, name, args, caller, callType, block);
+            return compilerCallMethod(context, receiver, name, args, caller, callType, block);
         } catch (StackOverflowError sfe) {
             throw context.getRuntime().newSystemStackError("stack level too deep");
         }
@@ -232,11 +233,76 @@ public class CompilerHelpers {
             ThreadContext context, byte methodIndex, String name, IRubyObject caller, 
             CallType callType, Block block) {
         try {
-            return receiver.compilerCallMethodWithIndex(context, methodIndex, name, args, caller, 
+            return compilerCallMethodWithIndex(context, receiver, methodIndex, name, args, caller, 
                     callType, block);
         } catch (StackOverflowError sfe) {
             throw context.getRuntime().newSystemStackError("stack level too deep");
         }
+    }
+
+    /**
+     * Used by the compiler to ease calling indexed methods, also to handle visibility.
+     * NOTE: THIS IS NOT THE SAME AS THE SWITCHVALUE VERSIONS.
+     */
+    public static IRubyObject compilerCallMethodWithIndex(ThreadContext context, IRubyObject receiver, int methodIndex, String name, IRubyObject[] args, IRubyObject caller, CallType callType, Block block) {
+        RubyModule module = receiver.getMetaClass();
+        
+        if (module.index != 0) {
+            return receiver.callMethod(context, module, methodIndex, name, args, callType, block);
+        }
+        
+        return compilerCallMethod(context, receiver, name, args, caller, callType, block);
+    }
+    
+    /**
+     * Used by the compiler to handle visibility
+     */
+    public static IRubyObject compilerCallMethod(ThreadContext context, IRubyObject receiver, String name,
+            IRubyObject[] args, IRubyObject caller, CallType callType, Block block) {
+        assert args != null;
+        DynamicMethod method = null;
+        RubyModule rubyclass = receiver.getMetaClass();
+        method = rubyclass.searchMethod(name);
+        
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(caller, callType))) {
+            return callMethodMissing(context, receiver, method, name, args, caller, callType, block);
+        }
+
+        return method.call(context, receiver, rubyclass, name, args, block);
+    }
+    
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, int methodIndex,
+                                                IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
+        // store call information so method_missing impl can use it            
+        context.setLastCallStatus(callType);            
+        context.setLastVisibility(method.getVisibility());
+
+        if (methodIndex == MethodIndex.METHOD_MISSING) {
+            return RubyKernel.method_missing(self, args, block);
+        }
+
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 1, args.length);
+        newArgs[0] = RubySymbol.newSymbol(self.getRuntime(), name);
+
+        return receiver.callMethod(context, "method_missing", newArgs, block);
+    }
+
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
+                                                IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
+        // store call information so method_missing impl can use it            
+        context.setLastCallStatus(callType);            
+        context.setLastVisibility(method.getVisibility());
+
+        if (name.equals("method_missing")) {
+            return RubyKernel.method_missing(self, args, block);
+        }
+
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 1, args.length);
+        newArgs[0] = RubySymbol.newSymbol(self.getRuntime(), name);
+
+        return receiver.callMethod(context, "method_missing", newArgs, block);
     }
 
     public static RubyArray ensureRubyArray(IRubyObject value) {

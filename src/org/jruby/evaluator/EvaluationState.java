@@ -494,7 +494,7 @@ public class EvaluationState {
         DynamicMethod method = module.searchMethod(name);
 
         if (method.isUndefined() || (!method.isCallableFrom(self, callType))) {
-            return RubyObject.callMethodMissing(context, receiver, method, name, args, self, callType, Block.NULL_BLOCK);
+            return CompilerHelpers.callMethodMissing(context, receiver, method, name, args, self, callType, Block.NULL_BLOCK);
         }
 
         method.call(context, receiver, module, name, args, Block.NULL_BLOCK);

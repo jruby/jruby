@@ -50,6 +50,7 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
+import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -1288,7 +1289,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
         // invoke callMethodMissing method directly
         // TODO: this could be further optimized, since some DSLs hit method_missing pretty hard...
-        mv.invokestatic(cg.p(RubyObject.class), "callMethodMissing", cg.sig(IRubyObject.class, 
+        mv.invokestatic(cg.p(CompilerHelpers.class), "callMethodMissing", cg.sig(IRubyObject.class, 
                 cg.params(ThreadContext.class, IRubyObject.class, DynamicMethod.class, String.class, 
                                     IRubyObject[].class, IRubyObject.class, CallType.class, Block.class)));
         // if no exception raised, jump to end to leave result on stack for return

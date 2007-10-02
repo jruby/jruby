@@ -32,6 +32,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.javasupport.util.CompilerHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -154,7 +155,7 @@ public abstract class CallAdapter {
                     DynamicMethod method = selfType.searchMethod(methodName);
 
                     if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                        return RubyObject.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, block);
+                        return CompilerHelpers.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, block);
                     }
 
                     cachedMethod = method;

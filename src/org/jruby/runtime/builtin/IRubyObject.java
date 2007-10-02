@@ -137,9 +137,6 @@ public interface IRubyObject {
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args, CallType callType);
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name, IRubyObject[] args, CallType callType, Block block);
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block);
-    public IRubyObject compilerCallMethodWithIndex(ThreadContext context, int methodIndex, String name, IRubyObject[] args, IRubyObject self, CallType callType, Block block);
-    public IRubyObject compilerCallMethod(ThreadContext context, String name,
-            IRubyObject[] args, IRubyObject self, CallType callType, Block block);
     
     /**
      * RubyMethod isNil.
