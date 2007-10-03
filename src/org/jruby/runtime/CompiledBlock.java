@@ -123,9 +123,9 @@ public class CompiledBlock extends Block {
     
     protected void post(ThreadContext context) {
         if (light) {
-            context.postYieldLight();
+            context.postYieldLight(this);
         } else {
-            context.postYield();
+            context.postYield(this);
         }
     }
 

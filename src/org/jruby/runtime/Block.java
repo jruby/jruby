@@ -106,6 +106,8 @@ public class Block {
     public boolean isLambda = false;
     
     protected Arity arity;
+    
+    public Frame oldFrame;
 
     public static Block createBlock(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
         return new Block(iterNode,
@@ -191,7 +193,7 @@ public class Block {
     }
     
     protected void post(ThreadContext context) {
-        context.postYield();
+        context.postYield(this);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value) {

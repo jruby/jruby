@@ -107,7 +107,7 @@ public class MethodBlock extends Block{
     }
     
     protected void post(ThreadContext context) {
-        context.postYield();
+        context.postYield(this);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
