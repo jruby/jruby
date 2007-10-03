@@ -316,7 +316,7 @@ public class LoadService {
             
             library.load(runtime);
             return true;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             if(library instanceof JarredScript && file.endsWith(".jar")) {
                 return true;
             }
