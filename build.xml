@@ -161,6 +161,12 @@
     <delete file="${lib.dir}/jruby1.5.jar"/>
   </target>
 
+  <target name="jar-complete-1.4" depends="jar-complete">
+    <copy file="${lib.dir}/jruby-complete.jar" tofile="${lib.dir}/jruby-complete1.5.jar"/>
+    <retro inputjar="${lib.dir}/jruby-complete1.5.jar" outputjar="${lib.dir}/jruby-complete.jar"/>
+    <delete file="${lib.dir}/jruby-complete1.5.jar"/>
+  </target>
+
     <target name="jar-complete" depends="generate-method-classes" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
       <property name="mainclass" value="org.jruby.Main"/>
       <property name="filename" value="jruby-complete.jar"/>
