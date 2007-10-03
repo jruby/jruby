@@ -2149,13 +2149,16 @@ public class ASTCompiler {
             argsNodeId = iterNode.getVarNode().nodeId;
         }
         
+        ASTInspector inspector = new ASTInspector();
+        inspector.inspect(iterNode.getBodyNode());
+        inspector.inspect(iterNode.getVarNode());
         if (argsNodeId == null) {
             // no args, do not pass args processor
             context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
-                    closureBody, null, hasMultipleArgsHead, argsNodeId);
+                    closureBody, null, hasMultipleArgsHead, argsNodeId, inspector);
         } else {
             context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
-                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId);
+                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
         }
     }
 

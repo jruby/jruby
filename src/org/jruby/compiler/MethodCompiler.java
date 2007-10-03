@@ -208,7 +208,7 @@ public interface MethodCompiler {
      * @param arity The arity of the block's argument list
      * @param body The callback which will generate the closure's body
      */
-    public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId);
+    public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
     
     /**
      * Create a new closure (block) for a for loop with the given call arity and

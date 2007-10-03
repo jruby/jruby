@@ -942,11 +942,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.label(done);
         }
 
-        public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId) {
+        public void createNewClosure(
+                StaticScope scope,
+                int arity,
+                ClosureCallback body,
+                ClosureCallback args,
+                boolean hasMultipleArgsHead,
+                NodeType argsNodeId,
+                ASTInspector inspector) {
             String closureMethodName = "closure" + ++innerIndex;
             String closureFieldName = "_" + closureMethodName;
             
-            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName);
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName, inspector);
             
             closureCompiler.beginMethod(args, scope);
             
@@ -985,16 +992,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.getfield(classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
             method.ldc(Boolean.valueOf(hasMultipleArgsHead));
             method.ldc(Block.asArgumentType(argsNodeId));
+            // if there's a sub-closure or there's scope-aware methods, it can't be "light"
+            method.ldc(!(inspector.hasClosure() || inspector.hasScopeAwareMethods()));
 
             invokeUtilityMethod("createBlock", cg.sig(CompiledBlock.class,
-                    cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, String[].class, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE)));
+                    cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, String[].class, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE, boolean.class)));
         }
 
         public void runBeginBlock(StaticScope scope, ClosureCallback body) {
             String closureMethodName = "closure" + ++innerIndex;
             String closureFieldName = "_" + closureMethodName;
             
-            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName);
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName, null);
             
             closureCompiler.beginMethod(null, scope);
             
@@ -1039,7 +1048,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             String closureMethodName = "closure" + ++innerIndex;
             String closureFieldName = "_" + closureMethodName;
             
-            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName);
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName, null);
             
             closureCompiler.beginMethod(args, null);
             
@@ -1085,7 +1094,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             String closureMethodName = "END_closure" + ++innerIndex;
             String closureFieldName = "_" + closureMethodName;
             
-            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName);
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName, null);
             
             closureCompiler.beginMethod(null, null);
             
@@ -2318,14 +2327,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public class ASMClosureCompiler extends AbstractMethodCompiler {
         private String closureMethodName;
         
-        public ASMClosureCompiler(String closureMethodName, String closureFieldName) {
+        public ASMClosureCompiler(String closureMethodName, String closureFieldName, ASTInspector inspector) {
             this.closureMethodName = closureMethodName;
 
             // declare the field
             getClassVisitor().visitField(ACC_PRIVATE, closureFieldName, cg.ci(CompiledBlockCallback.class), null, null);
             
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
-            variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
+            if (inspector == null || inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
+            } else {
+                variableCompiler = new StackBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, ARGS_INDEX, CLOSURE_INDEX);
+            }
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }
 
@@ -2451,7 +2464,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             if (inspector == null || inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                 variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
             } else {
-                variableCompiler = new StackBasedVariableCompiler(this, method, ARGS_INDEX, CLOSURE_INDEX);
+                variableCompiler = new StackBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, ARGS_INDEX, CLOSURE_INDEX);
             }
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }

@@ -762,6 +762,13 @@ public final class ThreadContext {
         pushRubyClass((klass != null) ? klass : block.getKlass());
     }
     
+    public void preYieldLightBlock(Block block, RubyModule klass) {
+        pushFrame(block.getFrame());
+        getCurrentFrame().setVisibility(block.getVisibility());
+        pushScope(block.getDynamicScope());
+        pushRubyClass((klass != null) ? klass : block.getKlass());
+    }
+    
     public void preEvalWithBinding(Block block) {
         Frame frame = block.getFrame();
         
@@ -778,6 +785,12 @@ public final class ThreadContext {
     }
     
     public void postYield() {
+        popScope();
+        popFrameReal();
+        popRubyClass();
+    }
+    
+    public void postYieldLight() {
         popScope();
         popFrameReal();
         popRubyClass();

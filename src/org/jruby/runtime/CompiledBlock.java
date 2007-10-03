@@ -42,6 +42,7 @@ public class CompiledBlock extends Block {
     private CompiledBlockCallback callback;
     private boolean hasMultipleArgsHead;
     private int argumentType;
+    private boolean light;
 
     public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
             CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
@@ -58,6 +59,14 @@ public class CompiledBlock extends Block {
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
         this.argumentType = argumentType;
+    }
+    
+    public void setLight(boolean light) {
+        this.light = light;
+    }
+    
+    public boolean getLight() {
+        return light;
     }
     
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
@@ -103,6 +112,22 @@ public class CompiledBlock extends Block {
             post(context);
         }
     }
+    
+    protected void pre(ThreadContext context, RubyModule klass) {
+        if (light) {
+            context.preYieldLightBlock(this, klass);
+        } else {
+            context.preYieldSpecificBlock(this, klass);
+        }
+    }
+    
+    protected void post(ThreadContext context) {
+        if (light) {
+            context.postYieldLight();
+        } else {
+            context.postYield();
+        }
+    }
 
     private IRubyObject[] setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
         switch (argumentType) {
@@ -145,8 +170,16 @@ public class CompiledBlock extends Block {
     }
 
     public Block cloneBlock() {
-        Block newBlock = new CompiledBlock(self, frame.duplicate(), visibility, klass, 
-                dynamicScope.cloneScope(), arity, callback, hasMultipleArgsHead, argumentType);
+        Block newBlock = new CompiledBlock(
+                self,
+                frame.duplicate(),
+                visibility,
+                klass,
+                light ? dynamicScope : dynamicScope.cloneScope(),
+                arity,
+                callback,
+                hasMultipleArgsHead,
+                argumentType);
         
         newBlock.isLambda = isLambda;
         

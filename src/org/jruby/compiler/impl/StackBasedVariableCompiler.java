@@ -36,6 +36,7 @@ import org.jruby.compiler.VariableCompiler;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -47,11 +48,11 @@ import org.objectweb.asm.Label;
  * @author headius
  */
 public class StackBasedVariableCompiler extends AbstractVariableCompiler {
-    private int argsIndex; // the index where an IRubyObject[] representing incoming arguments can be found
-    private int closureIndex; // the index of the block parameter
+    private int scopeIndex; // the index of the dynamic scope for higher scopes
 
-    public StackBasedVariableCompiler(StandardASMCompiler.AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method, int argsIndex, int closureIndex) {
+    public StackBasedVariableCompiler(StandardASMCompiler.AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method, int scopeIndex, int argsIndex, int closureIndex) {
         super(methodCompiler, method, argsIndex, closureIndex);
+        this.scopeIndex = scopeIndex;
     }
 
     public void beginMethod(ClosureCallback argsCallback, StaticScope scope) {
@@ -72,13 +73,11 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
     }
 
     public void beginClosure(ClosureCallback argsCallback, StaticScope scope) {
-        // FIXME: This is not yet active, but it could be made to work
-        // load args[0] which will be the IRubyObject representing block args
-        method.aload(argsIndex);
-        method.ldc(new Integer(0));
-        method.arrayload();
-
-        // load nil into all vars to avoid null/nil checking
+        // store the local vars in a local variable
+        methodCompiler.loadThreadContext();
+        methodCompiler.invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
+        method.astore(scopeIndex);
+        
         methodCompiler.loadNil();
         for (int i = 0; i < scope.getNumberOfVariables(); i++) {
             assignLocalVariable(i);
@@ -86,7 +85,12 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         method.pop();
         
         if (argsCallback != null) {
+            // load args[0] which will be the IRubyObject representing block args
+            method.aload(argsIndex);
+            method.ldc(new Integer(0));
+            method.arrayload();
             argsCallback.compile(methodCompiler);
+            method.pop(); // clear remaining value on the stack
         }
     }
 
@@ -100,7 +104,14 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         if (depth == 0) {
             assignLocalVariable(index);
         } else {
-            throw new NotCompilableException("Stack-based local variables are not applicable to nested scopes");
+            method.dup();
+
+            method.aload(scopeIndex);
+            method.swap();
+            method.ldc(new Integer(index));
+            method.swap();
+            method.ldc(new Integer(depth));
+            method.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
         }
     }
 
@@ -112,7 +123,13 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         if (depth == 0) {
             retrieveLocalVariable(index);
         } else {
-            throw new NotCompilableException("Stack-based local variables are not applicable to nested scopes");
+            method.aload(scopeIndex);
+            method.ldc(new Integer(index));
+            method.ldc(new Integer(depth));
+            method.invokevirtual(cg.p(DynamicScope.class), "getValue", cg.sig(IRubyObject.class, cg.params(Integer.TYPE, Integer.TYPE)));
+
+            // FIXME: This is a pretty unpleasant perf hit, and it's not required for most local var accesses. We need a better way
+            methodCompiler.nullToNil();
         }
     }
 

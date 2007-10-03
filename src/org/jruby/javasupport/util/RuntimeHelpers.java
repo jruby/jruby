@@ -53,13 +53,22 @@ import org.jruby.util.ByteList;
  */
 public class RuntimeHelpers {
     public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, 
-            String[] staticScopeNames, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeType) {
+            String[] staticScopeNames, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeType, boolean light) {
         StaticScope staticScope = 
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
         
-        return new CompiledBlock(context, self, Arity.createArity(arity), 
-                new DynamicScope(staticScope, context.getCurrentScope()), callback, hasMultipleArgsHead, argsNodeType);
+        CompiledBlock block = new CompiledBlock(
+                    context,
+                    self,
+                    Arity.createArity(arity),
+                    new DynamicScope(staticScope, context.getCurrentScope()),
+                    callback,
+                    hasMultipleArgsHead,
+                    argsNodeType);
+        block.setLight(light);
+        
+        return block;
     }
     
     public static IRubyObject runBeginBlock(ThreadContext context, IRubyObject self, String[] staticScopeNames, CompiledBlockCallback callback) {
