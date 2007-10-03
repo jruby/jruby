@@ -1345,12 +1345,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void createNewRegexp(final ByteList value, final int options, final String lang) {
-            String regname = getNewConstant(cg.ci(RubyRegexp.class), "literal_reg_");
-            String name = getNewConstant(cg.ci(RegexpPattern.class), "literal_re_");
+            String regexpField = getNewConstant(cg.ci(RubyRegexp.class), "lit_reg_");
+            String patternField = getNewConstant(cg.ci(RegexpPattern.class), "lit_pat_");
 
             // in current method, load the field to see if we've created a Pattern yet
             method.aload(THIS);
-            method.getfield(classname, name, cg.ci(RegexpPattern.class));
+            method.getfield(classname, regexpField, cg.ci(RubyRegexp.class));
 
             Label alreadyCreated = new Label();
             method.ifnonnull(alreadyCreated);
@@ -1373,7 +1373,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.aload(THIS);
             method.swap();
-            method.putfield(classname, name, cg.ci(RegexpPattern.class));
+            method.putfield(classname, patternField, cg.ci(RegexpPattern.class));
 
             if (null == lang) {
                 method.aconst_null();
@@ -1385,10 +1385,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.aload(THIS);
             method.swap();
-            method.putfield(classname, regname, cg.ci(RubyRegexp.class));
+            method.putfield(classname, regexpField, cg.ci(RubyRegexp.class));
             method.label(alreadyCreated);
             method.aload(THIS);
-            method.getfield(classname, regname, cg.ci(RubyRegexp.class));
+            method.getfield(classname, regexpField, cg.ci(RubyRegexp.class));
         }
 
         public void createNewRegexp(ClosureCallback createStringCallback, final int options, final String lang) {
