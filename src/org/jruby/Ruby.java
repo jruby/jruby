@@ -490,8 +490,9 @@ public final class Ruby {
             } else {
                 classname = filename.replace('\\', '/').replaceAll(".rb", "");
             }
-            // remove leading / from classname, since it will muck up the dotted name
+            // remove leading / or ./ from classname, since it will muck up the dotted name
             if (classname.startsWith("/")) classname = classname.substring(1);
+            if (classname.startsWith("./")) classname = classname.substring(2);
 
             ASTInspector inspector = new ASTInspector();
             inspector.inspect(node);
