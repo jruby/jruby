@@ -47,6 +47,7 @@ public class RubyInstanceConfig {
     private final boolean jitLogging;
     private final boolean jitLoggingVerbose;
     private final int jitThreshold;
+    private final boolean samplingEnabled;
 
     private final String defaultRegexpEngine;
     
@@ -71,6 +72,8 @@ public class RubyInstanceConfig {
                 objectSpaceEnabled = Boolean.getBoolean("jruby.objectspace.enabled");
             }
         }
+
+        samplingEnabled = System.getProperty("jruby.sampling.enabled") != null && Boolean.getBoolean("jruby.sampling.enabled");
         
         if (Ruby.isSecurityRestricted()) {
             jitEnabled = false;
@@ -116,6 +119,10 @@ public class RubyInstanceConfig {
 
     public boolean isJitLoggingVerbose() {
         return jitLoggingVerbose;
+    }
+
+    public boolean isSamplingEnabled() {
+        return samplingEnabled;
     }
     
     public int getJitThreshold() {

@@ -204,7 +204,7 @@ public final class Frame implements JumpTarget {
      * 
      * @return the method name
      */
-    String getName() {
+    public String getName() {
         return name;
     }
 

@@ -55,7 +55,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class ThreadContext {
     public static synchronized ThreadContext newContext(Ruby runtime) {
         ThreadContext context = new ThreadContext(runtime);
-        
+        //        if(runtime.getInstanceConfig().isSamplingEnabled()) {
+        //    org.jruby.util.SimpleSampler.registerThreadContext(context);
+        //}
+
         return context;
     }
     
@@ -119,7 +122,7 @@ public final class ThreadContext {
             
         for (int i = 0; i < frameStack.length; i++) {
             frameStack[i] = new Frame();
-    }
+        }
     }
     
     CallType lastCallType;

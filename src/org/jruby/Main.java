@@ -171,6 +171,9 @@ public class Main {
         config.updateWithCommandline(commandline);
         final Ruby runtime = Ruby.newInstance(config);
         runtime.setKCode(commandline.getKCode());
+        if(config.isSamplingEnabled()) {
+            org.jruby.util.SimpleSampler.startSampleThread();
+        }
 
         try {
             runInterpreter(runtime, reader, filename);
@@ -207,6 +210,9 @@ public class Main {
                 for (Object key: runtime.getRuntimeInformation().keySet()) {
                     System.err.println("[" + key + "]: " + runtime.getRuntimeInformation().get(key));
                 }
+            }
+            if(config.isSamplingEnabled()) {
+                org.jruby.util.SimpleSampler.report();
             }
         }
     }
