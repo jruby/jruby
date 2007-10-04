@@ -126,10 +126,8 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
             method.aload(scopeIndex);
             method.ldc(new Integer(index));
             method.ldc(new Integer(depth));
-            method.invokevirtual(cg.p(DynamicScope.class), "getValue", cg.sig(IRubyObject.class, cg.params(Integer.TYPE, Integer.TYPE)));
-
-            // FIXME: This is a pretty unpleasant perf hit, and it's not required for most local var accesses. We need a better way
-            methodCompiler.nullToNil();
+            methodCompiler.loadNil();
+            method.invokevirtual(cg.p(DynamicScope.class), "getValueOrNil", cg.sig(IRubyObject.class, cg.params(Integer.TYPE, Integer.TYPE, IRubyObject.class)));
         }
     }
 }

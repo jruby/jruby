@@ -94,6 +94,26 @@ public class DynamicScope {
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         return variableValues[offset];
     }
+    
+    /**
+     * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
+     */
+    public IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil) {
+        if (depth > 0) {
+            return parent.getValueOrNil(offset, depth - 1, nil);
+        }
+        lazy();
+        assert variableValues != null : "No variables in getValue for off: " + offset + ", Dep: " + depth;
+        assert offset < variableValues.length : "Index to big for getValue off: " + offset + ", Dep: " + depth + ", O: " + this;
+        // &foo are not getting set from somewhere...I want the following assert to be true though
+        //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
+        IRubyObject value = variableValues[offset];
+        if (value == null) {
+            variableValues[offset] = nil;
+            value = nil;
+        }
+        return value;
+    }
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
