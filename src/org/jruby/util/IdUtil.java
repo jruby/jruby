@@ -95,9 +95,9 @@ public final class IdUtil {
 	    return id.endsWith("=");
 	}
 
-    public static boolean isValidConstantName(final String id) {
-        final char c;
-        final int len;
+    public static boolean isValidConstantName(String id) {
+        char c;
+        int len;
         if ((len = id.length()) > 0 && (c = id.charAt(0)) <= 'Z' && c >= 'A') {
             return isNameString(id, 1, len);
         }
@@ -106,8 +106,8 @@ public final class IdUtil {
     
     // Pickaxe says @ must be followed by a name character, but MRI
     // does not require this.
-    public static boolean isValidInstanceVariableName(final String id) {
-        final int len;
+    public static boolean isValidInstanceVariableName(String id) {
+        int len;
         if ((len = id.length()) > 0 && '@' == id.charAt(0)) {
             if (len > 1) {
                 if (isInitialCharacter(id.charAt(1))) {
@@ -122,8 +122,8 @@ public final class IdUtil {
     
     // Pickaxe says @@ must be followed by a name character, but MRI
     // does not require this.
-    public static boolean isValidClassVariableName(final String id) {
-        final int len;
+    public static boolean isValidClassVariableName(String id) {
+        int len;
         if ((len = id.length()) > 1 && '@' == id.charAt(0) && '@' == id.charAt(1)) {
             if (len > 2) {
                 if (isInitialCharacter(id.charAt(2))) {
@@ -140,14 +140,14 @@ public final class IdUtil {
         return ((c &= ~0x20) <= 'Z' && c >= 'A') || c == '_';
     }
     
-    public static boolean isNameCharacter(final char c) {
-        final int letter;
+    public static boolean isNameCharacter(char c) {
+        int letter;
         return ((letter = c & ~0x20) <= 'Z' && letter >= 'A') ||
             c == '_' ||
             (c <= '9' && c >= '0');
     }
     
-    public static boolean isNameString(final String id, final int start, final int limit) {
+    public static boolean isNameString(String id, int start, int limit) {
         for (int i = start; i < limit; i++) {
             if (!isNameCharacter(id.charAt(i))) {
                 return false;
