@@ -28,20 +28,11 @@
 
 package org.jruby.compiler.impl;
 
-import org.jruby.Ruby;
-import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.ClosureCallback;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.compiler.VariableCompiler;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Frame;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
-import org.objectweb.asm.Label;
 
 /**
  *
@@ -56,7 +47,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
     }
 
     public void beginMethod(ClosureCallback argsCallback, StaticScope scope) {
-        // fill in all vars with nol so compiler is happy about future accesses
+        // fill in all vars with nil so compiler is happy about future accesses
         methodCompiler.loadNil();
         for (int i = 0; i < scope.getNumberOfVariables(); i++) {
             assignLocalVariable(i);
@@ -78,11 +69,13 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         methodCompiler.invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
         method.astore(scopeIndex);
         
-        methodCompiler.loadNil();
-        for (int i = 0; i < scope.getNumberOfVariables(); i++) {
-            assignLocalVariable(i);
+        if (scope != null) {
+            methodCompiler.loadNil();
+            for (int i = 0; i < scope.getNumberOfVariables(); i++) {
+                assignLocalVariable(i);
+            }
+            method.pop();
         }
-        method.pop();
         
         if (argsCallback != null) {
             // load args[0] which will be the IRubyObject representing block args
