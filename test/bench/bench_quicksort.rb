@@ -16,9 +16,7 @@ def quicksort(l)
   end
 end
 
-5.times {
-  Benchmark.bm(25) {|b| b.report("350-element quicksort") { quicksort($small_array) } }
-}
-5.times {
-  Benchmark.bm(25) {|b| b.report("35k-element quicksort") { quicksort($big_array) } }
-}
+Benchmark.bm(25) do |b| 
+  5.times { b.report("350-element quicksort") { quicksort($small_array) } }
+  5.times { b.report("35k-element quicksort") { quicksort($big_array) } }
+end
