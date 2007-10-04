@@ -5,7 +5,7 @@
 ##############################################################
 require "benchmark"
 
-MAX = 20000
+MAX = 200000
 
 Benchmark.bm(30) do |x|
    x.report("Hash[]"){
