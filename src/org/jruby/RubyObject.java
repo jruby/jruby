@@ -598,7 +598,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject instance_variable_get(IRubyObject var) {
     	String varName = var.asSymbol();
 
-    	if (!IdUtil.isInstanceVariable(varName)) {
+    	if (!IdUtil.isValidInstanceVariableName(varName)) {
     		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
     	}
 
@@ -615,7 +615,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject instance_variable_set(IRubyObject var, IRubyObject value) {
     	String varName = var.asSymbol();
 
-    	if (!IdUtil.isInstanceVariable(varName)) {
+    	if (!IdUtil.isValidInstanceVariableName(varName)) {
     		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
     	}
 
@@ -1407,7 +1407,7 @@ public class RubyObject implements Cloneable, IRubyObject {
    public IRubyObject remove_instance_variable(IRubyObject name, Block block) {
        String id = name.asSymbol();
 
-       if (!IdUtil.isInstanceVariable(id)) {
+       if (!IdUtil.isValidInstanceVariableName(id)) {
            throw getRuntime().newNameError("wrong instance variable name " + id, id);
        }
        if (!isTaint() && getRuntime().getSafeLevel() >= 4) {

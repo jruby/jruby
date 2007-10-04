@@ -1291,7 +1291,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject class_variable_get(IRubyObject var) {
         String varName = var.asSymbol();
 
-        if (!IdUtil.isClassVariable(varName)) {
+        if (!IdUtil.isValidClassVariableName(varName)) {
             throw getRuntime().newNameError("`" + varName + "' is not allowed as a class variable name", varName);
         }
 
@@ -1304,7 +1304,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
         String varName = var.asSymbol();
 
-        if (!IdUtil.isClassVariable(varName)) {
+        if (!IdUtil.isValidClassVariableName(varName)) {
             throw getRuntime().newNameError("`" + varName + "' is not allowed as a class variable name", varName);
         }
 
@@ -1583,7 +1583,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject const_get(IRubyObject symbol) {
         String name = symbol.asSymbol();
 
-        if (!IdUtil.isConstant(name)) {
+        if (!IdUtil.isValidConstantName(name)) {
             throw wrongConstantNameError(name);
         }
 
@@ -1596,7 +1596,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
         String name = symbol.asSymbol();
 
-        if (!IdUtil.isConstant(name)) {
+        if (!IdUtil.isValidConstantName(name)) {
             throw wrongConstantNameError(name);
         }
 
@@ -1609,7 +1609,7 @@ public class RubyModule extends RubyObject {
     public RubyBoolean const_defined(IRubyObject symbol) {
         String name = symbol.asSymbol();
 
-        if (!IdUtil.isConstant(name)) {
+        if (!IdUtil.isValidConstantName(name)) {
             throw wrongConstantNameError(name);
         }
         
@@ -1732,7 +1732,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject remove_class_variable(IRubyObject name) {
         String id = name.asSymbol();
 
-        if (!IdUtil.isClassVariable(id)) {
+        if (!IdUtil.isValidClassVariableName(id)) {
             throw getRuntime().newNameError("wrong class variable name " + id, id);
         }
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
@@ -1758,7 +1758,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject remove_const(IRubyObject name) {
         String id = name.asSymbol();
 
-        if (!IdUtil.isConstant(id)) {
+        if (!IdUtil.isValidConstantName(id)) {
             throw wrongConstantNameError(id);
         }
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
