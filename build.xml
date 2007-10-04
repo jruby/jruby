@@ -150,7 +150,7 @@
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Main-Class" value="org.jruby.Main"/>
-        <attribute name="Class-Path" value="asm-3.0.jar asm-commons-3.0.jar asm-util-3.0.jar jline-0.9.91.jar bsf.jar backport-util-concurrent.jar"/>
+        <attribute name="Class-Path" value="asm-3.0.jar asm-commons-3.0.jar asm-util-3.0.jar asm-analysis-3.0.jar asm-tree-3.0.jar jline-0.9.91.jar bsf.jar backport-util-concurrent.jar"/>
       </manifest>
     </jar>
   </target>
@@ -233,7 +233,9 @@
               <exclude name="**/xsd/**"/>
         </fileset>
           <zipfileset src="${lib.dir}/asm-3.0.jar"/>
+          <zipfileset src="${lib.dir}/asm-analysis-3.0.jar"/>
           <zipfileset src="${lib.dir}/asm-commons-3.0.jar"/>
+          <zipfileset src="${lib.dir}/asm-jar-3.0.jar"/>
           <zipfileset src="${lib.dir}/asm-util-3.0.jar"/>
           <zipfileset src="${lib.dir}/jline-0.9.91.jar"/>
       	  <zipfileset src="${lib.dir}/backport-util-concurrent.jar"/>
