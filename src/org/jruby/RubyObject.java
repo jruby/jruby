@@ -1345,7 +1345,18 @@ public class RubyObject implements Cloneable, IRubyObject {
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
 
-        return callMethod(getRuntime().getCurrentContext(), name, newArgs, CallType.FUNCTIONAL, block);
+        ThreadContext context = getRuntime().getCurrentContext();
+        assert args != null;
+        DynamicMethod method = null;
+        RubyModule rubyClass = getMetaClass();
+        method = rubyClass.searchMethod(name);
+
+        // send doesn't check visibility
+        if (method.isUndefined()) {
+            return RuntimeHelpers.callMethodMissing(context, this, method, name, newArgs, context.getFrameSelf(), CallType.FUNCTIONAL, block);
+        }
+
+        return method.call(context, this, rubyClass, name, newArgs, block);
     }
     
     public IRubyObject nil_p() {
