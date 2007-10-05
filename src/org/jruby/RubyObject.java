@@ -462,7 +462,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block) {
         RubyModule klazz = context.getFrameKlazz();
 
-        RubyClass superClass = klazz.getSuperClass();
+        RubyClass superClass = RuntimeHelpers.findImplementerIfNecessary(getMetaClass(), klazz).getSuperClass();
         
         assert superClass != null : "Superclass should always be something for " + klazz.getBaseName();
 
