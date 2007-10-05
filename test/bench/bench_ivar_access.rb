@@ -6,16 +6,33 @@ module IvarBench
   def benchmark_ivar_get
     i = 0
     while i < 100000
-      a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;          
-      a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;          
-      a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;          
-      a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;          
-      a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;          
-      a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;          
-      a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;          
-      a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;          
-      a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;          
-      a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;a = @a;          
+      @a; @a; @a; @a; @a; @a; @a; @a; @a; @a;          
+      @a; @a; @a; @a; @a; @a; @a; @a; @a; @a;          
+      @a; @a; @a; @a; @a; @a; @a; @a; @a; @a;          
+      @a; @a; @a; @a; @a; @a; @a; @a; @a; @a;          
+      @a; @a; @a; @a; @a; @a; @a; @a; @a; @a;          
+      @a; @a; @a; @a; @a; @a; @a; @a; @a; @a;          
+      @a; @a; @a; @a; @a; @a; @a; @a; @a; @a;          
+      @a; @a; @a; @a; @a; @a; @a; @a; @a; @a;          
+      @a; @a; @a; @a; @a; @a; @a; @a; @a; @a;          
+      @a; @a; @a; @a; @a; @a; @a; @a; @a; @a;          
+      i += 1
+    end
+  end
+
+  def benchmark_ivar_set
+    i = 0
+    while i < 100000
+      @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1
+      @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1
+      @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1
+      @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1
+      @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1
+      @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1
+      @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1
+      @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1
+      @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1
+      @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1; @a = 1
       i += 1
     end
   end
@@ -23,16 +40,33 @@ module IvarBench
   def benchmark_attr_get
     i = 0
     while i < 100000
-      _a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;
-      _a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;
-      _a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;
-      _a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;
-      _a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;
-      _a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;
-      _a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;
-      _a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;
-      _a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;
-      _a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;_a = a;
+      a; a; a; a; a; a; a; a; a; a;
+      a; a; a; a; a; a; a; a; a; a;
+      a; a; a; a; a; a; a; a; a; a;
+      a; a; a; a; a; a; a; a; a; a;
+      a; a; a; a; a; a; a; a; a; a;
+      a; a; a; a; a; a; a; a; a; a;
+      a; a; a; a; a; a; a; a; a; a;
+      a; a; a; a; a; a; a; a; a; a;
+      a; a; a; a; a; a; a; a; a; a;
+      a; a; a; a; a; a; a; a; a; a;
+      i += 1
+    end
+  end
+
+  def benchmark_attr_set
+    i = 0
+    while i < 100000
+      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
+      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
+      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
+      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
+      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
+      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
+      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
+      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
+      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
+      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
       i += 1
     end
   end
@@ -104,32 +138,124 @@ class IvarSixteen
   end
 end
 
-puts "100k loop of 100 ivar accesses and assign to local; one ivar"
-5.times { puts Benchmark.measure { b = IvarOne.new; b.benchmark_ivar_get } }
+Benchmark.bm(30) do |bm|
+  5.times do
+    bm.report("100k * 100 ivar gets, 1 ivar") do
+      b = IvarOne.new; b.benchmark_ivar_get
+    end
+  end
 
-puts "100k loop of 100 attr accesses and assign to local; one ivar"
-5.times { puts Benchmark.measure { b = IvarOne.new; b.benchmark_attr_get } }
+  5.times do
+    bm.report("100k * 100 ivar sets, 1 ivar") do
+      b = IvarOne.new; b.benchmark_ivar_set
+    end
+  end
 
-puts "100k loop of 100 ivar accesses and assign to local; two ivars"
-5.times { puts Benchmark.measure { b = IvarTwo.new; b.benchmark_ivar_get } }
+  5.times do
+    bm.report("100k * 100 attr gets, 1 ivar") do
+      b = IvarOne.new; b.benchmark_attr_get
+    end
+  end
 
-puts "100k loop of 100 attr accesses and assign to local; two ivars"
-5.times { puts Benchmark.measure { b = IvarTwo.new; b.benchmark_attr_get } }
+  5.times do
+    bm.report("100k * 100 attr sets, 1 ivar") do
+      b = IvarOne.new; b.benchmark_attr_set
+    end
+  end
 
-puts "100k loop of 100 ivar accesses and assign to local; four ivars"
-5.times { puts Benchmark.measure { b = IvarFour.new; b.benchmark_ivar_get } }
+  5.times do
+    bm.report("100k * 100 ivar gets, 2 ivar") do
+      b = IvarTwo.new; b.benchmark_ivar_get
+    end
+  end
 
-puts "100k loop of 100 attr accesses and assign to local; four ivars"
-5.times { puts Benchmark.measure { b = IvarFour.new; b.benchmark_attr_get } }
+  5.times do
+    bm.report("100k * 100 ivar sets, 2 ivar") do
+      b = IvarTwo.new; b.benchmark_ivar_set
+    end
+  end
 
-puts "100k loop of 100 ivar accesses and assign to local; eight ivars"
-5.times { puts Benchmark.measure { b = IvarEight.new; b.benchmark_ivar_get } }
+  5.times do
+    bm.report("100k * 100 attr gets, 2 ivar") do
+      b = IvarTwo.new; b.benchmark_attr_get
+    end
+  end
 
-puts "100k loop of 100 attr accesses and assign to local; eight ivars"
-5.times { puts Benchmark.measure { b = IvarEight.new; b.benchmark_attr_get } }
+  5.times do
+    bm.report("100k * 100 attr sets, 2 ivar") do
+      b = IvarTwo.new; b.benchmark_attr_set
+    end
+  end
 
-puts "100k loop of 100 ivar accesses and assign to local; sixteen ivars"
-5.times { puts Benchmark.measure { b = IvarSixteen.new; b.benchmark_ivar_get } }
+  5.times do
+    bm.report("100k * 100 ivar gets, 4 ivar") do
+      b = IvarFour.new; b.benchmark_ivar_get
+    end
+  end
 
-puts "100k loop of 100 attr accesses and assign to local; sixteen ivars"
-5.times { puts Benchmark.measure { b = IvarSixteen.new; b.benchmark_attr_get } }
+  5.times do
+    bm.report("100k * 100 ivar sets, 4 ivar") do
+      b = IvarFour.new; b.benchmark_ivar_set
+    end
+  end
+
+  5.times do
+    bm.report("100k * 100 attr gets, 4 ivar") do
+      b = IvarFour.new; b.benchmark_attr_get
+    end
+  end
+
+  5.times do
+    bm.report("100k * 100 attr sets, 4 ivar") do
+      b = IvarFour.new; b.benchmark_attr_set
+    end
+  end
+
+  5.times do
+    bm.report("100k * 100 ivar gets, 8 ivar") do
+      b = IvarEight.new; b.benchmark_ivar_get
+    end
+  end
+
+  5.times do
+    bm.report("100k * 100 ivar sets, 8 ivar") do
+      b = IvarEight.new; b.benchmark_ivar_set
+    end
+  end
+
+  5.times do
+    bm.report("100k * 100 attr gets, 8 ivar") do
+      b = IvarEight.new; b.benchmark_attr_get
+    end
+  end
+
+  5.times do
+    bm.report("100k * 100 attr sets, 8 ivar") do
+      b = IvarEight.new; b.benchmark_attr_set
+    end
+  end
+
+  5.times do
+    bm.report("100k * 100 ivar gets, 16 ivar") do
+      b = IvarSixteen.new; b.benchmark_ivar_get
+    end
+  end
+
+  5.times do
+    bm.report("100k * 100 ivar sets, 16 ivar") do
+      b = IvarSixteen.new; b.benchmark_ivar_set
+    end
+  end
+
+  5.times do
+    bm.report("100k * 100 attr gets, 16 ivar") do
+      b = IvarSixteen.new; b.benchmark_attr_get
+    end
+  end
+
+  5.times do
+    bm.report("100k * 100 attr sets, 16 ivar") do
+      b = IvarSixteen.new; b.benchmark_attr_set
+    end
+  end
+end
