@@ -57,16 +57,16 @@ module IvarBench
   def benchmark_attr_set
     i = 0
     while i < 100000
-      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
-      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
-      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
-      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
-      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
-      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
-      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
-      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
-      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
-      a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;a = 1;
+      self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;
+      self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;
+      self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;
+      self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;
+      self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;
+      self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;
+      self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;
+      self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;
+      self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;
+      self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;self.a = 1;
       i += 1
     end
   end
