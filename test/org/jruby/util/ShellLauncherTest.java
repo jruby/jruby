@@ -25,6 +25,14 @@ public class ShellLauncherTest extends TestCase {
         assertEquals(0, result);
         assertEquals("hi\n", baos.toString());
     }
+
+    public void testScriptVerboseOutput() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        RubyString cmd = RubyString.newString(runtime, "jruby -e \"1.upto(1000) { puts %{hi} }\"");
+        int result = launcher.runAndWait(new IRubyObject[] {cmd}, baos);
+        assertEquals(0, result);
+        assertEquals(3000, baos.size());
+    }
     
     public void testCanLaunchShellsFromInternallForkedRubyProcess() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

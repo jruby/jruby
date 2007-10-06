@@ -39,8 +39,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
-import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 import org.jruby.Main;
@@ -233,22 +231,18 @@ public class ShellLauncher {
             this.onlyIfAvailable = avail;
         }
         public void run() {
-            byte[] buf = new byte[128];
+            byte[] buf = new byte[1024];
             int numRead;
             try {
-                while (true) {
-                    if (quit) {
-                        break;
-                    }
-                    Thread.sleep(10);
+                while (!quit) {
                     if (onlyIfAvailable && in.available() == 0) {
+                        Thread.sleep(10);
                         continue;
                     }
                     if ((numRead = in.read(buf)) == -1) {
                         break;
                     }
                     out.write(buf, 0, numRead);
-                    out.flush();
                 }
             } catch (Exception e) {
             }
