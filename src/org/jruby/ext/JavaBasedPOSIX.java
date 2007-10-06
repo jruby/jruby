@@ -43,4 +43,8 @@ public class JavaBasedPOSIX implements POSIX {
         return -1;
     }
 
+    public int getpid() {
+      return Runtime.getRuntime().hashCode();
+    }
+
 }

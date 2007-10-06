@@ -164,11 +164,10 @@ public class RubyGlobal {
         runtime.defineVariable(new LastMatchGlobalVariable(runtime, "$+"));
         runtime.defineVariable(new BackRefGlobalVariable(runtime, "$~"));
 
-        // This is not the actual OS process id, but it is a valid JRuby runtime identifier within
-        // the same virtual machine.  So this is a minor incompatibility.  External job control with
-        // this could cause issues.  OTOH, we would not want to report JVM pid since that could 
-        // take down many runtimes.  
-        runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(runtime.hashCode())));
+        // On platforms without a c-library accessable through JNA, getpid will return hashCode 
+        // as $$ used to. Using $$ to kill processes could take down many runtimes, but by basing
+        // $$ on getpid() where available, we have the same semantics as MRI.
+        runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(Ruby.getPosix().getpid())));
 
         // after defn of $stderr as the call may produce warnings
         defineGlobalEnvConstants(runtime);

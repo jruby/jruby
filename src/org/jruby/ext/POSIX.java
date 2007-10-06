@@ -18,4 +18,5 @@ import com.sun.jna.Library;
 public interface POSIX extends Library {
     public int chmod(String filename, int mode);
     public int chown(String filename, int user, int group);
+    public int getpid();
 }
