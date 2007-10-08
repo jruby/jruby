@@ -803,7 +803,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_values_at
      * 
      */
-    @JRubyMethod(name = "values_at", required = 1, rest = true)
+    @JRubyMethod(name = "values_at", rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
         return values_at(realLength, args);
     }
@@ -877,7 +877,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_push_m
      * FIXME: Whis is this named "push_m"?
      */
-    @JRubyMethod(name = "push", required = 1, rest = true)
+    @JRubyMethod(name = "push", rest = true)
     public RubyArray push_m(IRubyObject[] items) {
         for (int i = 0; i < items.length; i++) {
             append(items[i]);
@@ -948,7 +948,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_unshift_m
      *
      */
-    @JRubyMethod(name = "unshift", required = 1, rest = true)
+    @JRubyMethod(name = "unshift", rest = true)
     public RubyArray unshift_m(IRubyObject[] items) {
         long len = realLength;
 

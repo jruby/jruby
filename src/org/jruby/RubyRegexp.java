@@ -762,7 +762,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /**
      * rb_reg_s_union
      */
-    @JRubyMethod(name = "union", required = 1, rest = true, singleton = true)
+    @JRubyMethod(name = "union", rest = true, singleton = true)
     public static IRubyObject union(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         

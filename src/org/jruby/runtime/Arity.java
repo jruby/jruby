@@ -86,10 +86,7 @@ public final class Arity implements Serializable {
     }
     
     public static Arity fromAnnotation(JRubyMethod anno) {
-        if (anno.rest()) {
-            return OPTIONAL;
-        }
-        if (anno.optional() > 0) {
+        if (anno.optional() > 0 || anno.rest()) {
             return createArity(-(anno.required() + 1));
         }
         return createArity(anno.required());

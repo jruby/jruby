@@ -973,7 +973,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_indexes
      * 
      */
-    @JRubyMethod(name = "indexes", name2 = "indices", required = 1, rest = true)
+    @JRubyMethod(name = "indexes", name2 = "indices", rest = true)
     public RubyArray indices(IRubyObject[] indices) {
         RubyArray values = RubyArray.newArray(getRuntime(), indices.length);
 
@@ -1296,7 +1296,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_values_at
      * 
      */
-    @JRubyMethod(name = "values_at", required = 1, rest = true)
+    @JRubyMethod(name = "values_at", rest = true)
     public RubyArray values_at(IRubyObject[] args) {
         RubyArray result = RubyArray.newArray(getRuntime(), args.length);
         for (int i = 0; i < args.length; i++) {

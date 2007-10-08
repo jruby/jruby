@@ -2914,7 +2914,7 @@ public class RubyString extends RubyObject {
     /** rb_str_squeeze
      *
      */
-    @JRubyMethod(name = "squeeze", required = 1, rest = true)
+    @JRubyMethod(name = "squeeze", rest = true)
     public IRubyObject squeeze(IRubyObject[] args) {
         RubyString str = strDup();
         str.squeeze_bang(args);        
@@ -2924,7 +2924,7 @@ public class RubyString extends RubyObject {
     /** rb_str_squeeze_bang
      *
      */
-    @JRubyMethod(name = "squeeze!", required = 1, rest = true)
+    @JRubyMethod(name = "squeeze!", rest = true)
     public IRubyObject squeeze_bang(IRubyObject[] args) {
         if (value.realSize == 0) return getRuntime().getNil();
 
