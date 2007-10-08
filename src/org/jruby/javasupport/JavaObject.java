@@ -110,8 +110,8 @@ public class JavaObject extends RubyObject {
 		CallbackFactory callbackFactory = runtime.callbackFactory(JavaObject.class);
 
         result.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        result.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
-        result.defineFastMethod("eql?", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        result.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
+        result.defineFastMethod("eql?", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
         result.defineFastMethod("equal?", callbackFactory.getFastMethod("same", IRubyObject.class));
         result.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
         result.defineFastMethod("java_type", callbackFactory.getFastMethod("java_type"));
@@ -134,7 +134,7 @@ public class JavaObject extends RubyObject {
         return s == null ? getRuntime().getNil() : RubyString.newUnicodeString(getRuntime(), s);
     }
 
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject op_equal(IRubyObject other) {
         if (!(other instanceof JavaObject)) {
             other = other.getInstanceVariable("@java_object");
             if (!(other instanceof JavaObject)) {

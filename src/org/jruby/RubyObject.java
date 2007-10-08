@@ -877,14 +877,22 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_equal
      *
      */
-    public IRubyObject obj_equal(IRubyObject obj) {
+    public IRubyObject op_equal(IRubyObject obj) {
+        return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
+    
+    public IRubyObject equal_p(IRubyObject obj) {
         return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
+    public IRubyObject eql_p(IRubyObject obj) {
+        return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
+    
     /** rb_equal
      * 
      */
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject op_eqq(IRubyObject other) {
         if(this == other || callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==",other).isTrue()){
             return getRuntime().getTrue();
         }

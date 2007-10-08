@@ -65,7 +65,7 @@ public class JavaField extends JavaAccessibleObject {
         result.defineFastMethod("final?", callbackFactory.getFastMethod("final_p"));
         result.defineFastMethod("static_value", callbackFactory.getFastMethod("static_value"));
         result.defineFastMethod("name", callbackFactory.getFastMethod("name"));
-        result.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        result.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
         result.defineAlias("===", "==");
 
         return result;
@@ -80,7 +80,7 @@ public class JavaField extends JavaAccessibleObject {
         return getRuntime().newString(field.getType().getName());
     }
 
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject op_equal(IRubyObject other) {
     	if (!(other instanceof JavaField)) {
     		return getRuntime().getFalse();
     	}

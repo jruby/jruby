@@ -24,6 +24,8 @@ import org.jruby.runtime.Visibility;
 public @interface JRubyMethod {
     String name();
     String name2() default "";
+    String name3() default "";
+    String name4() default "";
     int required() default 0;
     int optional() default 0;
     boolean rest() default false;

@@ -79,7 +79,7 @@ public class RubyBignum extends RubyInteger {
         bignum.defineFastMethod("[]", callbackFactory.getFastMethod("aref", RubyKernel.IRUBY_OBJECT));
 
         bignum.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", RubyKernel.IRUBY_OBJECT));
-        bignum.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
+        bignum.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", RubyKernel.IRUBY_OBJECT));
         bignum.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
         bignum.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
         bignum.defineFastMethod("to_f", callbackFactory.getFastMethod("to_f"));
@@ -515,7 +515,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_eq     
      * 
      */
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject op_equal(IRubyObject other) {
         final BigInteger otherValue;
         if (other instanceof RubyFixnum) {
             otherValue = fix2big((RubyFixnum) other);
@@ -528,7 +528,7 @@ public class RubyBignum extends RubyInteger {
             }
             return RubyBoolean.newBoolean(getRuntime(), a == big2dbl(this));
         } else {
-            return super.equal(other);
+            return super.op_equal(other);
         }
         return RubyBoolean.newBoolean(getRuntime(), value.compareTo(otherValue) == 0);
     }

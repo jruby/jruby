@@ -163,7 +163,7 @@ public class RubyUndef implements IRubyObject {
         return false;
     }
 
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject op_equal(IRubyObject other) {
         return null;
     }
 

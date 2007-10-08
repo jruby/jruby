@@ -68,7 +68,7 @@ public class RubyTime extends RubyObject {
         // TODO: cache the RubyString "TZ" so it doesn't need to be recreated for each call?
         RubyString tzVar = runtime.newString("TZ");
         RubyHash h = ((RubyHash)runtime.getObject().getConstant("ENV"));
-        IRubyObject tz = h.aref(tzVar);
+        IRubyObject tz = h.op_aref(tzVar);
         if (tz == null || ! (tz instanceof RubyString)) {
             return TimeZone.getDefault();
         } else {

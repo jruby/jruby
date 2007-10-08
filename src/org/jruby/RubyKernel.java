@@ -157,11 +157,11 @@ public class RubyKernel {
         module.defineModuleFunction("singleton_method_undefined", callbackFactory.getSingletonMethod("singleton_method_undefined", IRUBY_OBJECT));
         
         // Object methods
-        module.defineFastPublicModuleFunction("==", objectCallbackFactory.getFastMethod("obj_equal", IRUBY_OBJECT));
-        module.defineFastPublicModuleFunction("eql?", objectCallbackFactory.getFastMethod("obj_equal", IRUBY_OBJECT));
-        module.defineFastPublicModuleFunction("equal?", objectCallbackFactory.getFastMethod("obj_equal", IRUBY_OBJECT));
+        module.defineFastPublicModuleFunction("==", objectCallbackFactory.getFastMethod("op_equal", IRUBY_OBJECT));
+        module.defineFastPublicModuleFunction("eql?", objectCallbackFactory.getFastMethod("eql_p", IRUBY_OBJECT));
+        module.defineFastPublicModuleFunction("equal?", objectCallbackFactory.getFastMethod("equal_p", IRUBY_OBJECT));
 
-        module.defineFastPublicModuleFunction("===", objectCallbackFactory.getFastMethod("equal", IRUBY_OBJECT));
+        module.defineFastPublicModuleFunction("===", objectCallbackFactory.getFastMethod("op_eqq", IRUBY_OBJECT));
 
         module.defineFastPublicModuleFunction("to_s", objectCallbackFactory.getFastMethod("to_s"));
         module.defineFastPublicModuleFunction("nil?", objectCallbackFactory.getFastMethod("nil_p"));

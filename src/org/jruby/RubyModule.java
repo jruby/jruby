@@ -609,9 +609,9 @@ public class RubyModule extends RubyObject {
                 dynamicMethod = new SimpleCallbackMethod(this, callback, jrubyMethod.visibility());
             }
             module.addMethod(jrubyMethod.name(), dynamicMethod);
-            if (!jrubyMethod.name2().equals("")) {
-                module.addMethod(jrubyMethod.name2(), dynamicMethod);
-            }
+            if (!jrubyMethod.name2().equals("")) module.addMethod(jrubyMethod.name2(), dynamicMethod);
+            if (!jrubyMethod.name3().equals("")) module.addMethod(jrubyMethod.name3(), dynamicMethod);
+            if (!jrubyMethod.name4().equals("")) module.addMethod(jrubyMethod.name4(), dynamicMethod);
             
             if (!jrubyMethod.alias().equals("")) {
                 module.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
@@ -1472,7 +1472,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject op_equal(IRubyObject other) {
-        return super.obj_equal(other);
+        return super.op_equal(other);
     }
 
     /** rb_mod_freeze

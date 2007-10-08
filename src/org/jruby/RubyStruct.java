@@ -79,7 +79,7 @@ public class RubyStruct extends RubyObject {
         structClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", RubyKernel.IRUBY_OBJECT));
         structClass.defineMethod("clone", callbackFactory.getFastMethod("rbClone"));
 
-        structClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
+        structClass.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", RubyKernel.IRUBY_OBJECT));
         structClass.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
 
         structClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
@@ -351,7 +351,7 @@ public class RubyStruct extends RubyObject {
         System.arraycopy(values, 0, struct.values, 0, values.length);
     }
 
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject op_equal(IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyStruct)) return getRuntime().getFalse();
         if (getMetaClass().getRealClass() != other.getMetaClass().getRealClass()) return getRuntime().getFalse();

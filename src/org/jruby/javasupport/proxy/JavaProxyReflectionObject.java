@@ -50,9 +50,9 @@ public class JavaProxyReflectionObject extends RubyObject {
                 .callbackFactory(JavaProxyReflectionObject.class);
 
         result.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        result.defineFastMethod("==", callbackFactory.getFastMethod("equal",
+        result.defineFastMethod("==", callbackFactory.getFastMethod("op_equal",
                 IRubyObject.class));
-        result.defineFastMethod("eql?", callbackFactory.getFastMethod("equal",
+        result.defineFastMethod("eql?", callbackFactory.getFastMethod("op_equal",
                 IRubyObject.class));
         result.defineFastMethod("equal?", callbackFactory.getFastMethod("same",
                 IRubyObject.class));
@@ -81,7 +81,7 @@ public class JavaProxyReflectionObject extends RubyObject {
         return getRuntime().newString(toString());
     }
 
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject op_equal(IRubyObject other) {
         if (!(other instanceof JavaProxyReflectionObject)) {
             other = other.getInstanceVariable("@java_object");
             if (!(other instanceof JavaObject)) {

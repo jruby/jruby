@@ -529,7 +529,7 @@ public class RubyNumeric extends RubyObject {
         if (getMetaClass() != other.getMetaClass()) {
             return getRuntime().getFalse();
         }
-        return super.equal(other);
+        return op_equal(other);
     }
             
     /** num_quo
@@ -574,7 +574,7 @@ public class RubyNumeric extends RubyObject {
         IRubyObject x = this;
         RubyFixnum zero = RubyFixnum.zero(getRuntime());
 
-        if (z.equal(zero).isTrue()) {
+        if (z.op_equal(zero).isTrue()) {
             return z;
         } else if (x.callMethod(context, MethodIndex.OP_LT, "<", zero).isTrue()
                         && dividend.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue()
@@ -620,7 +620,7 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "zero?")
     public IRubyObject zero_p() {
         // Will always return a boolean
-        return equal(RubyFixnum.zero(getRuntime())).isTrue() ? getRuntime().getTrue() : getRuntime().getFalse();
+        return op_equal(RubyFixnum.zero(getRuntime())).isTrue() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
     
     /** num_nonzero_p
@@ -756,7 +756,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @Override
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject op_equal(IRubyObject other) {
         if (this == other) { // it won't hurt fixnums
             return getRuntime().getTrue();
         }

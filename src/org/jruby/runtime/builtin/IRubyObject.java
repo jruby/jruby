@@ -415,7 +415,7 @@ public interface IRubyObject {
     RubyFixnum id();
     
     
-    public IRubyObject equal(IRubyObject other); 
+    public IRubyObject op_equal(IRubyObject other); 
 
     public boolean eql(IRubyObject other);
 

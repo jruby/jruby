@@ -78,11 +78,11 @@ public class Parser {
         if (!configuration.isEvalParse() && scriptLines != null) {
             if (scriptLines instanceof RubyHash) {
                 RubyString filename = runtime.newString(file);
-                IRubyObject object = ((RubyHash) scriptLines).aref(filename);
+                IRubyObject object = ((RubyHash) scriptLines).op_aref(filename);
                 
                 list = (RubyArray) (object instanceof RubyArray ? object : runtime.newArray()); 
                 
-                ((RubyHash) scriptLines).aset(filename, list);
+                ((RubyHash) scriptLines).op_aset(filename, list);
             }
         }
 

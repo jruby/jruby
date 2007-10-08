@@ -370,7 +370,7 @@ public class YARVMachine {
                 for(int i = hsize; i>0; i -= 2) {
                     v = pop();
                     k = pop();
-                    h.aset(k,v);
+                    h.op_aset(k,v);
                 }
                 push(h);
                 break;

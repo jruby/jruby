@@ -47,7 +47,7 @@ public class RubyComparable {
         RubyModule comparableModule = runtime.defineModule("Comparable");
         runtime.setComparable(comparableModule);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyComparable.class);
-        comparableModule.defineFastMethod("==", callbackFactory.getFastSingletonMethod("equal", RubyKernel.IRUBY_OBJECT));
+        comparableModule.defineFastMethod("==", callbackFactory.getFastSingletonMethod("op_equal", RubyKernel.IRUBY_OBJECT));
         comparableModule.defineFastMethod(">", callbackFactory.getFastSingletonMethod("op_gt", RubyKernel.IRUBY_OBJECT));
         comparableModule.defineFastMethod(">=", callbackFactory.getFastSingletonMethod("op_ge", RubyKernel.IRUBY_OBJECT));
         comparableModule.defineFastMethod("<", callbackFactory.getFastSingletonMethod("op_lt", RubyKernel.IRUBY_OBJECT));
@@ -113,7 +113,7 @@ public class RubyComparable {
     /** cmp_equal (cmp_eq inlined here)
      * 
      */
-    public static IRubyObject equal(IRubyObject recv, IRubyObject other) {
+    public static IRubyObject op_equal(IRubyObject recv, IRubyObject other) {
             if (recv == other) {
                 return recv.getRuntime().getTrue();
             }

@@ -153,7 +153,7 @@ public abstract class RubyMatchData extends RubyObject {
      *
      */
     @JRubyMethod(name = "[]", required = 1, optional = 1)
-    public IRubyObject aref(IRubyObject[] args) {
+    public IRubyObject op_aref(IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         if (argc == 2) {
             int beg = RubyNumeric.fix2int(args[0]);

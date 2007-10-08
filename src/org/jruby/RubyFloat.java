@@ -96,7 +96,7 @@ public class RubyFloat extends RubyNumeric {
         floatc.defineFastMethod("modulo", callbackFactory.getFastMethod("mod", RubyKernel.IRUBY_OBJECT));
         floatc.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod", RubyKernel.IRUBY_OBJECT));
         floatc.defineFastMethod("**", callbackFactory.getFastMethod("pow", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", RubyKernel.IRUBY_OBJECT));
         floatc.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", RubyKernel.IRUBY_OBJECT));
         floatc.defineFastMethod(">", callbackFactory.getFastMethod("gt", RubyKernel.IRUBY_OBJECT));
         floatc.defineFastMethod(">=", callbackFactory.getFastMethod("ge", RubyKernel.IRUBY_OBJECT));
@@ -335,7 +335,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_eq
      * 
      */
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject op_equal(IRubyObject other) {
         if (Double.isNaN(value)) {
             return getRuntime().getFalse();
     }
@@ -344,7 +344,7 @@ public class RubyFloat extends RubyNumeric {
                     .getDoubleValue());
     }
         // Numeric.equal            
-        return super.equal(other);
+        return super.op_equal(other);
 
     }
 

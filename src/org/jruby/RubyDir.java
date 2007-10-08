@@ -507,14 +507,14 @@ public class RubyDir extends RubyObject {
 	public static RubyString getHomeDirectoryPath(IRubyObject recv) {
         RubyHash systemHash = (RubyHash) recv.getRuntime().getObject().getConstant("ENV_JAVA");
         RubyHash envHash = (RubyHash) recv.getRuntime().getObject().getConstant("ENV");
-        IRubyObject  home = envHash.aref(recv.getRuntime().newString("HOME"));
+        IRubyObject  home = envHash.op_aref(recv.getRuntime().newString("HOME"));
 
         if (home == null || home.isNil()) {
-            home = systemHash.aref(recv.getRuntime().newString("user.home"));
+            home = systemHash.op_aref(recv.getRuntime().newString("user.home"));
         }
         
 		if (home == null || home.isNil()) {
-			home = envHash.aref(recv.getRuntime().newString("LOGDIR"));
+			home = envHash.op_aref(recv.getRuntime().newString("LOGDIR"));
 		}
 		
 		if (home == null || home.isNil()) {

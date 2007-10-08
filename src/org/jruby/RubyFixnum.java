@@ -443,11 +443,11 @@ public class RubyFixnum extends RubyInteger {
      * 
      */
     @JRubyMethod(name = "==", required = 1)
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject op_equal(IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(getRuntime(), value == ((RubyFixnum) other).value);
         }
-        return super.equal(other);
+        return super.op_equal(other);
             }
 
     /** fix_cmp

@@ -288,14 +288,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
         
         // FIXME: 
-        return ((RubyMatchData)recv.getRuntime().getCurrentContext().getCurrentFrame().getBackRef()).aref(args);
+        return ((RubyMatchData)recv.getRuntime().getCurrentContext().getCurrentFrame().getBackRef()).op_aref(args);
     }
 
     /** rb_reg_equal
      * 
      */
     @JRubyMethod(name = "==", name2 = "eql?", required = 1)
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject op_equal(IRubyObject other) {
         if (other == this) {
             return getRuntime().getTrue();
         }

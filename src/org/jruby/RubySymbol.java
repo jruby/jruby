@@ -157,8 +157,8 @@ public class RubySymbol extends RubyObject {
     }
 
     @JRubyMethod(name = "===", required = 1)
-    public IRubyObject obj_equal(IRubyObject other) {
-        return super.obj_equal(other);
+    public IRubyObject op_eqq(IRubyObject other) {
+        return super.op_equal(other);
     }
 
     public RubyFixnum hash() {

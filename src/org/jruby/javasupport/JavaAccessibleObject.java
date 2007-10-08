@@ -47,8 +47,8 @@ public abstract class JavaAccessibleObject extends RubyObject {
 	public static void registerRubyMethods(Ruby runtime, RubyClass result) {
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaAccessibleObject.class);
 
-        result.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
-        result.defineFastMethod("eql?", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        result.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
+        result.defineFastMethod("eql?", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
         result.defineFastMethod("equal?", callbackFactory.getFastMethod("same", IRubyObject.class));
         result.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
 
@@ -61,7 +61,7 @@ public abstract class JavaAccessibleObject extends RubyObject {
 		return getRuntime().newFixnum(accesibleObject().hashCode());
     }
 
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject op_equal(IRubyObject other) {
 		return other instanceof JavaAccessibleObject && accesibleObject().equals(((JavaAccessibleObject)other).accesibleObject()) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
    
