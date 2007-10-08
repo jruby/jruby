@@ -113,27 +113,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineConstant("IGNORECASE", runtime.newFixnum(RE_OPTION_IGNORECASE));
         regexpClass.defineConstant("EXTENDED", runtime.newFixnum(RE_OPTION_EXTENDED));
         regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
-
-        regexpClass.defineFastMethod("initialize", callbackFactory.getFastOptMethod("initialize"));
-        regexpClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy",RubyKernel.IRUBY_OBJECT));        
-        regexpClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
-        regexpClass.defineFastMethod("eql?", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
-        regexpClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
-        regexpClass.defineFastMethod("source", callbackFactory.getFastMethod("source"));
-        regexpClass.defineFastMethod("casefold?", callbackFactory.getFastMethod("casefold"));
-        regexpClass.defineFastMethod("kcode", callbackFactory.getFastMethod("kcode"));
-        regexpClass.defineFastMethod("options", callbackFactory.getFastMethod("options"));
-        regexpClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        regexpClass.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
-
-        regexpClass.getMetaClass().defineFastMethod("new", callbackFactory.getFastOptSingletonMethod("newInstance"));
-        regexpClass.getMetaClass().defineFastMethod("compile", callbackFactory.getFastOptSingletonMethod("newInstance"));
-        regexpClass.getMetaClass().defineFastMethod("quote", callbackFactory.getFastOptSingletonMethod("quote"));
-        regexpClass.getMetaClass().defineFastMethod("escape", callbackFactory.getFastSingletonMethod("quote", RubyString.class));
-        regexpClass.getMetaClass().defineFastMethod("union", callbackFactory.getFastOptSingletonMethod("union"));
         
         regexpClass.defineAnnotatedMethods(RubyRegexp.class, callbackFactory);
-        
         regexpClass.dispatcher = callbackFactory.createDispatcher(regexpClass);
 
         return regexpClass;
@@ -215,6 +196,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return re;
     }
     
+    @JRubyMethod(name = "new", name2 = "compile", required = 1, optional = 2, singleton = true)
     public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyClass klass = (RubyClass)recv;
         
@@ -225,6 +207,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return re;
     }
 
+    @JRubyMethod(name = "initialize", required = 1, optional = 2)
     public IRubyObject initialize(IRubyObject[] args) {
         ByteList pat =
             (args[0] instanceof RubyRegexp)
@@ -250,7 +233,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_s_quote
      * 
      */
-    public static RubyString quote(IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(name = "quote", required = 1, optional = 1, singleton = true)
+    public static IRubyObject quote(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0 || args.length > 2) {
             throw recv.getRuntime().newArgumentError(0, args.length);
         }
@@ -285,8 +269,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /**
      * Utility version of quote that doesn't use encoding
      */
-    public static RubyString quote(IRubyObject recv, RubyString str) {        
-        return (RubyString) recv.getRuntime().newString(escapeSpecialChars(str.toString())).infectBy(str);
+    @JRubyMethod(name = "escape", required = 1, singleton = true)
+    public static IRubyObject quote(IRubyObject recv, IRubyObject str) {        
+        return recv.getRuntime().newString(escapeSpecialChars(str.toString())).infectBy(str);
     }
 
     /** 
@@ -309,6 +294,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_equal
      * 
      */
+    @JRubyMethod(name = "==", name2 = "eql?", required = 1)
     public IRubyObject equal(IRubyObject other) {
         if (other == this) {
             return getRuntime().getTrue();
@@ -409,11 +395,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_source
      * 
      */
+    @JRubyMethod(name = "source")
     public RubyString source() {
         checkInitialized();
         return getRuntime().newString(pattern.getSource());
     }
 
+    @JRubyMethod(name = "kcode")
     public IRubyObject kcode() {
         if(code == KCode.NIL) {
             return code.kcode(getRuntime());
@@ -422,6 +410,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
     }
 
+    @JRubyMethod(name = "options")
     public IRubyObject options() {
         if(this.pattern.isCaseInsensitive()) {
             this.options |= 1;
@@ -438,7 +427,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_casefold_p
      * 
      */
-    public RubyBoolean casefold() {
+    @JRubyMethod(name = "casefold?")
+    public RubyBoolean casefold_p() {
         checkInitialized();
         return getRuntime().newBoolean(this.pattern.isCaseInsensitive());
     }
@@ -690,6 +680,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_init_copy
      * 
      */
+    @JRubyMethod(name = "initialize_copy", required = 1)
     public IRubyObject initialize_copy(IRubyObject original) {
         if (this == original) return this;
         
@@ -707,6 +698,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_inspect
      *
      */
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
         final ByteList regex = pattern.getSource();
         final int length = regex.length();
@@ -770,6 +762,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /**
      * rb_reg_s_union
      */
+    @JRubyMethod(name = "union", required = 1, rest = true, singleton = true)
     public static IRubyObject union(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         
@@ -801,6 +794,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
 
     
+    @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
         return getRuntime().newString(toString());
     }
@@ -829,18 +823,18 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** Helper method for the {@link #toString() toString} method which creates
      * an <i>on-off</i> pattern of {@link Pattern Pattern} flags. 
      * 
-	 * @param buffer the default buffer for the output
-	 * @param off temporary buffer for the off flags
-	 * @param flag a Pattern flag
-	 * @param c the char which represents the flag
-	 */
-	private void flagToString(StringBuffer buffer, StringBuffer off, boolean flag, char c) {
-		if (flag) {
-    		buffer.append(c);
-    	} else {
-    		off.append(c);
-    	}
-	}
+     * @param buffer the default buffer for the output
+     * @param off temporary buffer for the off flags
+     * @param flag a Pattern flag
+     * @param c the char which represents the flag
+     */
+    private void flagToString(StringBuffer buffer, StringBuffer off, boolean flag, char c) {
+        if (flag) {
+            buffer.append(c);
+        } else {
+            off.append(c);
+        }
+    }
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubyRegexp result = newRegexp(input.getRuntime(), 
@@ -865,10 +859,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         output.writeInt(_flags);
     }
 	
-	public RegexpPattern getPattern() {
-		return this.pattern;
-	}
+    public RegexpPattern getPattern() {
+        return this.pattern;
+    }
 
+    @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         return getRuntime().newFixnum(this.pattern.toString().hashCode() + this.pattern.getFlags());
     }
