@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
@@ -47,12 +48,8 @@ public class RubyComparable {
         RubyModule comparableModule = runtime.defineModule("Comparable");
         runtime.setComparable(comparableModule);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyComparable.class);
-        comparableModule.defineFastMethod("==", callbackFactory.getFastSingletonMethod("op_equal", RubyKernel.IRUBY_OBJECT));
-        comparableModule.defineFastMethod(">", callbackFactory.getFastSingletonMethod("op_gt", RubyKernel.IRUBY_OBJECT));
-        comparableModule.defineFastMethod(">=", callbackFactory.getFastSingletonMethod("op_ge", RubyKernel.IRUBY_OBJECT));
-        comparableModule.defineFastMethod("<", callbackFactory.getFastSingletonMethod("op_lt", RubyKernel.IRUBY_OBJECT));
-        comparableModule.defineFastMethod("<=", callbackFactory.getFastSingletonMethod("op_le", RubyKernel.IRUBY_OBJECT));
-        comparableModule.defineFastMethod("between?", callbackFactory.getFastSingletonMethod("between_p", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        
+        comparableModule.defineAnnotatedMethods(RubyComparable.class, callbackFactory);
 
         return comparableModule;
     }
@@ -113,6 +110,7 @@ public class RubyComparable {
     /** cmp_equal (cmp_eq inlined here)
      * 
      */
+    @JRubyMethod(name = "==", required = 1)
     public static IRubyObject op_equal(IRubyObject recv, IRubyObject other) {
             if (recv == other) {
                 return recv.getRuntime().getTrue();
@@ -136,6 +134,7 @@ public class RubyComparable {
      * 
      */
     // <=> may return nil in many circumstances, e.g. 3 <=> NaN        
+    @JRubyMethod(name = ">", required = 1)
     public static RubyBoolean op_gt(IRubyObject recv, IRubyObject other) {
         final Ruby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(runtime.getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other);
@@ -150,6 +149,7 @@ public class RubyComparable {
     /** cmp_ge
      * 
      */
+    @JRubyMethod(name = ">=", required = 1)
     public static RubyBoolean op_ge(IRubyObject recv, IRubyObject other) {
         final Ruby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(runtime.getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other);
@@ -164,6 +164,7 @@ public class RubyComparable {
     /** cmp_lt
      * 
      */
+    @JRubyMethod(name = "<", required = 1)
     public static RubyBoolean op_lt(IRubyObject recv, IRubyObject other) {
         final Ruby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(runtime.getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other);
@@ -178,6 +179,7 @@ public class RubyComparable {
     /** cmp_le
      * 
      */
+    @JRubyMethod(name = "<=", required = 1)
     public static RubyBoolean op_le(IRubyObject recv, IRubyObject other) {
         final Ruby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(runtime.getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other);
@@ -192,6 +194,7 @@ public class RubyComparable {
     /** cmp_between
      * 
      */
+    @JRubyMethod(name = "between?", required = 2)
     public static RubyBoolean between_p(IRubyObject recv, IRubyObject first, IRubyObject second) {
 
         return recv.getRuntime().newBoolean(op_lt(recv, first).isFalse() && op_gt(recv, second).isFalse());
