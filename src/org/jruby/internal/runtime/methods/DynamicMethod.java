@@ -62,15 +62,15 @@ public abstract class DynamicMethod {
     public abstract DynamicMethod dup();
 
     public boolean isCallableFrom(IRubyObject caller, CallType callType) {
-        switch (visibility.value) {
-        case Visibility.PUBLIC_VALUE:
+        switch (visibility) {
+        case PUBLIC:
             return true;
-        case Visibility.PRIVATE_VALUE:
+        case PRIVATE:
             if (callType == CallType.NORMAL) {
                 return false;
             }
             break;
-        case Visibility.PROTECTED_VALUE:
+        case PROTECTED:
             RubyModule defined = getImplementationClass();
             while (defined.isIncluded()) {
                 defined = defined.getMetaClass();

@@ -122,7 +122,7 @@ public class RuntimeHelpers {
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method;
         
-        if (name == "initialize" || visibility.isModuleFunction()) {
+        if (name == "initialize" || visibility == Visibility.MODULE_FUNCTION) {
             method = factory.getCompiledMethod(containingClass, javaName, 
                     Arity.createArity(arity), Visibility.PRIVATE, scope, scriptObject);
         } else {
@@ -134,7 +134,7 @@ public class RuntimeHelpers {
         
         containingClass.addMethod(name, method);
         
-        if (visibility.isModuleFunction()) {
+        if (visibility == Visibility.MODULE_FUNCTION) {
             containingClass.getSingletonClass().addMethod(name,
                     new WrapperMethod(containingClass.getSingletonClass(), method,
                     Visibility.PUBLIC));

@@ -794,7 +794,7 @@ public class ASTInterpreter {
         }
 
         Visibility visibility = context.getCurrentVisibility();
-        if (name == "initialize" || visibility.isModuleFunction()) {
+        if (name == "initialize" || visibility == Visibility.MODULE_FUNCTION) {
             visibility = Visibility.PRIVATE;
         }
         
@@ -806,7 +806,7 @@ public class ASTInterpreter {
    
         containingClass.addMethod(name, newMethod);
    
-        if (context.getCurrentVisibility().isModuleFunction()) {
+        if (context.getCurrentVisibility() == Visibility.MODULE_FUNCTION) {
             containingClass.getSingletonClass().addMethod(
                     name,
                     new WrapperMethod(containingClass.getSingletonClass(), newMethod,
@@ -1836,8 +1836,8 @@ public class ASTInterpreter {
                     DynamicMethod method = metaClass.searchMethod(iVisited.getName());
                     Visibility visibility = method.getVisibility();
 
-                    if (!visibility.isPrivate() && 
-                            (!visibility.isProtected() || self.isKindOf(metaClass.getRealClass()))) {
+                    if (visibility != Visibility.PRIVATE && 
+                            (visibility != Visibility.PROTECTED || self.isKindOf(metaClass.getRealClass()))) {
                         if (metaClass.isMethodBound(iVisited.getName(), false)) {
                             return getArgumentDefinition(runtime,context, iVisited.getArgsNode(), "assignment", self, aBlock);
                         }
@@ -1866,8 +1866,8 @@ public class ASTInterpreter {
                     DynamicMethod method = metaClass.searchMethod(iVisited.getName());
                     Visibility visibility = method.getVisibility();
 
-                    if (!visibility.isPrivate() && 
-                            (!visibility.isProtected() || self.isKindOf(metaClass.getRealClass()))) {
+                    if (visibility != Visibility.PRIVATE && 
+                            (visibility != Visibility.PROTECTED || self.isKindOf(metaClass.getRealClass()))) {
                         if (metaClass.isMethodBound(iVisited.getName(), false)) {
                             return getArgumentDefinition(runtime, context, iVisited.getArgsNode(), "method", self, aBlock);
                         }

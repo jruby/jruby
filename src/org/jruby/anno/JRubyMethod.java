@@ -13,6 +13,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.jruby.runtime.Visibility;
 
 /**
  *
@@ -29,4 +30,5 @@ public @interface JRubyMethod {
     boolean singleton() default false;
     boolean frame() default false;
     boolean scope() default false;
+    Visibility visibility() default Visibility.PUBLIC;
 }

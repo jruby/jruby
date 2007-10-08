@@ -100,7 +100,7 @@ public class RubiniusMachine {
                 RubyArray method = (RubyArray)stack[stackTop--];
                 
                 Visibility visibility = context.getCurrentVisibility();
-                if (name == "initialize" || visibility.isModuleFunction()) {
+                if (name == "initialize" || visibility == Visibility.MODULE_FUNCTION) {
                     visibility = Visibility.PRIVATE;
                 }
                 
@@ -114,7 +114,7 @@ public class RubiniusMachine {
 
                 clzz.addMethod(name, newMethod);
     
-                if (context.getCurrentVisibility().isModuleFunction()) {
+                if (context.getCurrentVisibility() == Visibility.MODULE_FUNCTION) {
                     clzz.getSingletonClass().addMethod(
                             name,
                             new WrapperMethod(clzz.getSingletonClass(), newMethod,

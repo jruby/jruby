@@ -59,6 +59,7 @@ import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
@@ -1063,7 +1064,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                                 if (callback.isSingleton()) continue;
                                 
                                 // skipping non-public methods for now, to avoid visibility checks in STI
-                                if (!dynamicMethod.getVisibility().isPublic()) continue;
+                                if (dynamicMethod.getVisibility() != Visibility.PUBLIC) continue;
                             }
                             
                             allMethods.put(entry.getKey(), entry.getValue());

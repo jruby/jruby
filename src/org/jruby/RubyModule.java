@@ -585,7 +585,6 @@ public class RubyModule extends RubyObject {
     }
 
     public void defineMethod(String name, Callback method) {
-        if (method.getClass().isAnonymousClass()) Thread.dumpStack();
         Visibility visibility = name.equals("initialize") ?
                 Visibility.PRIVATE : Visibility.PUBLIC;
         addMethod(name, new FullFunctionCallbackMethod(this, method, visibility));
@@ -603,12 +602,14 @@ public class RubyModule extends RubyObject {
             if (jrubyMethod.singleton()) module = getMetaClass();
 
             Callback callback = callbackFactory.getMethod(method);
+            DynamicMethod dynamicMethod;
             
             if (jrubyMethod.frame() || jrubyMethod.scope()) {
-                module.defineMethod(jrubyMethod.name(), callback);
+                dynamicMethod = new FullFunctionCallbackMethod(this, callback, jrubyMethod.visibility());
             } else {
-                module.defineFastMethod(jrubyMethod.name(), callback);
+                dynamicMethod = new SimpleCallbackMethod(this, callback, jrubyMethod.visibility());
             }
+            module.addMethod(jrubyMethod.name(), dynamicMethod);
             
             if (!jrubyMethod.alias().equals("")) {
                 module.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
@@ -1104,9 +1105,9 @@ public class RubyModule extends RubyObject {
 
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility attributeScope = tc.getCurrentVisibility();
-        if (attributeScope.isPrivate()) {
+        if (attributeScope == Visibility.PRIVATE) {
             //FIXME warning
-        } else if (attributeScope.isModuleFunction()) {
+        } else if (attributeScope == Visibility.MODULE_FUNCTION) {
             attributeScope = Visibility.PRIVATE;
             // FIXME warning
         }
@@ -1192,7 +1193,7 @@ public class RubyModule extends RubyObject {
     public boolean isMethodBound(String name, boolean checkVisibility) {
         DynamicMethod method = searchMethod(name);
         if (!method.isUndefined()) {
-            return !(checkVisibility && method.getVisibility().isPrivate());
+            return !(checkVisibility && method.getVisibility() == Visibility.PRIVATE);
         }
         return false;
     }
@@ -1227,7 +1228,7 @@ public class RubyModule extends RubyObject {
         ThreadContext tc = getRuntime().getCurrentContext();
         Visibility visibility = tc.getCurrentVisibility();
 
-        if (visibility.isModuleFunction()) visibility = Visibility.PRIVATE;
+        if (visibility == Visibility.MODULE_FUNCTION) visibility = Visibility.PRIVATE;
 
         if (args.length == 1 || args[1].isKindOf(getRuntime().getProc())) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
@@ -1258,7 +1259,7 @@ public class RubyModule extends RubyObject {
         RubySymbol symbol = RubySymbol.newSymbol(getRuntime(), name);
         ThreadContext context = getRuntime().getCurrentContext();
 
-        if (tc.getPreviousVisibility().isModuleFunction()) {
+        if (tc.getPreviousVisibility() == Visibility.MODULE_FUNCTION) {
             getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), newMethod, Visibility.PUBLIC));
         }
 
@@ -1661,7 +1662,7 @@ public class RubyModule extends RubyObject {
         return getRuntime().newNameError("wrong constant name " + name, name);
     }
 
-    private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility) {
+    private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility, boolean not) {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
         RubyArray ary = getRuntime().newArray();
         HashMap undefinedMethods = new HashMap();
@@ -1679,7 +1680,8 @@ public class RubyModule extends RubyObject {
                     continue;
                 }
                 if (method.getImplementationClass() == realType &&
-                    method.getVisibility().is(visibility) && undefinedMethods.get(methodName) == null) {
+                    (!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) &&
+                    undefinedMethods.get(methodName) == null) {
 
                     if (!added.contains(methodName)) {
                         ary.append(getRuntime().newString(methodName));
@@ -1697,11 +1699,11 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyArray instance_methods(IRubyObject[] args) {
-        return instance_methods(args, Visibility.PUBLIC_PROTECTED);
+        return instance_methods(args, Visibility.PRIVATE, true);
     }
 
     public RubyArray public_instance_methods(IRubyObject[] args) {
-        return instance_methods(args, Visibility.PUBLIC);
+        return instance_methods(args, Visibility.PUBLIC, false);
     }
 
     public IRubyObject instance_method(IRubyObject symbol) {
@@ -1712,14 +1714,14 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyArray protected_instance_methods(IRubyObject[] args) {
-        return instance_methods(args, Visibility.PROTECTED);
+        return instance_methods(args, Visibility.PROTECTED, false);
     }
 
     /** rb_class_private_instance_methods
      *
      */
     public RubyArray private_instance_methods(IRubyObject[] args) {
-        return instance_methods(args, Visibility.PRIVATE);
+        return instance_methods(args, Visibility.PRIVATE, false);
     }
 
     /** rb_mod_constants
@@ -1949,19 +1951,19 @@ public class RubyModule extends RubyObject {
     public IRubyObject public_method_defined(IRubyObject symbol) {
 	    DynamicMethod method = searchMethod(symbol.asSymbol());
 	    
-		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility().isPublic());
+		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == Visibility.PUBLIC);
     }
 
     public IRubyObject protected_method_defined(IRubyObject symbol) {
 	    DynamicMethod method = searchMethod(symbol.asSymbol());
 	    
-		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility().isProtected());
+		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == Visibility.PROTECTED);
     }
 	
     public IRubyObject private_method_defined(IRubyObject symbol) {
 	    DynamicMethod method = searchMethod(symbol.asSymbol());
 	    
-		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility().isPrivate());
+		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == Visibility.PRIVATE);
     }
 
     public RubyModule public_class_method(IRubyObject[] args) {

@@ -411,7 +411,7 @@ public class YARVMachine {
                 }
     
                 Visibility visibility = context.getCurrentVisibility();
-                if (mname == "initialize" || visibility.isModuleFunction()) {
+                if (mname == "initialize" || visibility == Visibility.MODULE_FUNCTION) {
                     visibility = Visibility.PRIVATE;
                 }
                 
@@ -430,7 +430,7 @@ public class YARVMachine {
 
                 containingClass.addMethod(mname, newMethod);
     
-                if (context.getCurrentVisibility().isModuleFunction()) {
+                if (context.getCurrentVisibility() == Visibility.MODULE_FUNCTION) {
                     RubyModule singleton = containingClass.getSingletonClass();
                     singleton.addMethod(mname, new WrapperMethod(singleton, newMethod, Visibility.PUBLIC));
                     containingClass.callMethod(context, "singleton_method_added", runtime.newSymbol(mname));

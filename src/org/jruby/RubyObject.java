@@ -1245,7 +1245,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 }
 
                 RubyString methodName = getRuntime().newString((String) entry.getKey());
-                if (method.getVisibility().isPublic() && ! result.includes(methodName)) {
+                if (method.getVisibility() == Visibility.PUBLIC && ! result.includes(methodName)) {
                     result.append(methodName);
                 }
             }
