@@ -669,7 +669,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             if (elementCount < 6) {
                 Class[] params = new Class[elementCount];
                 Arrays.fill(params, IRubyObject.class);
-                invokeUtilityMethod("createObjectArray", cg.sig(IRubyObject[].class, params));
+                invokeUtilityMethod("constructObjectArray", cg.sig(IRubyObject[].class, params));
             } else {
                 // This is pretty inefficient for building an array, so just raise an error if someone's using it for a lot of elements
                 throw new NotCompilableException("Don't use createObjectArray(int) for more than 5 elements");

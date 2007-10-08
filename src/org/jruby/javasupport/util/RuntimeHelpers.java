@@ -481,26 +481,6 @@ public class RuntimeHelpers {
         }
     }
     
-    public static IRubyObject[] createObjectArray(IRubyObject arg1) {
-        return new IRubyObject[] {arg1};
-    }
-    
-    public static IRubyObject[] createObjectArray(IRubyObject arg1, IRubyObject arg2) {
-        return new IRubyObject[] {arg1, arg2};
-    }
-    
-    public static IRubyObject[] createObjectArray(IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return new IRubyObject[] {arg1, arg2, arg3};
-    }
-    
-    public static IRubyObject[] createObjectArray(IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4) {
-        return new IRubyObject[] {arg1, arg2, arg3, arg4};
-    }
-    
-    public static IRubyObject[] createObjectArray(IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
-        return new IRubyObject[] {arg1, arg2, arg3, arg4, arg5};
-    }
-    
     public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
         Ruby runtime = proc.getRuntime();
 
