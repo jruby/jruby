@@ -61,12 +61,6 @@ public abstract class RubyInteger extends RubyNumeric {
         integer.getSingletonClass().undefineMethod("new");
 
         integer.includeModule(runtime.getPrecision());
-
-        integer.defineFastMethod("to_int", callbackFactory.getFastMethod("to_i"));
-        integer.defineFastMethod("floor", callbackFactory.getFastMethod("to_i"));
-        integer.defineFastMethod("ceil", callbackFactory.getFastMethod("to_i"));
-        integer.defineFastMethod("round", callbackFactory.getFastMethod("to_i"));
-        integer.defineFastMethod("truncate", callbackFactory.getFastMethod("to_i"));
         
         integer.defineAnnotatedMethods(RubyInteger.class, callbackFactory);
         integer.dispatcher = callbackFactory.createDispatcher(integer);
@@ -212,7 +206,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_to_i
      * 
      */
-    @JRubyMethod(name = "to_i")
+    @JRubyMethod(name = "to_i", name2 = "to_int", name3 = "floor", name4 = "ceil", name5 = "round", name6 = "truncate")
     public RubyInteger to_i() {
         return this;
     }

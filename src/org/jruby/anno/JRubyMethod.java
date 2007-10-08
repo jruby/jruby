@@ -26,6 +26,8 @@ public @interface JRubyMethod {
     String name2() default "";
     String name3() default "";
     String name4() default "";
+    String name5() default "";
+    String name6() default "";
     int required() default 0;
     int optional() default 0;
     boolean rest() default false;

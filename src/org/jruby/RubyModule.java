@@ -612,6 +612,8 @@ public class RubyModule extends RubyObject {
             if (!jrubyMethod.name2().equals("")) module.addMethod(jrubyMethod.name2(), dynamicMethod);
             if (!jrubyMethod.name3().equals("")) module.addMethod(jrubyMethod.name3(), dynamicMethod);
             if (!jrubyMethod.name4().equals("")) module.addMethod(jrubyMethod.name4(), dynamicMethod);
+            if (!jrubyMethod.name5().equals("")) module.addMethod(jrubyMethod.name5(), dynamicMethod);
+            if (!jrubyMethod.name6().equals("")) module.addMethod(jrubyMethod.name6(), dynamicMethod);
             
             if (!jrubyMethod.alias().equals("")) {
                 module.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
