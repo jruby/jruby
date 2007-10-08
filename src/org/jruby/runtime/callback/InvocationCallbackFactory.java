@@ -289,7 +289,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     }
                     
                     // load args
-                    if (methodAnno.optional() == 0) {
+                    if (methodAnno.optional() == 0 && !methodAnno.rest()) {
                         // only required args
                         loadArguments(mv, METHOD_ARGS_INDEX, methodAnno.required(), signature);
                     } else {

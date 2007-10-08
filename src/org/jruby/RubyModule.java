@@ -610,6 +610,9 @@ public class RubyModule extends RubyObject {
                 dynamicMethod = new SimpleCallbackMethod(this, callback, jrubyMethod.visibility());
             }
             module.addMethod(jrubyMethod.name(), dynamicMethod);
+            if (!jrubyMethod.name2().equals("")) {
+                module.addMethod(jrubyMethod.name2(), dynamicMethod);
+            }
             
             if (!jrubyMethod.alias().equals("")) {
                 module.defineAlias(jrubyMethod.alias(), jrubyMethod.name());

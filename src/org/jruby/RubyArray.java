@@ -41,11 +41,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Set;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -70,99 +69,14 @@ public class RubyArray extends RubyObject implements List {
         runtime.setArray(arrayc);
         arrayc.index = ClassIndex.ARRAY;
         arrayc.kindOf = new RubyModule.KindOf() {
-                public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                    return obj instanceof RubyArray;
-                }
-            };
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof RubyArray;
+            }
+        };
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyArray.class);
 
         arrayc.includeModule(runtime.getEnumerable());
-        arrayc.getMetaClass().defineMethod("[]", callbackFactory.getOptSingletonMethod("create"));
-
-        arrayc.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        arrayc.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("replace", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s")); 
-        arrayc.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
-        arrayc.defineFastMethod("to_a", callbackFactory.getFastMethod("to_a"));
-        arrayc.defineFastMethod("to_ary", callbackFactory.getFastMethod("to_ary"));
-        arrayc.defineFastMethod("frozen?", callbackFactory.getFastMethod("frozen"));
-
-        arrayc.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
-
-        arrayc.defineFastMethod("[]", callbackFactory.getFastOptMethod("aref"));
-        arrayc.defineFastMethod("[]=", callbackFactory.getFastOptMethod("aset"));
-        arrayc.defineFastMethod("at", callbackFactory.getFastMethod("at", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineMethod("fetch", callbackFactory.getOptMethod("fetch"));
-        arrayc.defineFastMethod("first", callbackFactory.getFastOptMethod("first"));
-        arrayc.defineFastMethod("last", callbackFactory.getFastOptMethod("last"));
-        arrayc.defineFastMethod("concat", callbackFactory.getFastMethod("concat", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("<<", callbackFactory.getFastMethod("append", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("push", callbackFactory.getFastOptMethod("push_m"));
-        arrayc.defineFastMethod("pop", callbackFactory.getFastMethod("pop"));
-        arrayc.defineFastMethod("shift", callbackFactory.getFastMethod("shift"));
-        arrayc.defineFastMethod("unshift", callbackFactory.getFastOptMethod("unshift_m"));
-        arrayc.defineFastMethod("insert", callbackFactory.getFastOptMethod("insert"));
-        arrayc.defineMethod("each", callbackFactory.getMethod("each"));
-        arrayc.defineMethod("each_index", callbackFactory.getMethod("each_index"));
-        arrayc.defineMethod("reverse_each", callbackFactory.getMethod("reverse_each"));
-        arrayc.defineFastMethod("length", callbackFactory.getFastMethod("length"));
-        arrayc.defineAlias("size", "length");
-        arrayc.defineFastMethod("empty?", callbackFactory.getFastMethod("empty_p"));
-        arrayc.defineFastMethod("index", callbackFactory.getFastMethod("index", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("rindex", callbackFactory.getFastMethod("rindex", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("indexes", callbackFactory.getFastOptMethod("indexes"));
-        arrayc.defineFastMethod("indices", callbackFactory.getFastOptMethod("indexes"));
-        arrayc.defineFastMethod("join", callbackFactory.getFastOptMethod("join_m"));
-        arrayc.defineFastMethod("reverse", callbackFactory.getFastMethod("reverse"));
-        arrayc.defineFastMethod("reverse!", callbackFactory.getFastMethod("reverse_bang"));
-        arrayc.defineMethod("sort", callbackFactory.getMethod("sort"));
-        arrayc.defineMethod("sort!", callbackFactory.getMethod("sort_bang"));
-        arrayc.defineMethod("collect", callbackFactory.getMethod("collect"));
-        arrayc.defineMethod("collect!", callbackFactory.getMethod("collect_bang"));
-        arrayc.defineMethod("map", callbackFactory.getMethod("collect"));
-        arrayc.defineMethod("map!", callbackFactory.getMethod("collect_bang"));
-        arrayc.defineMethod("select", callbackFactory.getMethod("select"));
-        arrayc.defineFastMethod("values_at", callbackFactory.getFastOptMethod("values_at"));
-        arrayc.defineMethod("delete", callbackFactory.getMethod("delete", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("delete_at", callbackFactory.getFastMethod("delete_at", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineMethod("delete_if", callbackFactory.getMethod("delete_if"));
-        arrayc.defineMethod("reject", callbackFactory.getMethod("reject"));
-        arrayc.defineMethod("reject!", callbackFactory.getMethod("reject_bang"));
-        arrayc.defineMethod("zip", callbackFactory.getOptMethod("zip"));
-        arrayc.defineFastMethod("transpose", callbackFactory.getFastMethod("transpose"));
-        arrayc.defineFastMethod("replace", callbackFactory.getFastMethod("replace", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("clear", callbackFactory.getFastMethod("rb_clear"));
-        arrayc.defineMethod("fill", callbackFactory.getOptMethod("fill"));
-        arrayc.defineFastMethod("include?", callbackFactory.getFastMethod("include_p", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("<=>", callbackFactory.getFastMethod("op_cmp", RubyKernel.IRUBY_OBJECT));
-
-        arrayc.defineFastMethod("slice", callbackFactory.getFastOptMethod("aref"));
-        arrayc.defineFastMethod("slice!", callbackFactory.getFastOptMethod("slice_bang"));
-
-        arrayc.defineFastMethod("assoc", callbackFactory.getFastMethod("assoc", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("rassoc", callbackFactory.getFastMethod("rassoc", RubyKernel.IRUBY_OBJECT));
-
-        arrayc.defineFastMethod("+", callbackFactory.getFastMethod("op_plus", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("*", callbackFactory.getFastMethod("op_times", RubyKernel.IRUBY_OBJECT));
-
-        arrayc.defineFastMethod("-", callbackFactory.getFastMethod("op_diff", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("&", callbackFactory.getFastMethod("op_and", RubyKernel.IRUBY_OBJECT));
-        arrayc.defineFastMethod("|", callbackFactory.getFastMethod("op_or", RubyKernel.IRUBY_OBJECT));
-
-        arrayc.defineFastMethod("uniq", callbackFactory.getFastMethod("uniq"));
-        arrayc.defineFastMethod("uniq!", callbackFactory.getFastMethod("uniq_bang"));
-        arrayc.defineFastMethod("compact", callbackFactory.getFastMethod("compact"));
-        arrayc.defineFastMethod("compact!", callbackFactory.getFastMethod("compact_bang"));
-
-        arrayc.defineFastMethod("flatten", callbackFactory.getFastMethod("flatten"));
-        arrayc.defineFastMethod("flatten!", callbackFactory.getFastMethod("flatten_bang"));
-
-        arrayc.defineFastMethod("nitems", callbackFactory.getFastMethod("nitems"));
-
-        arrayc.defineFastMethod("pack", callbackFactory.getFastMethod("pack", RubyKernel.IRUBY_OBJECT));
-        
+        arrayc.defineAnnotatedMethods(RubyArray.class, callbackFactory);
         arrayc.dispatcher = callbackFactory.createDispatcher(arrayc);
 
         return arrayc;
@@ -181,6 +95,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_s_create
      * 
      */
+    @JRubyMethod(name = "[]", rest = true, frame = true, singleton = true)
     public static IRubyObject create(IRubyObject klass, IRubyObject[] args, Block block) {
         RubyArray arr = (RubyArray) ((RubyClass) klass).allocate();
         arr.callInit(IRubyObject.NULL_ARRAY, block);
@@ -476,6 +391,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_initialize
      * 
      */
+    @JRubyMethod(name = "initialize", required = 0, optional = 2, frame = true)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 2);
         Ruby runtime = getRuntime();
@@ -527,6 +443,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_replace
      *
      */
+    @JRubyMethod(name = "replace", name2 = "initialize_copy", required = 1)
     public IRubyObject replace(IRubyObject orig) {
         modifyCheck();
 
@@ -547,12 +464,14 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_to_s
      *
      */
+    @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
         if (realLength == 0) return getRuntime().newString("");
 
         return join(getRuntime().getGlobalVariables().get("$,"));
     }
 
+    
     public boolean includes(IRubyObject item) {
         final ThreadContext context = getRuntime().getCurrentContext();
         int begin = this.begin;
@@ -567,6 +486,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_hash
      * 
      */
+    @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         int h = realLength;
 
@@ -677,6 +597,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_fetch
      *
      */
+    @JRubyMethod(name = "fetch", required = 1, optional = 1, frame = true)
     public IRubyObject fetch(IRubyObject[] args, Block block) {
         if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2 && block.isGiven()) {
             getRuntime().getWarnings().warn("block supersedes default value argument");
@@ -783,6 +704,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_insert
      * 
      */
+    @JRubyMethod(name = "insert", required = 1, rest = true)
     public IRubyObject insert(IRubyObject[] args) {
         if (args.length == 1) return this;
 
@@ -818,6 +740,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_transpose
      * 
      */
+    @JRubyMethod(name = "transpose")
     public RubyArray transpose() {
         RubyArray tmp, result = null;
 
@@ -880,6 +803,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_values_at
      * 
      */
+    @JRubyMethod(name = "values_at", required = 1, rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
         return values_at(realLength, args);
     }
@@ -921,6 +845,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_length
      *
      */
+    @JRubyMethod(name = "length", alias = "size")
     public RubyFixnum length() {
         return getRuntime().newFixnum(realLength);
     }
@@ -928,6 +853,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_push - specialized rb_ary_store 
      *
      */
+    @JRubyMethod(name = "<<", required = 1)
     public RubyArray append(IRubyObject item) {
         modify();
         
@@ -949,8 +875,9 @@ public class RubyArray extends RubyObject implements List {
     }
 
     /** rb_ary_push_m
-     *
+     * FIXME: Whis is this named "push_m"?
      */
+    @JRubyMethod(name = "push", required = 1, rest = true)
     public RubyArray push_m(IRubyObject[] items) {
         for (int i = 0; i < items.length; i++) {
             append(items[i]);
@@ -962,6 +889,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_pop
      *
      */
+    @JRubyMethod(name = "pop")
     public IRubyObject pop() {
         modifyCheck();
         
@@ -980,6 +908,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_shift
      *
      */
+    @JRubyMethod(name = "shift")
     public IRubyObject shift() {
         modifyCheck();
 
@@ -1019,6 +948,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_unshift_m
      *
      */
+    @JRubyMethod(name = "unshift", required = 1, rest = true)
     public RubyArray unshift_m(IRubyObject[] items) {
         long len = realLength;
 
@@ -1036,6 +966,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_includes
      * 
      */
+    @JRubyMethod(name = "include?", required = 1)
     public RubyBoolean include_p(IRubyObject item) {
         return getRuntime().newBoolean(includes(item));
     }
@@ -1043,12 +974,14 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_frozen_p
      *
      */
+    @JRubyMethod(name = "frozen?")
     public RubyBoolean frozen() {
         return getRuntime().newBoolean(isFrozen() || (flags & TMPLOCK_ARR_F) != 0);
     }
 
     /** rb_ary_aref
      */
+    @JRubyMethod(name = "[]", name2 = "slice", required = 1, optional = 1)
     public IRubyObject aref(IRubyObject[] args) {
         long beg, len;
 
@@ -1088,6 +1021,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_aset
      *
      */
+    @JRubyMethod(name = "[]=", required = 1, optional = 1)
     public IRubyObject aset(IRubyObject[] args) {
         if (args.length == 2) {
         if (args[0] instanceof RubyFixnum) {
@@ -1119,6 +1053,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_at
      *
      */
+    @JRubyMethod(name = "at", required = 1)
     public IRubyObject at(IRubyObject pos) {
         return entry(RubyNumeric.num2long(pos));
     }
@@ -1126,6 +1061,7 @@ public class RubyArray extends RubyObject implements List {
 	/** rb_ary_concat
      *
      */
+    @JRubyMethod(name = "concat", required = 1)
     public RubyArray concat(IRubyObject obj) {
         RubyArray ary = obj.convertToArray();
         
@@ -1162,7 +1098,8 @@ public class RubyArray extends RubyObject implements List {
 
     /** rb_ary_inspect
     *
-    */    
+    */
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
         if (realLength == 0) return getRuntime().newString("[]");
         if (getRuntime().isInspecting(this)) return  getRuntime().newString("[...]");
@@ -1178,6 +1115,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_first
      *
      */
+    @JRubyMethod(name = "first", optional = 1)
     public IRubyObject first(IRubyObject[] args) {
     	if (args.length == 0) {
             if (realLength == 0) return getRuntime().getNil();
@@ -1199,6 +1137,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_last
      *
      */
+    @JRubyMethod(name = "last", optional = 1)
     public IRubyObject last(IRubyObject[] args) {
         if (args.length == 0) {
             if (realLength == 0) return getRuntime().getNil();
@@ -1220,6 +1159,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_each
      *
      */
+    @JRubyMethod(name = "each", frame = true)
     public IRubyObject each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         if ((flags & SHARED_ARR_F) != 0) {
@@ -1237,6 +1177,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_each_index
      *
      */
+    @JRubyMethod(name = "each_index", frame = true)
     public IRubyObject each_index(Block block) {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
@@ -1249,6 +1190,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_reverse_each
      *
      */
+    @JRubyMethod(name = "reverse_each", frame = true)
     public IRubyObject reverse_each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         
@@ -1324,6 +1266,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_join_m
      *
      */
+    @JRubyMethod(name = "join", optional = 1)
     public RubyString join_m(IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 1);
         IRubyObject sep = (argc == 1) ? args[0] : getRuntime().getGlobalVariables().get("$,");
@@ -1334,6 +1277,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_to_a
      *
      */
+    @JRubyMethod(name = "to_a")
     public RubyArray to_a() {
         if(getMetaClass() != getRuntime().getArray()) {
             RubyArray dup = new RubyArray(getRuntime(), getRuntime().isObjectSpaceEnabled());
@@ -1349,6 +1293,7 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
+    @JRubyMethod(name = "to_ary")
     public IRubyObject to_ary() {
     	return this;
     }
@@ -1364,6 +1309,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_equal
      *
      */
+    @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal(IRubyObject obj) {
         if (this == obj) return getRuntime().getTrue();
 
@@ -1389,6 +1335,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_eql
      *
      */
+    @JRubyMethod(name = "eql?", required = 1)
     public RubyBoolean eql_p(IRubyObject obj) {
         if (this == obj) return getRuntime().getTrue();
         if (!(obj instanceof RubyArray)) return getRuntime().getFalse();
@@ -1408,6 +1355,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_compact_bang
      *
      */
+    @JRubyMethod(name = "compact!")
     public IRubyObject compact_bang() {
         modify();
 
@@ -1433,6 +1381,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_compact
      *
      */
+    @JRubyMethod(name = "compact")
     public IRubyObject compact() {
         RubyArray ary = aryDup();
         ary.compact_bang();
@@ -1442,6 +1391,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_empty_p
      *
      */
+    @JRubyMethod(name = "empty?")
     public IRubyObject empty_p() {
         return realLength == 0 ? getRuntime().getTrue() : getRuntime().getFalse();
     }
@@ -1449,6 +1399,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_clear
      *
      */
+    @JRubyMethod(name = "clear")
     public IRubyObject rb_clear() {
         modifyCheck();
 
@@ -1467,6 +1418,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_fill
      *
      */
+    @JRubyMethod(name = "fill", optional = 2, frame = true)
     public IRubyObject fill(IRubyObject[] args, Block block) {
         IRubyObject item = null;
         IRubyObject begObj = null;
@@ -1539,6 +1491,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_index
      *
      */
+    @JRubyMethod(name = "index", required = 1)
     public IRubyObject index(IRubyObject obj) {
         Ruby runtime = getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
@@ -1552,6 +1505,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_rindex
      *
      */
+    @JRubyMethod(name = "rindex", required = 1)
     public IRubyObject rindex(IRubyObject obj) {
         Ruby runtime = getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
@@ -1572,6 +1526,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_indexes
      * 
      */
+    @JRubyMethod(name = "indexes", name2 = "indices", required = 1, rest = true)
     public IRubyObject indexes(IRubyObject[] args) {
         getRuntime().getWarnings().warn("Array#indexes is deprecated; use Array#values_at");
 
@@ -1589,6 +1544,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_reverse_bang
      *
      */
+    @JRubyMethod(name = "reverse!")
     public IRubyObject reverse_bang() {
         modify();
 
@@ -1609,6 +1565,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_reverse_m
      *
      */
+    @JRubyMethod(name = "reverse")
     public IRubyObject reverse() {
         return aryDup().reverse_bang();
     }
@@ -1616,6 +1573,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_collect
      *
      */
+    @JRubyMethod(name = "collect", name2 = "map", frame = true)
     public RubyArray collect(Block block) {
         Ruby runtime = getRuntime();
         
@@ -1634,6 +1592,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_collect_bang
      *
      */
+    @JRubyMethod(name = "collect!", name2 = "map!", frame = true)
     public RubyArray collect_bang(Block block) {
         modify();
         ThreadContext context = getRuntime().getCurrentContext();
@@ -1646,6 +1605,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_select
      *
      */
+    @JRubyMethod(name = "select", frame = true)
     public RubyArray select(Block block) {
         Ruby runtime = getRuntime();
         RubyArray result = new RubyArray(runtime, realLength);
@@ -1666,6 +1626,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_delete
      *
      */
+    @JRubyMethod(name = "delete", required = 1, frame = true)
     public IRubyObject delete(IRubyObject item, Block block) {
         int i2 = 0;
 
@@ -1718,6 +1679,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_delete_at_m
      * 
      */
+    @JRubyMethod(name = "delete_at", required = 1)
     public IRubyObject delete_at(IRubyObject obj) {
         return delete_at((int) RubyNumeric.num2long(obj));
     }
@@ -1725,6 +1687,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_reject_bang
      * 
      */
+    @JRubyMethod(name = "reject", frame = true)
     public IRubyObject reject(Block block) {
         RubyArray ary = aryDup();
         ary.reject_bang(block);
@@ -1734,6 +1697,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_reject_bang
      *
      */
+    @JRubyMethod(name = "reject!", frame = true)
     public IRubyObject reject_bang(Block block) {
         int i2 = 0;
         modify();
@@ -1756,6 +1720,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_delete_if
      *
      */
+    @JRubyMethod(name = "delete_if", frame = true)
     public IRubyObject delete_if(Block block) {
         reject_bang(block);
         return this;
@@ -1764,6 +1729,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_zip
      * 
      */
+    @JRubyMethod(name = "zip", optional = 1, rest = true, frame = true)
     public IRubyObject zip(IRubyObject[] args, Block block) {
         for (int i = 0; i < args.length; i++) {
             args[i] = args[i].convertToArray();
@@ -1799,6 +1765,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_cmp
      *
      */
+    @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject op_cmp(IRubyObject obj) {
         RubyArray ary2 = obj.convertToArray();
 
@@ -1823,6 +1790,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_slice_bang
      *
      */
+    @JRubyMethod(name = "slice!", required = 1, optional = 2)
     public IRubyObject slice_bang(IRubyObject[] args) {
         if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             long pos = RubyNumeric.num2long(args[0]);
@@ -1856,6 +1824,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_assoc
      *
      */
+    @JRubyMethod(name = "assoc", required = 1)
     public IRubyObject assoc(IRubyObject key) {
         Ruby runtime = getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
@@ -1873,6 +1842,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_rassoc
      *
      */
+    @JRubyMethod(name = "rassoc", required = 1)
     public IRubyObject rassoc(IRubyObject value) {
         Ruby runtime = getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
@@ -1918,6 +1888,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_flatten_bang
      *
      */
+    @JRubyMethod(name = "flatten!")
     public IRubyObject flatten_bang() {
         int i = 0;
         RubyArray memo = null;
@@ -1943,6 +1914,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_flatten
      *
      */
+    @JRubyMethod(name = "flatten")
     public IRubyObject flatten() {
         RubyArray ary = aryDup();
         ary.flatten_bang();
@@ -1952,6 +1924,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_nitems
      *
      */
+    @JRubyMethod(name = "nitems")
     public IRubyObject nitems() {
         int n = 0;
 
@@ -1965,6 +1938,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_plus
      *
      */
+    @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(IRubyObject obj) {
         RubyArray y = obj.convertToArray();
         int len = realLength + y.realLength;
@@ -1978,6 +1952,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_times
      *
      */
+    @JRubyMethod(name = "*", required = 1)
     public IRubyObject op_times(IRubyObject times) {
         IRubyObject tmp = times.checkStringType();
 
@@ -2027,6 +2002,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_uniq_bang
      *
      */
+    @JRubyMethod(name = "uniq!")
     public IRubyObject uniq_bang() {
         RubyHash hash = makeHash(null);
 
@@ -2044,6 +2020,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_uniq
      *
      */
+    @JRubyMethod(name = "uniq")
     public IRubyObject uniq() {
         RubyArray ary = aryDup();
         ary.uniq_bang();
@@ -2053,6 +2030,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_diff
      *
      */
+    @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_diff(IRubyObject other) {
         RubyHash hash = other.convertToArray().makeHash(null);
         RubyArray ary3 = new RubyArray(getRuntime());
@@ -2069,6 +2047,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_and
      *
      */
+    @JRubyMethod(name = "&", required = 1)
     public IRubyObject op_and(IRubyObject other) {
         RubyArray ary2 = other.convertToArray();
         RubyHash hash = ary2.makeHash(null);
@@ -2086,6 +2065,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_or
      *
      */
+    @JRubyMethod(name = "|", required = 1)
     public IRubyObject op_or(IRubyObject other) {
         RubyArray ary2 = other.convertToArray();
         RubyHash set = makeHash(ary2);
@@ -2106,6 +2086,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_sort
      *
      */
+    @JRubyMethod(name = "sort", frame = true)
     public RubyArray sort(Block block) {
         RubyArray ary = aryDup();
         ary.sort_bang(block);
@@ -2115,6 +2096,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_sort_bang
      *
      */
+    @JRubyMethod(name = "sort!", frame = true)
     public RubyArray sort_bang(Block block) {
         modify();
         if (realLength > 1) {
@@ -2193,6 +2175,7 @@ public class RubyArray extends RubyObject implements List {
     /**
      * @see org.jruby.util.Pack#pack
      */
+    @JRubyMethod(name = "pack", required = 1)
     public RubyString pack(IRubyObject obj) {
         RubyString iFmt = RubyString.objAsString(obj);
         return Pack.pack(getRuntime(), this, iFmt.getByteList());
@@ -2203,28 +2186,27 @@ public class RubyArray extends RubyObject implements List {
     }
 
     // Satisfy java.util.List interface (for Java integration)
-
 	public int size() {
         return realLength;
-	}
+    }
 
-	public boolean isEmpty() {
+    public boolean isEmpty() {
         return realLength == 0;
-	}
+    }
 
-	public boolean contains(Object element) {
+    public boolean contains(Object element) {
         return indexOf(element) != -1;
-	}
+    }
 
-	public Object[] toArray() {
+    public Object[] toArray() {
         Object[] array = new Object[realLength];
         for (int i = begin; i < realLength; i++) {
             array[i - begin] = JavaUtil.convertRubyToJava(values[i]);
         }
-		return array;
-	}
+        return array;
+    }
 
-	public Object[] toArray(final Object[] arg) {
+    public Object[] toArray(final Object[] arg) {
         Object[] array = arg;
         if (array.length < realLength) {
             Class type = array.getClass().getComponentType();
@@ -2233,116 +2215,126 @@ public class RubyArray extends RubyObject implements List {
         int length = realLength - begin;
 
         for (int i = 0; i < length; i++) {
-           array[i] = JavaUtil.convertRubyToJava(values[i + begin]); 
+            array[i] = JavaUtil.convertRubyToJava(values[i + begin]);
         }
         return array;
-	}
+    }
 
-	public boolean add(Object element) {
+    public boolean add(Object element) {
         append(JavaUtil.convertJavaToRuby(getRuntime(), element));
         return true;
-	}
+    }
 
-	public boolean remove(Object element) {
+    public boolean remove(Object element) {
         IRubyObject deleted = delete(JavaUtil.convertJavaToRuby(getRuntime(), element), Block.NULL_BLOCK);
         return deleted.isNil() ? false : true; // TODO: is this correct ?
-	}
+    }
 
-	public boolean containsAll(Collection c) {
-		for (Iterator iter = c.iterator(); iter.hasNext();) {
-			if (indexOf(iter.next()) == -1) return false;
-		}
-        
-		return true;
-	}
-
-	public boolean addAll(Collection c) {
+    public boolean containsAll(Collection c) {
         for (Iterator iter = c.iterator(); iter.hasNext();) {
-			add(iter.next());
-		}
-		return !c.isEmpty();
-	}
+            if (indexOf(iter.next()) == -1) {
+                return false;
+            }
+        }
 
-	public boolean addAll(int index, Collection c) {
-		Iterator iter = c.iterator();
-		for (int i = index; iter.hasNext(); i++) {
-			add(i, iter.next());
-		}
-		return !c.isEmpty();
-	}
+        return true;
+    }
 
-	public boolean removeAll(Collection c) {
+    public boolean addAll(Collection c) {
+        for (Iterator iter = c.iterator(); iter.hasNext();) {
+            add(iter.next());
+        }
+        return !c.isEmpty();
+    }
+
+    public boolean addAll(int index, Collection c) {
+        Iterator iter = c.iterator();
+        for (int i = index; iter.hasNext(); i++) {
+            add(i, iter.next());
+        }
+        return !c.isEmpty();
+    }
+
+    public boolean removeAll(Collection c) {
         boolean listChanged = false;
-		for (Iterator iter = c.iterator(); iter.hasNext();) {
-			if (remove(iter.next())) {
+        for (Iterator iter = c.iterator(); iter.hasNext();) {
+            if (remove(iter.next())) {
                 listChanged = true;
-			}
-		}
+            }
+        }
         return listChanged;
-	}
+    }
 
-	public boolean retainAll(Collection c) {
-		boolean listChanged = false;
+    public boolean retainAll(Collection c) {
+        boolean listChanged = false;
 
-		for (Iterator iter = iterator(); iter.hasNext();) {
-			Object element = iter.next();
-			if (!c.contains(element)) {
-				remove(element);
-				listChanged = true;
-			}
-		}
-		return listChanged;
-	}
+        for (Iterator iter = iterator(); iter.hasNext();) {
+            Object element = iter.next();
+            if (!c.contains(element)) {
+                remove(element);
+                listChanged = true;
+            }
+        }
+        return listChanged;
+    }
 
-	public Object get(int index) {
+    public Object get(int index) {
         return JavaUtil.convertRubyToJava((IRubyObject) elt(index), Object.class);
-	}
+    }
 
-	public Object set(int index, Object element) {
+    public Object set(int index, Object element) {
         return store(index, JavaUtil.convertJavaToRuby(getRuntime(), element));
-	}
+    }
 
     // TODO: make more efficient by not creating IRubyArray[]
-	public void add(int index, Object element) {
-        insert(new IRubyObject[] { RubyFixnum.newFixnum(getRuntime(), index), JavaUtil.convertJavaToRuby(getRuntime(), element) });
-	}
+    public void add(int index, Object element) {
+        insert(new IRubyObject[]{RubyFixnum.newFixnum(getRuntime(), index), JavaUtil.convertJavaToRuby(getRuntime(), element)});
+    }
 
-	public Object remove(int index) {
+    public Object remove(int index) {
         return JavaUtil.convertRubyToJava(delete_at(index), Object.class);
-	}
+    }
 
-	public int indexOf(Object element) {
+    public int indexOf(Object element) {
         int begin = this.begin;
-        
+
         if (element == null) {
             for (int i = begin; i < begin + realLength; i++) {
-                if (values[i] == null) return i;
+                if (values[i] == null) {
+                    return i;
+                }
             }
         } else {
             IRubyObject convertedElement = JavaUtil.convertJavaToRuby(getRuntime(), element);
-            
+
             for (int i = begin; i < begin + realLength; i++) {
-                if (convertedElement.equals(values[i])) return i;
+                if (convertedElement.equals(values[i])) {
+                    return i;
+                }
             }
         }
         return -1;
     }
 
-	public int lastIndexOf(Object element) {
+    public int lastIndexOf(Object element) {
         int begin = this.begin;
 
         if (element == null) {
             for (int i = begin + realLength - 1; i >= begin; i--) {
-                if (values[i] == null) return i;
+                if (values[i] == null) {
+                    return i;
+                }
             }
         } else {
             IRubyObject convertedElement = JavaUtil.convertJavaToRuby(getRuntime(), element);
-            
+
             for (int i = begin + realLength - 1; i >= begin; i--) {
-                if (convertedElement.equals(values[i])) return i;
+                if (convertedElement.equals(values[i])) {
+                    return i;
+                }
             }
         }
-        
+
         return -1;
     }
 
