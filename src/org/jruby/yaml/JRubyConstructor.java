@@ -103,7 +103,11 @@ public class JRubyConstructor extends ConstructorImpl {
     public Object constructRubyScalar(final Node node) {
         ByteList sc = (ByteList)super.constructScalar(node);
         if(sc.length() > 0 && sc.charAt(0) == ':' && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) {
-            return runtime.evalScriptlet(sc.toString());
+            String ss = sc.toString();
+            if(sc.charAt(1) != '"') {
+                ss = ":\"" + ss.substring(1).replaceAll("([^\\\\])\"", "\\1\\\\\"") + "\"";
+            }
+            return runtime.evalScriptlet(ss);
         }
 
         return RubyString.newString(runtime,(ByteList)super.constructScalar(node));
