@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
@@ -59,27 +60,18 @@ public abstract class RubyInteger extends RubyNumeric {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyInteger.class);
         integer.getSingletonClass().undefineMethod("new");
 
-        integer.defineFastMethod("integer?", callbackFactory.getFastMethod("int_p"));
-        integer.defineMethod("upto", callbackFactory.getMethod("upto", RubyKernel.IRUBY_OBJECT));
-        integer.defineMethod("downto", callbackFactory.getMethod("downto", RubyKernel.IRUBY_OBJECT));
-        integer.defineMethod("times", callbackFactory.getMethod("times"));
-
         integer.includeModule(runtime.getPrecision());
 
-        integer.defineFastMethod("succ", callbackFactory.getFastMethod("succ"));
-        integer.defineFastMethod("next", callbackFactory.getFastMethod("succ"));
-        integer.defineFastMethod("chr", callbackFactory.getFastMethod("chr"));
-        integer.defineFastMethod("to_i", callbackFactory.getFastMethod("to_i"));
         integer.defineFastMethod("to_int", callbackFactory.getFastMethod("to_i"));
         integer.defineFastMethod("floor", callbackFactory.getFastMethod("to_i"));
         integer.defineFastMethod("ceil", callbackFactory.getFastMethod("to_i"));
         integer.defineFastMethod("round", callbackFactory.getFastMethod("to_i"));
         integer.defineFastMethod("truncate", callbackFactory.getFastMethod("to_i"));
-
-        integer.getMetaClass().defineFastMethod("induced_from", callbackFactory.getFastSingletonMethod("induced_from",
-                RubyKernel.IRUBY_OBJECT));
         
         integer.dispatcher = callbackFactory.createDispatcher(integer);
+        
+        integer.defineAnnotatedMethods(RubyInteger.class, callbackFactory);
+        
         return integer;
     }
 
@@ -108,13 +100,15 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_int_p
      * 
      */
-    public IRubyObject int_p() {
+    @JRubyMethod(name = "integer?")
+    public IRubyObject integer_p() {
         return getRuntime().getTrue();
     }
 
     /** int_upto
      * 
      */
+    @JRubyMethod(name = "upto", required = 1, frame = true)
     public IRubyObject upto(IRubyObject to, Block block) {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
@@ -145,6 +139,7 @@ public abstract class RubyInteger extends RubyNumeric {
      * 
      */
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
+    @JRubyMethod(name = "downto", required = 1, frame = true)
     public IRubyObject downto(IRubyObject to, Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
 
@@ -168,6 +163,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
+    @JRubyMethod(name = "times", frame = true)
     public IRubyObject times(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
 
@@ -194,6 +190,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_succ
      * 
      */
+    @JRubyMethod(name = "succ", alias = "next")
     public IRubyObject succ() {
         if (this instanceof RubyFixnum) {
             return RubyFixnum.newFixnum(getRuntime(), getLongValue() + 1L);
@@ -205,6 +202,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_chr
      * 
      */
+    @JRubyMethod(name = "chr")
     public RubyString chr() {
         if (getLongValue() < 0 || getLongValue() > 0xff) {
             throw getRuntime().newRangeError(this.toString() + " out of char range");
@@ -215,6 +213,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_to_i
      * 
      */
+    @JRubyMethod(name = "to_i")
     public RubyInteger to_i() {
         return this;
     }
@@ -227,6 +226,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** rb_int_induced_from
      * 
      */
+    @JRubyMethod(name = "induced_from", singleton = true, required = 1)
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return other;
@@ -235,6 +235,6 @@ public abstract class RubyInteger extends RubyNumeric {
         } else {
             throw recv.getRuntime().newTypeError(
                     "failed to convert " + other.getMetaClass().getName() + " into Integer");
+        }
     }
-}
 }
