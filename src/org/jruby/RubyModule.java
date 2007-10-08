@@ -36,7 +36,6 @@
 package org.jruby;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1665,11 +1664,20 @@ public class RubyModule extends RubyObject {
         return getRuntime().newNameError("wrong constant name " + name, name);
     }
 
+    /**
+     * Get a list of all instance methods names of the provided visibility unless not is true, then 
+     * get all methods which are not the provided visibility.
+     * 
+     * @param args passed into one of the Ruby instance_method methods
+     * @param visibility to find matching instance methods against
+     * @param not if true only find methods not matching supplied visibility
+     * @return a RubyArray of instance method names
+     */
     private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility, boolean not) {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
         RubyArray ary = getRuntime().newArray();
-        HashMap undefinedMethods = new HashMap();
-        Set added = new HashSet();
+        HashMap<String, Boolean> undefinedMethods = new HashMap<String, Boolean>();
+        Set<String> added = new HashSet<String>();
 
         for (RubyModule type = this; type != null; type = type.getSuperClass()) {
             RubyModule realType = type.getNonIncludedClass();
