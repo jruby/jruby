@@ -750,7 +750,7 @@ public class RuntimeHelpers {
     
     public static IRubyObject match3(RubyRegexp regexp, IRubyObject value, ThreadContext context) {
         if (value instanceof RubyString) {
-            return regexp.match(value);
+            return regexp.op_match(value);
         } else {
             return value.callMethod(context, "=~", regexp);
         }

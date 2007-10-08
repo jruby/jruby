@@ -2142,7 +2142,7 @@ public class RubyArray extends RubyObject implements List {
                 return 0;
             }
             if (o1 instanceof RubyString && o2 instanceof RubyString) {
-                return ((RubyString) o1).cmp((RubyString) o2);
+                return ((RubyString) o1).op_cmp((RubyString) o2);
             }
 
             IRubyObject obj1 = (IRubyObject) o1;

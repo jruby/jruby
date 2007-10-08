@@ -333,10 +333,10 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     @JRubyMethod(name = "~")
-    public IRubyObject match2() {
+    public IRubyObject op_match2() {
         IRubyObject target = getRuntime().getCurrentContext().getCurrentFrame().getLastLine();
         
-        return target instanceof RubyString ? match(target) : getRuntime().getNil();
+        return target instanceof RubyString ? op_match(target) : getRuntime().getNil();
     }
     
     /** rb_reg_eqq
@@ -366,7 +366,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     @JRubyMethod(name = "=~", required = 1)
-    public IRubyObject match(IRubyObject target) {
+    public IRubyObject op_match(IRubyObject target) {
         if (target.isNil()) {
             return getRuntime().getFalse();
         }
@@ -394,7 +394,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public IRubyObject match_m(IRubyObject target) {
         if (target.isNil()) return target;
 
-        IRubyObject result = match(target);
+        IRubyObject result = op_match(target);
         
         if(result.isNil()) {
             return result;

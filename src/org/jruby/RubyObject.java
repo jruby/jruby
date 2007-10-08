@@ -1363,7 +1363,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     	return getRuntime().getFalse();
     }
     
-    public IRubyObject match(IRubyObject arg) {
+    public IRubyObject op_match(IRubyObject arg) {
     	return getRuntime().getFalse();
     }
     

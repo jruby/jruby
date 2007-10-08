@@ -100,103 +100,8 @@ public class RubyString extends RubyObject {
         stringClass.includeModule(runtime.getComparable());
         stringClass.includeModule(runtime.getEnumerable());
         
-        stringClass.defineFastMethod("<=>", callbackFactory.getFastMethod("op_cmp", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("+", callbackFactory.getFastMethod("op_plus", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("*", callbackFactory.getFastMethod("op_mul", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("%", callbackFactory.getFastMethod("format", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
-        
-        // To override Comparable with faster String ones
-        stringClass.defineFastMethod(">=", callbackFactory.getFastMethod("op_ge", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod(">", callbackFactory.getFastMethod("op_gt", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("<=", callbackFactory.getFastMethod("op_le", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("<", callbackFactory.getFastMethod("op_lt", RubyKernel.IRUBY_OBJECT));
-        
-        stringClass.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
-        
-        stringClass.defineFastMethod("[]", callbackFactory.getFastOptMethod("aref"));
-        stringClass.defineFastMethod("[]=", callbackFactory.getFastOptMethod("aset"));
-        stringClass.defineFastMethod("=~", callbackFactory.getFastMethod("match", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("~", callbackFactory.getFastMethod("match2"));
-        stringClass.defineFastMethod("capitalize", callbackFactory.getFastMethod("capitalize"));
-        stringClass.defineFastMethod("capitalize!", callbackFactory.getFastMethod("capitalize_bang"));
-        stringClass.defineFastMethod("casecmp", callbackFactory.getFastMethod("casecmp", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("center", callbackFactory.getFastOptMethod("center"));
-        stringClass.defineFastMethod("chop", callbackFactory.getFastMethod("chop"));
-        stringClass.defineFastMethod("chop!", callbackFactory.getFastMethod("chop_bang"));
-        stringClass.defineFastMethod("chomp", callbackFactory.getFastOptMethod("chomp"));
-        stringClass.defineFastMethod("chomp!", callbackFactory.getFastOptMethod("chomp_bang"));
-        stringClass.defineFastMethod("concat", callbackFactory.getFastMethod("concat", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("count", callbackFactory.getFastOptMethod("count"));
-        stringClass.defineFastMethod("crypt", callbackFactory.getFastMethod("crypt", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("delete", callbackFactory.getFastOptMethod("delete"));
-        stringClass.defineFastMethod("delete!", callbackFactory.getFastOptMethod("delete_bang"));
-        stringClass.defineFastMethod("downcase", callbackFactory.getFastMethod("downcase"));
-        stringClass.defineFastMethod("downcase!", callbackFactory.getFastMethod("downcase_bang"));
-        stringClass.defineFastMethod("dump", callbackFactory.getFastMethod("dump"));
-        stringClass.defineMethod("each_byte", callbackFactory.getMethod("each_byte"));
-        stringClass.defineFastMethod("empty?", callbackFactory.getFastMethod("empty"));
-        stringClass.defineMethod("gsub", callbackFactory.getOptMethod("gsub"));
-        stringClass.defineMethod("gsub!", callbackFactory.getOptMethod("gsub_bang"));
-        stringClass.defineFastMethod("hex", callbackFactory.getFastMethod("hex"));
-        stringClass.defineFastMethod("include?", callbackFactory.getFastMethod("include", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("index", callbackFactory.getFastOptMethod("index"));
-        stringClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        stringClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("replace", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("insert", callbackFactory.getFastMethod("insert", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
-        stringClass.defineFastMethod("length", callbackFactory.getFastMethod("length"));
-        stringClass.defineFastMethod("ljust", callbackFactory.getFastOptMethod("ljust"));
-        stringClass.defineFastMethod("lstrip", callbackFactory.getFastMethod("lstrip"));
-        stringClass.defineFastMethod("lstrip!", callbackFactory.getFastMethod("lstrip_bang"));
-        stringClass.defineFastMethod("match", callbackFactory.getFastMethod("match3", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("oct", callbackFactory.getFastMethod("oct"));
-        stringClass.defineFastMethod("replace", callbackFactory.getFastMethod("replace", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("reverse", callbackFactory.getFastMethod("reverse"));
-        stringClass.defineFastMethod("reverse!", callbackFactory.getFastMethod("reverse_bang"));
-        stringClass.defineFastMethod("rindex", callbackFactory.getFastOptMethod("rindex"));
-        stringClass.defineFastMethod("rjust", callbackFactory.getFastOptMethod("rjust"));
-        stringClass.defineFastMethod("rstrip", callbackFactory.getFastMethod("rstrip"));
-        stringClass.defineFastMethod("rstrip!", callbackFactory.getFastMethod("rstrip_bang"));
-        stringClass.defineMethod("scan", callbackFactory.getMethod("scan", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("slice!", callbackFactory.getFastOptMethod("slice_bang"));
-        stringClass.defineFastMethod("split", callbackFactory.getFastOptMethod("split"));
-        stringClass.defineFastMethod("strip", callbackFactory.getFastMethod("strip"));
-        stringClass.defineFastMethod("strip!", callbackFactory.getFastMethod("strip_bang"));
-        stringClass.defineFastMethod("succ", callbackFactory.getFastMethod("succ"));
-        stringClass.defineFastMethod("succ!", callbackFactory.getFastMethod("succ_bang"));
-        stringClass.defineFastMethod("squeeze", callbackFactory.getFastOptMethod("squeeze"));
-        stringClass.defineFastMethod("squeeze!", callbackFactory.getFastOptMethod("squeeze_bang"));
-        stringClass.defineMethod("sub", callbackFactory.getOptMethod("sub"));
-        stringClass.defineMethod("sub!", callbackFactory.getOptMethod("sub_bang"));
-        stringClass.defineFastMethod("sum", callbackFactory.getFastOptMethod("sum"));
-        stringClass.defineFastMethod("swapcase", callbackFactory.getFastMethod("swapcase"));
-        stringClass.defineFastMethod("swapcase!", callbackFactory.getFastMethod("swapcase_bang"));
-        stringClass.defineFastMethod("to_f", callbackFactory.getFastMethod("to_f"));
-        stringClass.defineFastMethod("to_i", callbackFactory.getFastOptMethod("to_i"));
-        stringClass.defineFastMethod("to_str", callbackFactory.getFastMethod("to_s"));
-        stringClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        stringClass.defineFastMethod("to_sym", callbackFactory.getFastMethod("to_sym"));
-        stringClass.defineFastMethod("tr", callbackFactory.getFastMethod("tr", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("tr!", callbackFactory.getFastMethod("tr_bang", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("tr_s", callbackFactory.getFastMethod("tr_s", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("tr_s!", callbackFactory.getFastMethod("tr_s_bang", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("unpack", callbackFactory.getFastMethod("unpack", RubyKernel.IRUBY_OBJECT));
-        stringClass.defineFastMethod("upcase", callbackFactory.getFastMethod("upcase"));
-        stringClass.defineFastMethod("upcase!", callbackFactory.getFastMethod("upcase_bang"));
-        stringClass.defineMethod("upto", callbackFactory.getMethod("upto", RubyKernel.IRUBY_OBJECT));
-        
-        stringClass.defineAlias("<<", "concat");
-        stringClass.defineAlias("intern", "to_sym");
-        stringClass.defineAlias("next", "succ");
-        stringClass.defineAlias("next!", "succ!");
-        stringClass.defineAlias("size", "length");
-        stringClass.defineAlias("slice", "[]");
-        
-        stringClass.dispatcher = callbackFactory.createDispatcher(stringClass);
-        
         stringClass.defineAnnotatedMethods(RubyString.class, callbackFactory);
+        stringClass.dispatcher = callbackFactory.createDispatcher(stringClass);
         
         return stringClass;
     }
@@ -413,6 +318,7 @@ public class RubyString extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "to_s", name2 = "to_str")
     public IRubyObject to_s() {
         if (getMetaClass().getRealClass() != getRuntime().getString()) {
             return strDup(getRuntime().getString());
@@ -421,9 +327,10 @@ public class RubyString extends RubyObject {
     }
 
     /* rb_str_cmp_m */
+    @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject op_cmp(IRubyObject other) {
         if (other instanceof RubyString) {
-            return getRuntime().newFixnum(cmp((RubyString)other));
+            return getRuntime().newFixnum(op_cmp((RubyString)other));
         }
 
         return getRuntime().getNil();
@@ -432,16 +339,18 @@ public class RubyString extends RubyObject {
     /**
      * 
      */
-    public IRubyObject equal(IRubyObject other) {
+    @JRubyMethod(name = "==", required = 1)
+    public IRubyObject op_equal(IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyString)) {
             if (!other.respondsTo("to_str")) return getRuntime().getFalse();
             Ruby runtime = getRuntime();
             return other.callMethod(runtime.getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this).isTrue() ? runtime.getTrue() : runtime.getFalse();
-            }
-        return value.equal(((RubyString)other).value) ? getRuntime().getTrue() : getRuntime().getFalse();
         }
+        return value.equal(((RubyString)other).value) ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
 
+    @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(IRubyObject other) {
         RubyString str = RubyString.stringValue(other);
 
@@ -451,6 +360,7 @@ public class RubyString extends RubyObject {
         return newString(getRuntime(), newValue).infectBy(other).infectBy(this);
     }
 
+    @JRubyMethod(name = "*", required = 1)
     public IRubyObject op_mul(IRubyObject other) {
         RubyInteger otherInteger = (RubyInteger) other.convertToInteger();
         long len = otherInteger.getLongValue();
@@ -472,11 +382,13 @@ public class RubyString extends RubyObject {
         return newString;
     }
 
-    public IRubyObject format(IRubyObject arg) {
+    @JRubyMethod(name = "%", required = 1)
+    public IRubyObject op_format(IRubyObject arg) {
         // FIXME: Should we make this work with platform's locale, or continue hardcoding US?
         return getRuntime().newString((ByteList)Sprintf.sprintf(Locale.US, value, arg));
     }
 
+    @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         return getRuntime().newFixnum(value.hashCode());
     }
@@ -515,7 +427,7 @@ public class RubyString extends RubyObject {
     /** rb_str_cmp
      *
      */
-    public int cmp(RubyString other) {
+    public int op_cmp(RubyString other) {
         return value.cmp(other.value);
     }
 
@@ -637,6 +549,7 @@ public class RubyString extends RubyObject {
     /** rb_str_replace_m
      *
      */
+    @JRubyMethod(name = "replace", name2 = "initialize_copy", required = 1)
     public RubyString replace(IRubyObject other) {
         modifyCheck();
 
@@ -653,6 +566,7 @@ public class RubyString extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "reverse")
     public RubyString reverse() {
         if (value.length() <= 1) return strDup();
 
@@ -668,6 +582,7 @@ public class RubyString extends RubyObject {
         return rev;
     }
 
+    @JRubyMethod(name = "reverse!")
     public RubyString reverse_bang() {
         if (value.length() > 1) {
             modify();
@@ -692,12 +607,14 @@ public class RubyString extends RubyObject {
         return newString;
     }
 
+    @JRubyMethod(name = "initialize", optional = 1, frame = true)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 1) replace(args[0]);
 
         return this;
     }
 
+    @JRubyMethod(name = "casecmp", required = 1)
     public IRubyObject casecmp(IRubyObject other) {
         int compare = toString().compareToIgnoreCase(stringValue(other).toString());
         
@@ -707,8 +624,9 @@ public class RubyString extends RubyObject {
     /** rb_str_match
      *
      */
-    public IRubyObject match(IRubyObject other) {
-        if (other instanceof RubyRegexp) return ((RubyRegexp) other).match(this);
+    @JRubyMethod(name = "=~", required = 1)
+    public IRubyObject op_match(IRubyObject other) {
+        if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match(this);
         if (other instanceof RubyString) {
             throw getRuntime().newTypeError("type mismatch: String given");
         }
@@ -718,8 +636,9 @@ public class RubyString extends RubyObject {
     /** rb_str_match2
      *
      */
-    public IRubyObject match2() {
-        return RubyRegexp.newRegexp(this, 0, null).match2();
+    @JRubyMethod(name = "~")
+    public IRubyObject op_match2() {
+        return RubyRegexp.newRegexp(this, 0, null).op_match2();
     }
 
     /**
@@ -727,7 +646,8 @@ public class RubyString extends RubyObject {
      *
      * @param pattern Regexp or String
      */
-    public IRubyObject match3(IRubyObject pattern) {
+    @JRubyMethod(name = "match", required = 1)
+    public IRubyObject match(IRubyObject pattern) {
         IRubyObject res = null;
         if (pattern instanceof RubyRegexp) {
             res = ((RubyRegexp)pattern).search2(toString(), this);
@@ -752,6 +672,7 @@ public class RubyString extends RubyObject {
     /** rb_str_capitalize
      *
      */
+    @JRubyMethod(name = "capitalize")
     public IRubyObject capitalize() {
         RubyString str = strDup();
         str.capitalize_bang();
@@ -761,6 +682,7 @@ public class RubyString extends RubyObject {
     /** rb_str_capitalize_bang
      *
      */
+    @JRubyMethod(name = "capitalize!")
     public IRubyObject capitalize_bang() {
         if (value.realSize == 0) return getRuntime().getNil();
         
@@ -792,38 +714,43 @@ public class RubyString extends RubyObject {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = ">=", required = 1)
     public IRubyObject op_ge(IRubyObject other) {
         if (other instanceof RubyString) {
-            return getRuntime().newBoolean(cmp((RubyString) other) >= 0);
+            return getRuntime().newBoolean(op_cmp((RubyString) other) >= 0);
         }
 
         return RubyComparable.op_ge(this, other);
     }
 
+    @JRubyMethod(name = ">", required = 1)
     public IRubyObject op_gt(IRubyObject other) {
         if (other instanceof RubyString) {
-            return getRuntime().newBoolean(cmp((RubyString) other) > 0);
+            return getRuntime().newBoolean(op_cmp((RubyString) other) > 0);
         }
 
         return RubyComparable.op_gt(this, other);
     }
 
+    @JRubyMethod(name = "<=", required = 1)
     public IRubyObject op_le(IRubyObject other) {
         if (other instanceof RubyString) {
-            return getRuntime().newBoolean(cmp((RubyString) other) <= 0);
+            return getRuntime().newBoolean(op_cmp((RubyString) other) <= 0);
         }
 
         return RubyComparable.op_le(this, other);
     }
 
+    @JRubyMethod(name = "<", required = 1)
     public IRubyObject op_lt(IRubyObject other) {
         if (other instanceof RubyString) {
-            return getRuntime().newBoolean(cmp((RubyString) other) < 0);
+            return getRuntime().newBoolean(op_cmp((RubyString) other) < 0);
         }
 
         return RubyComparable.op_lt(this, other);
     }
 
+    @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql_p(IRubyObject other) {
         if (!(other instanceof RubyString)) return getRuntime().getFalse();
         RubyString otherString = (RubyString)other;
@@ -833,6 +760,7 @@ public class RubyString extends RubyObject {
     /** rb_str_upcase
      *
      */
+    @JRubyMethod(name = "upcase")
     public RubyString upcase() {
         RubyString str = strDup();
         str.upcase_bang();
@@ -842,6 +770,7 @@ public class RubyString extends RubyObject {
     /** rb_str_upcase_bang
      *
      */
+    @JRubyMethod(name = "upcase!")
     public IRubyObject upcase_bang() {
         if (value.realSize == 0)  return getRuntime().getNil();
 
@@ -868,6 +797,7 @@ public class RubyString extends RubyObject {
     /** rb_str_downcase
      *
      */
+    @JRubyMethod(name = "downcase")
     public RubyString downcase() {
         RubyString str = strDup();
         str.downcase_bang();
@@ -877,6 +807,7 @@ public class RubyString extends RubyObject {
     /** rb_str_downcase_bang
      *
      */
+    @JRubyMethod(name = "downcase!")
     public IRubyObject downcase_bang() {
         if (value.realSize == 0)  return getRuntime().getNil();
         
@@ -903,6 +834,7 @@ public class RubyString extends RubyObject {
     /** rb_str_swapcase
      *
      */
+    @JRubyMethod(name = "swapcase")
     public RubyString swapcase() {
         RubyString str = strDup();
         str.swapcase_bang();
@@ -912,6 +844,7 @@ public class RubyString extends RubyObject {
     /** rb_str_swapcase_bang
      *
      */
+    @JRubyMethod(name = "swapcase!")
     public IRubyObject swapcase_bang() {
         if (value.realSize == 0)  return getRuntime().getNil();        
         
@@ -943,10 +876,12 @@ public class RubyString extends RubyObject {
     /** rb_str_dump
      *
      */
+    @JRubyMethod(name = "dump")
     public IRubyObject dump() {
         return inspect();
     }
 
+    @JRubyMethod(name = "insert", required = 2)
     public IRubyObject insert(IRubyObject indexArg, IRubyObject stringArg) {
         int index = (int) indexArg.convertToInteger().getLongValue();
         if (index < 0) index += value.length() + 1;
@@ -965,6 +900,7 @@ public class RubyString extends RubyObject {
     /** rb_str_inspect
      *
      */
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
         final int length = value.length();
         Ruby runtime = getRuntime();
@@ -1022,6 +958,7 @@ public class RubyString extends RubyObject {
     /** rb_str_length
      *
      */
+    @JRubyMethod(name = "length", alias = "size")
     public RubyFixnum length() {
         return getRuntime().newFixnum(value.length());
     }
@@ -1029,7 +966,8 @@ public class RubyString extends RubyObject {
     /** rb_str_empty
      *
      */
-    public RubyBoolean empty() {
+    @JRubyMethod(name = "empty?")
+    public RubyBoolean empty_p() {
         return isEmpty() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
@@ -1048,6 +986,7 @@ public class RubyString extends RubyObject {
     /** rb_str_concat
      *
      */
+    @JRubyMethod(name = "concat", alias = "<<", required = 1)
     public RubyString concat(IRubyObject other) {
         if (other instanceof RubyFixnum) {
             long value = ((RubyFixnum) other).getLongValue();
@@ -1059,6 +998,7 @@ public class RubyString extends RubyObject {
     /** rb_str_crypt
      *
      */
+    @JRubyMethod(name = "crypt", required = 1)
     public RubyString crypt(IRubyObject other) {
         String salt = stringValue(other).getValue().toString();
         if (salt.length() < 2) {
@@ -1669,6 +1609,7 @@ public class RubyString extends RubyObject {
     /** rb_str_sub
      *
      */
+    @JRubyMethod(name = "sub", required = 1, optional = 1, frame = true)
     public IRubyObject sub(IRubyObject[] args, Block block) {
         RubyString str = strDup();
         str.sub_bang(args, block);
@@ -1678,6 +1619,7 @@ public class RubyString extends RubyObject {
     /** rb_str_sub_bang
      *
      */
+    @JRubyMethod(name = "sub!", required = 1, optional = 1, frame = true)
     public IRubyObject sub_bang(IRubyObject[] args, Block block) {
         boolean iter = false;
         IRubyObject repl;
@@ -1765,6 +1707,7 @@ public class RubyString extends RubyObject {
     /** rb_str_gsub
      *
      */
+    @JRubyMethod(name = "gsub", required = 1, optional = 1, frame = true)
     public IRubyObject gsub(IRubyObject[] args, Block block) {
         return gsub(args, block, false);
     }
@@ -1772,6 +1715,7 @@ public class RubyString extends RubyObject {
     /** rb_str_gsub_bang
      *
      */
+    @JRubyMethod(name = "gsub!", required = 1, optional = 1, frame = true)
     public IRubyObject gsub_bang(IRubyObject[] args, Block block) {
         return gsub(args, block, true);
     }
@@ -1905,6 +1849,7 @@ public class RubyString extends RubyObject {
     /** rb_str_index_m
      *
      */
+    @JRubyMethod(name = "index", required = 1, optional = 1)
     public IRubyObject index(IRubyObject[] args) {
         return index(args, false);
     }
@@ -1912,6 +1857,7 @@ public class RubyString extends RubyObject {
     /** rb_str_rindex_m
      *
      */
+    @JRubyMethod(name = "rindex", required = 1, optional = 1)
     public IRubyObject rindex(IRubyObject[] args) {
         return index(args, true);
     }
@@ -2015,7 +1961,8 @@ public class RubyString extends RubyObject {
     /** rb_str_aref, rb_str_aref_m
      *
      */
-    public IRubyObject aref(IRubyObject[] args) {
+    @JRubyMethod(name = "[]", alias = "slice", required = 1, optional = 1)
+    public IRubyObject op_aref(IRubyObject[] args) {
         if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             if (args[0] instanceof RubyRegexp) {
                 IRubyObject match = RubyRegexp.regexpValue(args[0]).match(toString(), this, 0);
@@ -2081,7 +2028,8 @@ public class RubyString extends RubyObject {
     /** rb_str_aset, rb_str_aset_m
      *
      */
-    public IRubyObject aset(IRubyObject[] args) {
+    @JRubyMethod(name = "[]=", required = 2, optional = 1)
+    public IRubyObject op_aset(IRubyObject[] args) {
         int strLen = value.length();
         if (Arity.checkArgumentCount(getRuntime(), args, 2, 3) == 3) {
             if (args[0] instanceof RubyFixnum) {
@@ -2153,6 +2101,7 @@ public class RubyString extends RubyObject {
     /** rb_str_slice_bang
      *
      */
+    @JRubyMethod(name = "slice!", required = 1, optional = 1)
     public IRubyObject slice_bang(IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         IRubyObject[] newArgs = new IRubyObject[argc + 1];
@@ -2160,17 +2109,19 @@ public class RubyString extends RubyObject {
         if (argc > 1) newArgs[1] = args[1];
 
         newArgs[argc] = newString("");
-        IRubyObject result = aref(args);
+        IRubyObject result = op_aref(args);
         if (result.isNil()) return result;
 
-        aset(newArgs);
+        op_aset(newArgs);
         return result;
     }
 
+    @JRubyMethod(name = "succ", alias = "next")
     public IRubyObject succ() {
         return strDup().succ_bang();
     }
 
+    @JRubyMethod(name = "succ!", alias = "next!")
     public IRubyObject succ_bang() {
         if (value.length() == 0) return this;
 
@@ -2220,6 +2171,7 @@ public class RubyString extends RubyObject {
     /** rb_str_upto_m
      *
      */
+    @JRubyMethod(name = "upto", required = 1, frame = true)
     public IRubyObject upto(IRubyObject str, Block block) {
         return upto(str, false, block);
     }
@@ -2230,7 +2182,7 @@ public class RubyString extends RubyObject {
         RubyString beg = this;
         RubyString end = stringValue(str);
 
-        int n = beg.cmp(end);
+        int n = beg.op_cmp(end);
         if (n > 0 || (excl && n == 0)) return beg;
 
         RubyString afterEnd = stringValue(end.succ());
@@ -2256,7 +2208,8 @@ public class RubyString extends RubyObject {
     /** rb_str_include
      *
      */
-    public RubyBoolean include(IRubyObject obj) {
+    @JRubyMethod(name = "include?", required = 1)
+    public RubyBoolean include_p(IRubyObject obj) {
         if (obj instanceof RubyFixnum) {
             int c = RubyNumeric.fix2int(obj);
             for (int i = 0; i < value.length(); i++) {
@@ -2273,6 +2226,7 @@ public class RubyString extends RubyObject {
     /** rb_str_to_i
      *
      */
+    @JRubyMethod(name = "to_i", optional = 1)
     public IRubyObject to_i(IRubyObject[] args) {
         long base = Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 0 ? 10 : args[0].convertToInteger().getLongValue();
         return RubyNumeric.str2inum(getRuntime(), this, (int) base);
@@ -2281,6 +2235,7 @@ public class RubyString extends RubyObject {
     /** rb_str_oct
      *
      */
+    @JRubyMethod(name = "oct")
     public IRubyObject oct() {
         if (isEmpty()) {
             return getRuntime().newFixnum(0);
@@ -2300,6 +2255,7 @@ public class RubyString extends RubyObject {
     /** rb_str_hex
      *
      */
+    @JRubyMethod(name = "hex")
     public IRubyObject hex() {
         return RubyNumeric.str2inum(getRuntime(), this, 16);
     }
@@ -2307,6 +2263,7 @@ public class RubyString extends RubyObject {
     /** rb_str_to_f
      *
      */
+    @JRubyMethod(name = "to_f")
     public IRubyObject to_f() {
         return RubyNumeric.str2fnum(getRuntime(), this);
     }
@@ -2314,6 +2271,7 @@ public class RubyString extends RubyObject {
     /** rb_str_split_m
      *
      */
+    @JRubyMethod(name = "split", optional = 2)
     public RubyArray split(IRubyObject[] args) {
         int beg, end, i = 0;
         int lim = 0;
@@ -2489,6 +2447,7 @@ public class RubyString extends RubyObject {
     /** rb_str_scan
      *
      */
+    @JRubyMethod(name = "scan", required = 1, frame = true)
     public IRubyObject scan(IRubyObject arg, Block block) {
         RubyRegexp pattern = getPat(arg, true);
         Ruby runtime = getRuntime();
@@ -2649,6 +2608,7 @@ public class RubyString extends RubyObject {
     /** rb_str_ljust
      *
      */
+    @JRubyMethod(name = "ljust", required = 1, optional = 1)
     public IRubyObject ljust(IRubyObject [] args) {
         return justify(args, 'l');
     }
@@ -2656,14 +2616,17 @@ public class RubyString extends RubyObject {
     /** rb_str_rjust
      *
      */
+    @JRubyMethod(name = "rjust", required = 1, optional = 1)
     public IRubyObject rjust(IRubyObject [] args) {
         return justify(args, 'r');
     }
 
+    @JRubyMethod(name = "center", required = 1, optional = 1)
     public IRubyObject center(IRubyObject[] args) {
         return justify(args, 'c');
     }
 
+    @JRubyMethod(name = "chop")
     public IRubyObject chop() {
         RubyString str = strDup();
         str.chop_bang();
@@ -2673,6 +2636,7 @@ public class RubyString extends RubyObject {
     /** rb_str_chop_bang
      * 
      */
+    @JRubyMethod(name = "chop!")
     public IRubyObject chop_bang() {
         int end = value.realSize - 1;
         if (end < 0) return getRuntime().getNil(); 
@@ -2688,6 +2652,7 @@ public class RubyString extends RubyObject {
     /** rb_str_chop
      * 
      */
+    @JRubyMethod(name = "chomp", optional = 1)
     public RubyString chomp(IRubyObject[] args) {
         RubyString str = strDup();
         str.chomp_bang(args);
@@ -2705,6 +2670,7 @@ public class RubyString extends RubyObject {
      *   all(!)).
      * @param args See method description.
      */
+    @JRubyMethod(name = "chomp!", optional = 1)
     public IRubyObject chomp_bang(IRubyObject[] args) {
         IRubyObject rsObj;
 
@@ -2785,6 +2751,7 @@ public class RubyString extends RubyObject {
     /** rb_str_lstrip
      * 
      */
+    @JRubyMethod(name = "lstrip")
     public IRubyObject lstrip() {
         RubyString str = strDup();
         str.lstrip_bang();
@@ -2803,6 +2770,7 @@ public class RubyString extends RubyObject {
 
     /** rb_str_lstrip_bang
      */
+    @JRubyMethod(name = "lstrip!")
     public IRubyObject lstrip_bang() {
         if (value.realSize == 0) return getRuntime().getNil();
         
@@ -2820,6 +2788,7 @@ public class RubyString extends RubyObject {
     /** rb_str_rstrip
      *  
      */
+    @JRubyMethod(name = "rstrip")
     public IRubyObject rstrip() {
         RubyString str = strDup();
         str.rstrip_bang();
@@ -2828,6 +2797,7 @@ public class RubyString extends RubyObject {
 
     /** rb_str_rstrip_bang
      */ 
+    @JRubyMethod(name = "rstrip!")
     public IRubyObject rstrip_bang() {
         if (value.realSize == 0) return getRuntime().getNil();
         int i=value.realSize - 1;
@@ -2846,6 +2816,7 @@ public class RubyString extends RubyObject {
     /** rb_str_strip
      *
      */
+    @JRubyMethod(name = "strip")
     public IRubyObject strip() {
         RubyString str = strDup();
         str.strip_bang();
@@ -2854,6 +2825,7 @@ public class RubyString extends RubyObject {
 
     /** rb_str_strip_bang
      */
+    @JRubyMethod(name = "strip!")
     public IRubyObject strip_bang() {
         IRubyObject l = lstrip_bang();
         IRubyObject r = rstrip_bang();
@@ -2867,6 +2839,7 @@ public class RubyString extends RubyObject {
     /** rb_str_count
      *
      */
+    @JRubyMethod(name = "count", required = 1, rest = true)
     public IRubyObject count(IRubyObject[] args) {
         if (args.length < 1) throw getRuntime().newArgumentError("wrong number of arguments");
         if (value.realSize == 0) return getRuntime().newFixnum(0);
@@ -2892,6 +2865,7 @@ public class RubyString extends RubyObject {
     /** rb_str_delete
      *
      */
+    @JRubyMethod(name = "delete", required = 1, rest = true)
     public IRubyObject delete(IRubyObject[] args) {
         RubyString str = strDup();
         str.delete_bang(args);
@@ -2901,6 +2875,7 @@ public class RubyString extends RubyObject {
     /** rb_str_delete_bang
      *
      */
+    @JRubyMethod(name = "delete!", required = 1, rest = true)
     public IRubyObject delete_bang(IRubyObject[] args) {
         if (args.length < 1) throw getRuntime().newArgumentError("wrong number of arguments");
         
@@ -2939,6 +2914,7 @@ public class RubyString extends RubyObject {
     /** rb_str_squeeze
      *
      */
+    @JRubyMethod(name = "squeeze", required = 1, rest = true)
     public IRubyObject squeeze(IRubyObject[] args) {
         RubyString str = strDup();
         str.squeeze_bang(args);        
@@ -2948,6 +2924,7 @@ public class RubyString extends RubyObject {
     /** rb_str_squeeze_bang
      *
      */
+    @JRubyMethod(name = "squeeze!", required = 1, rest = true)
     public IRubyObject squeeze_bang(IRubyObject[] args) {
         if (value.realSize == 0) return getRuntime().getNil();
 
@@ -2988,6 +2965,7 @@ public class RubyString extends RubyObject {
     /** rb_str_tr
      *
      */
+    @JRubyMethod(name = "tr", required = 2)
     public IRubyObject tr(IRubyObject src, IRubyObject repl) {
         RubyString str = strDup();
         str.tr_trans(src, repl, false);        
@@ -2997,6 +2975,7 @@ public class RubyString extends RubyObject {
     /** rb_str_tr_bang
     *
     */
+    @JRubyMethod(name = "tr!", required = 2)
     public IRubyObject tr_bang(IRubyObject src, IRubyObject repl) {
         return tr_trans(src, repl, false);
     }    
@@ -3163,6 +3142,7 @@ public class RubyString extends RubyObject {
     /** rb_str_tr_s
      *
      */
+    @JRubyMethod(name = "tr_s", required = 2)
     public IRubyObject tr_s(IRubyObject src, IRubyObject repl) {
         RubyString str = strDup();
         str.tr_trans(src, repl, true);        
@@ -3172,6 +3152,7 @@ public class RubyString extends RubyObject {
     /** rb_str_tr_s_bang
      *
      */
+    @JRubyMethod(name = "tr_s!", required = 2)
     public IRubyObject tr_s_bang(IRubyObject src, IRubyObject repl) {
         return tr_trans(src, repl, true);
     }
@@ -3225,6 +3206,7 @@ public class RubyString extends RubyObject {
     /**
      * rb_str_each_byte
      */
+    @JRubyMethod(name = "each_byte", frame = true)
     public RubyString each_byte(Block block) {
         int lLength = value.length();
         Ruby runtime = getRuntime();
@@ -3249,10 +3231,12 @@ public class RubyString extends RubyObject {
         return RubySymbol.newSymbol(getRuntime(), toString());
     }
 
+    @JRubyMethod(name = "to_sym", alias = "intern")
     public RubySymbol to_sym() {
         return intern();
     }
 
+    @JRubyMethod(name = "sum", optional = 1)
     public RubyInteger sum(IRubyObject[] args) {
         if (args.length > 1) {
             throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 1)");
@@ -3282,6 +3266,7 @@ public class RubyString extends RubyObject {
     /**
      * @see org.jruby.util.Pack#unpack
      */
+    @JRubyMethod(name = "unpack", required = 1)
     public RubyArray unpack(IRubyObject obj) {
         return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
     }
