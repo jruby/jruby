@@ -68,9 +68,8 @@ public abstract class RubyInteger extends RubyNumeric {
         integer.defineFastMethod("round", callbackFactory.getFastMethod("to_i"));
         integer.defineFastMethod("truncate", callbackFactory.getFastMethod("to_i"));
         
-        integer.dispatcher = callbackFactory.createDispatcher(integer);
-        
         integer.defineAnnotatedMethods(RubyInteger.class, callbackFactory);
+        integer.dispatcher = callbackFactory.createDispatcher(integer);
         
         return integer;
     }

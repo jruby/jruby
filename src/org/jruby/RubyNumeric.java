@@ -35,6 +35,7 @@
 package org.jruby;
 
 import java.math.BigInteger;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -69,30 +70,7 @@ public class RubyNumeric extends RubyObject {
         };
 
         numeric.includeModule(runtime.getComparable());
-
-        numeric.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("init_copy", RubyKernel.IRUBY_OBJECT), Visibility.PRIVATE);
-        numeric.defineFastMethod("coerce", callbackFactory.getFastMethod("coerce", RubyKernel.IRUBY_OBJECT));
-
-        numeric.defineFastMethod("+@", callbackFactory.getFastMethod("uplus"));
-        numeric.defineFastMethod("-@", callbackFactory.getFastMethod("uminus"));
-        numeric.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", RubyKernel.IRUBY_OBJECT));
-        numeric.defineFastMethod("quo", callbackFactory.getFastMethod("quo", RubyKernel.IRUBY_OBJECT));
-        numeric.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
-        numeric.defineFastMethod("div", callbackFactory.getFastMethod("div", RubyKernel.IRUBY_OBJECT));
-        numeric.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod", RubyKernel.IRUBY_OBJECT));
-        numeric.defineFastMethod("modulo", callbackFactory.getFastMethod("modulo", RubyKernel.IRUBY_OBJECT));
-        numeric.defineFastMethod("remainder", callbackFactory.getFastMethod("remainder", RubyKernel.IRUBY_OBJECT));
-        numeric.defineFastMethod("abs", callbackFactory.getFastMethod("abs"));
-        numeric.defineFastMethod("to_int", callbackFactory.getFastMethod("to_int"));
-        numeric.defineFastMethod("integer?", callbackFactory.getFastMethod("int_p"));
-        numeric.defineFastMethod("zero?", callbackFactory.getFastMethod("zero_p"));
-        numeric.defineFastMethod("nonzero?", callbackFactory.getFastMethod("nonzero_p"));
-        numeric.defineFastMethod("floor", callbackFactory.getFastMethod("floor"));
-        numeric.defineFastMethod("ceil", callbackFactory.getFastMethod("ceil"));
-        numeric.defineFastMethod("round", callbackFactory.getFastMethod("round"));
-        numeric.defineFastMethod("truncate", callbackFactory.getFastMethod("truncate"));
-        numeric.defineMethod("step", callbackFactory.getOptMethod("step"));
-        
+        numeric.defineAnnotatedMethods(RubyNumeric.class, callbackFactory);
         numeric.dispatcher = callbackFactory.createDispatcher(numeric);
 
         return numeric;
@@ -496,13 +474,16 @@ public class RubyNumeric extends RubyObject {
     /** num_init_copy
      *
      */
-    public IRubyObject init_copy(IRubyObject arg) {
+    @Override
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize_copy(IRubyObject arg) {
         throw getRuntime().newTypeError("can't copy " + getType().getName());
     }
     
     /** num_coerce
      *
      */
+    @JRubyMethod(name = "coerce", required = 1)
     public IRubyObject coerce(IRubyObject other) {
         if (getMetaClass() == other.getMetaClass()) {
             return getRuntime().newArray(other, this);
@@ -514,6 +495,7 @@ public class RubyNumeric extends RubyObject {
     /** num_uplus
      *
      */
+    @JRubyMethod(name = "+@")
     public IRubyObject uplus() {
         return this;
     }
@@ -521,6 +503,7 @@ public class RubyNumeric extends RubyObject {
     /** num_uminus
      *
      */
+    @JRubyMethod(name = "-@")
     public IRubyObject uminus() {
         RubyFixnum zero = RubyFixnum.zero(getRuntime());
         RubyArray ary = zero.doCoerce(this, true);
@@ -530,6 +513,7 @@ public class RubyNumeric extends RubyObject {
     /** num_cmp
      *
      */
+    @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject cmp(IRubyObject other) {
         if (this == other) { // won't hurt fixnums
             return RubyFixnum.zero(getRuntime());
@@ -540,6 +524,7 @@ public class RubyNumeric extends RubyObject {
     /** num_eql
      *
      */
+    @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql_p(IRubyObject other) {
         if (getMetaClass() != other.getMetaClass()) {
             return getRuntime().getFalse();
@@ -550,6 +535,7 @@ public class RubyNumeric extends RubyObject {
     /** num_quo
      *
      */
+    @JRubyMethod(name = "quo", required = 1)
     public IRubyObject quo(IRubyObject other) {
         return callMethod(getRuntime().getCurrentContext(), "/", other);
     }
@@ -557,6 +543,7 @@ public class RubyNumeric extends RubyObject {
     /** num_div
      * 
      */
+    @JRubyMethod(name = "div", required = 1)
     public IRubyObject div(IRubyObject other) {
         return callMethod(getRuntime().getCurrentContext(), "/", other).convertToFloat().floor();
     }
@@ -564,6 +551,7 @@ public class RubyNumeric extends RubyObject {
     /** num_divmod
      * 
      */
+    @JRubyMethod(name = "divmod", required = 1)
     public IRubyObject divmod(IRubyObject other) {
         return RubyArray.newArray(getRuntime(), div(other), modulo(other));
     }
@@ -571,6 +559,7 @@ public class RubyNumeric extends RubyObject {
     /** num_modulo
      *
      */
+    @JRubyMethod(name = "modulo", required = 1)
     public IRubyObject modulo(IRubyObject other) {
         return callMethod(getRuntime().getCurrentContext(), "%", other);
     }
@@ -578,19 +567,20 @@ public class RubyNumeric extends RubyObject {
     /** num_remainder
      *
      */
-    public IRubyObject remainder(IRubyObject y) {
+    @JRubyMethod(name = "remainder", required = 1)
+    public IRubyObject remainder(IRubyObject dividend) {
             ThreadContext context = getRuntime().getCurrentContext();
-        IRubyObject z = callMethod(context, "%", y);
+        IRubyObject z = callMethod(context, "%", dividend);
         IRubyObject x = this;
         RubyFixnum zero = RubyFixnum.zero(getRuntime());
 
         if (z.equal(zero).isTrue()) {
             return z;
         } else if (x.callMethod(context, MethodIndex.OP_LT, "<", zero).isTrue()
-                        && y.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue()
+                        && dividend.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue()
                    || x.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue()
-                        && (y.callMethod(context, MethodIndex.OP_LT, "<", zero)).isTrue()) {
-            return z.callMethod(context, MethodIndex.OP_MINUS, "-",y);
+                        && (dividend.callMethod(context, MethodIndex.OP_LT, "<", zero)).isTrue()) {
+            return z.callMethod(context, MethodIndex.OP_MINUS, "-",dividend);
         } else {
             return z;
         }
@@ -599,6 +589,7 @@ public class RubyNumeric extends RubyObject {
     /** num_abs
      *
      */
+    @JRubyMethod(name = "abs")
     public IRubyObject abs() {
         ThreadContext context = getRuntime().getCurrentContext();
         if (callMethod(context, MethodIndex.OP_LT, "<", RubyFixnum.zero(getRuntime())).isTrue()) {
@@ -610,6 +601,7 @@ public class RubyNumeric extends RubyObject {
     /** num_to_int
      * 
      */
+    @JRubyMethod(name = "to_int")
     public IRubyObject to_int() {
         return callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_I, "to_i", IRubyObject.NULL_ARRAY);
     }
@@ -617,13 +609,15 @@ public class RubyNumeric extends RubyObject {
     /** num_int_p
      *
      */
-    public IRubyObject int_p() {
+    @JRubyMethod(name = "integer?")
+    public IRubyObject integer_p() {
         return getRuntime().getFalse();
     }
     
     /** num_zero_p
      *
      */
+    @JRubyMethod(name = "zero?")
     public IRubyObject zero_p() {
         // Will always return a boolean
         return equal(RubyFixnum.zero(getRuntime())).isTrue() ? getRuntime().getTrue() : getRuntime().getFalse();
@@ -632,6 +626,7 @@ public class RubyNumeric extends RubyObject {
     /** num_nonzero_p
      *
      */
+    @JRubyMethod(name = "nonzero?")
     public IRubyObject nonzero_p() {
         if (callMethod(getRuntime().getCurrentContext(), "zero?").isTrue()) {
             return getRuntime().getNil();
@@ -642,6 +637,7 @@ public class RubyNumeric extends RubyObject {
     /** num_floor
      *
      */
+    @JRubyMethod(name = "floor")
     public IRubyObject floor() {
         return convertToFloat().floor();
     }
@@ -649,6 +645,7 @@ public class RubyNumeric extends RubyObject {
     /** num_ceil
      *
      */
+    @JRubyMethod(name = "ceil")
     public IRubyObject ceil() {
         return convertToFloat().ceil();
     }
@@ -656,6 +653,7 @@ public class RubyNumeric extends RubyObject {
     /** num_round
      *
      */
+    @JRubyMethod(name = "round")
     public IRubyObject round() {
         return convertToFloat().round();
     }
@@ -663,10 +661,12 @@ public class RubyNumeric extends RubyObject {
     /** num_truncate
      *
      */
+    @JRubyMethod(name = "truncate")
     public IRubyObject truncate() {
         return convertToFloat().truncate();
     }
     
+    @JRubyMethod(name = "step", required = 1, optional = 1, frame = true)
     public IRubyObject step(IRubyObject[] args, Block block) {
         IRubyObject to;
         IRubyObject step;
