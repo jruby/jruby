@@ -335,19 +335,6 @@ public class RuntimeHelpers {
 
         return rubyClass.getClassVar(name);
     }
-   
-    // needs to be rewritten to support new jump exceptions
-//    public static IRubyObject handleJumpException(JumpException je, Block block) {
-//        // JRUBY-530, Kernel#loop case:
-//        if (je.isBreakInKernelLoop()) {
-//            // consume and rethrow or just keep rethrowing?
-//            if (block == je.getTarget()) je.setBreakInKernelLoop(false);
-//
-//            throw je;
-//        }
-//
-//        return (IRubyObject) je.getValue();
-//    }
     
     public static IRubyObject nullToNil(IRubyObject value, Ruby runtime) {
         return value != null ? value : runtime.getNil();
@@ -471,14 +458,6 @@ public class RuntimeHelpers {
         }
         
         return blockArg;
-    }
-        
-    public static IRubyObject processRestArg(Ruby runtime, IRubyObject[] args, int start) {
-        if (args.length <= start) {
-            return RubyArray.newArray(runtime, 0);
-        } else {
-            return RubyArray.newArrayNoCopy(runtime, args, start);
-        }
     }
     
     public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
