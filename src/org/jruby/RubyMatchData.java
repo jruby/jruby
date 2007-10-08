@@ -34,12 +34,14 @@
 package org.jruby;
 
 import java.io.UnsupportedEncodingException;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.regexp.RegexpMatcher;
+import org.jruby.runtime.Block;
 
 /**
  *
@@ -59,24 +61,9 @@ public abstract class RubyMatchData extends RubyObject {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMatchData.class);
 
-        matchDataClass.defineFastMethod("captures", callbackFactory.getFastMethod("captures"));
-        matchDataClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
-        matchDataClass.defineFastMethod("size", callbackFactory.getFastMethod("size"));
-        matchDataClass.defineFastMethod("length", callbackFactory.getFastMethod("size"));
-        matchDataClass.defineFastMethod("offset", callbackFactory.getFastMethod("offset", RubyKernel.IRUBY_OBJECT));
-        matchDataClass.defineFastMethod("begin", callbackFactory.getFastMethod("begin", RubyKernel.IRUBY_OBJECT));
-        matchDataClass.defineFastMethod("end", callbackFactory.getFastMethod("end", RubyKernel.IRUBY_OBJECT));
-        matchDataClass.defineFastMethod("to_a", callbackFactory.getFastMethod("to_a"));
-        matchDataClass.defineFastMethod("[]", callbackFactory.getFastOptMethod("aref"));
-        matchDataClass.defineFastMethod("pre_match", callbackFactory.getFastMethod("pre_match"));
-        matchDataClass.defineFastMethod("post_match", callbackFactory.getFastMethod("post_match"));
-        matchDataClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        matchDataClass.defineFastMethod("string", callbackFactory.getFastMethod("string"));
-        matchDataClass.defineFastMethod("values_at", callbackFactory.getFastOptMethod("values_at"));
-        matchDataClass.defineMethod("select", callbackFactory.getMethod("select"));
-
         matchDataClass.getMetaClass().undefineMethod("new");
         
+        matchDataClass.defineAnnotatedMethods(RubyMatchData.class, callbackFactory);
         matchDataClass.dispatcher = callbackFactory.createDispatcher(matchDataClass);
 
         return matchDataClass;
@@ -99,6 +86,7 @@ public abstract class RubyMatchData extends RubyObject {
         return (this.flags & MATCH_BUSY) == MATCH_BUSY;
     }
     
+    @JRubyMethod(name = "captures")
     public abstract IRubyObject captures();
 
     public IRubyObject subseq(long beg, long len) {
@@ -164,6 +152,7 @@ public abstract class RubyMatchData extends RubyObject {
     /** match_aref
      *
      */
+    @JRubyMethod(name = "[]", required = 1, optional = 1)
     public IRubyObject aref(IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         if (argc == 2) {
@@ -197,6 +186,7 @@ public abstract class RubyMatchData extends RubyObject {
     /** match_begin
      *
      */
+    @JRubyMethod(name = "begin", required = 1)
     public IRubyObject begin(IRubyObject index) {
         int idx  = RubyNumeric.num2int(index);
         
@@ -214,6 +204,7 @@ public abstract class RubyMatchData extends RubyObject {
     /** match_end
      *
      */
+    @JRubyMethod(name = "end", required = 1)
     public IRubyObject end(IRubyObject index) {
         int idx  = RubyNumeric.num2int(index);
         
@@ -228,6 +219,7 @@ public abstract class RubyMatchData extends RubyObject {
         return outOfBounds(index) || !matcher.isCaptured(index) ? -1 : matcher.end(index); 
     }
     
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
     	return anyToString();
     }
@@ -235,21 +227,25 @@ public abstract class RubyMatchData extends RubyObject {
     /** match_size
      *
      */
-    public RubyFixnum size() {
+    @JRubyMethod(name = "size", name2 = "length")
+    public IRubyObject size() {
         return getRuntime().newFixnum(getSize());
     }
 
+    @JRubyMethod(name = "values_at", required = 1, rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
         return to_a().values_at(args);
     }
 
-    public IRubyObject select(org.jruby.runtime.Block block) {
+    @JRubyMethod(name = "select", frame = true)
+    public IRubyObject select(Block block) {
         return block.yield(getRuntime().getCurrentContext(), to_a());
     }
 
     /** match_offset
      *
      */
+    @JRubyMethod(name = "offset", required = 1)
     public IRubyObject offset(IRubyObject index) {
         int idx = RubyNumeric.num2int(index);
         
@@ -264,26 +260,31 @@ public abstract class RubyMatchData extends RubyObject {
     /** match_pre_match
      *
      */
+    @JRubyMethod(name = "pre_match")
     public abstract RubyString pre_match();
 
     /** match_post_match
      *
      */
+    @JRubyMethod(name = "post_match")
     public abstract RubyString post_match();
 
     /** match_string
      *
      */
+    @JRubyMethod(name = "string")
     public abstract RubyString string();
 
     /** match_to_a
      *
      */
+    @JRubyMethod(name = "to_a")
     public abstract RubyArray to_a();
 
     /** match_to_s
      *
      */
+    @JRubyMethod(name = "to_s")
     public abstract IRubyObject to_s();
     public abstract IRubyObject doClone();
 
