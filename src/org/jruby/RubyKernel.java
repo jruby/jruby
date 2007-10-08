@@ -774,6 +774,7 @@ public class RubyKernel {
         if (args.length > 1) {
             if (!args[1].isNil()) {
                 scope = args[1];
+                file = ((RubyBinding)scope).getBlock().getFrame().getPosition().getFile();
             }
             
             if (args.length > 2) {

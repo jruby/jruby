@@ -167,7 +167,7 @@ public final class Frame implements JumpTarget {
     /**
      * @return the frames current position
      */
-    ISourcePosition getPosition() {
+    public ISourcePosition getPosition() {
         return position;
     }
 
