@@ -171,6 +171,10 @@ public final class Frame implements JumpTarget {
         return position;
     }
 
+    public void setPosition(ISourcePosition pos) {
+        this.position = pos;
+    }
+
     /** 
      * Return class that we are supposedly calling for this invocation
      * 

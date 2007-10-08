@@ -770,20 +770,25 @@ public class RubyKernel {
         RubyString src = args[0].convertToString();
         IRubyObject scope = null;
         String file = "(eval)";
-        
+        int line = 1;
+
         if (args.length > 1) {
             if (!args[1].isNil()) {
                 scope = args[1];
 
-                file = ((scope instanceof RubyBinding) ? (RubyBinding)scope : (RubyBinding)((RubyProc)scope).binding()).getBlock().getFrame().getPosition().getFile();
+                org.jruby.lexer.yacc.ISourcePosition pos = ((scope instanceof RubyBinding) ? (RubyBinding)scope : (RubyBinding)((RubyProc)scope).binding()).getBlock().getFrame().getPosition();
+                file = pos.getFile();
+                line = pos.getEndLine();
             }
             
             if (args.length > 2) {
                 file = args[2].toString();
             }
-        }
 
-        int line = args.length > 3 ? RubyNumeric.fix2int(args[3]) - 1 : 1;
+            if(args.length > 3) {
+                line = RubyNumeric.fix2int(args[3]) - 1;
+            }
+        }
 
         recv.getRuntime().checkSafeString(src);
         ThreadContext context = recv.getRuntime().getCurrentContext();

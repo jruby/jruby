@@ -358,7 +358,6 @@ public final class Ruby {
     public IRubyObject eval(Node node) {
         try {
             ThreadContext tc = getCurrentContext();
-
             return ASTInterpreter.eval(this, tc, node, tc.getFrameSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             throw newLocalJumpError("return", (IRubyObject)rj.getValue(), "unexpected return");
@@ -382,6 +381,7 @@ public final class Ruby {
         Reader reader = new StringReader(script);
         Node node = parseInline(reader, filename, null);
         
+        getCurrentContext().getCurrentFrame().setPosition(node.getPosition());
         return runNormally(node, false, false);
     }
     
@@ -398,6 +398,8 @@ public final class Ruby {
                 scriptNode = parseFile(sourceReader, filename, getCurrentContext().getCurrentScope());
             }
             
+            getCurrentContext().getCurrentFrame().setPosition(scriptNode.getPosition());
+
             if (commandLine.isAssumePrinting() || commandLine.isAssumeLoop()) {
                 runWithGetsLoop(scriptNode, commandLine.isAssumePrinting(), commandLine.isProcessLineEnds(),
                         commandLine.isSplit(), commandLine.isCompilerEnabled(), commandLine.isYARVCompileEnabled());
