@@ -65,9 +65,6 @@ public class RubyBinding extends RubyObject {
     public static RubyClass createBindingClass(Ruby runtime) {
         RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), BINDING_ALLOCATOR);
         runtime.setBinding(bindingClass);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyBinding.class);   
-        
-        bindingClass.getMetaClass().defineMethod("of_caller", callbackFactory.getSingletonMethod("of_caller"));
         
         return bindingClass;
     }
@@ -121,19 +118,5 @@ public class RubyBinding extends RubyObject {
         Block bindingBlock = Block.createBinding(previousFrame, context.getCurrentScope());
         
         return new RubyBinding(runtime, runtime.getBinding(), bindingBlock);
-    }
-
-    public static RubyBinding newBindingOfCaller(Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        
-        // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
-        Frame frame = context.getPreviousFrame();
-        Block bindingBlock = Block.createBinding(frame, context.getPreviousScope());
-        
-        return new RubyBinding(runtime, runtime.getBinding(), bindingBlock);
-    }
-    
-    public static IRubyObject of_caller(IRubyObject recv, Block aBlock) {
-        return RubyBinding.newBindingOfCaller(recv.getRuntime());
     }
 }
