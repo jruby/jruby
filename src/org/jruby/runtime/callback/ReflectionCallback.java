@@ -82,7 +82,7 @@ public class ReflectionCallback implements Callback {
     	this.methodName = method.getName();
     	this.argumentTypes = method.getParameterTypes();
         this.isRestArgs = methodAnno.rest();
-        this.isStaticMethod = methodAnno.singleton();
+        this.isStaticMethod = Modifier.isStatic(method.getModifiers());
         this.fast = !(methodAnno.frame() || methodAnno.scope());
     	
         assert type != null;

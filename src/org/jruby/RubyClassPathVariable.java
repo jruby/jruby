@@ -30,6 +30,7 @@ package org.jruby;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -46,20 +47,15 @@ public class RubyClassPathVariable extends RubyObject {
         runtime.defineReadonlyVariable("$CLASSPATH", self);
         
         CallbackFactory cf = runtime.callbackFactory(RubyClassPathVariable.class);
-
-        self.getMetaClass().defineFastMethod("<<", cf.getFastMethod("append", IRubyObject.class));
-        self.getMetaClass().defineFastMethod("append", cf.getFastMethod("append", IRubyObject.class));
-        self.getMetaClass().defineFastMethod("size", cf.getFastMethod("size"));
-        self.getMetaClass().defineFastMethod("length", cf.getFastMethod("size"));
-        self.getMetaClass().defineMethod("each", cf.getMethod("each"));
-        self.getMetaClass().defineFastMethod("to_s", cf.getFastMethod("to_s"));
-        self.getMetaClass().defineFastMethod("inspect", cf.getFastMethod("inspect"));
+        
+        self.getMetaClass().defineAnnotatedMethods(RubyClassPathVariable.class, cf);
     }
 
     private RubyClassPathVariable(Ruby runtime) {
         super(runtime, runtime.getObject());
     }
 
+    @JRubyMethod(name = "append", name2 = "<<", required = 1)
     public IRubyObject append(IRubyObject obj) throws Exception {
         String ss = obj.convertToString().toString();
         URL url = getURL(ss);
@@ -75,10 +71,12 @@ public class RubyClassPathVariable extends RubyObject {
         }
     }
 
+    @JRubyMethod(name = "size", name2 = "length")
     public IRubyObject size() {
         return getRuntime().newFixnum(getRuntime().getJRubyClassLoader().getURLs().length);
     }
 
+    @JRubyMethod(name = "each", frame = true)
     public IRubyObject each(Block block) {
         URL[] urls = getRuntime().getJRubyClassLoader().getURLs();
         ThreadContext ctx = getRuntime().getCurrentContext();
@@ -88,10 +86,12 @@ public class RubyClassPathVariable extends RubyObject {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
         return callMethod(getRuntime().getCurrentContext(), "to_a").callMethod(getRuntime().getCurrentContext(), "to_s");
     }    
 
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
         return callMethod(getRuntime().getCurrentContext(), "to_a").callMethod(getRuntime().getCurrentContext(), "inspect");
     }    
