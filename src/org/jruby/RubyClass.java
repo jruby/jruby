@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -63,15 +64,11 @@ public class RubyClass extends RubyModule {
         };
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyClass.class);
-        classClass.defineFastMethod("allocate", callbackFactory.getFastMethod("allocate"));
-        classClass.defineMethod("new", callbackFactory.getOptMethod("newInstance"));
-        classClass.defineFastMethod("superclass", callbackFactory.getFastMethod("superclass"));
-        classClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        classClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", RubyKernel.IRUBY_OBJECT));
-        classClass.defineFastMethod("inherited", callbackFactory.getFastSingletonMethod("inherited", RubyKernel.IRUBY_OBJECT));
         classClass.undefineMethod("module_function");
         classClass.undefineMethod("append_features");
         classClass.undefineMethod("extend_object");
+        
+        classClass.defineAnnotatedMethods(RubyClass.class, callbackFactory);
         
         // This is a non-standard method; have we decided to start extending Ruby?
         //classClass.defineFastMethod("subclasses", callbackFactory.getFastOptMethod("subclasses"));
@@ -96,6 +93,7 @@ public class RubyClass extends RubyModule {
         this.allocator = allocator;
     }
 
+    @JRubyMethod(name = "allocate")
     public IRubyObject allocate() {
         if (superClass == null) throw runtime.newTypeError("can't instantiate uninitialized class");
         IRubyObject obj = allocator.allocate(runtime, this);
@@ -204,56 +202,60 @@ public class RubyClass extends RubyModule {
     /** rb_class_new_instance
     *
     */
-   public IRubyObject newInstance(IRubyObject[] args, Block block) {
-       IRubyObject obj = allocate();
-       obj.callMethod(getRuntime().getCurrentContext(), "initialize", args, block);
-       return obj;
-   }
+    @JRubyMethod(name = "new", rest = true, frame = true)
+    public IRubyObject newInstance(IRubyObject[] args, Block block) {
+        IRubyObject obj = allocate();
+        obj.callMethod(getRuntime().getCurrentContext(), "initialize", args, block);
+        return obj;
+    }
 
-   /** rb_class_initialize
-    * 
-    */
-   public IRubyObject initialize(IRubyObject[] args, Block block) {
-       if (superClass != null) throw getRuntime().newTypeError("already initialized class");
+    /** rb_class_initialize
+     * 
+     */
+    @JRubyMethod(name = "initialize", optional = 1, frame = true)
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
+        if (superClass != null) throw getRuntime().newTypeError("already initialized class");
+ 
+        IRubyObject superObject;
+        if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 0) {
+            superObject = getRuntime().getObject();
+        } else {
+            superObject = args[0];
+            checkInheritable(superObject);
+        }
+ 
+        RubyClass superClazz = (RubyClass) superObject;
 
-       IRubyObject superObject;
-       if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 0) {
-           superObject = getRuntime().getObject();
-       } else {
-           superObject = args[0];
-           checkInheritable(superObject);
-       }
-
-       RubyClass superClazz = (RubyClass) superObject;
-
-       superClass = superClazz;
-       allocator = superClazz.allocator;
-       makeMetaClass(superClazz.getMetaClass());
+        superClass = superClazz;
+        allocator = superClazz.allocator;
+        makeMetaClass(superClazz.getMetaClass());
+        
+        marshal = superClazz.marshal;
        
-       marshal = superClazz.marshal;
+        superClazz.addSubclass(this);
        
-       superClazz.addSubclass(this);
+        super.initialize(block);
        
-       super.initialize(block);
-       
-       inherit(superClazz);
+        inherit(superClazz);
 
-       return this;        
-   }    
+        return this;        
+    }    
 
-   /** rb_class_init_copy
-    * 
-    */
-   public IRubyObject initialize_copy(IRubyObject original){
-       if (superClass != null) throw runtime.newTypeError("already initialized class");
-       if (original instanceof MetaClass) throw getRuntime().newTypeError("can't copy singleton class");        
-       
-       super.initialize_copy(original);
-       allocator = ((RubyClass)original).allocator; 
-       return this;        
-   }
+    /** rb_class_init_copy
+     * 
+     */
+    @JRubyMethod(name = "initialize_copy", required = 1)
+    public IRubyObject initialize_copy(IRubyObject original){
+        if (superClass != null) throw runtime.newTypeError("already initialized class");
+        if (original instanceof MetaClass) throw getRuntime().newTypeError("can't copy singleton class");        
+        
+        super.initialize_copy(original);
+        allocator = ((RubyClass)original).allocator; 
+        return this;        
+    }
     
-    
+    // TODO: Someday, enable.
+    // @JRubyMethod(name = "subclasses", optional = 1)
     public IRubyObject subclasses(IRubyObject[] args) {
         boolean recursive = false;
         if (args.length == 1) {
@@ -295,8 +297,9 @@ public class RubyClass extends RubyModule {
         return this;
     }    
 
-    public static IRubyObject inherited(IRubyObject recv, IRubyObject arg) {
-        return recv.getRuntime().getNil();
+    @JRubyMethod(name = "inherited", required = 1)
+    public IRubyObject inherited(IRubyObject arg) {
+        return getRuntime().getNil();
     }
 
     /** rb_class_inherited (reversed semantics!)
@@ -312,6 +315,7 @@ public class RubyClass extends RubyModule {
      * rb_class_superclass
      *
      */
+    @JRubyMethod(name = "superclass")
     public IRubyObject superclass() {
         RubyClass superClazz = superClass;
 
