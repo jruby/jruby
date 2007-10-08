@@ -32,6 +32,7 @@ package org.jruby;
 import java.security.Provider;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -57,17 +58,7 @@ public class RubyDigest {
 
         CallbackFactory basecb = runtime.callbackFactory(Base.class);
         
-        cDigestBase.getMetaClass().defineFastMethod("digest",basecb.getFastSingletonMethod("s_digest",RubyKernel.IRUBY_OBJECT));
-        cDigestBase.getMetaClass().defineFastMethod("hexdigest",basecb.getFastSingletonMethod("s_hexdigest",RubyKernel.IRUBY_OBJECT));
-
-        cDigestBase.defineMethod("initialize",basecb.getOptMethod("initialize"));
-        cDigestBase.defineFastMethod("initialize_copy",basecb.getFastMethod("initialize_copy",RubyKernel.IRUBY_OBJECT));
-        cDigestBase.defineFastMethod("update",basecb.getFastMethod("update",RubyKernel.IRUBY_OBJECT));
-        cDigestBase.defineFastMethod("<<",basecb.getFastMethod("update",RubyKernel.IRUBY_OBJECT));
-        cDigestBase.defineFastMethod("digest",basecb.getFastMethod("digest"));
-        cDigestBase.defineFastMethod("hexdigest",basecb.getFastMethod("hexdigest"));
-        cDigestBase.defineFastMethod("to_s",basecb.getFastMethod("hexdigest"));
-        cDigestBase.defineFastMethod("==",basecb.getFastMethod("eq",RubyKernel.IRUBY_OBJECT));
+        cDigestBase.defineAnnotatedMethods(Base.class, basecb);
     }
 
     private static MessageDigest createMessageDigest(Ruby runtime, String providerName) throws NoSuchAlgorithmException {
@@ -134,6 +125,8 @@ public class RubyDigest {
                 return new Base(runtime, klass);
             }
         };
+        
+        @JRubyMethod(name = "digest", required = 1, singleton = true)
         public static IRubyObject s_digest(IRubyObject recv, IRubyObject str) {
             Ruby runtime = recv.getRuntime();
             String name = ((RubyClass)recv).getClassVar("metadata").toString();
@@ -144,6 +137,8 @@ public class RubyDigest {
                 throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
             }
         }
+        
+        @JRubyMethod(name = "hexdigest", required = 1, singleton = true)
         public static IRubyObject s_hexdigest(IRubyObject recv, IRubyObject str) {
             Ruby runtime = recv.getRuntime();
             String name = ((RubyClass)recv).getClassVar("metadata").toString();
@@ -176,6 +171,7 @@ public class RubyDigest {
 
         }
         
+        @JRubyMethod(name = "initialize", optional = 1, frame = true)
         public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
             if(args.length > 0 && !args[0].isNil()) {
                 update(args[0]);
@@ -183,6 +179,7 @@ public class RubyDigest {
             return this;
         }
 
+        @JRubyMethod(name = "initialize_copy", required = 1)
         public IRubyObject initialize_copy(IRubyObject obj) {
             if(this == obj) {
                 return this;
@@ -199,22 +196,26 @@ public class RubyDigest {
             return this;
         }
 
+        @JRubyMethod(name = "update", name2 = "<<", required = 1)
         public IRubyObject update(IRubyObject obj) {
             data.append(obj);
             return this;
         }
 
+        @JRubyMethod(name = "digest")
         public IRubyObject digest() {
             algo.reset();
             return RubyString.newString(getRuntime(), algo.digest(ByteList.plain(data)));
         }
 
+        @JRubyMethod(name = "hexdigest")
         public IRubyObject hexdigest() {
             algo.reset();
             return RubyString.newString(getRuntime(), ByteList.plain(toHex(algo.digest(ByteList.plain(data)))));
         }
 
-        public IRubyObject eq(IRubyObject oth) {
+        @JRubyMethod(name = "==", required = 1)
+        public IRubyObject op_equal(IRubyObject oth) {
             boolean ret = this == oth;
             if(!ret && oth instanceof Base) {
                 Base b = (Base)oth;

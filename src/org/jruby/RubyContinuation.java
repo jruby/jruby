@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -41,10 +42,10 @@ public class RubyContinuation {
     public static void createContinuation(Ruby runtime) {
         RubyModule cContinuation = runtime.defineClass("Continuation",runtime.getObject(),runtime.getObject().getAllocator());
         CallbackFactory cf = runtime.callbackFactory(RubyContinuation.class);
-        cContinuation.defineMethod("call", cf.getOptSingletonMethod("call"));
-        cContinuation.defineAlias("[]","call");
+        cContinuation.defineAnnotatedMethods(RubyContinuation.class, cf);
     }
 
+    @JRubyMethod(name = "call", name2 = "[]", rest = true, frame = true)
     public static IRubyObject call(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         recv.getRuntime().getWarnings().warn("Continuation.call: Continuations are not implemented in JRuby and will not work");
 
