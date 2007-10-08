@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.lang.annotation.AnnotationTypeMismatchException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -589,36 +590,56 @@ public class RubyModule extends RubyObject {
         addMethod(name, new FullFunctionCallbackMethod(this, method, visibility));
     }
     
+    public void defineAnnotatedMethod(Class clazz, String name, CallbackFactory callbackFactory) {
+        // FIXME: This is probably not very efficient, since it loads all methods for each call
+        boolean foundMethod = false;
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (method.getName().equals(name) && defineAnnotatedMethod(method, callbackFactory)) {
+                foundMethod = true;
+            }
+        }
+
+        if (!foundMethod) {
+            throw new RuntimeException("No JRubyMethod present for method " + name + "on class " + clazz.getName());
+        }
+    }
+    
     public void defineAnnotatedMethods(Class clazz, CallbackFactory callbackFactory) {
         Method[] declaredMethods = clazz.getDeclaredMethods();
         for (Method method: declaredMethods) {
-            JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
-            
-            if (jrubyMethod == null) continue;
-            
-            // select current module or module's metaclass for singleton methods
-            RubyModule module = this;
-            if (jrubyMethod.singleton()) module = getMetaClass();
-
-            Callback callback = callbackFactory.getMethod(method);
-            DynamicMethod dynamicMethod;
-            
-            if (jrubyMethod.frame() || jrubyMethod.scope()) {
-                dynamicMethod = new FullFunctionCallbackMethod(this, callback, jrubyMethod.visibility());
-            } else {
-                dynamicMethod = new SimpleCallbackMethod(this, callback, jrubyMethod.visibility());
-            }
-            module.addMethod(jrubyMethod.name(), dynamicMethod);
-            if (!jrubyMethod.name2().equals("")) module.addMethod(jrubyMethod.name2(), dynamicMethod);
-            if (!jrubyMethod.name3().equals("")) module.addMethod(jrubyMethod.name3(), dynamicMethod);
-            if (!jrubyMethod.name4().equals("")) module.addMethod(jrubyMethod.name4(), dynamicMethod);
-            if (!jrubyMethod.name5().equals("")) module.addMethod(jrubyMethod.name5(), dynamicMethod);
-            if (!jrubyMethod.name6().equals("")) module.addMethod(jrubyMethod.name6(), dynamicMethod);
-            
-            if (!jrubyMethod.alias().equals("")) {
-                module.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
-            }
+            defineAnnotatedMethod(method, callbackFactory);
         }
+    }
+    
+    public boolean defineAnnotatedMethod(Method method, CallbackFactory callbackFactory) {
+        JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
+
+        if (jrubyMethod == null) return false;
+
+        // select current module or module's metaclass for singleton methods
+        RubyModule module = this;
+        if (jrubyMethod.singleton()) module = getMetaClass();
+
+        Callback callback = callbackFactory.getMethod(method);
+        DynamicMethod dynamicMethod;
+
+        if (jrubyMethod.frame() || jrubyMethod.scope()) {
+            dynamicMethod = new FullFunctionCallbackMethod(this, callback, jrubyMethod.visibility());
+        } else {
+            dynamicMethod = new SimpleCallbackMethod(this, callback, jrubyMethod.visibility());
+        }
+        module.addMethod(jrubyMethod.name(), dynamicMethod);
+        if (!jrubyMethod.name2().equals("")) module.addMethod(jrubyMethod.name2(), dynamicMethod);
+        if (!jrubyMethod.name3().equals("")) module.addMethod(jrubyMethod.name3(), dynamicMethod);
+        if (!jrubyMethod.name4().equals("")) module.addMethod(jrubyMethod.name4(), dynamicMethod);
+        if (!jrubyMethod.name5().equals("")) module.addMethod(jrubyMethod.name5(), dynamicMethod);
+        if (!jrubyMethod.name6().equals("")) module.addMethod(jrubyMethod.name6(), dynamicMethod);
+
+        if (!jrubyMethod.alias().equals("")) {
+            module.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
+        }
+        
+        return true;
     }
 
     public void defineFastMethod(String name, Callback method) {

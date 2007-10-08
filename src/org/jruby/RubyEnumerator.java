@@ -27,12 +27,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -59,24 +61,24 @@ public class RubyEnumerator extends RubyObject {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyEnumerator.class);
 
         RubyModule kernel = runtime.getKernel();
-        kernel.defineMethod("to_enum", callbackFactory.getOptSingletonMethod("obj_to_enum"));
-        kernel.defineMethod("enum_for", callbackFactory.getOptSingletonMethod("obj_to_enum"));
+        kernel.defineAnnotatedMethod(RubyEnumerator.class, "obj_to_enum", callbackFactory);
 
         RubyModule enm = runtime.getClassFromPath("Enumerable");
-        enm.defineFastMethod("enum_with_index", callbackFactory.getFastSingletonMethod("each_with_index"));
-        enm.defineMethod("each_slice", callbackFactory.getSingletonMethod("each_slice", IRubyObject.class));
-        enm.defineFastMethod("enum_slice", callbackFactory.getFastSingletonMethod("enum_slice", IRubyObject.class));
-        enm.defineMethod("each_cons", callbackFactory.getSingletonMethod("each_cons", IRubyObject.class));
-        enm.defineFastMethod("enum_cons", callbackFactory.getFastSingletonMethod("enum_cons", IRubyObject.class));
+        enm.defineAnnotatedMethod(RubyEnumerator.class, "each_with_index", callbackFactory);
+        enm.defineAnnotatedMethod(RubyEnumerator.class, "each_slice", callbackFactory);
+        enm.defineAnnotatedMethod(RubyEnumerator.class, "enum_slice", callbackFactory);
+        enm.defineAnnotatedMethod(RubyEnumerator.class, "each_cons", callbackFactory);
+        enm.defineAnnotatedMethod(RubyEnumerator.class, "enum_cons", callbackFactory);
 
         RubyClass enmr = enm.defineClassUnder("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
 
         enmr.includeModule(enm);
 
-        enmr.defineFastMethod("initialize", callbackFactory.getFastOptMethod("initialize"));
-        enmr.defineMethod("each", callbackFactory.getMethod("each"));
+        enmr.defineAnnotatedMethod(RubyEnumerator.class, "initialize", callbackFactory);
+        enmr.defineAnnotatedMethod(RubyEnumerator.class, "each", callbackFactory);
     }
 
+    @JRubyMethod(name = "to_enum", name2 = "enum_for", optional = 1, rest = true, frame = true)
     public static IRubyObject obj_to_enum(IRubyObject self, IRubyObject[] args, Block block) {
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
         newArgs[0] = self;
@@ -90,6 +92,7 @@ public class RubyEnumerator extends RubyObject {
         object = method = runtime.getNil();
     }
 
+    @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 1, -1);
         object = args[0];
@@ -108,15 +111,18 @@ public class RubyEnumerator extends RubyObject {
      * Block may not be given and "each" should just ignore it and call on through to
      * underlying method.
      */
+    @JRubyMethod(name = "each", frame = true)
     public IRubyObject each(Block block) {
         return object.callMethod(getRuntime().getCurrentContext(), method.asSymbol(), methodArgs, block);
     }
 
+    @JRubyMethod(name = "enum_with_index")
     public static IRubyObject each_with_index(IRubyObject self) {
         return self.getRuntime().getEnumerable().getConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
                                new IRubyObject[] { self, self.getRuntime().newSymbol("each_with_index") });
     }
 
+    @JRubyMethod(name = "each_slice", required = 1, frame = true)
     public static IRubyObject each_slice(IRubyObject self, IRubyObject arg, final Block block) {
         final int size = (int)RubyNumeric.num2long(arg);
 
@@ -141,6 +147,7 @@ public class RubyEnumerator extends RubyObject {
         return self.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "each_cons", required = 1, frame = true)
     public static IRubyObject each_cons(IRubyObject self, IRubyObject arg, final Block block) {
         final int size = (int)RubyNumeric.num2long(arg);
 
@@ -162,11 +169,13 @@ public class RubyEnumerator extends RubyObject {
         return runtime.getNil();        
     }
 
+    @JRubyMethod(name = "enum_slice", required = 1)
     public static IRubyObject enum_slice(IRubyObject self, IRubyObject arg) {
         return self.getRuntime().getEnumerable().getConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
                                      new IRubyObject[] { self, self.getRuntime().newSymbol("each_slice"), arg });
     }
 
+    @JRubyMethod(name = "enum_cons", required = 1)
     public static IRubyObject enum_cons(IRubyObject self, IRubyObject arg) {
         return self.getRuntime().getEnumerable().getConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
                                new IRubyObject[] { self, self.getRuntime().newSymbol("each_cons"), arg });
