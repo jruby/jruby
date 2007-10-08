@@ -412,7 +412,7 @@ public interface IRubyObject {
      *
      * @return
      */
-    RubyFixnum id();
+    IRubyObject id();
     
     
     public IRubyObject op_equal(IRubyObject other); 

@@ -496,7 +496,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "+@")
-    public IRubyObject uplus() {
+    public IRubyObject op_uplus() {
         return this;
     }
 
@@ -504,7 +504,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "-@")
-    public IRubyObject uminus() {
+    public IRubyObject op_uminus() {
         RubyFixnum zero = RubyFixnum.zero(getRuntime());
         RubyArray ary = zero.doCoerce(this, true);
         return ary.eltInternal(0).callMethod(getRuntime().getCurrentContext(), MethodIndex.OP_MINUS, "-", ary.eltInternal(1));
@@ -514,7 +514,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "<=>", required = 1)
-    public IRubyObject cmp(IRubyObject other) {
+    public IRubyObject op_cmp(IRubyObject other) {
         if (this == other) { // won't hurt fixnums
             return RubyFixnum.zero(getRuntime());
         }

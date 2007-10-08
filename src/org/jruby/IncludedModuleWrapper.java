@@ -31,6 +31,7 @@
 package org.jruby;
 
 import java.util.Map;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * This class is used to provide an intermediate superclass for modules and classes that include
@@ -130,7 +131,7 @@ public final class IncludedModuleWrapper extends RubyClass {
     * We don't want to reveal ourselves to Ruby code, so delegate this
     * operation.
     */    
-    public RubyFixnum id() {
+    public IRubyObject id() {
         return delegate.id();
     }
 }

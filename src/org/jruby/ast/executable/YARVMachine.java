@@ -618,7 +618,7 @@ public class YARVMachine {
             long otherValue = ((RubyFixnum) other).getLongValue();
             long result = receiverValue + otherValue;
             if ((~(receiverValue ^ otherValue) & (receiverValue ^ result) & RubyFixnum.SIGN_BIT) != 0) {
-                push(RubyBignum.newBignum(runtime, receiverValue).plus(other));
+                push(RubyBignum.newBignum(runtime, receiverValue).op_plus(other));
             }
 
             push(runtime.newFixnum(result));
@@ -633,7 +633,7 @@ public class YARVMachine {
             long otherValue = ((RubyFixnum) other).getLongValue();
             long result = receiverValue - otherValue;
             if ((~(receiverValue ^ otherValue) & (receiverValue ^ result) & RubyFixnum.SIGN_BIT) != 0) {
-                push(RubyBignum.newBignum(runtime, receiverValue).minus(other));
+                push(RubyBignum.newBignum(runtime, receiverValue).op_minus(other));
             }
 
             push(runtime.newFixnum(result));

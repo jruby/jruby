@@ -322,6 +322,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             } catch (IllegalArgumentException e) {
                 throw e;
             } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println(method.getName());
                 throw new IllegalArgumentException(e);
             }
         }

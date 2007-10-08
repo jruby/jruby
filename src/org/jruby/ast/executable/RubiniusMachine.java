@@ -224,7 +224,7 @@ public class RubiniusMachine {
                 IRubyObject t1 = stack[stackTop--];
                 IRubyObject t2 = stack[stackTop--];
                 if((t1 instanceof RubyFixnum) && (t2 instanceof RubyFixnum)) {
-                    stack[++stackTop] = ((RubyFixnum)t1).plus(t2);
+                    stack[++stackTop] = ((RubyFixnum)t1).op_plus(t2);
                 } else {
                     stack[++stackTop] = t1.callMethod(context, MethodIndex.OP_PLUS, "+", t2);
                 }
@@ -235,7 +235,7 @@ public class RubiniusMachine {
                 IRubyObject t1 = stack[stackTop--];
                 IRubyObject t2 = stack[stackTop--];
                 if((t1 instanceof RubyFixnum) && (t2 instanceof RubyFixnum)) {
-                    stack[++stackTop] = ((RubyFixnum)t1).minus(t2);
+                    stack[++stackTop] = ((RubyFixnum)t1).op_minus(t2);
                 } else {
                     stack[++stackTop] = t1.callMethod(context, MethodIndex.OP_MINUS, "-", t2);
                 }

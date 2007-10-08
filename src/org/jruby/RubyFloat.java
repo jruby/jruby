@@ -39,6 +39,7 @@ package org.jruby;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -84,41 +85,8 @@ public class RubyFloat extends RubyNumeric {
         floatc.defineConstant("MIN", RubyFloat.newFloat(runtime, Double.MIN_VALUE));
         floatc.defineConstant("MAX", RubyFloat.newFloat(runtime, Double.MAX_VALUE));
         floatc.defineConstant("EPSILON", RubyFloat.newFloat(runtime, 2.2204460492503131e-16));
-
-        floatc.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        floatc.defineFastMethod("coerce", callbackFactory.getFastMethod("coerce", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("-@", callbackFactory.getFastMethod("uminus"));
-        floatc.defineFastMethod("+", callbackFactory.getFastMethod("plus", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("-", callbackFactory.getFastMethod("minus", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("*", callbackFactory.getFastMethod("mul", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("/", callbackFactory.getFastMethod("fdiv", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("%", callbackFactory.getFastMethod("mod", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("modulo", callbackFactory.getFastMethod("mod", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("**", callbackFactory.getFastMethod("pow", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod(">", callbackFactory.getFastMethod("gt", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod(">=", callbackFactory.getFastMethod("ge", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("<", callbackFactory.getFastMethod("lt", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("<=", callbackFactory.getFastMethod("le", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
-        floatc.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
-        floatc.defineFastMethod("to_f", callbackFactory.getFastMethod("to_f"));
-        floatc.defineFastMethod("abs", callbackFactory.getFastMethod("abs"));
-        floatc.defineFastMethod("zero?", callbackFactory.getFastMethod("zero_p"));
-
-        floatc.defineFastMethod("to_i", callbackFactory.getFastMethod("truncate"));
-        floatc.defineFastMethod("to_int", callbackFactory.getFastMethod("truncate"));
-        floatc.defineFastMethod("floor", callbackFactory.getFastMethod("floor"));
-        floatc.defineFastMethod("ceil", callbackFactory.getFastMethod("ceil"));
-        floatc.defineFastMethod("round", callbackFactory.getFastMethod("round"));
-        floatc.defineFastMethod("truncate", callbackFactory.getFastMethod("truncate"));
-
-        floatc.defineFastMethod("nan?", callbackFactory.getFastMethod("nan_p"));
-        floatc.defineFastMethod("infinite?", callbackFactory.getFastMethod("infinite_p"));
-        floatc.defineFastMethod("finite?", callbackFactory.getFastMethod("finite_p"));
         
+        floatc.defineAnnotatedMethods(RubyFloat.class, callbackFactory);
         floatc.dispatcher = callbackFactory.createDispatcher(floatc);
 
         return floatc;
@@ -196,6 +164,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_to_s
      * 
      */
+    @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
         if (Double.isInfinite(value)) {
             return RubyString.newString(getRuntime(), value < 0 ? "-Infinity" : "Infinity");
@@ -226,6 +195,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_coerce
      * 
      */
+    @JRubyMethod(name = "coerce", required = 1)
     public IRubyObject coerce(IRubyObject other) {
         // MRI doesn't type check here either
         return getRuntime().newArray(
@@ -235,14 +205,16 @@ public class RubyFloat extends RubyNumeric {
     /** flo_uminus
      * 
      */
-    public IRubyObject uminus() {
+    @JRubyMethod(name = "-@")
+    public IRubyObject op_uminus() {
         return RubyFloat.newFloat(getRuntime(), -value);
         }
 
     /** flo_plus
      * 
      */
-    public IRubyObject plus(IRubyObject other) {
+    @JRubyMethod(name = "+", required = 1)
+    public IRubyObject op_plus(IRubyObject other) {
         if (other instanceof RubyNumeric) {
             return RubyFloat.newFloat(getRuntime(), value + ((RubyNumeric) other).getDoubleValue());
         }
@@ -252,7 +224,8 @@ public class RubyFloat extends RubyNumeric {
     /** flo_minus
      * 
      */
-    public IRubyObject minus(IRubyObject other) {
+    @JRubyMethod(name = "-", required = 1)
+    public IRubyObject op_minus(IRubyObject other) {
         if (other instanceof RubyNumeric) {
             return RubyFloat.newFloat(getRuntime(), value - ((RubyNumeric) other).getDoubleValue());
     }
@@ -262,7 +235,8 @@ public class RubyFloat extends RubyNumeric {
     /** flo_mul
      * 
      */
-    public IRubyObject mul(IRubyObject other) {
+    @JRubyMethod(name = "*", required = 1)
+    public IRubyObject op_mul(IRubyObject other) {
         if (other instanceof RubyNumeric) {
             return RubyFloat.newFloat(getRuntime(), value * ((RubyNumeric) other).getDoubleValue());
     }
@@ -272,7 +246,8 @@ public class RubyFloat extends RubyNumeric {
     /** flo_div
      * 
      */
-    public IRubyObject fdiv(IRubyObject other) { // don't override Numeric#div !
+    @JRubyMethod(name = "/", required = 1)
+    public IRubyObject op_fdiv(IRubyObject other) { // don't override Numeric#div !
     	if (other instanceof RubyNumeric) {
             return RubyFloat.newFloat(getRuntime(), value / ((RubyNumeric) other).getDoubleValue());
     	}
@@ -282,7 +257,8 @@ public class RubyFloat extends RubyNumeric {
     /** flo_mod
      * 
      */
-    public IRubyObject mod(IRubyObject other) {
+    @JRubyMethod(name = "%", name2 = "modulo", required = 1)
+    public IRubyObject op_mod(IRubyObject other) {
     	if (other instanceof RubyNumeric) {
             double y = ((RubyNumeric) other).getDoubleValue();
             // Modelled after c ruby implementation (java /,% not same as ruby)
@@ -301,6 +277,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_divmod
      * 
      */
+    @JRubyMethod(name = "divmod", required = 1)
     public IRubyObject divmod(IRubyObject other) {
     	if (other instanceof RubyNumeric) {
             double y = ((RubyNumeric) other).getDoubleValue();
@@ -324,7 +301,8 @@ public class RubyFloat extends RubyNumeric {
     /** flo_pow
      * 
      */
-    public IRubyObject pow(IRubyObject other) {
+    @JRubyMethod(name = "**", required = 1)
+    public IRubyObject op_pow(IRubyObject other) {
     	if (other instanceof RubyNumeric) {
             return RubyFloat.newFloat(getRuntime(), Math.pow(value, ((RubyNumeric) other)
                     .getDoubleValue()));
@@ -335,6 +313,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_eq
      * 
      */
+    @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal(IRubyObject other) {
         if (Double.isNaN(value)) {
             return getRuntime().getFalse();
@@ -351,7 +330,8 @@ public class RubyFloat extends RubyNumeric {
     /** flo_cmp
      * 
      */
-    public IRubyObject cmp(IRubyObject other) {
+    @JRubyMethod(name = "<=>", required = 1)
+    public IRubyObject op_cmp(IRubyObject other) {
         if (other instanceof RubyNumeric) {
             double b = ((RubyNumeric) other).getDoubleValue();
             return dbl_cmp(getRuntime(), value, b);
@@ -362,7 +342,8 @@ public class RubyFloat extends RubyNumeric {
     /** flo_gt
      * 
      */
-    public IRubyObject gt(IRubyObject other) {
+    @JRubyMethod(name = ">", required = 1)
+    public IRubyObject op_gt(IRubyObject other) {
         if (other instanceof RubyNumeric) {
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(b) && value > b);
@@ -373,7 +354,8 @@ public class RubyFloat extends RubyNumeric {
     /** flo_ge
      * 
      */
-    public IRubyObject ge(IRubyObject other) {
+    @JRubyMethod(name = ">=", required = 1)
+    public IRubyObject op_ge(IRubyObject other) {
         if (other instanceof RubyNumeric) {
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(b) && value >= b);
@@ -384,7 +366,8 @@ public class RubyFloat extends RubyNumeric {
     /** flo_lt
      * 
      */
-    public IRubyObject lt(IRubyObject other) {
+    @JRubyMethod(name = "<", required = 1)
+    public IRubyObject op_lt(IRubyObject other) {
         if (other instanceof RubyNumeric) {
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(b) && value < b);
@@ -395,7 +378,8 @@ public class RubyFloat extends RubyNumeric {
     /** flo_le
      * 
      */
-    public IRubyObject le(IRubyObject other) {
+    @JRubyMethod(name = "<=", required = 1)
+    public IRubyObject op_le(IRubyObject other) {
         if (other instanceof RubyNumeric) {
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(b) && value <= b);
@@ -406,6 +390,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_eql
      * 
      */
+    @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql_p(IRubyObject other) {
         if (other instanceof RubyFloat) {
             double b = ((RubyFloat) other).value;
@@ -422,6 +407,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_hash
      * 
      */
+    @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         return getRuntime().newFixnum(hashCode());
     }
@@ -434,13 +420,15 @@ public class RubyFloat extends RubyNumeric {
     /** flo_fo 
      * 
      */
+    @JRubyMethod(name = "to_f")
     public IRubyObject to_f() {
         return this;
-        }
+    }
         
     /** flo_abs
      * 
      */
+    @JRubyMethod(name = "abs")
     public IRubyObject abs() {
         if (value < 0) {
             return RubyFloat.newFloat(getRuntime(), Math.abs(value));
@@ -451,6 +439,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_zero_p
      * 
      */
+    @JRubyMethod(name = "zero?")
     public IRubyObject zero_p() {
         return RubyBoolean.newBoolean(getRuntime(), value == 0.0);
         }
@@ -458,6 +447,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_truncate
      * 
      */
+    @JRubyMethod(name = "truncate", name2 = "to_i", name3 = "to_int")
     public IRubyObject truncate() {
         double f = value;
         if (f > 0.0) f = Math.floor(f);
@@ -469,6 +459,7 @@ public class RubyFloat extends RubyNumeric {
     /** floor
      * 
      */
+    @JRubyMethod(name = "floor")
     public IRubyObject floor() {
         return dbl2num(getRuntime(), Math.floor(value));
     }
@@ -476,6 +467,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_ceil
      * 
      */
+    @JRubyMethod(name = "ceil")
     public IRubyObject ceil() {
         return dbl2num(getRuntime(), Math.ceil(value));
         }
@@ -483,6 +475,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_round
      * 
      */
+    @JRubyMethod(name = "round")
     public IRubyObject round() {
         double f = value;
         if (f > 0.0) {
@@ -497,6 +490,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_is_nan_p
      * 
      */
+    @JRubyMethod(name = "nan?")
     public IRubyObject nan_p() {
         return RubyBoolean.newBoolean(getRuntime(), Double.isNaN(value));
     }
@@ -504,6 +498,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_is_infinite_p
      * 
      */
+    @JRubyMethod(name = "infinite?")
     public IRubyObject infinite_p() {
         if (Double.isInfinite(value)) {
             return RubyFixnum.newFixnum(getRuntime(), value < 0 ? -1 : 1);
@@ -514,6 +509,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_is_finite_p
      * 
      */
+    @JRubyMethod(name = "finite?")
     public IRubyObject finite_p() {
         if (Double.isInfinite(value) || Double.isNaN(value)) {
             return getRuntime().getFalse();
