@@ -33,6 +33,7 @@ public @interface JRubyMethod {
     boolean rest() default false;
     String alias() default "";
     boolean singleton() default false;
+    boolean module() default false;
     boolean frame() default false;
     boolean scope() default false;
     Visibility visibility() default Visibility.PUBLIC;

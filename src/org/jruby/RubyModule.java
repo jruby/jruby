@@ -618,7 +618,6 @@ public class RubyModule extends RubyObject {
 
         // select current module or module's metaclass for singleton methods
         RubyModule module = this;
-        if (jrubyMethod.singleton()) module = getMetaClass();
 
         Callback callback = callbackFactory.getMethod(method);
         DynamicMethod dynamicMethod;
@@ -628,19 +627,42 @@ public class RubyModule extends RubyObject {
         } else {
             dynamicMethod = new SimpleCallbackMethod(this, callback, jrubyMethod.visibility());
         }
-        if (jrubyMethod.name().equals("")) {
-            module.addMethod(method.getName(), dynamicMethod);
-        } else {
-            module.addMethod(jrubyMethod.name(), dynamicMethod);
-        }
-        if (!jrubyMethod.name2().equals("")) module.addMethod(jrubyMethod.name2(), dynamicMethod);
-        if (!jrubyMethod.name3().equals("")) module.addMethod(jrubyMethod.name3(), dynamicMethod);
-        if (!jrubyMethod.name4().equals("")) module.addMethod(jrubyMethod.name4(), dynamicMethod);
-        if (!jrubyMethod.name5().equals("")) module.addMethod(jrubyMethod.name5(), dynamicMethod);
-        if (!jrubyMethod.name6().equals("")) module.addMethod(jrubyMethod.name6(), dynamicMethod);
+        
+        // if it's a singleton (metaclass) method or a module method, bind to metaclass
+        if (jrubyMethod.singleton() || jrubyMethod.module()) {
+            RubyModule metaClass = getMetaClass();
+            if (jrubyMethod.name().equals("")) {
+                metaClass.addMethod(method.getName(), dynamicMethod);
+            } else {
+                metaClass.addMethod(jrubyMethod.name(), dynamicMethod);
+            }
+            if (!jrubyMethod.name2().equals("")) metaClass.addMethod(jrubyMethod.name2(), dynamicMethod);
+            if (!jrubyMethod.name3().equals("")) metaClass.addMethod(jrubyMethod.name3(), dynamicMethod);
+            if (!jrubyMethod.name4().equals("")) metaClass.addMethod(jrubyMethod.name4(), dynamicMethod);
+            if (!jrubyMethod.name5().equals("")) metaClass.addMethod(jrubyMethod.name5(), dynamicMethod);
+            if (!jrubyMethod.name6().equals("")) metaClass.addMethod(jrubyMethod.name6(), dynamicMethod);
 
-        if (!jrubyMethod.alias().equals("")) {
-            module.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
+            if (!jrubyMethod.alias().equals("")) {
+                metaClass.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
+            }
+        }
+        
+        // if it's not a singleton (metaclass) method (i.e. normal instance or module method)
+        if (!jrubyMethod.singleton()) {
+            if (jrubyMethod.name().equals("")) {
+                module.addMethod(method.getName(), dynamicMethod);
+            } else {
+                module.addMethod(jrubyMethod.name(), dynamicMethod);
+            }
+            if (!jrubyMethod.name2().equals("")) module.addMethod(jrubyMethod.name2(), dynamicMethod);
+            if (!jrubyMethod.name3().equals("")) module.addMethod(jrubyMethod.name3(), dynamicMethod);
+            if (!jrubyMethod.name4().equals("")) module.addMethod(jrubyMethod.name4(), dynamicMethod);
+            if (!jrubyMethod.name5().equals("")) module.addMethod(jrubyMethod.name5(), dynamicMethod);
+            if (!jrubyMethod.name6().equals("")) module.addMethod(jrubyMethod.name6(), dynamicMethod);
+
+            if (!jrubyMethod.alias().equals("")) {
+                module.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
+            }
         }
         
         return true;

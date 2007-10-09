@@ -32,9 +32,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 
@@ -70,47 +72,36 @@ public class RubyFileStat extends RubyObject {
         runtime.setFileStat(fileStatClass);
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
 
-        fileStatClass.defineFastMethod("initialize",callbackFactory.getMethod("initialize", RubyKernel.IRUBY_OBJECT));
         //        fileStatClass.defineMethod("<=>", callbackFactory.getMethod(""));
         //        fileStateClass.includeModule(runtime.getModule("Comparable"));
         //        fileStatClass.defineMethod("atime", callbackFactory.getMethod(""));
-        fileStatClass.defineFastMethod("blksize", callbackFactory.getFastMethod("blksize"));
         //        fileStatClass.defineMethod("blockdev?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("blocks", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("chardev?", callbackFactory.getMethod(""));
-        fileStatClass.defineFastMethod("ctime", callbackFactory.getFastMethod("ctime"));
         //        fileStatClass.defineMethod("dev", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("dev_major", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("dev_minor", callbackFactory.getMethod(""));
-        fileStatClass.defineFastMethod("directory?", callbackFactory.getFastMethod("directory_p"));
         //        fileStatClass.defineMethod("executable?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("executable_real?", callbackFactory.getMethod(""));
-        fileStatClass.defineFastMethod("file?", callbackFactory.getFastMethod("file_p"));
-        fileStatClass.defineFastMethod("ftype", callbackFactory.getFastMethod("ftype"));
         //        fileStatClass.defineMethod("gid", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("grpowned?", callbackFactory.getMethod(""));
-        fileStatClass.defineFastMethod("ino", callbackFactory.getFastMethod("ino"));
-        fileStatClass.defineFastMethod("mode", callbackFactory.getFastMethod("mode"));
-        fileStatClass.defineFastMethod("mtime", callbackFactory.getFastMethod("mtime"));
         //        fileStatClass.defineMethod("nlink", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("owned?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("pipe?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("rdev", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("rdev_major", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("rdev_minor", callbackFactory.getMethod(""));
-        fileStatClass.defineFastMethod("readable?", callbackFactory.getFastMethod("readable_p"));
         //        fileStatClass.defineMethod("readable_real?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("setgid?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("setuid?", callbackFactory.getMethod(""));
-        fileStatClass.defineFastMethod("size", callbackFactory.getFastMethod("size"));
         //        fileStatClass.defineMethod("size?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("socket?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("sticky?", callbackFactory.getMethod(""));
-        fileStatClass.defineFastMethod("symlink?", callbackFactory.getFastMethod("symlink_p"));
         //        fileStatClass.defineMethod("uid", callbackFactory.getMethod(""));
-        fileStatClass.defineFastMethod("writable?", callbackFactory.getFastMethod("writable"));
         //        fileStatClass.defineMethod("writable_real?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("zero?", callbackFactory.getMethod(""));
+        
+        fileStatClass.defineAnnotatedMethods(RubyFileStat.class, callbackFactory);
     	
         return fileStatClass;
     }
@@ -120,6 +111,7 @@ public class RubyFileStat extends RubyObject {
 
     }
 
+    @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
         Ruby runtime = getRuntime();
         String filename = fname.toString();
@@ -154,52 +146,64 @@ public class RubyFileStat extends RubyObject {
         return this;
     }
     
+    @JRubyMethod(name = "blksize")
     public RubyFixnum blksize() {
         return blksize;
     }
 
+    @JRubyMethod(name = "directory?")
     public RubyBoolean directory_p() {
         return isDirectory;
     }
 
+    @JRubyMethod(name = "file?")
     public RubyBoolean file_p() {
         return isFile;
     }
     
+    @JRubyMethod(name = "ftype")
     public RubyString ftype() {
         return ftype;
     }
     
     // Limitation: We have no pure-java way of getting inode.  webrick needs this defined to work.
+    @JRubyMethod(name = "ino")
     public IRubyObject ino() {
         return getRuntime().newFixnum(0);
     }
     
+    @JRubyMethod(name = "mode")
     public IRubyObject mode() {
         return mode;
     }
     
+    @JRubyMethod(name = "mtime")
     public IRubyObject mtime() {
         return mtime;
     }
 
+    @JRubyMethod(name = "ctime")
     public IRubyObject ctime() {
         return ctime;
     }
     
+    @JRubyMethod(name = "readable?")
     public IRubyObject readable_p() {
         return isReadable;
     }
     
+    @JRubyMethod(name = "size")
     public IRubyObject size() {
         return size;
     }
     
+    @JRubyMethod(name = "symlink?")
     public IRubyObject symlink_p() {
         return isSymlink;
     }
     
-    public IRubyObject writable() {
+    @JRubyMethod(name = "writable?")
+    public IRubyObject writable_p() {
     	return isWritable;
     }
 }

@@ -270,7 +270,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     MethodVisitor mv;
                     boolean fast = !(methodAnno.frame() || methodAnno.scope());
                     boolean getsBlock = signature.length > 0 && signature[signature.length - 1] == Block.class;
-                    if (!fast) {
+                    if (!fast || getsBlock) {
                         cw = createCtor(generatedClassPath);
                         
                         if (Modifier.isStatic(method.getModifiers())) {
