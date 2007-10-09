@@ -796,6 +796,14 @@ public class RubyHash extends RubyObject implements Map {
         return value;
     }
 
+    /**
+     * Note: this is included as a compatibility measure for AR-JDBC
+     * @deprecated use RubyHash.op_aset instead
+     */
+    public IRubyObject aset(IRubyObject key, IRubyObject value) {
+        return op_aset(key, value);
+    }
+
     public final IRubyObject fastARef(IRubyObject key) { // retuns null when not found to avoid unnecessary getRuntime().getNil() call
         return internalGet(key);
     }
