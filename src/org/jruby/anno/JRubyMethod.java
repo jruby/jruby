@@ -32,7 +32,7 @@ public @interface JRubyMethod {
     int optional() default 0;
     boolean rest() default false;
     String alias() default "";
-    boolean singleton() default false;
+    boolean meta() default false;
     boolean module() default false;
     boolean frame() default false;
     boolean scope() default false;

@@ -126,7 +126,7 @@ public class RubyDigest {
             }
         };
         
-        @JRubyMethod(name = "digest", required = 1, singleton = true)
+        @JRubyMethod(name = "digest", required = 1, meta = true)
         public static IRubyObject s_digest(IRubyObject recv, IRubyObject str) {
             Ruby runtime = recv.getRuntime();
             String name = ((RubyClass)recv).getClassVar("metadata").toString();
@@ -138,7 +138,7 @@ public class RubyDigest {
             }
         }
         
-        @JRubyMethod(name = "hexdigest", required = 1, singleton = true)
+        @JRubyMethod(name = "hexdigest", required = 1, meta = true)
         public static IRubyObject s_hexdigest(IRubyObject recv, IRubyObject str) {
             Ruby runtime = recv.getRuntime();
             String name = ((RubyClass)recv).getClassVar("metadata").toString();

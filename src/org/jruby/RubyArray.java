@@ -96,7 +96,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_s_create
      * 
      */
-    @JRubyMethod(name = "[]", rest = true, frame = true, singleton = true)
+    @JRubyMethod(name = "[]", rest = true, frame = true, meta = true)
     public static IRubyObject create(IRubyObject klass, IRubyObject[] args, Block block) {
         RubyArray arr = (RubyArray) ((RubyClass) klass).allocate();
         arr.callInit(IRubyObject.NULL_ARRAY, block);

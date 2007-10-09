@@ -196,7 +196,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return re;
     }
     
-    @JRubyMethod(name = "new", name2 = "compile", required = 1, optional = 2, singleton = true)
+    @JRubyMethod(name = "new", name2 = "compile", required = 1, optional = 2, meta = true)
     public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyClass klass = (RubyClass)recv;
         
@@ -233,7 +233,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_s_quote
      * 
      */
-    @JRubyMethod(name = "quote", required = 1, optional = 1, singleton = true)
+    @JRubyMethod(name = "quote", required = 1, optional = 1, meta = true)
     public static IRubyObject quote(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0 || args.length > 2) {
             throw recv.getRuntime().newArgumentError(0, args.length);
@@ -269,7 +269,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /**
      * Utility version of quote that doesn't use encoding
      */
-    @JRubyMethod(name = "escape", required = 1, singleton = true)
+    @JRubyMethod(name = "escape", required = 1, meta = true)
     public static IRubyObject quote(IRubyObject recv, IRubyObject str) {        
         return recv.getRuntime().newString(escapeSpecialChars(str.toString())).infectBy(str);
     }
@@ -277,7 +277,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** 
      * 
      */
-    @JRubyMethod(name = "last_match", optional = 1, singleton = true)
+    @JRubyMethod(name = "last_match", optional = 1, meta = true)
     public static IRubyObject last_match_s(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
             IRubyObject ret = recv.getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
@@ -762,7 +762,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /**
      * rb_reg_s_union
      */
-    @JRubyMethod(name = "union", rest = true, singleton = true)
+    @JRubyMethod(name = "union", rest = true, meta = true)
     public static IRubyObject union(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         

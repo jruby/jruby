@@ -130,7 +130,7 @@ public class RubyDir extends RubyObject {
      * with each filename is passed to the block in turn. In this case, Nil is
      * returned.  
      */
-    @JRubyMethod(name = "glob", name2 = "[]", required = 1, optional = 1, frame = true, singleton = true)
+    @JRubyMethod(name = "glob", name2 = "[]", required = 1, optional = 1, frame = true, meta = true)
     public static IRubyObject glob(IRubyObject recv, IRubyObject[] args, Block block) {
         String cwd = recv.getRuntime().getCurrentDirectory();
         int flags = 0;
@@ -174,7 +174,7 @@ public class RubyDir extends RubyObject {
     /**
      * Returns an array containing all of the filenames in the given directory.
      */
-    @JRubyMethod(name = "entries", required = 1, singleton = true)
+    @JRubyMethod(name = "entries", required = 1, meta = true)
     public static RubyArray entries(IRubyObject recv, IRubyObject path) {
         final JRubyFile directory = JRubyFile.create(recv.getRuntime().getCurrentDirectory(),path.convertToString().toString());
         
@@ -189,7 +189,7 @@ public class RubyDir extends RubyObject {
     }
 
     /** Changes the current directory to <code>path</code> */
-    @JRubyMethod(name = "chdir", optional = 1, frame = true, singleton = true)
+    @JRubyMethod(name = "chdir", optional = 1, frame = true, meta = true)
     public static IRubyObject chdir(IRubyObject recv, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(recv.getRuntime(), args, 0, 1);
         RubyString path = args.length == 1 ? 
@@ -228,7 +228,7 @@ public class RubyDir extends RubyObject {
      * Changes the root directory (only allowed by super user).  Not available
      * on all platforms.
      */
-    @JRubyMethod(name = "chroot", required = 1, singleton = true)
+    @JRubyMethod(name = "chroot", required = 1, meta = true)
     public static IRubyObject chroot(IRubyObject recv, IRubyObject path) {
         throw recv.getRuntime().newNotImplementedError("chroot not implemented: chroot is non-portable and is not supported.");
     }
@@ -237,7 +237,7 @@ public class RubyDir extends RubyObject {
      * Deletes the directory specified by <code>path</code>.  The directory must
      * be empty.
      */
-    @JRubyMethod(name = "rmdir", name2 = "unlink", name3 = "delete", required = 1, singleton = true)
+    @JRubyMethod(name = "rmdir", name2 = "unlink", name3 = "delete", required = 1, meta = true)
     public static IRubyObject rmdir(IRubyObject recv, IRubyObject path) {
         JRubyFile directory = getDir(recv.getRuntime(), path.convertToString().toString(), true);
         
@@ -252,7 +252,7 @@ public class RubyDir extends RubyObject {
      * Executes the block once for each file in the directory specified by
      * <code>path</code>.
      */
-    @JRubyMethod(name = "foreach", required = 1, frame = true, singleton = true)
+    @JRubyMethod(name = "foreach", required = 1, frame = true, meta = true)
     public static IRubyObject foreach(IRubyObject recv, IRubyObject _path, Block block) {
         RubyString path = _path.convertToString();
         recv.getRuntime().checkSafeString(path);
@@ -265,7 +265,7 @@ public class RubyDir extends RubyObject {
     }
 
     /** Returns the current directory. */
-    @JRubyMethod(name = "getwd", name2 = "pwd", singleton = true)
+    @JRubyMethod(name = "getwd", name2 = "pwd", meta = true)
     public static RubyString getwd(IRubyObject recv) {
         return recv.getRuntime().newString(recv.getRuntime().getCurrentDirectory());
     }
@@ -275,7 +275,7 @@ public class RubyDir extends RubyObject {
      * <code>mode</code> parameter is provided only to support existing Ruby
      * code, and is ignored.
      */
-    @JRubyMethod(name = "mkdir", required = 1, optional = 1, singleton = true)
+    @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true)
     public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
         if (args.length < 1) {
             throw recv.getRuntime().newArgumentError(args.length, 1);
@@ -301,7 +301,7 @@ public class RubyDir extends RubyObject {
      * provided, a new directory object is passed to the block, which closes the
      * directory object before terminating.
      */
-    @JRubyMethod(name = "open", required = 1, frame = true, singleton = true)
+    @JRubyMethod(name = "open", required = 1, frame = true, meta = true)
     public static IRubyObject open(IRubyObject recv, IRubyObject path, Block block) {
         RubyDir directory = 
             (RubyDir) recv.getRuntime().getDir().newInstance(

@@ -1283,7 +1283,7 @@ public class RubyIO extends RubyObject {
     /** rb_io_s_foreach
     *
     */
-    @JRubyMethod(name = "foreach", required = 1, rest = true, frame = true, singleton = true)
+    @JRubyMethod(name = "foreach", required = 1, rest = true, frame = true, meta = true)
     public static IRubyObject foreach(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         int count = Arity.checkArgumentCount(runtime, args, 1, -1);
@@ -1339,7 +1339,7 @@ public class RubyIO extends RubyObject {
        return ioObj;
    }
    
-    @JRubyMethod(name = "select", required = 1, optional = 3, singleton = true)
+    @JRubyMethod(name = "select", required = 1, optional = 3, meta = true)
     public static IRubyObject select(IRubyObject recv, IRubyObject[] args) {
         return select_static(recv.getRuntime(), args);
     }
@@ -1450,7 +1450,7 @@ public class RubyIO extends RubyObject {
        }
    }
    
-    @JRubyMethod(name = "read", required = 1, optional = 2, singleton = true)
+    @JRubyMethod(name = "read", required = 1, optional = 2, meta = true)
     public static IRubyObject read(IRubyObject recv, IRubyObject[] args, Block block) {
        Ruby runtime = recv.getRuntime();
        Arity.checkArgumentCount(runtime, args, 1, 3);
@@ -1476,7 +1476,7 @@ public class RubyIO extends RubyObject {
        }
    }
    
-    @JRubyMethod(name = "readlines", required = 1, optional = 1, singleton = true)
+    @JRubyMethod(name = "readlines", required = 1, optional = 1, meta = true)
     public static RubyArray readlines(IRubyObject recv, IRubyObject[] args, Block block) {
        int count = Arity.checkArgumentCount(recv.getRuntime(), args, 1, 2);
        
@@ -1491,7 +1491,7 @@ public class RubyIO extends RubyObject {
    }
    
     //XXX Hacked incomplete popen implementation to make
-    @JRubyMethod(name = "popen", required = 1, optional = 1, singleton = true)
+    @JRubyMethod(name = "popen", required = 1, optional = 1, meta = true)
     public static IRubyObject popen(IRubyObject recv, IRubyObject[] args, Block block) {
        Ruby runtime = recv.getRuntime();
        Arity.checkArgumentCount(runtime, args, 1, 2);
@@ -1520,7 +1520,7 @@ public class RubyIO extends RubyObject {
    }
    
     // NIO based pipe
-    @JRubyMethod(name = "pipe", singleton = true)
+    @JRubyMethod(name = "pipe", meta = true)
     public static IRubyObject pipe(IRubyObject recv) throws Exception {
        Ruby runtime = recv.getRuntime();
        Pipe pipe = Pipe.open();

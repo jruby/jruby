@@ -103,23 +103,23 @@ public class RubyBigDecimal extends RubyNumeric {
         return newInstance(recv.getRuntime().getClass("BigDecimal"), args);
     }
 
-    @JRubyMethod(name = "ver", singleton = true)
+    @JRubyMethod(name = "ver", meta = true)
     public static IRubyObject ver(IRubyObject recv) {
         return recv.getRuntime().newString("1.0.1");
     }
 
-    @JRubyMethod(name = "_load", required = 1, frame = true, singleton = true)
+    @JRubyMethod(name = "_load", required = 1, frame = true, meta = true)
     public static IRubyObject _load(IRubyObject recv, IRubyObject p1, Block block) {
         // TODO: implement
         return recv.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "double_fig", singleton = true)
+    @JRubyMethod(name = "double_fig", meta = true)
     public static IRubyObject double_fig(IRubyObject recv) {
         return recv.getRuntime().newFixnum(20);
     }
     
-    @JRubyMethod(name = "limit", required = 1, singleton = true)
+    @JRubyMethod(name = "limit", required = 1, meta = true)
     public static IRubyObject limit(IRubyObject recv, IRubyObject arg1) {
         RubyModule c = (RubyModule)recv;
         IRubyObject nCur = c.getClassVar("VpPrecLimit");
@@ -133,7 +133,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return nCur;
     }
 
-    @JRubyMethod(name = "mode", required = 1, optional = 1, singleton = true)
+    @JRubyMethod(name = "mode", required = 1, optional = 1, meta = true)
     public static IRubyObject mode(IRubyObject recv, IRubyObject[] args) {
         RubyModule c = (RubyModule)recv;
         
@@ -219,7 +219,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return null;
     }
 
-    @JRubyMethod(name = "new", required = 1, optional = 1, singleton = true)
+    @JRubyMethod(name = "new", required = 1, optional = 1, meta = true)
     public static RubyBigDecimal newInstance(IRubyObject recv, IRubyObject[] args) {
         BigDecimal decimal;
         if (Arity.checkArgumentCount(recv.getRuntime(), args, 1, 2) == 0) { 

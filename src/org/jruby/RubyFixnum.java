@@ -697,7 +697,7 @@ public class RubyFixnum extends RubyInteger {
     /** rb_fix_induced_from
      * 
      */
-    @JRubyMethod(name = "induced_from", required = 1, singleton = true)
+    @JRubyMethod(name = "induced_from", required = 1, meta = true)
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         return RubyNumeric.num2fix(other);
     }

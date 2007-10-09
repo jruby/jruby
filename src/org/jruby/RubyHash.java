@@ -96,7 +96,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_s_create
      * 
      */
-    @JRubyMethod(name = "[]", rest = true, frame = true, singleton = true)
+    @JRubyMethod(name = "[]", rest = true, frame = true, meta = true)
     public static IRubyObject create(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass) recv;
         RubyHash hash;

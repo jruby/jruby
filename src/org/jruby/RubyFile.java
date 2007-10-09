@@ -456,7 +456,7 @@ public class RubyFile extends RubyIO {
     
     /* File class methods */
     
-    @JRubyMethod(required = 1, optional = 1, singleton = true)
+    @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject basename(IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(recv.getRuntime(), args, 1, 2);
         
@@ -503,7 +503,7 @@ public class RubyFile extends RubyIO {
         return recv.getRuntime().newString(name).infectBy(args[0]);
     }
     
-    @JRubyMethod(required = 2, rest = true, singleton = true)
+    @JRubyMethod(required = 2, rest = true, meta = true)
     public static IRubyObject chmod(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         Arity.checkArgumentCount(runtime, args, 2, -1);
@@ -526,7 +526,7 @@ public class RubyFile extends RubyIO {
         return runtime.newFixnum(count);
     }
     
-    @JRubyMethod(required = 3, rest = true, singleton = true)
+    @JRubyMethod(required = 3, rest = true, meta = true)
     public static IRubyObject chown(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         Arity.checkArgumentCount(runtime, args, 3, -1);
@@ -550,7 +550,7 @@ public class RubyFile extends RubyIO {
         return runtime.newFixnum(count);
     }
     
-    @JRubyMethod(required = 1, singleton = true)
+    @JRubyMethod(required = 1, meta = true)
     public static IRubyObject dirname(IRubyObject recv, IRubyObject arg) {
         RubyString filename = RubyString.stringValue(arg);
         String name = filename.toString().replace('\\', '/');
@@ -572,7 +572,7 @@ public class RubyFile extends RubyIO {
      * @param arg Path to get extension name of
      * @return Extension, including the dot, or an empty string
      */
-    @JRubyMethod(required = 1, singleton = true)
+    @JRubyMethod(required = 1, meta = true)
     public static IRubyObject extname(IRubyObject recv, IRubyObject arg) {
         IRubyObject baseFilename = basename(recv, new IRubyObject[] { arg });
         String filename = RubyString.stringValue(baseFilename).toString();
@@ -597,7 +597,7 @@ public class RubyFile extends RubyIO {
      * @param args 
      * @return Resulting absolute path as a String
      */
-    @JRubyMethod(required = 1, optional = 2, singleton = true)
+    @JRubyMethod(required = 1, optional = 2, meta = true)
     public static IRubyObject expand_path(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         Arity.checkArgumentCount(runtime, args, 1, 2);
@@ -785,7 +785,7 @@ public class RubyFile extends RubyIO {
      *   [set]:  Matches a single char in a set (re: [...]).
      *
      */
-    @JRubyMethod(name2 = "fnmatch?", required = 2, optional = 1, singleton = true)
+    @JRubyMethod(name2 = "fnmatch?", required = 2, optional = 1, meta = true)
     public static IRubyObject fnmatch(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int flags;
@@ -807,7 +807,7 @@ public class RubyFile extends RubyIO {
      * Fixme:  This does not have exact same semantics as RubyArray.join, but they
      * probably could be consolidated (perhaps as join(args[], sep, doChomp)).
      */
-    @JRubyMethod(rest = true, singleton = true)
+    @JRubyMethod(rest = true, meta = true)
     public static RubyString join(IRubyObject recv, IRubyObject[] args) {
         boolean isTainted = false;
         StringBuffer buffer = new StringBuffer();
@@ -847,13 +847,13 @@ public class RubyFile extends RubyIO {
         }
     }
     
-    @JRubyMethod(name2 = "stat", required = 1, singleton = true)
+    @JRubyMethod(name2 = "stat", required = 1, meta = true)
     public static IRubyObject lstat(IRubyObject recv, IRubyObject filename) {
         RubyString name = RubyString.stringValue(filename);
         return recv.getRuntime().newRubyFileStat(name.toString());
     }
     
-    @JRubyMethod(name2 = "atime", name3 = "ctime", required = 1, singleton = true)
+    @JRubyMethod(name2 = "atime", name3 = "ctime", required = 1, meta = true)
     public static IRubyObject mtime(IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
         RubyString name = RubyString.stringValue(filename);
@@ -866,7 +866,7 @@ public class RubyFile extends RubyIO {
         return runtime.newTime(file.lastModified());
     }
     
-    @JRubyMethod(required = 1, rest = true, frame = true, singleton = true)
+    @JRubyMethod(required = 1, rest = true, frame = true, meta = true)
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         return open(recv, args, true, block);
     }
@@ -904,7 +904,7 @@ public class RubyFile extends RubyIO {
         return file;
     }
     
-    @JRubyMethod(required = 2, singleton = true)
+    @JRubyMethod(required = 2, meta = true)
     public static IRubyObject rename(IRubyObject recv, IRubyObject oldName, IRubyObject newName) {
         Ruby runtime = recv.getRuntime();
         RubyString oldNameString = RubyString.stringValue(oldName);
@@ -922,7 +922,7 @@ public class RubyFile extends RubyIO {
         return RubyFixnum.zero(runtime);
     }
     
-    @JRubyMethod(name = "size?", required = 1, singleton = true)
+    @JRubyMethod(name = "size?", required = 1, meta = true)
     public static IRubyObject size_p(IRubyObject recv, IRubyObject filename) {
         long size = 0;
         
@@ -941,7 +941,7 @@ public class RubyFile extends RubyIO {
         return recv.getRuntime().newFixnum(size);
     }
     
-    @JRubyMethod(required = 1, singleton = true)
+    @JRubyMethod(required = 1, meta = true)
     public static RubyArray split(IRubyObject recv, IRubyObject arg) {
         RubyString filename = RubyString.stringValue(arg);
         
@@ -949,7 +949,7 @@ public class RubyFile extends RubyIO {
                 basename(recv, new IRubyObject[] { filename }));
     }
     
-    @JRubyMethod(required = 2, singleton = true)
+    @JRubyMethod(required = 2, meta = true)
     public static IRubyObject symlink(IRubyObject recv, IRubyObject from, IRubyObject to) {
         Ruby runtime = recv.getRuntime();
         
@@ -963,7 +963,7 @@ public class RubyFile extends RubyIO {
         }
     }
 
-    @JRubyMethod(name = "symlink?", required = 1, singleton = true)
+    @JRubyMethod(name = "symlink?", required = 1, meta = true)
     public static IRubyObject symlink_p(IRubyObject recv, IRubyObject arg1) {
         Ruby runtime = recv.getRuntime();
         RubyString filename = RubyString.stringValue(arg1);
@@ -991,7 +991,7 @@ public class RubyFile extends RubyIO {
     }
     
     // Can we produce IOError which bypasses a close?
-    @JRubyMethod(required = 2, singleton = true)
+    @JRubyMethod(required = 2, meta = true)
     public static IRubyObject truncate(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = recv.getRuntime();
         RubyString filename = arg1.convertToString(); // TODO: SafeStringValue here
@@ -1012,7 +1012,7 @@ public class RubyFile extends RubyIO {
     /**
      * This method does NOT set atime, only mtime, since Java doesn't support anything else.
      */
-    @JRubyMethod(required = 2, rest = true, singleton = true)
+    @JRubyMethod(required = 2, rest = true, meta = true)
     public static IRubyObject utime(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         Arity.checkArgumentCount(runtime, args, 2, -1);
@@ -1043,7 +1043,7 @@ public class RubyFile extends RubyIO {
         return runtime.newFixnum(args.length - 2);
     }
     
-    @JRubyMethod(name2 = "delete", rest = true, singleton = true)
+    @JRubyMethod(name2 = "delete", rest = true, meta = true)
     public static IRubyObject unlink(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         

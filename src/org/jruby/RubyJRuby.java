@@ -28,6 +28,7 @@
 package org.jruby;
 
 import java.io.IOException;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
@@ -53,22 +54,13 @@ public class RubyJRuby {
         RubyModule jrubyModule = runtime.defineModule("JRuby");
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
-        jrubyModule.defineModuleFunction("parse", 
-                callbackFactory.getOptSingletonMethod("parse"));
-        jrubyModule.defineModuleFunction("compile", 
-                callbackFactory.getOptSingletonMethod("compile"));
-        jrubyModule.getMetaClass().defineAlias("ast_for", "parse");
-        jrubyModule.defineModuleFunction("runtime", 
-                callbackFactory.getSingletonMethod("runtime"));
-        jrubyModule.defineModuleFunction("reference", 
-                                         callbackFactory.getFastSingletonMethod("reference", RubyKernel.IRUBY_OBJECT));
+        jrubyModule.defineAnnotatedMethods(RubyJRuby.class, callbackFactory);
 
         RubyClass compiledScriptClass = jrubyModule.defineClassUnder("CompiledScript",runtime.getObject(), runtime.getObject().getAllocator());
+        CallbackFactory compiledScriptCallbackFactory = runtime.callbackFactory(JRubyCompiledScript.class);
 
         compiledScriptClass.attr_accessor(new IRubyObject[]{runtime.newSymbol("name"), runtime.newSymbol("class_name"), runtime.newSymbol("original_script"), runtime.newSymbol("code")});
-        compiledScriptClass.defineFastMethod("to_s", callbackFactory.getFastSingletonMethod("compiled_script_to_s"));
-        compiledScriptClass.defineFastMethod("inspect", callbackFactory.getFastSingletonMethod("compiled_script_inspect"));
-        compiledScriptClass.defineFastMethod("inspect_bytecode", callbackFactory.getFastSingletonMethod("compiled_script_inspect_bytecode"));
+        compiledScriptClass.defineAnnotatedMethods(JRubyCompiledScript.class, compiledScriptCallbackFactory);
 
         return jrubyModule;
     }
@@ -76,10 +68,9 @@ public class RubyJRuby {
     public static RubyModule createJRubyExt(Ruby runtime) {
         runtime.getKernel().callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
         RubyModule mJRubyExt = runtime.getOrCreateModule("JRuby").defineModuleUnder("Extensions");
-        CallbackFactory cf = runtime.callbackFactory(RubyJRuby.class);
-
-        mJRubyExt.defineFastPublicModuleFunction("steal_method", cf.getFastSingletonMethod("steal_method", IRubyObject.class, IRubyObject.class));
-        mJRubyExt.defineFastPublicModuleFunction("steal_methods", cf.getFastOptSingletonMethod("steal_methods"));
+        CallbackFactory cf = runtime.callbackFactory(JRubyExtensions.class);
+        
+        mJRubyExt.defineAnnotatedMethods(JRubyExtensions.class, cf);
 
         runtime.getObject().includeModule(mJRubyExt);
 
@@ -92,10 +83,12 @@ public class RubyJRuby {
         }
     }
     
+    @JRubyMethod(name = "runtime", frame = true, module = true)
     public static IRubyObject runtime(IRubyObject recv, Block unusedBlock) {
         return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), recv.getRuntime()), Block.NULL_BLOCK);
     }
     
+    @JRubyMethod(name = "parse", alias = "ast_for", optional = 3, frame = true, module = true)
     public static IRubyObject parse(IRubyObject recv, IRubyObject[] args, Block block) {
         if(block.isGiven()) {
             Arity.checkArgumentCount(recv.getRuntime(),args,0,0);
@@ -116,6 +109,7 @@ public class RubyJRuby {
         }
     }
 
+    @JRubyMethod(name = "compile", optional = 3, frame = true, module = true)
     public static IRubyObject compile(IRubyObject recv, IRubyObject[] args, Block block) {
         Node node;
         String filename;
@@ -166,53 +160,63 @@ public class RubyJRuby {
         return compiledScript;
     }
 
-    public static IRubyObject compiled_script_to_s(IRubyObject recv) {
-        return recv.getInstanceVariable("@original_script");
-    }
-
-    public static IRubyObject compiled_script_inspect(IRubyObject recv) {
-        return recv.getRuntime().newString("#<JRuby::CompiledScript " + recv.getInstanceVariable("@name") + ">");
-    }
-
-    public static IRubyObject compiled_script_inspect_bytecode(IRubyObject recv) {
-        java.io.StringWriter sw = new java.io.StringWriter();
-        org.objectweb.asm.ClassReader cr = new org.objectweb.asm.ClassReader((byte[])org.jruby.javasupport.JavaUtil.convertRubyToJava(recv.getInstanceVariable("@code"),byte[].class));
-        org.objectweb.asm.util.TraceClassVisitor cv = new org.objectweb.asm.util.TraceClassVisitor(new java.io.PrintWriter(sw));
-        cr.accept(cv, ClassReader.SKIP_DEBUG);
-        return recv.getRuntime().newString(sw.toString());
-    }
-
-    public static IRubyObject steal_method(IRubyObject recv, IRubyObject type, IRubyObject methodName) {
-        RubyModule to_add = null;
-        if(recv instanceof RubyModule) {
-            to_add = (RubyModule)recv;
-        } else {
-            to_add = recv.getSingletonClass();
-        }
-        String name = methodName.toString();
-        if(!(type instanceof RubyModule)) {
-            throw recv.getRuntime().newArgumentError("First argument must be a module/class");
-        }
-
-        DynamicMethod method = ((RubyModule)type).searchMethod(name);
-        if(method == null || method.isUndefined()) {
-            throw recv.getRuntime().newArgumentError("No such method " + name + " on " + type);
-        }
-
-        to_add.addMethod(name, method);
-        return recv.getRuntime().getNil();
-    }
-
-    public static IRubyObject steal_methods(IRubyObject recv, IRubyObject[] args) {
-        Arity.checkArgumentCount(recv.getRuntime(), args, 1, -1);
-        IRubyObject type = args[0];
-        for(int i=1;i<args.length;i++) {
-            steal_method(recv, type, args[i]);
-        }
-        return recv.getRuntime().getNil();
-    }
-
+    @JRubyMethod(name = "reference", required = 1, module = true)
     public static IRubyObject reference(IRubyObject recv, IRubyObject obj) {
         return Java.wrap(recv.getRuntime().getModule("JavaUtilities"), JavaObject.wrap(recv.getRuntime(), obj));
+    }
+
+    public static class JRubyCompiledScript {
+        @JRubyMethod(name = "to_s")
+        public static IRubyObject compiled_script_to_s(IRubyObject recv) {
+            return recv.getInstanceVariable("@original_script");
+        }
+
+        @JRubyMethod(name = "inspect")
+        public static IRubyObject compiled_script_inspect(IRubyObject recv) {
+            return recv.getRuntime().newString("#<JRuby::CompiledScript " + recv.getInstanceVariable("@name") + ">");
+        }
+
+        @JRubyMethod(name = "inspect_bytecode")
+        public static IRubyObject compiled_script_inspect_bytecode(IRubyObject recv) {
+            java.io.StringWriter sw = new java.io.StringWriter();
+            org.objectweb.asm.ClassReader cr = new org.objectweb.asm.ClassReader((byte[])org.jruby.javasupport.JavaUtil.convertRubyToJava(recv.getInstanceVariable("@code"),byte[].class));
+            org.objectweb.asm.util.TraceClassVisitor cv = new org.objectweb.asm.util.TraceClassVisitor(new java.io.PrintWriter(sw));
+            cr.accept(cv, ClassReader.SKIP_DEBUG);
+            return recv.getRuntime().newString(sw.toString());
+        }
+    }
+
+    public static class JRubyExtensions {
+        @JRubyMethod(name = "steal_method", required = 2, module = true)
+        public static IRubyObject steal_method(IRubyObject recv, IRubyObject type, IRubyObject methodName) {
+            RubyModule to_add = null;
+            if(recv instanceof RubyModule) {
+                to_add = (RubyModule)recv;
+            } else {
+                to_add = recv.getSingletonClass();
+            }
+            String name = methodName.toString();
+            if(!(type instanceof RubyModule)) {
+                throw recv.getRuntime().newArgumentError("First argument must be a module/class");
+            }
+
+            DynamicMethod method = ((RubyModule)type).searchMethod(name);
+            if(method == null || method.isUndefined()) {
+                throw recv.getRuntime().newArgumentError("No such method " + name + " on " + type);
+            }
+
+            to_add.addMethod(name, method);
+            return recv.getRuntime().getNil();
+        }
+
+        @JRubyMethod(name = "steal_methods", required = 1, rest = true, module = true)
+        public static IRubyObject steal_methods(IRubyObject recv, IRubyObject[] args) {
+            Arity.checkArgumentCount(recv.getRuntime(), args, 1, -1);
+            IRubyObject type = args[0];
+            for(int i=1;i<args.length;i++) {
+                steal_method(recv, type, args[i]);
+            }
+            return recv.getRuntime().getNil();
+        }
     }
 }

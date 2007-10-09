@@ -219,7 +219,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** rb_int_induced_from
      * 
      */
-    @JRubyMethod(name = "induced_from", singleton = true, required = 1)
+    @JRubyMethod(name = "induced_from", meta = true, required = 1)
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return other;

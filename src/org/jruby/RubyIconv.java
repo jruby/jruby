@@ -154,7 +154,7 @@ public class RubyIconv extends RubyObject {
         return encoding.toLowerCase().indexOf(IGNORE) != -1 ? true : false;
     }
 
-    @JRubyMethod(name = "open", required = 2, frame = true, singleton = true)
+    @JRubyMethod(name = "open", required = 2, frame = true, meta = true)
     public static IRubyObject open(IRubyObject recv, IRubyObject to, IRubyObject from, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyIconv iconv =
@@ -255,12 +255,12 @@ public class RubyIconv extends RubyObject {
         return getRuntime().newString(new ByteList(arr, 0, buf.limit()));
     }
 
-    @JRubyMethod(name = "iconv", required = 1, optional = 1, singleton = true)
+    @JRubyMethod(name = "iconv", required = 1, optional = 1, meta = true)
     public static IRubyObject iconv(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return convertWithArgs(recv, args, "iconv");
     }
     
-    @JRubyMethod(name = "conv", required = 3, rest = true, singleton = true)
+    @JRubyMethod(name = "conv", required = 3, rest = true, meta = true)
     public static IRubyObject conv(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return convertWithArgs(recv, args, "conv").join(recv.getRuntime().newString(""));
     }

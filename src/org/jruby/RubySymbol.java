@@ -307,7 +307,7 @@ public class RubySymbol extends RubyObject {
         return false;
     }
     
-    @JRubyMethod(name = "all_symbols", singleton = true)
+    @JRubyMethod(name = "all_symbols", meta = true)
     public static IRubyObject all_symbols(IRubyObject recv) {
         return recv.getRuntime().newArrayNoCopy(recv.getRuntime().getSymbolTable().all_symbols());
     }
