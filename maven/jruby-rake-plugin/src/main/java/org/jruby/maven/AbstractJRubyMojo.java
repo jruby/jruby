@@ -18,7 +18,6 @@ import org.apache.tools.ant.taskdefs.Java;
 import org.apache.tools.ant.types.Commandline.Argument;
 import org.apache.tools.ant.types.Environment.Variable;
 import org.apache.tools.ant.types.Path;
-import org.apache.tools.ant.types.Reference;
 import org.codehaus.plexus.util.StringUtils;
 
 /**
@@ -73,7 +72,7 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
 
     protected Java jruby(String[] args) throws MojoExecutionException {
         launchDirectory.mkdirs();
-        Project project = null;;
+        Project project = null;
         try {
             project = getProject();
         } catch (DependencyResolutionRequiredException e) {
@@ -126,7 +125,7 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
 
     protected void ensureGems(String[] gemNames) throws MojoExecutionException {
         List args = new ArrayList();
-        args.add("--command");
+        args.add("-S");
         args.add("maybe_install_gems");
         for (int i = 0; i < gemNames.length; i++) {
             args.add(gemNames[i]);
