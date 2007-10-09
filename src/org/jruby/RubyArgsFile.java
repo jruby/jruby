@@ -249,7 +249,7 @@ public class RubyArgsFile extends RubyObject {
         if(currentFile == null && !nextArgsFile()) {
             return this;
         }
-        return ((RubyIO)currentFile).closed();
+        return ((RubyIO)currentFile).closed_p();
     }
 
     @JRubyMethod(name = "binmode")
@@ -287,7 +287,7 @@ public class RubyArgsFile extends RubyObject {
         if(currentFile != null && !nextArgsFile()) {
             return getRuntime().getTrue();
         }
-        return ((RubyIO)currentFile).eof();
+        return ((RubyIO)currentFile).eof_p();
     }
 
     @JRubyMethod(name = "pos=", required = 1)

@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -47,24 +48,24 @@ public class RubyGC {
         runtime.setGC(result);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyGC.class);
         
-        result.defineFastModuleFunction("start", callbackFactory.getFastSingletonMethod("start"));
-        result.defineFastModuleFunction("garbage_collect", callbackFactory.getFastSingletonMethod("start"));
-        result.defineFastModuleFunction("enable", callbackFactory.getFastSingletonMethod("enable"));
-        result.defineFastModuleFunction("disable", callbackFactory.getFastSingletonMethod("disable"));
+        result.defineAnnotatedMethods(RubyGC.class, callbackFactory);
         
         return result;        
     }
 
+    @JRubyMethod(name = "start", name2 = "garbage_collect", module = true)
     public static IRubyObject start(IRubyObject recv) {
         System.gc();
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "enable", module = true)
     public static IRubyObject enable(IRubyObject recv) {
         recv.getRuntime().getWarnings().warn("GC#enable will not work on JRuby");
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "disable", module = true)
     public static IRubyObject disable(IRubyObject recv) {
         recv.getRuntime().getWarnings().warn("GC#disable will not work on JRuby");
         return recv.getRuntime().getNil();
