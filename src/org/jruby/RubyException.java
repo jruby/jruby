@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -49,6 +50,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -62,9 +64,9 @@ public class RubyException extends RubyObject {
     private Frame[] backtraceFrames;
     private IRubyObject backtrace;
     public IRubyObject message;
-	public static final int TRACE_HEAD = 8;
-	public static final int TRACE_TAIL = 4;
-	public static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 6;
+    public static final int TRACE_HEAD = 8;
+    public static final int TRACE_TAIL = 4;
+    public static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 6;
 
     protected RubyException(Ruby runtime, RubyClass rubyClass) {
         this(runtime, rubyClass, null);
@@ -123,15 +125,9 @@ public class RubyException extends RubyObject {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyException.class);
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
         // TODO: could this just  be an alias for new?
-        exceptionClass.getMetaClass().defineMethod("exception", classCB.getOptMethod("newInstance"));		
-        exceptionClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        exceptionClass.defineFastMethod("exception", callbackFactory.getFastOptMethod("exception"));
-        exceptionClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        exceptionClass.defineFastMethod("to_str", callbackFactory.getFastMethod("to_str"));
-        exceptionClass.defineFastMethod("message", callbackFactory.getFastMethod("to_str"));
-        exceptionClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
-        exceptionClass.defineFastMethod("backtrace", callbackFactory.getFastMethod("backtrace"));		
-        exceptionClass.defineFastMethod("set_backtrace", callbackFactory.getFastMethod("set_backtrace", RubyKernel.IRUBY_OBJECT));		
+        // FIXME: not sure how to bind this right...
+        exceptionClass.getMetaClass().defineMethod("exception", classCB.getOptMethod("newInstance"));
+        exceptionClass.defineAnnotatedMethods(RubyException.class, callbackFactory);
 
         return exceptionClass;
     }
@@ -151,15 +147,18 @@ public class RubyException extends RubyObject {
         return backtrace;
     }
 
+    @JRubyMethod(optional = 1, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 1) message = args[0];
         return this;
     }
 
+    @JRubyMethod
     public IRubyObject backtrace() {
         return getBacktrace(); 
     }
 
+    @JRubyMethod(required = 1)
     public IRubyObject set_backtrace(IRubyObject obj) {
         if (obj.isNil()) {
             backtrace = null;
@@ -171,6 +170,7 @@ public class RubyException extends RubyObject {
         return backtrace();
     }
     
+    @JRubyMethod(optional = 1)
     public RubyException exception(IRubyObject[] args) {
         switch (args.length) {
             case 0 :
@@ -187,12 +187,14 @@ public class RubyException extends RubyObject {
         }
     }
 
+    @JRubyMethod
     public IRubyObject to_s() {
         if (message.isNil()) return getRuntime().newString(getMetaClass().getName());
         message.setTaint(isTaint());
         return message;
     }
 
+    @JRubyMethod(name2 = "message")
     public IRubyObject to_str() {
         return callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
     }
@@ -201,6 +203,7 @@ public class RubyException extends RubyObject {
      * 
      *@return A RubyString containing the debug information.
      */
+    @JRubyMethod
     public IRubyObject inspect() {
         RubyModule rubyClass = getMetaClass();
         RubyString exception = RubyString.objAsString(this);
@@ -211,29 +214,29 @@ public class RubyException extends RubyObject {
         return getRuntime().newString(sb.toString());
     }
 
-	public void printBacktrace(PrintStream errorStream) {
-	    IRubyObject backtrace = callMethod(getRuntime().getCurrentContext(), "backtrace");
-	    if (!backtrace.isNil() && backtrace instanceof RubyArray) {
-    		IRubyObject[] elements = ((RubyArray)backtrace.convertToArray()).toJavaArray();
-	
-    		for (int i = 1; i < elements.length; i++) {
-    		    IRubyObject stackTraceLine = elements[i];
-    			if (stackTraceLine instanceof RubyString) {
-    		        printStackTraceLine(errorStream, stackTraceLine);
-    		    }
-	
-    		    if (i == RubyException.TRACE_HEAD && elements.length > RubyException.TRACE_MAX) {
-    		        int hiddenLevels = elements.length - RubyException.TRACE_HEAD - RubyException.TRACE_TAIL;
-    				errorStream.print("\t ... " + hiddenLevels + " levels...\n");
-    		        i = elements.length - RubyException.TRACE_TAIL;
-    		    }
-    		}
-		}
-	}
+    public void printBacktrace(PrintStream errorStream) {
+        IRubyObject backtrace = callMethod(getRuntime().getCurrentContext(), "backtrace");
+        if (!backtrace.isNil() && backtrace instanceof RubyArray) {
+            IRubyObject[] elements = ((RubyArray)backtrace.convertToArray()).toJavaArray();
 
-	private void printStackTraceLine(PrintStream errorStream, IRubyObject stackTraceLine) {
-		errorStream.print("\tfrom " + stackTraceLine + '\n');
-	}
+            for (int i = 1; i < elements.length; i++) {
+                IRubyObject stackTraceLine = elements[i];
+                    if (stackTraceLine instanceof RubyString) {
+                    printStackTraceLine(errorStream, stackTraceLine);
+                }
+
+                if (i == RubyException.TRACE_HEAD && elements.length > RubyException.TRACE_MAX) {
+                    int hiddenLevels = elements.length - RubyException.TRACE_HEAD - RubyException.TRACE_TAIL;
+                            errorStream.print("\t ... " + hiddenLevels + " levels...\n");
+                    i = elements.length - RubyException.TRACE_TAIL;
+                }
+            }
+            }
+    }
+
+    private void printStackTraceLine(PrintStream errorStream, IRubyObject stackTraceLine) {
+            errorStream.print("\tfrom " + stackTraceLine + '\n');
+    }
 	
     private boolean isArrayOfStrings(IRubyObject backtrace) {
         if (!(backtrace instanceof RubyArray)) return false; 
