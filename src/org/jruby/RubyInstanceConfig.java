@@ -55,10 +55,10 @@ public class RubyInstanceConfig {
         LoadService create(Ruby runtime);
 
         LoadServiceCreator DEFAULT = new LoadServiceCreator() {
-                public LoadService create(Ruby runtime) {
-                    return new LoadService(runtime);
-                }
-            };
+            public LoadService create(Ruby runtime) {
+                return new LoadService(runtime);
+            }
+        };
     }
 
     private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;

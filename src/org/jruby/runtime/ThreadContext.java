@@ -328,6 +328,13 @@ public final class ThreadContext {
         frameIndex--;
         setPosition(frame.getPosition());
     }
+        
+    private void popFrameReal() {
+        Frame frame = frameStack[frameIndex];
+        frameStack[frameIndex] = new Frame();
+        frameIndex--;
+        setPosition(frame.getPosition());
+    }
     
     public Frame getCurrentFrame() {
         return frameStack[frameIndex];
@@ -782,8 +789,6 @@ public final class ThreadContext {
     
     public void preEvalWithBinding(Block block) {
         Frame frame = block.getFrame();
-        
-        block.oldFrame = getNextFrame();
         frame.setIsBindingFrame(true);
         pushFrame(frame);
         getCurrentFrame().setVisibility(block.getVisibility());
@@ -792,7 +797,7 @@ public final class ThreadContext {
     
     public void postEvalWithBinding(Block block) {
         block.getFrame().setIsBindingFrame(false);
-        popFrameReal(block.oldFrame);
+        popFrameReal();
         popRubyClass();
     }
     
