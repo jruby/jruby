@@ -39,6 +39,7 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import java.nio.charset.UnsupportedCharsetException;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
@@ -68,14 +69,8 @@ public class RubyIconv extends RubyObject {
     public static void createIconv(Ruby runtime) {
         RubyClass iconvClass = runtime.defineClass("Iconv", runtime.getObject(), ICONV_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyIconv.class);
-
-        iconvClass.getMetaClass().defineFastMethod("iconv", callbackFactory.getOptSingletonMethod("iconv"));
-        iconvClass.getMetaClass().defineFastMethod("conv", callbackFactory.getOptSingletonMethod("conv"));
-        iconvClass.getMetaClass().defineMethod("open", callbackFactory.getSingletonMethod("open", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
         
-        iconvClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        iconvClass.defineFastMethod("iconv", callbackFactory.getFastOptMethod("iconv"));
-        iconvClass.defineFastMethod("close", callbackFactory.getFastMethod("close"));
+        iconvClass.defineAnnotatedMethods(RubyIconv.class, callbackFactory);
 
         RubyModule failure = iconvClass.defineModuleUnder("Failure");
         CallbackFactory failureCallbackFactory = runtime.callbackFactory(RubyFailure.class);
@@ -86,10 +81,7 @@ public class RubyIconv extends RubyObject {
         
         for (int i = 0; i < iconvErrors.length; i++) {
             RubyClass subClass = iconvClass.defineClassUnder(iconvErrors[i], argumentError, RubyFailure.ICONV_FAILURE_ALLOCATOR);
-            subClass.defineMethod("initialize", failureCallbackFactory.getOptMethod("initialize"));
-            subClass.defineFastMethod("success", failureCallbackFactory.getFastMethod("success"));
-            subClass.defineFastMethod("failed", failureCallbackFactory.getFastMethod("failed"));
-            subClass.defineFastMethod("inspect", failureCallbackFactory.getFastMethod("inspect"));
+            subClass.defineAnnotatedMethods(RubyFailure.class, failureCallbackFactory);
             subClass.includeModule(failure);
         }    
     }
@@ -116,6 +108,7 @@ public class RubyIconv extends RubyObject {
             super(runtime, rubyClass, message);
         }
 
+        @JRubyMethod(name = "initialize", required = 1, optional = 2, frame = true)
         public IRubyObject initialize(IRubyObject[] args, Block block) {
             Arity.checkArgumentCount(getRuntime(), args, 1, 3);
             super.initialize(args, block);
@@ -125,14 +118,17 @@ public class RubyIconv extends RubyObject {
             return this;
         }
 
+        @JRubyMethod(name = "success")
         public IRubyObject success() {
             return success;
         }
 
+        @JRubyMethod(name = "failed")
         public IRubyObject failed() {
             return failed;
         }
 
+        @JRubyMethod(name = "inspect")
         public IRubyObject inspect() {
             RubyModule rubyClass = getMetaClass();
             StringBuffer buffer = new StringBuffer("#<");
@@ -158,6 +154,7 @@ public class RubyIconv extends RubyObject {
         return encoding.toLowerCase().indexOf(IGNORE) != -1 ? true : false;
     }
 
+    @JRubyMethod(name = "open", required = 2, frame = true, singleton = true)
     public static IRubyObject open(IRubyObject recv, IRubyObject to, IRubyObject from, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyIconv iconv =
@@ -175,18 +172,18 @@ public class RubyIconv extends RubyObject {
         return result;
     }
     
-    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        Arity.checkArgumentCount(getRuntime(), args, 2, 2);
+    @JRubyMethod(name = "initialize", required = 2, frame = true)
+    public IRubyObject initialize(IRubyObject arg1, IRubyObject arg2, Block unusedBlock) {
         Ruby runtime = getRuntime();
-        if (!args[0].respondsTo("to_str")) {
-            throw runtime.newTypeError("can't convert " + args[0].getMetaClass() + " into String");
+        if (!arg1.respondsTo("to_str")) {
+            throw runtime.newTypeError("can't convert " + arg1.getMetaClass() + " into String");
         }
-        if (!args[1].respondsTo("to_str")) {
-            throw runtime.newTypeError("can't convert " + args[1].getMetaClass() + " into String");
+        if (!arg2.respondsTo("to_str")) {
+            throw runtime.newTypeError("can't convert " + arg2.getMetaClass() + " into String");
         }
 
-        String to = args[0].convertToString().toString();
-        String from = args[1].convertToString().toString();
+        String to = arg1.convertToString().toString();
+        String from = arg2.convertToString().toString();
 
         try {
 
@@ -206,12 +203,14 @@ public class RubyIconv extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "close")
     public IRubyObject close() {
         toEncoding = null;
         fromEncoding = null;
         return getRuntime().newString("");
     }
 
+    @JRubyMethod(name = "iconv", required = 1, optional = 2)
     public IRubyObject iconv(IRubyObject[] args) {
         Ruby runtime = getRuntime();
         args = Arity.scanArgs(runtime, args, 1, 2);
@@ -256,10 +255,12 @@ public class RubyIconv extends RubyObject {
         return getRuntime().newString(new ByteList(arr, 0, buf.limit()));
     }
 
+    @JRubyMethod(name = "iconv", required = 1, optional = 1, singleton = true)
     public static IRubyObject iconv(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return convertWithArgs(recv, args, "iconv");
     }
     
+    @JRubyMethod(name = "conv", required = 3, rest = true, singleton = true)
     public static IRubyObject conv(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return convertWithArgs(recv, args, "conv").join(recv.getRuntime().newString(""));
     }
