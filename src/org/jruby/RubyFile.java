@@ -43,12 +43,14 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.DirectoryAsFileException;
@@ -218,45 +220,12 @@ public class RubyFile extends RubyIO {
         
         runtime.getFileTest().extend_object(fileClass);
         
-        fileMetaClass.defineFastMethod("basename", callbackFactory.getFastOptSingletonMethod("basename"));
-        fileMetaClass.defineFastMethod("chmod", callbackFactory.getFastOptSingletonMethod("chmod"));
-        fileMetaClass.defineFastMethod("chown", callbackFactory.getFastOptSingletonMethod("chown"));
-        fileMetaClass.defineFastMethod("delete", callbackFactory.getFastOptSingletonMethod("unlink"));
-        fileMetaClass.defineFastMethod("dirname", callbackFactory.getFastSingletonMethod("dirname", IRubyObject.class));
-        fileMetaClass.defineFastMethod("expand_path", callbackFactory.getFastOptSingletonMethod("expand_path"));
-        fileMetaClass.defineFastMethod("extname", callbackFactory.getFastSingletonMethod("extname", IRubyObject.class));
-        fileMetaClass.defineFastMethod("fnmatch", callbackFactory.getFastOptSingletonMethod("fnmatch"));
-        fileMetaClass.defineFastMethod("fnmatch?", callbackFactory.getFastOptSingletonMethod("fnmatch"));
-        fileMetaClass.defineFastMethod("join", callbackFactory.getFastOptSingletonMethod("join"));
-        fileMetaClass.defineFastMethod("lstat", callbackFactory.getFastSingletonMethod("lstat", IRubyObject.class));
         // atime and ctime are implemented like mtime, since we don't have an atime API in Java
-        fileMetaClass.defineFastMethod("atime", callbackFactory.getFastSingletonMethod("mtime", IRubyObject.class));
-        fileMetaClass.defineFastMethod("mtime", callbackFactory.getFastSingletonMethod("mtime", IRubyObject.class));
-        fileMetaClass.defineFastMethod("ctime", callbackFactory.getFastSingletonMethod("mtime", IRubyObject.class));
-        fileMetaClass.defineMethod("open", callbackFactory.getOptSingletonMethod("open"));
-        fileMetaClass.defineFastMethod("rename", callbackFactory.getFastSingletonMethod("rename", IRubyObject.class, IRubyObject.class));
-        fileMetaClass.defineFastMethod("size?", callbackFactory.getFastSingletonMethod("size_p", IRubyObject.class));
-        fileMetaClass.defineFastMethod("split", callbackFactory.getFastSingletonMethod("split", IRubyObject.class));
-        fileMetaClass.defineFastMethod("stat", callbackFactory.getFastSingletonMethod("lstat", IRubyObject.class));
-        fileMetaClass.defineFastMethod("symlink", callbackFactory.getFastSingletonMethod("symlink", IRubyObject.class, IRubyObject.class));
-        fileMetaClass.defineFastMethod("symlink?", callbackFactory.getFastSingletonMethod("symlink_p", IRubyObject.class));
-        fileMetaClass.defineFastMethod("truncate", callbackFactory.getFastSingletonMethod("truncate", IRubyObject.class, IRubyObject.class));
-        fileMetaClass.defineFastMethod("utime", callbackFactory.getFastOptSingletonMethod("utime"));
-        fileMetaClass.defineFastMethod("unlink", callbackFactory.getFastOptSingletonMethod("unlink"));
         
         // TODO: Define instance methods: lchmod, lchown, lstat
-        fileClass.defineFastMethod("chmod", callbackFactory.getFastMethod("chmod", IRubyObject.class));
-        fileClass.defineFastMethod("chown", callbackFactory.getFastMethod("chown", IRubyObject.class, IRubyObject.class));
         // atime and ctime are implemented like mtime, since we don't have an atime API in Java
-        fileClass.defineFastMethod("atime", callbackFactory.getFastMethod("mtime"));
-        fileClass.defineFastMethod("ctime", callbackFactory.getFastMethod("mtime"));
-        fileClass.defineFastMethod("mtime", callbackFactory.getFastMethod("mtime"));
-        fileClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        fileClass.defineFastMethod("path", callbackFactory.getFastMethod("path"));
-        fileClass.defineFastMethod("stat", callbackFactory.getFastMethod("stat"));
-        fileClass.defineFastMethod("truncate", callbackFactory.getFastMethod("truncate", IRubyObject.class));
-        fileClass.defineFastMethod("flock", callbackFactory.getFastMethod("flock", IRubyObject.class));
         
+        fileClass.defineAnnotatedMethods(RubyFile.class, callbackFactory);
         fileClass.dispatcher = callbackFactory.createDispatcher(fileClass);
         
         return fileClass;
@@ -285,6 +254,7 @@ public class RubyFile extends RubyIO {
 		}
     }
     
+    @JRubyMethod
     public IRubyObject close() {
         // Make sure any existing lock is released before we try and close the file
         if (currentLock != null) {
@@ -297,175 +267,183 @@ public class RubyFile extends RubyIO {
         return super.close();
     }
 
-	public IRubyObject flock(IRubyObject lockingConstant) {
+    @JRubyMethod(required = 1)
+    public IRubyObject flock(IRubyObject lockingConstant) {
         FileChannel fileChannel = handler.getFileChannel();
-        int lockMode = RubyNumeric.num2int(lockingConstant); 
+        int lockMode = RubyNumeric.num2int(lockingConstant);
 
         try {
-			switch(lockMode) {
-			case LOCK_UN:
-            case LOCK_UN | LOCK_NB:
-				if (currentLock != null) {
-					currentLock.release();
-					currentLock = null;
-					
-					return getRuntime().newFixnum(0);
-				}
-				break;
-			case LOCK_EX:
-				if (currentLock != null) {
-					currentLock.release();
-					currentLock = null;
-				}
-				currentLock = fileChannel.lock();
-				if (currentLock != null) {
-					return getRuntime().newFixnum(0);
-				}
+            switch (lockMode) {
+                case LOCK_UN:
+                case LOCK_UN | LOCK_NB:
+                    if (currentLock != null) {
+                        currentLock.release();
+                        currentLock = null;
 
-				break;
-			case LOCK_EX | LOCK_NB:
-				if (currentLock != null) {
-					currentLock.release();
-					currentLock = null;
-				}
-				currentLock = fileChannel.tryLock();
-				if (currentLock != null) {
-					return getRuntime().newFixnum(0);
-				}
+                        return getRuntime().newFixnum(0);
+                    }
+                    break;
+                case LOCK_EX:
+                    if (currentLock != null) {
+                        currentLock.release();
+                        currentLock = null;
+                    }
+                    currentLock = fileChannel.lock();
+                    if (currentLock != null) {
+                        return getRuntime().newFixnum(0);
+                    }
 
-				break;
-			case LOCK_SH:
-				if (currentLock != null) {
-					currentLock.release();
-					currentLock = null;
-				}
-				
-				currentLock = fileChannel.lock(0L, Long.MAX_VALUE, true);
-				if (currentLock != null) {
-					return getRuntime().newFixnum(0);
-				}
+                    break;
+                case LOCK_EX | LOCK_NB:
+                    if (currentLock != null) {
+                        currentLock.release();
+                        currentLock = null;
+                    }
+                    currentLock = fileChannel.tryLock();
+                    if (currentLock != null) {
+                        return getRuntime().newFixnum(0);
+                    }
 
-				break;
-			case LOCK_SH | LOCK_NB:
-				if (currentLock != null) {
-					currentLock.release();
-					currentLock = null;
-				}
-				
-				currentLock = fileChannel.tryLock(0L, Long.MAX_VALUE, true);
-				if (currentLock != null) {
-					return getRuntime().newFixnum(0);
-				}
+                    break;
+                case LOCK_SH:
+                    if (currentLock != null) {
+                        currentLock.release();
+                        currentLock = null;
+                    }
 
-				break;
-			default:	
-			}
+                    currentLock = fileChannel.lock(0L, Long.MAX_VALUE, true);
+                    if (currentLock != null) {
+                        return getRuntime().newFixnum(0);
+                    }
+
+                    break;
+                case LOCK_SH | LOCK_NB:
+                    if (currentLock != null) {
+                        currentLock.release();
+                        currentLock = null;
+                    }
+
+                    currentLock = fileChannel.tryLock(0L, Long.MAX_VALUE, true);
+                    if (currentLock != null) {
+                        return getRuntime().newFixnum(0);
+                    }
+
+                    break;
+                default:
+            }
         } catch (IOException ioe) {
-            if(getRuntime().getDebug().isTrue()) {
+            if (getRuntime().getDebug().isTrue()) {
                 ioe.printStackTrace(System.err);
             }
             // Return false here
         } catch (java.nio.channels.OverlappingFileLockException ioe) {
-            if(getRuntime().getDebug().isTrue()) {
+            if (getRuntime().getDebug().isTrue()) {
                 ioe.printStackTrace(System.err);
             }
             // Return false here
         }
-		
-		return getRuntime().getFalse();
-	}
 
-	public IRubyObject initialize(IRubyObject[] args, Block block) {
-	    if (args.length == 0) {
-	        throw getRuntime().newArgumentError(0, 1);
-	    }
+        return getRuntime().getFalse();
+    }
 
-	    getRuntime().checkSafeString(args[0]);
-	    path = args[0].toString();
-	    modes = args.length > 1 ? getModes(getRuntime(), args[1]) :
-	    	new IOModes(getRuntime(), IOModes.RDONLY);
-	    
-	    // One of the few places where handler may be null.
-	    // If handler is not null, it indicates that this object
-	    // is being reused.
-	    if (handler != null) {
-	        close();
-	    }
-	    openInternal(path, modes);
-	    
-	    if (block.isGiven()) {
-	        // getRuby().getRuntime().warn("File::new does not take block; use File::open instead");
-	    }
-	    return this;
-	}
+    @JRubyMethod(required = 1, optional = 2, frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
+        if (args.length == 0) {
+            throw getRuntime().newArgumentError(0, 1);
+        }
 
+        getRuntime().checkSafeString(args[0]);
+        path = args[0].toString();
+        modes = args.length > 1 ? getModes(getRuntime(), args[1]) : new IOModes(getRuntime(), IOModes.RDONLY);
+
+        // One of the few places where handler may be null.
+        // If handler is not null, it indicates that this object
+        // is being reused.
+        if (handler != null) {
+            close();
+        }
+        openInternal(path, modes);
+
+        if (block.isGiven()) {
+            // getRuby().getRuntime().warn("File::new does not take block; use File::open instead");
+        }
+        return this;
+    }
+
+    @JRubyMethod(required = 1)
     public IRubyObject chmod(IRubyObject arg) {
         RubyInteger mode = arg.convertToInteger();
 
         if (!new File(path).exists()) {
             throw getRuntime().newErrnoENOENTError("No such file or directory - " + path);
         }
-        
-        int result = Ruby.getPosix().chmod(path, (int)mode.getLongValue());
-        
+
+        int result = Ruby.getPosix().chmod(path, (int) mode.getLongValue());
+
         return getRuntime().newFixnum(result);
     }
 
+    @JRubyMethod(required = 2)
     public IRubyObject chown(IRubyObject arg, IRubyObject arg2) {
         RubyInteger owner = arg.convertToInteger();
         RubyInteger group = arg2.convertToInteger();
         if (!new File(path).exists()) {
             throw getRuntime().newErrnoENOENTError("No such file or directory - " + path);
         }
-        
-        int result = Ruby.getPosix().chown(path, (int)owner.getLongValue(), (int)group.getLongValue());
-        
+
+        int result = Ruby.getPosix().chown(path, (int) owner.getLongValue(), (int) group.getLongValue());
+
         return RubyFixnum.newFixnum(getRuntime(), result);
     }
 
+    @JRubyMethod(name2 = "atime", name3 = "ctime")
     public IRubyObject mtime() {
-        return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(),this.path).getParentFile().lastModified());
+        return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(), this.path).getParentFile().lastModified());
     }
-    
+
+    @JRubyMethod
     public RubyString path() {
         return getRuntime().newString(path);
     }
-    
+
+    @JRubyMethod
     public IRubyObject stat() {
         return getRuntime().newRubyFileStat(path);
     }
-    
+
+    @JRubyMethod(required = 1)
     public IRubyObject truncate(IRubyObject arg) {
-    	RubyInteger newLength = arg.convertToInteger();
+        RubyInteger newLength = arg.convertToInteger();
         if (newLength.getLongValue() < 0) {
             throw getRuntime().newErrnoEINVALError("invalid argument: " + path);
         }
         try {
             handler.truncate(newLength.getLongValue());
         } catch (IOHandler.PipeException e) {
-        	throw getRuntime().newErrnoESPIPEError();
+            throw getRuntime().newErrnoESPIPEError();
         } catch (IOException e) {
             // Should we do anything?
         }
-        
+
         return RubyFixnum.zero(getRuntime());
     }
-    
+
     public String toString() {
         return "RubyFile(" + path + ", " + modes + ", " + fileno + ")";
     }
 
     // TODO: This is also defined in the MetaClass too...Consolidate somewhere.
-	private static IOModes getModes(Ruby runtime, IRubyObject object) {
-		if (object instanceof RubyString) {
-			return new IOModes(runtime, ((RubyString)object).toString());
-		} else if (object instanceof RubyFixnum) {
-			return new IOModes(runtime, ((RubyFixnum)object).getLongValue());
-		}
+    private static IOModes getModes(Ruby runtime, IRubyObject object) {
+        if (object instanceof RubyString) {
+            return new IOModes(runtime, ((RubyString) object).toString());
+        } else if (object instanceof RubyFixnum) {
+            return new IOModes(runtime, ((RubyFixnum) object).getLongValue());
+        }
 
-		throw runtime.newTypeError("Invalid type for modes");
-	}
+        throw runtime.newTypeError("Invalid type for modes");
+    }
 
+    @JRubyMethod
     public IRubyObject inspect() {
         StringBuffer val = new StringBuffer();
         val.append("#<File:").append(path);
@@ -478,6 +456,7 @@ public class RubyFile extends RubyIO {
     
     /* File class methods */
     
+    @JRubyMethod(required = 1, optional = 1, singleton = true)
     public static IRubyObject basename(IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(recv.getRuntime(), args, 1, 2);
         
@@ -524,6 +503,7 @@ public class RubyFile extends RubyIO {
         return recv.getRuntime().newString(name).infectBy(args[0]);
     }
     
+    @JRubyMethod(required = 2, rest = true, singleton = true)
     public static IRubyObject chmod(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         Arity.checkArgumentCount(runtime, args, 2, -1);
@@ -546,6 +526,7 @@ public class RubyFile extends RubyIO {
         return runtime.newFixnum(count);
     }
     
+    @JRubyMethod(required = 3, rest = true, singleton = true)
     public static IRubyObject chown(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         Arity.checkArgumentCount(runtime, args, 3, -1);
@@ -569,6 +550,7 @@ public class RubyFile extends RubyIO {
         return runtime.newFixnum(count);
     }
     
+    @JRubyMethod(required = 1, singleton = true)
     public static IRubyObject dirname(IRubyObject recv, IRubyObject arg) {
         RubyString filename = RubyString.stringValue(arg);
         String name = filename.toString().replace('\\', '/');
@@ -590,6 +572,7 @@ public class RubyFile extends RubyIO {
      * @param arg Path to get extension name of
      * @return Extension, including the dot, or an empty string
      */
+    @JRubyMethod(required = 1, singleton = true)
     public static IRubyObject extname(IRubyObject recv, IRubyObject arg) {
         IRubyObject baseFilename = basename(recv, new IRubyObject[] { arg });
         String filename = RubyString.stringValue(baseFilename).toString();
@@ -614,6 +597,7 @@ public class RubyFile extends RubyIO {
      * @param args 
      * @return Resulting absolute path as a String
      */
+    @JRubyMethod(required = 1, optional = 2, singleton = true)
     public static IRubyObject expand_path(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         Arity.checkArgumentCount(runtime, args, 1, 2);
@@ -801,6 +785,7 @@ public class RubyFile extends RubyIO {
      *   [set]:  Matches a single char in a set (re: [...]).
      *
      */
+    @JRubyMethod(name2 = "fnmatch?", required = 2, optional = 1, singleton = true)
     public static IRubyObject fnmatch(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int flags;
@@ -822,6 +807,7 @@ public class RubyFile extends RubyIO {
      * Fixme:  This does not have exact same semantics as RubyArray.join, but they
      * probably could be consolidated (perhaps as join(args[], sep, doChomp)).
      */
+    @JRubyMethod(rest = true, singleton = true)
     public static RubyString join(IRubyObject recv, IRubyObject[] args) {
         boolean isTainted = false;
         StringBuffer buffer = new StringBuffer();
@@ -861,11 +847,13 @@ public class RubyFile extends RubyIO {
         }
     }
     
+    @JRubyMethod(name2 = "stat", required = 1, singleton = true)
     public static IRubyObject lstat(IRubyObject recv, IRubyObject filename) {
         RubyString name = RubyString.stringValue(filename);
         return recv.getRuntime().newRubyFileStat(name.toString());
     }
     
+    @JRubyMethod(name2 = "atime", name3 = "ctime", required = 1, singleton = true)
     public static IRubyObject mtime(IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
         RubyString name = RubyString.stringValue(filename);
@@ -878,6 +866,7 @@ public class RubyFile extends RubyIO {
         return runtime.newTime(file.lastModified());
     }
     
+    @JRubyMethod(required = 1, rest = true, frame = true, singleton = true)
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         return open(recv, args, true, block);
     }
@@ -915,6 +904,7 @@ public class RubyFile extends RubyIO {
         return file;
     }
     
+    @JRubyMethod(required = 2, singleton = true)
     public static IRubyObject rename(IRubyObject recv, IRubyObject oldName, IRubyObject newName) {
         Ruby runtime = recv.getRuntime();
         RubyString oldNameString = RubyString.stringValue(oldName);
@@ -932,6 +922,7 @@ public class RubyFile extends RubyIO {
         return RubyFixnum.zero(runtime);
     }
     
+    @JRubyMethod(name = "size?", required = 1, singleton = true)
     public static IRubyObject size_p(IRubyObject recv, IRubyObject filename) {
         long size = 0;
         
@@ -950,6 +941,7 @@ public class RubyFile extends RubyIO {
         return recv.getRuntime().newFixnum(size);
     }
     
+    @JRubyMethod(required = 1, singleton = true)
     public static RubyArray split(IRubyObject recv, IRubyObject arg) {
         RubyString filename = RubyString.stringValue(arg);
         
@@ -957,6 +949,7 @@ public class RubyFile extends RubyIO {
                 basename(recv, new IRubyObject[] { filename }));
     }
     
+    @JRubyMethod(required = 2, singleton = true)
     public static IRubyObject symlink(IRubyObject recv, IRubyObject from, IRubyObject to) {
         Ruby runtime = recv.getRuntime();
         
@@ -970,6 +963,7 @@ public class RubyFile extends RubyIO {
         }
     }
 
+    @JRubyMethod(name = "symlink?", required = 1, singleton = true)
     public static IRubyObject symlink_p(IRubyObject recv, IRubyObject arg1) {
         Ruby runtime = recv.getRuntime();
         RubyString filename = RubyString.stringValue(arg1);
@@ -997,6 +991,7 @@ public class RubyFile extends RubyIO {
     }
     
     // Can we produce IOError which bypasses a close?
+    @JRubyMethod(required = 2, singleton = true)
     public static IRubyObject truncate(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = recv.getRuntime();
         RubyString filename = arg1.convertToString(); // TODO: SafeStringValue here
@@ -1017,6 +1012,7 @@ public class RubyFile extends RubyIO {
     /**
      * This method does NOT set atime, only mtime, since Java doesn't support anything else.
      */
+    @JRubyMethod(required = 2, rest = true, singleton = true)
     public static IRubyObject utime(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         Arity.checkArgumentCount(runtime, args, 2, -1);
@@ -1047,6 +1043,7 @@ public class RubyFile extends RubyIO {
         return runtime.newFixnum(args.length - 2);
     }
     
+    @JRubyMethod(name2 = "delete", rest = true, singleton = true)
     public static IRubyObject unlink(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         
