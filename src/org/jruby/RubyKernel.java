@@ -601,7 +601,7 @@ public class RubyKernel {
         return recv.getRuntime().newBoolean(recv.getRuntime().getCurrentContext().getPreviousFrame().getBlock().isGiven());
     }
 
-    @JRubyMethod(name = "sprintf", required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "sprintf", name2 = "format", required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
             throw recv.getRuntime().newArgumentError("sprintf must have at least one argument");
