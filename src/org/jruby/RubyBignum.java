@@ -248,7 +248,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_div
      * 
      */
-    @JRubyMethod(name = "/", required = 1)
+    @JRubyMethod(name = "/", name2 = "div", name3 = "quo", required = 1)
     public IRubyObject op_div(IRubyObject other) {
         final BigInteger otherValue;
         if (other instanceof RubyFixnum) {
@@ -359,7 +359,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_pow
      * 
      */
-    @JRubyMethod(name = "**", required = 1)
+    @JRubyMethod(name = "**", name2 = "power", required = 1)
     public IRubyObject op_pow(IRubyObject other) {
         double d;
         if (other instanceof RubyFixnum) {
@@ -529,7 +529,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_eql     
      * 
      */
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?", name2 = "===", required = 1)
     public IRubyObject eql_p(IRubyObject other) {
         if (other instanceof RubyBignum) {
             return value.compareTo(((RubyBignum)other).value) == 0 ? getRuntime().getTrue() : getRuntime().getFalse();

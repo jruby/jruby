@@ -308,7 +308,7 @@ public class RubyFixnum extends RubyInteger {
     @JRubyMethod(name = "div", required = 1)
     public IRubyObject div_div(IRubyObject other) {
         return idiv(other, "div");
-    	}
+    }
     	
     @JRubyMethod(name = "/", required = 1)
     public IRubyObject op_div(IRubyObject other) {
@@ -321,7 +321,7 @@ public class RubyFixnum extends RubyInteger {
             long y = ((RubyFixnum) other).value;
             
             if (y == 0) {
-            	throw getRuntime().newZeroDivisionError();
+                throw getRuntime().newZeroDivisionError();
             }
             
             long div = x / y;
