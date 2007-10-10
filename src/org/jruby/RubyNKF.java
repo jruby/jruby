@@ -36,6 +36,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -99,12 +100,10 @@ public class RubyNKF {
         nkfVersion.freeze();
         nkfDate.freeze();
 
-        nkfModule.defineModuleFunction("nkf", callbackFactory.getFastSingletonMethod("nkf", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-        nkfModule.defineModuleFunction("guess", callbackFactory.getFastSingletonMethod("guess", RubyKernel.IRUBY_OBJECT));
-        nkfModule.defineModuleFunction("guess1", callbackFactory.getFastSingletonMethod("guess1", RubyKernel.IRUBY_OBJECT));
-        nkfModule.defineModuleFunction("guess2", callbackFactory.getFastSingletonMethod("guess2", RubyKernel.IRUBY_OBJECT));
+        nkfModule.defineAnnotatedMethods(RubyNKF.class, callbackFactory);
     }
 
+    @JRubyMethod(name = "guess", required = 1, module = true)
     public static IRubyObject guess(IRubyObject recv, IRubyObject s) {
         Ruby runtime = recv.getRuntime();
         if (!s.respondsTo("to_str")) {
@@ -136,14 +135,17 @@ public class RubyNKF {
             return runtime.newFixnum(UNKNOWN.getValue());
     }
     
+    @JRubyMethod(name = "guess1", required = 1, module = true)
     public static IRubyObject guess1(IRubyObject recv, IRubyObject str) {
         return guess(recv, str);
     }
     
+    @JRubyMethod(name = "guess2", required = 1, module = true)
     public static IRubyObject guess2(IRubyObject recv, IRubyObject str) {
         return guess(recv, str);
     }
     
+    @JRubyMethod(name = "nkf", required = 2, module = true)
     public static IRubyObject nkf(IRubyObject recv, IRubyObject opt, IRubyObject str) {
         Ruby runtime = recv.getRuntime();
         if (!opt.respondsTo("to_str")) {

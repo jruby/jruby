@@ -28,6 +28,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -51,9 +52,7 @@ public class RubyNameError extends RubyException {
 
         nameErrorClass.getMetaClass().defineFastMethod("exception", callbackFactory.getFastOptSingletonMethod("newRubyNameError"));		
 
-        nameErrorClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        nameErrorClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));        
-        nameErrorClass.defineFastMethod("name", callbackFactory.getFastMethod("name"));
+        nameErrorClass.defineAnnotatedMethods(RubyNameError.class, callbackFactory);
 
         return nameErrorClass;
     }
@@ -81,6 +80,7 @@ public class RubyNameError extends RubyException {
         return newError;
     }
 
+    @JRubyMethod(name = "initialize", optional = 2, frame = true)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 1) {
             name = args[args.length - 1];
@@ -97,6 +97,7 @@ public class RubyNameError extends RubyException {
         return this;
     }
 
+    @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
         if (message.isNil()) return getRuntime().newString(message.getMetaClass().getName());
         RubyString str = message.convertToString();
@@ -105,6 +106,7 @@ public class RubyNameError extends RubyException {
         return message;
     }
 
+    @JRubyMethod(name = "name")
     public IRubyObject name() {
         return name;
     }

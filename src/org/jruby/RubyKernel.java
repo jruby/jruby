@@ -615,7 +615,7 @@ public class RubyKernel {
         return str.op_format(newArgs);
     }
 
-    @JRubyMethod(name = "raise", optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "raise", name2 = "fail", optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args, Block block) {
         // FIXME: Pass block down?
         Arity.checkArgumentCount(recv.getRuntime(), args, 0, 3); 

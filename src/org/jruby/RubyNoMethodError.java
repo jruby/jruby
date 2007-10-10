@@ -26,6 +26,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -44,8 +45,7 @@ public class RubyNoMethodError extends RubyNameError {
         RubyClass noMethodErrorClass = runtime.defineClass("NoMethodError", nameErrorClass, NOMETHODERROR_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNoMethodError.class);
         
-        noMethodErrorClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        noMethodErrorClass.defineFastMethod("args", callbackFactory.getFastMethod("args"));
+        noMethodErrorClass.defineAnnotatedMethods(RubyNoMethodError.class, callbackFactory);
 
         return noMethodErrorClass;
     }
@@ -60,6 +60,7 @@ public class RubyNoMethodError extends RubyNameError {
         this.args = args;
     }    
 
+    @JRubyMethod(name = "initialize", optional = 3, frame = true)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 2) {
             this.args = args[args.length - 1];
@@ -74,6 +75,7 @@ public class RubyNoMethodError extends RubyNameError {
         return this;
     }
     
+    @JRubyMethod(name = "args")
     public IRubyObject args() {
         return args;
     }

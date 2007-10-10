@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -66,20 +67,13 @@ public class RubyNil extends RubyObject {
         nilClass.index = ClassIndex.NIL;
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNil.class);
-        nilClass.defineFastMethod("to_i", callbackFactory.getFastSingletonMethod("to_i"));
-        nilClass.defineFastMethod("to_s", callbackFactory.getFastSingletonMethod("to_s"));
-        nilClass.defineFastMethod("to_a", callbackFactory.getFastSingletonMethod("to_a"));
-        nilClass.defineFastMethod("to_f", callbackFactory.getFastSingletonMethod("to_f"));
-        nilClass.defineFastMethod("inspect", callbackFactory.getFastSingletonMethod("inspect"));
         
-        nilClass.defineFastMethod("&", callbackFactory.getFastSingletonMethod("op_and", RubyKernel.IRUBY_OBJECT));
-        nilClass.defineFastMethod("|", callbackFactory.getFastSingletonMethod("op_or", RubyKernel.IRUBY_OBJECT));
-        nilClass.defineFastMethod("^", callbackFactory.getFastSingletonMethod("op_xor", RubyKernel.IRUBY_OBJECT));
-        nilClass.defineFastMethod("nil?", callbackFactory.getFastMethod("nil_p"));
+        nilClass.defineAnnotatedMethods(RubyNil.class, callbackFactory);
         
         nilClass.getMetaClass().undefineMethod("new");
         
-        nilClass.dispatcher = callbackFactory.createDispatcher(nilClass);
+        // FIXME: This is causing a verification error for some reason
+        //nilClass.dispatcher = callbackFactory.createDispatcher(nilClass);
         
         return nilClass;
     }
@@ -109,6 +103,7 @@ public class RubyNil extends RubyObject {
     /** nil_to_i
      *
      */
+    @JRubyMethod(name = "to_i")
     public static RubyFixnum to_i(IRubyObject recv) {
         return RubyFixnum.zero(recv.getRuntime());
     }
@@ -117,6 +112,7 @@ public class RubyNil extends RubyObject {
      * nil_to_f
      *
      */
+    @JRubyMethod(name = "to_f")
     public static RubyFloat to_f(IRubyObject recv) {
         return RubyFloat.newFloat(recv.getRuntime(), 0.0D);
     }
@@ -124,6 +120,7 @@ public class RubyNil extends RubyObject {
     /** nil_to_s
      *
      */
+    @JRubyMethod(name = "to_s")
     public static RubyString to_s(IRubyObject recv) {
         return recv.getRuntime().newString("");
     }
@@ -131,6 +128,7 @@ public class RubyNil extends RubyObject {
     /** nil_to_a
      *
      */
+    @JRubyMethod(name = "to_a")
     public static RubyArray to_a(IRubyObject recv) {
         return recv.getRuntime().newArray(0);
     }
@@ -138,6 +136,7 @@ public class RubyNil extends RubyObject {
     /** nil_inspect
      *
      */
+    @JRubyMethod(name = "inspect")
     public static RubyString inspect(IRubyObject recv) {
         return recv.getRuntime().newString("nil");
     }
@@ -145,6 +144,7 @@ public class RubyNil extends RubyObject {
     /** nil_type
      *
      */
+    @JRubyMethod(name = "type")
     public static RubyClass type(IRubyObject recv) {
         return recv.getRuntime().getNilClass();
     }
@@ -152,6 +152,7 @@ public class RubyNil extends RubyObject {
     /** nil_and
      *
      */
+    @JRubyMethod(name = "&", required = 1)
     public static RubyBoolean op_and(IRubyObject recv, IRubyObject obj) {
         return recv.getRuntime().getFalse();
     }
@@ -159,6 +160,7 @@ public class RubyNil extends RubyObject {
     /** nil_or
      *
      */
+    @JRubyMethod(name = "|", required = 1)
     public static RubyBoolean op_or(IRubyObject recv, IRubyObject obj) {
         return recv.getRuntime().newBoolean(obj.isTrue());
     }
@@ -166,6 +168,7 @@ public class RubyNil extends RubyObject {
     /** nil_xor
      *
      */
+    @JRubyMethod(name = "^", required = 1)
     public static RubyBoolean op_xor(IRubyObject recv, IRubyObject obj) {
         return recv.getRuntime().newBoolean(obj.isTrue());
     }
@@ -174,6 +177,7 @@ public class RubyNil extends RubyObject {
         return this;
     }
     
+    @JRubyMethod(name = "nil?")
     public IRubyObject nil_p() {
         return getRuntime().getTrue();
     }
