@@ -31,6 +31,7 @@ package org.jruby;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -54,11 +55,7 @@ public class RubyThreadGroup extends RubyObject {
         runtime.setThreadGroup(threadGroupClass);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThreadGroup.class);
         
-        threadGroupClass.defineMethod("add", callbackFactory.getMethod("add", RubyThread.class));
-        threadGroupClass.defineMethod("enclose", callbackFactory.getMethod("enclose"));
-        threadGroupClass.defineMethod("enclosed?", callbackFactory.getMethod("isEnclosed"));
-        threadGroupClass.defineMethod("list", callbackFactory.getMethod("list"));
-        threadGroupClass.getMetaClass().defineMethod("new", callbackFactory.getSingletonMethod("newInstance"));
+        threadGroupClass.defineAnnotatedMethods(RubyThreadGroup.class, callbackFactory);
         
         // create the default thread group
         RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(runtime, threadGroupClass);
@@ -67,43 +64,51 @@ public class RubyThreadGroup extends RubyObject {
         return threadGroupClass;
     }
     
+    @JRubyMethod(name = "new", frame = true, meta = true)
     public static IRubyObject newInstance(IRubyObject recv, Block block) {
         return new RubyThreadGroup(recv.getRuntime(), (RubyClass)recv);
     }
 
-    public IRubyObject add(RubyThread rubyThread, Block block) {
-    	if (isFrozen()) {
-        	throw getRuntime().newTypeError("can't add to frozen ThreadGroup");
-    	}
-    	
-    	if (rubyThread.group() != getRuntime().getNil()) {
-    		RubyThreadGroup threadGroup = (RubyThreadGroup)rubyThread.group();
-    		threadGroup.rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
-    	}
-    	
-    	rubyThread.setThreadGroup(this);
-		rubyThreadList.put(new Integer(System.identityHashCode(rubyThread)), rubyThread);
-	
-		return this;
+    @JRubyMethod(name = "add", required = 1, frame = true)
+    public IRubyObject add(IRubyObject rubyThread, Block block) {
+        if (!(rubyThread instanceof RubyThread)) throw getRuntime().newTypeError(rubyThread, getRuntime().getThread());
+        
+        if (isFrozen()) {
+            throw getRuntime().newTypeError("can't add to frozen ThreadGroup");
+        }
+
+        RubyThread thread = (RubyThread)rubyThread;
+        if (thread.group() != getRuntime().getNil()) {
+            RubyThreadGroup threadGroup = (RubyThreadGroup) thread.group();
+            threadGroup.rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
+        }
+
+        thread.setThreadGroup(this);
+        rubyThreadList.put(new Integer(System.identityHashCode(rubyThread)), rubyThread);
+
+        return this;
     }
     
     public void remove(RubyThread rubyThread) {
-    	rubyThread.setThreadGroup(null);
-    	rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
+        rubyThread.setThreadGroup(null);
+        rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
     }
     
+    @JRubyMethod(name = "enclose", frame = true)
     public IRubyObject enclose(Block block) {
-    	enclosed = true;
-    	
-    	return this;
+        enclosed = true;
+
+        return this;
     }
     
-    public IRubyObject isEnclosed(Block block) {
-    	return new RubyBoolean(getRuntime(), enclosed);
+    @JRubyMethod(name = "enclosed?", frame = true)
+    public IRubyObject enclosed_p(Block block) {
+        return new RubyBoolean(getRuntime(), enclosed);
     }
-    
+
+    @JRubyMethod(name = "list", frame = true)
     public IRubyObject list(Block block) {
-    	return getRuntime().newArrayNoCopy((IRubyObject[])rubyThreadList.values().toArray(new IRubyObject[rubyThreadList.size()]));
+        return getRuntime().newArrayNoCopy((IRubyObject[]) rubyThreadList.values().toArray(new IRubyObject[rubyThreadList.size()]));
     }
 
     private RubyThreadGroup(Ruby runtime, RubyClass type) {
