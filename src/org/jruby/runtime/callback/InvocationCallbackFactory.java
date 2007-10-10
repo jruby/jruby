@@ -30,6 +30,7 @@ package org.jruby.runtime.callback;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1063,7 +1064,6 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                                 // TODO: skip singleton methods for now; we'll figure out fast dispatching for them in a future patch
                                 SimpleCallbackMethod simpleMethod = (SimpleCallbackMethod)dynamicMethod;
                                 InvocationCallback callback = (InvocationCallback)simpleMethod.getCallback();
-                                if (callback.isSingleton()) continue;
                                 
                                 // skipping non-public methods for now, to avoid visibility checks in STI
                                 if (dynamicMethod.getVisibility() != Visibility.PUBLIC) continue;
@@ -1164,7 +1164,11 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                             // arity check
                             checkArity(mv, arity);
                             
-                            // FIXME: This doesn't properly handle static methods by passing self/recv
+                            // if singleton load self/recv
+                            if (invocationCallback.isSingleton()) {
+                                mv.aload(DISPATCHER_SELF_INDEX);
+                            }
+                            
                             switch (arity.getValue()) {
                             case 3:
                                 loadArguments(mv, DISPATCHER_ARGS_INDEX, 3, descriptor);
@@ -1177,20 +1181,17 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                                 break;
                             case 0:
                                 break;
-                            case -1:
+                            default: // this should catch all opt/rest cases
                                 mv.aload(DISPATCHER_ARGS_INDEX);
                                 checkCast(mv, IRubyObject[].class);
                                 break;
-                            default:
-                                mv.go_to(defaultLabel);
-                                continue;
                             }
                             
                             Class ret = getReturnClass(method, descriptor);
                             String callSig = cg.sig(ret, descriptor);
-    
+
                             // if block, pass it
-                            if (descriptor.length > 1 && descriptor[descriptor.length - 1] == Block.class) {
+                            if (descriptor.length > 0 && descriptor[descriptor.length - 1] == Block.class) {
                                 mv.aload(DISPATCHER_BLOCK_INDEX);
                             }
                             
