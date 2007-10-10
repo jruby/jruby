@@ -82,7 +82,16 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject[].class));
     private final static String IRUB = cg.p(RubyKernel.IRUBY_OBJECT);
     
-    private static final int DISPATCHER_ARGS_INDEX = 6;
+    
+    public static final int DISPATCHER_THREADCONTEXT_INDEX = 1;
+    public static final int DISPATCHER_SELF_INDEX = 2;
+    public static final int DISPATCHER_RUBYMODULE_INDEX = 3;
+    public static final int DISPATCHER_METHOD_INDEX = 4;
+    public static final int DISPATCHER_NAME_INDEX = 5;
+    public static final int DISPATCHER_ARGS_INDEX = 6;
+    public static final int DISPATCHER_CALLTYPE_INDEX = 7;
+    public static final int DISPATCHER_BLOCK_INDEX = 8;
+    public static final int DISPATCHER_RUNTIME_INDEX = 9;
 
     private static final int METHOD_ARGS_INDEX = 2;
 
@@ -1027,15 +1036,6 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
     
-    public static final int DISPATCHER_THREADCONTEXT_INDEX = 1;
-    public static final int DISPATCHER_SELF_INDEX = 2;
-    public static final int DISPATCHER_RUBYMODULE_INDEX = 3;
-    public static final int DISPATCHER_METHOD_INDEX = 4;
-    public static final int DISPATCHER_NAME_INDEX = 5;
-    public static final int DISPATCHER_CALLTYPE_INDEX = 7;
-    public static final int DISPATCHER_BLOCK_INDEX = 8;
-    public static final int DISPATCHER_RUNTIME_INDEX = 9;
-    
     public Dispatcher createDispatcher(RubyClass metaClass) {
         String className = type.getName() + "Dispatcher_for_" + metaClass.getBaseName();
         String classPath = typePath + "Dispatcher_for_" + metaClass.getBaseName();
@@ -1164,6 +1164,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                             // arity check
                             checkArity(mv, arity);
                             
+                            // FIXME: This doesn't properly handle static methods by passing self/recv
                             switch (arity.getValue()) {
                             case 3:
                                 loadArguments(mv, DISPATCHER_ARGS_INDEX, 3, descriptor);
@@ -1188,6 +1189,11 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                             Class ret = getReturnClass(method, descriptor);
                             String callSig = cg.sig(ret, descriptor);
     
+                            // if block, pass it
+                            if (descriptor.length > 1 && descriptor[descriptor.length - 1] == Block.class) {
+                                mv.aload(DISPATCHER_BLOCK_INDEX);
+                            }
+                            
                             mv.invokevirtual(typePath, method, callSig);
                             mv.areturn();
                         }
