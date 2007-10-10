@@ -47,6 +47,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.Private;
 
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
@@ -80,81 +82,82 @@ public class RubyKernel {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyKernel.class);
         CallbackFactory objectCallbackFactory = runtime.callbackFactory(RubyObject.class);
 
-        module.defineFastModuleFunction("Array", callbackFactory.getFastSingletonMethod("new_array", IRUBY_OBJECT));
-        module.defineFastModuleFunction("Float", callbackFactory.getFastSingletonMethod("new_float", IRUBY_OBJECT));
-        module.defineFastModuleFunction("Integer", callbackFactory.getFastSingletonMethod("new_integer", IRUBY_OBJECT));
-        module.defineFastModuleFunction("String", callbackFactory.getFastSingletonMethod("new_string", IRUBY_OBJECT));
-        module.defineFastModuleFunction("`", callbackFactory.getFastSingletonMethod("backquote", IRUBY_OBJECT));
-        module.defineFastModuleFunction("abort", callbackFactory.getFastOptSingletonMethod("abort"));
-        module.defineModuleFunction("at_exit", callbackFactory.getSingletonMethod("at_exit"));
-        module.defineFastModuleFunction("autoload", callbackFactory.getFastSingletonMethod("autoload", IRUBY_OBJECT, IRUBY_OBJECT));
-        module.defineFastModuleFunction("autoload?", callbackFactory.getFastSingletonMethod("autoload_p", IRUBY_OBJECT));
-        module.defineModuleFunction("binding", callbackFactory.getSingletonMethod("binding"));
-        module.defineModuleFunction("block_given?", callbackFactory.getSingletonMethod("block_given"));
-        module.defineModuleFunction("callcc", callbackFactory.getOptSingletonMethod("callcc"));
-        module.defineModuleFunction("caller", callbackFactory.getOptSingletonMethod("caller"));
-        module.defineModuleFunction("catch", callbackFactory.getSingletonMethod("rbCatch", IRUBY_OBJECT));
-        module.defineModuleFunction("chomp", callbackFactory.getOptSingletonMethod("chomp"));
-        module.defineModuleFunction("chomp!", callbackFactory.getOptSingletonMethod("chomp_bang"));
-        module.defineModuleFunction("chop", callbackFactory.getSingletonMethod("chop"));
-        module.defineModuleFunction("chop!", callbackFactory.getSingletonMethod("chop_bang"));
-        module.defineModuleFunction("eval", callbackFactory.getOptSingletonMethod("eval"));
-        module.defineFastModuleFunction("exit", callbackFactory.getFastOptSingletonMethod("exit"));
-        module.defineFastModuleFunction("exit!", callbackFactory.getFastOptSingletonMethod("exit_bang"));
-        module.defineModuleFunction("fail", callbackFactory.getOptSingletonMethod("raise"));
-        // TODO: Implement Kernel#fork
-        module.defineFastModuleFunction("format", callbackFactory.getFastOptSingletonMethod("sprintf"));
-        module.defineFastModuleFunction("gets", callbackFactory.getFastOptSingletonMethod("gets"));
-        module.defineFastModuleFunction("global_variables", callbackFactory.getFastSingletonMethod("global_variables"));
-        module.defineModuleFunction("gsub", callbackFactory.getOptSingletonMethod("gsub"));
-        module.defineModuleFunction("gsub!", callbackFactory.getOptSingletonMethod("gsub_bang"));
-        // TODO: Add deprecation to Kernel#iterator? (maybe formal deprecation mech.)
-        module.defineModuleFunction("iterator?", callbackFactory.getSingletonMethod("block_given"));
-        module.defineModuleFunction("lambda", callbackFactory.getSingletonMethod("proc"));
-        module.defineModuleFunction("load", callbackFactory.getOptSingletonMethod("load"));
-        module.defineFastModuleFunction("local_variables", callbackFactory.getFastSingletonMethod("local_variables"));
-        module.defineModuleFunction("loop", callbackFactory.getSingletonMethod("loop"));
-        // Note: method_missing is documented as being in Object, but ruby appears to stick it in Kernel.
-        module.defineModuleFunction("method_missing", callbackFactory.getOptSingletonMethod("method_missing"));
-        module.defineModuleFunction("open", callbackFactory.getOptSingletonMethod("open"));
-        module.defineFastModuleFunction("p", callbackFactory.getFastOptSingletonMethod("p"));
-        module.defineFastModuleFunction("print", callbackFactory.getFastOptSingletonMethod("print"));
-        module.defineFastModuleFunction("printf", callbackFactory.getFastOptSingletonMethod("printf"));
-        module.defineModuleFunction("proc", callbackFactory.getSingletonMethod("proc"));
-        // TODO: implement Kernel#putc
-        module.defineFastModuleFunction("putc", callbackFactory.getFastSingletonMethod("putc", IRubyObject.class));
-        module.defineFastModuleFunction("puts", callbackFactory.getFastOptSingletonMethod("puts"));
-        module.defineModuleFunction("raise", callbackFactory.getOptSingletonMethod("raise"));
-        module.defineFastModuleFunction("rand", callbackFactory.getFastOptSingletonMethod("rand"));
-        module.defineFastModuleFunction("readline", callbackFactory.getFastOptSingletonMethod("readline"));
-        module.defineFastModuleFunction("readlines", callbackFactory.getFastOptSingletonMethod("readlines"));
-        module.defineModuleFunction("require", callbackFactory.getSingletonMethod("require", IRUBY_OBJECT));
-        module.defineModuleFunction("scan", callbackFactory.getSingletonMethod("scan", IRUBY_OBJECT));
-        module.defineFastModuleFunction("select", callbackFactory.getFastOptSingletonMethod("select"));
-        module.defineModuleFunction("set_trace_func", callbackFactory.getSingletonMethod("set_trace_func", IRUBY_OBJECT));
-        module.defineModuleFunction("trace_var", callbackFactory.getOptSingletonMethod("trace_var"));
-        module.defineModuleFunction("untrace_var", callbackFactory.getOptSingletonMethod("untrace_var"));
-        module.defineFastModuleFunction("sleep", callbackFactory.getFastOptSingletonMethod("sleep"));
-        module.defineModuleFunction("split", callbackFactory.getOptSingletonMethod("split"));
-        module.defineFastModuleFunction("sprintf", callbackFactory.getFastOptSingletonMethod("sprintf"));
-        module.defineFastModuleFunction("srand", callbackFactory.getFastOptSingletonMethod("srand"));
-        module.defineModuleFunction("sub", callbackFactory.getOptSingletonMethod("sub"));
-        module.defineModuleFunction("sub!", callbackFactory.getOptSingletonMethod("sub_bang"));
-        // Skipping: Kernel#syscall (too system dependent)
-        module.defineFastModuleFunction("system", callbackFactory.getFastOptSingletonMethod("system"));
-        // TODO: Implement Kernel#exec differently?
-        module.defineFastModuleFunction("exec", callbackFactory.getFastOptSingletonMethod("system"));
-        module.defineFastModuleFunction("test", callbackFactory.getFastOptSingletonMethod("test"));
-        module.defineModuleFunction("throw", callbackFactory.getOptSingletonMethod("rbThrow"));
-        // TODO: Implement Kernel#trace_var
-        module.definePublicModuleFunction("trap", callbackFactory.getOptSingletonMethod("trap"));
-        // TODO: Implement Kernel#untrace_var
-        module.defineFastModuleFunction("warn", callbackFactory.getFastSingletonMethod("warn", IRUBY_OBJECT));
-        
-        // Defined p411 Pickaxe 2nd ed.
-        module.defineModuleFunction("singleton_method_added", callbackFactory.getSingletonMethod("singleton_method_added", IRUBY_OBJECT));
-        module.defineModuleFunction("singleton_method_removed", callbackFactory.getSingletonMethod("singleton_method_removed", IRUBY_OBJECT));
-        module.defineModuleFunction("singleton_method_undefined", callbackFactory.getSingletonMethod("singleton_method_undefined", IRUBY_OBJECT));
+        module.defineAnnotatedMethods(RubyKernel.class, callbackFactory);
+//        module.defineFastModuleFunction("Array", callbackFactory.getFastSingletonMethod("new_array", IRUBY_OBJECT));
+//        module.defineFastModuleFunction("Float", callbackFactory.getFastSingletonMethod("new_float", IRUBY_OBJECT));
+//        module.defineFastModuleFunction("Integer", callbackFactory.getFastSingletonMethod("new_integer", IRUBY_OBJECT));
+//        module.defineFastModuleFunction("String", callbackFactory.getFastSingletonMethod("new_string", IRUBY_OBJECT));
+//        module.defineFastModuleFunction("`", callbackFactory.getFastSingletonMethod("backquote", IRUBY_OBJECT));
+//        module.defineFastModuleFunction("abort", callbackFactory.getFastOptSingletonMethod("abort"));
+//        module.defineModuleFunction("at_exit", callbackFactory.getSingletonMethod("at_exit"));
+//        module.defineFastModuleFunction("autoload", callbackFactory.getFastSingletonMethod("autoload", IRUBY_OBJECT, IRUBY_OBJECT));
+//        module.defineFastModuleFunction("autoload?", callbackFactory.getFastSingletonMethod("autoload_p", IRUBY_OBJECT));
+//        module.defineModuleFunction("binding", callbackFactory.getSingletonMethod("binding"));
+//        module.defineModuleFunction("block_given?", callbackFactory.getSingletonMethod("block_given"));
+//        module.defineModuleFunction("callcc", callbackFactory.getOptSingletonMethod("callcc"));
+//        module.defineModuleFunction("caller", callbackFactory.getOptSingletonMethod("caller"));
+//        module.defineModuleFunction("catch", callbackFactory.getSingletonMethod("rbCatch", IRUBY_OBJECT));
+//        module.defineModuleFunction("chomp", callbackFactory.getOptSingletonMethod("chomp"));
+//        module.defineModuleFunction("chomp!", callbackFactory.getOptSingletonMethod("chomp_bang"));
+//        module.defineModuleFunction("chop", callbackFactory.getSingletonMethod("chop"));
+//        module.defineModuleFunction("chop!", callbackFactory.getSingletonMethod("chop_bang"));
+//        module.defineModuleFunction("eval", callbackFactory.getOptSingletonMethod("eval"));
+//        module.defineFastModuleFunction("exit", callbackFactory.getFastOptSingletonMethod("exit"));
+//        module.defineFastModuleFunction("exit!", callbackFactory.getFastOptSingletonMethod("exit_bang"));
+//        module.defineModuleFunction("fail", callbackFactory.getOptSingletonMethod("raise"));
+//        // TODO: Implement Kernel#fork
+//        module.defineFastModuleFunction("format", callbackFactory.getFastOptSingletonMethod("sprintf"));
+//        module.defineFastModuleFunction("gets", callbackFactory.getFastOptSingletonMethod("gets"));
+//        module.defineFastModuleFunction("global_variables", callbackFactory.getFastSingletonMethod("global_variables"));
+//        module.defineModuleFunction("gsub", callbackFactory.getOptSingletonMethod("gsub"));
+//        module.defineModuleFunction("gsub!", callbackFactory.getOptSingletonMethod("gsub_bang"));
+//        // TODO: Add deprecation to Kernel#iterator? (maybe formal deprecation mech.)
+//        module.defineModuleFunction("iterator?", callbackFactory.getSingletonMethod("block_given"));
+//        module.defineModuleFunction("lambda", callbackFactory.getSingletonMethod("proc"));
+//        module.defineModuleFunction("load", callbackFactory.getOptSingletonMethod("load"));
+//        module.defineFastModuleFunction("local_variables", callbackFactory.getFastSingletonMethod("local_variables"));
+//        module.defineModuleFunction("loop", callbackFactory.getSingletonMethod("loop"));
+//        // Note: method_missing is documented as being in Object, but ruby appears to stick it in Kernel.
+//        module.defineModuleFunction("method_missing", callbackFactory.getOptSingletonMethod("method_missing"));
+//        module.defineModuleFunction("open", callbackFactory.getOptSingletonMethod("open"));
+//        module.defineFastModuleFunction("p", callbackFactory.getFastOptSingletonMethod("p"));
+//        module.defineFastModuleFunction("print", callbackFactory.getFastOptSingletonMethod("print"));
+//        module.defineFastModuleFunction("printf", callbackFactory.getFastOptSingletonMethod("printf"));
+//        module.defineModuleFunction("proc", callbackFactory.getSingletonMethod("proc"));
+//        // TODO: implement Kernel#putc
+//        module.defineFastModuleFunction("putc", callbackFactory.getFastSingletonMethod("putc", IRubyObject.class));
+//        module.defineFastModuleFunction("puts", callbackFactory.getFastOptSingletonMethod("puts"));
+//        module.defineModuleFunction("raise", callbackFactory.getOptSingletonMethod("raise"));
+//        module.defineFastModuleFunction("rand", callbackFactory.getFastOptSingletonMethod("rand"));
+//        module.defineFastModuleFunction("readline", callbackFactory.getFastOptSingletonMethod("readline"));
+//        module.defineFastModuleFunction("readlines", callbackFactory.getFastOptSingletonMethod("readlines"));
+//        module.defineModuleFunction("require", callbackFactory.getSingletonMethod("require", IRUBY_OBJECT));
+//        module.defineModuleFunction("scan", callbackFactory.getSingletonMethod("scan", IRUBY_OBJECT));
+//        module.defineFastModuleFunction("select", callbackFactory.getFastOptSingletonMethod("select"));
+//        module.defineModuleFunction("set_trace_func", callbackFactory.getSingletonMethod("set_trace_func", IRUBY_OBJECT));
+//        module.defineModuleFunction("trace_var", callbackFactory.getOptSingletonMethod("trace_var"));
+//        module.defineModuleFunction("untrace_var", callbackFactory.getOptSingletonMethod("untrace_var"));
+//        module.defineFastModuleFunction("sleep", callbackFactory.getFastOptSingletonMethod("sleep"));
+//        module.defineModuleFunction("split", callbackFactory.getOptSingletonMethod("split"));
+//        module.defineFastModuleFunction("sprintf", callbackFactory.getFastOptSingletonMethod("sprintf"));
+//        module.defineFastModuleFunction("srand", callbackFactory.getFastOptSingletonMethod("srand"));
+//        module.defineModuleFunction("sub", callbackFactory.getOptSingletonMethod("sub"));
+//        module.defineModuleFunction("sub!", callbackFactory.getOptSingletonMethod("sub_bang"));
+//        // Skipping: Kernel#syscall (too system dependent)
+//        module.defineFastModuleFunction("system", callbackFactory.getFastOptSingletonMethod("system"));
+//        // TODO: Implement Kernel#exec differently?
+//        module.defineFastModuleFunction("exec", callbackFactory.getFastOptSingletonMethod("system"));
+//        module.defineFastModuleFunction("test", callbackFactory.getFastOptSingletonMethod("test"));
+//        module.defineModuleFunction("throw", callbackFactory.getOptSingletonMethod("rbThrow"));
+//        // TODO: Implement Kernel#trace_var
+//        module.definePublicModuleFunction("trap", callbackFactory.getOptSingletonMethod("trap"));
+//        // TODO: Implement Kernel#untrace_var
+//        module.defineFastModuleFunction("warn", callbackFactory.getFastSingletonMethod("warn", IRUBY_OBJECT));
+//        
+//        // Defined p411 Pickaxe 2nd ed.
+//        module.defineModuleFunction("singleton_method_added", callbackFactory.getSingletonMethod("singleton_method_added", IRUBY_OBJECT));
+//        module.defineModuleFunction("singleton_method_removed", callbackFactory.getSingletonMethod("singleton_method_removed", IRUBY_OBJECT));
+//        module.defineModuleFunction("singleton_method_undefined", callbackFactory.getSingletonMethod("singleton_method_undefined", IRUBY_OBJECT));
         
         // Object methods
         module.defineFastPublicModuleFunction("==", objectCallbackFactory.getFastMethod("op_equal", IRUBY_OBJECT));
@@ -165,7 +168,7 @@ public class RubyKernel {
 
         module.defineFastPublicModuleFunction("to_s", objectCallbackFactory.getFastMethod("to_s"));
         module.defineFastPublicModuleFunction("nil?", objectCallbackFactory.getFastMethod("nil_p"));
-        module.defineFastPublicModuleFunction("to_a", callbackFactory.getFastSingletonMethod("to_a"));
+        module.defineFastPublicModuleFunction("to_a", objectCallbackFactory.getFastMethod("to_a"));
         module.defineFastPublicModuleFunction("hash", objectCallbackFactory.getFastMethod("hash"));
         module.defineFastPublicModuleFunction("id", objectCallbackFactory.getFastMethod("id_deprecated"));
         module.defineFastPublicModuleFunction("object_id", objectCallbackFactory.getFastMethod("id"));
@@ -212,10 +215,12 @@ public class RubyKernel {
         return module;
     }
 
+    @JRubyMethod(name = "at_exit", frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject at_exit(IRubyObject recv, Block block) {
         return recv.getRuntime().pushExitBlock(recv.getRuntime().newProc(false, block));
     }
 
+    @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject autoload_p(final IRubyObject recv, IRubyObject symbol) {
         RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : recv.getRuntime().getObject();
         String name = module.getName() + "::" + symbol.asSymbol();
@@ -226,6 +231,7 @@ public class RubyKernel {
         return recv.getRuntime().newString(autoloadMethod.file());
     }
 
+    @JRubyMethod(name = "autoload", required = 2, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
         Ruby runtime = recv.getRuntime(); 
         final LoadService loadService = runtime.getLoadService();
@@ -258,6 +264,7 @@ public class RubyKernel {
         return runtime.getNil();
     }
 
+    @JRubyMethod(name = "method_missing", rest = true, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject method_missing(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
 
@@ -336,6 +343,7 @@ public class RubyKernel {
         throw new RaiseException((RubyException)exc.newInstance(exArgs, Block.NULL_BLOCK));
     }
 
+    @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(recv.getRuntime(), args,1,3);
         String arg = args[0].convertToString().toString();
@@ -366,10 +374,12 @@ public class RubyKernel {
         return RubyFile.open(runtime.getFile(), args, block);
     }
 
+    @JRubyMethod(name = "gets", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject gets(IRubyObject recv, IRubyObject[] args) {
         return ((RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<")).gets(args);
     }
 
+    @JRubyMethod(name = "abort", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject abort(IRubyObject recv, IRubyObject[] args) {
         if(Arity.checkArgumentCount(recv.getRuntime(), args,0,1) == 1) {
             recv.getRuntime().getGlobalVariables().get("$stderr").callMethod(recv.getRuntime().getCurrentContext(),"puts",args[0]);
@@ -377,6 +387,7 @@ public class RubyKernel {
         throw new MainExitException(1,true);
     }
 
+    @JRubyMethod(name = "Array", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject new_array(IRubyObject recv, IRubyObject object) {
         IRubyObject value = object.checkArrayType();
 
@@ -392,6 +403,7 @@ public class RubyKernel {
         return value;
     }
 
+    @JRubyMethod(name = "Float", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject new_float(IRubyObject recv, IRubyObject object) {
         if(object instanceof RubyFixnum){
             return RubyFloat.newFloat(object.getRuntime(), ((RubyFixnum)object).getDoubleValue());
@@ -413,6 +425,7 @@ public class RubyKernel {
         }
     }
 
+    @JRubyMethod(name = "Integer", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject new_integer(IRubyObject recv, IRubyObject object) {
         if (object instanceof RubyFloat) {
             double val = ((RubyFloat)object).getDoubleValue(); 
@@ -430,10 +443,12 @@ public class RubyKernel {
         return tmp;
     }
 
+    @JRubyMethod(name = "String", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject new_string(IRubyObject recv, IRubyObject object) {
         return object.convertToType(recv.getRuntime().getString(), MethodIndex.TO_S, "to_s");
     }
 
+    @JRubyMethod(name = "p", rest = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject p(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
         ThreadContext context = recv.getRuntime().getCurrentContext();
@@ -449,11 +464,13 @@ public class RubyKernel {
 
     /** rb_f_putc
      */
+    @JRubyMethod(name = "putc", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject putc(IRubyObject recv, IRubyObject ch) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
         return defout.callMethod(recv.getRuntime().getCurrentContext(), "putc", ch);
     }
 
+    @JRubyMethod(name = "puts", rest = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject puts(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
         ThreadContext context = recv.getRuntime().getCurrentContext();
@@ -463,6 +480,7 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "print", rest = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject print(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
         ThreadContext context = recv.getRuntime().getCurrentContext();
@@ -472,6 +490,7 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "printf", rest = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject printf(IRubyObject recv, IRubyObject[] args) {
         if (args.length != 0) {
             IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
@@ -489,6 +508,7 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "readline", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject readline(IRubyObject recv, IRubyObject[] args) {
         IRubyObject line = gets(recv, args);
 
@@ -499,6 +519,7 @@ public class RubyKernel {
         return line;
     }
 
+    @JRubyMethod(name = "readlines", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyArray readlines(IRubyObject recv, IRubyObject[] args) {
         return ((RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<")).readlines(args);
     }
@@ -520,10 +541,12 @@ public class RubyKernel {
         }
     }
 
+    @JRubyMethod(name = "sub!", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject sub_bang(IRubyObject recv, IRubyObject[] args, Block block) {
         return getLastlineString(recv.getRuntime()).sub_bang(args, block);
     }
 
+    @JRubyMethod(name = "sub", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject sub(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyString str = (RubyString) getLastlineString(recv.getRuntime()).dup();
 
@@ -534,10 +557,12 @@ public class RubyKernel {
         return str;
     }
 
+    @JRubyMethod(name = "gsub!", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject gsub_bang(IRubyObject recv, IRubyObject[] args, Block block) {
         return getLastlineString(recv.getRuntime()).gsub_bang(args, block);
     }
 
+    @JRubyMethod(name = "gsub", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject gsub(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyString str = (RubyString) getLastlineString(recv.getRuntime()).dup();
 
@@ -548,10 +573,12 @@ public class RubyKernel {
         return str;
     }
 
+    @JRubyMethod(name = "chop!", frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject chop_bang(IRubyObject recv, Block block) {
         return getLastlineString(recv.getRuntime()).chop_bang();
     }
 
+    @JRubyMethod(name = "chop", frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject chop(IRubyObject recv, Block block) {
         RubyString str = getLastlineString(recv.getRuntime());
 
@@ -564,10 +591,12 @@ public class RubyKernel {
         return str;
     }
 
+    @JRubyMethod(name = "chomp!", optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject chomp_bang(IRubyObject recv, IRubyObject[] args, Block block) {
         return getLastlineString(recv.getRuntime()).chomp_bang(args);
     }
 
+    @JRubyMethod(name = "chomp", optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject chomp(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyString str = getLastlineString(recv.getRuntime());
         RubyString dup = (RubyString) str.dup();
@@ -580,18 +609,22 @@ public class RubyKernel {
         return dup;
     }
 
+    @JRubyMethod(name = "split", optional = 2, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject split(IRubyObject recv, IRubyObject[] args, Block block) {
         return getLastlineString(recv.getRuntime()).split(args);
     }
 
+    @JRubyMethod(name = "scan", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject scan(IRubyObject recv, IRubyObject pattern, Block block) {
         return getLastlineString(recv.getRuntime()).scan(pattern, block);
     }
 
+    @JRubyMethod(name = "select", required = 1, optional = 3, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject select(IRubyObject recv, IRubyObject[] args) {
         return RubyIO.select_static(recv.getRuntime(), args);
     }
 
+    @JRubyMethod(name = "sleep", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject sleep(IRubyObject recv, IRubyObject[] args) {
         long milliseconds;
 
@@ -625,6 +658,7 @@ public class RubyKernel {
     }
 
     // FIXME: Add at_exit and finalizers to exit, then make exit_bang not call those.
+    @JRubyMethod(name = "exit", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
         recv.getRuntime().secure(4);
 
@@ -641,6 +675,7 @@ public class RubyKernel {
         throw recv.getRuntime().newSystemExit(status);
     }
 
+    @JRubyMethod(name = "exit!", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
         return exit(recv, args);
     }
@@ -649,6 +684,7 @@ public class RubyKernel {
     /** Returns an Array with the names of all global variables.
      *
      */
+    @JRubyMethod(name = "global_variables", module = true, visibility = Visibility.PRIVATE)
     public static RubyArray global_variables(IRubyObject recv) {
         RubyArray globalVariables = recv.getRuntime().newArray();
 
@@ -665,6 +701,7 @@ public class RubyKernel {
     /** Returns an Array with the names of all local variables.
      *
      */
+    @JRubyMethod(name = "local_variables", module = true, visibility = Visibility.PRIVATE)
     public static RubyArray local_variables(IRubyObject recv) {
         final Ruby runtime = recv.getRuntime();
         RubyArray localVariables = runtime.newArray();
@@ -676,15 +713,18 @@ public class RubyKernel {
         return localVariables;
     }
 
+    @JRubyMethod(name = "binding", frame = true, module = true, visibility = Visibility.PRIVATE)
     public static RubyBinding binding(IRubyObject recv, Block block) {
         // FIXME: Pass block into binding
         return recv.getRuntime().newBinding();
     }
 
-    public static RubyBoolean block_given(IRubyObject recv, Block block) {
+    @JRubyMethod(name = "block_given?", name2 = "iterator?", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static RubyBoolean block_given_p(IRubyObject recv, Block block) {
         return recv.getRuntime().newBoolean(recv.getRuntime().getCurrentContext().getPreviousFrame().getBlock().isGiven());
     }
 
+    @JRubyMethod(name = "sprintf", required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
             throw recv.getRuntime().newArgumentError("sprintf must have at least one argument");
@@ -698,6 +738,7 @@ public class RubyKernel {
         return str.op_format(newArgs);
     }
 
+    @JRubyMethod(name = "raise", optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args, Block block) {
         // FIXME: Pass block down?
         Arity.checkArgumentCount(recv.getRuntime(), args, 0, 3); 
@@ -749,6 +790,7 @@ public class RubyKernel {
      * @param recv ruby object used to call require (any object will do and it won't be used anyway).
      * @param name the name of the file to require
      **/
+    @JRubyMethod(name = "require", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject require(IRubyObject recv, IRubyObject name, Block block) {
         if (recv.getRuntime().getLoadService().require(name.toString())) {
             return recv.getRuntime().getTrue();
@@ -756,12 +798,14 @@ public class RubyKernel {
         return recv.getRuntime().getFalse();
     }
 
-    public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyString file = args[0].convertToString();
+    @JRubyMethod(name = "load", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject load(IRubyObject recv, IRubyObject arg1, Block block) {
+        RubyString file = arg1.convertToString();
         recv.getRuntime().getLoadService().load(file.toString());
         return recv.getRuntime().getTrue();
     }
 
+    @JRubyMethod(name = "eval", required = 1, optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject eval(IRubyObject recv, IRubyObject[] args, Block block) {
         if (args == null || args.length == 0) {
             throw recv.getRuntime().newArgumentError(args.length, 1);
@@ -800,7 +844,8 @@ public class RubyKernel {
         return recv.evalWithBinding(context, src, scope, file, line);
     }
 
-    public static IRubyObject callcc(IRubyObject recv, IRubyObject[] args, Block block) {
+    @JRubyMethod(name = "callcc", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject callcc(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
         runtime.getWarnings().warn("Kernel#callcc: Continuations are not implemented in JRuby and will not work");
         IRubyObject cc = runtime.getContinuation().callMethod(runtime.getCurrentContext(),"new");
@@ -808,6 +853,7 @@ public class RubyKernel {
         return block.yield(runtime.getCurrentContext(),cc);
     }
 
+    @JRubyMethod(name = "caller", optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject caller(IRubyObject recv, IRubyObject[] args, Block block) {
         int level = args.length > 0 ? RubyNumeric.fix2int(args[0]) : 1;
 
@@ -818,6 +864,7 @@ public class RubyKernel {
         return ThreadContext.createBacktraceFromFrames(recv.getRuntime(), recv.getRuntime().getCurrentContext().createBacktrace(level, false));
     }
 
+    @JRubyMethod(name = "catch", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject rbCatch(IRubyObject recv, IRubyObject tag, Block block) {
         ThreadContext context = recv.getRuntime().getCurrentContext();
         try {
@@ -832,6 +879,7 @@ public class RubyKernel {
         }
     }
 
+    @JRubyMethod(name = "throw", required = 1, frame = true, optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject rbThrow(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
 
@@ -853,11 +901,13 @@ public class RubyKernel {
         throw runtime.newNameError(message, tag);
     }
 
+    @JRubyMethod(name = "trap", required = 1, frame = true, optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block block) {
         recv.getRuntime().getLoadService().require("jsignal");
         return recv.callMethod(recv.getRuntime().getCurrentContext(), "trap", args, CallType.FUNCTIONAL, block);
     }
     
+    @JRubyMethod(name = "warn", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject warn(IRubyObject recv, IRubyObject message) {
         Ruby runtime = recv.getRuntime();
         if (!runtime.getGlobalVariables().get("$VERBOSE").isNil()) {
@@ -868,6 +918,7 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "set_trace_func", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject set_trace_func(IRubyObject recv, IRubyObject trace_func, Block block) {
         if (trace_func.isNil()) {
             recv.getRuntime().setTraceFunction(null);
@@ -879,6 +930,7 @@ public class RubyKernel {
         return trace_func;
     }
 
+    @JRubyMethod(name = "trace_var", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject trace_var(IRubyObject recv, IRubyObject[] args, Block block) {
         if (args.length == 0) throw recv.getRuntime().newArgumentError(0, 1);
         RubyProc proc = null;
@@ -905,6 +957,7 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "untrace_var", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject untrace_var(IRubyObject recv, IRubyObject[] args, Block block) {
         if (args.length == 0) throw recv.getRuntime().newArgumentError(0, 1);
         String var = null;
@@ -933,23 +986,27 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "singleton_method_added", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject singleton_method_added(IRubyObject recv, IRubyObject symbolId, Block block) {
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "singleton_method_removed", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject singleton_method_removed(IRubyObject recv, IRubyObject symbolId, Block block) {
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "singleton_method_undefined", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject singleton_method_undefined(IRubyObject recv, IRubyObject symbolId, Block block) {
         return recv.getRuntime().getNil();
     }
     
-    
+    @JRubyMethod(name = "proc", name2 = "lambda", frame = true, module = true, visibility = Visibility.PRIVATE)
     public static RubyProc proc(IRubyObject recv, Block block) {
         return recv.getRuntime().newProc(true, block);
     }
 
+    @JRubyMethod(name = "loop", frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject loop(IRubyObject recv, Block block) {
         ThreadContext context = recv.getRuntime().getCurrentContext();
         while (true) {
@@ -972,6 +1029,8 @@ public class RubyKernel {
             }
         }
     }
+    
+    @JRubyMethod(name = "test", required = 2, optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject test(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         if (args.length == 0) {
@@ -1118,6 +1177,7 @@ public class RubyKernel {
         }
     }
 
+    @JRubyMethod(name = "`", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject backquote(IRubyObject recv, IRubyObject aString) {
         Ruby runtime = recv.getRuntime();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -1129,6 +1189,7 @@ public class RubyKernel {
         return RubyString.newString(recv.getRuntime(), output.toByteArray());
     }
     
+    @JRubyMethod(name = "srand", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyInteger srand(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         long oldRandomSeed = runtime.getRandomSeed();
@@ -1147,6 +1208,7 @@ public class RubyKernel {
         return runtime.newFixnum(oldRandomSeed);
     }
 
+    @JRubyMethod(name = "rand", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyNumeric rand(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         long ceil;
@@ -1177,6 +1239,7 @@ public class RubyKernel {
         return runtime.newFixnum(runtime.getRandom().nextInt((int) ceil));
     }
 
+    @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int resultCode;
@@ -1187,10 +1250,5 @@ public class RubyKernel {
         }
         recv.getRuntime().getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         return runtime.newBoolean(resultCode == 0);
-    }
-    
-    public static RubyArray to_a(IRubyObject recv) {
-        recv.getRuntime().getWarnings().warn("default 'to_a' will be obsolete");
-        return recv.getRuntime().newArray(recv);
     }
 }

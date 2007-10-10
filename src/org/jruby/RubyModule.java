@@ -35,7 +35,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.lang.annotation.AnnotationTypeMismatchException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -662,18 +661,22 @@ public class RubyModule extends RubyObject {
             }
             
             if (jrubyMethod.module()) {
+                // module/singleton methods are all defined public
+                DynamicMethod moduleMethod = dynamicMethod.dup();
+                moduleMethod.setVisibility(Visibility.PUBLIC);
+                
                 RubyModule singletonClass = getSingletonClass();
 
                 if (jrubyMethod.name().equals("")) {
-                    singletonClass.addMethod(method.getName(), dynamicMethod);
+                    singletonClass.addMethod(method.getName(), moduleMethod);
                 } else {
-                    singletonClass.addMethod(jrubyMethod.name(), dynamicMethod);
+                    singletonClass.addMethod(jrubyMethod.name(), moduleMethod);
                 }
-                if (!jrubyMethod.name2().equals("")) singletonClass.addMethod(jrubyMethod.name2(), dynamicMethod);
-                if (!jrubyMethod.name3().equals("")) singletonClass.addMethod(jrubyMethod.name3(), dynamicMethod);
-                if (!jrubyMethod.name4().equals("")) singletonClass.addMethod(jrubyMethod.name4(), dynamicMethod);
-                if (!jrubyMethod.name5().equals("")) singletonClass.addMethod(jrubyMethod.name5(), dynamicMethod);
-                if (!jrubyMethod.name6().equals("")) singletonClass.addMethod(jrubyMethod.name6(), dynamicMethod);
+                if (!jrubyMethod.name2().equals("")) singletonClass.addMethod(jrubyMethod.name2(), moduleMethod);
+                if (!jrubyMethod.name3().equals("")) singletonClass.addMethod(jrubyMethod.name3(), moduleMethod);
+                if (!jrubyMethod.name4().equals("")) singletonClass.addMethod(jrubyMethod.name4(), moduleMethod);
+                if (!jrubyMethod.name5().equals("")) singletonClass.addMethod(jrubyMethod.name5(), moduleMethod);
+                if (!jrubyMethod.name6().equals("")) singletonClass.addMethod(jrubyMethod.name6(), moduleMethod);
 
                 if (!jrubyMethod.alias().equals("")) {
                     singletonClass.defineAlias(jrubyMethod.alias(), jrubyMethod.name());

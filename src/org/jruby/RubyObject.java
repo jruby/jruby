@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.Node;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
@@ -1276,6 +1277,12 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public IRubyObject to_s() {
     	return anyToString();
+    }
+    
+    @JRubyMethod(name = "to_a", visibility = Visibility.PUBLIC)
+    public RubyArray to_a() {
+        getRuntime().getWarnings().warn("default 'to_a' will be obsolete");
+        return getRuntime().newArray(this);
     }
 
     public IRubyObject instance_eval(IRubyObject[] args, Block block) {
