@@ -26,9 +26,11 @@
 
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubySystemExit extends RubyException {
@@ -44,9 +46,7 @@ public class RubySystemExit extends RubyException {
         RubyClass systemExitClass = runtime.defineClass("SystemExit", exceptionClass, SYSTEMEXIT_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubySystemExit.class);
 
-        systemExitClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        systemExitClass.defineMethod("status", callbackFactory.getFastMethod("status"));
-        systemExitClass.defineMethod("success?", callbackFactory.getFastMethod("success_p"));
+        systemExitClass.defineAnnotatedMethods(RubySystemExit.class, callbackFactory);
         
         return systemExitClass;
     }    
@@ -56,6 +56,7 @@ public class RubySystemExit extends RubyException {
         status = runtime.getNil();
     }
 
+    @JRubyMethod(name = "initialize", optional = 1, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[]args, Block block) {
         status = RubyFixnum.zero(getRuntime());
         if (args.length > 0 && args[0] instanceof RubyFixnum) {
@@ -68,10 +69,12 @@ public class RubySystemExit extends RubyException {
         return this;
     }
 
+    @JRubyMethod(name = "status")
     public IRubyObject status() {
         return status;
     }
 
+    @JRubyMethod(name = "success?")
     public IRubyObject success_p() {
         if (status.isNil()) return getRuntime().getTrue();
         if (status.equals(RubyFixnum.zero(getRuntime()))) return getRuntime().getTrue();
