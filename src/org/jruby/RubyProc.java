@@ -34,6 +34,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.Arity;
@@ -41,6 +42,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -71,16 +73,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
         runtime.setProc(procClass);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyProc.class);
         
-        procClass.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
-        procClass.defineFastMethod("binding", callbackFactory.getFastMethod("binding"));
-        procClass.defineMethod("call", callbackFactory.getOptMethod("call"));
-        procClass.defineAlias("[]", "call");
-        procClass.defineFastMethod("clone", callbackFactory.getFastMethod("rbClone"));
-        procClass.defineFastMethod("dup", callbackFactory.getFastMethod("dup"));
-        procClass.defineFastMethod("to_proc", callbackFactory.getFastMethod("to_proc"));
-        procClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-
-        procClass.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        procClass.defineAnnotatedMethods(RubyProc.class, callbackFactory);
         
         return procClass;
     }
@@ -101,6 +94,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
         return proc;
     }
     
+    @JRubyMethod(name = "initialize", rest = true, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block procBlock) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 0);
         if (procBlock == null) {
@@ -118,6 +112,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
         return this;
     }
     
+    @JRubyMethod(name = "clone")
     public IRubyObject rbClone() {
     	RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), isLambda);
     	newProc.block = getBlock();
@@ -125,6 +120,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
     	return newProc;
     }
 
+    @JRubyMethod(name = "dup")
     public IRubyObject dup() {
         RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), isLambda);
         newProc.block = getBlock();
@@ -136,6 +132,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
      * since we need to deal with special case of Proc.new with no arguments or block arg.  In 
      * this case, we need to check previous frame for a block to consume.
      */
+    @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         IRubyObject obj = ((RubyClass) recv).allocate();
@@ -149,6 +146,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
         return obj;
     }
 
+    @JRubyMethod(name = "binding")
     public IRubyObject binding() {
         return getRuntime().newBinding(block);
     }
@@ -158,6 +156,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
     }
 
     // ENEBO: For method def others are Java to java versions
+    @JRubyMethod(name = "call", name2 = "[]", rest = true, frame = true)
     public IRubyObject call(IRubyObject[] args, Block unusedBlock) {
         return call(args, null, Block.NULL_BLOCK);
     }
@@ -196,10 +195,12 @@ public class RubyProc extends RubyObject implements JumpTarget {
         } 
     }
 
+    @JRubyMethod(name = "arity")
     public RubyFixnum arity() {
         return getRuntime().newFixnum(block.arity().getValue());
     }
     
+    @JRubyMethod(name = "to_proc")
     public RubyProc to_proc() {
     	return this;
     }

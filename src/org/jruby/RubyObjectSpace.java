@@ -32,11 +32,13 @@
 package org.jruby;
 
 import java.util.Iterator;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyObjectSpace {
@@ -48,21 +50,17 @@ public class RubyObjectSpace {
         RubyModule objectSpaceModule = runtime.defineModule("ObjectSpace");
         runtime.setObjectSpaceModule(objectSpaceModule);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyObjectSpace.class);
-        objectSpaceModule.defineModuleFunction("each_object", callbackFactory.getOptSingletonMethod("each_object"));
-        objectSpaceModule.defineFastModuleFunction("garbage_collect", callbackFactory.getFastSingletonMethod("garbage_collect"));
-        objectSpaceModule.defineFastModuleFunction("_id2ref", callbackFactory.getFastSingletonMethod("id2ref", RubyFixnum.class));
-        objectSpaceModule.defineModuleFunction("define_finalizer", 
-        		callbackFactory.getOptSingletonMethod("define_finalizer"));
-        objectSpaceModule.defineModuleFunction("undefine_finalizer", 
-                callbackFactory.getOptSingletonMethod("undefine_finalizer"));
+        
+        objectSpaceModule.defineAnnotatedMethods(RubyObjectSpace.class, callbackFactory);
 
         return objectSpaceModule;
     }
 
+    @JRubyMethod(name = "define_finalizer", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyProc proc = null;
-        if(Arity.checkArgumentCount(runtime, args,1,2) == 2) {
+        if (Arity.checkArgumentCount(runtime, args,1,2) == 2) {
             if(args[1] instanceof RubyProc) {
                 proc = (RubyProc)args[1];
             } else {
@@ -76,15 +74,20 @@ public class RubyObjectSpace {
         return recv;
     }
 
-    public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
-        Arity.checkArgumentCount(recv.getRuntime(), args,1,1);
-        recv.getRuntime().getObjectSpace().removeFinalizers(RubyNumeric.fix2long(args[0].id()));
+    @JRubyMethod(name = "undefine_finalizer", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject arg1, Block block) {
+        recv.getRuntime().getObjectSpace().removeFinalizers(RubyNumeric.fix2long(arg1.id()));
         return recv;
     }
 
-    public static IRubyObject id2ref(IRubyObject recv, RubyFixnum id) {
+    @JRubyMethod(name = "_id2ref", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
         Ruby runtime = id.getRuntime();
-        long longId = id.getLongValue();
+        if (!(id instanceof RubyFixnum)) {
+            throw recv.getRuntime().newTypeError(id, recv.getRuntime().getFixnum());
+        }
+        RubyFixnum idFixnum = (RubyFixnum)id;
+        long longId = idFixnum.getLongValue();
         if (longId == 0) {
             return runtime.getFalse();
         } else if (longId == 2) {
@@ -101,6 +104,7 @@ public class RubyObjectSpace {
         }
     }
     
+    @JRubyMethod(name = "each_object", optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject each_object(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyModule rubyClass;
         if (args.length == 0) {
@@ -134,6 +138,7 @@ public class RubyObjectSpace {
         return recv.getRuntime().newFixnum(count);
     }
 
+    @JRubyMethod(name = "garbage_collect", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject garbage_collect(IRubyObject recv) {
         return RubyGC.start(recv);
     }

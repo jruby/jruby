@@ -39,6 +39,7 @@ package org.jruby;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -139,29 +140,11 @@ public class RubyRange extends RubyObject {
         
         result.includeModule(runtime.getEnumerable());
 
-        result.defineMethod("==", callbackFactory.getMethod("op_equal", RubyKernel.IRUBY_OBJECT));
-        result.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
-        result.defineFastMethod("begin", callbackFactory.getFastMethod("first"));
-        result.defineMethod("each", callbackFactory.getMethod("each"));
-        result.defineFastMethod("end", callbackFactory.getFastMethod("last"));
-        result.defineFastMethod("exclude_end?", callbackFactory.getFastMethod("exclude_end_p"));
-        result.defineFastMethod("first", callbackFactory.getFastMethod("first"));
-        result.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
-        result.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        result.defineMethod("inspect", callbackFactory.getMethod("inspect"));
-        result.defineFastMethod("last", callbackFactory.getFastMethod("last"));
-        result.defineMethod("length", callbackFactory.getMethod("length"));
-        result.defineMethod("size", callbackFactory.getMethod("length"));
-        result.defineMethod("step", callbackFactory.getOptMethod("step"));
-        result.defineMethod("to_s", callbackFactory.getMethod("to_s"));
-
-        result.defineMethod("include?", callbackFactory.getMethod("include_p", RubyKernel.IRUBY_OBJECT));
         // We override Enumerable#member? since ranges in 1.8.1 are continuous.
         //        result.defineMethod("member?", callbackFactory.getMethod("include_p", RubyKernel.IRUBY_OBJECT));
         //        result.defineMethod("===", callbackFactory.getMethod("include_p", RubyKernel.IRUBY_OBJECT));
 
-        result.defineAlias("member?", "include?");
-        result.defineAlias("===", "include?");
+        result.defineAnnotatedMethods(RubyRange.class, callbackFactory);
         
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
         result.getMetaClass().defineMethod("new", classCB.getOptMethod("newInstance"));
@@ -191,13 +174,12 @@ public class RubyRange extends RubyObject {
     public long[] getBeginLength(long limit, boolean truncate, boolean isStrict) {
         long beginLong = RubyNumeric.num2long(begin);
         long endLong = RubyNumeric.num2long(end);
-        
+
         // Apparent legend for MRI 'err' param to JRuby 'truncate' and 'isStrict':
         // 0 =>  truncate && !strict
         // 1 => !truncate &&  strict
         // 2 =>  truncate &&  strict
-
-        if (! isExclusive) {
+        if (!isExclusive) {
             endLong++;
         }
 
@@ -222,19 +204,19 @@ public class RubyRange extends RubyObject {
             endLong = limit;
         }
 
-		if (endLong < 0  || (!isExclusive && endLong == 0)) {
-			endLong += limit;
-			if (endLong < 0) {
-				if (isStrict) {
-					throw getRuntime().newRangeError(inspect().toString() + " out of range.");
-				}
-				return null;
-			}
-		}
+        if (endLong < 0 || (!isExclusive && endLong == 0)) {
+            endLong += limit;
+            if (endLong < 0) {
+                if (isStrict) {
+                    throw getRuntime().newRangeError(inspect().toString() + " out of range.");
+                }
+                return null;
+            }
+        }
 
-        return new long[] { beginLong, Math.max(endLong - beginLong, 0L) };
+        return new long[]{beginLong, Math.max(endLong - beginLong, 0L)};
     }
-    
+
     public long[] begLen(long len, int err){
         long beg = RubyNumeric.num2long(this.begin);
         long end = RubyNumeric.num2long(this.end);
@@ -280,6 +262,7 @@ public class RubyRange extends RubyObject {
         return range;
     }
 
+    @JRubyMethod(name = "initialize", required = 2, optional = 1, frame = true)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         if (args.length == 3) {
             init(args[0], args[1], (RubyBoolean) args[2]);
@@ -291,14 +274,17 @@ public class RubyRange extends RubyObject {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "first", name2 = "begin")
     public IRubyObject first() {
         return begin;
     }
 
+    @JRubyMethod(name = "last", name2 = "end")
     public IRubyObject last() {
         return end;
     }
     
+    @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         ThreadContext context = getRuntime().getCurrentContext();
         long baseHash = (isExclusive ? 1 : 0);
@@ -316,6 +302,7 @@ public class RubyRange extends RubyObject {
     private static byte[] DOTDOTDOT = "...".getBytes();
     private static byte[] DOTDOT = "..".getBytes();
 
+    @JRubyMethod(name = "inspect", frame = true)
     public IRubyObject inspect(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();        
         RubyString str = RubyString.objAsString(begin.callMethod(context, "inspect")).strDup();
@@ -327,6 +314,7 @@ public class RubyRange extends RubyObject {
         return str;
     }
     
+    @JRubyMethod(name = "to_s", frame = true)
     public IRubyObject to_s(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();        
         RubyString str = RubyString.objAsString(begin).strDup();
@@ -339,10 +327,12 @@ public class RubyRange extends RubyObject {
 
     }
 
+    @JRubyMethod(name = "exclude_end?")
     public RubyBoolean exclude_end_p() {
         return getRuntime().newBoolean(isExclusive);
     }
 
+    @JRubyMethod(name = "length", frame = true)
     public RubyFixnum length(Block block) {
         long size = 0;
         ThreadContext context = getRuntime().getCurrentContext();
@@ -371,6 +361,7 @@ public class RubyRange extends RubyObject {
         return getRuntime().newFixnum(size);
     }
 
+    @JRubyMethod(name = "==", required = 1, frame = true)
     public IRubyObject op_equal(IRubyObject other, Block block) {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyRange)) return getRuntime().getFalse();
@@ -382,6 +373,7 @@ public class RubyRange extends RubyObject {
         return getRuntime().newBoolean(result);
     }
     
+    @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql_p(IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyRange)) return getRuntime().getFalse();
@@ -390,6 +382,7 @@ public class RubyRange extends RubyObject {
         return getRuntime().getTrue();
     }
 
+    @JRubyMethod(name = "each", frame = true)
     public IRubyObject each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         
@@ -441,6 +434,7 @@ public class RubyRange extends RubyObject {
         return this;
     }
     
+    @JRubyMethod(name = "step", optional = 1, frame = true)
     public IRubyObject step(IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
         
@@ -494,6 +488,7 @@ public class RubyRange extends RubyObject {
         return false;
     }
 
+    @JRubyMethod(name = "include?", name2 = "member?", name3 = "===", required = 1, frame = true)
     public RubyBoolean include_p(IRubyObject obj, Block block) {
         RubyBoolean val = getRuntime().getFalse();
         if(r_le(begin,obj)) {

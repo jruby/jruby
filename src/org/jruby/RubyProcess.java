@@ -28,10 +28,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 
@@ -51,6 +53,9 @@ public class RubyProcess {
 
         CallbackFactory processCallbackFactory = runtime.callbackFactory(RubyProcess.class);
         CallbackFactory process_statusCallbackFactory = runtime.callbackFactory(RubyProcess.RubyStatus.class);
+        
+        process.defineAnnotatedMethods(RubyProcess.class, processCallbackFactory);
+        process_status.defineAnnotatedMethods(RubyStatus.class, process_statusCallbackFactory);
 
 //        process.defineModuleFunction("fork", processCallbackFactory.getSingletonMethod("fork"));
 //        process.defineModuleFunction("exit!", processCallbackFactory.getOptSingletonMethod("exit_bang"));
@@ -63,7 +68,6 @@ public class RubyProcess {
 //        process.defineModuleFunction("waitpid2", processCallbackFactory.getOptSingletonMethod("waitpid2"));
 //        process.defineModuleFunction("waitall", processCallbackFactory.getSingletonMethod("waitall"));
 //        process.defineModuleFunction("detach", processCallbackFactory.getSingletonMethod("detach", RubyKernel.IRUBY_OBJECT));
-        process.defineModuleFunction("pid", processCallbackFactory.getFastSingletonMethod("pid"));
 //        process.defineModuleFunction("ppid", processCallbackFactory.getSingletonMethod("ppid"));
 //
 //        process.defineModuleFunction("getpgrp", processCallbackFactory.getSingletonMethod("getprgrp"));
@@ -95,24 +99,16 @@ public class RubyProcess {
 //        process.defineModuleFunction("groups=", processCallbackFactory.getSingletonMethod("groups_set", RubyKernel.IRUBY_OBJECT));
 //        process.defineModuleFunction("maxgroups", processCallbackFactory.getSingletonMethod("maxgroups"));
 //        process.defineModuleFunction("maxgroups=", processCallbackFactory.getSingletonMethod("maxgroups_set", RubyKernel.IRUBY_OBJECT));
-        process.defineModuleFunction("times", processCallbackFactory.getSingletonMethod("times"));
         
         // Process::Status methods  
-        process_status.defineMethod("==", process_statusCallbackFactory.getMethod("op_eq", RubyKernel.IRUBY_OBJECT));
 //        process_status.defineMethod("&", process_statusCallbackFactory.getMethod("op_and"));
-        process_status.defineMethod(">>", process_statusCallbackFactory.getMethod("rightshift_op", RubyKernel.IRUBY_OBJECT));
-        process_status.defineMethod("to_i", process_statusCallbackFactory.getMethod("to_i"));
 //        process_status.defineMethod("to_int", process_statusCallbackFactory.getMethod("to_int"));
-        process_status.defineMethod("to_s", process_statusCallbackFactory.getMethod("to_s"));
-        process_status.defineMethod("inspect", process_statusCallbackFactory.getMethod("inspect"));
 //        process_status.defineMethod("pid", process_statusCallbackFactory.getMethod("pid"));
 //        process_status.defineMethod("stopped?", process_statusCallbackFactory.getMethod("stopped_p"));
 //        process_status.defineMethod("stopsig", process_statusCallbackFactory.getMethod("stopsig"));
 //        process_status.defineMethod("signaled?", process_statusCallbackFactory.getMethod("signaled_p"));
 //        process_status.defineMethod("termsig", process_statusCallbackFactory.getMethod("termsig"));
 //        process_status.defineMethod("exited?", process_statusCallbackFactory.getMethod("exited_p"));
-        process_status.defineMethod("exitstatus", process_statusCallbackFactory.getMethod("exitstatus"));
-        process_status.defineMethod("success?", process_statusCallbackFactory.getMethod("success_p"));
 //        process_status.defineMethod("coredump?", process_statusCallbackFactory.getMethod("coredump_p"));
         
         return process;
@@ -131,32 +127,39 @@ public class RubyProcess {
             return new RubyStatus(runtime, runtime.getProcStatus(), status);
         }
         
-        public IRubyObject exitstatus(Block block) {
+        @JRubyMethod(name = "exitstatus")
+        public IRubyObject exitstatus() {
             return getRuntime().newFixnum(status);
         }
         
-        public IRubyObject rightshift_op(IRubyObject other, Block block) {
+        @JRubyMethod(name = ">>", required = 1)
+        public IRubyObject op_rshift(IRubyObject other) {
             long shiftValue = other.convertToInteger().getLongValue();
             return getRuntime().newFixnum(status >> shiftValue);
         }
         
-        public IRubyObject op_eq(IRubyObject other, Block block) {
-            return other.callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this.to_i(block));
+        @JRubyMethod(name = "==", required = 1)
+        public IRubyObject op_equal(IRubyObject other) {
+            return other.callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this.to_i());
         }
 
-        public IRubyObject to_i(Block unusedBlock) {
+        @JRubyMethod(name = "to_i")
+        public IRubyObject to_i() {
             return getRuntime().newFixnum(shiftedValue());
         }
         
-        public IRubyObject to_s(Block unusedBlock) {
+        @JRubyMethod(name = "to_s")
+        public IRubyObject to_s() {
             return getRuntime().newString(String.valueOf(shiftedValue()));
         }
         
-        public IRubyObject inspect(Block unusedBlock) {
+        @JRubyMethod(name = "inspect")
+        public IRubyObject inspect() {
             return getRuntime().newString("#<Process::Status: pid=????,exited(" + String.valueOf(status) + ")>");
         }
         
-        public IRubyObject success_p(Block unusedBlock) {
+        @JRubyMethod(name = "success?")
+        public IRubyObject success_p() {
             return getRuntime().newBoolean(status == EXIT_SUCCESS);
         }
         
@@ -165,6 +168,7 @@ public class RubyProcess {
         }
     }
     
+    @JRubyMethod(name = "times", frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject times(IRubyObject recv, Block unusedBlock) {
         Ruby runtime = recv.getRuntime();
         double currentTime = System.currentTimeMillis() / 1000.0;
@@ -175,6 +179,7 @@ public class RubyProcess {
                 Block.NULL_BLOCK);
     }
 
+    @JRubyMethod(name = "pid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject pid(IRubyObject recv) {
         return recv.getRuntime().newFixnum(System.identityHashCode(recv.getRuntime()));
     }

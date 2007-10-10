@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -44,10 +45,9 @@ public class RubyPrecision {
         RubyModule precisionModule = runtime.defineModule("Precision");
         runtime.setPrecision(precisionModule);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyPrecision.class);
-        precisionModule.getSingletonClass().defineMethod("append_features", callbackFactory.getSingletonMethod("append_features", RubyKernel.IRUBY_OBJECT));
-        precisionModule.defineMethod("prec", callbackFactory.getSingletonMethod("prec", RubyKernel.IRUBY_OBJECT));
-        precisionModule.defineMethod("prec_i", callbackFactory.getSingletonMethod("prec_i"));
-        precisionModule.defineMethod("prec_f", callbackFactory.getSingletonMethod("prec_f"));
+        
+        precisionModule.defineAnnotatedMethods(RubyPrecision.class, callbackFactory);
+        
         return precisionModule;
     }
 
@@ -55,6 +55,7 @@ public class RubyPrecision {
         throw receiver.getRuntime().newTypeError("Undefined conversion from " + source.getMetaClass().getName() + " into " + ((RubyClass)receiver).getName());
     }
 
+    @JRubyMethod(name = "append_features", required = 1, frame = true, module = true)
     public static IRubyObject append_features(IRubyObject receiver, IRubyObject include, Block block) {
         if (include instanceof RubyModule) {
             ((RubyModule) include).includeModule(receiver);
@@ -64,14 +65,18 @@ public class RubyPrecision {
         return receiver;
     }
     
+    
+    @JRubyMethod(name = "prec", required = 1, frame = true)
     public static IRubyObject prec(IRubyObject receiver, IRubyObject type, Block block) {
         return type.callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
     }
 
+    @JRubyMethod(name = "prec_i", frame = true)
     public static IRubyObject prec_i(IRubyObject receiver, Block block) {
         return receiver.getRuntime().getInteger().callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
     }
 
+    @JRubyMethod(name = "prec_f", frame = true)
     public static IRubyObject prec_f(IRubyObject receiver, Block block) {
         return receiver.getRuntime().getFloat().callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
     }
