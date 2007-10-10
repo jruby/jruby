@@ -1116,7 +1116,7 @@ public class RubyKernel {
         return runtime.newFixnum(runtime.getRandom().nextInt((int) ceil));
     }
 
-    @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "system", name2 = "exec", required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int resultCode;
