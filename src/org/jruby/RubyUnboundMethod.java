@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -69,11 +70,8 @@ public class RubyUnboundMethod extends RubyMethod {
         runtime.setUnboundMethod(newClass);
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyUnboundMethod.class);
-        newClass.defineMethod("[]", callbackFactory.getOptMethod("call"));
-        newClass.defineMethod("bind", callbackFactory.getMethod("bind", RubyKernel.IRUBY_OBJECT));
-        newClass.defineMethod("call", callbackFactory.getOptMethod("call"));
-        newClass.defineMethod("to_proc", callbackFactory.getMethod("to_proc"));
-        newClass.defineMethod("unbind", callbackFactory.getMethod("unbind"));
+        
+        newClass.defineAnnotatedMethods(RubyUnboundMethod.class, callbackFactory);
 
         return newClass;
     }
@@ -81,6 +79,7 @@ public class RubyUnboundMethod extends RubyMethod {
     /**
      * @see org.jruby.RubyMethod#call(IRubyObject[])
      */
+    @JRubyMethod(name = "call", name2 = "[]", rest = true, frame = true)
     public IRubyObject call(IRubyObject[] args, Block block) {
         throw getRuntime().newTypeError("you cannot call unbound method; bind first");
     }
@@ -88,10 +87,12 @@ public class RubyUnboundMethod extends RubyMethod {
     /**
      * @see org.jruby.RubyMethod#unbind()
      */
+    @JRubyMethod(name = "unbind", frame = true)
     public RubyUnboundMethod unbind(Block block) {
         return this;
     }
 
+    @JRubyMethod(name = "bind", required = 1, frame = true)
     public RubyMethod bind(IRubyObject aReceiver, Block block) {
         RubyClass receiverClass = aReceiver.getMetaClass();
         
@@ -107,5 +108,10 @@ public class RubyUnboundMethod extends RubyMethod {
             }
         }
         return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, aReceiver);
+    }
+    
+    @JRubyMethod(name = "to_proc", frame = true)
+    public IRubyObject to_proc(Block unusedBlock) {
+        return super.to_proc(unusedBlock);
     }
 }
