@@ -1064,6 +1064,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                                 // TODO: skip singleton methods for now; we'll figure out fast dispatching for them in a future patch
                                 SimpleCallbackMethod simpleMethod = (SimpleCallbackMethod)dynamicMethod;
                                 InvocationCallback callback = (InvocationCallback)simpleMethod.getCallback();
+                                // singleton methods require doing a static invocation, etc...disabling again for now
+                                if (callback.isSingleton()) continue;
                                 
                                 // skipping non-public methods for now, to avoid visibility checks in STI
                                 if (dynamicMethod.getVisibility() != Visibility.PUBLIC) continue;
