@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -40,9 +41,11 @@ public class RubySignal {
     public static void createSignal(Ruby runtime) {
         RubyModule mSignal = runtime.defineModule("Signal");
         CallbackFactory cf = runtime.callbackFactory(RubySignal.class);
-        mSignal.getMetaClass().defineMethod("trap", cf.getOptSingletonMethod("trap"));
+        
+        mSignal.defineAnnotatedMethods(RubySignal.class, cf);
     }
 
+    @JRubyMethod(name = "trap", required = 1, optional = 1, frame = true, meta = true)
     public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         recv.getRuntime().getWarnings().warning("Signal.trap: Signals is currently not implemented in JRuby and will not work");
         return recv.getRuntime().getNil();
