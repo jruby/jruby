@@ -804,6 +804,14 @@ public class RubyHash extends RubyObject implements Map {
         return op_aset(key, value);
     }
 
+    /**
+     * Note: this is included as a compatibility measure for Mongrel+JRuby
+     * @deprecated use RubyHash.op_aref instead
+     */
+    public IRubyObject aref(IRubyObject key) {
+        return op_aref(key);
+    }
+
     public final IRubyObject fastARef(IRubyObject key) { // retuns null when not found to avoid unnecessary getRuntime().getNil() call
         return internalGet(key);
     }
