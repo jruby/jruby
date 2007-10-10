@@ -285,7 +285,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
         method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
 
-        method.invokevirtual(classname, "run", METHOD_SIGNATURE);
+        method.invokevirtual(classname, "load", METHOD_SIGNATURE);
         method.voidreturn();
         method.end();
         
