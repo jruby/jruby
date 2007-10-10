@@ -328,6 +328,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 ic.setArity(Arity.fromAnnotation(methodAnno));
                 ic.setJavaName(javaMethodName);
                 ic.setArgumentTypes(signature);
+                ic.setSingleton(Modifier.isStatic(method.getModifiers()));
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;
