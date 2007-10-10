@@ -31,6 +31,7 @@ package org.jruby;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
@@ -38,6 +39,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.IOHandler;
@@ -55,64 +57,12 @@ public class RubyStringIO extends RubyObject {
         
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyStringIO.class);
         
-        stringIOClass.getMetaClass().defineMethod("open", callbackFactory.getOptSingletonMethod("open"));
-        stringIOClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        stringIOClass.defineFastMethod("<<", callbackFactory.getFastMethod("append", IRubyObject.class));
-        stringIOClass.defineFastMethod("binmode", callbackFactory.getFastMethod("binmode"));
-        stringIOClass.defineFastMethod("close", callbackFactory.getFastMethod("close"));
-        stringIOClass.defineFastMethod("closed?", callbackFactory.getFastMethod("closed_p"));
-        stringIOClass.defineFastMethod("close_read", callbackFactory.getFastMethod("close_read"));
-        stringIOClass.defineFastMethod("closed_read?", callbackFactory.getFastMethod("closed_read_p"));
-        stringIOClass.defineFastMethod("close_write", callbackFactory.getFastMethod("close_write"));
-        stringIOClass.defineFastMethod("closed_write?", callbackFactory.getFastMethod("closed_write_p"));
-        stringIOClass.defineMethod("each", callbackFactory.getOptMethod("each"));
-        stringIOClass.defineMethod("each_byte", callbackFactory.getMethod("each_byte"));
-        stringIOClass.defineMethod("each_line", callbackFactory.getMethod("each_line"));
-        stringIOClass.defineFastMethod("eof", callbackFactory.getFastMethod("eof"));
-        stringIOClass.defineFastMethod("eof?", callbackFactory.getFastMethod("eof_p"));
-        stringIOClass.defineFastMethod("fcntl", callbackFactory.getFastMethod("fcntl"));
-        stringIOClass.defineFastMethod("fileno", callbackFactory.getFastMethod("fileno"));
-        stringIOClass.defineFastMethod("flush", callbackFactory.getFastMethod("flush"));
-        stringIOClass.defineFastMethod("fsync", callbackFactory.getFastMethod("fsync"));
-        stringIOClass.defineFastMethod("getc", callbackFactory.getFastMethod("getc"));
-        stringIOClass.defineFastMethod("gets", callbackFactory.getFastOptMethod("gets"));
-        stringIOClass.defineFastMethod("isatty", callbackFactory.getFastMethod("isatty"));
-        // FIXME: this should probably be an alias?
-        stringIOClass.defineFastMethod("tty?", callbackFactory.getFastMethod("tty_p"));
-        stringIOClass.defineFastMethod("length", callbackFactory.getFastMethod("length"));
-        stringIOClass.defineFastMethod("lineno", callbackFactory.getFastMethod("lineno"));
-        stringIOClass.defineFastMethod("lineno=", callbackFactory.getFastMethod("set_lineno", IRubyObject.class));
-        stringIOClass.defineFastMethod("path", callbackFactory.getFastMethod("path"));
-        stringIOClass.defineFastMethod("pid", callbackFactory.getFastMethod("pid"));
-        stringIOClass.defineFastMethod("pos", callbackFactory.getFastMethod("pos"));
-        // FIXME: this should probably be an alias?
-        stringIOClass.defineFastMethod("tell", callbackFactory.getFastMethod("tell"));
-        stringIOClass.defineFastMethod("pos=", callbackFactory.getFastMethod("set_pos", IRubyObject.class));
-        stringIOClass.defineFastMethod("print", callbackFactory.getFastOptMethod("print"));
-        stringIOClass.defineFastMethod("printf", callbackFactory.getFastOptMethod("printf"));
-        stringIOClass.defineFastMethod("putc", callbackFactory.getFastMethod("putc", IRubyObject.class));
-        stringIOClass.defineFastMethod("puts", callbackFactory.getFastOptMethod("puts"));
-        stringIOClass.defineFastMethod("read", callbackFactory.getFastOptMethod("read"));
-        stringIOClass.defineFastMethod("readchar", callbackFactory.getFastMethod("readchar"));
-        stringIOClass.defineFastMethod("readline", callbackFactory.getFastOptMethod("readline"));
-        stringIOClass.defineFastMethod("readlines", callbackFactory.getFastOptMethod("readlines"));
-        stringIOClass.defineFastMethod("reopen", callbackFactory.getFastOptMethod("reopen"));
-        stringIOClass.defineFastMethod("rewind", callbackFactory.getFastMethod("rewind"));
-        stringIOClass.defineFastMethod("seek", callbackFactory.getFastOptMethod("seek"));
-        stringIOClass.defineFastMethod("size", callbackFactory.getFastMethod("size"));
-        stringIOClass.defineFastMethod("string", callbackFactory.getFastMethod("string"));
-        stringIOClass.defineFastMethod("string=", callbackFactory.getFastMethod("set_string", IRubyObject.class));
-        stringIOClass.defineFastMethod("sync", callbackFactory.getFastMethod("sync"));
-        stringIOClass.defineFastMethod("sync=", callbackFactory.getFastMethod("set_sync", IRubyObject.class));
-        stringIOClass.defineFastMethod("sysread", callbackFactory.getFastOptMethod("sysread"));
-        stringIOClass.defineFastMethod("syswrite", callbackFactory.getFastMethod("syswrite", IRubyObject.class));
-        stringIOClass.defineFastMethod("truncate", callbackFactory.getFastMethod("truncate", IRubyObject.class));
-        stringIOClass.defineFastMethod("ungetc", callbackFactory.getFastMethod("ungetc", IRubyObject.class));
-        stringIOClass.defineFastMethod("write", callbackFactory.getFastMethod("write", IRubyObject.class));
+        stringIOClass.defineAnnotatedMethods(RubyStringIO.class, callbackFactory);
 
         return stringIOClass;
     }
 
+    @JRubyMethod(name = "open", optional = 2, frame = true, meta = true)
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(args, Block.NULL_BLOCK);
         IRubyObject val = strio;
@@ -141,6 +91,7 @@ public class RubyStringIO extends RubyObject {
     private boolean closedWrite = false;
     private boolean append = false;
 
+    @JRubyMethod(name = "initialize", optional = 2, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 2);
 
@@ -163,6 +114,7 @@ public class RubyStringIO extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "<<", required = 1)
     public IRubyObject append(IRubyObject obj) {
         checkWritable();
         checkFrozen();
@@ -180,10 +132,12 @@ public class RubyStringIO extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "binmode")
     public IRubyObject binmode() {
         return this;
     }
     
+    @JRubyMethod(name = "close")
     public IRubyObject close() {
         closedRead = true;
         closedWrite = true;
@@ -191,42 +145,49 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "closed?")
     public IRubyObject closed_p() {
         return getRuntime().newBoolean(closedRead && closedWrite);
     }
 
+    @JRubyMethod(name = "close_read")
     public IRubyObject close_read() {
         closedRead = true;
         
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "closed_read?")
     public IRubyObject closed_read_p() {
         return getRuntime().newBoolean(closedRead);
     }
 
+    @JRubyMethod(name = "close_write")
     public IRubyObject close_write() {
         closedWrite = true;
         
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "closed_write?")
     public IRubyObject closed_write_p() {
         return getRuntime().newBoolean(closedWrite);
     }
 
-   public IRubyObject each(IRubyObject[] args, Block block) {
-       IRubyObject line = gets(args);
-       ThreadContext context = getRuntime().getCurrentContext();
+    @JRubyMethod(name = "each", optional = 1, frame = true)
+    public IRubyObject each(IRubyObject[] args, Block block) {
+        IRubyObject line = gets(args);
+        ThreadContext context = getRuntime().getCurrentContext();
        
-       while (!line.isNil()) {
-           block.yield(context, line);
-           line = gets(args);
-       }
+        while (!line.isNil()) {
+            block.yield(context, line);
+            line = gets(args);
+        }
        
-       return this;
-   }
+        return this;
+    }
 
+    @JRubyMethod(name = "each_byte", frame = true)
     public IRubyObject each_byte(Block block) {
         checkReadable();
         
@@ -235,34 +196,42 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "each_line", frame = true)
     public IRubyObject each_line(Block block) {
         return each(new RubyObject[0], block);
     }
 
+    @JRubyMethod(name = "eof")
     public IRubyObject eof() {
         return (pos >= internal.getByteList().length() || eof) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
+    @JRubyMethod(name = "eof?")
     public IRubyObject eof_p() {
         return (pos >= internal.getByteList().length() || eof) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
+    @JRubyMethod(name = "fcntl")
     public IRubyObject fcntl() {
         throw getRuntime().newNotImplementedError("fcntl not implemented");
     }
 
+    @JRubyMethod(name = "fileno")
     public IRubyObject fileno() {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "flush")
     public IRubyObject flush() {
         return this;
     }
 
+    @JRubyMethod(name = "fsync")
     public IRubyObject fsync() {
         return RubyFixnum.zero(getRuntime());
     }
 
+    @JRubyMethod(name = "getc")
     public IRubyObject getc() {
         if (pos >= internal.getByteList().length()) {
             return getRuntime().getNil();
@@ -297,6 +266,7 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "gets", optional = 1)
     public IRubyObject gets(IRubyObject[] args) {
         checkReadable();
 
@@ -308,50 +278,61 @@ public class RubyStringIO extends RubyObject {
         return result;
     }
 
+    @JRubyMethod(name = "isatty")
     public IRubyObject isatty() {
         return getRuntime().getFalse();
     }
 
+    @JRubyMethod(name = "tty?")
     public IRubyObject tty_p() {
         return getRuntime().getFalse();
     }
 
+    @JRubyMethod(name = "length")
     public IRubyObject length() {
         return getRuntime().newFixnum(internal.getByteList().length());
     }
 
+    @JRubyMethod(name = "lineno")
     public IRubyObject lineno() {
         return getRuntime().newFixnum(lineno);
     }
 
+    @JRubyMethod(name = "lineno=", required = 1)
     public IRubyObject set_lineno(IRubyObject arg) {
         lineno = RubyNumeric.fix2int(arg);
         
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "path")
     public IRubyObject path() {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "pid")
     public IRubyObject pid() {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "pos")
     public IRubyObject pos() {
         return getRuntime().newFixnum(pos);
     }
 
+    @JRubyMethod(name = "tell")
     public IRubyObject tell() {
         return getRuntime().newFixnum(pos);
     }
 
+    @JRubyMethod(name = "pos=", required = 1)
     public IRubyObject set_pos(IRubyObject arg) {
         pos = RubyNumeric.fix2int(arg);
         
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "print", rest = true)
     public IRubyObject print(IRubyObject[] args) {
         if (args.length != 0) {
             for (int i=0,j=args.length;i<j;i++) {
@@ -365,11 +346,13 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().getNil();
     }
     
+    @JRubyMethod(name = "printf", required = 1, rest = true)
     public IRubyObject printf(IRubyObject[] args) {
         append(RubyKernel.sprintf(this,args));
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "putc", required = 1)
     public IRubyObject putc(IRubyObject obj) {
         checkWritable();
         byte c = RubyNumeric.num2chr(obj);
@@ -393,6 +376,7 @@ public class RubyStringIO extends RubyObject {
 
     private static final ByteList NEWLINE_BL = new ByteList(new byte[]{10},false);
 
+    @JRubyMethod(name = "puts", rest = true)
     public IRubyObject puts(IRubyObject[] obj) {
         checkWritable();
 
@@ -413,6 +397,7 @@ public class RubyStringIO extends RubyObject {
     }
 
     @SuppressWarnings("fallthrough")
+    @JRubyMethod(name = "read", optional = 2)
     public IRubyObject read(IRubyObject[] args) {
         checkReadable();
 
@@ -500,6 +485,7 @@ public class RubyStringIO extends RubyObject {
         return originalString != null ? originalString : getRuntime().newString(buf);
     }
 
+    @JRubyMethod(name = "readchar")
     public IRubyObject readchar() {
         IRubyObject c = getc();
         
@@ -508,6 +494,7 @@ public class RubyStringIO extends RubyObject {
         return c;
     }
 
+    @JRubyMethod(name = "readline", optional = 1)
     public IRubyObject readline(IRubyObject[] args) {
         IRubyObject line = gets(args);
         
@@ -516,6 +503,7 @@ public class RubyStringIO extends RubyObject {
         return line;
     }
     
+    @JRubyMethod(name = "readlines", optional = 1)
     public IRubyObject readlines(IRubyObject[] arg) {
         checkReadable();
         
@@ -526,6 +514,7 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().newArray(lns);
     }
     
+    @JRubyMethod(name = "reopen", required = 1, optional = 1)
     public IRubyObject reopen(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         
@@ -553,12 +542,14 @@ public class RubyStringIO extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "rewind")
     public IRubyObject rewind() {
         this.pos = 0L;
         this.lineno = 0;
         return RubyFixnum.zero(getRuntime());
     }
 
+    @JRubyMethod(name = "seek", required = 1, optional = 1)
     public IRubyObject seek(IRubyObject[] args) {
         long amount = RubyNumeric.fix2long(args[0]);
         int whence = IOHandler.SEEK_SET;
@@ -582,26 +573,32 @@ public class RubyStringIO extends RubyObject {
         return RubyFixnum.zero(getRuntime());
     }
 
+    @JRubyMethod(name = "string=", required = 1)
     public IRubyObject set_string(IRubyObject arg) {
         return reopen(new IRubyObject[] { arg });
     }
 
+    @JRubyMethod(name = "sync=", required = 1)
     public IRubyObject set_sync(IRubyObject args) {
         return args;
     }
     
+    @JRubyMethod(name = "size")
     public IRubyObject size() {
         return getRuntime().newFixnum(internal.getByteList().length());
     }
 
+    @JRubyMethod(name = "string")
     public IRubyObject string() {
         return internal;
     }
 
+    @JRubyMethod(name = "sync")
     public IRubyObject sync() {
         return getRuntime().getTrue();
     }
     
+    @JRubyMethod(name = "sysread", required = 1, optional = 1)
     public IRubyObject sysread(IRubyObject[] args) {
         IRubyObject obj = read(args);
         
@@ -610,11 +607,12 @@ public class RubyStringIO extends RubyObject {
         return obj; 
     }
 
-
+    @JRubyMethod(name = "syswrite", required = 1)
     public IRubyObject syswrite(IRubyObject args) {
         return write(args);
     }
 
+    @JRubyMethod(name = "truncate", required = 1)
     public IRubyObject truncate(IRubyObject arg) {
         checkWritable();
         
@@ -624,6 +622,7 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().newFixnum(len);
     }
 
+    @JRubyMethod(name = "ungetc", required = 1)
     public IRubyObject ungetc(IRubyObject arg) {
         checkReadable();
         
@@ -636,6 +635,7 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "write", required = 1)
     public IRubyObject write(IRubyObject arg) {
         checkWritable();
         String obj = arg.toString();
