@@ -31,7 +31,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyMath {
@@ -45,35 +47,8 @@ public class RubyMath {
         
         result.defineConstant("E", RubyFloat.newFloat(runtime, Math.E));
         result.defineConstant("PI", RubyFloat.newFloat(runtime, Math.PI));
-
-        result.defineFastModuleFunction("atan2", callbackFactory.getFastSingletonMethod("atan2", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-        result.defineFastModuleFunction("cos", callbackFactory.getFastSingletonMethod("cos", RubyKernel.IRUBY_OBJECT));
-        result.defineFastModuleFunction("sin", callbackFactory.getFastSingletonMethod("sin", RubyKernel.IRUBY_OBJECT));
-        result.defineFastModuleFunction("tan", callbackFactory.getFastSingletonMethod("tan", RubyKernel.IRUBY_OBJECT));
-
-        result.defineFastModuleFunction("acos", callbackFactory.getFastSingletonMethod("acos", RubyKernel.IRUBY_OBJECT));        
-        result.defineFastModuleFunction("asin", callbackFactory.getFastSingletonMethod("asin", RubyKernel.IRUBY_OBJECT));        
-        result.defineFastModuleFunction("atan", callbackFactory.getFastSingletonMethod("atan", RubyKernel.IRUBY_OBJECT));        
-
-        result.defineFastModuleFunction("cosh", callbackFactory.getFastSingletonMethod("cosh", RubyKernel.IRUBY_OBJECT));        
-        result.defineFastModuleFunction("sinh", callbackFactory.getFastSingletonMethod("sinh", RubyKernel.IRUBY_OBJECT));        
-        result.defineFastModuleFunction("tanh", callbackFactory.getFastSingletonMethod("tanh", RubyKernel.IRUBY_OBJECT));        
         
-        result.defineFastModuleFunction("acosh", callbackFactory.getFastSingletonMethod("acosh", RubyKernel.IRUBY_OBJECT));        
-        result.defineFastModuleFunction("asinh", callbackFactory.getFastSingletonMethod("asinh", RubyKernel.IRUBY_OBJECT));
-        result.defineFastModuleFunction("atanh", callbackFactory.getFastSingletonMethod("atanh", RubyKernel.IRUBY_OBJECT));
-        
-        result.defineFastModuleFunction("exp", callbackFactory.getFastSingletonMethod("exp", RubyKernel.IRUBY_OBJECT));
-        result.defineFastModuleFunction("log", callbackFactory.getFastSingletonMethod("log", RubyKernel.IRUBY_OBJECT));
-        result.defineFastModuleFunction("log10", callbackFactory.getFastSingletonMethod("log10", RubyKernel.IRUBY_OBJECT));
-        result.defineFastModuleFunction("sqrt", callbackFactory.getFastSingletonMethod("sqrt", RubyKernel.IRUBY_OBJECT));
-        
-        result.defineFastModuleFunction("frexp", callbackFactory.getFastSingletonMethod("frexp", RubyKernel.IRUBY_OBJECT));
-        result.defineFastModuleFunction("ldexp", callbackFactory.getFastSingletonMethod("ldexp", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-        
-        result.defineFastModuleFunction("hypot", callbackFactory.getFastSingletonMethod("hypot", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));        
-        result.defineFastModuleFunction("erf", callbackFactory.getFastSingletonMethod("erf", RubyKernel.IRUBY_OBJECT));        
-        result.defineFastModuleFunction("erfc", callbackFactory.getFastSingletonMethod("erfc", RubyKernel.IRUBY_OBJECT));
+        result.defineAnnotatedMethods(RubyMath.class, callbackFactory);
 
         return result;
     }
@@ -105,27 +80,32 @@ public class RubyMath {
         return (y < 0.0) ? -abs : abs;
     }
     
+    @JRubyMethod(name = "atan2", required = 2, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat atan2(IRubyObject recv, IRubyObject x, IRubyObject y) {
         double valuea = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         double valueb = ((RubyFloat)RubyKernel.new_float(recv,y)).getDoubleValue();
         return RubyFloat.newFloat(recv.getRuntime(), Math.atan2(valuea, valueb));
     }
 
+    @JRubyMethod(name = "cos", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat cos(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         return RubyFloat.newFloat(recv.getRuntime(),Math.cos(value));
     }
 
+    @JRubyMethod(name = "sin", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat sin(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         return RubyFloat.newFloat(recv.getRuntime(),Math.sin(value));
     }
 
+    @JRubyMethod(name = "tan", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat tan(IRubyObject recv,  IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         return RubyFloat.newFloat(recv.getRuntime(),Math.tan(value));
     }
     
+    @JRubyMethod(name = "asin", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat asin(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         double result = Math.asin(value);
@@ -133,6 +113,7 @@ public class RubyMath {
         return RubyFloat.newFloat(recv.getRuntime(),result);
     }
 
+    @JRubyMethod(name = "acos", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat acos(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         double result = Math.acos(value);  
@@ -140,25 +121,30 @@ public class RubyMath {
         return RubyFloat.newFloat(recv.getRuntime(), result);
     }
     
+    @JRubyMethod(name = "atan", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat atan(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         return RubyFloat.newFloat(recv.getRuntime(),Math.atan(value));
     }
 
+    @JRubyMethod(name = "cosh", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat cosh(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         return RubyFloat.newFloat(recv.getRuntime(),(Math.exp(value) + Math.exp(-value)) / 2.0);
     }    
 
+    @JRubyMethod(name = "sinh", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat sinh(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         return RubyFloat.newFloat(recv.getRuntime(),(Math.exp(value) - Math.exp(-value)) / 2.0);
     }
     
+    @JRubyMethod(name = "tanh", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat tanh(IRubyObject recv, IRubyObject x) {
         return RubyFloat.newFloat(recv.getRuntime(), sinh(recv, x).getDoubleValue() / cosh(recv, x).getDoubleValue());
     }          
     
+    @JRubyMethod(name = "acosh", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat acosh(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         double result;
@@ -199,6 +185,7 @@ public class RubyMath {
         .34904658524827565638313923706880e-17
     };      
     
+    @JRubyMethod(name = "asinh", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat asinh(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         double  y = Math.abs(value);
@@ -238,6 +225,7 @@ public class RubyMath {
         .4497954546494931083083327624533e-18
     };    
     
+    @JRubyMethod(name = "atanh", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat atanh(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         double  y = Math.abs(value);
@@ -261,6 +249,7 @@ public class RubyMath {
         return RubyFloat.newFloat(recv.getRuntime(),result);        
     }
     
+    @JRubyMethod(name = "exp", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat exp(IRubyObject recv, IRubyObject exponent) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,exponent)).getDoubleValue();
         return RubyFloat.newFloat(recv.getRuntime(),Math.exp(value));
@@ -269,6 +258,7 @@ public class RubyMath {
     /** Returns the natural logarithm of x.
      * 
      */
+    @JRubyMethod(name = "log", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat log(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         double result = Math.log(value);
@@ -279,6 +269,7 @@ public class RubyMath {
     /** Returns the base 10 logarithm of x.
      * 
      */
+    @JRubyMethod(name = "log10", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat log10(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         double result =  Math.log(value) / Math.log(10);
@@ -286,6 +277,7 @@ public class RubyMath {
         return RubyFloat.newFloat(recv.getRuntime(),result);
     }
 
+    @JRubyMethod(name = "sqrt", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat sqrt(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         double result;
@@ -300,6 +292,7 @@ public class RubyMath {
         return RubyFloat.newFloat(recv.getRuntime(), result);
     }
     
+    @JRubyMethod(name = "hypot", required = 2, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat hypot(IRubyObject recv, IRubyObject x, IRubyObject y) {
         double valuea = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue(); 
         double valueb = ((RubyFloat)RubyKernel.new_float(recv,y)).getDoubleValue();
@@ -324,6 +317,7 @@ public class RubyMath {
      * Where mantissa is in the range of [.5, 1)
      *
      */
+    @JRubyMethod(name = "frexp", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyArray frexp(IRubyObject recv, IRubyObject other) {
         double mantissa = ((RubyFloat)RubyKernel.new_float(recv,other)).getDoubleValue();
         short sign = 1;
@@ -351,6 +345,7 @@ public class RubyMath {
     /*
      * r = x * 2 ** y
      */
+    @JRubyMethod(name = "ldexp", required = 2, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat ldexp(IRubyObject recv, IRubyObject mantissa, IRubyObject exponent) {
         double mantissaValue = ((RubyFloat)RubyKernel.new_float(recv, mantissa)).getDoubleValue();
         return RubyFloat.newFloat(recv.getRuntime(),mantissaValue * Math.pow(2.0, RubyNumeric.num2int(exponent)));
@@ -373,6 +368,7 @@ public class RubyMath {
          -.126124551191552258324954248533e-18
     };
     
+    @JRubyMethod(name = "erf", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat erf(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
 
@@ -453,6 +449,7 @@ public class RubyMath {
          .194744338223207851429197867821e-18
     };
         
+    @JRubyMethod(name = "erfc", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat erfc(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         double  result;

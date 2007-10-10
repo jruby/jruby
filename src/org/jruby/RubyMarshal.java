@@ -38,6 +38,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -63,15 +64,14 @@ public class RubyMarshal {
         runtime.setMarshal(module);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMarshal.class);
 
-        module.getSingletonClass().defineMethod("dump", callbackFactory.getOptSingletonMethod("dump"));
-        module.getSingletonClass().defineMethod("load", callbackFactory.getOptSingletonMethod("load"));
-        module.getSingletonClass().defineMethod("restore", callbackFactory.getOptSingletonMethod("load"));
+        module.defineAnnotatedMethods(RubyMarshal.class, callbackFactory);
         module.defineConstant("MAJOR_VERSION", runtime.newFixnum(Constants.MARSHAL_MAJOR));
         module.defineConstant("MINOR_VERSION", runtime.newFixnum(Constants.MARSHAL_MINOR));
 
         return module;
     }
 
+    @JRubyMethod(name = "dump", required = 1, optional = 2, frame = true, module = true)
     public static IRubyObject dump(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         if (args.length < 1) {
             throw recv.getRuntime().newArgumentError("wrong # of arguments(at least 1)");
@@ -124,6 +124,7 @@ public class RubyMarshal {
         }
     }
 
+    @JRubyMethod(name = "load", name2 = "restore", required = 1, optional = 1, frame = true, module = true)
     public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         try {
             if (args.length < 1) {

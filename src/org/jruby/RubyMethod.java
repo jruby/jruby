@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
@@ -72,13 +73,7 @@ public class RubyMethod extends RubyObject {
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMethod.class);
         
-        methodClass.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
-        methodClass.defineMethod("to_proc", callbackFactory.getMethod("to_proc"));
-        methodClass.defineMethod("unbind", callbackFactory.getMethod("unbind"));
-        methodClass.defineMethod("call", callbackFactory.getOptMethod("call"));
-        methodClass.defineMethod("[]", callbackFactory.getOptMethod("call"));
-        methodClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
-        methodClass.defineFastMethod("to_s", callbackFactory.getFastMethod("inspect"));
+        methodClass.defineAnnotatedMethods(RubyMethod.class, callbackFactory);
         
         return methodClass;
     }
@@ -106,6 +101,7 @@ public class RubyMethod extends RubyObject {
     /** Call the method.
      * 
      */
+    @JRubyMethod(name = "call", name2 = "[]", rest = true, frame = true)
     public IRubyObject call(IRubyObject[] args, Block block) {
     	assert args != null;
         ThreadContext tc = getRuntime().getCurrentContext();
@@ -120,6 +116,7 @@ public class RubyMethod extends RubyObject {
      * 
      * @return the number of arguments of a method.
      */
+    @JRubyMethod(name = "arity")
     public RubyFixnum arity() {
         return getRuntime().newFixnum(method.getArity().getValue());
     }
@@ -127,6 +124,7 @@ public class RubyMethod extends RubyObject {
     /** Create a Proc object.
      * 
      */
+    @JRubyMethod(name = "to_proc", frame = true)
     public IRubyObject to_proc(Block unusedBlock) {
         CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
         Ruby r = getRuntime();
@@ -180,6 +178,7 @@ public class RubyMethod extends RubyObject {
         return ((RubyMethod) arg1).call(new IRubyObject[] { blockArg }, Block.NULL_BLOCK);
     }
 
+    @JRubyMethod(name = "unbind", frame = true)
     public RubyUnboundMethod unbind(Block unusedBlock) {
         RubyUnboundMethod unboundMethod =
         	RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
@@ -189,6 +188,7 @@ public class RubyMethod extends RubyObject {
         return unboundMethod;
     }
     
+    @JRubyMethod(name = "inspect", name2 = "to_s")
     public IRubyObject inspect() {
         String cname = getMetaClass().getRealClass().getName();
         RubyString str = getRuntime().newString("#<" + cname + ": " + originModule.getName() + "#" + methodName + ">");

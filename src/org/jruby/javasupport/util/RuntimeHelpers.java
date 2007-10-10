@@ -440,7 +440,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject unwrapLocalJumpErrorValue(RaiseException re) {
-        return ((RubyLocalJumpError)re.getException()).exitValue();
+        return ((RubyLocalJumpError)re.getException()).exit_value();
     }
     
     public static IRubyObject processBlockArgument(Ruby runtime, Block block) {

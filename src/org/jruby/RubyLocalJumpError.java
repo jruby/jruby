@@ -28,6 +28,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.CallbackFactory;
@@ -43,8 +44,7 @@ public class RubyLocalJumpError extends RubyException {
         RubyClass nameErrorClass = runtime.defineClass("LocalJumpError", standardErrorClass, LOCALJUMPERROR_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyLocalJumpError.class);	
         
-        nameErrorClass.defineFastMethod("reason", callbackFactory.getFastMethod("reason"));
-        nameErrorClass.defineFastMethod("exit_value", callbackFactory.getFastMethod("exitValue"));
+        nameErrorClass.defineAnnotatedMethods(RubyLocalJumpError.class, callbackFactory);
 
         return nameErrorClass;
     }
@@ -59,11 +59,13 @@ public class RubyLocalJumpError extends RubyException {
         setInstanceVariable("exit_value", exitValue);
     }
 
+    @JRubyMethod(name = "reason")
     public IRubyObject reason() {
         return getInstanceVariable("reason");
     }
     
-    public IRubyObject exitValue() {
+    @JRubyMethod(name = "exit_value")
+    public IRubyObject exit_value() {
         return getInstanceVariable("exit_value");
     }
 }

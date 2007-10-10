@@ -1663,7 +1663,7 @@ public class ASTInterpreter {
                         
                         // admittedly inefficient
                         if (reason.asSymbol().equals("break")) {
-                            return jumpError.exitValue();
+                            return jumpError.exit_value();
                         } else if (reason.asSymbol().equals("next")) {
                             break loop;
                         } else if (reason.asSymbol().equals("redo")) {
