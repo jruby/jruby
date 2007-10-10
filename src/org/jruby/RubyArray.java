@@ -976,7 +976,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     @JRubyMethod(name = "frozen?")
-    public RubyBoolean frozen() {
+    public RubyBoolean frozen_p() {
         return getRuntime().newBoolean(isFrozen() || (flags & TMPLOCK_ARR_F) != 0);
     }
 

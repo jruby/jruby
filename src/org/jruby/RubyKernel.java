@@ -48,7 +48,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.Private;
 
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
@@ -83,130 +82,8 @@ public class RubyKernel {
         CallbackFactory objectCallbackFactory = runtime.callbackFactory(RubyObject.class);
 
         module.defineAnnotatedMethods(RubyKernel.class, callbackFactory);
-//        module.defineFastModuleFunction("Array", callbackFactory.getFastSingletonMethod("new_array", IRUBY_OBJECT));
-//        module.defineFastModuleFunction("Float", callbackFactory.getFastSingletonMethod("new_float", IRUBY_OBJECT));
-//        module.defineFastModuleFunction("Integer", callbackFactory.getFastSingletonMethod("new_integer", IRUBY_OBJECT));
-//        module.defineFastModuleFunction("String", callbackFactory.getFastSingletonMethod("new_string", IRUBY_OBJECT));
-//        module.defineFastModuleFunction("`", callbackFactory.getFastSingletonMethod("backquote", IRUBY_OBJECT));
-//        module.defineFastModuleFunction("abort", callbackFactory.getFastOptSingletonMethod("abort"));
-//        module.defineModuleFunction("at_exit", callbackFactory.getSingletonMethod("at_exit"));
-//        module.defineFastModuleFunction("autoload", callbackFactory.getFastSingletonMethod("autoload", IRUBY_OBJECT, IRUBY_OBJECT));
-//        module.defineFastModuleFunction("autoload?", callbackFactory.getFastSingletonMethod("autoload_p", IRUBY_OBJECT));
-//        module.defineModuleFunction("binding", callbackFactory.getSingletonMethod("binding"));
-//        module.defineModuleFunction("block_given?", callbackFactory.getSingletonMethod("block_given"));
-//        module.defineModuleFunction("callcc", callbackFactory.getOptSingletonMethod("callcc"));
-//        module.defineModuleFunction("caller", callbackFactory.getOptSingletonMethod("caller"));
-//        module.defineModuleFunction("catch", callbackFactory.getSingletonMethod("rbCatch", IRUBY_OBJECT));
-//        module.defineModuleFunction("chomp", callbackFactory.getOptSingletonMethod("chomp"));
-//        module.defineModuleFunction("chomp!", callbackFactory.getOptSingletonMethod("chomp_bang"));
-//        module.defineModuleFunction("chop", callbackFactory.getSingletonMethod("chop"));
-//        module.defineModuleFunction("chop!", callbackFactory.getSingletonMethod("chop_bang"));
-//        module.defineModuleFunction("eval", callbackFactory.getOptSingletonMethod("eval"));
-//        module.defineFastModuleFunction("exit", callbackFactory.getFastOptSingletonMethod("exit"));
-//        module.defineFastModuleFunction("exit!", callbackFactory.getFastOptSingletonMethod("exit_bang"));
-//        module.defineModuleFunction("fail", callbackFactory.getOptSingletonMethod("raise"));
-//        // TODO: Implement Kernel#fork
-//        module.defineFastModuleFunction("format", callbackFactory.getFastOptSingletonMethod("sprintf"));
-//        module.defineFastModuleFunction("gets", callbackFactory.getFastOptSingletonMethod("gets"));
-//        module.defineFastModuleFunction("global_variables", callbackFactory.getFastSingletonMethod("global_variables"));
-//        module.defineModuleFunction("gsub", callbackFactory.getOptSingletonMethod("gsub"));
-//        module.defineModuleFunction("gsub!", callbackFactory.getOptSingletonMethod("gsub_bang"));
-//        // TODO: Add deprecation to Kernel#iterator? (maybe formal deprecation mech.)
-//        module.defineModuleFunction("iterator?", callbackFactory.getSingletonMethod("block_given"));
-//        module.defineModuleFunction("lambda", callbackFactory.getSingletonMethod("proc"));
-//        module.defineModuleFunction("load", callbackFactory.getOptSingletonMethod("load"));
-//        module.defineFastModuleFunction("local_variables", callbackFactory.getFastSingletonMethod("local_variables"));
-//        module.defineModuleFunction("loop", callbackFactory.getSingletonMethod("loop"));
-//        // Note: method_missing is documented as being in Object, but ruby appears to stick it in Kernel.
-//        module.defineModuleFunction("method_missing", callbackFactory.getOptSingletonMethod("method_missing"));
-//        module.defineModuleFunction("open", callbackFactory.getOptSingletonMethod("open"));
-//        module.defineFastModuleFunction("p", callbackFactory.getFastOptSingletonMethod("p"));
-//        module.defineFastModuleFunction("print", callbackFactory.getFastOptSingletonMethod("print"));
-//        module.defineFastModuleFunction("printf", callbackFactory.getFastOptSingletonMethod("printf"));
-//        module.defineModuleFunction("proc", callbackFactory.getSingletonMethod("proc"));
-//        // TODO: implement Kernel#putc
-//        module.defineFastModuleFunction("putc", callbackFactory.getFastSingletonMethod("putc", IRubyObject.class));
-//        module.defineFastModuleFunction("puts", callbackFactory.getFastOptSingletonMethod("puts"));
-//        module.defineModuleFunction("raise", callbackFactory.getOptSingletonMethod("raise"));
-//        module.defineFastModuleFunction("rand", callbackFactory.getFastOptSingletonMethod("rand"));
-//        module.defineFastModuleFunction("readline", callbackFactory.getFastOptSingletonMethod("readline"));
-//        module.defineFastModuleFunction("readlines", callbackFactory.getFastOptSingletonMethod("readlines"));
-//        module.defineModuleFunction("require", callbackFactory.getSingletonMethod("require", IRUBY_OBJECT));
-//        module.defineModuleFunction("scan", callbackFactory.getSingletonMethod("scan", IRUBY_OBJECT));
-//        module.defineFastModuleFunction("select", callbackFactory.getFastOptSingletonMethod("select"));
-//        module.defineModuleFunction("set_trace_func", callbackFactory.getSingletonMethod("set_trace_func", IRUBY_OBJECT));
-//        module.defineModuleFunction("trace_var", callbackFactory.getOptSingletonMethod("trace_var"));
-//        module.defineModuleFunction("untrace_var", callbackFactory.getOptSingletonMethod("untrace_var"));
-//        module.defineFastModuleFunction("sleep", callbackFactory.getFastOptSingletonMethod("sleep"));
-//        module.defineModuleFunction("split", callbackFactory.getOptSingletonMethod("split"));
-//        module.defineFastModuleFunction("sprintf", callbackFactory.getFastOptSingletonMethod("sprintf"));
-//        module.defineFastModuleFunction("srand", callbackFactory.getFastOptSingletonMethod("srand"));
-//        module.defineModuleFunction("sub", callbackFactory.getOptSingletonMethod("sub"));
-//        module.defineModuleFunction("sub!", callbackFactory.getOptSingletonMethod("sub_bang"));
-//        // Skipping: Kernel#syscall (too system dependent)
-//        module.defineFastModuleFunction("system", callbackFactory.getFastOptSingletonMethod("system"));
-//        // TODO: Implement Kernel#exec differently?
-//        module.defineFastModuleFunction("exec", callbackFactory.getFastOptSingletonMethod("system"));
-//        module.defineFastModuleFunction("test", callbackFactory.getFastOptSingletonMethod("test"));
-//        module.defineModuleFunction("throw", callbackFactory.getOptSingletonMethod("rbThrow"));
-//        // TODO: Implement Kernel#trace_var
-//        module.definePublicModuleFunction("trap", callbackFactory.getOptSingletonMethod("trap"));
-//        // TODO: Implement Kernel#untrace_var
-//        module.defineFastModuleFunction("warn", callbackFactory.getFastSingletonMethod("warn", IRUBY_OBJECT));
-//        
-//        // Defined p411 Pickaxe 2nd ed.
-//        module.defineModuleFunction("singleton_method_added", callbackFactory.getSingletonMethod("singleton_method_added", IRUBY_OBJECT));
-//        module.defineModuleFunction("singleton_method_removed", callbackFactory.getSingletonMethod("singleton_method_removed", IRUBY_OBJECT));
-//        module.defineModuleFunction("singleton_method_undefined", callbackFactory.getSingletonMethod("singleton_method_undefined", IRUBY_OBJECT));
+        module.defineAnnotatedMethods(RubyObject.class, objectCallbackFactory);
         
-        // Object methods
-        module.defineFastPublicModuleFunction("==", objectCallbackFactory.getFastMethod("op_equal", IRUBY_OBJECT));
-        module.defineFastPublicModuleFunction("eql?", objectCallbackFactory.getFastMethod("eql_p", IRUBY_OBJECT));
-        module.defineFastPublicModuleFunction("equal?", objectCallbackFactory.getFastMethod("equal_p", IRUBY_OBJECT));
-
-        module.defineFastPublicModuleFunction("===", objectCallbackFactory.getFastMethod("op_eqq", IRUBY_OBJECT));
-
-        module.defineFastPublicModuleFunction("to_s", objectCallbackFactory.getFastMethod("to_s"));
-        module.defineFastPublicModuleFunction("nil?", objectCallbackFactory.getFastMethod("nil_p"));
-        module.defineFastPublicModuleFunction("to_a", objectCallbackFactory.getFastMethod("to_a"));
-        module.defineFastPublicModuleFunction("hash", objectCallbackFactory.getFastMethod("hash"));
-        module.defineFastPublicModuleFunction("id", objectCallbackFactory.getFastMethod("id_deprecated"));
-        module.defineFastPublicModuleFunction("object_id", objectCallbackFactory.getFastMethod("id"));
-        module.defineAlias("__id__", "object_id");
-        module.defineFastPublicModuleFunction("is_a?", objectCallbackFactory.getFastMethod("kind_of", IRUBY_OBJECT));
-        module.defineAlias("kind_of?", "is_a?");
-        module.defineFastPublicModuleFunction("dup", objectCallbackFactory.getFastMethod("dup"));
-        module.defineFastPublicModuleFunction("type", objectCallbackFactory.getFastMethod("type_deprecated"));
-        module.defineFastPublicModuleFunction("class", objectCallbackFactory.getFastMethod("type"));
-        module.defineFastPublicModuleFunction("inspect", objectCallbackFactory.getFastMethod("inspect"));
-        module.defineFastPublicModuleFunction("=~", objectCallbackFactory.getFastMethod("op_match", IRUBY_OBJECT));
-        module.definePublicModuleFunction("clone", objectCallbackFactory.getFastMethod("rbClone"));
-        module.defineFastPublicModuleFunction("display", objectCallbackFactory.getFastOptMethod("display"));
-        module.defineFastPublicModuleFunction("extend", objectCallbackFactory.getFastOptMethod("extend"));
-        module.defineFastPublicModuleFunction("freeze", objectCallbackFactory.getFastMethod("freeze"));
-        module.defineFastPublicModuleFunction("frozen?", objectCallbackFactory.getFastMethod("frozen"));
-        module.defineFastModuleFunction("initialize_copy", objectCallbackFactory.getFastMethod("initialize_copy", IRUBY_OBJECT));
-        module.definePublicModuleFunction("instance_eval", objectCallbackFactory.getOptMethod("instance_eval"));
-        module.definePublicModuleFunction("instance_exec", objectCallbackFactory.getOptMethod("instance_exec"));
-        module.defineFastPublicModuleFunction("instance_of?", objectCallbackFactory.getFastMethod("instance_of", IRUBY_OBJECT));
-        module.defineFastPublicModuleFunction("instance_variables", objectCallbackFactory.getFastMethod("instance_variables"));
-        module.defineFastPublicModuleFunction("instance_variable_get", objectCallbackFactory.getFastMethod("instance_variable_get", IRUBY_OBJECT));
-        module.defineFastPublicModuleFunction("instance_variable_set", objectCallbackFactory.getFastMethod("instance_variable_set", IRUBY_OBJECT, IRUBY_OBJECT));
-        module.defineFastPublicModuleFunction("instance_variable_defined?", objectCallbackFactory.getFastMethod("instance_variable_defined_p", IRUBY_OBJECT));
-        module.defineFastPublicModuleFunction("method", objectCallbackFactory.getFastMethod("method", IRUBY_OBJECT));
-        module.defineFastPublicModuleFunction("methods", objectCallbackFactory.getFastOptMethod("methods"));
-        module.defineFastPublicModuleFunction("private_methods", objectCallbackFactory.getFastOptMethod("private_methods"));
-        module.defineFastPublicModuleFunction("protected_methods", objectCallbackFactory.getFastOptMethod("protected_methods"));
-        module.defineFastPublicModuleFunction("public_methods", objectCallbackFactory.getFastOptMethod("public_methods"));
-        module.defineFastModuleFunction("remove_instance_variable", objectCallbackFactory.getMethod("remove_instance_variable", IRUBY_OBJECT));
-        module.defineFastPublicModuleFunction("respond_to?", objectCallbackFactory.getFastOptMethod("respond_to"));
-        module.defineFastPublicModuleFunction("send", objectCallbackFactory.getOptMethod("send"));
-        module.defineAlias("__send__", "send");
-        module.defineFastPublicModuleFunction("singleton_methods", objectCallbackFactory.getFastOptMethod("singleton_methods"));
-        module.defineFastPublicModuleFunction("taint", objectCallbackFactory.getFastMethod("taint"));
-        module.defineFastPublicModuleFunction("tainted?", objectCallbackFactory.getFastMethod("tainted"));
-        module.defineFastPublicModuleFunction("untaint", objectCallbackFactory.getFastMethod("untaint"));
-
         runtime.setRespondToMethod(module.searchMethod("respond_to?"));
         
         runtime.getObject().dispatcher = objectCallbackFactory.createDispatcher(runtime.getObject());

@@ -146,7 +146,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     public IRubyObject shutdown(IRubyObject[] args) {
-        if (getRuntime().getSafeLevel() >= 4 && tainted().isFalse()) {
+        if (getRuntime().getSafeLevel() >= 4 && tainted_p().isFalse()) {
             throw getRuntime().newSecurityError("Insecure: can't shutdown socket");
         }
         
