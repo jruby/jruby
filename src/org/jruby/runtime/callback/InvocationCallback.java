@@ -42,7 +42,8 @@ import org.jruby.exceptions.MainExitException;
 public abstract class InvocationCallback implements Callback {
     public static final Class[] EMPTY_ARGS = new Class[0];
     public static final Class[] OPTIONAL_ARGS = new Class[] {IRubyObject[].class};
-    private Arity arity;
+    protected int arityValue;
+    protected Arity arity;
     private Class[] argumentTypes;
     private String javaName;
     private boolean isSingleton;
@@ -52,8 +53,16 @@ public abstract class InvocationCallback implements Callback {
     }
 
     public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs, Block block) {
-        Ruby runtime = recv.getRuntime();
-        arity.checkArity(runtime, oargs);
+        if (arityValue >= 0) {
+            if (oargs.length != arityValue) {
+                throw recv.getRuntime().newArgumentError("wrong number of arguments(" + oargs.length + " for " + arityValue + ")");
+            }
+        } else {
+            if (oargs.length < -(1 + arityValue)) {
+                throw recv.getRuntime().newArgumentError("wrong number of arguments(" + oargs.length + " for " + -(1 + arityValue) + ")");
+            }
+        }
+        
         try {
             return call(recv,oargs,block);
         } catch(RaiseException e) {
@@ -65,6 +74,7 @@ public abstract class InvocationCallback implements Callback {
         } catch(MainExitException e) {
             throw e;
         } catch(Exception e) {
+            Ruby runtime = recv.getRuntime();
             runtime.getJavaSupport().handleNativeException(e);
             return runtime.getNil();
         }        
@@ -74,6 +84,7 @@ public abstract class InvocationCallback implements Callback {
 
     public void setArity(Arity arity) {
         this.arity = arity;
+        this.arityValue = arity.getValue();
     }
 
     public Arity getArity() {

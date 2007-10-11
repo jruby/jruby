@@ -40,11 +40,17 @@ import org.jruby.exceptions.MainExitException;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public abstract class FastInvocationCallback extends InvocationCallback {
-    private Arity arity;
-
     public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs, Block block) {
-        Ruby runtime = recv.getRuntime();
-        arity.checkArity(runtime, oargs);
+        if (arityValue >= 0) {
+            if (oargs.length != arityValue) {
+                throw recv.getRuntime().newArgumentError("wrong number of arguments(" + oargs.length + " for " + arityValue + ")");
+            }
+        } else {
+            if (oargs.length < -(1 + arityValue)) {
+                throw recv.getRuntime().newArgumentError("wrong number of arguments(" + oargs.length + " for " + -(1 + arityValue) + ")");
+            }
+        }
+        
         try {
             return call(recv,oargs);
         } catch(RaiseException e) {
@@ -56,19 +62,12 @@ public abstract class FastInvocationCallback extends InvocationCallback {
         } catch(MainExitException e) {
             throw e;
         } catch(Exception e) {
+            Ruby runtime = recv.getRuntime();
             runtime.getJavaSupport().handleNativeException(e);
             return runtime.getNil();
         }
     }
 
     public abstract IRubyObject call(Object receiver, Object[] args);
-
-    public void setArity(Arity arity) {
-        this.arity = arity;
-    }
-
-    public Arity getArity() {
-        return arity;
-    }
 
 }// FastInvocationCallback
