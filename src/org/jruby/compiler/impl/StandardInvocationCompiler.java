@@ -144,7 +144,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             // block
             if (closureArg == null) {
                 // no args, no block
-                methodCompiler.loadClosure();
+                methodCompiler.loadBlock();
             } else {
                 // no args, with block
                 closureArg.compile(methodCompiler);
@@ -154,7 +154,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             // block
             if (closureArg == null) {
                 // with args, no block
-                methodCompiler.loadClosure();
+                methodCompiler.loadBlock();
             } else {
                 // with args, with block
                 closureArg.compile(methodCompiler);
@@ -300,7 +300,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
 
             method.label(tryCatch);
             {
-                methodCompiler.loadClosure();
+                methodCompiler.loadBlock();
                 methodCompiler.invokeUtilityMethod("handleJumpException", cg.sig(IRubyObject.class, cg.params(JumpException.class, Block.class)));
             }
 
@@ -309,7 +309,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
 
     public void yield(boolean hasArgs, boolean unwrap) {
-        methodCompiler.loadClosure();
+        methodCompiler.loadBlock();
 
         if (hasArgs) {
             method.swap();

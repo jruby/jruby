@@ -400,11 +400,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THREADCONTEXT_INDEX);
         }
 
-        public void loadClosure() {
-            loadThreadContext();
-            invokeThreadContext("getFrameBlock", cg.sig(Block.class));
-        }
-
         public void loadSelf() {
             method.aload(SELF_INDEX);
         }
@@ -883,7 +878,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 // break jump
                 {
                     method.label(catchBreak);
-                    loadClosure();
+                    loadBlock();
                     invokeUtilityMethod("breakJumpInWhile", cg.sig(IRubyObject.class, JumpException.BreakJump.class, Block.class));
                     method.go_to(done);
                 }
@@ -2383,9 +2378,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void loadBlock() {
-            // blocks don't accept blocks yet, so we just load null here and cast to Block
-            method.aconst_null();
-            method.checkcast(cg.p(Block.class));
+            loadThreadContext();
+            invokeThreadContext("getFrameBlock", cg.sig(Block.class));
         }
 
         protected String getNewRescueName() {
