@@ -367,7 +367,7 @@ public class RubyTime extends RubyObject {
         return getRuntime().newString(result);
     }
 
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod(name = "to_s", name2 = "inspect")
     public IRubyObject to_s() {
         simpleDateFormat.setCalendar(cal);
         simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss z yyyy");
@@ -451,7 +451,7 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum(cal.get(Calendar.DAY_OF_YEAR));
     }
 
-    @JRubyMethod(name = "gmt_offset", name2 = "gmtoffset", name3 = "utc_offset")
+    @JRubyMethod(name = "gmt_offset", name2 = "gmtoff", name3 = "utc_offset")
     public RubyInteger gmt_offset() {
         return getRuntime().newFixnum((int)(cal.get(Calendar.ZONE_OFFSET)/1000));
     }

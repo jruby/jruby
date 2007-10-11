@@ -35,6 +35,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 
 
 /**
@@ -101,15 +102,16 @@ public class RubyProcess {
 //        process.defineModuleFunction("maxgroups=", processCallbackFactory.getSingletonMethod("maxgroups_set", RubyKernel.IRUBY_OBJECT));
         
         // Process::Status methods  
-//        process_status.defineMethod("&", process_statusCallbackFactory.getMethod("op_and"));
-//        process_status.defineMethod("to_int", process_statusCallbackFactory.getMethod("to_int"));
-//        process_status.defineMethod("pid", process_statusCallbackFactory.getMethod("pid"));
-//        process_status.defineMethod("stopped?", process_statusCallbackFactory.getMethod("stopped_p"));
-//        process_status.defineMethod("stopsig", process_statusCallbackFactory.getMethod("stopsig"));
-//        process_status.defineMethod("signaled?", process_statusCallbackFactory.getMethod("signaled_p"));
-//        process_status.defineMethod("termsig", process_statusCallbackFactory.getMethod("termsig"));
-//        process_status.defineMethod("exited?", process_statusCallbackFactory.getMethod("exited_p"));
-//        process_status.defineMethod("coredump?", process_statusCallbackFactory.getMethod("coredump_p"));
+        Callback notImplemented = process_statusCallbackFactory.getFastMethod("not_implemented");
+        process_status.defineMethod("&", process_statusCallbackFactory.getFastMethod("not_implemented1", IRubyObject.class));
+        process_status.defineMethod("to_int", notImplemented);
+        process_status.defineMethod("pid", notImplemented);
+        process_status.defineMethod("stopped?", notImplemented);
+        process_status.defineMethod("stopsig", notImplemented);
+        process_status.defineMethod("signaled?", notImplemented);
+        process_status.defineMethod("termsig", notImplemented);
+        process_status.defineMethod("exited?", notImplemented);
+        process_status.defineMethod("coredump?", notImplemented);
         
         return process;
     }
@@ -125,6 +127,16 @@ public class RubyProcess {
         
         public static RubyStatus newProcessStatus(Ruby runtime, long status) {
             return new RubyStatus(runtime, runtime.getProcStatus(), status);
+        }
+        
+        public IRubyObject not_implemented() {
+            String error = "Process::Status#" + getRuntime().getCurrentContext().getFrameName() + " not implemented";
+            throw getRuntime().newNotImplementedError(error);
+        }
+        
+        public IRubyObject not_implemented1(IRubyObject arg) {
+            String error = "Process::Status#" + getRuntime().getCurrentContext().getFrameName() + " not implemented";
+            throw getRuntime().newNotImplementedError(error);
         }
         
         @JRubyMethod(name = "exitstatus")

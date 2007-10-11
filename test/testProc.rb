@@ -31,3 +31,8 @@ def foo(&block)
 end
 
 foo { |a, b, c| test_equal(1, a) }
+
+p1 = Proc.new {}
+p2 = p1.clone
+test_equal(p1, p2)
+test_ok(p1.to_s != nil)

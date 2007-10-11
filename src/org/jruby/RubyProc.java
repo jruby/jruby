@@ -127,6 +127,22 @@ public class RubyProc extends RubyObject implements JumpTarget {
         return newProc;
     }
     
+    @JRubyMethod(name = "==", required = 1)
+    public IRubyObject op_equal(IRubyObject other) {
+        if (!(other instanceof RubyProc)) return getRuntime().getFalse();
+        
+        if (this == other || this.block == ((RubyProc)other).block) {
+            return getRuntime().newBoolean(true);
+        }
+        
+        return getRuntime().getFalse();
+    }
+    
+    @JRubyMethod(name = "to_s")
+    public IRubyObject to_s() {
+        return RubyString.newString(getRuntime(), "#<Proc:0x" + Integer.toString(block.hashCode(), 16) + ">");
+    }
+    
     /**
      * Create a new instance of a Proc object.  We override this method (from RubyClass)
      * since we need to deal with special case of Proc.new with no arguments or block arg.  In 
