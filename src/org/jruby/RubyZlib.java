@@ -35,6 +35,7 @@ import java.util.ArrayList;
 
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import org.jruby.anno.JRubyMethod;
 
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -43,6 +44,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.IOInputStream;
@@ -63,45 +65,13 @@ public class RubyZlib {
 
         RubyClass gzfile = result.defineClassUnder("GzipFile", runtime.getObject(), RubyGzipFile.GZIPFILE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyGzipFile.class);
-        gzfile.getMetaClass().defineMethod("wrap", callbackFactory.getSingletonMethod("wrap", RubyGzipFile.class, RubyKernel.IRUBY_OBJECT));
-        gzfile.getMetaClass().defineMethod("new", callbackFactory.getSingletonMethod("newInstance"));
-        gzfile.defineFastMethod("os_code", callbackFactory.getFastMethod("os_code"));
-        gzfile.defineFastMethod("closed?", callbackFactory.getFastMethod("closed_p"));
-        gzfile.defineFastMethod("orig_name", callbackFactory.getFastMethod("orig_name"));
-        gzfile.defineFastMethod("to_io", callbackFactory.getFastMethod("to_io"));
-        gzfile.defineFastMethod("finish", callbackFactory.getFastMethod("finish"));
-        gzfile.defineFastMethod("comment", callbackFactory.getFastMethod("comment"));
-        gzfile.defineFastMethod("crc", callbackFactory.getFastMethod("crc"));
-        gzfile.defineFastMethod("mtime", callbackFactory.getFastMethod("mtime"));
-        gzfile.defineFastMethod("sync", callbackFactory.getFastMethod("sync"));
-        gzfile.defineFastMethod("close", callbackFactory.getFastMethod("close"));
-        gzfile.defineFastMethod("level", callbackFactory.getFastMethod("level"));
-        gzfile.defineFastMethod("sync=", callbackFactory.getFastMethod("set_sync", RubyKernel.IRUBY_OBJECT));
+        gzfile.defineAnnotatedMethods(RubyGzipFile.class, callbackFactory);
         
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
         RubyClass gzreader = result.defineClassUnder("GzipReader", gzfile, RubyGzipReader.GZIPREADER_ALLOCATOR);
         gzreader.includeModule(runtime.getEnumerable());
         CallbackFactory callbackFactory2 = runtime.callbackFactory(RubyGzipReader.class);
-        gzreader.getMetaClass().defineMethod("open", callbackFactory2.getSingletonMethod("open", RubyString.class));
-        gzreader.getMetaClass().defineMethod("new", classCB.getOptMethod("newInstance"));
-        gzreader.defineMethod("initialize", callbackFactory2.getMethod("initialize", RubyKernel.IRUBY_OBJECT));
-        gzreader.defineFastMethod("rewind", callbackFactory2.getFastMethod("rewind"));
-        gzreader.defineFastMethod("lineno", callbackFactory2.getFastMethod("lineno"));
-        gzreader.defineFastMethod("readline", callbackFactory2.getFastMethod("readline"));
-        gzreader.defineFastMethod("read", callbackFactory2.getFastOptMethod("read"));
-        gzreader.defineFastMethod("lineno=", callbackFactory2.getFastMethod("set_lineno", RubyNumeric.class));
-        gzreader.defineFastMethod("pos", callbackFactory2.getFastMethod("pos"));
-        gzreader.defineFastMethod("readchar", callbackFactory2.getFastMethod("readchar"));
-        gzreader.defineFastMethod("readlines", callbackFactory2.getFastOptMethod("readlines"));
-        gzreader.defineMethod("each_byte", callbackFactory2.getMethod("each_byte"));
-        gzreader.defineFastMethod("getc", callbackFactory2.getFastMethod("getc"));
-        gzreader.defineFastMethod("eof", callbackFactory2.getFastMethod("eof"));
-        gzreader.defineFastMethod("ungetc", callbackFactory2.getFastMethod("ungetc", RubyNumeric.class));
-        gzreader.defineMethod("each", callbackFactory2.getOptMethod("each"));
-        gzreader.defineFastMethod("unused", callbackFactory2.getFastMethod("unused"));
-        gzreader.defineFastMethod("eof?", callbackFactory2.getFastMethod("eof_p"));
-        gzreader.defineFastMethod("gets", callbackFactory2.getFastOptMethod("gets"));
-        gzreader.defineFastMethod("tell", callbackFactory2.getFastMethod("tell"));
+        gzreader.defineAnnotatedMethods(RubyGzipReader.class, callbackFactory2);
         
         RubyClass standardError = runtime.getClass("StandardError");
         RubyClass zlibError = result.defineClassUnder("Error", standardError, standardError.getAllocator());
@@ -109,20 +79,7 @@ public class RubyZlib {
 
         RubyClass gzwriter = result.defineClassUnder("GzipWriter", gzfile, RubyGzipWriter.GZIPWRITER_ALLOCATOR);
         CallbackFactory callbackFactory3 = runtime.callbackFactory(RubyGzipWriter.class);
-        gzwriter.getMetaClass().defineMethod("open", callbackFactory3.getOptSingletonMethod("open"));
-        gzwriter.getMetaClass().defineMethod("new", classCB.getOptMethod("newInstance"));
-        gzwriter.defineMethod("initialize", callbackFactory3.getOptMethod("initialize2"));
-        gzwriter.defineFastMethod("<<", callbackFactory3.getFastMethod("append", RubyKernel.IRUBY_OBJECT));
-        gzwriter.defineFastMethod("printf", callbackFactory3.getFastOptMethod("printf"));
-        gzwriter.defineFastMethod("pos", callbackFactory3.getFastMethod("pos"));
-        gzwriter.defineFastMethod("orig_name=", callbackFactory3.getFastMethod("set_orig_name", RubyString.class));
-        gzwriter.defineFastMethod("putc", callbackFactory3.getFastMethod("putc", RubyNumeric.class));
-        gzwriter.defineFastMethod("comment=", callbackFactory3.getFastMethod("set_comment", RubyString.class));
-        gzwriter.defineFastMethod("puts", callbackFactory3.getFastOptMethod("puts"));
-        gzwriter.defineFastMethod("flush", callbackFactory3.getFastOptMethod("flush"));
-        gzwriter.defineFastMethod("mtime=", callbackFactory3.getFastMethod("set_mtime", RubyKernel.IRUBY_OBJECT));
-        gzwriter.defineFastMethod("tell", callbackFactory3.getFastMethod("tell"));
-        gzwriter.defineFastMethod("write", callbackFactory3.getFastMethod("write", RubyKernel.IRUBY_OBJECT));
+        gzwriter.defineAnnotatedMethods(RubyGzipWriter.class, callbackFactory3);
 
         result.defineConstant("ZLIB_VERSION",runtime.newString("1.2.1"));
         result.defineConstant("VERSION",runtime.newString("0.6.0"));
@@ -168,11 +125,7 @@ public class RubyZlib {
         result.defineConstant("MAX_WBITS",runtime.newFixnum(15));
 
         CallbackFactory cf = runtime.callbackFactory(RubyZlib.class);
-        result.defineFastModuleFunction("zlib_version",cf.getFastSingletonMethod("zlib_version"));
-        result.defineFastModuleFunction("version",cf.getFastSingletonMethod("version"));
-        result.defineFastModuleFunction("adler32",cf.getFastOptSingletonMethod("adler32"));
-        result.defineFastModuleFunction("crc32",cf.getFastOptSingletonMethod("crc32"));
-        result.defineFastModuleFunction("crc_table",cf.getFastSingletonMethod("crc_table"));
+        result.defineAnnotatedMethods(RubyZlib.class, cf);
 
         result.defineClassUnder("StreamEnd",zlibError, zlibError.getAllocator());
         result.defineClassUnder("StreamError",zlibError, zlibError.getAllocator());
@@ -190,59 +143,33 @@ public class RubyZlib {
         // ZStream actually *isn't* allocatable
         RubyClass zstream = result.defineClassUnder("ZStream", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory zstreamcb = runtime.callbackFactory(ZStream.class);
-        zstream.defineMethod("initialize",zstreamcb.getMethod("initialize"));
-        zstream.defineFastMethod("flush_next_out",zstreamcb.getFastMethod("flush_next_out"));
-        zstream.defineFastMethod("total_out",zstreamcb.getFastMethod("total_out"));
-        zstream.defineFastMethod("stream_end?",zstreamcb.getFastMethod("stream_end_p"));
-        zstream.defineFastMethod("data_type",zstreamcb.getFastMethod("data_type"));
-        zstream.defineFastMethod("closed?",zstreamcb.getFastMethod("closed_p"));
-        zstream.defineFastMethod("ended?",zstreamcb.getFastMethod("ended_p"));
-        zstream.defineFastMethod("end",zstreamcb.getFastMethod("end"));
-        zstream.defineFastMethod("reset",zstreamcb.getFastMethod("reset"));
-        zstream.defineFastMethod("avail_out",zstreamcb.getFastMethod("avail_out"));
-        zstream.defineFastMethod("avail_out=",zstreamcb.getFastMethod("set_avail_out",RubyKernel.IRUBY_OBJECT));
-        zstream.defineFastMethod("adler",zstreamcb.getFastMethod("adler"));
-        zstream.defineFastMethod("finish",zstreamcb.getFastMethod("finish"));
-        zstream.defineFastMethod("avail_in",zstreamcb.getFastMethod("avail_in"));
-        zstream.defineFastMethod("flush_next_in",zstreamcb.getFastMethod("flush_next_in"));
-        zstream.defineFastMethod("total_in",zstreamcb.getFastMethod("total_in"));
-        zstream.defineFastMethod("finished?",zstreamcb.getFastMethod("finished_p"));
-        zstream.defineFastMethod("close",zstreamcb.getFastMethod("close"));
+        zstream.defineAnnotatedMethods(ZStream.class, zstreamcb);
         zstream.undefineMethod("new");
 
         RubyClass infl = result.defineClassUnder("Inflate", zstream, Inflate.INFLATE_ALLOCATOR);
         CallbackFactory inflcb = runtime.callbackFactory(Inflate.class);
-        infl.getMetaClass().defineFastMethod("inflate",inflcb.getFastSingletonMethod("s_inflate",RubyKernel.IRUBY_OBJECT));
-        infl.defineFastMethod("initialize",inflcb.getFastOptMethod("_initialize"));
-        infl.defineFastMethod("<<",inflcb.getFastMethod("append",RubyKernel.IRUBY_OBJECT));
-        infl.defineFastMethod("sync_point?",inflcb.getFastMethod("sync_point_p"));
-        infl.defineFastMethod("set_dictionary",inflcb.getFastMethod("set_dictionary",RubyKernel.IRUBY_OBJECT));
-        infl.defineFastMethod("inflate",inflcb.getFastMethod("inflate",RubyKernel.IRUBY_OBJECT));
-        infl.defineFastMethod("sync",inflcb.getFastMethod("sync",RubyKernel.IRUBY_OBJECT));
+        infl.defineAnnotatedMethods(Inflate.class, inflcb);
 
         RubyClass defl = result.defineClassUnder("Deflate", zstream, Deflate.DEFLATE_ALLOCATOR);
         CallbackFactory deflcb = runtime.callbackFactory(Deflate.class);
-        defl.getMetaClass().defineFastMethod("deflate",deflcb.getFastOptSingletonMethod("s_deflate"));
-        defl.defineFastMethod("initialize",deflcb.getFastOptMethod("_initialize"));
-        defl.defineFastMethod("<<",deflcb.getFastMethod("append",RubyKernel.IRUBY_OBJECT));
-        defl.defineFastMethod("params",deflcb.getFastMethod("params",RubyKernel.IRUBY_OBJECT,RubyKernel.IRUBY_OBJECT));
-        defl.defineFastMethod("set_dictionary",deflcb.getFastMethod("set_dictionary",RubyKernel.IRUBY_OBJECT));
-        defl.defineFastMethod("flush",deflcb.getFastOptMethod("flush"));
-        defl.defineFastMethod("deflate",deflcb.getFastOptMethod("deflate"));
+        defl.defineAnnotatedMethods(Deflate.class, deflcb);
 
         runtime.getKernel().callMethod(runtime.getCurrentContext(),"require",runtime.newString("stringio"));
 
         return result;
     }
 
+    @JRubyMethod(name = "zlib_version", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject zlib_version(IRubyObject recv) {
         return ((RubyModule)recv).getConstant("ZLIB_VERSION");
     }
 
+    @JRubyMethod(name = "version", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject version(IRubyObject recv) {
         return ((RubyModule)recv).getConstant("VERSION");
     }
 
+    @JRubyMethod(name = "crc32", optional = 2, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) throws Exception {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
         int crc = 0;
@@ -259,6 +186,7 @@ public class RubyZlib {
         return recv.getRuntime().newFixnum(ext.getValue());
     }
 
+    @JRubyMethod(name = "adler32", optional = 2, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject adler32(IRubyObject recv, IRubyObject[] args) throws Exception {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
         int adler = 1;
@@ -297,6 +225,7 @@ public class RubyZlib {
         3401237130L, 1404277552L, 615818150L, 3134207493L, 3453421203L, 1423857449L, 601450431L, 3009837614L, 3294710456L, 1567103746L, 711928724L, 3020668471L, 
         3272380065L, 1510334235L, 755167117};
 
+    @JRubyMethod(name = "crc_table", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject crc_table(IRubyObject recv) {
         List ll = new ArrayList(crctab.length);
         for(int i=0;i<crctab.length;i++) {
@@ -324,34 +253,42 @@ public class RubyZlib {
             super(runtime, type);
         }
 
+        @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
         public IRubyObject initialize(Block unusedBlock) {
             return this;
         }
 
+        @JRubyMethod(name = "flust_next_out")
         public IRubyObject flush_next_out() {
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "total_out")
         public IRubyObject total_out() {
             return getRuntime().newFixnum(internalTotalOut());
         }
 
+        @JRubyMethod(name = "stream_end?")
         public IRubyObject stream_end_p() {
             return internalStreamEndP() ? getRuntime().getTrue() : getRuntime().getFalse();
         }
 
+        @JRubyMethod(name = "data_type")
         public IRubyObject data_type() {
             return getRuntime().getModule("Zlib").getConstant("UNKNOWN");
         }
 
+        @JRubyMethod(name = "closed?")
         public IRubyObject closed_p() {
             return closed ? getRuntime().getTrue() : getRuntime().getFalse();
         }
 
+        @JRubyMethod(name = "ended?")
         public IRubyObject ended_p() {
             return ended ? getRuntime().getTrue() : getRuntime().getFalse();
         }
 
+        @JRubyMethod(name = "end")
         public IRubyObject end() {
             if(!ended) {
                 internalEnd();
@@ -360,23 +297,28 @@ public class RubyZlib {
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "reset")
         public IRubyObject reset() {
             internalReset();
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "avail_out")
         public IRubyObject avail_out() {
             return RubyFixnum.zero(getRuntime());
         }
 
+        @JRubyMethod(name = "avail_out=", required = 1)
         public IRubyObject set_avail_out(IRubyObject p1) {
             return p1;
         }
 
+        @JRubyMethod(name = "adler")
         public IRubyObject adler() {
             return getRuntime().newFixnum(internalAdler());
         }
 
+        @JRubyMethod(name = "finish")
         public IRubyObject finish() throws Exception {
             if(!finished) {
                 finished = true;
@@ -385,22 +327,27 @@ public class RubyZlib {
             return getRuntime().newString("");
         }
 
+        @JRubyMethod(name = "avail_in")
         public IRubyObject avail_in() {
             return RubyFixnum.zero(getRuntime());
         }
 
+        @JRubyMethod(name = "flush_next_in")
         public IRubyObject flush_next_in() {
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "total_in")
         public IRubyObject total_in() {
             return getRuntime().newFixnum(internalTotalIn());
         }
 
+        @JRubyMethod(name = "finished?")
         public IRubyObject finished_p() {
             return finished ? getRuntime().getTrue() : getRuntime().getFalse();
         }
 
+        @JRubyMethod(name = "close")
         public IRubyObject close() {
             if(!closed) {
                 internalClose();
@@ -417,6 +364,7 @@ public class RubyZlib {
             }
         };
 
+        @JRubyMethod(name = "inflate", required = 1, meta = true)
         public static IRubyObject s_inflate(IRubyObject recv, IRubyObject string) throws Exception {
             return ZlibInflate.s_inflate(recv,string.convertToString().getByteList());
         }
@@ -427,28 +375,34 @@ public class RubyZlib {
 
         private ZlibInflate infl;
 
+        @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
         public IRubyObject _initialize(IRubyObject[] args) throws Exception {
             infl = new ZlibInflate(this);
             return this;
         }
 
+        @JRubyMethod(name = "<<", required = 1)
         public IRubyObject append(IRubyObject arg) {
             infl.append(arg);
             return this;
         }
 
+        @JRubyMethod(name = "sync_point?")
         public IRubyObject sync_point_p() {
             return infl.sync_point();
         }
 
+        @JRubyMethod(name = "set_dictionary", required = 1)
         public IRubyObject set_dictionary(IRubyObject arg) throws Exception {
             return infl.set_dictionary(arg);
         }
 
+        @JRubyMethod(name = "inflate", required = 1)
         public IRubyObject inflate(IRubyObject string) throws Exception {
             return infl.inflate(string.convertToString().getByteList());
         }
 
+        @JRubyMethod(name = "sync", required = 1)
         public IRubyObject sync(IRubyObject string) {
             return infl.sync(string);
         }
@@ -498,6 +452,7 @@ public class RubyZlib {
             }
         };
 
+        @JRubyMethod(name = "deflate", required = 1, optional = 1, meta = true)
         public static IRubyObject s_deflate(IRubyObject recv, IRubyObject[] args) throws Exception {
             args = Arity.scanArgs(recv.getRuntime(),args,1,1);
             int level = -1;
@@ -513,6 +468,7 @@ public class RubyZlib {
 
         private ZlibDeflate defl;
 
+        @JRubyMethod(name = "initialize", optional = 4, visibility = Visibility.PRIVATE)
         public IRubyObject _initialize(IRubyObject[] args) throws Exception {
             args = Arity.scanArgs(getRuntime(),args,0,4);
             int level = -1;
@@ -535,20 +491,24 @@ public class RubyZlib {
             return this;
         }
 
+        @JRubyMethod(name = "<<", required = 1)
         public IRubyObject append(IRubyObject arg) throws Exception {
             defl.append(arg);
             return this;
         }
 
+        @JRubyMethod(name = "params", required = 2)
         public IRubyObject params(IRubyObject level, IRubyObject strategy) {
             defl.params(RubyNumeric.fix2int(level),RubyNumeric.fix2int(strategy));
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "set_dictionary", required = 1)
         public IRubyObject set_dictionary(IRubyObject arg) throws Exception {
             return defl.set_dictionary(arg);
         }
         
+        @JRubyMethod(name = "flush", optional = 1)
         public IRubyObject flush(IRubyObject[] args) throws Exception {
             int flush = 2; // SYNC_FLUSH
             if(Arity.checkArgumentCount(getRuntime(), args,0,1) == 1) {
@@ -559,6 +519,7 @@ public class RubyZlib {
             return defl.flush(flush);
         }
 
+        @JRubyMethod(name = "deflate", required = 1, optional = 1)
         public IRubyObject deflate(IRubyObject[] args) throws Exception {
             args = Arity.scanArgs(getRuntime(),args,1,1);
             int flush = 0; // NO_FLUSH
@@ -602,13 +563,16 @@ public class RubyZlib {
     }
 
     public static class RubyGzipFile extends RubyObject {
-        public static IRubyObject wrap(IRubyObject recv, RubyGzipFile io, IRubyObject proc, Block unusedBlock) throws IOException {
+        @JRubyMethod(name = "wrap", required = 2, frame = true, meta = true)
+        public static IRubyObject wrap(IRubyObject recv, IRubyObject io, IRubyObject proc, Block unusedBlock) throws IOException {
+            if (!(io instanceof RubyGzipFile)) throw recv.getRuntime().newTypeError(io, (RubyClass)recv);
             if (!proc.isNil()) {
                 try {
                     ((RubyProc)proc).call(new IRubyObject[]{io});
                 } finally {
-                    if (!io.isClosed()) {
-                        io.close();
+                    RubyGzipFile zipIO = (RubyGzipFile)io;
+                    if (!zipIO.isClosed()) {
+                        zipIO.close();
                     }
                 }
                 return recv.getRuntime().getNil();
@@ -623,6 +587,7 @@ public class RubyZlib {
             }
         };
 
+        @JRubyMethod(name = "new", frame = true, meta = true)
         public static RubyGzipFile newInstance(IRubyObject recv, Block block) {
             RubyClass klass = (RubyClass)recv;
             
@@ -647,10 +612,12 @@ public class RubyZlib {
             mtime = runtime.getNil();
         }
         
+        @JRubyMethod(name = "os_code")
         public IRubyObject os_code() {
             return getRuntime().newFixnum(os_code);
         }
         
+        @JRubyMethod(name = "closed?")
         public IRubyObject closed_p() {
             return closed ? getRuntime().getTrue() : getRuntime().getFalse();
         }
@@ -659,30 +626,37 @@ public class RubyZlib {
             return closed;
         }
         
+        @JRubyMethod(name = "orig_name")
         public IRubyObject orig_name() {
             return orig_name == null ? getRuntime().getNil() : getRuntime().newString(orig_name);
         }
         
+        @JRubyMethod(name = "to_io")
         public Object to_io() {
             return realIo;
         }
         
+        @JRubyMethod(name = "comment")
         public IRubyObject comment() {
             return comment == null ? getRuntime().getNil() : getRuntime().newString(comment);
         }
         
+        @JRubyMethod(name = "crc")
         public IRubyObject crc() {
             return RubyFixnum.zero(getRuntime());
         }
         
+        @JRubyMethod(name = "mtime")
         public IRubyObject mtime() {
             return mtime;
         }
         
+        @JRubyMethod(name = "sync")
         public IRubyObject sync() {
             return getRuntime().getNil();
         }
         
+        @JRubyMethod(name = "finish")
         public IRubyObject finish() throws IOException {
             if (!finished) {
                 //io.finish();
@@ -691,14 +665,17 @@ public class RubyZlib {
             return realIo;
         }
 
+        @JRubyMethod(name = "close")
         public IRubyObject close() throws IOException {
             return null;
         }
         
+        @JRubyMethod(name = "level")
         public IRubyObject level() {
             return getRuntime().newFixnum(level);
         }
         
+        @JRubyMethod(name = "sync=", required = 1)
         public IRubyObject set_sync(IRubyObject ignored) {
             return getRuntime().getNil();
         }
@@ -711,14 +688,16 @@ public class RubyZlib {
             }
         };
         
-        private static RubyGzipReader newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
+        @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
+        public static RubyGzipReader newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             RubyClass klass = (RubyClass)recv;
             RubyGzipReader result = (RubyGzipReader)klass.allocate();
             result.callInit(args, block);
             return result;
         }
 
-        public static IRubyObject open(IRubyObject recv, RubyString filename, Block block) throws IOException {
+        @JRubyMethod(name = "open", required = 1, frame = true, meta = true)
+        public static IRubyObject open(IRubyObject recv, IRubyObject filename, Block block) throws IOException {
             Ruby runtime = recv.getRuntime();
             IRubyObject proc = block.isGiven() ? runtime.newProc(false, block) : runtime.getNil();
             RubyGzipReader io = newInstance(
@@ -739,6 +718,7 @@ public class RubyZlib {
         private int line;
         private InputStream io;
         
+        @JRubyMethod(name = "initialize", required = 1, frame = true, visibility = Visibility.PRIVATE)
         public IRubyObject initialize(IRubyObject io, Block unusedBlock) {
             realIo = io;
             try {
@@ -754,14 +734,17 @@ public class RubyZlib {
             return this;
         }
         
+        @JRubyMethod(name = "rewind")
         public IRubyObject rewind() {
             return getRuntime().getNil();
         }
         
+        @JRubyMethod(name = "lineno")
         public IRubyObject lineno() {
             return getRuntime().newFixnum(line);
         }
 
+        @JRubyMethod(name = "readline")
         public IRubyObject readline() throws IOException {
             IRubyObject dst = gets(new IRubyObject[0]);
             if (dst.isNil()) {
@@ -789,6 +772,7 @@ public class RubyZlib {
             return getRuntime().newString(result.append(sep).toString());
         }
 
+        @JRubyMethod(name = "gets", optional = 1)
         public IRubyObject gets(IRubyObject[] args) throws IOException {
             IRubyObject result = internalGets(args);
             if (!result.isNil()) {
@@ -798,6 +782,8 @@ public class RubyZlib {
         }
 
         private final static int BUFF_SIZE = 4096;
+        
+        @JRubyMethod(name = "read", optional = 1)
         public IRubyObject read(IRubyObject[] args) throws IOException {
             if (args.length == 0 || args[0].isNil()) {
                 ByteList val = new ByteList(10);
@@ -832,15 +818,18 @@ public class RubyZlib {
             return getRuntime().newString("");
         }
 
-        public IRubyObject set_lineno(RubyNumeric lineArg) {
+        @JRubyMethod(name = "lineno=", required = 1)
+        public IRubyObject set_lineno(IRubyObject lineArg) {
             line = RubyNumeric.fix2int(lineArg);
             return lineArg;
         }
 
+        @JRubyMethod(name = "pos")
         public IRubyObject pos() {
             return RubyFixnum.zero(getRuntime());
         }
         
+        @JRubyMethod(name = "readchar")
         public IRubyObject readchar() throws IOException {
             int value = io.read();
             if (value == -1) {
@@ -849,6 +838,7 @@ public class RubyZlib {
             return getRuntime().newFixnum(value);
         }
 
+        @JRubyMethod(name = "getc")
         public IRubyObject getc() throws IOException {
             int value = io.read();
             return value == -1 ? getRuntime().getNil() : getRuntime().newFixnum(value);
@@ -858,6 +848,7 @@ public class RubyZlib {
             return ((GZIPInputStream)io).available() != 1;
         }
 
+        @JRubyMethod(name = "close")
         public IRubyObject close() throws IOException {
             if (!closed) {
                 io.close();
@@ -866,22 +857,27 @@ public class RubyZlib {
             return getRuntime().getNil();
         }
         
+        @JRubyMethod(name = "eof")
         public IRubyObject eof() throws IOException {
             return isEof() ? getRuntime().getTrue() : getRuntime().getFalse();
         }
 
+        @JRubyMethod(name = "eof?")
         public IRubyObject eof_p() throws IOException {
             return eof();
         }
 
+        @JRubyMethod(name = "unused")
         public IRubyObject unused() {
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "tell")
         public IRubyObject tell() {
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "each", optional = 1, frame = true)
         public IRubyObject each(IRubyObject[] args, Block block) throws IOException {
             String sep = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getValue().toString();
             
@@ -897,10 +893,12 @@ public class RubyZlib {
             return getRuntime().getNil();
         }
     
-        public IRubyObject ungetc(RubyNumeric arg) {
+        @JRubyMethod(name = "ungetc", required = 1)
+        public IRubyObject ungetc(IRubyObject arg) {
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "readlines", optional = 1)
         public IRubyObject readlines(IRubyObject[] args) throws IOException {
             List array = new ArrayList();
             
@@ -918,6 +916,7 @@ public class RubyZlib {
             return getRuntime().newArray(array);
         }
 
+        @JRubyMethod(name = "each_byte", frame = true)
         public IRubyObject each_byte(Block block) throws IOException {
             int value = io.read();
 
@@ -938,6 +937,7 @@ public class RubyZlib {
             }
         };
         
+        @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
         private static RubyGzipWriter newGzipWriter(IRubyObject recv, IRubyObject[] args, Block block) {
             RubyClass klass = (RubyClass)recv;
             
@@ -946,6 +946,7 @@ public class RubyZlib {
             return result;
         }
 
+        @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, meta = true)
         public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) throws IOException {
             Ruby runtime = recv.getRuntime();
             IRubyObject level = runtime.getNil();
@@ -972,6 +973,8 @@ public class RubyZlib {
         }
 
         private GZIPOutputStream io;
+        
+        @JRubyMethod(name = "initialize", required = 1, rest = true, frame = true, visibility = Visibility.PRIVATE)
         public IRubyObject initialize2(IRubyObject[] args, Block unusedBlock) throws IOException {
             realIo = (RubyObject)args[0];
             this.io = new GZIPOutputStream(new IOOutputStream(args[0]));
@@ -979,6 +982,7 @@ public class RubyZlib {
             return this;
         }
 
+        @JRubyMethod(name = "close")
         public IRubyObject close() throws IOException {
             if (!closed) {
                 io.close();
@@ -988,16 +992,19 @@ public class RubyZlib {
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "append", required = 1)
         public IRubyObject append(IRubyObject p1) throws IOException {
             this.write(p1);
             return this;
         }
 
+        @JRubyMethod(name = "printf", required = 1, rest = true)
         public IRubyObject printf(IRubyObject[] args) throws IOException {
             write(RubyKernel.sprintf(this, args));
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "print", rest = true)
         public IRubyObject print(IRubyObject[] args) throws IOException {
             if (args.length != 0) {
                 for (int i = 0, j = args.length; i < j; i++) {
@@ -1013,23 +1020,28 @@ public class RubyZlib {
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "pos")
         public IRubyObject pos() {
             return getRuntime().getNil();
         }
 
-        public IRubyObject set_orig_name(RubyString ignored) {
+        @JRubyMethod(name = "orig_name=", required = 1)
+        public IRubyObject set_orig_name(IRubyObject ignored) {
             return getRuntime().getNil();
         }
 
-        public IRubyObject set_comment(RubyString ignored) {
+        @JRubyMethod(name = "comment=", required = 1)
+        public IRubyObject set_comment(IRubyObject ignored) {
             return getRuntime().getNil();
         }
 
-        public IRubyObject putc(RubyNumeric p1) throws IOException {
+        @JRubyMethod(name = "putc", required = 1)
+        public IRubyObject putc(IRubyObject p1) throws IOException {
             io.write(RubyNumeric.fix2int(p1));
             return p1;
         }
         
+        @JRubyMethod(name = "puts", rest = true)
         public IRubyObject puts(IRubyObject[] args) throws IOException {
             RubyStringIO sio = (RubyStringIO)getRuntime().getClass("StringIO").newInstance(new IRubyObject[0], Block.NULL_BLOCK);
             sio.puts(args);
@@ -1046,6 +1058,7 @@ public class RubyZlib {
             return realIo;
         }
 
+        @JRubyMethod(name = "flush", optional = 1)
         public IRubyObject flush(IRubyObject[] args) throws IOException {
             if (args.length == 0 || args[0].isNil() || RubyNumeric.fix2int(args[0]) != 0) { // Zlib::NO_FLUSH
                 io.flush();
@@ -1053,14 +1066,17 @@ public class RubyZlib {
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "mtime=", required = 1)
         public IRubyObject set_mtime(IRubyObject ignored) {
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "tell")
         public IRubyObject tell() {
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "write", required = 1)
         public IRubyObject write(IRubyObject p1) throws IOException {
             ByteList bytes = p1.convertToString().getByteList();
             io.write(bytes.unsafeBytes(), bytes.begin(), bytes.length());
