@@ -49,6 +49,7 @@ import java.io.StringReader;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -92,6 +93,7 @@ import org.jruby.ext.socket.RubySocket;
 import org.jruby.ext.Generator;
 import org.jruby.ext.JavaBasedPOSIX;
 import org.jruby.ext.POSIX;
+import org.jruby.ext.POSIXFunctionMapper;
 import org.jruby.ext.Readline;
 import org.jruby.libraries.FiberLibrary;
 import org.jruby.parser.Parser;
@@ -2318,7 +2320,11 @@ public final class Ruby {
 
     private static POSIX loadPosix() {
         try {
-            POSIX posix = (POSIX)Native.loadLibrary("c", POSIX.class);
+            HashMap options = new HashMap();
+            options.put(com.sun.jna.Library.OPTION_FUNCTION_MAPPER, new POSIXFunctionMapper());
+
+            boolean isWindows = System.getProperty("os.name").startsWith("Windows");
+            POSIX posix = (POSIX) Native.loadLibrary(isWindows ? "msvcrt" : "c", POSIX.class, options);
             if (posix != null) {
                 return posix;
             }
