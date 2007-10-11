@@ -130,6 +130,7 @@ public class RubyGlobal {
 
         runtime.defineVariable(new ErrorInfoGlobalVariable(runtime, "$!", runtime.getNil()));
         runtime.defineVariable(new GlobalVariable(runtime, "$=", runtime.getFalse()));
+        runtime.defineVariable(new GlobalVariable(runtime, "$;", runtime.getNil()));
 
         runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"));
 

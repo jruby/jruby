@@ -7,7 +7,7 @@ class JavaInterfaceExtender
   end
   
   def extend_proxy(proxy_class)
-    proxy_class.class_eval &@block
+    proxy_class.class_eval(&@block)
   end
 end
 

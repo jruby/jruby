@@ -3,7 +3,7 @@ class ConcreteJavaProxy < JavaProxy
     alias_method :new_proxy, :new
 
     def new(*args,&block)
-      proxy = new_proxy *args,&block
+      proxy = new_proxy(*args,&block)
       proxy.__jcreate!(*args) unless proxy.java_object
       proxy
     end
