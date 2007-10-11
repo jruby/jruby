@@ -232,6 +232,7 @@ public final class Ruby {
 
     private RubyModule processModule;
     private RubyClass procStatusClass;
+    private RubyModule procUIDModule;
 
     private RubyModule precisionModule;
 
@@ -904,7 +905,14 @@ public final class Ruby {
     }
     void setProcStatus(RubyClass procStatusClass) {
         this.procStatusClass = procStatusClass;
-    }    
+    }
+    
+    public RubyModule getProcUID() {
+        return procUIDModule;
+    }
+    void setProcUID(RubyModule procUIDModule) {
+        this.procUIDModule = procUIDModule;
+    }
 
     public RubyModule getPrecision() {
         return precisionModule;

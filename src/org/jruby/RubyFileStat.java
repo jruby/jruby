@@ -72,34 +72,36 @@ public class RubyFileStat extends RubyObject {
         runtime.setFileStat(fileStatClass);
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
 
-        //        fileStatClass.defineMethod("<=>", callbackFactory.getMethod(""));
-        //        fileStateClass.includeModule(runtime.getModule("Comparable"));
-        //        fileStatClass.defineMethod("atime", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("blockdev?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("blocks", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("chardev?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("dev", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("dev_major", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("dev_minor", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("executable?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("executable_real?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("gid", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("grpowned?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("nlink", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("owned?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("pipe?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("rdev", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("rdev_major", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("rdev_minor", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("readable_real?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("setgid?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("setuid?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("size?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("socket?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("sticky?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("uid", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("writable_real?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("zero?", callbackFactory.getMethod(""));
+        fileStatClass.includeModule(runtime.getModule("Comparable"));
+        fileStatClass.defineMethod("<=>", callbackFactory.getFastMethod("not_implemented1", IRubyObject.class));
+        fileStatClass.defineMethod("atime", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("blockdev?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("blocks", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("chardev?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("dev", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("dev_major", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("dev_minor", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("executable?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("executable_real?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("gid", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("grpowned?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("initialize_copy", callbackFactory.getFastMethod("not_implemented1", IRubyObject.class));
+        fileStatClass.defineMethod("inspect", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("nlink", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("owned?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("pipe?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("rdev", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("rdev_major", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("rdev_minor", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("readable_real?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("setgid?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("setuid?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("size?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("socket?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("sticky?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("uid", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("writable_real?", callbackFactory.getFastMethod("not_implemented"));
+        fileStatClass.defineMethod("zero?", callbackFactory.getFastMethod("not_implemented"));
         
         fileStatClass.defineAnnotatedMethods(RubyFileStat.class, callbackFactory);
     	
@@ -144,6 +146,14 @@ public class RubyFileStat extends RubyObject {
         // We cannot determine this in Java, so we will always return false (better than blowing up)
         isSymlink = runtime.getFalse();
         return this;
+    }
+    
+    public IRubyObject not_implemented() {
+        throw getRuntime().newNotImplementedError("File::Stat#" + getRuntime().getCurrentContext().getFrameName() + " not yet implemented");
+    }
+    
+    public IRubyObject not_implemented1(IRubyObject arg) {
+        throw getRuntime().newNotImplementedError("File::Stat#" + getRuntime().getCurrentContext().getFrameName() + " not yet implemented");
     }
     
     @JRubyMethod(name = "blksize")

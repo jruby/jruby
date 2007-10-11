@@ -121,6 +121,18 @@ public class RubyMethod extends RubyObject {
         return getRuntime().newFixnum(method.getArity().getValue());
     }
 
+    @JRubyMethod(name = "==", required = 1)
+    public RubyBoolean op_equal(IRubyObject other) {
+        if (!(other instanceof RubyMethod)) return getRuntime().getFalse();
+        RubyMethod otherMethod = (RubyMethod)other;
+        return getRuntime().newBoolean(method == otherMethod.method && receiver == otherMethod.receiver);
+    }
+
+    @JRubyMethod(name = "clone")
+    public RubyMethod rbClone() {
+        return newMethod(implementationModule, methodName, originModule, originName, method, receiver);
+    }
+
     /** Create a Proc object.
      * 
      */

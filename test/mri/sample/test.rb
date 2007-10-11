@@ -1486,6 +1486,7 @@ $proc.call(5)
 $proc2.call
 test_ok($x == 5)
 
+=begin Disabling Process.kill test
 if defined? Process.kill
   test_check "signal"
 
@@ -1506,6 +1507,7 @@ if defined? Process.kill
   end
   test_ok(x && /Interrupt/ =~ x.message)
 end
+=end
 
 test_check "eval"
 test_ok(eval("") == nil)

@@ -51,55 +51,23 @@ public class RubyProcess {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         RubyClass process_status = process.defineClassUnder("Status", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setProcStatus(process_status);
+        
+        RubyModule process_uid = process.defineModuleUnder("UID");
+        runtime.setProcUID(process_uid);
 
         CallbackFactory processCallbackFactory = runtime.callbackFactory(RubyProcess.class);
         CallbackFactory process_statusCallbackFactory = runtime.callbackFactory(RubyProcess.RubyStatus.class);
+        CallbackFactory processUIDCallbackFactory = runtime.callbackFactory(RubyProcess.UID.class);
         
         process.defineAnnotatedMethods(RubyProcess.class, processCallbackFactory);
         process_status.defineAnnotatedMethods(RubyStatus.class, process_statusCallbackFactory);
-
-//        process.defineModuleFunction("fork", processCallbackFactory.getSingletonMethod("fork"));
-//        process.defineModuleFunction("exit!", processCallbackFactory.getOptSingletonMethod("exit_bang"));
-//        process.defineModuleFunction("exit", processCallbackFactory.getOptSingletonMethod("exit"));
-//        process.defineModuleFunction("abort", processCallbackFactory.getOptSingletonMethod("abort"));
-//        process.defineModuleFunction("kill", processCallbackFactory.getOptSingletonMethod("kill"));
-//        process.defineModuleFunction("wait", processCallbackFactory.getOptSingletonMethod("wait"));
-//        process.defineModuleFunction("wait2", processCallbackFactory.getOptSingletonMethod("wait2"));
-//        process.defineModuleFunction("waitpid", processCallbackFactory.getOptSingletonMethod("waitpid"));
-//        process.defineModuleFunction("waitpid2", processCallbackFactory.getOptSingletonMethod("waitpid2"));
-//        process.defineModuleFunction("waitall", processCallbackFactory.getSingletonMethod("waitall"));
-//        process.defineModuleFunction("detach", processCallbackFactory.getSingletonMethod("detach", RubyKernel.IRUBY_OBJECT));
-//        process.defineModuleFunction("ppid", processCallbackFactory.getSingletonMethod("ppid"));
-//
-//        process.defineModuleFunction("getpgrp", processCallbackFactory.getSingletonMethod("getprgrp"));
-//        process.defineModuleFunction("setpgrp", processCallbackFactory.getSingletonMethod("setpgrp"));
-//        process.defineModuleFunction("getpgid", processCallbackFactory.getSingletonMethod("getpgid", RubyKernel.IRUBY_OBJECT));
-//        process.defineModuleFunction("setpgid", processCallbackFactory.getSingletonMethod("setpgid", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-//
-//        process.defineModuleFunction("setsid", processCallbackFactory.getSingletonMethod("setsid"));
-//
-//        process.defineModuleFunction("getpriority", processCallbackFactory.getSingletonMethod("getpriority", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-//        process.defineModuleFunction("setpriority", processCallbackFactory.getSingletonMethod("setpriority", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        process_uid.defineAnnotatedMethods(UID.class, processUIDCallbackFactory);
 
 //    #ifdef HAVE_GETPRIORITY
 //        rb_define_const(rb_mProcess, "PRIO_PROCESS", INT2FIX(PRIO_PROCESS));
 //        rb_define_const(rb_mProcess, "PRIO_PGRP", INT2FIX(PRIO_PGRP));
 //        rb_define_const(rb_mProcess, "PRIO_USER", INT2FIX(PRIO_USER));
 //    #endif
-
-//        process.defineModuleFunction("uid", processCallbackFactory.getSingletonMethod("uid"));
-//        process.defineModuleFunction("uid=", processCallbackFactory.getSingletonMethod("uid_set", RubyKernel.IRUBY_OBJECT));
-//        process.defineModuleFunction("gid", processCallbackFactory.getSingletonMethod("gid"));
-//        process.defineModuleFunction("gid=", processCallbackFactory.getSingletonMethod("gid_set", RubyKernel.IRUBY_OBJECT));
-//        process.defineModuleFunction("euid", processCallbackFactory.getSingletonMethod("euid"));
-//        process.defineModuleFunction("euid=", processCallbackFactory.getSingletonMethod("euid_set", RubyKernel.IRUBY_OBJECT));
-//        process.defineModuleFunction("egid", processCallbackFactory.getSingletonMethod("egid"));
-//        process.defineModuleFunction("egid=", processCallbackFactory.getSingletonMethod("egid_set", RubyKernel.IRUBY_OBJECT));
-//        process.defineModuleFunction("initgroups", processCallbackFactory.getSingletonMethod("initgroups", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-//        process.defineModuleFunction("groups", processCallbackFactory.getSingletonMethod("groups"));
-//        process.defineModuleFunction("groups=", processCallbackFactory.getSingletonMethod("groups_set", RubyKernel.IRUBY_OBJECT));
-//        process.defineModuleFunction("maxgroups", processCallbackFactory.getSingletonMethod("maxgroups"));
-//        process.defineModuleFunction("maxgroups=", processCallbackFactory.getSingletonMethod("maxgroups_set", RubyKernel.IRUBY_OBJECT));
         
         // Process::Status methods  
         Callback notImplemented = process_statusCallbackFactory.getFastMethod("not_implemented");
@@ -180,6 +148,203 @@ public class RubyProcess {
         }
     }
     
+    public static class UID {
+        @JRubyMethod(name = "change_privilege", required = 1, module = true)
+        public static IRubyObject change_privilege(IRubyObject self, IRubyObject arg) {
+            throw self.getRuntime().newNotImplementedError("Process::UID::change_privilege not implemented yet");
+        }
+        
+        @JRubyMethod(name = "eid", module = true)
+        public static IRubyObject eid(IRubyObject self) {
+            throw self.getRuntime().newNotImplementedError("Process::UID::eid not implemented yet");
+        }
+        
+        @JRubyMethod(name = "eid=", required = 1, module = true)
+        public static IRubyObject eid(IRubyObject self, IRubyObject arg) {
+            throw self.getRuntime().newNotImplementedError("Process::UID::eid= not implemented yet");
+        }
+        
+        @JRubyMethod(name = "grant_privilege", required = 1, module = true)
+        public static IRubyObject grant_privilege(IRubyObject self, IRubyObject arg) {
+            throw self.getRuntime().newNotImplementedError("Process::UID::grant_privilege not implemented yet");
+        }
+        
+        @JRubyMethod(name = "re_exchange", module = true)
+        public static IRubyObject re_exchange(IRubyObject self) {
+            throw self.getRuntime().newNotImplementedError("Process::UID::re_exchange not implemented yet");
+        }
+        
+        @JRubyMethod(name = "re_exchangeable?", module = true)
+        public static IRubyObject re_exchangeable_p(IRubyObject self) {
+            throw self.getRuntime().newNotImplementedError("Process::UID::re_exchangeable? not implemented yet");
+        }
+        
+        @JRubyMethod(name = "rid", module = true)
+        public static IRubyObject rid(IRubyObject self) {
+            throw self.getRuntime().newNotImplementedError("Process::UID::rid not implemented yet");
+        }
+        
+        @JRubyMethod(name = "sid_available?", module = true)
+        public static IRubyObject sid_available_p(IRubyObject self) {
+            throw self.getRuntime().newNotImplementedError("Process::UID::sid_available not implemented yet");
+        }
+        
+        @JRubyMethod(name = "switch", module = true)
+        public static IRubyObject switch_rb(IRubyObject self) {
+            throw self.getRuntime().newNotImplementedError("Process::UID::switch not implemented yet");
+        }
+    }
+
+    @JRubyMethod(name = "groups", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject groups(IRubyObject recv) {
+        throw recv.getRuntime().newNotImplementedError("Process#groups not yet implemented");
+    }
+
+    @JRubyMethod(name = "setrlimit", rest = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject setrlimit(IRubyObject recv, IRubyObject[] args) {
+        throw recv.getRuntime().newNotImplementedError("Process#setrlimit not yet implemented");
+    }
+
+    @JRubyMethod(name = "getpgrp", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject getpgrp(IRubyObject recv) {
+        throw recv.getRuntime().newNotImplementedError("Process#getpgrp not yet implemented");
+    }
+
+    @JRubyMethod(name = "groups=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject groups_set(IRubyObject recv, IRubyObject arg) {
+        throw recv.getRuntime().newNotImplementedError("Process#groups not yet implemented");
+    }
+
+    @JRubyMethod(name = "waitpid", rest = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject waitpid(IRubyObject recv, IRubyObject[] args) {
+        throw recv.getRuntime().newNotImplementedError("Process#waitpid not yet implemented");
+    }
+
+    @JRubyMethod(name = "wait", rest = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject wait(IRubyObject recv, IRubyObject[] args) {
+        throw recv.getRuntime().newNotImplementedError("Process#wait not yet implemented");
+    }
+
+    @JRubyMethod(name = "waitall", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject waitall(IRubyObject recv) {
+        throw recv.getRuntime().newNotImplementedError("Process#waitall not yet implemented");
+    }
+
+    @JRubyMethod(name = "setsid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject setsid(IRubyObject recv) {
+        throw recv.getRuntime().newNotImplementedError("Process#setsid not yet implemented");
+    }
+
+    @JRubyMethod(name = "setpgrp", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject setpgrp(IRubyObject recv) {
+        throw recv.getRuntime().newNotImplementedError("Process#setpgrp not yet implemented");
+    }
+
+    @JRubyMethod(name = "egid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject egid_set(IRubyObject recv, IRubyObject arg) {
+        throw recv.getRuntime().newNotImplementedError("Process#egid= not yet implemented");
+    }
+
+    @JRubyMethod(name = "euid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject euid(IRubyObject recv) {
+        throw recv.getRuntime().newNotImplementedError("Process#euid not yet implemented");
+    }
+
+    @JRubyMethod(name = "uid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject uid_set(IRubyObject recv, IRubyObject arg) {
+        throw recv.getRuntime().newNotImplementedError("Process#uid= not yet implemented");
+    }
+
+    @JRubyMethod(name = "gid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject gid(IRubyObject recv) {
+        throw recv.getRuntime().newNotImplementedError("Process#gid not yet implemented");
+    }
+
+    @JRubyMethod(name = "maxgroups", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject maxgroups(IRubyObject recv) {
+        throw recv.getRuntime().newNotImplementedError("Process#maxgroups not yet implemented");
+    }
+
+    @JRubyMethod(name = "getpriority", required = 2, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject getpriority(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        throw recv.getRuntime().newNotImplementedError("Process#getpriority not yet implemented");
+    }
+
+    @JRubyMethod(name = "uid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject uid(IRubyObject recv) {
+        throw recv.getRuntime().newNotImplementedError("Process#uid not yet implemented");
+    }
+
+    @JRubyMethod(name = "waitpid2", rest = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject waitpid2(IRubyObject recv, IRubyObject[] args) {
+        throw recv.getRuntime().newNotImplementedError("Process#waitpid2 not yet implemented");
+    }
+
+    @JRubyMethod(name = "initgroups", required = 2, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject initgroups(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        throw recv.getRuntime().newNotImplementedError("Process#initgroups not yet implemented");
+    }
+
+    @JRubyMethod(name = "maxgroups=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject maxgroups_set(IRubyObject recv, IRubyObject arg) {
+        throw recv.getRuntime().newNotImplementedError("Process#maxgroups_set not yet implemented");
+    }
+
+    @JRubyMethod(name = "ppid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject ppid(IRubyObject recv) {
+        throw recv.getRuntime().newNotImplementedError("Process#ppid not yet implemented");
+    }
+
+    @JRubyMethod(name = "gid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject gid_set(IRubyObject recv, IRubyObject arg) {
+        throw recv.getRuntime().newNotImplementedError("Process#gid= not yet implemented");
+    }
+
+    @JRubyMethod(name = "wait2", rest = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject wait2(IRubyObject recv, IRubyObject[] args) {
+        throw recv.getRuntime().newNotImplementedError("Process#wait2 not yet implemented");
+    }
+
+    @JRubyMethod(name = "euid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject euid_set(IRubyObject recv, IRubyObject arg) {
+        throw recv.getRuntime().newNotImplementedError("Process#euid= not yet implemented");
+    }
+
+    @JRubyMethod(name = "setpriority", required = 3, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject setpriority(IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        throw recv.getRuntime().newNotImplementedError("Process#setpriority not yet implemented");
+    }
+
+    @JRubyMethod(name = "setpgid", required = 2, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject setpgid(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        throw recv.getRuntime().newNotImplementedError("Process#setpgid not yet implemented");
+    }
+
+    @JRubyMethod(name = "getpgid", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject getpgid(IRubyObject recv, IRubyObject arg) {
+        throw recv.getRuntime().newNotImplementedError("Process#getpgid not yet implemented");
+    }
+
+    @JRubyMethod(name = "getrlimit", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject getrlimit(IRubyObject recv, IRubyObject arg) {
+        throw recv.getRuntime().newNotImplementedError("Process#getrlimit not yet implemented");
+    }
+
+    @JRubyMethod(name = "egid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject egid(IRubyObject recv) {
+        throw recv.getRuntime().newNotImplementedError("Process#egid not yet implemented");
+    }
+
+    @JRubyMethod(name = "kill", rest = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject kill(IRubyObject recv, IRubyObject[] args) {
+        throw recv.getRuntime().newNotImplementedError("Process#kill not yet implemented");
+    }
+
+    @JRubyMethod(name = "detach", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject detach(IRubyObject recv, IRubyObject arg) {
+        throw recv.getRuntime().newNotImplementedError("Process#detach not yet implemented");
+    }
+    
     @JRubyMethod(name = "times", frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject times(IRubyObject recv, Block unusedBlock) {
         Ruby runtime = recv.getRuntime();
@@ -194,9 +359,5 @@ public class RubyProcess {
     @JRubyMethod(name = "pid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject pid(IRubyObject recv) {
         return recv.getRuntime().newFixnum(System.identityHashCode(recv.getRuntime()));
-    }
-
-    public static IRubyObject kill(IRubyObject recv, IRubyObject[] args) throws Exception {
-        return recv.getRuntime().getNil();
     }
 }

@@ -148,6 +148,20 @@ public abstract class RubyMatchData extends RubyObject {
     //
     // Methods of the MatchData Class:
     //
+    
+    @JRubyMethod(name = "initialize_copy", required = 1)
+    public IRubyObject initialize_copy(IRubyObject original) {
+        if (this == original) return this;
+        
+        if (!(getMetaClass() == original.getMetaClass())){ // MRI also does a pointer comparison here
+            throw getRuntime().newTypeError("wrong argument class");
+        }
+
+        RubyMatchData origMatchData = (RubyMatchData)original;
+        matcher = origMatchData.matcher;
+
+        return this;
+    }
 
     /** match_aref
      *
@@ -241,6 +255,20 @@ public abstract class RubyMatchData extends RubyObject {
     public IRubyObject select(Block block) {
         return block.yield(getRuntime().getCurrentContext(), to_a());
     }
+
+    // FIXME: This matches MRI rdoc but MRI behavior is the version above
+//    @JRubyMethod(name = "select", rest = true, frame = true)
+//    public IRubyObject select(IRubyObject[] args, Block block) {
+//        if (args.length > 0) {
+//            RubyArray array = getRuntime().newArray();
+//            for (int i = 0; i < args.length; i++) {
+//                array.append(group(i));
+//            }
+//            return array;
+//        } else {
+//            return to_a();
+//        }
+//    }
 
     /** match_offset
      *

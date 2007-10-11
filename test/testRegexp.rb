@@ -172,3 +172,10 @@ $KCODE = old_kcode
 pattern = /\w/
 ext = ["foo", "bar"].map {|e| e.match(pattern) }
 test_ok ext[0] != ext[1]
+
+# MatchData#select behavior
+# FIXME: the select behavior below matches MRI rdoc, but not MRI behavior
+m = /(.)(.)(\d+)(\d)/.match("THX1138: The Movie")
+test_equal(["HX1138", "H", "X", "113", "8"], m.to_a)
+#test_equal(["HX1138", "H", "X", "113", "8"], m.select {})
+#test_equal(["HX1138", "X", "113"], m.select(0, 2, -2) {})

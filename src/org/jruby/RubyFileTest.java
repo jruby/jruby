@@ -49,6 +49,66 @@ public class RubyFileTest {
         return fileTestModule;
     }
     
+    @JRubyMethod(name = "setgid?", required = 1, module = true)
+    public static RubyBoolean setgid_p(IRubyObject recv, IRubyObject filename) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#setgid? not yet implemented");
+    }
+    
+    @JRubyMethod(name = "grpowned?", required = 1, module = true)
+    public static RubyBoolean grpowned_p(IRubyObject recv, IRubyObject filename) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#grpowned? not yet implemented");
+    }
+    
+    @JRubyMethod(name = "sticky?", required = 1, module = true)
+    public static RubyBoolean sticky_p(IRubyObject recv, IRubyObject filename) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#sticky? not yet implemented");
+    }
+    
+    @JRubyMethod(name = "chardev?", required = 1, module = true)
+    public static RubyBoolean chardev_p(IRubyObject recv, IRubyObject filename) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#chardev? not yet implemented");
+    }
+    
+    @JRubyMethod(name = "identical?", required = 2, module = true)
+    public static RubyBoolean identical_p(IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#identical? not yet implemented");
+    }
+    
+    @JRubyMethod(name = "socket?", required = 1, module = true)
+    public static RubyBoolean socket_p(IRubyObject recv, IRubyObject filename) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#socket? not yet implemented");
+    }
+    
+    @JRubyMethod(name = "executable_real?", required = 1, module = true)
+    public static RubyBoolean executable_real_p(IRubyObject recv, IRubyObject filename) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#executable_real? not yet implemented");
+    }
+    
+    @JRubyMethod(name = "blockdev?", required = 1, module = true)
+    public static RubyBoolean blockdev_p(IRubyObject recv, IRubyObject filename) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#blockdev? not yet implemented");
+    }
+    
+    @JRubyMethod(name = "owned?", required = 1, module = true)
+    public static RubyBoolean owned_p(IRubyObject recv, IRubyObject filename) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#owned? not yet implemented");
+    }
+    
+    @JRubyMethod(name = "setuid?", required = 1, module = true)
+    public static RubyBoolean setuid_p(IRubyObject recv, IRubyObject filename) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#setuid? not yet implemented");
+    }
+    
+    @JRubyMethod(name = "pipe?", required = 1, module = true)
+    public static RubyBoolean pipe_p(IRubyObject recv, IRubyObject filename) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#pipe? not yet implemented");
+    }
+    
+    @JRubyMethod(name = "size?", required = 1, module = true)
+    public static RubyBoolean size_p(IRubyObject recv, IRubyObject filename) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#size? not yet implemented");
+    }
+    
     @JRubyMethod(name = "directory?", required = 1, module = true)
     public static RubyBoolean directory_p(IRubyObject recv, IRubyObject filename) {
         return recv.getRuntime().newBoolean(newFile(filename).isDirectory());
