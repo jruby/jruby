@@ -113,3 +113,7 @@ test_ok(true, s1.eql?(s2))
 test_equal(s1.hash, s2.hash)
 
 test_no_exception { Struct.new(:icandup).new(1).dup }
+
+FiveElementStruct = Struct.new(:a, :b, :c, :d, :e)
+fes = FiveElementStruct.new(1, 2, 3, 4, 5)
+test_equal([2,4], fes.select {|i| (i % 2).zero?})

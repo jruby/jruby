@@ -54,6 +54,8 @@ import org.jruby.regexp.RegexpFactory;
 import org.jruby.regexp.RegexpMatcher;
 import org.jruby.regexp.RegexpPattern;
 import org.jruby.regexp.PatternSyntaxException;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Visibility;
 
 /**
  *
@@ -207,8 +209,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return re;
     }
 
-    @JRubyMethod(name = "initialize", required = 1, optional = 2)
+    @JRubyMethod(name = "initialize", optional = 3, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 1, 3);
         ByteList pat =
             (args[0] instanceof RubyRegexp)
                 ? ((RubyRegexp) args[0]).source().getByteList()

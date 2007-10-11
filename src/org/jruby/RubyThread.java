@@ -518,8 +518,9 @@ public class RubyThread extends RubyObject {
         return priority;
     }
 
-    @JRubyMethod(name = "raise", required = 1, frame = true)
-    public IRubyObject raise(IRubyObject arg, Block block) {
+    @JRubyMethod(name = "raise", optional = 1, frame = true)
+    public IRubyObject raise(IRubyObject[] args, Block block) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
         ensureNotCurrent();
         Ruby runtime = getRuntime();
         
@@ -532,7 +533,7 @@ public class RubyThread extends RubyObject {
 
             currentThread.pollThreadEvents();
             if (DEBUG) System.out.println("thread " + Thread.currentThread() + " raising");
-            receivedException = prepareRaiseException(runtime, new IRubyObject[] {arg}, block);
+            receivedException = prepareRaiseException(runtime, args, block);
 
             // interrupt the target thread in case it's blocking or waiting
             threadImpl.interrupt();
@@ -629,7 +630,7 @@ public class RubyThread extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "kill")
+    @JRubyMethod(name = "kill", name2 = "exit", name3 = "terminate")
     public IRubyObject kill() {
     	// need to reexamine this
         RubyThread currentThread = getRuntime().getCurrentContext().getThread();
@@ -664,9 +665,14 @@ public class RubyThread extends RubyObject {
         return this;
     }
     
-    @JRubyMethod(name = "exit")
-    public IRubyObject exit() {
-    	return kill();
+    @JRubyMethod(name = "kill!", name2 = "exit!", name3 = "terminate!")
+    public IRubyObject kill_bang() {
+        throw getRuntime().newNotImplementedError("Thread#kill!, exit!, and terminate! are not safe and not supported");
+    }
+    
+    @JRubyMethod(name = "safe_level")
+    public IRubyObject safe_level() {
+        throw getRuntime().newNotImplementedError("Thread-specific SAFE levels are not supported");
     }
 
     private boolean isCurrent() {
@@ -683,7 +689,7 @@ public class RubyThread extends RubyObject {
         	// TODO: Doesn't SystemExit have its own method to make this less wordy..
             RubyException re = RubyException.newException(getRuntime(), getRuntime().getClass("SystemExit"), exception.getMessage());
             re.setInstanceVariable("status", getRuntime().newFixnum(1));
-            threadService.getMainThread().raise(re, Block.NULL_BLOCK);
+            threadService.getMainThread().raise(new IRubyObject[] {re}, Block.NULL_BLOCK);
         } else {
             exitingException = exception;
         }

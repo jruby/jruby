@@ -97,6 +97,7 @@ public class RubyStruct extends RubyObject {
         structClass.defineFastMethod("values_at", callbackFactory.getFastOptMethod("values_at"));
 
         structClass.defineFastMethod("members", callbackFactory.getFastMethod("members"));
+        structClass.defineMethod("select", callbackFactory.getOptMethod("select"));
 
         return structClass;
     }
@@ -301,6 +302,19 @@ public class RubyStruct extends RubyObject {
 
     public RubyArray members() {
         return members(classOf(), Block.NULL_BLOCK);
+    }
+    
+    public RubyArray select(IRubyObject[] args, Block block) {
+        ThreadContext context = getRuntime().getCurrentContext();
+        RubyArray array = RubyArray.newArray(context.getRuntime());
+        
+        for (int i = 0; i < values.length; i++) {
+            if (block.yield(context, values[i]).isTrue()) {
+                array.append(values[i]);
+            }
+        }
+        
+        return array;
     }
 
     public IRubyObject set(IRubyObject value, Block block) {
