@@ -40,10 +40,12 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyNumeric;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -54,13 +56,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         RubyClass rb_cTCPServer = runtime.defineClass("TCPServer", runtime.getClass("TCPSocket"), TCPSERVER_ALLOCATOR);
         CallbackFactory cfact = runtime.callbackFactory(RubyTCPServer.class);
 
-        rb_cTCPServer.defineFastMethod("initialize", cfact.getFastMethod("initialize",IRubyObject.class, IRubyObject.class));
-        rb_cTCPServer.defineFastMethod("peeraddr", cfact.getFastOptMethod("peeraddr"));
-        rb_cTCPServer.defineFastMethod("getpeername", cfact.getFastOptMethod("getpeername"));
-        rb_cTCPServer.defineFastMethod("accept", cfact.getFastMethod("accept"));
-        rb_cTCPServer.defineFastMethod("close", cfact.getFastMethod("close"));
-        rb_cTCPServer.defineFastMethod("listen", cfact.getFastMethod("listen",IRubyObject.class));
-        rb_cTCPServer.getMetaClass().defineMethod("open", cfact.getOptSingletonMethod("open"));
+        rb_cTCPServer.defineAnnotatedMethods(RubyTCPServer.class, cfact);
         
         runtime.getObject().setConstant("TCPserver",rb_cTCPServer);
     }
@@ -78,6 +74,7 @@ public class RubyTCPServer extends RubyTCPSocket {
     private ServerSocketChannel ssc;
     private InetSocketAddress socket_address;
 
+    @JRubyMethod(name = "initialize", required = 2, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject hostname, IRubyObject port) {
         if(hostname.isNil()) {
             hostname = getRuntime().newString("0.0.0.0");
@@ -101,6 +98,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         return this;
     }
 
+    @JRubyMethod(name = "accept")
     public IRubyObject accept() {
         RubyTCPSocket socket = new RubyTCPSocket(getRuntime(),getRuntime().getClass("TCPSocket"));
         try {
@@ -111,6 +109,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         return socket;
     }
 
+    @JRubyMethod(name = "close")
     public IRubyObject close() {
         try {
             ssc.close();
@@ -120,18 +119,22 @@ public class RubyTCPServer extends RubyTCPSocket {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "listen", required = 1)
     public IRubyObject listen(IRubyObject backlog) {
         return RubyFixnum.zero(getRuntime());
     }
 
+    @JRubyMethod(name = "peeraddt", rest = true)
     public IRubyObject peeraddr(IRubyObject[] args) {
         throw getRuntime().newNotImplementedError("not supported");
     }
 
+    @JRubyMethod(name = "getpeername", rest = true)
     public IRubyObject getpeername(IRubyObject[] args) {
         throw getRuntime().newNotImplementedError("not supported");
     }
 
+    @JRubyMethod(name = "open", rest = true, frame = true, meta = true)
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         ThreadContext context = recv.getRuntime().getCurrentContext();
         IRubyObject tcpServer = recv.callMethod(context, "new", args);

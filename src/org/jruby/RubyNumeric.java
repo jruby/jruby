@@ -59,8 +59,6 @@ public class RubyNumeric extends RubyObject {
         RubyClass numeric = runtime.defineClass("Numeric", runtime.getObject(), NUMERIC_ALLOCATOR);
         runtime.setNumeric(numeric);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNumeric.class);
-        numeric.defineFastMethod("singleton_method_added", callbackFactory.getFastMethod("sadded",
-                RubyKernel.IRUBY_OBJECT));
 
         numeric.kindOf = new RubyModule.KindOf() {
             @Override
@@ -467,6 +465,7 @@ public class RubyNumeric extends RubyObject {
     /** num_sadded
      *
      */
+    @JRubyMethod(name = "singleton_method_added", required = 1)
     public IRubyObject sadded(IRubyObject name) {
         throw getRuntime().newTypeError("can't define singleton method " + name + " for " + getType().getName());
     } 
