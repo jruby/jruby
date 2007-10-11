@@ -1225,7 +1225,7 @@ public class RubyIO extends RubyObject {
     /** 
      * <p>Invoke a block for each line.</p>
      */
-    @JRubyMethod(name = "each_line", optional = 1, frame = true)
+    @JRubyMethod(name = "each_line", name2 = "each", optional = 1, frame = true)
     public RubyIO each_line(IRubyObject[] args, Block block) {
         IRubyObject rs;
         
