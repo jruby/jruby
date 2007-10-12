@@ -27,10 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,8 +38,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-import org.jruby.anno.JRubyMethod;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -52,7 +47,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -965,7 +959,6 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
     
     public Dispatcher createDispatcher(RubyClass metaClass) {
-        if (true) return Dispatcher.DEFAULT_DISPATCHER;
         String className = type.getName() + "Dispatcher_for_" + metaClass.getBaseName();
         String classPath = typePath + "Dispatcher_for_" + metaClass.getBaseName();
         
