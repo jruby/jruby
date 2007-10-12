@@ -74,7 +74,7 @@ public class RubyYAML {
         RubyModule result = runtime.defineModule("YAML");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyYAML.class);
 
-        result.defineAnnotatedMethods(RubyYAML.class, callbackFactory);
+        result.defineAnnotatedMethods(RubyYAML.class);
 
         RubyClass obj = runtime.getObject();
         RubyClass clazz = runtime.getClassClass();
@@ -95,44 +95,44 @@ public class RubyYAML {
         RubyClass falseClass = runtime.getFalseClass(); 
         RubyClass nilClass = runtime.getNilClass(); 
 
-        clazz.defineAnnotatedMethods(YAMLClassMethods.class, runtime.callbackFactory(YAMLClassMethods.class));
+        clazz.defineAnnotatedMethods(YAMLClassMethods.class);
         
-        obj.defineAnnotatedMethods(YAMLObjectMethods.class, runtime.callbackFactory(YAMLObjectMethods.class));
+        obj.defineAnnotatedMethods(YAMLObjectMethods.class);
         
-        hash.defineAnnotatedMethods(YAMLHashMethods.class, runtime.callbackFactory(YAMLHashMethods.class));
+        hash.defineAnnotatedMethods(YAMLHashMethods.class);
 
-        array.defineAnnotatedMethods(YAMLArrayMethods.class, runtime.callbackFactory(YAMLArrayMethods.class));
+        array.defineAnnotatedMethods(YAMLArrayMethods.class);
 
-        struct.defineAnnotatedMethods(YAMLStructMethods.class, runtime.callbackFactory(YAMLStructMethods.class));
+        struct.defineAnnotatedMethods(YAMLStructMethods.class);
 
-        exception.defineAnnotatedMethods(YAMLExceptionMethods.class, runtime.callbackFactory(YAMLExceptionMethods.class));
+        exception.defineAnnotatedMethods(YAMLExceptionMethods.class);
 
-        string.defineAnnotatedMethods(YAMLStringMethods.class, runtime.callbackFactory(YAMLStringMethods.class));
+        string.defineAnnotatedMethods(YAMLStringMethods.class);
 
-        symbol.defineAnnotatedMethods(YAMLSymbolMethods.class, runtime.callbackFactory(YAMLSymbolMethods.class));
+        symbol.defineAnnotatedMethods(YAMLSymbolMethods.class);
 
-        range.defineAnnotatedMethods(YAMLRangeMethods.class, runtime.callbackFactory(YAMLRangeMethods.class));
+        range.defineAnnotatedMethods(YAMLRangeMethods.class);
 
-        regexp.defineAnnotatedMethods(YAMLRegexpMethods.class, runtime.callbackFactory(YAMLRegexpMethods.class));
+        regexp.defineAnnotatedMethods(YAMLRegexpMethods.class);
 
-        time.defineAnnotatedMethods(YAMLTimeMethods.class, runtime.callbackFactory(YAMLTimeMethods.class));
+        time.defineAnnotatedMethods(YAMLTimeMethods.class);
 
-        date.defineAnnotatedMethods(YAMLDateMethods.class, runtime.callbackFactory(YAMLDateMethods.class));
+        date.defineAnnotatedMethods(YAMLDateMethods.class);
 
-        bignum.defineAnnotatedMethods(YAMLNumericMethods.class, runtime.callbackFactory(YAMLNumericMethods.class));
-        bignum.defineAnnotatedMethods(YAMLFixnumMethods.class, runtime.callbackFactory(YAMLFixnumMethods.class));
+        bignum.defineAnnotatedMethods(YAMLNumericMethods.class);
+        bignum.defineAnnotatedMethods(YAMLFixnumMethods.class);
 
-        fixnum.defineAnnotatedMethods(YAMLNumericMethods.class, runtime.callbackFactory(YAMLNumericMethods.class));
-        fixnum.defineAnnotatedMethods(YAMLFixnumMethods.class, runtime.callbackFactory(YAMLFixnumMethods.class));
+        fixnum.defineAnnotatedMethods(YAMLNumericMethods.class);
+        fixnum.defineAnnotatedMethods(YAMLFixnumMethods.class);
 
-        flt.defineAnnotatedMethods(YAMLNumericMethods.class, runtime.callbackFactory(YAMLNumericMethods.class));
-        flt.defineAnnotatedMethods(YAMLFloatMethods.class, runtime.callbackFactory(YAMLFloatMethods.class));
+        flt.defineAnnotatedMethods(YAMLNumericMethods.class);
+        flt.defineAnnotatedMethods(YAMLFloatMethods.class);
 
-        trueClass.defineAnnotatedMethods(YAMLTrueMethods.class, runtime.callbackFactory(YAMLTrueMethods.class));
+        trueClass.defineAnnotatedMethods(YAMLTrueMethods.class);
 
-        falseClass.defineAnnotatedMethods(YAMLFalseMethods.class, runtime.callbackFactory(YAMLFalseMethods.class));
+        falseClass.defineAnnotatedMethods(YAMLFalseMethods.class);
 
-        nilClass.defineAnnotatedMethods(YAMLNilMethods.class, runtime.callbackFactory(YAMLNilMethods.class));
+        nilClass.defineAnnotatedMethods(YAMLNilMethods.class);
 
         return result;
     }

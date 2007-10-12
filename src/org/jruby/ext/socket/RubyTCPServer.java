@@ -56,7 +56,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         RubyClass rb_cTCPServer = runtime.defineClass("TCPServer", runtime.getClass("TCPSocket"), TCPSERVER_ALLOCATOR);
         CallbackFactory cfact = runtime.callbackFactory(RubyTCPServer.class);
 
-        rb_cTCPServer.defineAnnotatedMethods(RubyTCPServer.class, cfact);
+        rb_cTCPServer.defineAnnotatedMethods(RubyTCPServer.class);
         
         runtime.getObject().setConstant("TCPserver",rb_cTCPServer);
     }

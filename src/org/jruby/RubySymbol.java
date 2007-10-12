@@ -72,7 +72,7 @@ public class RubySymbol extends RubyObject {
             }
         };
 
-        symbolClass.defineAnnotatedMethods(RubySymbol.class, callbackFactory);
+        symbolClass.defineAnnotatedMethods(RubySymbol.class);
         symbolMetaClass.undefineMethod("new");
         
         symbolClass.dispatcher = callbackFactory.createDispatcher(symbolClass);

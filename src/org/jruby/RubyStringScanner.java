@@ -26,7 +26,7 @@ public class RubyStringScanner extends RubyObject {
         RubyClass scannerClass = runtime.defineClass("StringScanner", runtime.getObject(), STRINGSCANNER_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyStringScanner.class);
 
-        scannerClass.defineAnnotatedMethods(RubyStringScanner.class, callbackFactory);
+        scannerClass.defineAnnotatedMethods(RubyStringScanner.class);
 
         return scannerClass;
     }

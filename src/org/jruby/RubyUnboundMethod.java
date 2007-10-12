@@ -71,7 +71,7 @@ public class RubyUnboundMethod extends RubyMethod {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyUnboundMethod.class);
         
-        newClass.defineAnnotatedMethods(RubyUnboundMethod.class, callbackFactory);
+        newClass.defineAnnotatedMethods(RubyUnboundMethod.class);
 
         return newClass;
     }

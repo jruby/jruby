@@ -46,7 +46,7 @@ public class RubySystemExit extends RubyException {
         RubyClass systemExitClass = runtime.defineClass("SystemExit", exceptionClass, SYSTEMEXIT_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubySystemExit.class);
 
-        systemExitClass.defineAnnotatedMethods(RubySystemExit.class, callbackFactory);
+        systemExitClass.defineAnnotatedMethods(RubySystemExit.class);
         
         return systemExitClass;
     }    
@@ -56,7 +56,7 @@ public class RubySystemExit extends RubyException {
         status = runtime.getNil();
     }
 
-    @JRubyMethod(name = "initialize", optional = 1, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", optional = 2, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[]args, Block block) {
         status = RubyFixnum.zero(getRuntime());
         if (args.length > 0 && args[0] instanceof RubyFixnum) {

@@ -77,7 +77,7 @@ public class RubyArray extends RubyObject implements List {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyArray.class);
 
         arrayc.includeModule(runtime.getEnumerable());
-        arrayc.defineAnnotatedMethods(RubyArray.class, callbackFactory);
+        arrayc.defineAnnotatedMethods(RubyArray.class);
         arrayc.dispatcher = callbackFactory.createDispatcher(arrayc);
 
         return arrayc;
@@ -1022,7 +1022,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_aset
      *
      */
-    @JRubyMethod(name = "[]=", required = 1, optional = 1)
+    @JRubyMethod(name = "[]=", required = 2, optional = 1)
     public IRubyObject aset(IRubyObject[] args) {
         if (args.length == 2) {
         if (args[0] instanceof RubyFixnum) {
@@ -1419,7 +1419,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_fill
      *
      */
-    @JRubyMethod(name = "fill", optional = 2, frame = true)
+    @JRubyMethod(name = "fill", optional = 3, frame = true)
     public IRubyObject fill(IRubyObject[] args, Block block) {
         IRubyObject item = null;
         IRubyObject begObj = null;

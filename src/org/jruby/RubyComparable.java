@@ -49,7 +49,7 @@ public class RubyComparable {
         runtime.setComparable(comparableModule);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyComparable.class);
         
-        comparableModule.defineAnnotatedMethods(RubyComparable.class, callbackFactory);
+        comparableModule.defineAnnotatedMethods(RubyComparable.class);
 
         return comparableModule;
     }

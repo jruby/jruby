@@ -31,7 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.lang.reflect.Method;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.runtime.callback.Callback;
@@ -47,8 +46,6 @@ import org.jruby.runtime.callback.DumpingInvocationCallbackFactory;
  **/
 public abstract class CallbackFactory {
     public static final Class[] NULL_CLASS_ARRAY = new Class[0];
-    
-    public abstract Callback getMethod(Method method);
     
     /**
      * gets an instance method with no arguments.

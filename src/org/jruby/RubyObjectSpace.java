@@ -51,7 +51,7 @@ public class RubyObjectSpace {
         runtime.setObjectSpaceModule(objectSpaceModule);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyObjectSpace.class);
         
-        objectSpaceModule.defineAnnotatedMethods(RubyObjectSpace.class, callbackFactory);
+        objectSpaceModule.defineAnnotatedMethods(RubyObjectSpace.class);
 
         return objectSpaceModule;
     }

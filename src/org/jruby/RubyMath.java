@@ -48,7 +48,7 @@ public class RubyMath {
         result.defineConstant("E", RubyFloat.newFloat(runtime, Math.E));
         result.defineConstant("PI", RubyFloat.newFloat(runtime, Math.PI));
         
-        result.defineAnnotatedMethods(RubyMath.class, callbackFactory);
+        result.defineAnnotatedMethods(RubyMath.class);
 
         return result;
     }

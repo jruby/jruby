@@ -74,24 +74,6 @@ public class ReflectionCallback implements Callback {
         loadMethod(fast);
     }
     
-    public ReflectionCallback(Method method) {
-        JRubyMethod methodAnno = method.getAnnotation(JRubyMethod.class);
-        
-        this.arity = Arity.fromAnnotation(methodAnno);
-        this.type = method.getDeclaringClass();
-    	this.methodName = method.getName();
-    	this.argumentTypes = method.getParameterTypes();
-        this.isRestArgs = methodAnno.rest();
-        this.isStaticMethod = Modifier.isStatic(method.getModifiers());
-        this.fast = !(methodAnno.frame() || methodAnno.scope());
-    	
-        assert type != null;
-        assert methodName != null;
-        assert arity != null;
-        
-        this.method = method;
-    }
-    
     private void loadMethod(boolean fast) {
     	Class[] args;
     	

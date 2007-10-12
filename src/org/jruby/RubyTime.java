@@ -104,7 +104,7 @@ public class RubyTime extends RubyObject {
         
         timeClass.includeModule(runtime.getComparable());
         
-        timeClass.defineAnnotatedMethods(RubyTime.class, callbackFactory);
+        timeClass.defineAnnotatedMethods(RubyTime.class);
         
         return timeClass;
     }

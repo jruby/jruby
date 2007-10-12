@@ -49,7 +49,9 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
@@ -262,82 +264,6 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         cw.visitEnd();
         byte[] code = cw.toByteArray();
         return classLoader.defineClass(name, code);
-    }
-    
-    public Callback getMethod(Method method) {
-        JRubyMethod methodAnno = method.getAnnotation(JRubyMethod.class);
-        String javaMethodName = method.getName();
-        
-        String generatedClassName = type.getName() + "Invoker$" + javaMethodName + "_" + methodAnno.required() + "_" + methodAnno.optional();
-        String generatedClassPath = typePath + "Invoker$" + javaMethodName + "_" + methodAnno.required() + "_" + methodAnno.optional();
-        synchronized (runtime.getJRubyClassLoader()) {
-            Class c = tryClass(generatedClassName);
-            try {
-                Class[] signature = method.getParameterTypes();
-                if (c == null) {
-                    Class ret = method.getReturnType();
-                    ClassWriter cw;
-                    MethodVisitor mv;
-                    boolean fast = !(methodAnno.frame() || methodAnno.scope());
-                    boolean getsBlock = signature.length > 0 && signature[signature.length - 1] == Block.class;
-                    if (!fast || getsBlock) {
-                        cw = createCtor(generatedClassPath);
-                        
-                        if (Modifier.isStatic(method.getModifiers())) {
-                            mv = startCallS(cw);
-                        } else {
-                            mv = startCall(cw);
-                        }
-                    } else {
-                        cw = createCtorFast(generatedClassPath);
-                        
-                        if (Modifier.isStatic(method.getModifiers())) {
-                            mv = startCallSFast(cw);
-                        } else {
-                            mv = startCallFast(cw);
-                        }
-                    }
-                    
-                    // load args
-                    if (methodAnno.optional() == 0 && !methodAnno.rest()) {
-                        // only required args
-                        loadArguments(mv, METHOD_ARGS_INDEX, methodAnno.required(), signature);
-                    } else {
-                        // load args as-is
-                        mv.visitVarInsn(ALOAD, METHOD_ARGS_INDEX);
-                    }
-                    
-                    // load block if it accepts block
-                    if (getsBlock) {
-                        mv.visitVarInsn(ALOAD, 3);
-                    }
-                    
-                    if (Modifier.isStatic(method.getModifiers())) {
-                        // static invocation
-                        mv.visitMethodInsn(INVOKESTATIC, typePath, javaMethodName, cg.sig(ret, signature));
-                    } else {
-                        // virtual invocation
-                        mv.visitMethodInsn(INVOKEVIRTUAL, typePath, javaMethodName, cg.sig(ret, signature));
-                    }
-                        
-                    mv.visitInsn(ARETURN);
-                    mv.visitMaxs(1, 1);
-                    c = endCall(cw, mv, generatedClassName);
-                }
-                InvocationCallback ic = (InvocationCallback) c.newInstance();
-                ic.setArity(Arity.fromAnnotation(methodAnno));
-                ic.setJavaName(javaMethodName);
-                ic.setArgumentTypes(signature);
-                ic.setSingleton(Modifier.isStatic(method.getModifiers()));
-                return ic;
-            } catch (IllegalArgumentException e) {
-                throw e;
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println(method.getName());
-                throw new IllegalArgumentException(e);
-            }
-        }
     }
 
     public Callback getMethod(String method) {
@@ -1057,16 +983,16 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                             if (allMethods.containsKey(entry.getKey())) continue;
                             
                             DynamicMethod dynamicMethod = (DynamicMethod)entry.getValue();
-                            if (!(dynamicMethod instanceof SimpleCallbackMethod)) {
+                            if (!(dynamicMethod instanceof JavaMethod)) {
                                 // method is not a simple/fast method, don't add to our big switch
                                 // FIXME: eventually, we'll probably want to add it to the switch for fast non-hash dispatching
                                 continue;
                             } else {
                                 // TODO: skip singleton methods for now; we'll figure out fast dispatching for them in a future patch
-                                SimpleCallbackMethod simpleMethod = (SimpleCallbackMethod)dynamicMethod;
-                                InvocationCallback callback = (InvocationCallback)simpleMethod.getCallback();
+                                JavaMethod javaMethod = (JavaMethod)dynamicMethod;
+                                        
                                 // singleton methods require doing a static invocation, etc...disabling again for now
-                                if (callback.isSingleton()) continue;
+                                if (javaMethod.isSingleton() || javaMethod.getCallConfig() != CallConfiguration.JAVA_FAST) continue;
                                 
                                 // skipping non-public methods for now, to avoid visibility checks in STI
                                 if (dynamicMethod.getVisibility() != Visibility.PUBLIC) continue;
@@ -1158,17 +1084,16 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                             mv.label(labels[i]);
     
                             // based on the check above, it's a fast method, we can fast dispatch
-                            SimpleCallbackMethod simpleMethod = (SimpleCallbackMethod)dynamicMethod;
-                            InvocationCallback invocationCallback = (InvocationCallback)simpleMethod.getCallback();
-                            String method = invocationCallback.getJavaName();
-                            Arity arity = simpleMethod.getArity();
-                            Class[] descriptor = invocationCallback.getArgumentTypes();
+                            JavaMethod javaMethod = (JavaMethod)dynamicMethod;
+                            String method = javaMethod.getJavaName();
+                            Arity arity = javaMethod.getArity();
+                            Class[] descriptor = javaMethod.getArgumentTypes();
                             
                             // arity check
                             checkArity(mv, arity);
                             
                             // if singleton load self/recv
-                            if (invocationCallback.isSingleton()) {
+                            if (javaMethod.isSingleton()) {
                                 mv.aload(DISPATCHER_SELF_INDEX);
                             }
                             

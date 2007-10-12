@@ -51,7 +51,7 @@ public class RubyEnumerable {
         runtime.setEnumerable(enumModule);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyEnumerable.class);
         
-        enumModule.defineAnnotatedMethods(RubyEnumerable.class, callbackFactory);
+        enumModule.defineAnnotatedMethods(RubyEnumerable.class);
 
         return enumModule;
     }

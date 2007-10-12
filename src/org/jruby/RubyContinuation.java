@@ -42,7 +42,7 @@ public class RubyContinuation {
     public static void createContinuation(Ruby runtime) {
         RubyModule cContinuation = runtime.defineClass("Continuation",runtime.getObject(),runtime.getObject().getAllocator());
         CallbackFactory cf = runtime.callbackFactory(RubyContinuation.class);
-        cContinuation.defineAnnotatedMethods(RubyContinuation.class, cf);
+        cContinuation.defineAnnotatedMethods(RubyContinuation.class);
     }
 
     @JRubyMethod(name = "call", name2 = "[]", rest = true, frame = true)

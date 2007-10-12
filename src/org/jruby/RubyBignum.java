@@ -57,7 +57,7 @@ public class RubyBignum extends RubyInteger {
         bignum.index = ClassIndex.BIGNUM;
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBignum.class);
         
-        bignum.defineAnnotatedMethods(RubyBignum.class, callbackFactory);
+        bignum.defineAnnotatedMethods(RubyBignum.class);
         bignum.dispatcher = callbackFactory.createDispatcher(bignum);
 
         return bignum;

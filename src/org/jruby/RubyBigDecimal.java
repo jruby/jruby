@@ -82,7 +82,7 @@ public class RubyBigDecimal extends RubyNumeric {
         result.setClassVar("VpExceptionMode", RubyFixnum.zero(runtime));
         result.setClassVar("VpRoundingMode", RubyFixnum.zero(runtime));
         
-        result.defineAnnotatedMethods(RubyBigDecimal.class, callbackFactory);
+        result.defineAnnotatedMethods(RubyBigDecimal.class);
         result.dispatcher = callbackFactory.createDispatcher(result);
 
         return result;

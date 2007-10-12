@@ -144,7 +144,7 @@ public class RubyRange extends RubyObject {
         //        result.defineMethod("member?", callbackFactory.getMethod("include_p", RubyKernel.IRUBY_OBJECT));
         //        result.defineMethod("===", callbackFactory.getMethod("include_p", RubyKernel.IRUBY_OBJECT));
 
-        result.defineAnnotatedMethods(RubyRange.class, callbackFactory);
+        result.defineAnnotatedMethods(RubyRange.class);
         
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
         result.getMetaClass().defineMethod("new", classCB.getOptMethod("newInstance"));

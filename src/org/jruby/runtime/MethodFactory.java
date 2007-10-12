@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.lang.reflect.Method;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -38,6 +39,7 @@ import org.jruby.util.JRubyClassLoader;
 
 public abstract class MethodFactory {
     public abstract DynamicMethod getCompiledMethod(RubyModule implementationClass, String method, Arity arity, Visibility visibility, StaticScope scope, Object scriptObject);
+    public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method);
 
     private static boolean reflection = false;
     private static boolean dumping = false;

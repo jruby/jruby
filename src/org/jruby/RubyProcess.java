@@ -59,9 +59,9 @@ public class RubyProcess {
         CallbackFactory process_statusCallbackFactory = runtime.callbackFactory(RubyProcess.RubyStatus.class);
         CallbackFactory processUIDCallbackFactory = runtime.callbackFactory(RubyProcess.UID.class);
         
-        process.defineAnnotatedMethods(RubyProcess.class, processCallbackFactory);
-        process_status.defineAnnotatedMethods(RubyStatus.class, process_statusCallbackFactory);
-        process_uid.defineAnnotatedMethods(UID.class, processUIDCallbackFactory);
+        process.defineAnnotatedMethods(RubyProcess.class);
+        process_status.defineAnnotatedMethods(RubyStatus.class);
+        process_uid.defineAnnotatedMethods(UID.class);
 
 //    #ifdef HAVE_GETPRIORITY
 //        rb_define_const(rb_mProcess, "PRIO_PROCESS", INT2FIX(PRIO_PROCESS));

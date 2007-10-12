@@ -48,7 +48,7 @@ public class RubyGC {
         runtime.setGC(result);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyGC.class);
         
-        result.defineAnnotatedMethods(RubyGC.class, callbackFactory);
+        result.defineAnnotatedMethods(RubyGC.class);
         
         return result;        
     }

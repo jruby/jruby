@@ -10,8 +10,6 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- *
- * Copyright (C) 2007 Charles Oliver Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -28,37 +26,72 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
-import org.jruby.parser.StaticScope;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Block;
 
-public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
+/**
+ */
+public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cloneable {
+    protected int arityValue;
     protected Arity arity;
-    protected StaticScope staticScope;
-    protected Object $scriptObject;
-    
-    public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, Object scriptObject) {
-    	super(implementationClass, visibility, CallConfiguration.RUBY_FULL);
-        this.arity = arity;
-        this.staticScope = staticScope;
-        this.$scriptObject = scriptObject;
+    private Class[] argumentTypes;
+    private String javaName;
+    private boolean isSingleton;
+
+    public JavaMethod(RubyModule implementationClass, Visibility visibility) {
+        super(implementationClass, visibility, CallConfiguration.JAVA_FULL);
     }
 
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block);
+    public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block);
     
     public DynamicMethod dup() {
         try {
-            CompiledMethod msm = (CompiledMethod)clone();
+            JavaMethod msm = (JavaMethod)clone();
             return msm;
         } catch (CloneNotSupportedException cnse) {
             return null;
         }
     }
+    
+    public void setArity(Arity arity) {
+        this.arity = arity;
+        this.arityValue = arity.getValue();
+    }
 
     public Arity getArity() {
         return arity;
     }
-}// SimpleInvocationMethod
+    
+    public void setArgumentTypes(Class[] argumentTypes) {
+        this.argumentTypes = argumentTypes;
+    }
+    
+    public Class[] getArgumentTypes() {
+        return argumentTypes;   
+    }
+    
+    public void setJavaName(String javaName) {
+        this.javaName = javaName;
+    }
+    
+    public String getJavaName() {
+        return javaName;
+    }
+    
+    public void setSingleton(boolean isSingleton) {
+        this.isSingleton = isSingleton;
+    }
+    
+    public boolean isSingleton() {
+        return isSingleton;
+    }
+    
+    @Override
+    public boolean isNative() {
+        return true;
+    }
+}

@@ -57,7 +57,7 @@ public class RubyStringIO extends RubyObject {
         
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyStringIO.class);
         
-        stringIOClass.defineAnnotatedMethods(RubyStringIO.class, callbackFactory);
+        stringIOClass.defineAnnotatedMethods(RubyStringIO.class);
 
         return stringIOClass;
     }
@@ -93,8 +93,6 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "initialize", optional = 2, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 2);
-
         if (args.length > 0) {
             // Share bytelist since stringio is acting on this passed-in string.
             internal = args[0].convertToString();

@@ -44,6 +44,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -68,7 +69,7 @@ public class RubyClass extends RubyModule {
         classClass.undefineMethod("append_features");
         classClass.undefineMethod("extend_object");
         
-        classClass.defineAnnotatedMethods(RubyClass.class, callbackFactory);
+        classClass.defineAnnotatedMethods(RubyClass.class);
         
         // This is a non-standard method; have we decided to start extending Ruby?
         //classClass.defineFastMethod("subclasses", callbackFactory.getFastOptMethod("subclasses"));
@@ -212,7 +213,7 @@ public class RubyClass extends RubyModule {
     /** rb_class_initialize
      * 
      */
-    @JRubyMethod(name = "initialize", optional = 1, frame = true)
+    @JRubyMethod(name = "initialize", optional = 1, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (superClass != null) throw getRuntime().newTypeError("already initialized class");
  

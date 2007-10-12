@@ -77,7 +77,7 @@ public class RubyHash extends RubyObject implements Map {
 
         hashc.includeModule(runtime.getEnumerable());
         
-        hashc.defineAnnotatedMethods(RubyHash.class, callbackFactory);
+        hashc.defineAnnotatedMethods(RubyHash.class);
         hashc.dispatcher = callbackFactory.createDispatcher(hashc);
 
         return hashc;

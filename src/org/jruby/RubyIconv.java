@@ -70,7 +70,7 @@ public class RubyIconv extends RubyObject {
         RubyClass iconvClass = runtime.defineClass("Iconv", runtime.getObject(), ICONV_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyIconv.class);
         
-        iconvClass.defineAnnotatedMethods(RubyIconv.class, callbackFactory);
+        iconvClass.defineAnnotatedMethods(RubyIconv.class);
 
         RubyModule failure = iconvClass.defineModuleUnder("Failure");
         CallbackFactory failureCallbackFactory = runtime.callbackFactory(RubyFailure.class);
@@ -81,7 +81,7 @@ public class RubyIconv extends RubyObject {
         
         for (int i = 0; i < iconvErrors.length; i++) {
             RubyClass subClass = iconvClass.defineClassUnder(iconvErrors[i], argumentError, RubyFailure.ICONV_FAILURE_ALLOCATOR);
-            subClass.defineAnnotatedMethods(RubyFailure.class, failureCallbackFactory);
+            subClass.defineAnnotatedMethods(RubyFailure.class);
             subClass.includeModule(failure);
         }    
     }
@@ -255,7 +255,7 @@ public class RubyIconv extends RubyObject {
         return getRuntime().newString(new ByteList(arr, 0, buf.limit()));
     }
 
-    @JRubyMethod(name = "iconv", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = "iconv", required = 2, optional = 1, meta = true)
     public static IRubyObject iconv(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return convertWithArgs(recv, args, "iconv");
     }
@@ -266,8 +266,6 @@ public class RubyIconv extends RubyObject {
     }
     
     public static RubyArray convertWithArgs(IRubyObject recv, IRubyObject[] args, String function) {
-        Arity.checkArgumentCount(recv.getRuntime(), args, 3, -1);
-
         String fromEncoding = args[1].convertToString().toString();
         String toEncoding = args[0].convertToString().toString();
         RubyArray array = recv.getRuntime().newArray();

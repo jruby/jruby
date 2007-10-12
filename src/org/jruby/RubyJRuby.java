@@ -54,13 +54,13 @@ public class RubyJRuby {
         RubyModule jrubyModule = runtime.defineModule("JRuby");
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
-        jrubyModule.defineAnnotatedMethods(RubyJRuby.class, callbackFactory);
+        jrubyModule.defineAnnotatedMethods(RubyJRuby.class);
 
         RubyClass compiledScriptClass = jrubyModule.defineClassUnder("CompiledScript",runtime.getObject(), runtime.getObject().getAllocator());
         CallbackFactory compiledScriptCallbackFactory = runtime.callbackFactory(JRubyCompiledScript.class);
 
         compiledScriptClass.attr_accessor(new IRubyObject[]{runtime.newSymbol("name"), runtime.newSymbol("class_name"), runtime.newSymbol("original_script"), runtime.newSymbol("code")});
-        compiledScriptClass.defineAnnotatedMethods(JRubyCompiledScript.class, compiledScriptCallbackFactory);
+        compiledScriptClass.defineAnnotatedMethods(JRubyCompiledScript.class);
 
         return jrubyModule;
     }
@@ -70,7 +70,7 @@ public class RubyJRuby {
         RubyModule mJRubyExt = runtime.getOrCreateModule("JRuby").defineModuleUnder("Extensions");
         CallbackFactory cf = runtime.callbackFactory(JRubyExtensions.class);
         
-        mJRubyExt.defineAnnotatedMethods(JRubyExtensions.class, cf);
+        mJRubyExt.defineAnnotatedMethods(JRubyExtensions.class);
 
         runtime.getObject().includeModule(mJRubyExt);
 

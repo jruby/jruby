@@ -81,7 +81,7 @@ public class RubyDir extends RubyObject {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyDir.class);
         
-        dirClass.defineAnnotatedMethods(RubyDir.class, callbackFactory);
+        dirClass.defineAnnotatedMethods(RubyDir.class);
         dirClass.dispatcher = callbackFactory.createDispatcher(dirClass);
 
         return dirClass;

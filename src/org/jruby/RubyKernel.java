@@ -81,8 +81,8 @@ public class RubyKernel {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyKernel.class);
         CallbackFactory objectCallbackFactory = runtime.callbackFactory(RubyObject.class);
 
-        module.defineAnnotatedMethods(RubyKernel.class, callbackFactory);
-        module.defineAnnotatedMethods(RubyObject.class, objectCallbackFactory);
+        module.defineAnnotatedMethods(RubyKernel.class);
+        module.defineAnnotatedMethods(RubyObject.class);
         
         runtime.setRespondToMethod(module.searchMethod("respond_to?"));
         
@@ -618,7 +618,6 @@ public class RubyKernel {
     @JRubyMethod(name = "raise", name2 = "fail", optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args, Block block) {
         // FIXME: Pass block down?
-        Arity.checkArgumentCount(recv.getRuntime(), args, 0, 3); 
         Ruby runtime = recv.getRuntime();
 
         if (args.length == 0) {

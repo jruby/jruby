@@ -42,7 +42,7 @@ public class RubySignal {
         RubyModule mSignal = runtime.defineModule("Signal");
         CallbackFactory cf = runtime.callbackFactory(RubySignal.class);
         
-        mSignal.defineAnnotatedMethods(RubySignal.class, cf);
+        mSignal.defineAnnotatedMethods(RubySignal.class);
     }
 
     @JRubyMethod(name = "trap", required = 1, optional = 1, frame = true, meta = true)

@@ -61,7 +61,7 @@ public class RubyArgsFile extends RubyObject {
         
         RubyClass argfClass = getMetaClass();
 
-        argfClass.defineAnnotatedMethods(RubyArgsFile.class, callbackFactory);
+        argfClass.defineAnnotatedMethods(RubyArgsFile.class);
         
         getRuntime().defineReadonlyVariable("$FILENAME", getRuntime().newString("-"));
 

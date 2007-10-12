@@ -100,7 +100,7 @@ public class RubyNKF {
         nkfVersion.freeze();
         nkfDate.freeze();
 
-        nkfModule.defineAnnotatedMethods(RubyNKF.class, callbackFactory);
+        nkfModule.defineAnnotatedMethods(RubyNKF.class);
     }
 
     @JRubyMethod(name = "guess", required = 1, module = true)

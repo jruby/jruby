@@ -225,7 +225,7 @@ public class RubyFile extends RubyIO {
         // TODO: Define instance methods: lchmod, lchown, lstat
         // atime and ctime are implemented like mtime, since we don't have an atime API in Java
         
-        fileClass.defineAnnotatedMethods(RubyFile.class, callbackFactory);
+        fileClass.defineAnnotatedMethods(RubyFile.class);
         fileClass.dispatcher = callbackFactory.createDispatcher(fileClass);
         
         return fileClass;

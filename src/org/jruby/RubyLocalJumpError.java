@@ -44,7 +44,7 @@ public class RubyLocalJumpError extends RubyException {
         RubyClass nameErrorClass = runtime.defineClass("LocalJumpError", standardErrorClass, LOCALJUMPERROR_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyLocalJumpError.class);	
         
-        nameErrorClass.defineAnnotatedMethods(RubyLocalJumpError.class, callbackFactory);
+        nameErrorClass.defineAnnotatedMethods(RubyLocalJumpError.class);
 
         return nameErrorClass;
     }

@@ -44,7 +44,7 @@ public class RubyFileTest {
         runtime.setFileTest(fileTestModule);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileTest.class);
         
-        fileTestModule.defineAnnotatedMethods(RubyFileTest.class, callbackFactory);
+        fileTestModule.defineAnnotatedMethods(RubyFileTest.class);
         
         return fileTestModule;
     }

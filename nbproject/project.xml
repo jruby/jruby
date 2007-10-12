@@ -38,6 +38,10 @@
                     <target>clean</target>
                     <target>jar</target>
                 </action>
+                <action name="debug">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>debug-nb</target>
+                </action>
             </ide-actions>
             <view>
                 <items>
@@ -59,6 +63,7 @@
                     <ide-action name="javadoc"/>
                     <ide-action name="test"/>
                     <ide-action name="rebuild"/>
+                    <ide-action name="debug"/>
                 </context-menu>
             </view>
             <subprojects/>

@@ -117,4 +117,11 @@ public abstract class DynamicMethod {
     public void setCallConfig(CallConfiguration callConfig) {
         this.callConfig = callConfig;
     }
+    
+    /**
+     * Returns true if this method is backed by native (i.e. Java) code
+     */
+    public boolean isNative() {
+        return false;
+    }
 }

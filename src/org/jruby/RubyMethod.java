@@ -73,7 +73,7 @@ public class RubyMethod extends RubyObject {
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMethod.class);
         
-        methodClass.defineAnnotatedMethods(RubyMethod.class, callbackFactory);
+        methodClass.defineAnnotatedMethods(RubyMethod.class);
         
         return methodClass;
     }

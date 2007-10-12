@@ -68,7 +68,7 @@ public class RubyNumeric extends RubyObject {
         };
 
         numeric.includeModule(runtime.getComparable());
-        numeric.defineAnnotatedMethods(RubyNumeric.class, callbackFactory);
+        numeric.defineAnnotatedMethods(RubyNumeric.class);
         numeric.dispatcher = callbackFactory.createDispatcher(numeric);
 
         return numeric;

@@ -38,7 +38,6 @@ package org.jruby;
 
 import java.math.BigInteger;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -65,7 +64,7 @@ public class RubyFixnum extends RubyInteger {
 
         fixnum.includeModule(runtime.getPrecision());
         
-        fixnum.defineAnnotatedMethods(RubyFixnum.class, callbackFactory);
+        fixnum.defineAnnotatedMethods(RubyFixnum.class);
         
         fixnum.dispatcher = callbackFactory.createDispatcher(fixnum);
         
@@ -187,8 +186,6 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "to_s", optional = 1)
     public RubyString to_s(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
-        
         int base = args.length == 0 ? 10 : num2int(args[0]);
         if (base < 2 || base > 36) {
             throw getRuntime().newArgumentError("illegal radix " + base);

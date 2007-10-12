@@ -58,7 +58,7 @@ public class RubyDigest {
 
         CallbackFactory basecb = runtime.callbackFactory(Base.class);
         
-        cDigestBase.defineAnnotatedMethods(Base.class, basecb);
+        cDigestBase.defineAnnotatedMethods(Base.class);
     }
 
     private static MessageDigest createMessageDigest(Ruby runtime, String providerName) throws NoSuchAlgorithmException {

@@ -55,7 +55,7 @@ public class RubyThreadGroup extends RubyObject {
         runtime.setThreadGroup(threadGroupClass);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThreadGroup.class);
         
-        threadGroupClass.defineAnnotatedMethods(RubyThreadGroup.class, callbackFactory);
+        threadGroupClass.defineAnnotatedMethods(RubyThreadGroup.class);
         
         // create the default thread group
         RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(runtime, threadGroupClass);

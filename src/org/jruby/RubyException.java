@@ -122,12 +122,11 @@ public class RubyException extends RubyObject {
 
         exceptionClass.setMarshal(EXCEPTION_MARSHAL);
         
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyException.class);
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
         // TODO: could this just  be an alias for new?
         // FIXME: not sure how to bind this right...
         exceptionClass.getMetaClass().defineMethod("exception", classCB.getOptMethod("newInstance"));
-        exceptionClass.defineAnnotatedMethods(RubyException.class, callbackFactory);
+        exceptionClass.defineAnnotatedMethods(RubyException.class);
 
         return exceptionClass;
     }
@@ -147,9 +146,9 @@ public class RubyException extends RubyObject {
         return backtrace;
     }
 
-    @JRubyMethod(optional = 1, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(optional = 2, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 1) message = args[0];
+        if (args.length == 1) message = args[0];
         return this;
     }
 

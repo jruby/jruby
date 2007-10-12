@@ -27,12 +27,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import org.jruby.Ruby;
 import org.jruby.parser.StaticScope;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.jruby.RubyModule;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -57,6 +60,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private final static String COMPILED_CALL_SIG = cg.sig(IRubyObject.class,
             cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
     private final static String COMPILED_SUPER_SIG = cg.sig(Void.TYPE, cg.params(RubyModule.class, Arity.class, Visibility.class, StaticScope.class, Object.class));
+    private final static String JAVA_SUPER_SIG = cg.sig(Void.TYPE, cg.params(RubyModule.class, Visibility.class));
 
     private JRubyClassLoader classLoader;
     
@@ -78,13 +82,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return n.getName().replace('.','/');
     }
 
-    /**
-     * Creates a class identifier of form Labc/abc;, from a Class.
-     */
-    private static String ci(Class n) {
-        return "L" + p(n) + ";";
-    }
-
     private ClassWriter createCompiledCtor(String namePath, String sup) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
@@ -103,6 +100,21 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return cw;
     }
 
+    private ClassWriter createJavaMethodCtor(String namePath, String sup) throws Exception {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", JAVA_SUPER_SIG, null, null);
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", JAVA_SUPER_SIG);
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(0,0);
+        mv.visitEnd();
+        return cw;
+    }
+
     private Class tryClass(Ruby runtime, String name) {
         try {
             if (classLoader == null) {
@@ -115,7 +127,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private Class endCall(Ruby runtime, ClassWriter cw, MethodVisitor mv, String name) {
+    protected Class endCall(Ruby runtime, ClassWriter cw, MethodVisitor mv, String name) {
         mv.visitMaxs(0,0);
         mv.visitEnd();
         cw.visitEnd();
@@ -132,6 +144,250 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public static final int NAME_INDEX = 4;
     public static final int ARGS_INDEX = 5;
     public static final int BLOCK_INDEX = 6;
+    
+    private void loadArguments(MethodVisitor mv, int argsIndex, int count) {
+        for (int i = 0; i < count; i++) {
+            loadArgument(mv, argsIndex, i);
+        }
+    }
+    
+    private void loadArgument(MethodVisitor mv, int argsIndex, int argIndex) {
+        mv.visitVarInsn(ALOAD, argsIndex);
+        mv.visitLdcInsn(new Integer(argIndex));
+        mv.visitInsn(AALOAD);
+    }
+
+    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method) {
+        Class type = method.getDeclaringClass();
+        JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
+        String typePath = p(type);
+        String javaMethodName = method.getName();
+        
+        String generatedClassName = type.getName() + "Invoker$" + javaMethodName + "_method_" + jrubyMethod.required() + "_" + jrubyMethod.optional();
+        String generatedClassPath = typePath + "Invoker$" + javaMethodName + "_method_" + jrubyMethod.required() + "_" + jrubyMethod.optional();
+        
+        Class c = tryClass(implementationClass.getRuntime(), generatedClassName);
+        
+        try {
+            if (c == null) {
+                Class[] signature = method.getParameterTypes();
+                
+                Class ret = method.getReturnType();
+                ClassWriter cw = createJavaMethodCtor(generatedClassPath, cg.p(JavaMethod.class));
+                SkinnyMethodAdapter mv = null;
+                
+                mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
+                mv.visitCode();
+                
+                // check arity
+                Label arityError = new Label();
+                Label noArityError = new Label();
+                
+                if (jrubyMethod.rest()) {
+                    if (jrubyMethod.required() > 0) {
+                        // just confirm minimum args provided
+                        mv.aload(ARGS_INDEX);
+                        mv.arraylength();
+                        mv.ldc(jrubyMethod.required());
+                        mv.if_icmplt(arityError);
+                    }
+                } else if (jrubyMethod.optional() > 0) {
+                    if (jrubyMethod.required() > 0) {
+                        // confirm minimum args provided
+                        mv.aload(ARGS_INDEX);
+                        mv.arraylength();
+                        mv.ldc(jrubyMethod.required());
+                        mv.if_icmplt(arityError);
+                    }
+
+                    // confirm maximum not greater than optional
+                    mv.aload(ARGS_INDEX);
+                    mv.arraylength();
+                    mv.ldc(jrubyMethod.required() + jrubyMethod.optional());
+                    mv.if_icmpgt(arityError);
+                } else {
+                    // just confirm args length == required
+                    mv.aload(ARGS_INDEX);
+                    mv.arraylength();
+                    mv.ldc(jrubyMethod.required());
+                    mv.if_icmpne(arityError);
+                }
+
+                mv.go_to(noArityError);
+
+                mv.label(arityError);
+                mv.aload(THREADCONTEXT_INDEX);
+                mv.invokevirtual(cg.p(ThreadContext.class), "getRuntime", cg.sig(Ruby.class));
+                mv.aload(ARGS_INDEX);
+                mv.ldc(jrubyMethod.required());
+                mv.ldc(jrubyMethod.required() + jrubyMethod.optional());
+                mv.invokestatic(cg.p(Arity.class), "checkArgumentCount", cg.sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+                mv.pop();
+                
+                mv.label(noArityError);
+                
+                // invoke pre method stuff
+                {
+                    mv.aload(0); // load method to get callconfig
+                    mv.getfield(cg.p(DynamicMethod.class), "callConfig", cg.ci(CallConfiguration.class));
+                    
+                    // load pre params
+                    mv.aload(THREADCONTEXT_INDEX); // tc
+                    mv.aload(RECEIVER_INDEX); // self
+                    mv.aload(0);
+                    mv.invokevirtual(cg.p(DynamicMethod.class), "getImplementationClass", cg.sig(RubyModule.class)); // clazz
+                    mv.aload(0);
+                    mv.getfield(cg.p(JavaMethod.class), "arity", cg.ci(Arity.class)); // arity
+                    mv.aload(NAME_INDEX); // name
+                    mv.aload(ARGS_INDEX); // args
+                    mv.aload(BLOCK_INDEX); // block
+                    mv.aconst_null(); // scope
+                    mv.aload(0); // jump target
+                    mv.invokevirtual(cg.p(CallConfiguration.class), "pre", 
+                            cg.sig(void.class, 
+                            cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, Arity.class, String.class, IRubyObject[].class, Block.class, 
+                            StaticScope.class, JumpTarget.class)));
+                }
+                
+                boolean getsBlock = signature.length > 0 && signature[signature.length - 1] == Block.class;
+                    
+                Label tryBegin = new Label();
+                Label tryEnd = new Label();
+                Label tryFinally = new Label();
+                Label tryReturnJump = new Label();
+                Label tryRedoJump = new Label();
+                Label normalExit = new Label();
+                
+                mv.trycatch(tryBegin, tryEnd, tryReturnJump, cg.p(JumpException.ReturnJump.class));
+                mv.trycatch(tryBegin, tryEnd, tryRedoJump, cg.p(JumpException.RedoJump.class));
+                mv.trycatch(tryBegin, tryEnd, tryFinally, null);
+                mv.label(tryBegin);
+                
+                // load target for invocations
+                
+                if (Modifier.isStatic(method.getModifiers())) {
+                    // load self object as IRubyObject, for recv param
+                    mv.aload(RECEIVER_INDEX);
+                } else {
+                    // load receiver as original type for virtual invocation
+                    mv.aload(RECEIVER_INDEX);
+                    mv.checkcast(typePath);
+                }
+                
+                // load args
+                if (jrubyMethod.optional() == 0 && !jrubyMethod.rest()) {
+                    // only required args
+                    loadArguments(mv, ARGS_INDEX, jrubyMethod.required());
+                } else {
+                    // load args as-is
+                    mv.visitVarInsn(ALOAD, ARGS_INDEX);
+                }
+
+                // load block if it accepts block
+                if (getsBlock) {
+                    mv.visitVarInsn(ALOAD, BLOCK_INDEX);
+                }
+
+                if (Modifier.isStatic(method.getModifiers())) {
+                    // static invocation
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, javaMethodName, cg.sig(ret, signature));
+                } else {
+                    // virtual invocation
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, javaMethodName, cg.sig(ret, signature));
+                }
+                
+                mv.label(tryEnd);
+
+                //call post method stuff (non-finally)
+                mv.label(normalExit);
+                mv.aload(0); // load method to get callconfig
+                mv.getfield(cg.p(JavaMethod.class), "callConfig", cg.ci(CallConfiguration.class));
+                mv.aload(1);
+                mv.invokevirtual(cg.p(CallConfiguration.class), "post", cg.sig(void.class, cg.params(ThreadContext.class)));
+                mv.visitInsn(ARETURN);
+
+                // return jump handling
+                {
+                    mv.label(tryReturnJump);
+                    
+                    // dup return jump, get target, compare to this method object
+                    mv.dup();
+                    mv.invokevirtual(cg.p(JumpException.FlowControlException.class), "getTarget", cg.sig(Object.class));
+                    mv.aload(0);
+                    Label rethrow = new Label();
+                    mv.if_acmpne(rethrow);
+
+                    // this is the target, store return value and branch to normal exit
+                    mv.invokevirtual(cg.p(JumpException.FlowControlException.class), "getValue", cg.sig(Object.class));
+                    
+                    mv.areturn();
+
+                    // this is not the target, rethrow
+                    mv.label(rethrow);
+                    mv.go_to(tryFinally);
+                }
+
+                // redo jump handling
+                {
+                    mv.label(tryRedoJump);
+                    
+                    // clear the redo
+                    mv.pop();
+                    
+                    // get runtime, dup it
+                    mv.aload(1);
+                    mv.invokevirtual(cg.p(ThreadContext.class), "getRuntime", cg.sig(Ruby.class));
+                    mv.dup();
+                    
+                    // get nil
+                    mv.invokevirtual(cg.p(Ruby.class), "getNil", cg.sig(IRubyObject.class));
+                    
+                    // load "redo" under nil
+                    mv.ldc("redo");
+                    mv.swap();
+                    
+                    // load "unexpected redo" message
+                    mv.ldc("unexpected redo");
+                    
+                    mv.invokevirtual(cg.p(Ruby.class), "newLocalJumpError", cg.sig(RaiseException.class, cg.params(String.class, IRubyObject.class, String.class)));
+                    mv.go_to(tryFinally);
+                }
+
+                // finally handling for abnormal exit
+                {
+                    mv.label(tryFinally);
+
+                    //call post method stuff (exception raised)
+                    mv.aload(0); // load method to get callconfig
+                    mv.getfield(cg.p(JavaMethod.class), "callConfig", cg.ci(CallConfiguration.class));
+                    mv.aload(1);
+                    mv.invokevirtual(cg.p(CallConfiguration.class), "post", cg.sig(void.class, cg.params(ThreadContext.class)));
+
+                    // rethrow exception
+                    mv.athrow(); // rethrow it
+                }
+                
+                c = endCall(implementationClass.getRuntime(), cw, mv, generatedClassName);
+            }
+                
+            JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, jrubyMethod.visibility()});
+
+            boolean fast = !(jrubyMethod.frame() || jrubyMethod.scope());
+            ic.setArity(Arity.fromAnnotation(jrubyMethod));
+            ic.setJavaName(javaMethodName);
+            ic.setArgumentTypes(method.getParameterTypes());
+            ic.setSingleton(Modifier.isStatic(method.getModifiers()));
+            if (fast) {
+                ic.setCallConfig(CallConfiguration.JAVA_FAST);
+            } else {
+                ic.setCallConfig(CallConfiguration.JAVA_FULL);
+            }
+            return ic;
+        } catch(Exception e) {
+            e.printStackTrace();
+            throw implementationClass.getRuntime().newLoadError(e.getMessage());
+        }
+    }
 
     private DynamicMethod getCompleteMethod(RubyModule implementationClass, String method, Arity arity, Visibility visibility, StaticScope scope, String sup, Object scriptObject) {
         Class scriptClass = scriptObject.getClass();

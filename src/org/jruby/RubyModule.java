@@ -70,6 +70,7 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.MethodCache;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
 
 /**
@@ -589,11 +590,11 @@ public class RubyModule extends RubyObject {
         addMethod(name, new FullFunctionCallbackMethod(this, method, visibility));
     }
     
-    public void defineAnnotatedMethod(Class clazz, String name, CallbackFactory callbackFactory) {
+    public void defineAnnotatedMethod(Class clazz, String name) {
         // FIXME: This is probably not very efficient, since it loads all methods for each call
         boolean foundMethod = false;
         for (Method method : clazz.getDeclaredMethods()) {
-            if (method.getName().equals(name) && defineAnnotatedMethod(method, callbackFactory)) {
+            if (method.getName().equals(name) && defineAnnotatedMethod(method, MethodFactory.createFactory(getRuntime().getJRubyClassLoader()))) {
                 foundMethod = true;
             }
         }
@@ -603,14 +604,15 @@ public class RubyModule extends RubyObject {
         }
     }
     
-    public void defineAnnotatedMethods(Class clazz, CallbackFactory callbackFactory) {
+    public void defineAnnotatedMethods(Class clazz) {
         Method[] declaredMethods = clazz.getDeclaredMethods();
+        MethodFactory methodFactory = MethodFactory.createFactory(getRuntime().getJRubyClassLoader());
         for (Method method: declaredMethods) {
-            defineAnnotatedMethod(method, callbackFactory);
+            defineAnnotatedMethod(method, methodFactory);
         }
     }
     
-    public boolean defineAnnotatedMethod(Method method, CallbackFactory callbackFactory) {
+    public boolean defineAnnotatedMethod(Method method, MethodFactory methodFactory) {
         JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
 
         if (jrubyMethod == null) return false;
@@ -618,18 +620,10 @@ public class RubyModule extends RubyObject {
         // select current module or module's metaclass for singleton methods
         RubyModule module = this;
 
-        Callback callback = callbackFactory.getMethod(method);
-        DynamicMethod dynamicMethod;
-
-        if (jrubyMethod.frame() || jrubyMethod.scope()) {
-            dynamicMethod = new FullFunctionCallbackMethod(this, callback, jrubyMethod.visibility());
-        } else {
-            dynamicMethod = new SimpleCallbackMethod(this, callback, jrubyMethod.visibility());
-        }
+        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, method);
         
         // if it's a singleton (metaclass) method or a module method, bind to metaclass
         if (jrubyMethod.meta()) {
-            RubyModule metaClass = getMetaClass();
             if (jrubyMethod.name().equals("")) {
                 metaClass.addMethod(method.getName(), dynamicMethod);
             } else {

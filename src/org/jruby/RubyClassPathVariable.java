@@ -48,7 +48,7 @@ public class RubyClassPathVariable extends RubyObject {
         
         CallbackFactory cf = runtime.callbackFactory(RubyClassPathVariable.class);
         
-        self.getMetaClass().defineAnnotatedMethods(RubyClassPathVariable.class, cf);
+        self.getMetaClass().defineAnnotatedMethods(RubyClassPathVariable.class);
     }
 
     private RubyClassPathVariable(Ruby runtime) {

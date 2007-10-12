@@ -102,7 +102,7 @@ public class RubyThread extends RubyObject {
         runtime.setThread(threadClass);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThread.class);
 
-        threadClass.defineAnnotatedMethods(RubyThread.class, callbackFactory);
+        threadClass.defineAnnotatedMethods(RubyThread.class);
 
         RubyThread rubyThread = new RubyThread(runtime, threadClass);
         // TODO: need to isolate the "current" thread from class creation

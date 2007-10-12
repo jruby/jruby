@@ -100,7 +100,7 @@ public class RubyString extends RubyObject {
         stringClass.includeModule(runtime.getComparable());
         stringClass.includeModule(runtime.getEnumerable());
         
-        stringClass.defineAnnotatedMethods(RubyString.class, callbackFactory);
+        stringClass.defineAnnotatedMethods(RubyString.class);
         stringClass.dispatcher = callbackFactory.createDispatcher(stringClass);
         
         return stringClass;

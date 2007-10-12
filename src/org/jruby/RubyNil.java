@@ -68,7 +68,7 @@ public class RubyNil extends RubyObject {
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNil.class);
         
-        nilClass.defineAnnotatedMethods(RubyNil.class, callbackFactory);
+        nilClass.defineAnnotatedMethods(RubyNil.class);
         
         nilClass.getMetaClass().undefineMethod("new");
         

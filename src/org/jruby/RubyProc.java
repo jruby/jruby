@@ -73,7 +73,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
         runtime.setProc(procClass);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyProc.class);
         
-        procClass.defineAnnotatedMethods(RubyProc.class, callbackFactory);
+        procClass.defineAnnotatedMethods(RubyProc.class);
         
         return procClass;
     }

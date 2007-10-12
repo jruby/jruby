@@ -50,7 +50,7 @@ public class RubyNameError extends RubyException {
         RubyClass nameErrorClass = runtime.defineClass("NameError", standardErrorClass, NAMEERROR_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNameError.class);		
 
-        nameErrorClass.defineAnnotatedMethods(RubyNameError.class, callbackFactory);
+        nameErrorClass.defineAnnotatedMethods(RubyNameError.class);
 
         return nameErrorClass;
     }

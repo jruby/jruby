@@ -288,7 +288,7 @@ public class RubyIO extends RubyObject {
         // we could invoke jruby differently to allow stdin to return true
         // on this.  This would allow things like cgi.rb to work properly.
         
-        ioClass.defineAnnotatedMethods(RubyIO.class, callbackFactory);
+        ioClass.defineAnnotatedMethods(RubyIO.class);
 
         // Constants for seek
         ioClass.setConstant("SEEK_SET", runtime.newFixnum(IOHandler.SEEK_SET));

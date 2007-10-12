@@ -103,7 +103,7 @@ public class RubyFileStat extends RubyObject {
         fileStatClass.defineMethod("writable_real?", callbackFactory.getFastMethod("not_implemented"));
         fileStatClass.defineMethod("zero?", callbackFactory.getFastMethod("not_implemented"));
         
-        fileStatClass.defineAnnotatedMethods(RubyFileStat.class, callbackFactory);
+        fileStatClass.defineAnnotatedMethods(RubyFileStat.class);
     	
         return fileStatClass;
     }

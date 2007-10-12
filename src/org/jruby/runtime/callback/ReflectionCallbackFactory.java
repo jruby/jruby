@@ -48,10 +48,6 @@ public class ReflectionCallbackFactory extends CallbackFactory {
     public ReflectionCallbackFactory(Class type) {
             this.type = type;
     }
-    
-    public Callback getMethod(Method method) {
-        return new ReflectionCallback(method);
-    }
 	
     public Callback getMethod(String method) {
         return new ReflectionCallback(type, method, NULL_CLASS_ARRAY, false, false, Arity.noArguments(), false);

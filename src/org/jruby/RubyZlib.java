@@ -65,13 +65,13 @@ public class RubyZlib {
 
         RubyClass gzfile = result.defineClassUnder("GzipFile", runtime.getObject(), RubyGzipFile.GZIPFILE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyGzipFile.class);
-        gzfile.defineAnnotatedMethods(RubyGzipFile.class, callbackFactory);
+        gzfile.defineAnnotatedMethods(RubyGzipFile.class);
         
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
         RubyClass gzreader = result.defineClassUnder("GzipReader", gzfile, RubyGzipReader.GZIPREADER_ALLOCATOR);
         gzreader.includeModule(runtime.getEnumerable());
         CallbackFactory callbackFactory2 = runtime.callbackFactory(RubyGzipReader.class);
-        gzreader.defineAnnotatedMethods(RubyGzipReader.class, callbackFactory2);
+        gzreader.defineAnnotatedMethods(RubyGzipReader.class);
         
         RubyClass standardError = runtime.getClass("StandardError");
         RubyClass zlibError = result.defineClassUnder("Error", standardError, standardError.getAllocator());
@@ -79,7 +79,7 @@ public class RubyZlib {
 
         RubyClass gzwriter = result.defineClassUnder("GzipWriter", gzfile, RubyGzipWriter.GZIPWRITER_ALLOCATOR);
         CallbackFactory callbackFactory3 = runtime.callbackFactory(RubyGzipWriter.class);
-        gzwriter.defineAnnotatedMethods(RubyGzipWriter.class, callbackFactory3);
+        gzwriter.defineAnnotatedMethods(RubyGzipWriter.class);
 
         result.defineConstant("ZLIB_VERSION",runtime.newString("1.2.1"));
         result.defineConstant("VERSION",runtime.newString("0.6.0"));
@@ -125,7 +125,7 @@ public class RubyZlib {
         result.defineConstant("MAX_WBITS",runtime.newFixnum(15));
 
         CallbackFactory cf = runtime.callbackFactory(RubyZlib.class);
-        result.defineAnnotatedMethods(RubyZlib.class, cf);
+        result.defineAnnotatedMethods(RubyZlib.class);
 
         result.defineClassUnder("StreamEnd",zlibError, zlibError.getAllocator());
         result.defineClassUnder("StreamError",zlibError, zlibError.getAllocator());
@@ -143,16 +143,16 @@ public class RubyZlib {
         // ZStream actually *isn't* allocatable
         RubyClass zstream = result.defineClassUnder("ZStream", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory zstreamcb = runtime.callbackFactory(ZStream.class);
-        zstream.defineAnnotatedMethods(ZStream.class, zstreamcb);
+        zstream.defineAnnotatedMethods(ZStream.class);
         zstream.undefineMethod("new");
 
         RubyClass infl = result.defineClassUnder("Inflate", zstream, Inflate.INFLATE_ALLOCATOR);
         CallbackFactory inflcb = runtime.callbackFactory(Inflate.class);
-        infl.defineAnnotatedMethods(Inflate.class, inflcb);
+        infl.defineAnnotatedMethods(Inflate.class);
 
         RubyClass defl = result.defineClassUnder("Deflate", zstream, Deflate.DEFLATE_ALLOCATOR);
         CallbackFactory deflcb = runtime.callbackFactory(Deflate.class);
-        defl.defineAnnotatedMethods(Deflate.class, deflcb);
+        defl.defineAnnotatedMethods(Deflate.class);
 
         runtime.getKernel().callMethod(runtime.getCurrentContext(),"require",runtime.newString("stringio"));
 

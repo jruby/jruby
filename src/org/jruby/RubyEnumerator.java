@@ -61,21 +61,21 @@ public class RubyEnumerator extends RubyObject {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyEnumerator.class);
 
         RubyModule kernel = runtime.getKernel();
-        kernel.defineAnnotatedMethod(RubyEnumerator.class, "obj_to_enum", callbackFactory);
+        kernel.defineAnnotatedMethod(RubyEnumerator.class, "obj_to_enum");
 
         RubyModule enm = runtime.getClassFromPath("Enumerable");
-        enm.defineAnnotatedMethod(RubyEnumerator.class, "each_with_index", callbackFactory);
-        enm.defineAnnotatedMethod(RubyEnumerator.class, "each_slice", callbackFactory);
-        enm.defineAnnotatedMethod(RubyEnumerator.class, "enum_slice", callbackFactory);
-        enm.defineAnnotatedMethod(RubyEnumerator.class, "each_cons", callbackFactory);
-        enm.defineAnnotatedMethod(RubyEnumerator.class, "enum_cons", callbackFactory);
+        enm.defineAnnotatedMethod(RubyEnumerator.class, "each_with_index");
+        enm.defineAnnotatedMethod(RubyEnumerator.class, "each_slice");
+        enm.defineAnnotatedMethod(RubyEnumerator.class, "enum_slice");
+        enm.defineAnnotatedMethod(RubyEnumerator.class, "each_cons");
+        enm.defineAnnotatedMethod(RubyEnumerator.class, "enum_cons");
 
         RubyClass enmr = enm.defineClassUnder("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
 
         enmr.includeModule(enm);
 
-        enmr.defineAnnotatedMethod(RubyEnumerator.class, "initialize", callbackFactory);
-        enmr.defineAnnotatedMethod(RubyEnumerator.class, "each", callbackFactory);
+        enmr.defineAnnotatedMethod(RubyEnumerator.class, "initialize");
+        enmr.defineAnnotatedMethod(RubyEnumerator.class, "each");
     }
 
     @JRubyMethod(name = "to_enum", name2 = "enum_for", optional = 1, rest = true, frame = true)

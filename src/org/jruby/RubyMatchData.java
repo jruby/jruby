@@ -63,7 +63,7 @@ public abstract class RubyMatchData extends RubyObject {
 
         matchDataClass.getMetaClass().undefineMethod("new");
         
-        matchDataClass.defineAnnotatedMethods(RubyMatchData.class, callbackFactory);
+        matchDataClass.defineAnnotatedMethods(RubyMatchData.class);
         matchDataClass.dispatcher = callbackFactory.createDispatcher(matchDataClass);
 
         return matchDataClass;

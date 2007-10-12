@@ -116,7 +116,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineConstant("EXTENDED", runtime.newFixnum(RE_OPTION_EXTENDED));
         regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
         
-        regexpClass.defineAnnotatedMethods(RubyRegexp.class, callbackFactory);
+        regexpClass.defineAnnotatedMethods(RubyRegexp.class);
         regexpClass.dispatcher = callbackFactory.createDispatcher(regexpClass);
 
         return regexpClass;

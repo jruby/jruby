@@ -86,7 +86,7 @@ public class RubyFloat extends RubyNumeric {
         floatc.defineConstant("MAX", RubyFloat.newFloat(runtime, Double.MAX_VALUE));
         floatc.defineConstant("EPSILON", RubyFloat.newFloat(runtime, 2.2204460492503131e-16));
         
-        floatc.defineAnnotatedMethods(RubyFloat.class, callbackFactory);
+        floatc.defineAnnotatedMethods(RubyFloat.class);
         floatc.dispatcher = callbackFactory.createDispatcher(floatc);
 
         return floatc;

@@ -45,7 +45,7 @@ public class RubyNoMethodError extends RubyNameError {
         RubyClass noMethodErrorClass = runtime.defineClass("NoMethodError", nameErrorClass, NOMETHODERROR_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNoMethodError.class);
         
-        noMethodErrorClass.defineAnnotatedMethods(RubyNoMethodError.class, callbackFactory);
+        noMethodErrorClass.defineAnnotatedMethods(RubyNoMethodError.class);
 
         return noMethodErrorClass;
     }

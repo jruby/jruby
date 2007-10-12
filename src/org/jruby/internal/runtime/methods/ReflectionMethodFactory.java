@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import java.lang.reflect.Method;
 import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -38,4 +39,10 @@ public class ReflectionMethodFactory extends MethodFactory {
         assert false: "Not yet implemented";
         return null;
     }
+    
+    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method) {
+        assert false: "Not yet implemented";
+        return null;
+    }
+
 }

@@ -64,7 +64,7 @@ public class RubyMarshal {
         runtime.setMarshal(module);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMarshal.class);
 
-        module.defineAnnotatedMethods(RubyMarshal.class, callbackFactory);
+        module.defineAnnotatedMethods(RubyMarshal.class);
         module.defineConstant("MAJOR_VERSION", runtime.newFixnum(Constants.MARSHAL_MAJOR));
         module.defineConstant("MINOR_VERSION", runtime.newFixnum(Constants.MARSHAL_MINOR));
 

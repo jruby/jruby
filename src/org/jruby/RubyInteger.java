@@ -62,7 +62,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
         integer.includeModule(runtime.getPrecision());
         
-        integer.defineAnnotatedMethods(RubyInteger.class, callbackFactory);
+        integer.defineAnnotatedMethods(RubyInteger.class);
         integer.dispatcher = callbackFactory.createDispatcher(integer);
         
         return integer;
