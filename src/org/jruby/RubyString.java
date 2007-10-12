@@ -1609,7 +1609,7 @@ public class RubyString extends RubyObject {
     /** rb_str_sub
      *
      */
-    @JRubyMethod(name = "sub", required = 1, optional = 1, frame = true)
+    @JRubyMethod(name = "sub", required = 1, optional = 1)
     public IRubyObject sub(IRubyObject[] args, Block block) {
         RubyString str = strDup();
         str.sub_bang(args, block);
@@ -1619,7 +1619,7 @@ public class RubyString extends RubyObject {
     /** rb_str_sub_bang
      *
      */
-    @JRubyMethod(name = "sub!", required = 1, optional = 1, frame = true)
+    @JRubyMethod(name = "sub!", required = 1, optional = 1)
     public IRubyObject sub_bang(IRubyObject[] args, Block block) {
         boolean iter = false;
         IRubyObject repl;
@@ -1646,7 +1646,7 @@ public class RubyString extends RubyObject {
         if (mat.find()) {
             ThreadContext context = runtime.getCurrentContext();
             RubyMatchData md = matchdata(runtime, str, mat, utf8);
-            context.getPreviousFrame().setBackRef(md);
+            context.getCurrentFrame().setBackRef(md);
             if (iter) {
                 // FIXME: I don't like this setting into the frame directly, but it's necessary since blocks dupe the frame
                 block.getFrame().setBackRef(md);
