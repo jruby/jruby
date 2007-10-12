@@ -233,7 +233,7 @@ public class RubyThread extends RubyObject {
         }
     }
 
-    private RubyThread(Ruby runtime, RubyClass type) {
+    protected RubyThread(Ruby runtime, RubyClass type) {
         super(runtime, type);
         this.threadService = runtime.getThreadService();
         // set to default thread group
