@@ -107,6 +107,7 @@ public interface MethodCompiler {
      * Generate a new "Symbol" value (or fetch the existing one).
      */
     public void createNewSymbol(String name);
+    public void createNewSymbol(int id, String name);
     
     public void createObjectArray(Object[] elementArray, ArrayCallback callback);
 

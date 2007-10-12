@@ -45,6 +45,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class SymbolNode extends Node implements ILiteralNode, INameNode {
 	private String name;
+    private int id = -1;
 
 	public SymbolNode(ISourcePosition position, String name) {
 	    super(position, NodeType.SYMBOLNODE);
@@ -67,4 +68,11 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
         return EMPTY_LIST;
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 }

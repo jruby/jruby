@@ -1569,7 +1569,19 @@ public class ASTInterpreter {
     }
     
     private static IRubyObject symbolNode(Ruby runtime, Node node) {
-        return runtime.newSymbol(((SymbolNode) node).getName());
+        
+        SymbolNode snode = (SymbolNode)node;
+        int id = snode.getId();
+        if(id != -1) {
+            return RubySymbol.getSymbol(runtime, id);
+        } else {
+            RubySymbol sym = runtime.newSymbol(snode.getName());
+            snode.setId(sym.getId());
+            return sym;
+        }
+        
+
+        //        return runtime.newSymbol(((SymbolNode) node).getName());
     }
     
     private static IRubyObject toAryNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

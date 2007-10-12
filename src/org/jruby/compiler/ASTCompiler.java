@@ -2798,7 +2798,7 @@ public class ASTCompiler {
     
     public static void compileSymbol(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
-        context.createNewSymbol(((SymbolNode)node).getName());
+        context.createNewSymbol(((SymbolNode)node).getId(),((SymbolNode)node).getName());
     }    
     
     public static void compileToAry(Node node, MethodCompiler context) {

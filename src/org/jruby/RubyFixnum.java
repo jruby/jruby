@@ -198,7 +198,7 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "id2name")
     public IRubyObject id2name() {
-        RubySymbol symbol = RubySymbol.getSymbol(getRuntime(), value);
+        RubySymbol symbol = RubySymbol.getSymbolLong(getRuntime(), value);
         
         if (symbol != null) return getRuntime().newString(symbol.asSymbol());
 
@@ -210,7 +210,7 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "to_sym")
     public IRubyObject to_sym() {
-        RubySymbol symbol = RubySymbol.getSymbol(getRuntime(), value);
+        RubySymbol symbol = RubySymbol.getSymbolLong(getRuntime(), value);
         
         return symbol != null ? symbol : getRuntime().getNil(); 
     }

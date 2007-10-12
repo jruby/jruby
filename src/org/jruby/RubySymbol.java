@@ -107,14 +107,17 @@ public class RubySymbol extends RubyObject {
         throw getRuntime().newTypeError("can't define singleton");
     }
 
-    public static RubySymbol getSymbol(Ruby runtime, long id) {
+    public static RubySymbol getSymbol(Ruby runtime, int id) {
         return runtime.getSymbolTable().lookup(id);
+    }
+
+    public static RubySymbol getSymbolLong(Ruby runtime, long id) {
+        return runtime.getSymbolTable().lookupSafe(id);
     }
 
     /* Symbol class methods.
      * 
      */
-
     public static RubySymbol newSymbol(Ruby runtime, String name) {
         RubySymbol result;
         synchronized (RubySymbol.class) {
@@ -166,6 +169,10 @@ public class RubySymbol extends RubyObject {
     }
     
     public int hashCode() {
+        return id;
+    }
+
+    public int getId() {
         return id;
     }
     
@@ -320,6 +327,7 @@ public class RubySymbol extends RubyObject {
 
     public static class SymbolTable {
         private Map<String, RubySymbol> table = new HashMap<String, RubySymbol>();
+        private RubySymbol[] symTable = new RubySymbol[256];
         
         public RubySymbol[] all_symbols() {
             int length = table.size();
@@ -328,11 +336,15 @@ public class RubySymbol extends RubyObject {
             return array;
         }
         
-        public RubySymbol lookup(long symbolId) {
-            for (RubySymbol symbol : table.values()) {
-                if (symbol != null && symbol.id == symbolId) return symbol;
+        public RubySymbol lookup(int symbolId) {
+            return symTable[symbolId];
+        }
+
+        public RubySymbol lookupSafe(long symbolId) {
+            if(symbolId >= symTable.length) {
+                return null;
             }
-            return null;
+            return symTable[(int)symbolId];
         }
         
         public RubySymbol lookup(String name) {
@@ -341,6 +353,15 @@ public class RubySymbol extends RubyObject {
         
         public void store(RubySymbol symbol) {
             table.put(symbol.asSymbol(), symbol);
+            int id = symbol.getId();
+            if(id >= symTable.length) {
+                synchronized(this) {
+                    RubySymbol[] newTable = new RubySymbol[symTable.length*2];
+                    System.arraycopy(symTable, 0, newTable, 0, symTable.length);
+                    symTable = newTable;
+                }
+            }
+            symTable[id] = symbol;
         }
         
     }
