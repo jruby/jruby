@@ -965,6 +965,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
     
     public Dispatcher createDispatcher(RubyClass metaClass) {
+        if (true) return Dispatcher.DEFAULT_DISPATCHER;
         String className = type.getName() + "Dispatcher_for_" + metaClass.getBaseName();
         String classPath = typePath + "Dispatcher_for_" + metaClass.getBaseName();
         

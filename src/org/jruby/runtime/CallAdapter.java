@@ -66,7 +66,6 @@ public abstract class CallAdapter {
 
 
     public static class DefaultCallAdapter extends CallAdapter {
-        byte[] cachedSwitchTable;
         DynamicMethod cachedMethod;
         RubyClass cachedType;
         
@@ -137,19 +136,8 @@ public abstract class CallAdapter {
                 try {
                     RubyClass selfType = self.getMetaClass();
 
-                    if (cachedType == selfType) {
-                        if (cachedSwitchTable.length > methodID && cachedSwitchTable[methodID] != 0) {
-                            return selfType.getDispatcher().callMethod(context, self, selfType, methodID, methodName, args, callType, block);
-                        } else if (cachedMethod != null) {
-                            return cachedMethod.call(context, self, selfType, methodName, args, block);
-                        }
-                    }
-
-                    byte[] switchTable = selfType.getDispatcher().switchTable;
-                    if (switchTable.length > methodID && switchTable[methodID] != 0) {
-                        cachedSwitchTable = switchTable;
-                        cachedType = selfType;
-                        return selfType.getDispatcher().callMethod(context, self, selfType, methodID, methodName, args, callType, block);
+                    if (cachedType == selfType && cachedMethod != null) {
+                        return cachedMethod.call(context, self, selfType, methodName, args, block);
                     }
 
                     DynamicMethod method = selfType.searchMethod(methodName);
@@ -160,7 +148,6 @@ public abstract class CallAdapter {
 
                     cachedMethod = method;
                     cachedType = selfType;
-                    cachedSwitchTable = switchTable;
 
                     selfType.getRuntime().getCacheMap().add(method, this);
 
