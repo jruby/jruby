@@ -30,7 +30,6 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -40,9 +39,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyContinuation {
     public static void createContinuation(Ruby runtime) {
-        RubyModule cContinuation = runtime.defineClass("Continuation",runtime.getObject(),runtime.getObject().getAllocator());
-        CallbackFactory cf = runtime.callbackFactory(RubyContinuation.class);
+        RubyClass cContinuation = runtime.defineClass("Continuation",runtime.getObject(),runtime.getObject().getAllocator());
         cContinuation.defineAnnotatedMethods(RubyContinuation.class);
+        runtime.setContinuation(cContinuation);
     }
 
     @JRubyMethod(name = "call", name2 = "[]", rest = true, frame = true)

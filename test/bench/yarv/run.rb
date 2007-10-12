@@ -8,6 +8,9 @@ require 'rbconfig'
 $matzrubyonly = false
 $rubyonly = false
 
+$matzruby_program = "ruby"
+$ruby_program = "jruby -J-server -O"
+
 $results  = []
 
 # prepare 'wc.input'

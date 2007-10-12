@@ -59,7 +59,7 @@ public class RubyGlobal {
      * Obligate string-keyed and string-valued hash, used for ENV and ENV_JAVA
      * 
      */
-    private static class StringOnlyRubyHash extends RubyHash {
+    public static class StringOnlyRubyHash extends RubyHash {
         
         public StringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
             super(runtime, valueMap, defaultValue);
@@ -93,7 +93,7 @@ public class RubyGlobal {
         
         public IRubyObject to_s(){
             return getRuntime().newString("ENV");
-    }
+        }
     }
     
     public static void createGlobals(Ruby runtime) {

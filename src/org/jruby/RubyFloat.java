@@ -197,10 +197,12 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "coerce", required = 1)
     public IRubyObject coerce(IRubyObject other) {
-        // MRI doesn't type check here either
-        return getRuntime().newArray(
-                newFloat(getRuntime(), ((RubyNumeric) other).getDoubleValue()), this);
+        if (other instanceof RubyNumeric) {
+            return getRuntime().newArray(
+                    newFloat(getRuntime(), ((RubyNumeric) other).getDoubleValue()), this);
         }
+        throw getRuntime().newTypeError(other, getRuntime().getNumeric());
+    }
 
     /** flo_uminus
      * 

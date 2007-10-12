@@ -300,6 +300,8 @@
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
+      <arg value="-I"/>
+      <arg value="test/externals/rubinius/spec"/>
       <arg value="-S"/>
       <arg value="spec"/>
       <arg value="--format"/>
@@ -317,6 +319,8 @@
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.jit.threshold" value="0"/>
+      <arg value="-I"/>
+      <arg value="test/externals/rubinius/spec"/>
       <arg value="-S"/>
       <arg value="spec"/>
       <arg value="--format"/>
@@ -375,6 +379,16 @@
   <target name="test-reflected" depends="copy-test-files,run-junit-reflected-compiled"/>
   
   <target name="test-spec" depends="test-spec-compiled, test-spec-interpreted"/>
+  
+  <target name="test-rubinius-trunk-specs" depends="install-gems">
+      <exec executable="svn" dir="${build.dir}">
+          <arg value="export"/>
+          <arg value="http://rubini.us/svn/rubinius/trunk/spec/"/>
+          <arg value="rubinius-spec"/>
+      </exec>
+    <antcall target="run-spec-compiled"><param name="SPEC" value="${build.dir}/rubinius-spec"/></antcall>
+    <antcall target="run-spec-interpreted"><param name="SPEC" value="${build.dir}/rubinius-spec"/></antcall>
+  </target>
   
   <target name="test-spec-compiled" depends="install-gems">
     <antcall target="run-spec-compiled"><param name="SPEC" value="
