@@ -80,14 +80,50 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
 
     public void checkMethodArity(int requiredArgs, int optArgs, int restArg) {
         // check arity
-        methodCompiler.loadThreadContext();
+        Label arityError = new Label();
+        Label noArityError = new Label();
+
+        if (restArg != -1) {
+            if (requiredArgs > 0) {
+                // just confirm minimum args provided
+                method.aload(argsIndex);
+                method.arraylength();
+                method.ldc(requiredArgs);
+                method.if_icmplt(arityError);
+            }
+        } else if (optArgs > 0) {
+            if (requiredArgs > 0) {
+                // confirm minimum args provided
+                method.aload(argsIndex);
+                method.arraylength();
+                method.ldc(requiredArgs);
+                method.if_icmplt(arityError);
+            }
+
+            // confirm maximum not greater than optional
+            method.aload(argsIndex);
+            method.arraylength();
+            method.ldc(requiredArgs + optArgs);
+            method.if_icmpgt(arityError);
+        } else {
+            // just confirm args length == required
+            method.aload(argsIndex);
+            method.arraylength();
+            method.ldc(requiredArgs);
+            method.if_icmpne(arityError);
+        }
+
+        method.go_to(noArityError);
+
+        method.label(arityError);
         methodCompiler.loadRuntime();
         method.aload(argsIndex);
-        method.arraylength();
-        method.ldc(new Integer(requiredArgs));
-        method.ldc(new Integer(optArgs));
-        method.ldc(new Integer(restArg));
-        methodCompiler.invokeUtilityMethod("handleArgumentSizes", cg.sig(Void.TYPE, ThreadContext.class, Ruby.class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE));
+        method.ldc(requiredArgs);
+        method.ldc(requiredArgs + optArgs);
+        method.invokestatic(cg.p(Arity.class), "checkArgumentCount", cg.sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+        method.pop();
+
+        method.label(noArityError);
     }
 
     public void assignMethodArguments(
