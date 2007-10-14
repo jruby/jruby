@@ -506,7 +506,11 @@ public class RubyString extends RubyObject {
     }       
     
     public static RubyString newStringShared(Ruby runtime, ByteList bytes) {
-        RubyString str = new RubyString(runtime, runtime.getString(), bytes);
+        return newStringShared(runtime, runtime.getString(), bytes);
+    }    
+
+    public static RubyString newStringShared(Ruby runtime, RubyClass clazz, ByteList bytes) {
+        RubyString str = new RubyString(runtime, clazz, bytes);
         str.flags |= SHARED_BYTELIST_STR_F;
         return str;
     }    
@@ -3162,44 +3166,74 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "each_line", required = 0, optional = 1, frame = true, alias = "each")
     public IRubyObject each_line(IRubyObject[] args, Block block) {
-        int strLen = value.length();
-        if (strLen == 0) {
-            return this;
-        }
-        String sep;
-        if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 1) {
-            sep = RubyRegexp.escapeSpecialChars(stringValue(args[0]).toString());
+        byte newline;
+        int p = value.begin;
+        int pend = p + value.realSize;
+        int s;
+        int ptr = p;
+        int len = value.realSize;
+        int rslen;
+        IRubyObject line;
+        
+
+        IRubyObject _rsep;
+        if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 0) {
+            _rsep = getRuntime().getGlobalVariables().get("$/");
         } else {
-            sep = RubyRegexp.escapeSpecialChars(getRuntime().getGlobalVariables().get("$/").asSymbol());
+            _rsep = args[0];
         }
-        if (sep == null) {
-            sep = "(?:\\n|\\r\\n?)";
-        } else if (sep.length() == 0) {
-            sep = "(?:\\n|\\r\\n?){2,}";
-        }
-        RubyRegexp pat = RubyRegexp.newRegexp(getRuntime(), ".*?" + sep, RubyRegexp.RE_OPTION_MULTILINE, null);
-        int start = 0;
+
         ThreadContext tc = getRuntime().getCurrentContext();
 
-        // Fix for JRUBY-97: Temporary fix pending
-        // decision on UTF8-based string implementation.
-        // Move toString() call outside loop.
-        String toString = toString();
+        if(_rsep.isNil()) {
+            block.yield(tc, this);
+            return this;
+        }
+        
+        RubyString rsep = stringValue(_rsep);
+        ByteList rsepValue = rsep.value;
+        byte[] strBytes = value.bytes;
 
-        if (pat.search(toString, this, start) != -1) {
-            RubyMatchData md = (RubyMatchData) tc.getCurrentFrame().getBackRef();
-            md.use();
+        rslen = rsepValue.realSize;
+        
+        if(rslen == 0) {
+            newline = '\n';
+        } else {
+            newline = rsepValue.bytes[rsepValue.begin + rslen-1];
+        }
 
-            block.yield(tc, md.group(0));
-            start = md.end(0);
-            while (md.find()) {
-                block.yield(tc, md.group(0));
-                start = md.end(0);
+        s = p;
+        p+=rslen;
+
+        for(; p < pend; p++) {
+            if(rslen == 0 && strBytes[p] == '\n') {
+                if(strBytes[++p] != '\n') {
+                    continue;
+                }
+                while(strBytes[p] == '\n') {
+                    p++;
+                }
+            }
+            if(ptr<p && strBytes[p-1] == newline &&
+               (rslen <= 1 || 
+                ByteList.memcmp(rsepValue.bytes, rsepValue.begin, rslen, strBytes, p-rslen, rslen) == 0)) {
+                line = RubyString.newStringShared(getRuntime(), getMetaClass(), this.value.makeShared(s, p-s));
+                line.infectBy(this);
+                block.yield(tc, line);
+                modifyCheck(strBytes,len);
+                s = p;
             }
         }
-        if (start < strLen) {
-            block.yield(tc, substr(start, strLen - start));
+
+        if(s != pend) {
+            if(p > pend) {
+                p = pend;
+            }
+            line = RubyString.newStringShared(getRuntime(), getMetaClass(), this.value.makeShared(s, p-s));
+            line.infectBy(this);
+            block.yield(tc, line);
         }
+
         return this;
     }
 
