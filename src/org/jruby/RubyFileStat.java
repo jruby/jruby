@@ -99,7 +99,6 @@ public class RubyFileStat extends RubyObject {
         fileStatClass.defineMethod("size?", callbackFactory.getFastMethod("not_implemented"));
         fileStatClass.defineMethod("socket?", callbackFactory.getFastMethod("not_implemented"));
         fileStatClass.defineMethod("sticky?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("uid", callbackFactory.getFastMethod("not_implemented"));
         fileStatClass.defineMethod("writable_real?", callbackFactory.getFastMethod("not_implemented"));
         fileStatClass.defineMethod("zero?", callbackFactory.getFastMethod("not_implemented"));
         
@@ -180,6 +179,12 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "ino")
     public IRubyObject ino() {
         return getRuntime().newFixnum(0);
+    }
+    
+    // Limitation: We have no pure-java way of getting uid. RubyZip needs this defined to work.
+    @JRubyMethod(name = "uid")
+    public IRubyObject uid() {
+        return getRuntime().newFixnum(-1);
     }
     
     @JRubyMethod(name = "mode")
