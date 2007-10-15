@@ -43,14 +43,14 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyIPSocket extends RubyBasicSocket {
     static void createIPSocket(Ruby runtime) {
-        RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.getClass("BasicSocket"), IPSOCKET_ALLOCATOR);
+        RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.fastGetClass("BasicSocket"), IPSOCKET_ALLOCATOR);
         CallbackFactory cfact = runtime.callbackFactory(RubyIPSocket.class);
 
         rb_cIPSocket.defineFastMethod("addr", cfact.getFastMethod("addr"));
         rb_cIPSocket.defineFastMethod("peeraddr", cfact.getFastMethod("peeraddr"));
         rb_cIPSocket.getMetaClass().defineFastMethod("getaddress", cfact.getFastSingletonMethod("getaddress", IRubyObject.class));
 
-        runtime.getObject().setConstant("IPsocket",rb_cIPSocket);
+        runtime.getObject().fastSetConstant("IPsocket",rb_cIPSocket);
     }
     
     private static ObjectAllocator IPSOCKET_ALLOCATOR = new ObjectAllocator() {
@@ -64,7 +64,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     }
 
     protected static RuntimeException sockerr(IRubyObject recv, String msg) {
-        return new RaiseException(recv.getRuntime(), recv.getRuntime().getClass("SocketError"), msg, true);
+        return new RaiseException(recv.getRuntime(), recv.getRuntime().fastGetClass("SocketError"), msg, true);
     }
 
     private IRubyObject addrFor(InetSocketAddress addr) {

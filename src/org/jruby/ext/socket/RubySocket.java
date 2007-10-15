@@ -52,7 +52,7 @@ import org.jruby.util.ByteList;
 public class RubySocket extends RubyBasicSocket {
     public static class Service implements Library {
         public void load(final Ruby runtime) throws IOException {
-            runtime.defineClass("SocketError",runtime.getClass("StandardError"), runtime.getClass("StandardError").getAllocator());
+            runtime.defineClass("SocketError",runtime.fastGetClass("StandardError"), runtime.fastGetClass("StandardError").getAllocator());
             RubyBasicSocket.createBasicSocket(runtime);
             RubySocket.createSocket(runtime);
             RubyIPSocket.createIPSocket(runtime);
@@ -69,49 +69,49 @@ public class RubySocket extends RubyBasicSocket {
     };
 
     static void createSocket(Ruby runtime) {
-        RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.getClass("BasicSocket"), SOCKET_ALLOCATOR);
+        RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.fastGetClass("BasicSocket"), SOCKET_ALLOCATOR);
         CallbackFactory cfact = runtime.callbackFactory(RubySocket.class);
         
         RubyModule rb_mConstants = rb_cSocket.defineModuleUnder("Constants");
         // we don't have to define any that we don't support; see socket.c
         
-        rb_mConstants.setConstant("SOCK_STREAM", runtime.newFixnum(1));
-        rb_mConstants.setConstant("SOCK_DGRAM", runtime.newFixnum(2));
-        rb_mConstants.setConstant("PF_UNSPEC", runtime.newFixnum(0));
-        rb_mConstants.setConstant("AF_UNSPEC", runtime.newFixnum(0));
-        rb_mConstants.setConstant("PF_INET", runtime.newFixnum(2));
-        rb_mConstants.setConstant("AF_INET", runtime.newFixnum(2));
+        rb_mConstants.fastSetConstant("SOCK_STREAM", runtime.newFixnum(1));
+        rb_mConstants.fastSetConstant("SOCK_DGRAM", runtime.newFixnum(2));
+        rb_mConstants.fastSetConstant("PF_UNSPEC", runtime.newFixnum(0));
+        rb_mConstants.fastSetConstant("AF_UNSPEC", runtime.newFixnum(0));
+        rb_mConstants.fastSetConstant("PF_INET", runtime.newFixnum(2));
+        rb_mConstants.fastSetConstant("AF_INET", runtime.newFixnum(2));
         // mandatory constants we haven't implemented
-        rb_mConstants.setConstant("MSG_OOB", runtime.newFixnum(0x01));
-        rb_mConstants.setConstant("SOL_SOCKET", runtime.newFixnum(1));
-        rb_mConstants.setConstant("SOL_IP", runtime.newFixnum(0));
-        rb_mConstants.setConstant("SOL_TCP", runtime.newFixnum(6));
-        rb_mConstants.setConstant("SOL_UDP", runtime.newFixnum(17));
-        rb_mConstants.setConstant("IPPROTO_IP", runtime.newFixnum(0));
-        rb_mConstants.setConstant("IPPROTO_ICMP", runtime.newFixnum(1));
-        rb_mConstants.setConstant("IPPROTO_TCP", runtime.newFixnum(6));
-        rb_mConstants.setConstant("IPPROTO_UDP", runtime.newFixnum(17));
+        rb_mConstants.fastSetConstant("MSG_OOB", runtime.newFixnum(0x01));
+        rb_mConstants.fastSetConstant("SOL_SOCKET", runtime.newFixnum(1));
+        rb_mConstants.fastSetConstant("SOL_IP", runtime.newFixnum(0));
+        rb_mConstants.fastSetConstant("SOL_TCP", runtime.newFixnum(6));
+        rb_mConstants.fastSetConstant("SOL_UDP", runtime.newFixnum(17));
+        rb_mConstants.fastSetConstant("IPPROTO_IP", runtime.newFixnum(0));
+        rb_mConstants.fastSetConstant("IPPROTO_ICMP", runtime.newFixnum(1));
+        rb_mConstants.fastSetConstant("IPPROTO_TCP", runtime.newFixnum(6));
+        rb_mConstants.fastSetConstant("IPPROTO_UDP", runtime.newFixnum(17));
         //  IPPROTO_RAW = 255
-        rb_mConstants.setConstant("INADDR_ANY", runtime.newFixnum(0x00000000));
-        rb_mConstants.setConstant("INADDR_BROADCAST", runtime.newFixnum(0xffffffff));
-        rb_mConstants.setConstant("INADDR_LOOPBACK", runtime.newFixnum(0x7f000001));
-        rb_mConstants.setConstant("INADDR_UNSPEC_GROUP", runtime.newFixnum(0xe0000000));
-        rb_mConstants.setConstant("INADDR_ALLHOSTS_GROUP", runtime.newFixnum(0xe0000001));
-        rb_mConstants.setConstant("INADDR_MAX_LOCAL_GROUP", runtime.newFixnum(0xe00000ff));
-        rb_mConstants.setConstant("INADDR_NONE", runtime.newFixnum(0xffffffff));
-        rb_mConstants.setConstant("SO_REUSEADDR", runtime.newFixnum(2));
-        rb_mConstants.setConstant("SHUT_RD", runtime.newFixnum(0));
-        rb_mConstants.setConstant("SHUT_WR", runtime.newFixnum(1));
-        rb_mConstants.setConstant("SHUT_RDWR", runtime.newFixnum(2));
+        rb_mConstants.fastSetConstant("INADDR_ANY", runtime.newFixnum(0x00000000));
+        rb_mConstants.fastSetConstant("INADDR_BROADCAST", runtime.newFixnum(0xffffffff));
+        rb_mConstants.fastSetConstant("INADDR_LOOPBACK", runtime.newFixnum(0x7f000001));
+        rb_mConstants.fastSetConstant("INADDR_UNSPEC_GROUP", runtime.newFixnum(0xe0000000));
+        rb_mConstants.fastSetConstant("INADDR_ALLHOSTS_GROUP", runtime.newFixnum(0xe0000001));
+        rb_mConstants.fastSetConstant("INADDR_MAX_LOCAL_GROUP", runtime.newFixnum(0xe00000ff));
+        rb_mConstants.fastSetConstant("INADDR_NONE", runtime.newFixnum(0xffffffff));
+        rb_mConstants.fastSetConstant("SO_REUSEADDR", runtime.newFixnum(2));
+        rb_mConstants.fastSetConstant("SHUT_RD", runtime.newFixnum(0));
+        rb_mConstants.fastSetConstant("SHUT_WR", runtime.newFixnum(1));
+        rb_mConstants.fastSetConstant("SHUT_RDWR", runtime.newFixnum(2));
     
         // constants webrick crashes without
-        rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(1));
+        rb_mConstants.fastSetConstant("AI_PASSIVE", runtime.newFixnum(1));
 
         // constants Rails > 1.1.4 ActiveRecord's default mysql adapter dies without during scaffold generation
-        rb_mConstants.setConstant("SO_KEEPALIVE", runtime.newFixnum(9));
+        rb_mConstants.fastSetConstant("SO_KEEPALIVE", runtime.newFixnum(9));
     
         // drb needs defined
-        rb_mConstants.setConstant("TCP_NODELAY", runtime.newFixnum(1));
+        rb_mConstants.fastSetConstant("TCP_NODELAY", runtime.newFixnum(1));
         
         rb_cSocket.includeModule(rb_mConstants);
 
@@ -127,7 +127,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private static RuntimeException sockerr(IRubyObject recv, String msg) {
-        return new RaiseException(recv.getRuntime(), recv.getRuntime().getClass("SocketError"), null, true);
+        return new RaiseException(recv.getRuntime(), recv.getRuntime().fastGetClass("SocketError"), null, true);
     }
 
     public static IRubyObject gethostname(IRubyObject recv) {

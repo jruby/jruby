@@ -84,7 +84,7 @@ public class RubyEnumerator extends RubyObject {
         newArgs[0] = self;
         System.arraycopy(args, 0, newArgs, 1, args.length);
 
-        return self.getRuntime().getEnumerable().getConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", newArgs);
+        return self.getRuntime().getEnumerable().fastGetConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", newArgs);
     }
 
     private RubyEnumerator(Ruby runtime, RubyClass type) {
@@ -118,7 +118,7 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod(name = "enum_with_index")
     public static IRubyObject each_with_index(IRubyObject self) {
-        return self.getRuntime().getEnumerable().getConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
+        return self.getRuntime().getEnumerable().fastGetConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
                                new IRubyObject[] { self, self.getRuntime().newSymbol("each_with_index") });
     }
 
@@ -171,13 +171,13 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod(name = "enum_slice", required = 1)
     public static IRubyObject enum_slice(IRubyObject self, IRubyObject arg) {
-        return self.getRuntime().getEnumerable().getConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
+        return self.getRuntime().getEnumerable().fastGetConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
                                      new IRubyObject[] { self, self.getRuntime().newSymbol("each_slice"), arg });
     }
 
     @JRubyMethod(name = "enum_cons", required = 1)
     public static IRubyObject enum_cons(IRubyObject self, IRubyObject arg) {
-        return self.getRuntime().getEnumerable().getConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
+        return self.getRuntime().getEnumerable().fastGetConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
                                new IRubyObject[] { self, self.getRuntime().newSymbol("each_cons"), arg });
     }
 }

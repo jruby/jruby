@@ -106,12 +106,12 @@ public class RubyStruct extends RubyObject {
         return ClassIndex.STRUCT;
     }
     
-    private static IRubyObject getInstanceVariable(RubyClass type, String name) {
+    private static IRubyObject getInternalVariable(RubyClass type, String internedName) {
         RubyClass structClass = type.getRuntime().getStructClass();
+        IRubyObject variable;
 
         while (type != null && type != structClass) {
-            IRubyObject variable = type.getInstanceVariable(name);
-            if (variable != null) {
+            if ((variable = type.fastGetInternalVariable(internedName)) != null) {
                 return variable;
             }
 
@@ -147,7 +147,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private IRubyObject setByName(String name, IRubyObject value) {
-        RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
+        RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
         assert !member.isNil() : "uninitialized struct";
 
@@ -163,7 +163,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private IRubyObject getByName(String name) {
-        RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
+        RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
         assert !member.isNil() : "uninitialized struct";
 
@@ -226,8 +226,8 @@ public class RubyStruct extends RubyObject {
 
         newStruct.index = ClassIndex.STRUCT;
         
-        newStruct.setInstanceVariable("__size__", member.length());
-        newStruct.setInstanceVariable("__member__", member);
+        newStruct.fastSetInternalVariable("__size__", member.length());
+        newStruct.fastSetInternalVariable("__member__", member);
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyStruct.class);
         newStruct.getSingletonClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newStruct"));
@@ -258,7 +258,7 @@ public class RubyStruct extends RubyObject {
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyStruct struct = new RubyStruct(recv.getRuntime(), (RubyClass) recv);
 
-        int size = RubyNumeric.fix2int(getInstanceVariable((RubyClass) recv, "__size__"));
+        int size = RubyNumeric.fix2int(getInternalVariable((RubyClass) recv, "__size__"));
 
         struct.values = new IRubyObject[size];
 
@@ -270,7 +270,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         modify();
 
-        int size = RubyNumeric.fix2int(getInstanceVariable(getMetaClass(), "__size__"));
+        int size = RubyNumeric.fix2int(getInternalVariable(getMetaClass(), "__size__"));
 
         if (args.length > size) {
             throw getRuntime().newArgumentError("struct size differs (" + args.length +" for " + size + ")");
@@ -288,7 +288,7 @@ public class RubyStruct extends RubyObject {
     }
     
     public static RubyArray members(IRubyObject recv, Block block) {
-        RubyArray member = (RubyArray) getInstanceVariable((RubyClass) recv, "__member__");
+        RubyArray member = (RubyArray) getInternalVariable((RubyClass) recv, "__member__");
 
         assert !member.isNil() : "uninitialized struct";
 
@@ -323,7 +323,7 @@ public class RubyStruct extends RubyObject {
             name = name.substring(0, name.length() - 1);
         }
 
-        RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
+        RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
         assert !member.isNil() : "uninitialized struct";
 
@@ -345,7 +345,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject get(Block block) {
         String name = getRuntime().getCurrentContext().getFrameName();
 
-        RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
+        RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
         assert !member.isNil() : "uninitialized struct";
 
@@ -398,7 +398,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public IRubyObject inspect() {
-        RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
+        RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
         assert !member.isNil() : "uninitialized struct";
 
@@ -438,7 +438,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public IRubyObject each_pair(Block block) {
-        RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
+        RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
         assert !member.isNil() : "uninitialized struct";
 
@@ -522,7 +522,7 @@ public class RubyStruct extends RubyObject {
     public static void marshalTo(RubyStruct struct, MarshalStream output) throws java.io.IOException {
         output.dumpDefaultObjectHeader('S', struct.getMetaClass());
 
-        List members = ((RubyArray) getInstanceVariable(struct.classOf(), "__member__")).getList();
+        List members = ((RubyArray) getInternalVariable(struct.classOf(), "__member__")).getList();
         output.writeInt(members.size());
 
         for (int i = 0; i < members.size(); i++) {

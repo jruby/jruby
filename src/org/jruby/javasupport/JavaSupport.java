@@ -203,70 +203,70 @@ public class JavaSupport {
     
     public RubyModule getJavaModule() {
         if (javaModule == null) {
-            javaModule = runtime.getModule("Java");
+            javaModule = runtime.fastGetModule("Java");
         }
         return javaModule;
     }
     
     public RubyModule getJavaUtilitiesModule() {
         if (javaUtilitiesModule == null) {
-            javaUtilitiesModule = runtime.getModule("JavaUtilities");
+            javaUtilitiesModule = runtime.fastGetModule("JavaUtilities");
         }
         return javaUtilitiesModule;
     }
     
     public RubyClass getJavaObjectClass() {
         if (javaObjectClass == null) {
-            javaObjectClass = getJavaModule().getClass("JavaObject");
+            javaObjectClass = getJavaModule().fastGetClass("JavaObject");
         }
         return javaObjectClass;
     }
 
     public RubyClass getJavaArrayClass() {
         if (javaArrayClass == null) {
-            javaArrayClass = getJavaModule().getClass("JavaArray");
+            javaArrayClass = getJavaModule().fastGetClass("JavaArray");
         }
         return javaArrayClass;
     }
     
     public RubyClass getJavaClassClass() {
         if(javaClassClass == null) {
-            javaClassClass = getJavaModule().getClass("JavaClass");
+            javaClassClass = getJavaModule().fastGetClass("JavaClass");
         }
         return javaClassClass;
     }
     
     public RubyModule getJavaInterfaceTemplate() {
         if (javaInterfaceTemplate == null) {
-            javaInterfaceTemplate = runtime.getModule("JavaInterfaceTemplate");
+            javaInterfaceTemplate = runtime.fastGetModule("JavaInterfaceTemplate");
         }
         return javaInterfaceTemplate;
     }
     
     public RubyModule getPackageModuleTemplate() {
         if (packageModuleTemplate == null) {
-            packageModuleTemplate = runtime.getModule("JavaPackageModuleTemplate");
+            packageModuleTemplate = runtime.fastGetModule("JavaPackageModuleTemplate");
         }
         return packageModuleTemplate;
     }
     
     public RubyClass getJavaProxyClass() {
         if (javaProxyClass == null) {
-            javaProxyClass = runtime.getClass("JavaProxy");
+            javaProxyClass = runtime.fastGetClass("JavaProxy");
         }
         return javaProxyClass;
     }
     
     public RubyClass getConcreteProxyClass() {
         if (concreteProxyClass == null) {
-            concreteProxyClass = runtime.getClass("ConcreteJavaProxy");
+            concreteProxyClass = runtime.fastGetClass("ConcreteJavaProxy");
         }
         return concreteProxyClass;
     }
     
     public RubyClass getArrayProxyClass() {
         if (arrayProxyClass == null) {
-            arrayProxyClass = runtime.getClass("ArrayJavaProxy");
+            arrayProxyClass = runtime.fastGetClass("ArrayJavaProxy");
         }
         return arrayProxyClass;
     }

@@ -1,12 +1,14 @@
 package org.jruby;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.Variable;
 
 public class RubyUndef implements IRubyObject {
 
@@ -184,10 +186,12 @@ public class RubyUndef implements IRubyObject {
         return null;
     }
 
+    @Deprecated
     public Map getInstanceVariables() {
         return null;
     }
 
+    @Deprecated
     public Map getInstanceVariablesSnapshot() {
         return null;
     }
@@ -228,6 +232,7 @@ public class RubyUndef implements IRubyObject {
         return null;
     }
 
+    @Deprecated
     public Iterator instanceVariableNames() {
         return null;
     }
@@ -279,10 +284,12 @@ public class RubyUndef implements IRubyObject {
         return false;
     }
 
+    @Deprecated
     public Map safeGetInstanceVariables() {
         return null;
     }
 
+    @Deprecated
     public boolean safeHasInstanceVariables() {
         return false;
     }
@@ -294,6 +301,7 @@ public class RubyUndef implements IRubyObject {
         return null;
     }
 
+    @Deprecated
     public void setInstanceVariables(Map instanceVariables) {
     }
 
@@ -302,4 +310,87 @@ public class RubyUndef implements IRubyObject {
 
     public void setTaint(boolean b) {
     }
+
+    public boolean hasVariables() {
+        return false;
+    }
+    
+    public int getVariableCount() {
+        return 0;
+    }
+
+    public boolean hasInternalVariable(String name) {
+        return false;
+    }
+
+    public boolean fastHasInternalVariable(String name) {
+        return false;
+    }
+
+    public IRubyObject getInternalVariable(String name) {
+        return null;
+    }
+
+    public IRubyObject fastGetInternalVariable(String name) {
+        return null;
+    }
+
+    public void setInternalVariable(String name, IRubyObject value) {
+    }
+
+    public void fastSetInternalVariable(String name, IRubyObject value) {
+    }
+
+    public IRubyObject removeInternalVariable(String name) {
+        return null;
+    }
+    
+    public void syncVariables(List<Variable<IRubyObject>> attrs) {
+    }
+
+    public List<Variable<IRubyObject>> getVariableList() {
+        return null;
+    }
+
+    public List<Variable<IRubyObject>> getInternalVariableList() {
+        return null;
+    }
+
+    public List<String> getVariableNameList() {
+        return null;
+    }
+    
+    @Deprecated // born deprecated (transitional)
+    public Map getVariableMap() {
+        return null;
+    }
+    
+    public IRubyObject fastGetInstanceVariable(String name) {
+        return null;
+    }
+    
+    public boolean hasInstanceVariable(String name) {
+        return false;
+    }
+    
+    public boolean fastHasInstanceVariable(String name) {
+        return false;
+    }
+    
+    public IRubyObject fastSetInstanceVariable(String name, IRubyObject value) {
+        return null;
+    }
+    
+    public IRubyObject removeInstanceVariable(String name) {
+        return null;
+    }
+    
+    public List<Variable<IRubyObject>> getInstanceVariableList() {
+        return null;
+    }
+
+    public List<String> getInstanceVariableNameList() {
+        return null;
+    }
+    
 }

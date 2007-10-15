@@ -73,7 +73,7 @@ public class RubyZlib {
         CallbackFactory callbackFactory2 = runtime.callbackFactory(RubyGzipReader.class);
         gzreader.defineAnnotatedMethods(RubyGzipReader.class);
         
-        RubyClass standardError = runtime.getClass("StandardError");
+        RubyClass standardError = runtime.fastGetClass("StandardError");
         RubyClass zlibError = result.defineClassUnder("Error", standardError, standardError.getAllocator());
         gzreader.defineClassUnder("Error", zlibError, zlibError.getAllocator());
 
@@ -161,12 +161,12 @@ public class RubyZlib {
 
     @JRubyMethod(name = "zlib_version", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject zlib_version(IRubyObject recv) {
-        return ((RubyModule)recv).getConstant("ZLIB_VERSION");
+        return ((RubyModule)recv).fastGetConstant("ZLIB_VERSION");
     }
 
     @JRubyMethod(name = "version", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject version(IRubyObject recv) {
-        return ((RubyModule)recv).getConstant("VERSION");
+        return ((RubyModule)recv).fastGetConstant("VERSION");
     }
 
     @JRubyMethod(name = "crc32", optional = 2, module = true, visibility = Visibility.PRIVATE)
@@ -275,7 +275,7 @@ public class RubyZlib {
 
         @JRubyMethod(name = "data_type")
         public IRubyObject data_type() {
-            return getRuntime().getModule("Zlib").getConstant("UNKNOWN");
+            return getRuntime().fastGetModule("Zlib").fastGetConstant("UNKNOWN");
         }
 
         @JRubyMethod(name = "closed?")
@@ -725,7 +725,7 @@ public class RubyZlib {
                 this.io = new GZIPInputStream(new IOInputStream(io));
             } catch (IOException e) {
                 Ruby runtime = io.getRuntime();
-                RubyClass errorClass = runtime.getModule("Zlib").getClass("GzipReader").getClass("Error");
+                RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("GzipReader").fastGetClass("Error");
                 throw new RaiseException(RubyException.newException(runtime, errorClass, e.getMessage()));
             }
 
@@ -1043,7 +1043,7 @@ public class RubyZlib {
         
         @JRubyMethod(name = "puts", rest = true)
         public IRubyObject puts(IRubyObject[] args) throws IOException {
-            RubyStringIO sio = (RubyStringIO)getRuntime().getClass("StringIO").newInstance(new IRubyObject[0], Block.NULL_BLOCK);
+            RubyStringIO sio = (RubyStringIO)getRuntime().fastGetClass("StringIO").newInstance(new IRubyObject[0], Block.NULL_BLOCK);
             sio.puts(args);
             write(sio.string());
             

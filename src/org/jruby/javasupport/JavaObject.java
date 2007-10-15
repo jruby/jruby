@@ -136,7 +136,7 @@ public class JavaObject extends RubyObject {
 
     public IRubyObject op_equal(IRubyObject other) {
         if (!(other instanceof JavaObject)) {
-            other = other.getInstanceVariable("@java_object");
+            other = other.fastGetInstanceVariable("@java_object");
             if (!(other instanceof JavaObject)) {
                 return getRuntime().getFalse();
             }
@@ -152,7 +152,7 @@ public class JavaObject extends RubyObject {
     
     public IRubyObject same(IRubyObject other) {
         if (!(other instanceof JavaObject)) {
-            other = other.getInstanceVariable("@java_object");
+            other = other.fastGetInstanceVariable("@java_object");
             if (!(other instanceof JavaObject)) {
               return getRuntime().getFalse();
             }

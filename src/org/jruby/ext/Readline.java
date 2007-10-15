@@ -77,7 +77,7 @@ public class Readline {
         mReadline.defineMethod("completion_proc=",readlinecb.getFastSingletonMethod("s_set_completion_proc",IRubyObject.class));
         mReadline.module_function(new IRubyObject[]{runtime.newSymbol("completion_proc=")});
         IRubyObject hist = runtime.getObject().callMethod(runtime.getCurrentContext(), "new");
-        mReadline.setConstant("HISTORY",hist);
+        mReadline.fastSetConstant("HISTORY",hist);
         hist.getSingletonClass().includeModule(runtime.getEnumerable());
         hist.getSingletonClass().defineMethod("push",readlinecb.getFastOptSingletonMethod("s_push"));
         hist.getSingletonClass().defineMethod("pop",readlinecb.getFastSingletonMethod("s_pop"));

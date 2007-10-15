@@ -55,17 +55,17 @@ public class RubyLocalJumpError extends RubyException {
 
     public RubyLocalJumpError(Ruby runtime, RubyClass exceptionClass, String message, String reason, IRubyObject exitValue) {
         super(runtime, exceptionClass, message);
-        setInstanceVariable("reason", runtime.newSymbol(reason));
-        setInstanceVariable("exit_value", exitValue);
+        fastSetInternalVariable("reason", runtime.newSymbol(reason));
+        fastSetInternalVariable("exit_value", exitValue);
     }
 
     @JRubyMethod(name = "reason")
     public IRubyObject reason() {
-        return getInstanceVariable("reason");
+        return fastGetInternalVariable("reason");
     }
     
     @JRubyMethod(name = "exit_value")
     public IRubyObject exit_value() {
-        return getInstanceVariable("exit_value");
+        return fastGetInternalVariable("exit_value");
     }
 }

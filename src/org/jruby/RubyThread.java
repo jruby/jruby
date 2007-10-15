@@ -237,7 +237,7 @@ public class RubyThread extends RubyObject {
         super(runtime, type);
         this.threadService = runtime.getThreadService();
         // set to default thread group
-        RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getThreadGroup().getConstant("Default");
+        RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getThreadGroup().fastGetConstant("Default");
         defaultThreadGroup.add(this, Block.NULL_BLOCK);
         finalResult = runtime.getNil();
     }
@@ -551,7 +551,7 @@ public class RubyThread extends RubyObject {
         if(args.length == 0) {
             IRubyObject lastException = runtime.getGlobalVariables().get("$!");
             if(lastException.isNil()) {
-                return new RaiseException(runtime, runtime.getClass("RuntimeError"), "", false).getException();
+                return new RaiseException(runtime, runtime.fastGetClass("RuntimeError"), "", false).getException();
             } 
             return lastException;
         }
@@ -561,7 +561,7 @@ public class RubyThread extends RubyObject {
         
         if(args.length == 1) {
             if(args[0] instanceof RubyString) {
-                return runtime.getClass("RuntimeError").newInstance(args, block);
+                return runtime.fastGetClass("RuntimeError").newInstance(args, block);
             }
             
             if(!args[0].respondsTo("exception")) {
@@ -576,7 +576,7 @@ public class RubyThread extends RubyObject {
             exception = args[0].callMethod(context, "exception", args[1]);
         }
         
-        if (!exception.isKindOf(runtime.getClass("Exception"))) {
+        if (!exception.isKindOf(runtime.getException())) {
             return runtime.newTypeError("exception object expected").getException();
         }
         
@@ -687,8 +687,8 @@ public class RubyThread extends RubyObject {
             // FIXME: printError explodes on some nullpointer
             //getRuntime().getRuntime().printError(exception.getException());
         	// TODO: Doesn't SystemExit have its own method to make this less wordy..
-            RubyException re = RubyException.newException(getRuntime(), getRuntime().getClass("SystemExit"), exception.getMessage());
-            re.setInstanceVariable("status", getRuntime().newFixnum(1));
+            RubyException re = RubyException.newException(getRuntime(), getRuntime().fastGetClass("SystemExit"), exception.getMessage());
+            re.fastSetInternalVariable("status", getRuntime().newFixnum(1));
             threadService.getMainThread().raise(new IRubyObject[] {re}, Block.NULL_BLOCK);
             return;
         } else if (runtime.getDebug().isTrue()) {

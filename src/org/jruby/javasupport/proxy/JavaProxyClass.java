@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -12,6 +13,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -85,7 +87,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     /* package scope */
     JavaProxyClass(Class proxyClass) {
         super(getThreadLocalRuntime(), 
-                (RubyClass) getThreadLocalRuntime().getModule("Java").getClass("JavaProxyClass"));
+                (RubyClass) getThreadLocalRuntime().fastGetModule("Java").fastGetClass("JavaProxyClass"));
         
         this.proxyClass = proxyClass;
     }
@@ -198,8 +200,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         public ProxyMethodImpl(Ruby runtime, JavaProxyClass clazz, Method m,
                 Method sm) {
-            super(runtime, runtime.getModule("Java")
-                    .getClass("JavaProxyMethod"));
+            super(runtime, runtime.getJavaSupport().getJavaModule()
+                    .fastGetClass("JavaProxyMethod"));
             this.m = m;
             this.parameterTypes = m.getParameterTypes();
             this.sm = sm;
@@ -503,7 +505,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
     }
     
-    private static final HashSet EXCLUDE_MODULES = new HashSet();
+    private static final HashSet<String> EXCLUDE_MODULES = new HashSet<String>();
     static {
         EXCLUDE_MODULES.add("Kernel");
         EXCLUDE_MODULES.add("Java");
@@ -511,7 +513,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         EXCLUDE_MODULES.add("Enumerable");
     }
 
-    private static final HashSet EXCLUDE_METHODS = new HashSet();
+    private static final HashSet<String> EXCLUDE_METHODS = new HashSet<String>();
     static {
         EXCLUDE_METHODS.add("class");
         EXCLUDE_METHODS.add("finalize");
@@ -534,26 +536,25 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         // TODO: may want to exclude other common mixins?
 
         JavaClass javaClass = null;
-        Set names = new HashSet(); // need names ordered for key generation later
-        List interfaceList = new ArrayList();
+        Set<String> names = new HashSet<String>(); // need names ordered for key generation later
+        List<Class> interfaceList = new ArrayList<Class>();
 
-        List ancestors = clazz.getAncestorList();
+        List<IRubyObject> ancestors = clazz.getAncestorList();
         boolean skipRemainingClasses = false;
         for (Iterator iter = ancestors.iterator(); iter.hasNext(); ) {
             RubyModule ancestor = (RubyModule)iter.next();
             if (ancestor instanceof RubyClass) {
                 if (skipRemainingClasses) continue;
-                Map vars = ancestor.getInstanceVariables();
                 // we only collect methods and interfaces for 
                 // user-defined proxy classes.
-                if (!vars.containsKey("@java_proxy_class")) {
+                if (!ancestor.fastHasInstanceVariable("@java_proxy_class")) {
                     skipRemainingClasses = true;
                     continue;
                 }
 
                 // get JavaClass if this is the new proxy class; verify it
                 // matches if this is a superclass proxy.
-                IRubyObject var = (IRubyObject)vars.get("@java_class");
+                IRubyObject var = ancestor.fastGetInstanceVariable("@java_class");
                 if (var == null) {
                     throw runtime.newTypeError(
                             "no java_class defined for proxy (or ancestor): " + ancestor);
@@ -571,7 +572,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                             " (" + var + ")");
                 }
                 // get any included interfaces
-                var = (IRubyObject)vars.get("@java_interfaces");
+                var = ancestor.fastGetInstanceVariable("@java_interfaces");
                 if (var != null && !(var instanceof RubyNil)) {
                     if (!(var instanceof RubyArray)) {
                         throw runtime.newTypeError(
@@ -601,7 +602,10 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 // set this class's method names in var @__java_ovrd_methods if this
                 // is the new class; otherwise, get method names from there if this is
                 // a proxy superclass.
-                var = (IRubyObject)vars.get("@__java_ovrd_methods");
+                
+                // FIXME: shouldn't need @__java_ovrd_methods, just query locally defined methods.
+                
+                var = ancestor.fastGetInstanceVariable("@__java_ovrd_methods");
                 if (var == null) {
                     // lock in the overridden methods for the new class, and any as-yet
                     // uninstantiated ancestor class.
@@ -617,8 +621,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                             }
                         }
                     }
-                    // TODO: OK to just do a put here?
-                    ancestor.setInstanceVariable("@__java_ovrd_methods",methodNames);
+                    ancestor.fastSetInstanceVariable("@__java_ovrd_methods",methodNames);
                 } else {
                     if (!(var instanceof RubyArray)) {
                         throw runtime.newTypeError(
@@ -675,6 +678,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
     }
 
+
     public RubyObject superclass() {
         return JavaClass.get(getRuntime(), getSuperclass());
     }
@@ -694,7 +698,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     public static void createJavaProxyModule(Ruby runtime) {
         // TODO Auto-generated method stub
 
-        RubyModule javaProxyModule = runtime.getModule("Java");
+        RubyModule javaProxyModule = runtime.getJavaSupport().getJavaModule();
         JavaProxyClass.createJavaProxyClassClass(runtime, javaProxyModule);
         ProxyMethodImpl.createJavaProxyMethodClass(runtime, javaProxyModule);
         JavaProxyConstructor.createJavaProxyConstructorClass(runtime, javaProxyModule);

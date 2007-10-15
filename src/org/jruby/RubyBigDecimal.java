@@ -51,36 +51,36 @@ public class RubyBigDecimal extends RubyNumeric {
     public static RubyClass createBigDecimal(Ruby runtime) {
         RubyClass result = runtime.defineClass("BigDecimal",runtime.getNumeric(), BIGDECIMAL_ALLOCATOR);
 
-        result.setConstant("ROUND_DOWN",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_DOWN));
-        result.setConstant("SIGN_POSITIVE_INFINITE",RubyNumeric.int2fix(runtime,3));
-        result.setConstant("EXCEPTION_OVERFLOW",RubyNumeric.int2fix(runtime,1));
-        result.setConstant("SIGN_POSITIVE_ZERO",RubyNumeric.int2fix(runtime,1));
-        result.setConstant("EXCEPTION_ALL",RubyNumeric.int2fix(runtime,255));
-        result.setConstant("ROUND_CEILING",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_CEILING));
-        result.setConstant("ROUND_UP",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_UP));
-        result.setConstant("SIGN_NEGATIVE_FINITE",RubyNumeric.int2fix(runtime,-2));
-        result.setConstant("EXCEPTION_UNDERFLOW",RubyNumeric.int2fix(runtime, 4));
-        result.setConstant("SIGN_NaN",RubyNumeric.int2fix(runtime, 0));
-        result.setConstant("BASE",RubyNumeric.int2fix(runtime,10000));
-        result.setConstant("ROUND_HALF_DOWN",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_HALF_DOWN));
-        result.setConstant("ROUND_MODE",RubyNumeric.int2fix(runtime,256));
-        result.setConstant("SIGN_POSITIVE_FINITE",RubyNumeric.int2fix(runtime,2));
-        result.setConstant("EXCEPTION_INFINITY",RubyNumeric.int2fix(runtime,1));
-        result.setConstant("ROUND_HALF_EVEN",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_HALF_EVEN));
-        result.setConstant("ROUND_HALF_UP",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_HALF_UP));
-        result.setConstant("SIGN_NEGATIVE_INFINITE",RubyNumeric.int2fix(runtime,-3));
-        result.setConstant("EXCEPTION_ZERODIVIDE",RubyNumeric.int2fix(runtime,1));
-        result.setConstant("SIGN_NEGATIVE_ZERO",RubyNumeric.int2fix(runtime,-1));
-        result.setConstant("EXCEPTION_NaN",RubyNumeric.int2fix(runtime,2));
-        result.setConstant("ROUND_FLOOR",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_FLOOR));
+        result.fastSetConstant("ROUND_DOWN",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_DOWN));
+        result.fastSetConstant("SIGN_POSITIVE_INFINITE",RubyNumeric.int2fix(runtime,3));
+        result.fastSetConstant("EXCEPTION_OVERFLOW",RubyNumeric.int2fix(runtime,1));
+        result.fastSetConstant("SIGN_POSITIVE_ZERO",RubyNumeric.int2fix(runtime,1));
+        result.fastSetConstant("EXCEPTION_ALL",RubyNumeric.int2fix(runtime,255));
+        result.fastSetConstant("ROUND_CEILING",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_CEILING));
+        result.fastSetConstant("ROUND_UP",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_UP));
+        result.fastSetConstant("SIGN_NEGATIVE_FINITE",RubyNumeric.int2fix(runtime,-2));
+        result.fastSetConstant("EXCEPTION_UNDERFLOW",RubyNumeric.int2fix(runtime, 4));
+        result.fastSetConstant("SIGN_NaN",RubyNumeric.int2fix(runtime, 0));
+        result.fastSetConstant("BASE",RubyNumeric.int2fix(runtime,10000));
+        result.fastSetConstant("ROUND_HALF_DOWN",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_HALF_DOWN));
+        result.fastSetConstant("ROUND_MODE",RubyNumeric.int2fix(runtime,256));
+        result.fastSetConstant("SIGN_POSITIVE_FINITE",RubyNumeric.int2fix(runtime,2));
+        result.fastSetConstant("EXCEPTION_INFINITY",RubyNumeric.int2fix(runtime,1));
+        result.fastSetConstant("ROUND_HALF_EVEN",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_HALF_EVEN));
+        result.fastSetConstant("ROUND_HALF_UP",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_HALF_UP));
+        result.fastSetConstant("SIGN_NEGATIVE_INFINITE",RubyNumeric.int2fix(runtime,-3));
+        result.fastSetConstant("EXCEPTION_ZERODIVIDE",RubyNumeric.int2fix(runtime,1));
+        result.fastSetConstant("SIGN_NEGATIVE_ZERO",RubyNumeric.int2fix(runtime,-1));
+        result.fastSetConstant("EXCEPTION_NaN",RubyNumeric.int2fix(runtime,2));
+        result.fastSetConstant("ROUND_FLOOR",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_FLOOR));
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBigDecimal.class);
 
         runtime.getKernel().defineModuleFunction("BigDecimal",callbackFactory.getOptSingletonMethod("newBigDecimal"));
 
-        result.setClassVar("VpPrecLimit", RubyFixnum.zero(runtime));
-        result.setClassVar("VpExceptionMode", RubyFixnum.zero(runtime));
-        result.setClassVar("VpRoundingMode", RubyFixnum.zero(runtime));
+        result.setInternalModuleVariable("vpPrecLimit", RubyFixnum.zero(runtime));
+        result.setInternalModuleVariable("vpExceptionMode", RubyFixnum.zero(runtime));
+        result.setInternalModuleVariable("vpRoundingMode", RubyFixnum.zero(runtime));
         
         result.defineAnnotatedMethods(RubyBigDecimal.class);
         result.dispatcher = callbackFactory.createDispatcher(result);
@@ -95,12 +95,12 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value) {
-        super(runtime, runtime.getClass("BigDecimal"));
+        super(runtime, runtime.fastGetClass("BigDecimal"));
         this.value = value;
     }
 
     public static RubyBigDecimal newBigDecimal(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return newInstance(recv.getRuntime().getClass("BigDecimal"), args);
+        return newInstance(recv.getRuntime().fastGetClass("BigDecimal"), args);
     }
 
     @JRubyMethod(name = "ver", meta = true)
@@ -119,85 +119,98 @@ public class RubyBigDecimal extends RubyNumeric {
         return recv.getRuntime().newFixnum(20);
     }
     
-    @JRubyMethod(name = "limit", required = 1, meta = true)
-    public static IRubyObject limit(IRubyObject recv, IRubyObject arg1) {
+    @JRubyMethod(name = "limit", optional = 1, meta = true)
+    public static IRubyObject limit(IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = recv.getRuntime();
         RubyModule c = (RubyModule)recv;
-        IRubyObject nCur = c.getClassVar("VpPrecLimit");
+        IRubyObject nCur = c.searchInternalModuleVariable("vpPrecLimit");
 
-        if (arg1.isNil()) {
-            return nCur;
+        if (args.length > 0) {
+            IRubyObject arg = args[0];
+            if (!arg.isNil()) {
+                if (!(arg instanceof RubyFixnum)) {
+                    throw runtime.newTypeError(arg, runtime.getFixnum());
+                }
+                if (0 > ((RubyFixnum)arg).getLongValue()) {
+                    throw runtime.newArgumentError("argument must be positive");
+                }
+                c.setInternalModuleVariable("vpPrecLimit", arg);
+            }
         }
-
-        c.setClassVar("VpPrecLimit",arg1);
 
         return nCur;
     }
 
     @JRubyMethod(name = "mode", required = 1, optional = 1, meta = true)
     public static IRubyObject mode(IRubyObject recv, IRubyObject[] args) {
+        // FIXME: I doubt any of the constants referenced in this method
+        // are ever redefined -- should compare to the known values, rather
+        // than do an expensive constant lookup.
+        Ruby runtime = recv.getRuntime();
+        RubyClass clazz = runtime.fastGetClass("BigDecimal");
         RubyModule c = (RubyModule)recv;
         
-        args = Arity.scanArgs(recv.getRuntime(), args, 1, 1);
+        args = Arity.scanArgs(runtime, args, 1, 1);
         
         IRubyObject mode = args[0];
         IRubyObject value = args[1];
         
         if (!(mode instanceof RubyFixnum)) {
-            throw recv.getRuntime().newTypeError("wrong argument type " + mode.getMetaClass() + " (expected Fixnum)");
+            throw runtime.newTypeError("wrong argument type " + mode.getMetaClass() + " (expected Fixnum)");
         }
         
         long longMode = ((RubyFixnum)mode).getLongValue();
-        long EXCEPTION_ALL = ((RubyFixnum)recv.getRuntime().getModule("BigDecimal").getConstant("EXCEPTION_ALL")).getLongValue();
+        long EXCEPTION_ALL = ((RubyFixnum)clazz.fastGetConstant("EXCEPTION_ALL")).getLongValue();
         if ((longMode & EXCEPTION_ALL) != 0) {     
             if (value.isNil()) {
-                return c.getClassVar("VpExceptionMode");
+                return c.searchInternalModuleVariable("vpExceptionMode");
             }
             if (!(value.isNil()) && !(value instanceof RubyBoolean)) {
-                throw recv.getRuntime().newTypeError("second argument must be true or false");
+                throw runtime.newTypeError("second argument must be true or false");
             }
 
-            RubyFixnum currentExceptionMode = (RubyFixnum)c.getClassVar("VpExceptionMode");
-            RubyFixnum newExceptionMode = new RubyFixnum(recv.getRuntime(), currentExceptionMode.getLongValue());
+            RubyFixnum currentExceptionMode = (RubyFixnum)c.searchInternalModuleVariable("vpExceptionMode");
+            RubyFixnum newExceptionMode = new RubyFixnum(runtime, currentExceptionMode.getLongValue());
             
-            RubyFixnum EXCEPTION_INFINITY = (RubyFixnum)recv.getRuntime().getModule("BigDecimal").getConstant("EXCEPTION_INFINITY");
+            RubyFixnum EXCEPTION_INFINITY = (RubyFixnum)clazz.fastGetConstant("EXCEPTION_INFINITY");
             if ((longMode & EXCEPTION_INFINITY.getLongValue()) != 0) {
                 newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced("|", EXCEPTION_INFINITY)
-                        : (RubyFixnum)currentExceptionMode.callCoerced("&", new RubyFixnum(recv.getRuntime(), ~(EXCEPTION_INFINITY).getLongValue()));
+                        : (RubyFixnum)currentExceptionMode.callCoerced("&", new RubyFixnum(runtime, ~(EXCEPTION_INFINITY).getLongValue()));
             }
             
-            RubyFixnum EXCEPTION_NaN = (RubyFixnum)recv.getRuntime().getModule("BigDecimal").getConstant("EXCEPTION_NaN");
+            RubyFixnum EXCEPTION_NaN = (RubyFixnum)clazz.fastGetConstant("EXCEPTION_NaN");
             if ((longMode & EXCEPTION_NaN.getLongValue()) != 0) {
                 newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced("|", EXCEPTION_NaN)
-                        : (RubyFixnum)currentExceptionMode.callCoerced("&", new RubyFixnum(recv.getRuntime(), ~(EXCEPTION_NaN).getLongValue()));
+                        : (RubyFixnum)currentExceptionMode.callCoerced("&", new RubyFixnum(runtime, ~(EXCEPTION_NaN).getLongValue()));
             }
-            c.setClassVar("VpExceptionMode", newExceptionMode);
+            c.setInternalModuleVariable("vpExceptionMode", newExceptionMode);
             return newExceptionMode;
         }
         
-        long ROUND_MODE = ((RubyFixnum)recv.getRuntime().getModule("BigDecimal").getConstant("ROUND_MODE")).getLongValue();
+        long ROUND_MODE = ((RubyFixnum)clazz.fastGetConstant("ROUND_MODE")).getLongValue();
         if (longMode == ROUND_MODE) {
             if (value.isNil()) {
-                return c.getClassVar("VpRoundingMode");
+                return c.searchInternalModuleVariable("vpRoundingMode");
             }
             if (!(value instanceof RubyFixnum)) {
-                throw recv.getRuntime().newTypeError("wrong argument type " + mode.getMetaClass() + " (expected Fixnum)");
+                throw runtime.newTypeError("wrong argument type " + mode.getMetaClass() + " (expected Fixnum)");
             }
             
             RubyFixnum roundingMode = (RubyFixnum)value;
-            if (roundingMode == recv.getRuntime().getModule("BigDecimal").getConstant("ROUND_UP") ||
-                    roundingMode == recv.getRuntime().getModule("BigDecimal").getConstant("ROUND_DOWN") ||
-                    roundingMode == recv.getRuntime().getModule("BigDecimal").getConstant("ROUND_FLOOR") ||
-                    roundingMode == recv.getRuntime().getModule("BigDecimal").getConstant("ROUND_CEILING") ||
-                    roundingMode == recv.getRuntime().getModule("BigDecimal").getConstant("ROUND_HALF_UP") ||
-                    roundingMode == recv.getRuntime().getModule("BigDecimal").getConstant("ROUND_HALF_DOWN") ||
-                    roundingMode == recv.getRuntime().getModule("BigDecimal").getConstant("ROUND_HALF_EVEN")) {
-                c.setClassVar("VpRoundingMode", roundingMode);
+            if (roundingMode == clazz.fastGetConstant("ROUND_UP") ||
+                    roundingMode == clazz.fastGetConstant("ROUND_DOWN") ||
+                    roundingMode == clazz.fastGetConstant("ROUND_FLOOR") ||
+                    roundingMode == clazz.fastGetConstant("ROUND_CEILING") ||
+                    roundingMode == clazz.fastGetConstant("ROUND_HALF_UP") ||
+                    roundingMode == clazz.fastGetConstant("ROUND_HALF_DOWN") ||
+                    roundingMode == clazz.fastGetConstant("ROUND_HALF_EVEN")) {
+                c.setInternalModuleVariable("vpRoundingMode", roundingMode);
             } else {
-                throw recv.getRuntime().newTypeError("invalid rounding mode");
+                throw runtime.newTypeError("invalid rounding mode");
             }
-            return c.getClassVar("VpRoundingMode");
+            return c.searchInternalModuleVariable("vpRoundingMode");
         }
-        throw recv.getRuntime().newTypeError("first argument for BigDecimal#mode invalid");
+        throw runtime.newTypeError("first argument for BigDecimal#mode invalid");
     }
 
     private RubyBigDecimal getVpValue(IRubyObject v, boolean must) {
@@ -205,7 +218,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return (RubyBigDecimal)v;
         } else if(v instanceof RubyFixnum || v instanceof RubyBignum) {
             String s = v.toString();
-            return newInstance(getRuntime().getClass("BigDecimal"),new IRubyObject[]{getRuntime().newString(s)});
+            return newInstance(getRuntime().fastGetClass("BigDecimal"),new IRubyObject[]{getRuntime().newString(s)});
         }
         if(must) {
             String err;
@@ -239,7 +252,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private RubyBigDecimal setResult(int scale) {
-        int prec = RubyFixnum.fix2int(getRuntime().getClass("BigDecimal").getClassVar("VpPrecLimit"));
+        int prec = RubyFixnum.fix2int(getRuntime().fastGetClass("BigDecimal").searchInternalModuleVariable("vpPrecLimit"));
         int prec2 = Math.max(scale,prec);
         if(prec2 > 0 && this.value.scale() > (prec2-exp())) {
             this.value = this.value.setScale(prec2-exp(),BigDecimal.ROUND_HALF_UP);

@@ -94,6 +94,7 @@ public class RubyNil extends RubyObject {
         return metaClass;
     }
 
+    @Deprecated
     public boolean safeHasInstanceVariables() {
         return false;
     }

@@ -53,12 +53,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyTCPServer extends RubyTCPSocket {
     static void createTCPServer(Ruby runtime) {
-        RubyClass rb_cTCPServer = runtime.defineClass("TCPServer", runtime.getClass("TCPSocket"), TCPSERVER_ALLOCATOR);
+        RubyClass rb_cTCPServer = runtime.defineClass("TCPServer", runtime.fastGetClass("TCPSocket"), TCPSERVER_ALLOCATOR);
         CallbackFactory cfact = runtime.callbackFactory(RubyTCPServer.class);
 
         rb_cTCPServer.defineAnnotatedMethods(RubyTCPServer.class);
         
-        runtime.getObject().setConstant("TCPserver",rb_cTCPServer);
+        runtime.getObject().fastSetConstant("TCPserver",rb_cTCPServer);
     }
 
     private static ObjectAllocator TCPSERVER_ALLOCATOR = new ObjectAllocator() {
@@ -100,7 +100,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
     @JRubyMethod(name = "accept")
     public IRubyObject accept() {
-        RubyTCPSocket socket = new RubyTCPSocket(getRuntime(),getRuntime().getClass("TCPSocket"));
+        RubyTCPSocket socket = new RubyTCPSocket(getRuntime(),getRuntime().fastGetClass("TCPSocket"));
         try {
             socket.setChannel(ssc.accept());
         } catch(IOException e) {

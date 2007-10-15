@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -18,6 +19,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -452,30 +454,30 @@ public final class ThreadContext {
         return parentModule.getNonIncludedClass();
     }
     
-    public boolean getConstantDefined(String name) {
+    public boolean getConstantDefined(String internedName) {
         IRubyObject result;
         IRubyObject undef = runtime.getUndef();
         
         // flipped from while to do to search current class first
         for (StaticScope scope = getCurrentScope().getStaticScope(); scope != null; scope = scope.getPreviousCRefScope()) {
             RubyModule module = scope.getModule();
-            if ((result = module.getInstanceVariable(name)) != null) {
+            if ((result = module.fastFetchConstant(internedName)) != null) {
                 if (result != undef) return true;
-                return runtime.getLoadService().autoloadFor(module.getName() + "::" + name) != null;
+                return runtime.getLoadService().autoloadFor(module.getName() + "::" + internedName) != null;
             }
         }
         
-        return getCurrentScope().getStaticScope().getModule().isConstantDefined(name);
+        return getCurrentScope().getStaticScope().getModule().fastIsConstantDefined(internedName);
     }
     
     /**
      * Used by the evaluator and the compiler to look up a constant by name
      */
-    public IRubyObject getConstant(String name) {
+    public IRubyObject getConstant(String internedName) {
         StaticScope scope = getCurrentScope().getStaticScope();
         RubyClass object = runtime.getObject();
-        IRubyObject result = null;
         IRubyObject undef = runtime.getUndef();
+        IRubyObject result;
         
         // flipped from while to do to search current class first
         do {
@@ -483,44 +485,42 @@ public final class ThreadContext {
             
             // Not sure how this can happen
             //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
-            result = klass.getInstanceVariable(name);
-            if (result == undef) {
-                klass.removeInstanceVariable(name);
-                if (runtime.getLoadService().autoload(klass.getName() + "::" + name) == null) break;
+            if ((result = klass.fastFetchConstant(internedName)) != null) {
+                if (result != undef) {
+                    return result;
+                }
+                klass.deleteConstant(internedName);
+                if (runtime.getLoadService().autoload(klass.getName() + "::" + internedName) == null) break;
                 continue;
-            } else if (result != null) {
-                return result;
             }
-            scope = scope.getPreviousCRefScope();
-        } while (scope != null && scope.getModule() != object);
+        } while ((scope = scope.getPreviousCRefScope()) != null && scope.getModule() != object);
         
-        return getCurrentScope().getStaticScope().getModule().getConstant(name);
+        return getCurrentScope().getStaticScope().getModule().fastGetConstant(internedName);
     }
     
     /**
      * Used by the evaluator and the compiler to set a constant by name
      * This is for a null const decl
      */
-    public IRubyObject setConstantInCurrent(String name, IRubyObject result) {
-        RubyModule module = getCurrentScope().getStaticScope().getModule();
+    public IRubyObject setConstantInCurrent(String internedName, IRubyObject result) {
+        RubyModule module;
 
-        if (module == null) {
-            // TODO: wire into new exception handling mechanism
-            throw runtime.newTypeError("no class/module to define constant");
+        if ((module = getCurrentScope().getStaticScope().getModule()) != null) {
+            module.fastSetConstant(internedName, result);
+            return result;
         }
 
-        setConstantInModule(name, module, result);
-   
-        return result;
+        // TODO: wire into new exception handling mechanism
+        throw runtime.newTypeError("no class/module to define constant");
     }
     
     /**
      * Used by the evaluator and the compiler to set a constant by name.
      * This is for a Colon2 const decl
      */
-    public IRubyObject setConstantInModule(String name, RubyModule module, IRubyObject result) {
-        module.setConstant(name, result);
-   
+    public IRubyObject setConstantInModule(String internedName, RubyModule module, IRubyObject result) {
+        module.fastSetConstant(internedName, result);
+        
         return result;
     }
     
@@ -528,9 +528,9 @@ public final class ThreadContext {
      * Used by the evaluator and the compiler to set a constant by name
      * This is for a Colon2 const decl
      */
-    public IRubyObject setConstantInObject(String name, IRubyObject result) {
-        setConstantInModule(name, runtime.getObject(), result);
-   
+    public IRubyObject setConstantInObject(String internedName, IRubyObject result) {
+        runtime.getObject().fastSetConstant(internedName, result);
+        
         return result;
     }
     

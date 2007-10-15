@@ -541,7 +541,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void retrieveConstantFromModule(String name) {
             method.visitTypeInsn(CHECKCAST, cg.p(RubyModule.class));
             method.ldc(name);
-            method.invokevirtual(cg.p(RubyModule.class), "getConstantFrom", cg.sig(IRubyObject.class, cg.params(String.class)));
+            method.invokevirtual(cg.p(RubyModule.class), "fastGetConstantFrom", cg.sig(IRubyObject.class, cg.params(String.class)));
         }
 
         public void retrieveClassVariable(String name) {
@@ -550,7 +550,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadSelf();
             method.ldc(name);
 
-            invokeUtilityMethod("fetchClassVariable", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class)));
+            invokeUtilityMethod("fastFetchClassVariable", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class)));
         }
 
         public void assignClassVariable(String name) {
@@ -563,7 +563,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.ldc(name);
             method.swap();
 
-            invokeUtilityMethod("setClassVariable", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
+            invokeUtilityMethod("fastSetClassVariable", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
         }
 
         public void declareClassVariable(String name) {
@@ -576,7 +576,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.ldc(name);
             method.swap();
 
-            invokeUtilityMethod("declareClassVariable", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
+            invokeUtilityMethod("fastDeclareClassVariable", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
         }
 
         public void createNewFloat(double value) {
@@ -1229,7 +1229,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadRuntime();
             loadSelf();
             method.ldc(name);
-            invokeUtilityMethod("getInstanceVariable", cg.sig(IRubyObject.class, Ruby.class, IRubyObject.class, String.class));
+            invokeUtilityMethod("fastGetInstanceVariable", cg.sig(IRubyObject.class, Ruby.class, IRubyObject.class, String.class));
         }
 
         public void assignInstanceVariable(String name) {
@@ -1240,7 +1240,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.ldc(name);
             method.swap();
 
-            invokeIRubyObject("setInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
+            invokeIRubyObject("fastSetInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
         }
 
         public void retrieveGlobalVariable(String name) {
@@ -1798,10 +1798,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void isInstanceVariableDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch) {
             loadSelf();
             method.ldc(name);
-            method.invokeinterface(cg.p(IRubyObject.class), "getInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class)));
+            //method.invokeinterface(cg.p(IRubyObject.class), "getInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class)));
+            method.invokeinterface(cg.p(IRubyObject.class), "fastHasInstanceVariable", cg.sig(boolean.class, cg.params(String.class)));
             Label trueLabel = new Label();
             Label exitLabel = new Label();
-            method.ifnonnull(trueLabel);
+            //method.ifnonnull(trueLabel);
+            method.ifne(trueLabel);
             falseBranch.branch(this);
             method.go_to(exitLabel);
             method.label(trueLabel);
@@ -1811,7 +1813,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         public void isClassVarDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch){
             method.ldc(name);
-            method.invokevirtual(cg.p(RubyModule.class), "isClassVarDefined", cg.sig(boolean.class, cg.params(String.class)));
+            method.invokevirtual(cg.p(RubyModule.class), "fastIsClassVarDefined", cg.sig(boolean.class, cg.params(String.class)));
             Label trueLabel = new Label();
             Label exitLabel = new Label();
             method.ifne(trueLabel);
@@ -1881,7 +1883,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                         method.visitTypeInsn(CHECKCAST, cg.p(RubyModule.class));
                         method.dup(); //[C, C]
                         method.ldc(name); //[C, C, String]
-                        method.invokevirtual(cg.p(RubyModule.class), "getConstantAt", cg.sig(IRubyObject.class, cg.params(String.class))); //[C, null|C]
+                        method.invokevirtual(cg.p(RubyModule.class), "fastGetConstantAt", cg.sig(IRubyObject.class, cg.params(String.class))); //[C, null|C]
                         method.dup();
                         method.ifnull(nextJmpPop);
                         method.pop(); method.pop();
@@ -1961,7 +1963,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.visitTypeInsn(CHECKCAST, cg.p(RubyModule.class)); //[RubyModule]
             method.ldc(name); //[RubyModule, String]
             
-            method.invokevirtual(cg.p(RubyModule.class), "isClassVarDefined", cg.sig(boolean.class, cg.params(String.class))); //[boolean]
+            method.invokevirtual(cg.p(RubyModule.class), "fastIsClassVarDefined", cg.sig(boolean.class, cg.params(String.class))); //[boolean]
             method.ifeq((Label)gotoToken);
             method.go_to(successJmp);
             method.label(falsePopJmp);
@@ -1977,7 +1979,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         public void getInstanceVariable(String name) {
             method.ldc(name);
-            method.invokeinterface(cg.p(IRubyObject.class), "getInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class)));
+            method.invokeinterface(cg.p(IRubyObject.class), "fastGetInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class)));
         }
         
         public void getFrameName() {

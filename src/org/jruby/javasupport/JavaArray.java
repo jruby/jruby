@@ -50,7 +50,7 @@ public class JavaArray extends JavaObject {
     public static RubyClass createJavaArrayClass(Ruby runtime, RubyModule javaModule) {
         // FIXME: NOT_ALLOCATABLE_ALLOCATOR is probably not right here, since we might
         // eventually want JavaArray to be marshallable. JRUBY-414
-        return javaModule.defineClassUnder("JavaArray", javaModule.getClass("JavaObject"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        return javaModule.defineClassUnder("JavaArray", javaModule.fastGetClass("JavaObject"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
     }
 
     public RubyFixnum length() {

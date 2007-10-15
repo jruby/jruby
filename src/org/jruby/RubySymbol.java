@@ -52,9 +52,16 @@ public class RubySymbol extends RubyObject {
     private final String symbol;
     private final int id;
     
-    private RubySymbol(Ruby runtime, String symbol) {
+    /**
+     * 
+     * @param runtime
+     * @param internedSymbol the String value of the new Symbol. This <em>must</em>
+     *                       have been previously interned
+     */
+    private RubySymbol(Ruby runtime, String internedSymbol) {
         super(runtime, runtime.getSymbol(), false);
-        this.symbol = symbol;
+        // symbol string *must* be interned
+        this.symbol = internedSymbol;
 
         runtime.symbolLastId++;
         this.id = runtime.symbolLastId;
@@ -126,7 +133,7 @@ public class RubySymbol extends RubyObject {
 
             result = runtime.getSymbolTable().lookup(name);
             if (result == null) {
-                result = new RubySymbol(runtime, name);
+                result = new RubySymbol(runtime, name.intern());
                 runtime.getSymbolTable().store(result);
             }
         }

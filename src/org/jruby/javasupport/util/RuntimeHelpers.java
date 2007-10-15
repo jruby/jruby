@@ -336,6 +336,15 @@ public class RuntimeHelpers {
         return rubyClass.getClassVar(name);
     }
     
+    public static IRubyObject fastFetchClassVariable(ThreadContext context, Ruby runtime, 
+            IRubyObject self, String internedName) {
+        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
+   
+        if (rubyClass == null) rubyClass = self.getMetaClass();
+
+        return rubyClass.fastGetClassVar(internedName);
+    }
+    
     public static IRubyObject nullToNil(IRubyObject value, Ruby runtime) {
         return value != null ? value : runtime.getNil();
     }
@@ -384,6 +393,17 @@ public class RuntimeHelpers {
         return value;
     }
     
+    public static IRubyObject fastSetClassVariable(ThreadContext context, Ruby runtime, 
+            IRubyObject self, String internedName, IRubyObject value) {
+        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
+   
+        if (rubyClass == null) rubyClass = self.getMetaClass();
+
+        rubyClass.fastSetClassVar(internedName, value);
+   
+        return value;
+    }
+    
     public static IRubyObject declareClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String name, IRubyObject value) {
         // FIXME: This isn't quite right; it shouldn't evaluate the value if it's going to throw the error
         RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
@@ -391,6 +411,17 @@ public class RuntimeHelpers {
         if (rubyClass == null) throw runtime.newTypeError("no class/module to define class variable");
         
         rubyClass.setClassVar(name, value);
+   
+        return value;
+    }
+    
+    public static IRubyObject fastDeclareClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String internedName, IRubyObject value) {
+        // FIXME: This isn't quite right; it shouldn't evaluate the value if it's going to throw the error
+        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
+   
+        if (rubyClass == null) throw runtime.newTypeError("no class/module to define class variable");
+        
+        rubyClass.fastSetClassVar(internedName, value);
    
         return value;
     }
@@ -428,7 +459,7 @@ public class RuntimeHelpers {
     public static String getLocalJumpTypeOrRethrow(RaiseException re) {
         RubyException exception = re.getException();
         Ruby runtime = exception.getRuntime();
-        if (exception.isKindOf(runtime.getClass("LocalJumpError"))) {
+        if (exception.isKindOf(runtime.fastGetClass("LocalJumpError"))) {
             RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
 
             IRubyObject reason = jumpError.reason();
@@ -719,6 +750,12 @@ public class RuntimeHelpers {
         IRubyObject result = self.getInstanceVariable(name);
         if (result == null) return runtime.getNil();
         return result;
+    }
+    
+    public static IRubyObject fastGetInstanceVariable(Ruby runtime, IRubyObject self, String internedName) {
+        IRubyObject result;
+        if ((result = self.fastGetInstanceVariable(internedName)) != null) return result;
+        return runtime.getNil();
     }
     
     public static IRubyObject negate(IRubyObject value, Ruby runtime) {

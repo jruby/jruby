@@ -37,8 +37,7 @@
 package org.jruby;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -49,6 +48,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.Variable;
+import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
@@ -98,15 +99,15 @@ public class RubyRange extends RubyObject {
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             RubyRange range = (RubyRange)obj;
-            // FIXME: This is a pretty inefficient way to do this, but we need child class
-            // ivars and begin/end together
-            Map iVars = new HashMap(range.getInstanceVariables());
 
-            // add our "begin" and "end" instance vars to the collection
-            iVars.put("begin", range.begin);
-            iVars.put("end", range.end);
-            iVars.put("excl", range.isExclusive? runtime.getTrue() : runtime.getFalse());
-            marshalStream.dumpInstanceVars(iVars);
+            List<Variable<IRubyObject>> attrs = range.getVariableList();
+
+            attrs.add(new VariableEntry<IRubyObject>("begin", range.begin));
+            attrs.add(new VariableEntry<IRubyObject>("end", range.end));
+            attrs.add(new VariableEntry<IRubyObject>(
+                    "excl", range.isExclusive ? runtime.getTrue() : runtime.getFalse()));
+
+            marshalStream.dumpVariables(attrs);
         }
 
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
@@ -115,11 +116,11 @@ public class RubyRange extends RubyObject {
             
             unmarshalStream.registerLinkTarget(range);
 
-            unmarshalStream.defaultInstanceVarsUnmarshal(range);
+            unmarshalStream.defaultVariablesUnmarshal(range);
             
-            range.begin = range.getInstanceVariable("begin");
-            range.end = range.getInstanceVariable("end");
-            range.isExclusive = range.getInstanceVariable("excl").isTrue();
+            range.begin = range.removeInternalVariable("begin");
+            range.end = range.removeInternalVariable("end");
+            range.isExclusive = range.removeInternalVariable("excl").isTrue();
 
             return range;
         }

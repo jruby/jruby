@@ -74,7 +74,7 @@ public class RubyIconv extends RubyObject {
 
         RubyModule failure = iconvClass.defineModuleUnder("Failure");
         CallbackFactory failureCallbackFactory = runtime.callbackFactory(RubyFailure.class);
-        RubyClass argumentError = runtime.getClass("ArgumentError");
+        RubyClass argumentError = runtime.fastGetClass("ArgumentError");
 
         String[] iconvErrors = {"IllegalSequence", "InvalidCharacter", "InvalidEncoding", 
                 "OutOfRange", "BrokenLibrary"};
@@ -158,7 +158,7 @@ public class RubyIconv extends RubyObject {
     public static IRubyObject open(IRubyObject recv, IRubyObject to, IRubyObject from, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyIconv iconv =
-            (RubyIconv) runtime.getClass("Iconv").newInstance(
+            (RubyIconv) runtime.fastGetClass("Iconv").newInstance(
                     new IRubyObject[] { to, from }, Block.NULL_BLOCK);
         if (!block.isGiven()) return iconv;
 

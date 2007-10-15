@@ -44,6 +44,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -62,7 +64,9 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
@@ -185,9 +189,6 @@ public class RubyModule extends RubyObject {
         return false;
     }    
     
-    private static final String CVAR_TAINT_ERROR = "Insecure: can't modify class variable";
-    private static final String CVAR_FREEZE_ERROR = "class/module";
-
     // superClass may be null.
     protected RubyClass superClass;
 
@@ -213,16 +214,29 @@ public class RubyModule extends RubyObject {
     // If it is null, then it an anonymous class.
     private String classId;
 
+
+    // CONSTANT TABLE
+    
+    // Lock used for variableTable/constantTable writes. The RubyObject variableTable
+    // write methods are overridden here to use this lock rather than Java
+    // synchronization for faster concurrent writes for modules/classes.
+    protected final ReentrantLock variableWriteLock = new ReentrantLock();
+    
+    protected transient volatile ConstantTableEntry[] constantTable =
+        new ConstantTableEntry[CONSTANT_TABLE_DEFAULT_CAPACITY];
+
+    protected transient int constantTableSize;
+
+    protected transient int constantTableThreshold = 
+        (int)(CONSTANT_TABLE_DEFAULT_CAPACITY * CONSTANT_TABLE_LOAD_FACTOR);
+
     // All methods and all CACHED methods for the module.  The cached methods will be removed
     // when appropriate (e.g. when method is removed by source class or a new method is added
     // with same name by one of its subclasses).
     private Map methods = new HashMap();
     
-    
-    // FIXME: I'm not sure what the serialization/marshalling implications
-    // might be of defining this here. We could keep a hash in JavaSupport
-    // (or elsewhere) instead, but then RubyModule might need a reference to 
-    // JavaSupport code, which I've tried to avoid...
+    // ClassProviders return Java class/module (in #defineOrGetClassUnder and
+    // #defineOrGetModuleUnder) when class/module is opened using colon syntax. 
     private transient List classProviders;
 
     /** separate path for MetaClass construction
@@ -272,6 +286,7 @@ public class RubyModule extends RubyObject {
     }
     
     // synchronized method per JRUBY-1173 (unsafe Double-Checked Locking)
+    // FIXME: synchronization is still wrong in CP code
     public synchronized void addClassProvider(ClassProvider provider) {
         if (classProviders == null) {
             List cp = Collections.synchronizedList(new ArrayList());
@@ -354,7 +369,6 @@ public class RubyModule extends RubyObject {
         getMethods().put(name, method);
     }
 
-
     /**
      * Is this module one that in an included one (e.g. an IncludedModuleWrapper). 
      */
@@ -426,107 +440,6 @@ public class RubyModule extends RubyObject {
 
         return includedModule;
     }
-
-    /**
-     * Search this and parent modules for the named variable.
-     * 
-     * @param name The variable to search for
-     * @return The module in which that variable is found, or null if not found
-     */
-    private RubyModule getModuleWithInstanceVar(String name) {
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            if (p.getInstanceVariable(name) != null) {
-                return p;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Set the named class variable to the given value, provided taint and freeze allow setting it.
-     * 
-     * Ruby C equivalent = "rb_cvar_set"
-     * 
-     * @param name The variable name to set
-     * @param value The value to set it to
-     */
-    public IRubyObject setClassVar(String name, IRubyObject value) {
-        RubyModule module = getModuleWithInstanceVar(name);
-
-        if (module == null) {
-            module = this;
-        }
-
-        return module.setInstanceVariable(name, value, CVAR_TAINT_ERROR, CVAR_FREEZE_ERROR);
-    }
-
-    /**
-     * Retrieve the specified class variable, searching through this module, included modules, and supermodules.
-     * 
-     * Ruby C equivalent = "rb_cvar_get"
-     * 
-     * @param name The name of the variable to retrieve
-     * @return The variable's value, or throws NameError if not found
-     */
-    public IRubyObject getClassVar(String name) {
-        RubyModule module = getModuleWithInstanceVar(name);
-
-        if (module != null) {
-            IRubyObject variable = module.getInstanceVariable(name);
-
-            return variable == null ? getRuntime().getNil() : variable;
-        }
-
-        throw getRuntime().newNameError("uninitialized class variable " + name + " in " + getName(), name);
-    }
-
-    /**
-     * Is class var defined?
-     * 
-     * Ruby C equivalent = "rb_cvar_defined"
-     * 
-     * @param name The class var to determine "is defined?"
-     * @return true if true, false if false
-     */
-    public boolean isClassVarDefined(String name) {
-        return getModuleWithInstanceVar(name) != null;
-    }
-
-    /**
-     * Set the named constant on this module. Also, if the value provided is another Module and
-     * that module has not yet been named, assign it the specified name.
-     * 
-     * @param name The name to assign
-     * @param value The value to assign to it; if an unnamed Module, also set its basename to name
-     * @return The result of setting the variable.
-     * @see RubyObject#setInstanceVariable(String, IRubyObject, String, String)
-     */
-    public IRubyObject setConstant(String name, IRubyObject value) {
-        IRubyObject oldValue = getInstanceVariable(name);
-        
-        if (oldValue == getRuntime().getUndef()) {
-            getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + name);
-        } else if (oldValue != null) {
-            getRuntime().getWarnings().warn("already initialized constant " + name);
-        }
-
-        IRubyObject result = setInstanceVariable(name, value, "Insecure: can't set constant",
-                "class/module");
-
-        // if adding a module under a constant name, set that module's basename to the constant name
-        if (value instanceof RubyModule) {
-            RubyModule module = (RubyModule)value;
-            if (module.getBaseName() == null) {
-                module.setBaseName(name);
-                module.setParent(this);
-            }
-            /*
-            module.setParent(this);
-            */
-        }
-        return result;
-    }
-
     /**
      * Finds a class that is within the current module (or class).
      * 
@@ -534,24 +447,19 @@ public class RubyModule extends RubyObject {
      * @return the class or null if no such class
      */
     public RubyClass getClass(String name) {
-        IRubyObject module = getConstantAt(name);
-
-        return  (module instanceof RubyClass) ? (RubyClass) module : null;
+        IRubyObject module;
+        if ((module = getConstantAt(name)) instanceof RubyClass) {
+            return (RubyClass)module;
+        }
+        return null;
     }
 
-    /**
-     * Base implementation of Module#const_missing, throws NameError for specific missing constant.
-     * 
-     * @param name The constant name which was found to be missing
-     * @return Nothing! Absolutely nothing! (though subclasses might choose to return something)
-     */
-    public IRubyObject const_missing(IRubyObject name, Block block) {
-        /* Uninitialized constant */
-        if (this != getRuntime().getObject()) {
-            throw getRuntime().newNameError("uninitialized constant " + getName() + "::" + name.asSymbol(), "" + getName() + "::" + name.asSymbol());
+    public RubyClass fastGetClass(String internedName) {
+        IRubyObject module;
+        if ((module = fastGetConstantAt(internedName)) instanceof RubyClass) {
+            return (RubyClass)module;
         }
-
-        throw getRuntime().newNameError("uninitialized constant " + name.asSymbol(), name.asSymbol());
+        return null;
     }
 
     /**
@@ -937,90 +845,6 @@ public class RubyModule extends RubyObject {
         getSingletonClass().defineFastMethod(name, method);
     }
 
-    private IRubyObject getConstantInner(String name, boolean exclude) {
-        IRubyObject objectClass = getRuntime().getObject();
-        IRubyObject undef = getRuntime().getUndef();
-        boolean retryForModule = false;
-        RubyModule p = this;
-
-        retry: while (true) {
-            while (p != null) {
-                IRubyObject constant = p.getInstanceVariable(name);
-
-                if (constant == undef) {
-                    p.removeInstanceVariable(name);
-                    if (getRuntime().getLoadService().autoload(p.getName() + "::" + name) == null) break;
-                    continue;
-                }
-                if (constant != null) {
-                    if (exclude && p == objectClass && this != objectClass) {
-                        getRuntime().getWarnings().warn("toplevel constant " + name +
-                                " referenced by " + getName() + "::" + name);
-                    }
-
-                    return constant;
-                }
-                p = p.getSuperClass();
-            }
-
-            if (!exclude && !retryForModule && getClass().equals(RubyModule.class)) {
-                retryForModule = true;
-                p = getRuntime().getObject();
-                continue retry;
-            }
-
-            break;
-        }
-
-        return callMethod(getRuntime().getCurrentContext(), "const_missing", RubySymbol.newSymbol(getRuntime(), name));
-    }
-
-    /**
-     * Retrieve the named constant, invoking 'const_missing' should that be appropriate.
-     * 
-     * @param name The constant to retrieve
-     * @return The value for the constant, or null if not found
-     */
-    public IRubyObject getConstant(String name) {
-        return getConstantInner(name, false);
-    }
-
-    public IRubyObject getConstantFrom(String name) {
-        return getConstantInner(name, true);
-    }
-
-    public IRubyObject getConstantAt(String name) {
-        IRubyObject constant = getInstanceVariable(name);
-
-        if (constant != getRuntime().getUndef()) return constant;
-        
-        removeInstanceVariable(name);
-        return getRuntime().getLoadService().autoload(getName() + "::" + name);
-    }
-
-    // Fix for JRUBY-1339 - search hierarchy for constant
-    /** rb_const_defined_at
-     * 
-     */
-    public boolean isConstantDefined(String name) {
-        boolean isObject = this == getRuntime().getObject();
-        Object undef = getRuntime().getUndef();
-
-        RubyModule module = this;
-
-        do {
-            Object value;
-            if ((value = module.getInstanceVariable(name)) != null) {
-                if (value != undef) return true;
-                return getRuntime().getLoadService().autoloadFor(
-                        module.getName() + "::" + name) != null;
-            }
-
-        } while (isObject && (module = module.getSuperClass()) != null );
-
-        return false;
-    }
-
     /** rb_alias
      *
      */
@@ -1121,49 +945,7 @@ public class RubyModule extends RubyObject {
         return getRuntime().defineModuleUnder(name, this);
     }
 
-    /** rb_define_const
-     *
-     */
-    public void defineConstant(String name, IRubyObject value) {
-        assert value != null;
-
-        if (this == getRuntime().getClassClass()) {
-            getRuntime().secure(4);
-        }
-
-        if (!IdUtil.isConstant(name)) {
-            throw getRuntime().newNameError("bad constant name " + name, name);
-        }
-
-        setConstant(name, value);
-    }
-
-    /** rb_mod_remove_cvar
-     *
-     */
-    public IRubyObject removeCvar(IRubyObject name) { // Wrong Parameter ?
-        if (!IdUtil.isClassVariable(name.asSymbol())) {
-            throw getRuntime().newNameError("wrong class variable name " + name.asSymbol(), name.asSymbol());
-        }
-
-        if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw getRuntime().newSecurityError("Insecure: can't remove class variable");
-        }
-        testFrozen("class/module");
-
-        IRubyObject value = removeInstanceVariable(name.asSymbol());
-
-        if (value != null) {
-            return value;
-        }
-
-        if (isClassVarDefined(name.asSymbol())) {
-            throw cannotRemoveError(name.asSymbol());
-        }
-
-        throw getRuntime().newNameError("class variable " + name.asSymbol() + " not defined for " + getName(), name.asSymbol());
-    }
-
+    // FIXME: create AttrReaderMethod, AttrWriterMethod, for faster attr access
     private void addAccessor(String name, boolean readable, boolean writeable) {
         ThreadContext tc = getRuntime().getCurrentContext();
 
@@ -1183,7 +965,7 @@ public class RubyModule extends RubyObject {
                 public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                     Arity.checkArgumentCount(getRuntime(), args, 0, 0);
 
-                    IRubyObject variable = self.getInstanceVariable(variableName);
+                    IRubyObject variable = self.fastGetInstanceVariable(variableName);
 
                     return variable == null ? runtime.getNil() : variable;
                 }
@@ -1195,13 +977,13 @@ public class RubyModule extends RubyObject {
             callMethod(context, "method_added", RubySymbol.newSymbol(getRuntime(), name));
         }
         if (writeable) {
-            name = name + "=";
+            name = (name + "=").intern();
             defineFastMethod(name, new Callback() {
                 public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                     // ENEBO: Can anyone get args to be anything but length 1?
                     Arity.checkArgumentCount(getRuntime(), args, 1, 1);
 
-                    return self.setInstanceVariable(variableName, args[0]);
+                    return self.fastSetInstanceVariable(variableName, args[0]);
                 }
 
                 public Arity getArity() {
@@ -1353,67 +1135,6 @@ public class RubyModule extends RubyObject {
         return getRuntime().newString(getBaseName() == null ? "" : getName());
     }
 
-    /** rb_mod_class_variables
-     *
-     */
-    public RubyArray class_variables() {
-        RubyArray ary = getRuntime().newArray();
-
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            for (Iterator iter = p.instanceVariableNames(); iter.hasNext();) {
-                String id = (String) iter.next();
-                if (IdUtil.isClassVariable(id)) {
-                    RubyString kval = getRuntime().newString(id);
-                    if (!ary.includes(kval)) {
-                        ary.append(kval);
-                    }
-                }
-            }
-        }
-        return ary;
-    }
-
-    /** rb_mod_cvar_get
-    *
-    */
-    public IRubyObject class_variable_get(IRubyObject var) {
-        String varName = var.asSymbol();
-
-        if (!IdUtil.isValidClassVariableName(varName)) {
-            throw getRuntime().newNameError("`" + varName + "' is not allowed as a class variable name", varName);
-        }
-
-        return getClassVar(varName);
-    }
-
-    public IRubyObject class_variable_defined_p(IRubyObject var) {
-        String name = var.asSymbol();
-
-        if (!IdUtil.isValidClassVariableName(name)) {
-            throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", name);
-        }
-
-        RubyModule module = getModuleWithInstanceVar(name);
-
-        if (module != null) {
-            return module.getInstanceVariable(name) == null ? getRuntime().getFalse() : getRuntime().getTrue() ;
-        }
-        return getRuntime().getFalse();
-    }
-
-    /** rb_mod_cvar_set
-    *
-    */
-    public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
-        String varName = var.asSymbol();
-
-        if (!IdUtil.isValidClassVariableName(varName)) {
-            throw getRuntime().newNameError("`" + varName + "' is not allowed as a class variable name", varName);
-        }
-
-        return setClassVar(varName, value);
-    }
-
     protected IRubyObject cloneMethods(RubyModule clone) {
         RubyModule realType = this.getNonIncludedClass();
         for (Iterator iter = getMethods().entrySet().iterator(); iter.hasNext(); ) {
@@ -1445,7 +1166,9 @@ public class RubyModule extends RubyObject {
         if (!getMetaClass().isSingleton()) setMetaClass(originalModule.getSingletonClassClone());
         setSuperClass(originalModule.getSuperClass());
 
-        if (originalModule.safeHasInstanceVariables()) setInstanceVariables(new HashMap(originalModule.getInstanceVariables()));
+        if (originalModule.hasVariables()){
+            syncVariables(originalModule.getVariableList());
+        }
 
         originalModule.cloneMethods(this);
 
@@ -1476,8 +1199,8 @@ public class RubyModule extends RubyObject {
         return ary;
     }
 
-    public List getAncestorList() {
-        ArrayList list = new ArrayList();
+    public List<IRubyObject> getAncestorList() {
+        ArrayList<IRubyObject> list = new ArrayList<IRubyObject>();
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
             if(!p.isSingleton()) {
@@ -1683,49 +1406,6 @@ public class RubyModule extends RubyObject {
         return getRuntime().getNil();
     }
 
-    /** rb_mod_const_get
-     *
-     */
-    public IRubyObject const_get(IRubyObject symbol) {
-        String name = symbol.asSymbol();
-
-        if (!IdUtil.isValidConstantName(name)) {
-            throw wrongConstantNameError(name);
-        }
-
-        return getConstant(name);
-    }
-
-    /** rb_mod_const_set
-     *
-     */
-    public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
-        String name = symbol.asSymbol();
-
-        if (!IdUtil.isValidConstantName(name)) {
-            throw wrongConstantNameError(name);
-        }
-
-        return setConstant(name, value);
-    }
-
-    /** rb_mod_const_defined
-     *
-     */
-    public RubyBoolean const_defined(IRubyObject symbol) {
-        String name = symbol.asSymbol();
-
-        if (!IdUtil.isValidConstantName(name)) {
-            throw wrongConstantNameError(name);
-        }
-        
-        return getRuntime().newBoolean(isConstantDefined(name));
-    }
-
-    private RaiseException wrongConstantNameError(String name) {
-        return getRuntime().newNameError("wrong constant name " + name, name);
-    }
-
     /**
      * Get a list of all instance methods names of the provided visibility unless not is true, then 
      * get all methods which are not the provided visibility.
@@ -1795,104 +1475,6 @@ public class RubyModule extends RubyObject {
      */
     public RubyArray private_instance_methods(IRubyObject[] args) {
         return instance_methods(args, Visibility.PRIVATE, false);
-    }
-
-    /** rb_mod_constants
-     *
-     */
-    public RubyArray constants() {
-        ArrayList constantNames = new ArrayList();
-        RubyModule objectClass = getRuntime().getObject();
-
-        if (getRuntime().getModule() == this) {
-            for (Iterator vars = objectClass.instanceVariableNames();
-                 vars.hasNext();) {
-                String name = (String) vars.next();
-                if (IdUtil.isConstant(name)) {
-                    constantNames.add(getRuntime().newString(name));
-                }
-            }
-
-            return getRuntime().newArray(constantNames);
-        } else if (getRuntime().getObject() == this) {
-            for (Iterator vars = instanceVariableNames(); vars.hasNext();) {
-                String name = (String) vars.next();
-                if (IdUtil.isConstant(name)) {
-                    constantNames.add(getRuntime().newString(name));
-                }
-            }
-
-            return getRuntime().newArray(constantNames);
-        }
-
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            if (objectClass == p) {
-                continue;
-            }
-
-            for (Iterator vars = p.instanceVariableNames(); vars.hasNext();) {
-                String name = (String) vars.next();
-                if (IdUtil.isConstant(name)) {
-                    constantNames.add(getRuntime().newString(name));
-                }
-            }
-        }
-
-        return getRuntime().newArray(constantNames);
-    }
-
-    /** rb_mod_remove_cvar
-     *
-     */
-    public IRubyObject remove_class_variable(IRubyObject name) {
-        String id = name.asSymbol();
-
-        if (!IdUtil.isClassVariable(id)) {
-            throw getRuntime().newNameError("wrong class variable name " + id, id);
-        }
-        if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw getRuntime().newSecurityError("Insecure: can't remove class variable");
-        }
-        testFrozen("class/module");
-
-        IRubyObject variable = removeInstanceVariable(id);
-        if (variable != null) {
-            return variable;
-        }
-
-        if (isClassVarDefined(id)) {
-            throw cannotRemoveError(id);
-        }
-        throw getRuntime().newNameError("class variable " + id + " not defined for " + getName(), id);
-    }
-
-    private RaiseException cannotRemoveError(String id) {
-        return getRuntime().newNameError("cannot remove " + id + " for " + getName(), id);
-    }
-
-    public IRubyObject remove_const(IRubyObject name) {
-        String id = name.asSymbol();
-
-        if (!IdUtil.isConstant(id)) {
-            throw wrongConstantNameError(id);
-        }
-        if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw getRuntime().newSecurityError("Insecure: can't remove class variable");
-        }
-        testFrozen("class/module");
-
-        IRubyObject variable = getInstanceVariable(id);
-        if (variable != null) {
-            if (variable == getRuntime().getUndef()) {
-                getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + id);
-            }
-            return removeInstanceVariable(id);
-        }
-
-        if (isClassVarDefined(id)) {
-            throw cannotRemoveError(id);
-        }
-        throw getRuntime().newNameError("constant " + id + " not defined for " + getName(), id);
     }
 
     /** rb_mod_append_features
@@ -2152,4 +1734,1379 @@ public class RubyModule extends RubyObject {
         }
     }
 
+
+    //
+    ////////////////// CLASS VARIABLE RUBY METHODS ////////////////
+    //
+
+    public IRubyObject class_variable_defined_p(IRubyObject var) {
+        String internedName = validateClassVariable(var.asSymbol());
+        RubyModule module = this;
+        do {
+            if (module.fastHasClassVariable(internedName)) {
+                return getRuntime().getTrue();
+            }
+        } while ((module = module.getSuperClass()) != null);
+
+        return getRuntime().getFalse();
+    }
+
+    /** rb_mod_cvar_get
+     *
+     */
+    public IRubyObject class_variable_get(IRubyObject var) {
+        return fastGetClassVar(validateClassVariable(var.asSymbol()));
+    }
+
+    /** rb_mod_cvar_set
+     *
+     */
+    public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
+        return fastSetClassVar(validateClassVariable(var.asSymbol()), value);
+    }
+
+    /** rb_mod_remove_cvar
+     *
+     */
+    public IRubyObject remove_class_variable(IRubyObject name) {
+        String internedName = validateClassVariable(name.asSymbol());
+        IRubyObject value;
+
+        if ((value = deleteClassVariable(internedName)) != null) {
+            return value;
+        }
+
+        if (fastIsClassVarDefined(internedName)) {
+            throw cannotRemoveError(internedName);
+        }
+
+        throw getRuntime().newNameError("class variable " + internedName + " not defined for " + getName(), internedName);
+    }
+
+    /** rb_mod_class_variables
+     *
+     */
+    public RubyArray class_variables() {
+        Set<String> names = new HashSet<String>();
+
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+            for (String name : p.getClassVariableNameList()) {
+                names.add(name);
+            }
+        }
+
+        Ruby runtime = getRuntime();
+        RubyArray ary = runtime.newArray();
+
+        for (String name : names) {
+            ary.add(runtime.newString(name));
+        }
+
+        return ary;
+    }
+
+
+    //
+    ////////////////// CONSTANT RUBY METHODS ////////////////
+    //
+
+    /** rb_mod_const_defined
+     *
+     */
+    public RubyBoolean const_defined(IRubyObject symbol) {
+        // Note: includes part of fix for JRUBY-1339
+        return getRuntime().newBoolean(fastIsConstantDefined(validateConstant(symbol.asSymbol())));
+    }
+
+    /** rb_mod_const_get
+     *
+     */
+    public IRubyObject const_get(IRubyObject symbol) {
+        return fastGetConstant(validateConstant(symbol.asSymbol()));
+    }
+
+    /** rb_mod_const_set
+     *
+     */
+    public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
+        return fastSetConstant(validateConstant(symbol.asSymbol()), value);
+    }
+
+    public IRubyObject remove_const(IRubyObject name) {
+        String id = validateConstant(name.asSymbol());
+        IRubyObject value;
+        if ((value = deleteConstant(id)) != null) {
+            if (value != getRuntime().getUndef()) {
+                return value;
+            }
+            getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + id);
+            // FIXME: I'm not sure this is right, but the old code returned
+            // the undef, which definitely isn't right...
+            return getRuntime().getNil();
+        }
+
+        if (hasConstantInHierarchy(id)) {
+            throw cannotRemoveError(id);
+        }
+
+        throw getRuntime().newNameError("constant " + id + " not defined for " + getName(), id);
+    }
+
+    private boolean hasConstantInHierarchy(final String name) {
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+            if (p.hasConstant(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Base implementation of Module#const_missing, throws NameError for specific missing constant.
+     * 
+     * @param name The constant name which was found to be missing
+     * @return Nothing! Absolutely nothing! (though subclasses might choose to return something)
+     */
+    public IRubyObject const_missing(IRubyObject name, Block block) {
+        /* Uninitialized constant */
+        if (this != getRuntime().getObject()) {
+            throw getRuntime().newNameError("uninitialized constant " + getName() + "::" + name.asSymbol(), "" + getName() + "::" + name.asSymbol());
+        }
+
+        throw getRuntime().newNameError("uninitialized constant " + name.asSymbol(), name.asSymbol());
+    }
+
+    /** rb_mod_constants
+     *
+     */
+    public RubyArray constants() {
+        Ruby runtime = getRuntime();
+        RubyArray array = runtime.newArray();
+        RubyModule objectClass = runtime.getObject();
+
+        if (getRuntime().getModule() == this) {
+
+            for (String name : objectClass.getStoredConstantNameList()) {
+                array.add(runtime.newString(name));
+            }
+
+        } else if (objectClass == this) {
+
+            for (String name : getStoredConstantNameList()) {
+                array.add(runtime.newString(name));
+            }
+
+        } else {
+            Set<String> names = new HashSet<String>();
+            for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+                if (objectClass != p) {
+                    for (String name : p.getStoredConstantNameList()) {
+                        names.add(name);
+                    }
+                }
+            }
+            for (String name : names) {
+                array.add(runtime.newString(name));
+            }
+        }
+
+        return array;
+    }
+
+
+    //
+    ////////////////// CLASS VARIABLE API METHODS ////////////////
+    //
+
+    /**
+     * Set the named class variable to the given value, provided taint and freeze allow setting it.
+     * 
+     * Ruby C equivalent = "rb_cvar_set"
+     * 
+     * @param name The variable name to set
+     * @param value The value to set it to
+     */
+    public IRubyObject setClassVar(String name, IRubyObject value) {
+        RubyModule module = this;
+        do {
+            if (module.hasClassVariable(name)) {
+                return module.storeClassVariable(name, value);
+            }
+        } while ((module = module.getSuperClass()) != null);
+        
+        return storeClassVariable(name, value);
+    }
+
+    public IRubyObject fastSetClassVar(final String internedName, final IRubyObject value) {
+        RubyModule module = this;
+        do {
+            if (module.fastHasClassVariable(internedName)) {
+                return module.fastStoreClassVariable(internedName, value);
+            }
+        } while ((module = module.getSuperClass()) != null);
+        
+        return fastStoreClassVariable(internedName, value);
+    }
+
+    /**
+     * Retrieve the specified class variable, searching through this module, included modules, and supermodules.
+     * 
+     * Ruby C equivalent = "rb_cvar_get"
+     * 
+     * @param name The name of the variable to retrieve
+     * @return The variable's value, or throws NameError if not found
+     */
+    public IRubyObject getClassVar(String name) {
+        assert IdUtil.isClassVariable(name);
+        IRubyObject value;
+        RubyModule module = this;
+        
+        do {
+            if ((value = module.variableTableFetch(name)) != null) return value;
+        } while ((module = module.getSuperClass()) != null);
+
+        throw getRuntime().newNameError("uninitialized class variable " + name + " in " + getName(), name);
+    }
+
+    public IRubyObject fastGetClassVar(String internedName) {
+        assert IdUtil.isClassVariable(internedName);
+        IRubyObject value;
+        RubyModule module = this;
+        
+        do {
+            if ((value = module.variableTableFastFetch(internedName)) != null) return value; 
+        } while ((module = module.getSuperClass()) != null);
+
+        throw getRuntime().newNameError("uninitialized class variable " + internedName + " in " + getName(), internedName);
+    }
+
+    /**
+     * Is class var defined?
+     * 
+     * Ruby C equivalent = "rb_cvar_defined"
+     * 
+     * @param name The class var to determine "is defined?"
+     * @return true if true, false if false
+     */
+    public boolean isClassVarDefined(String name) {
+        RubyModule module = this;
+        do {
+            if (module.hasClassVariable(name)) return true;
+        } while ((module = module.getSuperClass()) != null);
+
+        return false;
+    }
+
+    public boolean fastIsClassVarDefined(String internedName) {
+        RubyModule module = this;
+        do {
+            if (module.fastHasClassVariable(internedName)) return true;
+        } while ((module = module.getSuperClass()) != null);
+
+        return false;
+    }
+
+    
+    /** rb_mod_remove_cvar
+     *
+     * FIXME: any good reason to have two identical methods? (same as remove_class_variable)
+     */
+    public IRubyObject removeCvar(IRubyObject name) { // Wrong Parameter ?
+        String internedName = validateClassVariable(name.asSymbol());
+        IRubyObject value;
+
+        if ((value = deleteClassVariable(internedName)) != null) {
+            return value;
+        }
+
+        if (fastIsClassVarDefined(internedName)) {
+            throw cannotRemoveError(internedName);
+        }
+
+        throw getRuntime().newNameError("class variable " + internedName + " not defined for " + getName(), internedName);
+    }
+
+
+    //
+    ////////////////// CONSTANT API METHODS ////////////////
+    //
+
+    public IRubyObject getConstantAt(String name) {
+        IRubyObject value;
+        if ((value = fetchConstant(name)) != getRuntime().getUndef()) {
+            return value;
+        }
+        deleteConstant(name);
+        return getRuntime().getLoadService().autoload(getName() + "::" + name);
+    }
+
+    public IRubyObject fastGetConstantAt(String internedName) {
+        IRubyObject value;
+        if ((value = fastFetchConstant(internedName)) != getRuntime().getUndef()) {
+            return value;
+        }
+        deleteConstant(internedName);
+        return getRuntime().getLoadService().autoload(getName() + "::" + internedName);
+    }
+
+    /**
+     * Retrieve the named constant, invoking 'const_missing' should that be appropriate.
+     * 
+     * @param name The constant to retrieve
+     * @return The value for the constant, or null if not found
+     */
+    public IRubyObject getConstant(String name) {
+        assert IdUtil.isConstant(name);
+        IRubyObject undef = getRuntime().getUndef();
+        boolean retryForModule = false;
+        IRubyObject value;
+        RubyModule p = this;
+
+        retry: while (true) {
+            while (p != null) {
+                if ((value = p.constantTableFetch(name)) != null) {
+                    if (value != undef) {
+                        return value;
+                    }
+                    p.deleteConstant(name);
+                    if (getRuntime().getLoadService().autoload(
+                            p.getName() + "::" + name) == null) {
+                        break;
+                    }
+                    continue;
+                }
+                p = p.getSuperClass();
+            };
+
+            if (!retryForModule && !isClass()) {
+                retryForModule = true;
+                p = getRuntime().getObject();
+                continue retry;
+            }
+
+            break;
+        }
+
+        return callMethod(getRuntime().getCurrentContext(),
+                "const_missing", RubySymbol.newSymbol(getRuntime(), name));
+    }
+    
+    public IRubyObject fastGetConstant(String internedName) {
+        assert IdUtil.isConstant(internedName);
+        IRubyObject undef = getRuntime().getUndef();
+        boolean retryForModule = false;
+        IRubyObject value;
+        RubyModule p = this;
+
+        retry: while (true) {
+            while (p != null) {
+                if ((value = p.constantTableFastFetch(internedName)) != null) {
+                    if (value != undef) {
+                        return value;
+                    }
+                    p.deleteConstant(internedName);
+                    if (getRuntime().getLoadService().autoload(
+                            p.getName() + "::" + internedName) == null) {
+                        break;
+                    }
+                    continue;
+                }
+                p = p.getSuperClass();
+            };
+
+            if (!retryForModule && !isClass()) {
+                retryForModule = true;
+                p = getRuntime().getObject();
+                continue retry;
+            }
+
+            break;
+        }
+
+        return callMethod(getRuntime().getCurrentContext(),
+                "const_missing", RubySymbol.newSymbol(getRuntime(), internedName));
+    }
+
+    // not actually called anywhere (all known uses call the fast version)
+    public IRubyObject getConstantFrom(String name) {
+        return fastGetConstantFrom(name.intern());
+    }
+    
+    public IRubyObject fastGetConstantFrom(String internedName) {
+        assert IdUtil.isConstant(internedName);
+        RubyClass objectClass = getRuntime().getObject();
+        IRubyObject undef = getRuntime().getUndef();
+        IRubyObject value;
+
+        RubyModule p = this;
+        
+        while (p != null) {
+            if ((value = p.constantTableFastFetch(internedName)) != null) {
+                if (value != undef) {
+                    if (p == objectClass && this != objectClass) {
+                        getRuntime().getWarnings().warn("toplevel constant " + internedName +
+                                " referenced by " + getName() + "::" + internedName);
+                    }
+                    return value;
+                }
+                p.deleteConstant(internedName);
+                if (getRuntime().getLoadService().autoload(
+                        p.getName() + "::" + internedName) == null) {
+                    break;
+                }
+                continue;
+            }
+            p = p.getSuperClass();
+        };
+
+        return callMethod(getRuntime().getCurrentContext(),
+                "const_missing", RubySymbol.newSymbol(getRuntime(), internedName));
+    }
+    /**
+     * Set the named constant on this module. Also, if the value provided is another Module and
+     * that module has not yet been named, assign it the specified name.
+     * 
+     * @param name The name to assign
+     * @param value The value to assign to it; if an unnamed Module, also set its basename to name
+     * @return The result of setting the variable.
+     */
+    public IRubyObject setConstant(String name, IRubyObject value) {
+        IRubyObject oldValue;
+        if ((oldValue = fetchConstant(name)) != null) {
+            if (oldValue == getRuntime().getUndef()) {
+                getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + name);
+            } else {
+                getRuntime().getWarnings().warn("already initialized constant " + name);
+            }
+        }
+
+        storeConstant(name, value);
+
+        // if adding a module under a constant name, set that module's basename to the constant name
+        if (value instanceof RubyModule) {
+            RubyModule module = (RubyModule)value;
+            if (module.getBaseName() == null) {
+                module.setBaseName(name);
+                module.setParent(this);
+            }
+            /*
+            module.setParent(this);
+            */
+        }
+        return value;
+    }
+
+    public IRubyObject fastSetConstant(String internedName, IRubyObject value) {
+        IRubyObject oldValue;
+        if ((oldValue = fastFetchConstant(internedName)) != null) {
+            if (oldValue == getRuntime().getUndef()) {
+                getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + internedName);
+            } else {
+                getRuntime().getWarnings().warn("already initialized constant " + internedName);
+            }
+        }
+
+        fastStoreConstant(internedName, value);
+
+        // if adding a module under a constant name, set that module's basename to the constant name
+        if (value instanceof RubyModule) {
+            RubyModule module = (RubyModule)value;
+            if (module.getBaseName() == null) {
+                module.setBaseName(internedName);
+                module.setParent(this);
+            }
+            /*
+            module.setParent(this);
+            */
+        }
+        return value;
+    }
+    
+    /** rb_define_const
+     *
+     */
+    public void defineConstant(String name, IRubyObject value) {
+        assert value != null;
+
+        if (this == getRuntime().getClassClass()) {
+            getRuntime().secure(4);
+        }
+
+        if (!IdUtil.isValidConstantName(name)) {
+            throw getRuntime().newNameError("bad constant name " + name, name);
+        }
+
+        setConstant(name, value);
+    }
+
+    // Fix for JRUBY-1339 - search hierarchy for constant
+    /** rb_const_defined_at
+     * 
+     */
+    public boolean isConstantDefined(String name) {
+        assert IdUtil.isConstant(name);
+        boolean isObject = this == getRuntime().getObject();
+        Object undef = getRuntime().getUndef();
+
+        RubyModule module = this;
+
+        do {
+            Object value;
+            if ((value = module.constantTableFetch(name)) != null) {
+                if (value != undef) return true;
+                return getRuntime().getLoadService().autoloadFor(
+                        module.getName() + "::" + name) != null;
+            }
+
+        } while (isObject && (module = module.getSuperClass()) != null );
+
+        return false;
+    }
+
+    public boolean fastIsConstantDefined(String internedName) {
+        assert IdUtil.isConstant(internedName);
+        boolean isObject = this == getRuntime().getObject();
+        Object undef = getRuntime().getUndef();
+
+        RubyModule module = this;
+
+        do {
+            Object value;
+            if ((value = module.constantTableFastFetch(internedName)) != null) {
+                if (value != undef) return true;
+                return getRuntime().getLoadService().autoloadFor(
+                        module.getName() + "::" + internedName) != null;
+            }
+
+        } while (isObject && (module = module.getSuperClass()) != null );
+
+        return false;
+    }
+
+    //
+    ////////////////// COMMON CONSTANT / CVAR METHODS ////////////////
+    //
+
+    private RaiseException cannotRemoveError(String id) {
+        return getRuntime().newNameError("cannot remove " + id + " for " + getName(), id);
+    }
+
+
+    //
+    ////////////////// INTERNAL MODULE VARIABLE API METHODS ////////////////
+    //
+    
+    /**
+     * Behaves similarly to {@link #getClassVar(String)}. Searches this
+     * class/module <em>and its ancestors</em> for the specified internal
+     * variable.
+     * 
+     * @param name the internal variable name
+     * @return the value of the specified internal variable if found, else null
+     * @see #setInternalModuleVariable(String, IRubyObject)
+     */
+    public boolean hasInternalModuleVariable(final String name) {
+        RubyModule module = this;
+        do {
+            if (module.hasInternalVariable(name)) {
+                return true;
+            }
+        } while ((module = module.getSuperClass()) != null);
+
+        return false;
+    }
+    /**
+     * Behaves similarly to {@link #getClassVar(String)}. Searches this
+     * class/module <em>and its ancestors</em> for the specified internal
+     * variable.
+     * 
+     * @param name the internal variable name
+     * @return the value of the specified internal variable if found, else null
+     * @see #setInternalModuleVariable(String, IRubyObject)
+     */
+    public IRubyObject searchInternalModuleVariable(final String name) {
+        RubyModule module = this;
+        IRubyObject value;
+        do {
+            if ((value = module.getInternalVariable(name)) != null) {
+                return value;
+            }
+        } while ((module = module.getSuperClass()) != null);
+
+        return null;
+    }
+
+    /**
+     * Behaves similarly to {@link #setClassVar(String, IRubyObject)}. If the
+     * specified internal variable is found in this class/module <em>or an ancestor</em>,
+     * it is set where found.  Otherwise it is set in this module. 
+     * 
+     * @param name the internal variable name
+     * @param value the internal variable value
+     * @see #searchInternalModuleVariable(String)
+     */
+    public void setInternalModuleVariable(final String name, final IRubyObject value) {
+        RubyModule module = this;
+        do {
+            if (module.hasInternalVariable(name)) {
+                module.setInternalVariable(name, value);
+                return;
+            }
+        } while ((module = module.getSuperClass()) != null);
+
+        setInternalVariable(name, value);
+    }
+
+    //
+    ////////////////// LOW-LEVEL CLASS VARIABLE INTERFACE ////////////////
+    //
+    // fetch/store/list class variables for this module
+    //
+    
+    public boolean hasClassVariable(String name) {
+        assert IdUtil.isClassVariable(name);
+        return variableTableContains(name);
+    }
+
+    public boolean fastHasClassVariable(String internedName) {
+        assert IdUtil.isClassVariable(internedName);
+        return variableTableFastContains(internedName);
+    }
+
+    public IRubyObject fetchClassVariable(String name) {
+        assert IdUtil.isClassVariable(name);
+        return variableTableFetch(name);
+    }
+
+    public IRubyObject fastFetchClassVariable(String internedName) {
+        assert IdUtil.isClassVariable(internedName);
+        return variableTableFastFetch(internedName);
+    }
+
+    public IRubyObject storeClassVariable(String name, IRubyObject value) {
+        assert IdUtil.isClassVariable(name) && value != null;
+        ensureClassVariablesSettable();
+        return variableTableStore(name, value);
+    }
+
+    public IRubyObject fastStoreClassVariable(String internedName, IRubyObject value) {
+        assert IdUtil.isClassVariable(internedName) && value != null;
+        ensureClassVariablesSettable();
+        return variableTableFastStore(internedName, value);
+    }
+
+    public IRubyObject deleteClassVariable(String name) {
+        assert IdUtil.isClassVariable(name);
+        ensureClassVariablesSettable();
+        return variableTableRemove(name);
+    }
+
+    public List<Variable<IRubyObject>> getClassVariableList() {
+        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        VariableTableEntry[] table = variableTableGetTable();
+        IRubyObject readValue;
+        for (int i = table.length; --i >= 0; ) {
+            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
+                if (IdUtil.isClassVariable(e.name)) {
+                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
+                    list.add(new VariableEntry<IRubyObject>(e.name, readValue));
+                }
+            }
+        }
+        return list;
+    }
+
+    public List<String> getClassVariableNameList() {
+        ArrayList<String> list = new ArrayList<String>();
+        VariableTableEntry[] table = variableTableGetTable();
+        for (int i = table.length; --i >= 0; ) {
+            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
+                if (IdUtil.isClassVariable(e.name)) {
+                    list.add(e.name);
+                }
+            }
+        }
+        return list;
+    }
+
+    protected static final String ERR_INSECURE_SET_CLASS_VAR = "Insecure: can't modify class variable";
+    protected static final String ERR_FROZEN_CVAR_TYPE = "class/module ";
+   
+    protected final String validateClassVariable(String name) {
+        if (IdUtil.isValidClassVariableName(name)) {
+            return name;
+        }
+        throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", name);
+    }
+
+    protected final void ensureClassVariablesSettable() {
+        if (!isFrozen() && (getRuntime().getSafeLevel() < 4 || isTaint())) {
+            return;
+        }
+        
+        if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
+            throw getRuntime().newSecurityError(ERR_INSECURE_SET_CONSTANT);
+        }
+        if (isFrozen()) {
+            if (this instanceof RubyModule) {
+                throw getRuntime().newFrozenError(ERR_FROZEN_CONST_TYPE);
+            } else {
+                throw getRuntime().newFrozenError("");
+            }
+        }
+    }
+
+    //
+    ////////////////// LOW-LEVEL CONSTANT INTERFACE ////////////////
+    //
+    // fetch/store/list constants for this module
+    //
+
+    public boolean hasConstant(String name) {
+        assert IdUtil.isConstant(name);
+        return constantTableContains(name);
+    }
+
+    public boolean fastHasConstant(String internedName) {
+        assert IdUtil.isConstant(internedName);
+        return constantTableFastContains(internedName);
+    }
+
+    // returns the stored value without processing undefs (autoloads)
+    public IRubyObject fetchConstant(String name) {
+        assert IdUtil.isConstant(name);
+        return constantTableFetch(name);
+    }
+
+    // returns the stored value without processing undefs (autoloads)
+    public IRubyObject fastFetchConstant(String internedName) {
+        assert IdUtil.isConstant(internedName);
+        return constantTableFastFetch(internedName);
+    }
+
+    public IRubyObject storeConstant(String name, IRubyObject value) {
+        assert IdUtil.isConstant(name) && value != null;
+        ensureConstantsSettable();
+        return constantTableStore(name, value);
+    }
+
+    public IRubyObject fastStoreConstant(String internedName, IRubyObject value) {
+        assert IdUtil.isConstant(internedName) && value != null;
+        ensureConstantsSettable();
+        return constantTableFastStore(internedName, value);
+    }
+
+    // removes and returns the stored value without processing undefs (autoloads)
+    public IRubyObject deleteConstant(String name) {
+        assert IdUtil.isConstant(name);
+        ensureConstantsSettable();
+        return constantTableRemove(name);
+    }
+
+    public List<Variable<IRubyObject>> getStoredConstantList() {
+        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        ConstantTableEntry[] table = constantTableGetTable();
+        for (int i = table.length; --i >= 0; ) {
+            for (ConstantTableEntry e = table[i]; e != null; e = e.next) {
+                list.add(e);
+            }
+        }
+        return list;
+    }
+
+    public List<String> getStoredConstantNameList() {
+        ArrayList<String> list = new ArrayList<String>();
+        ConstantTableEntry[] table = constantTableGetTable();
+        for (int i = table.length; --i >= 0; ) {
+            for (ConstantTableEntry e = table[i]; e != null; e = e.next) {
+                list.add(e.name);
+            }
+        }
+        return list;
+    }
+
+    protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";
+    protected static final String ERR_FROZEN_CONST_TYPE = "class/module ";
+   
+    protected final String validateConstant(String name) {
+        if (IdUtil.isValidConstantName(name)) {
+            return name;
+        }
+        throw getRuntime().newNameError("wrong constant name " + name, name);
+    }
+
+    protected final void ensureConstantsSettable() {
+        if (!isFrozen() && (getRuntime().getSafeLevel() < 4 || isTaint())) {
+            return;
+        }
+        
+        if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
+            throw getRuntime().newSecurityError(ERR_INSECURE_SET_CONSTANT);
+        }
+        if (isFrozen()) {
+            if (this instanceof RubyModule) {
+                throw getRuntime().newFrozenError(ERR_FROZEN_CONST_TYPE);
+            } else {
+                throw getRuntime().newFrozenError("");
+            }
+        }
+    }
+
+     
+    //
+    ////////////////// VARIABLE TABLE METHODS ////////////////
+    //
+    // Overridden to use variableWriteLock in place of synchronization  
+    //
+
+    @Override
+    protected IRubyObject variableTableStore(String name, IRubyObject value) {
+        int hash = name.hashCode();
+        ReentrantLock lock;
+        (lock = variableWriteLock).lock();
+        try {
+            VariableTableEntry[] table;
+            VariableTableEntry e;
+            if ((table = variableTable) == null) {
+                table =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
+                e = new VariableTableEntry(hash, name.intern(), value, null);
+                table[hash & (VARIABLE_TABLE_DEFAULT_CAPACITY - 1)] = e;
+                variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
+                variableTableSize = 1;
+                variableTable = table;
+                return value;
+            }
+            int potentialNewSize;
+            if ((potentialNewSize = variableTableSize + 1) > variableTableThreshold) {
+                table = variableTableRehash();
+            }
+            int index;
+            for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
+                if (hash == e.hash && name.equals(e.name)) {
+                    e.value = value;
+                    return value;
+                }
+            }
+            // external volatile value initialization intended to obviate the need for
+            // readValueUnderLock technique used in ConcurrentHashMap. may be a little
+            // slower, but better to pay a price on first write rather than all reads.
+            e = new VariableTableEntry(hash, name.intern(), value, table[index]);
+            table[index] = e;
+            variableTableSize = potentialNewSize;
+            variableTable = table; // write-volatile
+        } finally {
+            lock.unlock();
+        }
+        return value;
+    }
+    
+    @Override
+    protected IRubyObject variableTableFastStore(String internedName, IRubyObject value) {
+        assert internedName == internedName.intern() : internedName + " not interned";
+        int hash = internedName.hashCode();
+        ReentrantLock lock;
+        (lock = variableWriteLock).lock();
+        try {
+            VariableTableEntry[] table;
+            VariableTableEntry e;
+            if ((table = variableTable) == null) {
+                table =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
+                e = new VariableTableEntry(hash, internedName, value, null);
+                table[hash & (VARIABLE_TABLE_DEFAULT_CAPACITY - 1)] = e;
+                variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
+                variableTableSize = 1;
+                variableTable = table;
+                return value;
+            }
+            int potentialNewSize;
+            if ((potentialNewSize = variableTableSize + 1) > variableTableThreshold) {
+                table = variableTableRehash();
+            }
+            int index;
+            for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
+                if (internedName == e.name) {
+                    e.value = value;
+                    return value;
+                }
+            }
+            // external volatile value initialization intended to obviate the need for
+            // readValueUnderLock technique used in ConcurrentHashMap. may be a little
+            // slower, but better to pay a price on first write rather than all reads.
+            e = new VariableTableEntry(hash, internedName, value, table[index]);
+            table[index] = e;
+            variableTableSize = potentialNewSize;
+            variableTable = table; // write-volatile
+        } finally {
+            lock.unlock();
+        }
+        return value;
+    }
+
+    @Override   
+    protected IRubyObject variableTableRemove(String name) {
+        ReentrantLock lock;
+        (lock = variableWriteLock).lock();
+        try {
+            VariableTableEntry[] table;
+            if ((table = variableTable) != null) {
+                int hash = name.hashCode();
+                int index = hash & (table.length - 1);
+                VariableTableEntry first = table[index];
+                VariableTableEntry e;
+                for (e = first; e != null; e = e.next) {
+                    if (hash == e.hash && name.equals(e.name)) {
+                        IRubyObject oldValue = e.value;
+                        // All entries following removed node can stay
+                        // in list, but all preceding ones need to be
+                        // cloned.
+                        VariableTableEntry newFirst = e.next;
+                        for (VariableTableEntry p = first; p != e; p = p.next) {
+                            newFirst = new VariableTableEntry(p.hash, p.name, p.value, newFirst);
+                        }
+                        table[index] = newFirst;
+                        variableTableSize--;
+                        variableTable = table; // write-volatile 
+                        return oldValue;
+                    }
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
+        return null;
+    }
+    
+    @Override
+    protected IRubyObject variableTableReadLocked(VariableTableEntry entry) {
+        ReentrantLock lock;
+        (lock = variableWriteLock).lock();
+        try {
+            return entry.value;
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    @Override
+    protected void variableTableSync(List<Variable<IRubyObject>> vars) {
+        ReentrantLock lock;
+        (lock = variableWriteLock).lock();
+        try {
+            variableTableSize = 0;
+            variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
+            variableTable =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
+            for (Variable<IRubyObject> var : vars) {
+                assert !var.isConstant() && var.getValue() != null;
+                variableTableStore(var.getName(), var.getValue());
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    @Override
+    public void syncVariables(List<Variable<IRubyObject>> variables) {
+        ArrayList<Variable<IRubyObject>> constants = new ArrayList<Variable<IRubyObject>>(variables.size());
+        Variable<IRubyObject> var;
+        for (Iterator<Variable<IRubyObject>> iter = variables.iterator(); iter.hasNext(); ) {
+            if ((var = iter.next()).isConstant()) {
+                constants.add(var);
+                iter.remove();
+            }
+        }
+        ReentrantLock lock;
+        (lock = variableWriteLock).lock();
+        try {
+            variableTableSync(variables);
+            constantTableSync(constants);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    @Deprecated // born deprecated
+    public Map getVariableMap() {
+        Map map = variableTableGetMap();
+        constantTableGetMap(map);
+        return map;
+    }
+
+    @Override
+    public boolean hasVariables() {
+        return variableTableGetSize() > 0 || constantTableGetSize() > 0;
+    }
+
+    @Override
+    public int getVariableCount() {
+        return variableTableGetSize() + constantTableGetSize();
+    }
+    
+    @Override
+    public List<Variable<IRubyObject>> getVariableList() {
+        VariableTableEntry[] vtable = variableTableGetTable();
+        ConstantTableEntry[] ctable = constantTableGetTable();
+        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        IRubyObject readValue;
+        for (int i = vtable.length; --i >= 0; ) {
+            for (VariableTableEntry e = vtable[i]; e != null; e = e.next) {
+                if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
+                list.add(new VariableEntry<IRubyObject>(e.name, readValue));
+            }
+        }
+        for (int i = ctable.length; --i >= 0; ) {
+            for (ConstantTableEntry e = ctable[i]; e != null; e = e.next) {
+                list.add(e);
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public List<String> getVariableNameList() {
+        VariableTableEntry[] vtable = variableTableGetTable();
+        ConstantTableEntry[] ctable = constantTableGetTable();
+        ArrayList<String> list = new ArrayList<String>();
+        for (int i = vtable.length; --i >= 0; ) {
+            for (VariableTableEntry e = vtable[i]; e != null; e = e.next) {
+                list.add(e.name);
+            }
+        }
+        for (int i = ctable.length; --i >= 0; ) {
+            for (ConstantTableEntry e = ctable[i]; e != null; e = e.next) {
+                list.add(e.name);
+            }
+        }
+        return list;
+    }
+    
+
+    //
+    ////////////////// CONSTANT TABLE METHODS, ETC. ////////////////
+    //
+    
+    protected static final int CONSTANT_TABLE_DEFAULT_CAPACITY = 8; // MUST be power of 2!
+    protected static final int CONSTANT_TABLE_MAXIMUM_CAPACITY = 1 << 30;
+    protected static final float CONSTANT_TABLE_LOAD_FACTOR = 0.75f;
+
+    protected static final class ConstantTableEntry implements Variable<IRubyObject> {
+        final int hash;
+        final String name;
+        final IRubyObject value;
+        final ConstantTableEntry next;
+
+        // constant table entry values are final; if a constant is redefined, the
+        // entry will be removed and replaced with a new entry.
+        ConstantTableEntry(
+                int hash,
+                String name,
+                IRubyObject value,
+                ConstantTableEntry next) {
+            this.hash = hash;
+            this.name = name;
+            this.value = value;
+            this.next = next;
+        }
+        
+        public String getName() {
+            return name;
+        }
+        
+        public IRubyObject getValue() {
+            return value;
+        }
+        public final boolean isClassVariable() {
+            return false;
+        }
+        
+        public final boolean isConstant() {
+            return true;
+        }
+        
+        public final boolean isInstanceVariable() {
+            return false;
+        }
+
+        public final boolean isRubyVariable() {
+            return true;
+        }
+    }
+
+    protected boolean constantTableContains(String name) {
+        int hash = name.hashCode();
+        ConstantTableEntry[] table;
+        for (ConstantTableEntry e = (table = constantTable)[hash & (table.length - 1)]; e != null; e = e.next) {
+            if (hash == e.hash && name.equals(e.name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    protected boolean constantTableFastContains(String internedName) {
+        ConstantTableEntry[] table;
+        for (ConstantTableEntry e = (table = constantTable)[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
+            if (internedName == e.name) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    protected IRubyObject constantTableFetch(String name) {
+        int hash = name.hashCode();
+        ConstantTableEntry[] table;
+        for (ConstantTableEntry e = (table = constantTable)[hash & (table.length - 1)]; e != null; e = e.next) {
+            if (hash == e.hash && name.equals(e.name)) {
+                return e.value;
+            }
+        }
+        return null;
+    }
+    
+    protected IRubyObject constantTableFastFetch(String internedName) {
+        ConstantTableEntry[] table;
+        for (ConstantTableEntry e = (table = constantTable)[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
+            if (internedName == e.name) {
+                return e.value;
+            }
+        }
+        return null;
+    }
+    
+    protected IRubyObject constantTableStore(String name, IRubyObject value) {
+        int hash = name.hashCode();
+        ReentrantLock lock;
+        (lock = variableWriteLock).lock();
+        try {
+            ConstantTableEntry[] table;
+            ConstantTableEntry e;
+            ConstantTableEntry first;
+            int potentialNewSize;
+            if ((potentialNewSize = constantTableSize + 1) > constantTableThreshold) {
+                table = constantTableRehash();
+            } else {
+                table = constantTable;
+            }
+            int index;
+            for (e = first = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
+                if (hash == e.hash && name.equals(e.name)) {
+                    // if value is unchanged, do nothing
+                    if (value == e.value) {
+                        return value;
+                    }
+                    // create new entry, prepend to any trailing entries
+                    ConstantTableEntry newFirst = new ConstantTableEntry(e.hash, e.name, value, e.next);
+                    // all entries before this one must be cloned
+                    for (ConstantTableEntry n = first; n != e; n = n.next) {
+                        newFirst = new ConstantTableEntry(n.hash, n.name, n.value, newFirst);
+                    }
+                    table[index] = newFirst;
+                    constantTable = table; // write-volatile
+                    return value;
+                }
+            }
+            table[index] = new ConstantTableEntry(hash, name.intern(), value, table[index]);
+            constantTableSize = potentialNewSize;
+            constantTable = table; // write-volatile
+        } finally {
+            lock.unlock();
+        }
+        return value;
+    }
+    
+    protected IRubyObject constantTableFastStore(String internedName, IRubyObject value) {
+        assert internedName == internedName.intern() : internedName + " not interned";
+        int hash = internedName.hashCode();
+        ReentrantLock lock;
+        (lock = variableWriteLock).lock();
+        try {
+            ConstantTableEntry[] table;
+            ConstantTableEntry e;
+            ConstantTableEntry first;
+            int potentialNewSize;
+            if ((potentialNewSize = constantTableSize + 1) > constantTableThreshold) {
+                table = constantTableRehash();
+            } else {
+                table = constantTable;
+            }
+            int index;
+            for (e = first = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
+                if (internedName == e.name) {
+                    // if value is unchanged, do nothing
+                    if (value == e.value) {
+                        return value;
+                    }
+                    // create new entry, prepend to any trailing entries
+                    ConstantTableEntry newFirst = new ConstantTableEntry(e.hash, e.name, value, e.next);
+                    // all entries before this one must be cloned
+                    for (ConstantTableEntry n = first; n != e; n = n.next) {
+                        newFirst = new ConstantTableEntry(n.hash, n.name, n.value, newFirst);
+                    }
+                    table[index] = newFirst;
+                    constantTable = table; // write-volatile
+                    return value;
+                }
+            }
+            table[index] = new ConstantTableEntry(hash, internedName, value, table[index]);
+            constantTableSize = potentialNewSize;
+            constantTable = table; // write-volatile
+        } finally {
+            lock.unlock();
+        }
+        return value;
+    }
+        
+    protected IRubyObject constantTableRemove(String name) {
+        ReentrantLock lock;
+        (lock = variableWriteLock).lock();
+        try {
+            ConstantTableEntry[] table;
+            if ((table = constantTable) != null) {
+                int hash = name.hashCode();
+                int index = hash & (table.length - 1);
+                ConstantTableEntry first = table[index];
+                ConstantTableEntry e;
+                for (e = first; e != null; e = e.next) {
+                    if (hash == e.hash && name.equals(e.name)) {
+                        IRubyObject oldValue = e.value;
+                        // All entries following removed node can stay
+                        // in list, but all preceding ones need to be
+                        // cloned.
+                        ConstantTableEntry newFirst = e.next;
+                        for (ConstantTableEntry p = first; p != e; p = p.next) {
+                            newFirst = new ConstantTableEntry(p.hash, p.name, p.value, newFirst);
+                        }
+                        table[index] = newFirst;
+                        constantTableSize--;
+                        constantTable = table; // write-volatile 
+                        return oldValue;
+                    }
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
+        return null;
+    }
+    
+
+    protected ConstantTableEntry[] constantTableGetTable() {
+        return constantTable;
+    }
+    
+    protected int constantTableGetSize() {
+        if (constantTable != null) {
+            return constantTableSize;
+        }
+        return 0;
+    }
+    
+    protected void constantTableSync(List<Variable<IRubyObject>> vars) {
+        ReentrantLock lock;
+        (lock = variableWriteLock).lock();
+        try {
+            constantTableSize = 0;
+            constantTableThreshold = (int)(CONSTANT_TABLE_DEFAULT_CAPACITY * CONSTANT_TABLE_LOAD_FACTOR);
+            constantTable =  new ConstantTableEntry[CONSTANT_TABLE_DEFAULT_CAPACITY];
+            for (Variable<IRubyObject> var : vars) {
+                assert var.isConstant() && var.getValue() != null;
+                constantTableStore(var.getName(), var.getValue());
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    // MUST be called from synchronized/locked block!
+    // should only be called by constantTableStore/constantTableFastStore
+    private final ConstantTableEntry[] constantTableRehash() {
+        ConstantTableEntry[] oldTable = constantTable;
+        int oldCapacity;
+        if ((oldCapacity = oldTable.length) >= CONSTANT_TABLE_MAXIMUM_CAPACITY) {
+            return oldTable;
+        }
+        
+        int newCapacity = oldCapacity << 1;
+        ConstantTableEntry[] newTable = new ConstantTableEntry[newCapacity];
+        constantTableThreshold = (int)(newCapacity * CONSTANT_TABLE_LOAD_FACTOR);
+        int sizeMask = newCapacity - 1;
+        ConstantTableEntry e;
+        for (int i = oldCapacity; --i >= 0; ) {
+            // We need to guarantee that any existing reads of old Map can
+            //  proceed. So we cannot yet null out each bin.
+            e = oldTable[i];
+
+            if (e != null) {
+                ConstantTableEntry next = e.next;
+                int idx = e.hash & sizeMask;
+
+                //  Single node on list
+                if (next == null)
+                    newTable[idx] = e;
+
+                else {
+                    // Reuse trailing consecutive sequence at same slot
+                    ConstantTableEntry lastRun = e;
+                    int lastIdx = idx;
+                    for (ConstantTableEntry last = next;
+                         last != null;
+                         last = last.next) {
+                        int k = last.hash & sizeMask;
+                        if (k != lastIdx) {
+                            lastIdx = k;
+                            lastRun = last;
+                        }
+                    }
+                    newTable[lastIdx] = lastRun;
+
+                    // Clone all remaining nodes
+                    for (ConstantTableEntry p = e; p != lastRun; p = p.next) {
+                        int k = p.hash & sizeMask;
+                        ConstantTableEntry m = new ConstantTableEntry(p.hash, p.name, p.value, newTable[k]);
+                        newTable[k] = m;
+                    }
+                }
+            }
+        }
+        constantTable = newTable;
+        return newTable;
+    }
+    
+
+    /**
+     * Method to help ease transition to new variables implementation.
+     * Will likely be deprecated in the near future.
+     */
+    @SuppressWarnings("unchecked")
+    protected Map constantTableGetMap() {
+        HashMap map = new HashMap();
+        ConstantTableEntry[] table;
+        if ((table = constantTable) != null) {
+            for (int i = table.length; --i >= 0; ) {
+                for (ConstantTableEntry e = table[i]; e != null; e = e.next) {
+                    map.put(e.name, e.value);
+                }
+            }
+        }
+        return map;
+    }
+    
+    /**
+     * Method to help ease transition to new variables implementation.
+     * Will likely be deprecated in the near future.
+     */
+    @SuppressWarnings("unchecked")
+    protected Map constantTableGetMap(Map map) {
+        ConstantTableEntry[] table;
+        if ((table = constantTable) != null) {
+            for (int i = table.length; --i >= 0; ) {
+                for (ConstantTableEntry e = table[i]; e != null; e = e.next) {
+                    map.put(e.name, e.value);
+                }
+            }
+        }
+        return map;
+    }
 }

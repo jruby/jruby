@@ -72,7 +72,7 @@ public class RubyFileStat extends RubyObject {
         runtime.setFileStat(fileStatClass);
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
 
-        fileStatClass.includeModule(runtime.getModule("Comparable"));
+        fileStatClass.includeModule(runtime.fastGetModule("Comparable"));
         fileStatClass.defineMethod("<=>", callbackFactory.getFastMethod("not_implemented1", IRubyObject.class));
         fileStatClass.defineMethod("atime", callbackFactory.getFastMethod("not_implemented"));
         fileStatClass.defineMethod("blockdev?", callbackFactory.getFastMethod("not_implemented"));

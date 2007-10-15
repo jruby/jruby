@@ -141,7 +141,7 @@ public class ShellLauncher {
     }
 
     private String[] getCurrentEnv() {
-        RubyHash hash = (RubyHash)runtime.getObject().getConstant("ENV");
+        RubyHash hash = (RubyHash)runtime.getObject().fastGetConstant("ENV");
         String[] ret = new String[hash.size()];
         int i=0;
 

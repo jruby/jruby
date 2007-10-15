@@ -383,7 +383,7 @@ public class JavaUtil {
             RubyObject rubyObject = (RubyObject) argument;
             if (!rubyObject.respondsTo("java_object")) {
                 Ruby runtime = rubyObject.getRuntime();
-                IRubyObject javaUtilities = runtime.getModule("JavaUtilities");
+                IRubyObject javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
                 IRubyObject javaInterfaceModule = Java.get_interface_module(javaUtilities, JavaClass.get(runtime, parameterType));
                 if (!rubyObject.isKindOf((RubyModule) javaInterfaceModule)) {
                     rubyObject.extend(new IRubyObject[] {javaInterfaceModule});

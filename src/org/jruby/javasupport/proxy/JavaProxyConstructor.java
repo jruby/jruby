@@ -59,7 +59,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
 
     JavaProxyConstructor(Ruby runtime, JavaProxyClass pClass,
             Constructor constructor) {
-        super(runtime, runtime.getModule("Java").getClass(
+        super(runtime, runtime.getJavaSupport().getJavaModule().fastGetClass(
                 "JavaProxyConstructor"));
         this.declaringProxyClass = pClass;
         this.proxyConstructor = constructor;

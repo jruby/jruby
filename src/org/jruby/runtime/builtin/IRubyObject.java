@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -17,6 +18,7 @@
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,6 +35,7 @@
 package org.jruby.runtime.builtin;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.jruby.Ruby;
@@ -42,7 +45,6 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.runtime.Block;
@@ -70,57 +72,6 @@ public interface IRubyObject {
      * @return the ClassIndex of the native type this object was constructed from
      */
     int getNativeTypeIndex();
-    
-    /**
-     * Gets a copy of the instance variables for this object, if any exist.
-     * Returns null if this object has no instance variables.
-     * "safe" in that it doesn't cause the instance var map to be created.
-     *
-     * @return A snapshot of the instance vars, or null if none.
-     */
-    Map safeGetInstanceVariables();
-    
-    /**
-     * Returns true if the object has any instance variables, false otherwise.
-     * "safe" in that it doesn't cause the instance var map to be created.
-     *
-     * @return true if the object has instance variables, false otherwise.
-     */
-    boolean safeHasInstanceVariables();
-    
-    /**
-     * RubyMethod getInstanceVar.
-     * @param string
-     * @return RubyObject
-     */
-    IRubyObject getInstanceVariable(String string);
-    
-    /**
-     * RubyMethod setInstanceVar.
-     * @param string
-     * @param rubyObject
-     * @return RubyObject
-     */
-    IRubyObject setInstanceVariable(String string, IRubyObject rubyObject);
-    
-    /**
-     *
-     * @return
-     */
-    Map getInstanceVariables();
-    
-    /**
-     *
-     * 
-     * @param instanceVariables 
-     */
-    void setInstanceVariables(Map instanceVariables);
-    
-    /**
-     *
-     * @return
-     */
-    Map getInstanceVariablesSnapshot();
     
     public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block);
 
@@ -384,12 +335,6 @@ public interface IRubyObject {
     boolean isSingleton();
     
     /**
-     *
-     * @return 
-     */
-    Iterator instanceVariableNames();
-    
-    /**
      * Our version of Data_Wrap_Struct.
      *
      * This method will just set a private pointer to the object provided. This pointer is transient
@@ -422,4 +367,171 @@ public interface IRubyObject {
     public void addFinalizer(RubyProc finalizer);
 
     public void removeFinalizers();
+
+    //
+    // COMMON VARIABLE METHODS
+    //
+
+    /**
+     * Returns true if object has any variables, defined as:
+     * <ul>
+     * <li> instance variables
+     * <li> class variables
+     * <li> constants
+     * <li> internal variables, such as those used when marshalling Ranges and Exceptions
+     * </ul>
+     * @return true if object has any variables, else false
+     */
+    boolean hasVariables();
+
+    /**
+     * @return the count of all variables (ivar/cvar/constant/internal)
+     */
+    int getVariableCount();
+    
+    /**
+     * Sets object's variables to those in the supplied list,
+     * removing/replacing any previously defined variables.  Applies
+     * to all variable types (ivar/cvar/constant/internal).
+     * 
+     * @param variables the variables to be set for object 
+     */
+    void syncVariables(List<Variable<IRubyObject>> variables);
+    
+    /**
+     * @return a list of all variables (ivar/cvar/constant/internal)
+     */
+    List<Variable<IRubyObject>> getVariableList();
+
+    //
+    // INSTANCE VARIABLE METHODS
+    //
+
+    boolean hasInstanceVariable(String name);
+    boolean fastHasInstanceVariable(String internedName);
+    
+    IRubyObject getInstanceVariable(String name);
+    IRubyObject fastGetInstanceVariable(String internedName);
+    
+    IRubyObject setInstanceVariable(String name, IRubyObject value);
+    IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value);
+
+    IRubyObject removeInstanceVariable(String name);
+
+    List<Variable<IRubyObject>> getInstanceVariableList();
+
+    List<String> getInstanceVariableNameList();
+
+    //
+    // INTERNAL VARIABLE METHODS
+    //
+
+    /**
+     * Returns true if object has the named internal variable.  Use only
+     * for internal variables (not ivar/cvar/constant).
+     * 
+     * @param name the name of an internal variable
+     * @return true if object has the named internal variable.
+     */
+    boolean hasInternalVariable(String name);
+    
+    /**
+     * Returns true if object has the named internal variable.  Use only
+     * for internal variables (not ivar/cvar/constant). The supplied
+     * name <em>must</em> have been previously interned.
+     * 
+     * @param internedName the interned name of an internal variable
+     * @return true if object has the named internal variable, else false
+     */
+    boolean fastHasInternalVariable(String internedName);
+
+    /**
+     * Returns the named internal variable if present, else null.  Use only
+     * for internal variables (not ivar/cvar/constant).
+     * 
+     * @param name the name of an internal variable
+     * @return the named internal variable if present, else null
+     */
+    IRubyObject getInternalVariable(String name);
+    
+    /**
+     * Returns the named internal variable if present, else null.  Use only
+     * for internal variables (not ivar/cvar/constant). The supplied
+     * name <em>must</em> have been previously interned.
+     * 
+     * @param internedName the interned name of an internal variable
+     * @return he named internal variable if present, else null
+     */
+    IRubyObject fastGetInternalVariable(String internedName);
+
+    /**
+     * Sets the named internal variable to the specified value.  Use only
+     * for internal variables (not ivar/cvar/constant).
+     * 
+     * @param name the name of an internal variable
+     * @param value the value to be set
+     */
+    void setInternalVariable(String name, IRubyObject value);
+    
+    /**
+     * Sets the named internal variable to the specified value.  Use only
+     * for internal variables (not ivar/cvar/constant). The supplied
+     * name <em>must</em> have been previously interned.
+     * 
+     * @param internedName the interned name of an internal variable
+     * @param value the value to be set
+     */
+    void fastSetInternalVariable(String internedName, IRubyObject value);
+
+    /**
+     * Removes the named internal variable, if present, returning its
+     * value.  Use only for internal variables (not ivar/cvar/constant).
+     * 
+     * @param name the name of the variable to remove
+     * @return the value of the remove variable, if present; else null
+     */
+    IRubyObject removeInternalVariable(String name);
+
+    /**
+     * @return only internal variables (NOT ivar/cvar/constant)
+     */
+    List<Variable<IRubyObject>> getInternalVariableList();
+
+    /**
+     * @return a list of all variable names (ivar/cvar/constant/internal)
+     */
+    List<String> getVariableNameList();
+
+    /**
+     * @return all variables (ivar/cvar/constant/internal) as a HashMap.
+     *         This is a snapshot, not the store itself.  Provided mostly
+     *         to ease transition to new variables mechanism. May be 
+     *         deprecated in the near future -- call the appropriate 
+     *         getXxxList method for future compatiblity.
+     */
+    @Deprecated // born deprecated
+    Map getVariableMap();
+
+    //
+    // DEPRECATED METHODS
+    //
+    
+    @Deprecated
+    Map getInstanceVariables();
+    
+    @Deprecated
+    Map getInstanceVariablesSnapshot();
+    
+    @Deprecated
+    Iterator instanceVariableNames();
+   
+    @Deprecated
+    Map safeGetInstanceVariables();
+    
+    @Deprecated
+    boolean safeHasInstanceVariables();
+        
+    @Deprecated
+    void setInstanceVariables(Map instanceVariables);
+    
 }

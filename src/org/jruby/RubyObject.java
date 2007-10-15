@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -22,6 +23,7 @@
  * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * Copyright (C) 2007 MenTaLguY <mental@rydia.net>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -50,10 +52,11 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.component.VariableEntry;
 import org.jruby.util.IdUtil;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -77,8 +80,20 @@ public class RubyObject implements Cloneable, IRubyObject {
     // The class of this object
     protected RubyClass metaClass;
 
-    // The instance variables of this object.
-    protected Map instanceVariables;
+    /**
+     * The variableTable contains variables for an object, defined as:
+     * <ul>
+     * <li> instance variables
+     * <li> class variables (for classes/modules)
+     * <li> internal variables (such as those used when marshaling RubyRange and RubyException)
+     * </ul>
+     * 
+     * Constants are stored separately, see {@link RubyModule}. 
+     * 
+     */
+    protected transient volatile VariableTableEntry[] variableTable;
+    protected transient int variableTableSize;
+    protected transient int variableTableThreshold;
 
     private transient Object dataStruct;
 
@@ -266,44 +281,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     public Ruby getRuntime() {
         return metaClass.getRuntime();
     }
-    
-    public boolean safeHasInstanceVariables() {
-        return instanceVariables != null && instanceVariables.size() > 0;
-    }
-    
-    public Map safeGetInstanceVariables() {
-        return instanceVariables == null ? null : getInstanceVariablesSnapshot();
-    }
-
-    public IRubyObject removeInstanceVariable(String name) {
-        return (IRubyObject) getInstanceVariables().remove(name);
-    }
-
-    /**
-     * Returns an unmodifiable snapshot of the current state of instance variables.
-     * This method synchronizes access to avoid deadlocks.
-     */
-    public Map getInstanceVariablesSnapshot() {
-        synchronized(getInstanceVariables()) {
-            return Collections.unmodifiableMap(new HashMap(getInstanceVariables()));
-        }
-    }
-
-    public Map getInstanceVariables() {
-    	// TODO: double checking may or may not be safe enough here
-    	if (instanceVariables == null) {
-	    	synchronized (this) {
-	    		if (instanceVariables == null) {
-                            instanceVariables = Collections.synchronizedMap(new HashMap());
-	    		}
-	    	}
-    	}
-        return instanceVariables;
-    }
-
-    public void setInstanceVariables(Map instanceVariables) {
-        this.instanceVariables = Collections.synchronizedMap(instanceVariables);
-    }
 
     /**
      * if exist return the meta-class else return the type of the object.
@@ -431,7 +408,9 @@ public class RubyObject implements Cloneable, IRubyObject {
 
        clone.setSuperClass(klass.getSuperClass());
 
-       if (klass.safeHasInstanceVariables()) clone.setInstanceVariables(new HashMap(klass.getInstanceVariables()));
+       if (klass.hasVariables()) {
+           clone.syncVariables(klass.getVariableList());
+       }
 
        klass.cloneMethods(clone);
 
@@ -447,7 +426,11 @@ public class RubyObject implements Cloneable, IRubyObject {
         assert !clone.isFrozen() : "frozen object (" + clone.getMetaClass().getName() + ") allocated";
 
         original.copySpecialInstanceVariables(clone);
-        if (original.safeHasInstanceVariables()) clone.setInstanceVariables(new HashMap(original.getInstanceVariables()));
+
+        if (original.hasVariables()) {
+            clone.syncVariables(original.getVariableList());
+        }
+
         /* FIXME: finalizer should be dupped here */
         clone.callMethod(clone.getRuntime().getCurrentContext(), "initialize_copy", original);
     }
@@ -528,72 +511,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
 
         return method.call(context, this, rubyclass, name, args, block);
-    }
-
-    @JRubyMethod(name = "instance_variable_get", required = 1, module = true)
-    public IRubyObject instance_variable_get(IRubyObject var) {
-    	String varName = var.asSymbol();
-
-    	if (!IdUtil.isValidInstanceVariableName(varName)) {
-    		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
-    	}
-
-    	IRubyObject variable = getInstanceVariable(varName);
-
-    	// Pickaxe v2 says no var should show NameError, but ruby only sends back nil..
-    	return variable == null ? getRuntime().getNil() : variable;
-    }
-
-    @JRubyMethod(name = "instance_variable_defined?", required = 1, module = true)
-    public IRubyObject instance_variable_defined_p(IRubyObject var) {
-    	String varName = var.asSymbol();
-
-    	if (!IdUtil.isValidInstanceVariableName(varName)) {
-    		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
-    	}
-
-    	IRubyObject variable = getInstanceVariable(varName);
-
-        return (variable != null) ? getRuntime().getTrue() : getRuntime().getFalse();
-    }
-
-    public IRubyObject getInstanceVariable(String name) {
-        return (IRubyObject) getInstanceVariables().get(name);
-    }
-
-    @JRubyMethod(name = "instance_variable_set", required = 2, module = true)
-    public IRubyObject instance_variable_set(IRubyObject var, IRubyObject value) {
-    	String varName = var.asSymbol();
-
-    	if (!IdUtil.isValidInstanceVariableName(varName)) {
-    		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
-    	}
-
-    	return setInstanceVariable(var.asSymbol(), value);
-    }
-
-    public IRubyObject setInstanceVariable(String name, IRubyObject value,
-            String taintError, String freezeError) {
-        if (isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw getRuntime().newSecurityError(taintError);
-        }
-        testFrozen(freezeError);
-
-        getInstanceVariables().put(name, value);
-
-        return value;
-    }
-
-    /** rb_iv_set / rb_ivar_set
-     *
-     */
-    public IRubyObject setInstanceVariable(String name, IRubyObject value) {
-        return setInstanceVariable(name, value,
-                "Insecure: can't modify instance variable", "");
-    }
-
-    public Iterator instanceVariableNames() {
-        return getInstanceVariables().keySet().iterator();
     }
 
     public void callInit(IRubyObject[] args, Block block) {
@@ -1120,17 +1037,13 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     private StringBuffer inspectObj(StringBuffer part) {
         String sep = "";
-        Map iVars = getInstanceVariablesSnapshot();
-        for (Iterator iter = iVars.keySet().iterator(); iter.hasNext();) {
-            String name = (String) iter.next();
-            if(IdUtil.isInstanceVariable(name)) {
-                part.append(sep);
-                part.append(" ");
-                part.append(name);
-                part.append("=");
-                part.append(((IRubyObject)(iVars.get(name))).callMethod(getRuntime().getCurrentContext(), "inspect"));
-                sep = ",";
-            }
+        for (Variable<IRubyObject> ivar : getInstanceVariableList()) {
+            part.append(sep);
+            part.append(" ");
+            part.append(ivar.getName());
+            part.append("=");
+            part.append(ivar.getValue().callMethod(getRuntime().getCurrentContext(), "inspect"));
+            sep = ",";
         }
         part.append(">");
         return part;
@@ -1148,7 +1061,9 @@ public class RubyObject implements Cloneable, IRubyObject {
                 this != runtime.getObject() &&
                 this != runtime.getModule() &&
                 !(this instanceof RubyModule) &&
-                safeHasInstanceVariables()) {
+                // TODO: should have #hasInstanceVariables method, though
+                // this will work here:
+                hasVariables()) {
 
             StringBuffer part = new StringBuffer();
             String cname = getMetaClass().getRealClass().getName();
@@ -1180,20 +1095,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getRuntime().newBoolean(type() == type);
     }
 
-
-    @JRubyMethod(name = "instance_variables", module = true)
-    public RubyArray instance_variables() {
-        ArrayList names = new ArrayList();
-        for(Iterator iter = getInstanceVariablesSnapshot().keySet().iterator();iter.hasNext();) {
-            String name = (String) iter.next();
-
-            // Do not include constants which also get stored in instance var list in classes.
-            if (IdUtil.isInstanceVariable(name)) {
-                names.add(getRuntime().newString(name));
-            }
-        }
-        return getRuntime().newArray(names);
-    }
 
     /** rb_obj_is_kind_of
      *
@@ -1424,26 +1325,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     	return getRuntime().getFalse();
     }
     
-    @JRubyMethod(name = "remove_instance_variable", required = 1, frame = true, module = true)
-    public IRubyObject remove_instance_variable(IRubyObject name, Block block) {
-       String id = name.asSymbol();
-
-       if (!IdUtil.isInstanceVariable(id)) {
-           throw getRuntime().newNameError("wrong instance variable name " + id, id);
-       }
-       if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-           throw getRuntime().newSecurityError("Insecure: can't remove instance variable");
-       }
-       testFrozen("class/module");
-
-       IRubyObject variable = removeInstanceVariable(id); 
-       if (variable != null) {
-           return variable;
-       }
-
-       throw getRuntime().newNameError("instance variable " + id + " not defined", id);
-   }
-    
     /**
      * @see org.jruby.runtime.builtin.IRubyObject#getType()
      */
@@ -1480,4 +1361,619 @@ public class RubyObject implements Cloneable, IRubyObject {
             getRuntime().removeFinalizer(this.finalizer);
         }
     }
+
+
+    //
+    // INSTANCE VARIABLE RUBY METHODS
+    //
+    
+    @JRubyMethod(name = "instance_variable_defined?", required = 1, module = true)
+    public IRubyObject instance_variable_defined_p(IRubyObject name) {
+        if (variableTableFastContains(validateInstanceVariable(name.asSymbol()))) {
+            return getRuntime().getTrue();
+        }
+        return getRuntime().getFalse();
+    }
+
+    @JRubyMethod(name = "instance_variable_get", required = 1, module = true)
+    public IRubyObject instance_variable_get(IRubyObject name) {
+        IRubyObject value;
+        if ((value = variableTableFastFetch(validateInstanceVariable(name.asSymbol()))) != null) {
+            return value;
+        }
+        return getRuntime().getNil();
+    }
+
+    @JRubyMethod(name = "instance_variable_set", required = 2, module = true)
+    public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
+        ensureInstanceVariablesSettable();
+        return variableTableFastStore(validateInstanceVariable(name.asSymbol()), value);
+    }
+
+    @JRubyMethod(name = "remove_instance_variable", required = 1, frame = true, module = true)
+    public IRubyObject remove_instance_variable(IRubyObject name, Block block) {
+        ensureInstanceVariablesSettable();
+        IRubyObject value;
+        if ((value = variableTableRemove(validateInstanceVariable(name.asSymbol()))) != null) {
+            return value;
+        }
+        throw getRuntime().newNameError("instance variable " + name.asSymbol() + " not defined", name.asSymbol());
+    }
+    
+    @JRubyMethod(name = "instance_variables", module = true)
+    public RubyArray instance_variables() {
+        Ruby runtime = getRuntime();
+        List<String> nameList = getInstanceVariableNameList();
+
+        RubyArray array = runtime.newArray(nameList.size());
+
+        for (String name : nameList) {
+            array.append(runtime.newString(name));
+        }
+
+        return array;
+    }
+
+    //
+    // INSTANCE VARIABLE API METHODS
+    //
+    
+    public boolean hasInstanceVariable(String name) {
+        assert IdUtil.isInstanceVariable(name);
+        return variableTableContains(name);
+    }
+    
+    public boolean fastHasInstanceVariable(String internedName) {
+        assert IdUtil.isInstanceVariable(internedName);
+        return variableTableFastContains(internedName);
+    }
+    
+    public IRubyObject getInstanceVariable(String name) {
+        assert IdUtil.isInstanceVariable(name);
+        return variableTableFetch(name);
+    }
+    
+    public IRubyObject fastGetInstanceVariable(String internedName) {
+        assert IdUtil.isInstanceVariable(internedName);
+        return variableTableFastFetch(internedName);
+    }
+
+    /** rb_iv_set / rb_ivar_set
+    *
+    */
+    public IRubyObject setInstanceVariable(String name, IRubyObject value) {
+        assert IdUtil.isInstanceVariable(name) && value != null;
+        ensureInstanceVariablesSettable();
+        return variableTableStore(name, value);
+    }
+    
+    public IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value) {
+        assert IdUtil.isInstanceVariable(internedName) && value != null;
+        ensureInstanceVariablesSettable();
+        return variableTableFastStore(internedName, value);
+     }
+
+    public IRubyObject removeInstanceVariable(String name) {
+        assert IdUtil.isInstanceVariable(name);
+        ensureInstanceVariablesSettable();
+        return variableTableRemove(name);
+    }
+
+    public List<Variable<IRubyObject>> getInstanceVariableList() {
+        VariableTableEntry[] table = variableTableGetTable();
+        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        IRubyObject readValue;
+        for (int i = table.length; --i >= 0; ) {
+            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
+                if (IdUtil.isInstanceVariable(e.name)) {
+                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
+                    list.add(new VariableEntry<IRubyObject>(e.name, readValue));
+                }
+            }
+        }
+        return list;
+    }
+
+    public List<String> getInstanceVariableNameList() {
+        VariableTableEntry[] table = variableTableGetTable();
+        ArrayList<String> list = new ArrayList<String>();
+        for (int i = table.length; --i >= 0; ) {
+            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
+                if (IdUtil.isInstanceVariable(e.name)) {
+                    list.add(e.name);
+                }
+            }
+        }
+        return list;
+    }
+
+    protected static final String ERR_INSECURE_SET_INST_VAR  = "Insecure: can't modify instance variable";
+
+    protected String validateInstanceVariable(String name) {
+        if (IdUtil.isValidInstanceVariableName(name)) {
+            return name;
+        }
+        throw getRuntime().newNameError("`" + name + "' is not allowable as an instance variable name", name);
+    }
+
+    protected void ensureInstanceVariablesSettable() {
+        if (!isFrozen() && (getRuntime().getSafeLevel() < 4 || isTaint())) {
+            return;
+        }
+        
+        if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
+            throw getRuntime().newSecurityError(ERR_INSECURE_SET_INST_VAR);
+        }
+        if (isFrozen()) {
+            if (this instanceof RubyModule) {
+                throw getRuntime().newFrozenError("class/module ");
+            } else {
+                throw getRuntime().newFrozenError("");
+            }
+        }
+    }
+
+    //
+    // INTERNAL VARIABLE METHODS
+    //
+    
+    public boolean hasInternalVariable(String name) {
+        assert !isRubyVariable(name);
+        return variableTableContains(name);
+    }
+
+    public boolean fastHasInternalVariable(String internedName) {
+        assert !isRubyVariable(internedName);
+        return variableTableFastContains(internedName);
+    }
+
+    public IRubyObject getInternalVariable(String name) {
+        assert !isRubyVariable(name);
+        return variableTableFetch(name);
+    }
+
+    public IRubyObject fastGetInternalVariable(String internedName) {
+        assert !isRubyVariable(internedName);
+        return variableTableFastFetch(internedName);
+    }
+
+    public void setInternalVariable(String name, IRubyObject value) {
+        assert !isRubyVariable(name);
+        variableTableStore(name, value);
+    }
+
+    public void fastSetInternalVariable(String internedName, IRubyObject value) {
+        assert !isRubyVariable(internedName);
+        variableTableFastStore(internedName, value);
+    }
+
+    public IRubyObject removeInternalVariable(String name) {
+        assert !isRubyVariable(name);
+        return variableTableRemove(name);
+    }
+
+    public void syncVariables(List<Variable<IRubyObject>> variables) {
+        variableTableSync(variables);
+    }
+
+    public List<Variable<IRubyObject>> getInternalVariableList() {
+        VariableTableEntry[] table = variableTableGetTable();
+        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        IRubyObject readValue;
+        for (int i = table.length; --i >= 0; ) {
+            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
+                if (!isRubyVariable(e.name)) {
+                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
+                    list.add(new VariableEntry<IRubyObject>(e.name, readValue));
+                }
+            }
+        }
+        return list;
+    }
+
+    
+    //
+    // COMMON VARIABLE METHODS
+    //
+
+    /**
+     * Returns true if object has any variables, defined as:
+     * <ul>
+     * <li> instance variables
+     * <li> class variables
+     * <li> constants
+     * <li> internal variables, such as those used when marshaling Ranges and Exceptions
+     * </ul>
+     * @return true if object has any variables, else false
+     */
+    public boolean hasVariables() {
+        return variableTableGetSize() > 0;
+    }
+
+    public int getVariableCount() {
+        return variableTableGetSize();
+    }
+    
+    // TODO: must override in RubyModule to pick up constants
+    public List<Variable<IRubyObject>> getVariableList() {
+        VariableTableEntry[] table = variableTableGetTable();
+        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        IRubyObject readValue;
+        for (int i = table.length; --i >= 0; ) {
+            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
+                if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
+                list.add(new VariableEntry<IRubyObject>(e.name, readValue));
+            }
+        }
+        return list;
+    }
+
+   // TODO: must override in RubyModule to pick up constants
+   public List<String> getVariableNameList() {
+        VariableTableEntry[] table = variableTableGetTable();
+        ArrayList<String> list = new ArrayList<String>();
+        for (int i = table.length; --i >= 0; ) {
+            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
+                list.add(e.name);
+            }
+        }
+        return list;
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Deprecated // born deprecated
+    public Map getVariableMap() {
+        return variableTableGetMap();
+    }
+
+
+    // FIXME: this should go somewhere more generic -- maybe IdUtil
+    protected static final boolean isRubyVariable(String name) {
+        char c;
+        return name.length() > 0 && ((c = name.charAt(0)) == '@' || (c <= 'Z' && c >= 'A'));
+    }
+    
+    //
+    // VARIABLE TABLE METHODS, ETC.
+    //
+    
+    protected static final int VARIABLE_TABLE_DEFAULT_CAPACITY = 8; // MUST be power of 2!
+    protected static final int VARIABLE_TABLE_MAXIMUM_CAPACITY = 1 << 30;
+    protected static final float VARIABLE_TABLE_LOAD_FACTOR = 0.75f;
+    protected static final VariableTableEntry[] VARIABLE_TABLE_EMPTY_TABLE = new VariableTableEntry[0];
+
+    protected static final class VariableTableEntry {
+        final int hash;
+        final String name;
+        volatile IRubyObject value;
+        final VariableTableEntry next;
+        
+        VariableTableEntry(int hash, String name, IRubyObject value, VariableTableEntry next) {
+            this.hash = hash;
+            this.name = name;
+            this.value = value;
+            this.next = next;
+        }
+    }
+    
+    protected synchronized IRubyObject variableTableReadLocked(VariableTableEntry entry) {
+        return entry.value;
+    }
+
+    protected boolean variableTableContains(String name) {
+        VariableTableEntry[] table;
+        if ((table = variableTable) != null) {
+            int hash = name.hashCode();
+            for (VariableTableEntry e = table[hash & (table.length - 1)]; e != null; e = e.next) {
+                if (hash == e.hash && name.equals(e.name)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    protected boolean variableTableFastContains(String internedName) {
+        VariableTableEntry[] table;
+        if ((table = variableTable) != null) {
+            for (VariableTableEntry e = table[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
+                if (internedName == e.name) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    protected IRubyObject variableTableFetch(String name) {
+        VariableTableEntry[] table;
+        IRubyObject readValue;
+        if ((table = variableTable) != null) {
+            int hash = name.hashCode();
+            for (VariableTableEntry e = table[hash & (table.length - 1)]; e != null; e = e.next) {
+                if (hash == e.hash && name.equals(e.name)) {
+                    if ((readValue = e.value) != null) return readValue;
+                    return variableTableReadLocked(e);
+                }
+            }
+        }
+        return null;
+    }
+
+    protected IRubyObject variableTableFastFetch(String internedName) {
+        VariableTableEntry[] table;
+        IRubyObject readValue;
+        if ((table = variableTable) != null) {
+            for (VariableTableEntry e = table[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
+                if (internedName == e.name) {
+                    if ((readValue = e.value) != null) return readValue;
+                    return variableTableReadLocked(e);
+                }
+            }
+        }
+        return null;
+    }
+
+    protected IRubyObject variableTableStore(String name, IRubyObject value) {
+        int hash = name.hashCode();
+        synchronized(this) {
+            VariableTableEntry[] table;
+            VariableTableEntry e;
+            if ((table = variableTable) == null) {
+                table =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
+                e = new VariableTableEntry(hash, name.intern(), value, null);
+                table[hash & (VARIABLE_TABLE_DEFAULT_CAPACITY - 1)] = e;
+                variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
+                variableTableSize = 1;
+                variableTable = table;
+                return value;
+            }
+            int potentialNewSize;
+            if ((potentialNewSize = variableTableSize + 1) > variableTableThreshold) {
+                table = variableTableRehash();
+            }
+            int index;
+            for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
+                if (hash == e.hash && name.equals(e.name)) {
+                    e.value = value;
+                    return value;
+                }
+            }
+            e = new VariableTableEntry(hash, name.intern(), value, table[index]);
+            table[index] = e;
+            variableTableSize = potentialNewSize;
+            variableTable = table; // write-volatile
+        }
+        return value;
+    }
+
+    protected IRubyObject variableTableFastStore(String internedName, IRubyObject value) {
+        assert internedName == internedName.intern() : internedName + " not interned";
+        int hash = internedName.hashCode();
+        synchronized(this) {
+            VariableTableEntry[] table;
+            VariableTableEntry e;
+            if ((table = variableTable) == null) {
+                table =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
+                e = new VariableTableEntry(hash, internedName, value, null);
+                table[hash & (VARIABLE_TABLE_DEFAULT_CAPACITY - 1)] = e;
+                variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
+                variableTableSize = 1;
+                variableTable = table;
+                return value;
+            }
+            int potentialNewSize;
+            if ((potentialNewSize = variableTableSize + 1) > variableTableThreshold) {
+                table = variableTableRehash();
+            }
+            int index;
+            for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
+                if (internedName == e.name) {
+                    e.value = value;
+                    return value;
+                }
+            }
+            e = new VariableTableEntry(hash, internedName, value, table[index]);
+            table[index] = e;
+            variableTableSize = potentialNewSize;
+            variableTable = table; // write-volatile
+        }
+        return value;
+    }
+
+    protected IRubyObject variableTableRemove(String name) {
+        synchronized(this) {
+            VariableTableEntry[] table;
+            if ((table = variableTable) != null) {
+                int hash = name.hashCode();
+                int index = hash & (table.length - 1);
+                VariableTableEntry first = table[index];
+                VariableTableEntry e;
+                for (e = first; e != null; e = e.next) {
+                    if (hash == e.hash && name.equals(e.name)) {
+                        IRubyObject oldValue = e.value;
+                        // All entries following removed node can stay
+                        // in list, but all preceding ones need to be
+                        // cloned.
+                        VariableTableEntry newFirst = e.next;
+                        for (VariableTableEntry p = first; p != e; p = p.next) {
+                            newFirst = new VariableTableEntry(p.hash, p.name, p.value, newFirst);
+                        }
+                        table[index] = newFirst;
+                        variableTableSize--;
+                        variableTable = table; // write-volatile 
+                        return oldValue;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    protected VariableTableEntry[] variableTableGetTable() {
+        VariableTableEntry[] table;
+        if ((table = variableTable) != null) {
+            return table;
+        }
+        return VARIABLE_TABLE_EMPTY_TABLE;
+    }
+
+    protected int variableTableGetSize() {
+        if (variableTable != null) {
+            return variableTableSize;
+        }
+        return 0;
+    }
+
+    protected void variableTableSync(List<Variable<IRubyObject>> vars) {
+        synchronized(this) {
+            variableTableSize = 0;
+            variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
+            variableTable =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
+            for (Variable<IRubyObject> var : vars) {
+                variableTableStore(var.getName(), var.getValue());
+            }
+        }
+    }
+
+    // MUST be called from synchronized/locked block!
+    // should only be called by variableTableStore/variableTableFastStore
+    protected final VariableTableEntry[] variableTableRehash() {
+        VariableTableEntry[] oldTable = variableTable;
+        int oldCapacity;
+        if ((oldCapacity = oldTable.length) >= VARIABLE_TABLE_MAXIMUM_CAPACITY) {
+            return oldTable;
+        }
+
+        int newCapacity = oldCapacity << 1;
+        VariableTableEntry[] newTable = new VariableTableEntry[newCapacity];
+        variableTableThreshold = (int)(newCapacity * VARIABLE_TABLE_LOAD_FACTOR);
+        int sizeMask = newCapacity - 1;
+        VariableTableEntry e;
+        for (int i = oldCapacity; --i >= 0; ) {
+            // We need to guarantee that any existing reads of old Map can
+            //  proceed. So we cannot yet null out each bin.
+            e = oldTable[i];
+
+            if (e != null) {
+                VariableTableEntry next = e.next;
+                int idx = e.hash & sizeMask;
+
+                //  Single node on list
+                if (next == null)
+                    newTable[idx] = e;
+
+                else {
+                    // Reuse trailing consecutive sequence at same slot
+                    VariableTableEntry lastRun = e;
+                    int lastIdx = idx;
+                    for (VariableTableEntry last = next;
+                         last != null;
+                         last = last.next) {
+                        int k = last.hash & sizeMask;
+                        if (k != lastIdx) {
+                            lastIdx = k;
+                            lastRun = last;
+                        }
+                    }
+                    newTable[lastIdx] = lastRun;
+
+                    // Clone all remaining nodes
+                    for (VariableTableEntry p = e; p != lastRun; p = p.next) {
+                        int k = p.hash & sizeMask;
+                        VariableTableEntry m = new VariableTableEntry(p.hash, p.name, p.value, newTable[k]);
+                        newTable[k] = m;
+                    }
+                }
+            }
+        }
+        variableTable = newTable;
+        return newTable;
+    }
+
+    /**
+     * Method to help ease transition to new variables implementation.
+     * Will likely be deprecated in the near future.
+     */
+    @SuppressWarnings("unchecked")
+    protected Map variableTableGetMap() {
+        HashMap map = new HashMap();
+        VariableTableEntry[] table;
+        IRubyObject readValue;
+        if ((table = variableTable) != null) {
+            for (int i = table.length; --i >= 0; ) {
+                for (VariableTableEntry e = table[i]; e != null; e = e.next) {
+                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
+                    map.put(e.name, readValue);
+                }
+            }
+        }
+        return map;
+    }
+
+    /**
+     * Method to help ease transition to new variables implementation.
+     * Will likely be deprecated in the near future.
+     */
+    @SuppressWarnings("unchecked")
+    protected Map variableTableGetMap(Map map) {
+        VariableTableEntry[] table;
+        IRubyObject readValue;
+        if ((table = variableTable) != null) {
+            for (int i = table.length; --i >= 0; ) {
+                for (VariableTableEntry e = table[i]; e != null; e = e.next) {
+                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
+                    map.put(e.name, readValue);
+                }
+            }
+        }
+        return map;
+    }
+    
+    //
+    // DEPRECATED METHODS
+    //
+
+    @Deprecated
+    public Map getInstanceVariables() {
+        getRuntime().getWarnings().warn("internal: deprecated getInstanceVariables() called");
+        return variableTableGetMap();
+    }
+
+    @Deprecated
+    public Map getInstanceVariablesSnapshot() {
+        getRuntime().getWarnings().warn("internal: deprecated getInstanceVariablesSnapshot() called");
+        return variableTableGetMap();
+    }
+
+    @Deprecated
+    public Iterator instanceVariableNames() {
+        getRuntime().getWarnings().warn("internal: deprecated instanceVariableNames() called");
+        return variableTableGetMap().keySet().iterator();
+    }
+
+    @Deprecated
+    public Map safeGetInstanceVariables() {
+        getRuntime().getWarnings().warn("internal: deprecated safeGetInstanceVariables() called");
+        return variableTableGetMap();
+    }
+
+    @Deprecated
+    public boolean safeHasInstanceVariables() {
+        getRuntime().getWarnings().warn("internal: deprecated safeHasInstanceVariables() called");
+        return variableTable != null && variableTableSize > 0;
+    }
+    
+    @Deprecated // allowed message customization for cvar/constant errors; built in to cvar/constant logic now
+    public IRubyObject setInstanceVariable(String name, IRubyObject value,
+            String taintError, String freezeError) { 
+        // probably no one using this now, it was mainly internal
+        throw new UnsupportedOperationException("deprecated");
+    }
+
+    @Deprecated
+    public void setInstanceVariables(Map instanceVariables) {
+        throw new UnsupportedOperationException("deprecated - use syncVariables()");
+    }
+
 }

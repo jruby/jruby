@@ -87,7 +87,7 @@ public class RubyYAML {
         RubyClass range = runtime.getRange();
         RubyClass regexp = runtime.getRegexp();
         RubyClass time = runtime.getTime();
-        RubyClass date = runtime.getClass("Date"); 
+        RubyClass date = runtime.fastGetClass("Date"); 
         RubyClass fixnum = runtime.getFixnum(); 
         RubyClass bignum = runtime.getBignum(); 
         RubyClass flt = runtime.getFloat(); 
@@ -161,7 +161,7 @@ public class RubyYAML {
         IOOutputStream iox = null;
         if(null == io) {
             self.getRuntime().getKernel().callMethod(context,"require", self.getRuntime().newString("stringio"));
-            io2 = self.getRuntime().getClass("StringIO").callMethod(context, "new");
+            io2 = self.getRuntime().fastGetClass("StringIO").callMethod(context, "new");
             iox = new IOOutputStream(io2);
         } else {
             iox = new IOOutputStream(io);
@@ -274,7 +274,7 @@ public class RubyYAML {
             Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
             while(ctor.checkData()) {
                 if(d.isNil()) {
-                    d = self.getRuntime().getModule("YAML").getClass("Stream").callMethod(context,"new", d);
+                    d = self.getRuntime().fastGetModule("YAML").fastGetClass("Stream").callMethod(context,"new", d);
                 }
                 d.callMethod(context,"add", JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
             }
@@ -288,7 +288,7 @@ public class RubyYAML {
     @JRubyMethod(name = "dump_stream", rest = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject dump_stream(IRubyObject self, IRubyObject[] args) {
         ThreadContext context = self.getRuntime().getCurrentContext();
-        IRubyObject stream = self.getRuntime().getModule("YAML").getClass("Stream").callMethod(context, "new");
+        IRubyObject stream = self.getRuntime().fastGetModule("YAML").fastGetClass("Stream").callMethod(context, "new");
         for(int i=0,j=args.length;i<j;i++) {
             stream.callMethod(context,"add", args[i]);
         }
@@ -346,7 +346,7 @@ public class RubyYAML {
         @JRubyMethod(name = "to_yaml", rest = true)
         public static IRubyObject obj_to_yaml(IRubyObject self, IRubyObject[] args) {
             ThreadContext context = self.getRuntime().getCurrentContext();
-            return self.getRuntime().getModule("YAML").callMethod(context,"dump", self);
+            return self.getRuntime().fastGetModule("YAML").callMethod(context,"dump", self);
         }
         @JRubyMethod(name = "taguri")
         public static IRubyObject obj_taguri(IRubyObject self) {
@@ -435,7 +435,7 @@ public class RubyYAML {
             return self.toString().indexOf('\0') != -1 ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
         }
         private static org.jruby.yaml.JRubyRepresenter into(IRubyObject arg) {
-            IRubyObject jobj = arg.getInstanceVariable("@java_object");
+            IRubyObject jobj = arg.fastGetInstanceVariable("@java_object");
             if(jobj != null) {
                 return (org.jruby.yaml.JRubyRepresenter)(((org.jruby.javasupport.JavaObject)jobj).getValue());
             }

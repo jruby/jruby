@@ -112,15 +112,15 @@ public class RubyKernel {
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
         Ruby runtime = recv.getRuntime(); 
         final LoadService loadService = runtime.getLoadService();
-        final String baseName = symbol.asSymbol();
+        final String baseName = symbol.asSymbol(); // interned, OK for "fast" methods
         final RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : runtime.getObject();
         String nm = module.getName() + "::" + baseName;
         
         IRubyObject undef = runtime.getUndef();
-        IRubyObject existingValue = module.getInstanceVariable(baseName); 
+        IRubyObject existingValue = module.fastFetchConstant(baseName); 
         if (existingValue != null && existingValue != undef) return runtime.getNil();
         
-        module.setInstanceVariable(baseName, undef);
+        module.fastStoreConstant(baseName, undef);
         
         loadService.addAutoload(nm, new IAutoloadMethod() {
             public String file() {
@@ -135,7 +135,7 @@ public class RubyKernel {
                 // File to be loaded by autoload has already been or is being loaded.
                 if (!required) return null;
                 
-                return module.getConstant(baseName);
+                return module.fastGetConstant(baseName);
             }
         });
         return runtime.getNil();
@@ -212,9 +212,9 @@ public class RubyKernel {
             IRubyObject[]NMEArgs = new IRubyObject[args.length - 1];
             System.arraycopy(args, 1, NMEArgs, 0, NMEArgs.length);
             exArgs[2] = runtime.newArrayNoCopy(NMEArgs);
-            exc = runtime.getClass("NoMethodError");
+            exc = runtime.fastGetClass("NoMethodError");
         } else {
-            exc = runtime.getClass("NameError");
+            exc = runtime.fastGetClass("NameError");
         }
         
         throw new RaiseException((RubyException)exc.newInstance(exArgs, Block.NULL_BLOCK));
@@ -623,7 +623,7 @@ public class RubyKernel {
         if (args.length == 0) {
             IRubyObject lastException = runtime.getGlobalVariables().get("$!");
             if (lastException.isNil()) {
-                throw new RaiseException(runtime, runtime.getClass("RuntimeError"), "", false);
+                throw new RaiseException(runtime, runtime.fastGetClass("RuntimeError"), "", false);
             } 
             throw new RaiseException((RubyException) lastException);
         }
@@ -633,7 +633,7 @@ public class RubyKernel {
         
         if (args.length == 1) {
             if (args[0] instanceof RubyString) {
-                throw new RaiseException((RubyException)runtime.getClass("RuntimeError").newInstance(args, block));
+                throw new RaiseException((RubyException)runtime.fastGetClass("RuntimeError").newInstance(args, block));
             }
             
             if (!args[0].respondsTo("exception")) {
@@ -648,7 +648,7 @@ public class RubyKernel {
             exception = args[0].callMethod(context, "exception", args[1]);
         }
         
-        if (!exception.isKindOf(runtime.getClass("Exception"))) {
+        if (!exception.isKindOf(runtime.fastGetClass("Exception"))) {
             throw runtime.newTypeError("exception object expected");
         }
         
@@ -787,7 +787,7 @@ public class RubyKernel {
     public static IRubyObject warn(IRubyObject recv, IRubyObject message) {
         Ruby runtime = recv.getRuntime();
         if (!runtime.getGlobalVariables().get("$VERBOSE").isNil()) {
-            IRubyObject out = runtime.getObject().getConstant("STDERR");
+            IRubyObject out = runtime.getObject().fastGetConstant("STDERR");
             RubyIO io = (RubyIO) out.convertToType(runtime.getIO(), 0, "to_io", true); 
             io.puts(new IRubyObject[] { message });
         }

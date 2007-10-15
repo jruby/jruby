@@ -75,10 +75,10 @@ public class RubyDigest {
 
     public static void createDigestMD5(Ruby runtime) {
         runtime.getLoadService().require("digest.so");
-        RubyModule mDigest = runtime.getModule("Digest");
-        RubyClass cDigestBase = mDigest.getClass("Base");
+        RubyModule mDigest = runtime.fastGetModule("Digest");
+        RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_MD5 = mDigest.defineClassUnder("MD5",cDigestBase,cDigestBase.getAllocator());
-        cDigest_MD5.setClassVar("metadata",runtime.newString("MD5"));
+        cDigest_MD5.setInternalModuleVariable("metadata",runtime.newString("MD5"));
     }
 
     public static void createDigestRMD160(Ruby runtime) {
@@ -87,18 +87,18 @@ public class RubyDigest {
             throw runtime.newLoadError("RMD160 not supported without BouncyCastle");
         }
 
-        RubyModule mDigest = runtime.getModule("Digest");
-        RubyClass cDigestBase = mDigest.getClass("Base");
+        RubyModule mDigest = runtime.fastGetModule("Digest");
+        RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_RMD160 = mDigest.defineClassUnder("RMD160",cDigestBase,cDigestBase.getAllocator());
-        cDigest_RMD160.setClassVar("metadata",runtime.newString("RIPEMD160"));
+        cDigest_RMD160.setInternalModuleVariable("metadata",runtime.newString("RIPEMD160"));
     }
 
     public static void createDigestSHA1(Ruby runtime) {
         runtime.getLoadService().require("digest.so");
-        RubyModule mDigest = runtime.getModule("Digest");
-        RubyClass cDigestBase = mDigest.getClass("Base");
+        RubyModule mDigest = runtime.fastGetModule("Digest");
+        RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_SHA1 = mDigest.defineClassUnder("SHA1",cDigestBase,cDigestBase.getAllocator());
-        cDigest_SHA1.setClassVar("metadata",runtime.newString("SHA1"));
+        cDigest_SHA1.setInternalModuleVariable("metadata",runtime.newString("SHA1"));
     }
 
     public static void createDigestSHA2(Ruby runtime) {
@@ -109,14 +109,14 @@ public class RubyDigest {
             throw runtime.newLoadError("SHA2 not supported");
         }
 
-        RubyModule mDigest = runtime.getModule("Digest");
-        RubyClass cDigestBase = mDigest.getClass("Base");
+        RubyModule mDigest = runtime.fastGetModule("Digest");
+        RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_SHA2_256 = mDigest.defineClassUnder("SHA256",cDigestBase,cDigestBase.getAllocator());
-        cDigest_SHA2_256.setClassVar("metadata",runtime.newString("SHA-256"));
+        cDigest_SHA2_256.setInternalModuleVariable("metadata",runtime.newString("SHA-256"));
         RubyClass cDigest_SHA2_384 = mDigest.defineClassUnder("SHA384",cDigestBase,cDigestBase.getAllocator());
-        cDigest_SHA2_384.setClassVar("metadata",runtime.newString("SHA-384"));
+        cDigest_SHA2_384.setInternalModuleVariable("metadata",runtime.newString("SHA-384"));
         RubyClass cDigest_SHA2_512 = mDigest.defineClassUnder("SHA512",cDigestBase,cDigestBase.getAllocator());
-        cDigest_SHA2_512.setClassVar("metadata",runtime.newString("SHA-512"));
+        cDigest_SHA2_512.setInternalModuleVariable("metadata",runtime.newString("SHA-512"));
     }
 
     public static class Base extends RubyObject {
@@ -129,7 +129,7 @@ public class RubyDigest {
         @JRubyMethod(name = "digest", required = 1, meta = true)
         public static IRubyObject s_digest(IRubyObject recv, IRubyObject str) {
             Ruby runtime = recv.getRuntime();
-            String name = ((RubyClass)recv).getClassVar("metadata").toString();
+            String name = ((RubyClass)recv).searchInternalModuleVariable("metadata").toString();
             try {
                 MessageDigest md = createMessageDigest(runtime, name);
                 return RubyString.newString(runtime, md.digest(str.convertToString().getBytes()));
@@ -141,7 +141,7 @@ public class RubyDigest {
         @JRubyMethod(name = "hexdigest", required = 1, meta = true)
         public static IRubyObject s_hexdigest(IRubyObject recv, IRubyObject str) {
             Ruby runtime = recv.getRuntime();
-            String name = ((RubyClass)recv).getClassVar("metadata").toString();
+            String name = ((RubyClass)recv).searchInternalModuleVariable("metadata").toString();
             try {
                 MessageDigest md = createMessageDigest(runtime, name);
                 return RubyString.newString(runtime, ByteList.plain(toHex(md.digest(str.convertToString().getBytes()))));
@@ -157,14 +157,14 @@ public class RubyDigest {
             super(runtime,type);
             data = new StringBuffer();
 
-            if(type == runtime.getModule("Digest").getClass("Base")) {
+            if(type == runtime.fastGetModule("Digest").fastGetClass("Base")) {
                 throw runtime.newNotImplementedError("Digest::Base is an abstract class");
             }
-            if(!type.isClassVarDefined("metadata")) {
+            if(!type.hasInternalModuleVariable("metadata")) {
                 throw runtime.newNotImplementedError("the " + type + "() function is unimplemented on this machine");
             }
             try {
-                setAlgorithm(type.getClassVar("metadata"));
+                setAlgorithm(type.searchInternalModuleVariable("metadata"));
             } catch(NoSuchAlgorithmException e) {
                 throw runtime.newNotImplementedError("the " + type + "() function is unimplemented on this machine");
             }

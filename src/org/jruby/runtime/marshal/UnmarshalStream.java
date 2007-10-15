@@ -35,6 +35,9 @@ package org.jruby.runtime.marshal;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -50,6 +53,8 @@ import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.Variable;
+import org.jruby.runtime.component.VariableEntry;
 import org.jruby.util.ByteList;
 
 /**
@@ -104,7 +109,7 @@ public class UnmarshalStream extends BufferedInputStream {
         switch (type) {
             case 'I':
                 rubyObj = unmarshalObject();
-                defaultInstanceVarsUnmarshal(rubyObj);
+                defaultVariablesUnmarshal(rubyObj);
                 break;
             case '0' :
                 rubyObj = runtime.getNil();
@@ -152,7 +157,7 @@ public class UnmarshalStream extends BufferedInputStream {
                 try {
                     tp = runtime.getClassFromPath(moduleName.asSymbol());
                 } catch (RaiseException e) {
-                    if (e.getException().isKindOf(runtime.getModule("NameError"))) {
+                    if (e.getException().isKindOf(runtime.fastGetModule("NameError"))) {
                         throw runtime.newArgumentError("undefined class/module " + moduleName.asSymbol());
                     } 
                     throw e;
@@ -262,7 +267,7 @@ public class UnmarshalStream extends BufferedInputStream {
         try {
             type = getClassFromPath(runtime, className.toString());
         } catch (RaiseException e) {
-            if (e.getException().isKindOf(runtime.getModule("NameError"))) {
+            if (e.getException().isKindOf(runtime.fastGetModule("NameError"))) {
                 throw runtime.newArgumentError("undefined class/module " + className.asSymbol());
             } 
                 
@@ -276,15 +281,27 @@ public class UnmarshalStream extends BufferedInputStream {
         return result;
     }
     
+    /**
+     * @deprecated superseded by {@link #defaultVariablesUnmarshal(IRubyObject)}
+     */
     public void defaultInstanceVarsUnmarshal(IRubyObject object) throws IOException {
-    	int count = unmarshalInt();
-    	
-    	for (int i = 0; i < count; i++) {
+        defaultVariablesUnmarshal(object);
+    }
+    
+    public void defaultVariablesUnmarshal(IRubyObject object) throws IOException {
+        int count = unmarshalInt();
+
+        List<Variable<IRubyObject>> attrs = new ArrayList<Variable<IRubyObject>>(count);
+        
+        for (int i = count; --i >= 0; ) {            
             String name = unmarshalObject().asSymbol();
             IRubyObject value = unmarshalObject();
-            object.setInstanceVariable(name, value);
-    	}
+            attrs.add(new VariableEntry<IRubyObject>(name, value));
+        }
+        
+        object.syncVariables(attrs);
     }
+    
     
     private IRubyObject uclassUnmarshall() throws IOException {
     	RubySymbol className = (RubySymbol)unmarshalObject();
@@ -305,7 +322,7 @@ public class UnmarshalStream extends BufferedInputStream {
         try {
             classInstance = runtime.getClassFromPath(className);
         } catch (RaiseException e) {
-            if (e.getException().isKindOf(runtime.getModule("NameError"))) {
+            if (e.getException().isKindOf(runtime.fastGetModule("NameError"))) {
                 throw runtime.newArgumentError("undefined class/module " + className);
             } 
                 

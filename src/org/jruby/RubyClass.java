@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 import org.jruby.anno.JRubyMethod;
 
@@ -263,7 +262,7 @@ public class RubyClass extends RubyModule {
             if (args[0] instanceof RubyBoolean) {
                 recursive = args[0].isTrue();
             } else {
-                getRuntime().newTypeError(args[0], getRuntime().getClass("Boolean"));
+                getRuntime().newTypeError(args[0], getRuntime().fastGetClass("Boolean"));
             }
         }
         
@@ -372,9 +371,7 @@ public class RubyClass extends RubyModule {
                               MarshalStream marshalStream) throws IOException {
             IRubyObject object = (IRubyObject)obj;
             
-            Map iVars = object.getInstanceVariablesSnapshot();
-            
-            marshalStream.dumpInstanceVars(iVars);
+            marshalStream.dumpVariables(object.getVariableList());
         }
 
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
@@ -383,7 +380,7 @@ public class RubyClass extends RubyModule {
             
             unmarshalStream.registerLinkTarget(result);
 
-            unmarshalStream.defaultInstanceVarsUnmarshal(result);
+            unmarshalStream.defaultVariablesUnmarshal(result);
 
             return result;
         }

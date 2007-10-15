@@ -291,9 +291,9 @@ public class RubyIO extends RubyObject {
         ioClass.defineAnnotatedMethods(RubyIO.class);
 
         // Constants for seek
-        ioClass.setConstant("SEEK_SET", runtime.newFixnum(IOHandler.SEEK_SET));
-        ioClass.setConstant("SEEK_CUR", runtime.newFixnum(IOHandler.SEEK_CUR));
-        ioClass.setConstant("SEEK_END", runtime.newFixnum(IOHandler.SEEK_END));
+        ioClass.fastSetConstant("SEEK_SET", runtime.newFixnum(IOHandler.SEEK_SET));
+        ioClass.fastSetConstant("SEEK_CUR", runtime.newFixnum(IOHandler.SEEK_CUR));
+        ioClass.fastSetConstant("SEEK_END", runtime.newFixnum(IOHandler.SEEK_END));
         
         ioClass.dispatcher = callbackFactory.createDispatcher(ioClass);
 

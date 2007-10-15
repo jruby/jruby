@@ -72,7 +72,7 @@ public class Parser {
     @SuppressWarnings("unchecked")
     public Node parse(String file, Reader content, DynamicScope blockScope,
             ParserConfiguration configuration) {
-        IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
+        IRubyObject scriptLines = runtime.getObject().fastGetConstantAt("SCRIPT_LINES__");
         RubyArray list = null;
         
         if (!configuration.isEvalParse() && scriptLines != null) {

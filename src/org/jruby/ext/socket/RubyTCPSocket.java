@@ -51,17 +51,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyTCPSocket extends RubyIPSocket {
     static void createTCPSocket(Ruby runtime) {
-        RubyClass rb_cTCPSocket = runtime.defineClass("TCPSocket", runtime.getClass("IPSocket"), TCPSOCKET_ALLOCATOR);
+        RubyClass rb_cTCPSocket = runtime.defineClass("TCPSocket", runtime.fastGetClass("IPSocket"), TCPSOCKET_ALLOCATOR);
         CallbackFactory cfact = runtime.callbackFactory(RubyTCPSocket.class);
 
-        rb_cTCPSocket.includeModule(runtime.getClass("Socket").getConstant("Constants"));
+        rb_cTCPSocket.includeModule(runtime.fastGetClass("Socket").fastGetConstant("Constants"));
 
         rb_cTCPSocket.defineFastMethod("initialize", cfact.getFastOptMethod("initialize"));
         rb_cTCPSocket.defineFastMethod("setsockopt", cfact.getFastOptMethod("setsockopt"));
         rb_cTCPSocket.getMetaClass().defineFastMethod("gethostbyname", cfact.getFastSingletonMethod("gethostbyname", IRubyObject.class));
         rb_cTCPSocket.getMetaClass().defineMethod("open", cfact.getOptSingletonMethod("open"));
 
-        runtime.getObject().setConstant("TCPsocket",rb_cTCPSocket);
+        runtime.getObject().fastSetConstant("TCPsocket",rb_cTCPSocket);
     }
 
     private static ObjectAllocator TCPSOCKET_ALLOCATOR = new ObjectAllocator() {

@@ -257,7 +257,7 @@ public class ThreadLibrary implements Library {
                 should_block = args[0].isTrue();
             }
             if ( !should_block && entries.size() == 0 ) {
-                throw new RaiseException(getRuntime(), getRuntime().getClass("ThreadError"), "queue empty", false);
+                throw new RaiseException(getRuntime(), getRuntime().fastGetClass("ThreadError"), "queue empty", false);
             }
             while ( entries.size() == 0 ) {
                 try {
@@ -291,7 +291,7 @@ public class ThreadLibrary implements Library {
         }
 
         public static void setup(Ruby runtime) {
-            RubyClass cSizedQueue = runtime.defineClass("SizedQueue", runtime.getClass("Queue"), new ObjectAllocator() {
+            RubyClass cSizedQueue = runtime.defineClass("SizedQueue", runtime.fastGetClass("Queue"), new ObjectAllocator() {
                 public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new SizedQueue(runtime, klass);
                 }

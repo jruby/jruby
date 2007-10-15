@@ -161,56 +161,56 @@ public class RubyFile extends RubyIO {
         // TODO: These were missing, so we're not handling them elsewhere?
         // FIXME: The old value, 32786, didn't match what IOModes expected, so I reference
         // the constant here. THIS MAY NOT BE THE CORRECT VALUE.
-        fileClass.setConstant("BINARY", runtime.newFixnum(IOModes.BINARY));
-        fileClass.setConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
-        fileClass.setConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
-        fileClass.setConstant("FNM_SYSCASE", runtime.newFixnum(FNM_CASEFOLD));
-        fileClass.setConstant("FNM_DOTMATCH", runtime.newFixnum(FNM_DOTMATCH));
-        fileClass.setConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
+        fileClass.fastSetConstant("BINARY", runtime.newFixnum(IOModes.BINARY));
+        fileClass.fastSetConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
+        fileClass.fastSetConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
+        fileClass.fastSetConstant("FNM_SYSCASE", runtime.newFixnum(FNM_CASEFOLD));
+        fileClass.fastSetConstant("FNM_DOTMATCH", runtime.newFixnum(FNM_DOTMATCH));
+        fileClass.fastSetConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
         
         // Create constants for open flags
-        fileClass.setConstant("RDONLY", runtime.newFixnum(IOModes.RDONLY));
-        fileClass.setConstant("WRONLY", runtime.newFixnum(IOModes.WRONLY));
-        fileClass.setConstant("RDWR", runtime.newFixnum(IOModes.RDWR));
-        fileClass.setConstant("CREAT", runtime.newFixnum(IOModes.CREAT));
-        fileClass.setConstant("EXCL", runtime.newFixnum(IOModes.EXCL));
-        fileClass.setConstant("NOCTTY", runtime.newFixnum(IOModes.NOCTTY));
-        fileClass.setConstant("TRUNC", runtime.newFixnum(IOModes.TRUNC));
-        fileClass.setConstant("APPEND", runtime.newFixnum(IOModes.APPEND));
-        fileClass.setConstant("NONBLOCK", runtime.newFixnum(IOModes.NONBLOCK));
+        fileClass.fastSetConstant("RDONLY", runtime.newFixnum(IOModes.RDONLY));
+        fileClass.fastSetConstant("WRONLY", runtime.newFixnum(IOModes.WRONLY));
+        fileClass.fastSetConstant("RDWR", runtime.newFixnum(IOModes.RDWR));
+        fileClass.fastSetConstant("CREAT", runtime.newFixnum(IOModes.CREAT));
+        fileClass.fastSetConstant("EXCL", runtime.newFixnum(IOModes.EXCL));
+        fileClass.fastSetConstant("NOCTTY", runtime.newFixnum(IOModes.NOCTTY));
+        fileClass.fastSetConstant("TRUNC", runtime.newFixnum(IOModes.TRUNC));
+        fileClass.fastSetConstant("APPEND", runtime.newFixnum(IOModes.APPEND));
+        fileClass.fastSetConstant("NONBLOCK", runtime.newFixnum(IOModes.NONBLOCK));
         
         // Create constants for flock
-        fileClass.setConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
-        fileClass.setConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
-        fileClass.setConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
-        fileClass.setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
+        fileClass.fastSetConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
+        fileClass.fastSetConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
+        fileClass.fastSetConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
+        fileClass.fastSetConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
         
         // Create Constants class
         RubyModule constants = fileClass.defineModuleUnder("Constants");
         
         // TODO: These were missing, so we're not handling them elsewhere?
-        constants.setConstant("BINARY", runtime.newFixnum(32768));
-        constants.setConstant("FNM_NOESCAPE", runtime.newFixnum(1));
-        constants.setConstant("FNM_CASEFOLD", runtime.newFixnum(8));
-        constants.setConstant("FNM_DOTMATCH", runtime.newFixnum(4));
-        constants.setConstant("FNM_PATHNAME", runtime.newFixnum(2));
+        constants.fastSetConstant("BINARY", runtime.newFixnum(32768));
+        constants.fastSetConstant("FNM_NOESCAPE", runtime.newFixnum(1));
+        constants.fastSetConstant("FNM_CASEFOLD", runtime.newFixnum(8));
+        constants.fastSetConstant("FNM_DOTMATCH", runtime.newFixnum(4));
+        constants.fastSetConstant("FNM_PATHNAME", runtime.newFixnum(2));
         
         // Create constants for open flags
-        constants.setConstant("RDONLY", runtime.newFixnum(IOModes.RDONLY));
-        constants.setConstant("WRONLY", runtime.newFixnum(IOModes.WRONLY));
-        constants.setConstant("RDWR", runtime.newFixnum(IOModes.RDWR));
-        constants.setConstant("CREAT", runtime.newFixnum(IOModes.CREAT));
-        constants.setConstant("EXCL", runtime.newFixnum(IOModes.EXCL));
-        constants.setConstant("NOCTTY", runtime.newFixnum(IOModes.NOCTTY));
-        constants.setConstant("TRUNC", runtime.newFixnum(IOModes.TRUNC));
-        constants.setConstant("APPEND", runtime.newFixnum(IOModes.APPEND));
-        constants.setConstant("NONBLOCK", runtime.newFixnum(IOModes.NONBLOCK));
+        constants.fastSetConstant("RDONLY", runtime.newFixnum(IOModes.RDONLY));
+        constants.fastSetConstant("WRONLY", runtime.newFixnum(IOModes.WRONLY));
+        constants.fastSetConstant("RDWR", runtime.newFixnum(IOModes.RDWR));
+        constants.fastSetConstant("CREAT", runtime.newFixnum(IOModes.CREAT));
+        constants.fastSetConstant("EXCL", runtime.newFixnum(IOModes.EXCL));
+        constants.fastSetConstant("NOCTTY", runtime.newFixnum(IOModes.NOCTTY));
+        constants.fastSetConstant("TRUNC", runtime.newFixnum(IOModes.TRUNC));
+        constants.fastSetConstant("APPEND", runtime.newFixnum(IOModes.APPEND));
+        constants.fastSetConstant("NONBLOCK", runtime.newFixnum(IOModes.NONBLOCK));
         
         // Create constants for flock
-        constants.setConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
-        constants.setConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
-        constants.setConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
-        constants.setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
+        constants.fastSetConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
+        constants.fastSetConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
+        constants.fastSetConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
+        constants.fastSetConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
         
         // TODO Singleton methods: blockdev?, chardev?, directory?
         // TODO Singleton methods: executable?, executable_real?,

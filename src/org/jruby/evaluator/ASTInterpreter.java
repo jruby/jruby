@@ -683,7 +683,7 @@ public class ASTInterpreter {
    
         if (rubyClass == null) rubyClass = self.getMetaClass();
 
-        rubyClass.setClassVar(iVisited.getName(), result);
+        rubyClass.fastSetClassVar(iVisited.getName(), result);
    
         return result;
     }
@@ -697,7 +697,7 @@ public class ASTInterpreter {
         }
         
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
-        rubyClass.setClassVar(iVisited.getName(), result);
+        rubyClass.fastSetClassVar(iVisited.getName(), result);
    
         return result;
     }
@@ -718,11 +718,11 @@ public class ASTInterpreter {
         // rule in grammar (it is convenient to think of them as the same thing
         // at a grammar level even though evaluation is).
         if (leftNode == null) {
-            return runtime.getObject().getConstantFrom(iVisited.getName());
+            return runtime.getObject().fastGetConstantFrom(iVisited.getName());
         } else {
             IRubyObject result = evalInternal(runtime,context, iVisited.getLeftNode(), self, aBlock);
             if (result instanceof RubyModule) {
-                return ((RubyModule) result).getConstantFrom(iVisited.getName());
+                return ((RubyModule) result).fastGetConstantFrom(iVisited.getName());
             } else {
                 return result.callMethod(context, iVisited.getName(), aBlock);
             }
@@ -730,7 +730,7 @@ public class ASTInterpreter {
     }
 
     private static IRubyObject colon3Node(Ruby runtime, Node node) {
-        return runtime.getObject().getConstantFrom(((Colon3Node)node).getName());
+        return runtime.getObject().fastGetConstantFrom(((Colon3Node)node).getName());
     }
 
     private static IRubyObject constDeclNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1121,14 +1121,14 @@ public class ASTInterpreter {
         InstAsgnNode iVisited = (InstAsgnNode) node;
    
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
-        self.setInstanceVariable(iVisited.getName(), result);
+        self.fastSetInstanceVariable(iVisited.getName(), result);
    
         return result;
     }
 
     private static IRubyObject instVarNode(Ruby runtime, Node node, IRubyObject self) {
         InstVarNode iVisited = (InstVarNode) node;
-        IRubyObject variable = self.getInstanceVariable(iVisited.getName());
+        IRubyObject variable = self.fastGetInstanceVariable(iVisited.getName());
    
         return variable == null ? runtime.getNil() : variable;
     }
@@ -1441,7 +1441,7 @@ public class ASTInterpreter {
 
                     IRubyObject[] exceptions;
                     if (exceptionNodesList == null) {
-                        exceptions = new IRubyObject[] {runtime.getClass("StandardError")};
+                        exceptions = new IRubyObject[] {runtime.fastGetClass("StandardError")};
                     } else {
                         exceptions = setupArgs(runtime, context, exceptionNodes, self, aBlock);
                     }
@@ -1668,7 +1668,7 @@ public class ASTInterpreter {
                     evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
                     break loop;
                 } catch (RaiseException re) {
-                    if (re.getException().isKindOf(runtime.getClass("LocalJumpError"))) {
+                    if (re.getException().isKindOf(runtime.fastGetClass("LocalJumpError"))) {
                         RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
                         
                         IRubyObject reason = jumpError.reason();
@@ -1899,9 +1899,9 @@ public class ASTInterpreter {
             ClassVarNode iVisited = (ClassVarNode) node;
             //RubyModule module = context.getRubyClass();
             RubyModule module = context.getCurrentScope().getStaticScope().getModule();
-            if (module == null && self.getMetaClass().isClassVarDefined(iVisited.getName())) {
+            if (module == null && self.getMetaClass().fastIsClassVarDefined(iVisited.getName())) {
                 return "class variable";
-            } else if (module.isClassVarDefined(iVisited.getName())) {
+            } else if (module.fastIsClassVarDefined(iVisited.getName())) {
                 return "class variable";
             } 
             IRubyObject attached = null;
@@ -1909,7 +1909,7 @@ public class ASTInterpreter {
             if (attached instanceof RubyModule) {
                 module = (RubyModule)attached;
 
-                if (module.isClassVarDefined(iVisited.getName())) return "class variable"; 
+                if (module.fastIsClassVarDefined(iVisited.getName())) return "class variable"; 
             }
 
             return null;
@@ -1925,7 +1925,7 @@ public class ASTInterpreter {
                 }
 
                 if (left instanceof RubyModule &&
-                        ((RubyModule) left).getConstantAt(iVisited.getName()) != null) {
+                        ((RubyModule) left).fastGetConstantAt(iVisited.getName()) != null) {
                     return "constant";
                 } else if (left.getMetaClass().isMethodBound(iVisited.getName(), true)) {
                     return "method";
@@ -1957,7 +1957,7 @@ public class ASTInterpreter {
             }
             return null;
         case INSTVARNODE:
-            if (self.getInstanceVariable(((InstVarNode) node).getName()) != null) {
+            if (self.fastHasInstanceVariable(((InstVarNode) node).getName())) {
                 return "instance-variable";
             }
             return null;

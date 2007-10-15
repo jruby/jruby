@@ -180,7 +180,7 @@ public class Main {
             return 0;
         } catch (RaiseException rj) {
             RubyException raisedException = rj.getException();
-            if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
+            if (raisedException.isKindOf(runtime.fastGetClass("SystemExit"))) {
                 IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
 
                 if (status != null && !status.isNil()) {
@@ -246,8 +246,21 @@ public class Main {
         defineGlobalVERBOSE(runtime);
         defineGlobalDEBUG(runtime);
 
-        runtime.getObject().setConstant("$VERBOSE",
+        //
+        // FIXME: why "constant" and not global variable? this doesn't seem right,
+        // $VERBOSE is set as global var elsewhere.
+        //
+//        runtime.getObject().setConstant("$VERBOSE",
+//                commandline.isVerbose() ? runtime.getTrue() : runtime.getNil());
+
+        // storing via internal var for now, as setConstant will now fail
+        // validation
+        runtime.getObject().setInternalVariable("$VERBOSE",
                 commandline.isVerbose() ? runtime.getTrue() : runtime.getNil());
+        //
+        //
+
+        
         runtime.defineGlobalConstant("ARGV", argumentArray);
 
         defineGlobal(runtime, "$-p", commandline.isAssumePrinting());

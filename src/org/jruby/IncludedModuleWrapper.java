@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -15,6 +16,7 @@
  * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,8 +32,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.List;
 import java.util.Map;
+
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.Variable;
 
 /**
  * This class is used to provide an intermediate superclass for modules and classes that include
@@ -103,10 +108,12 @@ public final class IncludedModuleWrapper extends RubyClass {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
+    @Deprecated
     public Map getInstanceVariables() {
         return delegate.getInstanceVariables();
     }
 
+    @Deprecated
     public void setInstanceVariables(Map newMethods) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
@@ -134,4 +141,166 @@ public final class IncludedModuleWrapper extends RubyClass {
     public IRubyObject id() {
         return delegate.id();
     }
+
+    //
+    // VARIABLE TABLE METHODS - pass to delegate
+    //
+
+    @Override
+    protected boolean variableTableContains(String name) {
+        return delegate.variableTableContains(name);
+    }
+
+    @Override
+    protected boolean variableTableFastContains(String internedName) {
+        return delegate.variableTableFastContains(internedName);
+    }
+
+    @Override
+    protected IRubyObject variableTableFetch(String name) {
+        return delegate.variableTableFetch(name);
+    }
+
+    @Override
+    protected IRubyObject variableTableFastFetch(String internedName) {
+        return delegate.variableTableFastFetch(internedName);
+    }
+
+    @Override
+    protected IRubyObject variableTableStore(String name, IRubyObject value) {
+        return delegate.variableTableStore(name, value);
+    }
+
+    @Override
+    protected IRubyObject variableTableFastStore(String internedName, IRubyObject value) {
+        return delegate.variableTableFastStore(internedName, value);
+    }
+
+    @Override
+    protected IRubyObject variableTableRemove(String name) {
+        return delegate.variableTableRemove(name);
+    }
+
+    @Override
+    protected VariableTableEntry[] variableTableGetTable() {
+        return delegate.variableTableGetTable();
+    }
+
+    @Override
+    protected int variableTableGetSize() {
+        return delegate.variableTableGetSize();
+    }
+
+    @Override
+    protected void variableTableSync(List<Variable<IRubyObject>> vars) {
+        delegate.variableTableSync(vars);
+    }
+
+    @Override
+    protected IRubyObject variableTableReadLocked(VariableTableEntry entry) {
+        return delegate.variableTableReadLocked(entry);
+    }
+
+    /**
+     * Method to help ease transition to new variables implementation.
+     * Will likely be deprecated in the near future.
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    @Deprecated // born deprecated
+    protected Map variableTableGetMap() {
+        return delegate.variableTableGetMap();
+    }
+
+    /**
+     * Method to help ease transition to new variables implementation.
+     * Will likely be deprecated in the near future.
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    @Deprecated // born deprecated
+    protected Map variableTableGetMap(Map map) {
+        return delegate.variableTableGetMap(map);
+    }
+
+    //
+    // CONSTANT TABLE METHODS - pass to delegate
+    //
+
+    @Override
+    protected boolean constantTableContains(String name) {
+        return delegate.constantTableContains(name);
+    }
+
+    @Override
+    protected boolean constantTableFastContains(String internedName) {
+        return delegate.constantTableFastContains(internedName);
+    }
+
+    @Override
+    protected IRubyObject constantTableFetch(String name) {
+        return delegate.constantTableFetch(name);
+    }
+
+    @Override
+    protected IRubyObject constantTableFastFetch(String internedName) {
+        return delegate.constantTableFastFetch(internedName);
+    }
+
+    @Override
+    protected IRubyObject constantTableStore(String name, IRubyObject value) {
+        // FIXME: legal here? may want UnsupportedOperationException
+        return delegate.constantTableStore(name, value);
+    }
+
+    @Override
+    protected IRubyObject constantTableFastStore(String internedName, IRubyObject value) {
+        // FIXME: legal here? may want UnsupportedOperationException
+        return delegate.constantTableFastStore(internedName, value);
+    }
+
+    @Override
+    protected IRubyObject constantTableRemove(String name) {
+        // this _is_ legal (when removing an undef)
+        return delegate.constantTableRemove(name);
+    }
+
+    @Override
+    protected ConstantTableEntry[] constantTableGetTable() {
+        return delegate.constantTableGetTable();
+    }
+
+    @Override
+    protected int constantTableGetSize() {
+        return delegate.constantTableGetSize();
+    }
+
+    @Override
+    protected void constantTableSync(List<Variable<IRubyObject>> vars) {
+        // FIXME: legal here? may want UnsupportedOperationException
+        delegate.constantTableSync(vars);
+    }
+
+    /**
+     * Method to help ease transition to new variables implementation.
+     * Will likely be deprecated in the near future.
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    @Deprecated // born deprecated
+    protected Map constantTableGetMap() {
+        return delegate.constantTableGetMap();
+    }
+
+    /**
+     * Method to help ease transition to new variables implementation.
+     * Will likely be deprecated in the near future.
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    @Deprecated // born deprecated
+    protected Map constantTableGetMap(Map map) {
+        return delegate.constantTableGetMap(map);
+    }
+
 }
