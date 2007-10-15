@@ -14,9 +14,10 @@ public class POSIXFunctionMapper implements FunctionMapper {
   
     public String getFunctionName(NativeLibrary library, Method method) {
         String name = method.getName();
-        if (name.equals("getpid")) {
-            if (library.getName().equals("msvcrt")) {
-               name = "_getpid";
+        if (library.getName().equals("msvcrt")) {
+            // FIXME: We should either always _ name for msvcrt or get good list of _ methods
+            if (name.equals("getpid") || name.equals("chmod")) {
+                name = "_" + name;
             }
         }
         return name;
