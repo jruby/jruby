@@ -2307,13 +2307,7 @@ public class RubyString extends RubyObject {
             if (spat instanceof RubyString && ((RubyString)spat).value.realSize == 1) {
                 if (((RubyString)spat).value.get(0) == ' ') {
                     awkSplit = true;
-                } else {
-                    // FIXME: Shouldn't this be unicode-aware?
-                    String stringPattern = RubyString.stringValue(spat).toString();
-                    spat = RubyRegexp.newRegexp(runtime, RubyRegexp.escapeSpecialChars(stringPattern), 0, null);
                 }
-            } else {
-                spat = getPat(spat, true);
             }
         }
             
@@ -2353,11 +2347,55 @@ public class RubyString extends RubyObject {
                     result.append(makeShared(beg, value.realSize - beg));
                 }
             }
+        } else if(spat instanceof RubyString) { // string split
+            ByteList rsep = ((RubyString)spat).value;
+            int rslen = rsep.realSize;
+
+            int ptr = value.begin; 
+            int pend = ptr + value.realSize;
+            byte[]buff = value.bytes;            
+            int p = ptr;
+            
+            byte lastVal = rsep.bytes[rsep.begin+rslen-1];
+
+            int s = p;
+            p+=rslen;
+
+            for(; p < pend; p++) {
+                if(ptr<p && buff[p-1] == lastVal &&
+                   (rslen <= 1 || 
+                    ByteList.memcmp(rsep.bytes, rsep.begin, rslen, buff, p-rslen, rslen) == 0)) {
+
+                    result.append(makeShared(s-ptr, (p - s) - rslen));
+                    s = p;
+                    if(limit) {
+                        i++;
+                        if(lim<=i) {
+                            p = pend;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if(s != pend) {
+                if(p > pend) {
+                    p = pend;
+                }
+                if(!(limit && lim<=i) && ByteList.memcmp(rsep.bytes, rsep.begin, rslen, buff, p-rslen, rslen) == 0) {
+                    result.append(makeShared(s-ptr, (p - s)-rslen));
+                    if(lim < 0) {
+                        result.append(newEmptyString(runtime, getMetaClass()));
+                    }
+                } else {
+                    result.append(makeShared(s-ptr, p - s));
+                }
+            }
         } else { // regexp split
             boolean utf8 = false; 
             String str;
             
-            RubyRegexp rr =(RubyRegexp)spat;
+            RubyRegexp rr =(RubyRegexp)getPat(spat,true);
             if (runtime.getKCode() == KCode.UTF8) {
                 // We're in UTF8 mode; try to convert the string to UTF8, but fall back on raw bytes if we can't decode
                 // TODO: all this decoder and charset stuff could be centralized...in KCode perhaps?
