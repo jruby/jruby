@@ -493,7 +493,8 @@ public final class ThreadContext {
                 if (runtime.getLoadService().autoload(klass.getName() + "::" + internedName) == null) break;
                 continue;
             }
-        } while ((scope = scope.getPreviousCRefScope()) != null && scope.getModule() != object);
+            scope = scope.getPreviousCRefScope();
+        } while (scope != null && scope.getModule() != object);
         
         return getCurrentScope().getStaticScope().getModule().fastGetConstant(internedName);
     }
