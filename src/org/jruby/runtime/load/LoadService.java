@@ -527,31 +527,32 @@ e.printStackTrace();
         if((library == null || library instanceof JarredScript) && !file.equalsIgnoreCase("")) {
             // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
             String[] all = file.split("/");
+
             StringBuffer finName = new StringBuffer();
             for(int i=0, j=(all.length-1); i<j; i++) {
                 finName.append(all[i].toLowerCase()).append(".");
                 
             }
             
-            // Make the class name look nice, by splitting on _ and capitalize each segment, then joining
-            // the, together without anything separating them, and last put on "Service" at the end.
-            String[] last = all[all.length-1].split("_");
-            for(int i=0, j=last.length; i<j; i++) {
-                finName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
-            }
-            finName.append("Service");
-
-            // We don't want a package name beginning with dots, so we remove them
-            String className = finName.toString().replaceAll("^\\.*","");
-
-            // If there is a jar-file with the required name, we add this to the class path.
-            if(library instanceof JarredScript) {
-                // It's _really_ expensive to check that the class actually exists in the Jar, so
-                // we don't do that now.
-                runtime.getJavaSupport().addToClasspath(((JarredScript)library).getResource().getURL());
-            }
-
             try {
+                // Make the class name look nice, by splitting on _ and capitalize each segment, then joining
+                // the, together without anything separating them, and last put on "Service" at the end.
+                String[] last = all[all.length-1].split("_");
+                for(int i=0, j=last.length; i<j; i++) {
+                    finName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
+                }
+                finName.append("Service");
+
+                // We don't want a package name beginning with dots, so we remove them
+                String className = finName.toString().replaceAll("^\\.*","");
+
+                // If there is a jar-file with the required name, we add this to the class path.
+                if(library instanceof JarredScript) {
+                    // It's _really_ expensive to check that the class actually exists in the Jar, so
+                    // we don't do that now.
+                    runtime.getJavaSupport().addToClasspath(((JarredScript)library).getResource().getURL());
+                }
+
                 Class theClass = runtime.getJavaSupport().loadJavaClass(className);
                 library = new ClassExtensionLibrary(theClass);
             } catch(Exception ee) {
