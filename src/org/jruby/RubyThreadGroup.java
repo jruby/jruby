@@ -70,7 +70,7 @@ public class RubyThreadGroup extends RubyObject {
     }
 
     @JRubyMethod(name = "add", required = 1, frame = true)
-    public IRubyObject add(IRubyObject rubyThread, Block block) {
+    public synchronized IRubyObject add(IRubyObject rubyThread, Block block) {
         if (!(rubyThread instanceof RubyThread)) throw getRuntime().newTypeError(rubyThread, getRuntime().getThread());
         
         if (isFrozen()) {
@@ -89,7 +89,7 @@ public class RubyThreadGroup extends RubyObject {
         return this;
     }
     
-    public void remove(RubyThread rubyThread) {
+    public synchronized void remove(RubyThread rubyThread) {
         rubyThread.setThreadGroup(null);
         rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
     }
@@ -107,7 +107,7 @@ public class RubyThreadGroup extends RubyObject {
     }
 
     @JRubyMethod(name = "list", frame = true)
-    public IRubyObject list(Block block) {
+    public synchronized IRubyObject list(Block block) {
         return getRuntime().newArrayNoCopy((IRubyObject[]) rubyThreadList.values().toArray(new IRubyObject[rubyThreadList.size()]));
     }
 
