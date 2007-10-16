@@ -591,4 +591,16 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     public CharSequence subSequence(int start, int end) {
         return new ByteList(this, start, end - start);
     }
+
+    public static int memcmp(final byte[] first, final int firstStart, final int firstLen, final byte[] second, final int secondStart, final int secondLen) {
+        if (first == second) return 0;
+        final int len =  Math.min(firstLen,secondLen);
+        int offset = -1;
+        for (  ; ++offset < len && first[firstStart + offset] == second[secondStart + offset]; ) ;
+        if (offset < len) {
+            return (first[firstStart + offset]&0xFF) > (second[secondStart + offset]&0xFF) ? 1 : -1;
+        }
+        return firstLen == secondLen ? 0 : firstLen == len ? -1 : 1;
+
+    }
 }
