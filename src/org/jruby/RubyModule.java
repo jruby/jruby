@@ -73,6 +73,7 @@ import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.MethodCache;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
@@ -961,9 +962,9 @@ public class RubyModule extends RubyObject {
         final Ruby runtime = getRuntime();
         ThreadContext context = getRuntime().getCurrentContext();
         if (readable) {
-            defineFastMethod(name, new Callback() {
-                public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                    Arity.checkArgumentCount(getRuntime(), args, 0, 0);
+            addMethod(name, new JavaMethod(this, Visibility.PUBLIC) {
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                    if (args.length != 0) Arity.raiseArgumentError(getRuntime(), args.length, 0, 0);
 
                     IRubyObject variable = self.fastGetInstanceVariable(variableName);
 
@@ -978,10 +979,10 @@ public class RubyModule extends RubyObject {
         }
         if (writeable) {
             name = (name + "=").intern();
-            defineFastMethod(name, new Callback() {
-                public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+            addMethod(name, new JavaMethod(this, Visibility.PUBLIC) {
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     // ENEBO: Can anyone get args to be anything but length 1?
-                    Arity.checkArgumentCount(getRuntime(), args, 1, 1);
+                    if (args.length != 1) Arity.raiseArgumentError(getRuntime(), args.length, 1, 1);
 
                     return self.fastSetInstanceVariable(variableName, args[0]);
                 }
