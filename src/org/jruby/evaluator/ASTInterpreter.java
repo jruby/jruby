@@ -156,7 +156,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.regexp.PatternSyntaxException;
 
 public class ASTInterpreter {
     public static IRubyObject eval(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
@@ -880,23 +879,17 @@ public class ASTInterpreter {
             }
         }
    
+        String lang = null;
         int opts = iVisited.getOptions();
-        String lang = ((opts & 16) != 0) ? "n" : null;
-        if((opts & 48) == 48) { // param s
+        if((opts & 16) != 0) { // param n
+            lang = "n";
+        } else if((opts & 48) != 0) { // param s
             lang = "s";
-        } else if((opts & 32) == 32) { // param e
-            lang = "e";
         } else if((opts & 64) != 0) { // param s
             lang = "u";
         }
-        
-        try {
-            return RubyRegexp.newRegexp(runtime, string.toString(), iVisited.getOptions(), lang);
-        } catch(jregex.PatternSyntaxException e) {
-        //                    System.err.println(iVisited.getValue().toString());
-        //                    e.printStackTrace();
-            throw runtime.newRegexpError(e.getMessage());
-        }
+
+        return RubyRegexp.newRegexp(runtime, string.getByteList(), iVisited.getOptions(), lang);
     }
     
     private static IRubyObject dStrNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1378,28 +1371,22 @@ public class ASTInterpreter {
 
     private static IRubyObject regexpNode(Ruby runtime, Node node) {
         RegexpNode iVisited = (RegexpNode) node;
-        if(iVisited.literal == null) {
+        RubyRegexp p = iVisited.getPattern();
+        if(p == null) {
+            String lang = null;
             int opts = iVisited.getOptions();
-            String lang = ((opts & 16) == 16) ? "n" : null;
-            if((opts & 48) == 48) { // param s
+            if((opts & 16) != 0) { // param n
+                lang = "n";
+            } else if((opts & 48) != 0) { // param s
                 lang = "s";
-            } else if((opts & 32) == 32) { // param e
-                lang = "e";
-            } else if((opts & 64) != 0) { // param u
+            } else if((opts & 64) != 0) { // param s
                 lang = "u";
             }
-        
-            IRubyObject noCaseGlobal = runtime.getGlobalVariables().get("$=");
-        
-            int extraOptions = noCaseGlobal.isTrue() ? ReOptions.RE_OPTION_IGNORECASE : 0;
-
-            try {
-                iVisited.literal = RubyRegexp.newRegexp(runtime, iVisited.getPattern(runtime, extraOptions), lang);
-            } catch(PatternSyntaxException e) {
-                throw runtime.newRegexpError(e.getMessage());
-            }
+            p = RubyRegexp.newRegexp(runtime, iVisited.getValue(), iVisited.getFlags(), lang);
+            iVisited.setPattern(p);
         }
-        return iVisited.literal;
+
+        return p;
     }
 
     private static IRubyObject rescueNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1971,7 +1958,7 @@ public class ASTInterpreter {
             IRubyObject backref = context.getCurrentFrame().getBackRef();
             if(backref instanceof RubyMatchData) {
                 ((RubyMatchData)backref).use();
-                if(!((RubyMatchData)backref).group(((NthRefNode) node).getMatchNumber()).isNil()) {
+                if(!RubyRegexp.nth_match(((NthRefNode) node).getMatchNumber(),((RubyMatchData)backref)).isNil()) {
                     return "$" + ((NthRefNode) node).getMatchNumber();
                 }
             }

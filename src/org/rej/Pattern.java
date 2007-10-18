@@ -2346,11 +2346,11 @@ public class Pattern {
     }
     
     private static interface StartPos {
-        int startpos(byte[] string, int pos);
+        int startpos(byte[] string, int begin, int pos);
     }
 
     private static class ASC_StartPos implements StartPos {
-        public int startpos(byte[] string, int pos) {
+        public int startpos(byte[] string, int begin, int pos) {
             return pos;
         }
     }
@@ -2368,17 +2368,17 @@ public class Pattern {
             return mbctab_sjis[c&0xFF] + 1;
         }
 
-        public int startpos(byte[] string, int pos) {
+        public int startpos(byte[] string, int begin, int pos) {
             int i = pos, w;
-            if(i > 0 && istrail(string[i])) {
+            if(i > 0 && istrail(string[begin+i])) {
                 do {
-                    if(!isfirst(string[--i])) {
+                    if(!isfirst(string[begin+--i])) {
                         ++i;
                         break;
                     }
                 } while (i > 0);
             }
-            if(i == pos || i + (w = mbclen(string[i])) > pos) {
+            if(i == pos || i + (w = mbclen(string[begin+i])) > pos) {
                 return i;
             }
             i += w;
@@ -2395,12 +2395,12 @@ public class Pattern {
             return mbctab_euc[c&0xFF] + 1;
         }
 
-        public int startpos(byte[] string, int pos) {
+        public int startpos(byte[] string, int begin, int pos) {
             int i = pos, w;
-            while(i > 0 && !islead(string[i])) {
+            while(i > 0 && !islead(string[begin+i])) {
                 --i;
             }
-            if(i == pos || i + (w = mbclen(string[i])) > pos) {
+            if(i == pos || i + (w = mbclen(string[begin+i])) > pos) {
                 return i;
             }
             i += w;
@@ -2417,13 +2417,13 @@ public class Pattern {
             return mbctab_utf8[c&0xFF] + 1;
         }
 
-        public int startpos(byte[] string, int pos) {
+        public int startpos(byte[] string, int begin, int pos) {
             int i = pos, w;
 
-            while(i > 0 && !islead(string[i])) {
+            while(i > 0 && !islead(string[begin+i])) {
                 --i;
             }
-            if(i == pos || i + (w = mbclen(string[i])) > pos) {
+            if(i == pos || i + (w = mbclen(string[begin+i])) > pos) {
                 return i;
             }
             return i + w;
@@ -2436,11 +2436,11 @@ public class Pattern {
         new SJIS_StartPos(),
         new UTF8_StartPos()};
 
-    public final static int mbc_startpos(byte[] string, int startpos, CompileContext ctx) {
-        return startpositions[ctx.current_mbctype].startpos(string,startpos);
+    public final static int mbc_startpos(byte[] string, int begin, int startpos, CompileContext ctx) {
+        return startpositions[ctx.current_mbctype].startpos(string,begin,startpos);
     }
     
-    public int adjust_startpos(byte[] string, int size, int startpos, int range) {
+    public int adjust_startpos(byte[] string, int begin, int size, int startpos, int range) {
         /* Update the fastmap now if not correct already.  */
         if(fastmap_accurate==0) {
             compile_fastmap();
@@ -2448,13 +2448,13 @@ public class Pattern {
 
         /* Adjust startpos for mbc string */
         if(ctx.current_mbctype != 0 && startpos>0 && (options&RE_OPTIMIZE_BMATCH) == 0) {
-            int i = mbc_startpos(string, startpos, ctx);
+            int i = mbc_startpos(string, begin, startpos, ctx);
 
             if(i < startpos) {
                 if(range > 0) {
-                    startpos = i + mbclen(string[i],ctx);
+                    startpos = i + mbclen(string[begin+i],ctx);
                 } else {
-                    int len = mbclen(string[i],ctx);
+                    int len = mbclen(string[begin+i],ctx);
                     if(i + len <= startpos) {
                         startpos = i + len;
                     } else {
@@ -2531,7 +2531,7 @@ public class Pattern {
     /**
      * @mri re_search
      */
-    public int search(byte[] string, int size, int startpos, int range, Registers regs) {
+    public int search(byte[] string, final int string_start, int size, int startpos, int range, Registers regs) {
         int val=-1, anchor = 0, initpos = startpos;
         boolean doBegbuf = false;
         int pix;
@@ -2558,7 +2558,7 @@ public class Pattern {
                 break;
             case begpos:
                 //                                System.err.println("doing match1");
-                val = match(string, size, startpos, regs);
+                val = match(string, string_start, size, startpos, regs);
                 if (val >= 0) {
                     return startpos;
                 }
@@ -2574,7 +2574,7 @@ public class Pattern {
                         return -1;
                     } else {
                         //                                                System.err.println("doing match2");
-                        val = match(string, size, 0, regs);
+                        val = match(string, string_start, size, 0, regs);
                         if(val >= 0) {
                             return 0;
                         }
@@ -2606,11 +2606,17 @@ public class Pattern {
                 pend = size;
                 if((options&RE_OPTIMIZE_NO_BM) != 0) {
                     //System.err.println("doing slow_search");
-                    pos = slow_search(buffer, must+1, len, string, pbeg, pend-pbeg, MAY_TRANSLATE()?ctx.translate:null);
+                    pos = slow_search(buffer, must+1, len, string, string_start+pbeg, pend-pbeg, MAY_TRANSLATE()?ctx.translate:null);
+                    if(pos != -1) {
+                        pos-=string_start;
+                    }
                     //System.err.println("slow_search=" + pos);
                 } else {
-                    //System.err.println("doing bm_search (" + (must+1) + "," + len + "," + pbeg + "," +(pend-pbeg));
-                    pos = bm_search(buffer, must+1, len, string, pbeg, pend-pbeg, must_skip, MAY_TRANSLATE()?ctx.translate:null);
+                    //System.err.println("doing bm_search (" + (must+1) + "," + len + "," + pbeg + "," +(pend-pbeg)+")");
+                    pos = bm_search(buffer, must+1, len, string, string_start+pbeg, pend-pbeg, must_skip, MAY_TRANSLATE()?ctx.translate:null);
+                    if(pos != -1) {
+                        pos-=string_start;
+                    }
                     //System.err.println("bm_search=" + pos);
                 }
                 if(pos == -1) {
@@ -2635,7 +2641,7 @@ public class Pattern {
                     if(fastmap!=null && startpos < size && can_be_null != 1 && !(anchor != 0 && startpos == 0)) {
                         if(range > 0) {	/* Searching forwards.  */
                             int irange = range;
-                            pix = startpos;
+                            pix = string_start+startpos;
 
                             startpos_adjust: while(range > 0) {
                                 c = (char)(string[pix++]&0xFF);
@@ -2661,7 +2667,7 @@ public class Pattern {
                             }
                             startpos += irange - range;
                         } else { /* Searching backwards.  */
-                            c = (char)(string[startpos]&0xFF);
+                            c = (char)(string[string_start + startpos]&0xFF);
                             c &= 0xff;
                             if(MAY_TRANSLATE() ? fastmap[ctx.translate[c]]==0 : fastmap[c]==0) {
                                 break advance;
@@ -2676,7 +2682,7 @@ public class Pattern {
                     if((anchor!=0 || can_be_null==0) && range > 0 && size > 0 && startpos == size) {
                         return -1;
                     }
-                    val = match_exec(string, size, startpos, initpos, regs);
+                    val = match_exec(string, string_start, size, startpos, initpos, regs);
                     if(val >= 0) {
                         return startpos;
                     }
@@ -2685,8 +2691,8 @@ public class Pattern {
                     }
 
                     if(range > 0) {
-                        if(anchor!=0 && startpos < size && (startpos < 1 || string[startpos-1] != '\n')) {
-                            while(range > 0 && string[startpos] != '\n') {
+                        if(anchor!=0 && startpos < size && (startpos < 1 || string[string_start + startpos-1] != '\n')) {
+                            while(range > 0 && string[string_start+startpos] != '\n') {
                                 range--;
                                 startpos++;
                             }
@@ -2701,8 +2707,8 @@ public class Pattern {
                     break;
                 } else if(range > 0) {
                     int d = startpos;
-                    if(ismbchar(string[d],ctx)) {
-                        int len = mbclen(string[d],ctx) - 1;
+                    if(ismbchar(string[string_start+d],ctx)) {
+                        int len = mbclen(string[string_start+d],ctx) - 1;
                         range-=len;
                         startpos+=len;
                         if(range==0) {
@@ -2715,9 +2721,9 @@ public class Pattern {
                     range++;
                     startpos--;
                     {
-                        int s = 0;
-                        int d = startpos;
-                        for(pix = d; pix-- > s && ismbchar(string[pix],ctx); );
+                        int s = string_start;
+                        int d = string_start+ startpos;
+                        for(pix = string_start+d; pix-- > s && ismbchar(string[pix],ctx); );
                         if(((d - pix)&1) == 0) {
                             if(range == 0) {
                                 break;
@@ -2818,8 +2824,8 @@ public class Pattern {
     /**
      * @mri re_match
      */
-    public int match(byte[] string_arg, int size, int pos, Registers regs) {
-        return match_exec(string_arg, size, pos, pos, regs);
+    public int match(byte[] string_arg, int string_start, int size, int pos, Registers regs) {
+        return match_exec(string_arg, string_start, size, pos, pos, regs);
     }
 
     private final static int NON_GREEDY = 1;
@@ -2838,6 +2844,7 @@ public class Pattern {
         public int optz;
         public int num_regs;
         public byte[] string;
+        public int string_start;
         public int mcnt;
         public int d;
         public int dend;
@@ -3211,16 +3218,16 @@ public class Pattern {
         public final int anychar() {
             if(d == dend) {return 1;}
 
-            if(ismbchar(string[d],ctx)) {
-                if(d + mbclen(string[d],ctx) > dend) {
+            if(ismbchar(string[string_start+d],ctx)) {
+                if(d + mbclen(string[string_start+d],ctx) > dend) {
                     return 1;
                 }
                 SET_REGS_MATCHED();
-                d += mbclen(string[d],ctx);
+                d += mbclen(string[string_start+d],ctx);
                 return 0;
             }
             if((optz&RE_OPTION_MULTILINE)==0
-               && (TRANSLATE_P() ? ctx.translate[string[d]] : string[d]) == '\n') {
+               && (TRANSLATE_P() ? ctx.translate[string[string_start+d]] : string[string_start+d]) == '\n') {
                 return 1;
             }
             SET_REGS_MATCHED();
@@ -3236,11 +3243,11 @@ public class Pattern {
                     
             if(d == dend) {return 1;}
                         
-            c = (char)(string[d++]&0xFF);
+            c = (char)(string[string_start+d++]&0xFF);
             if(ismbchar(c,ctx)) {
                 if(d + mbclen(c,ctx) - 1 <= dend) {
                     cc = c;
-                    c = self.MBC2WC(c, string, d);
+                    c = self.MBC2WC(c, string, string_start+d);
                     not = is_in_list_mbc(c, p, pix);
                     if(!not) {
                         part = not = is_in_list_sbc(cc, p, pix);
@@ -3273,16 +3280,16 @@ public class Pattern {
             for (;;) {
                 PUSH_FAILURE_POINT(pix,d);
                 if(d == dend) {return;}
-                if(ismbchar(string[d],ctx)) {
-                    if(d + mbclen(string[d],ctx) > dend) {
+                if(ismbchar(string[string_start+d],ctx)) {
+                    if(d + mbclen(string[string_start+d],ctx) > dend) {
                         return;
                     }
                     SET_REGS_MATCHED();
-                    d += mbclen(string[d],ctx);
+                    d += mbclen(string[string_start+d],ctx);
                     continue;
                 }
                 if((optz&RE_OPTION_MULTILINE)==0 &&
-                   (TRANSLATE_P() ? ctx.translate[string[d]] : string[d]) == '\n') {
+                   (TRANSLATE_P() ? ctx.translate[string[string_start+d]] : string[string_start+d]) == '\n') {
                     return;
                 }
                 SET_REGS_MATCHED();
@@ -3460,12 +3467,12 @@ public class Pattern {
                         pix++;  
                         if(--mcnt==0
                            || d == dend
-                           || string[d++] != p[pix++]) {
+                           || string[string_start+d++] != p[pix++]) {
                             return 1;
                         }
                         continue;
                     }
-                    c = (char)(string[d++]&0xFF);
+                    c = (char)(string[string_start+d++]&0xFF);
                     if(ismbchar(c,ctx)) {
                         int n;
                         if(c != (char)(p[pix++]&0xFF)) {
@@ -3474,7 +3481,7 @@ public class Pattern {
                         for(n = mbclen(c,ctx) - 1; n > 0; n--) {
                             if(--mcnt==0
                                || d == dend
-                               || string[d++] != p[pix++]) {
+                               || string[string_start+d++] != p[pix++]) {
                                 return 1;
                             }
                         }
@@ -3491,7 +3498,7 @@ public class Pattern {
                     if((p[pix]&0xFF) == 0xff) {
                         pix++; mcnt--;
                     }
-                    if(string[d++] != p[pix++]) {
+                    if(string[string_start+d++] != p[pix++]) {
                         return 1;
                     }
                 } while(--mcnt > 0);
@@ -3570,14 +3577,14 @@ public class Pattern {
                 if(size == 0 || d == 0) {
                     return CONTINUE_MAINLOOP;
                 }
-                if(string[d-1] == '\n' && d != dend) {
+                if(string[string_start+d-1] == '\n' && d != dend) {
                     return CONTINUE_MAINLOOP;
                 }
                 return BREAK_FAIL1;
             case endline:
                 if(d == dend) {
                     return CONTINUE_MAINLOOP;
-                } else if(string[d] == '\n') {
+                } else if(string[string_start+d] == '\n') {
                     return CONTINUE_MAINLOOP;
                 }
                 return BREAK_FAIL1;
@@ -3599,7 +3606,7 @@ public class Pattern {
                     return CONTINUE_MAINLOOP;
                 }
                 /* .. or newline just before the end of the data. */
-                if(string[d] == '\n' && d+1 == dend) {
+                if(string[string_start+d] == '\n' && d+1 == dend) {
                     return CONTINUE_MAINLOOP;
                 }
                 return BREAK_FAIL1;
@@ -3830,20 +3837,20 @@ public class Pattern {
         private final int wordbound() {
             if(d == 0) {
                 if(d == dend) {return BREAK_FAIL1;}
-                if(IS_A_LETTER(string,d,dend)) {
+                if(IS_A_LETTER(string,string_start+d,string_start+dend)) {
                     return CONTINUE_MAINLOOP;
                 } else {
                     return BREAK_FAIL1;
                 }
             }
             if(d == dend) {
-                if(PREV_IS_A_LETTER(string,d,dend)) {
+                if(PREV_IS_A_LETTER(string,string_start+d,string_start+dend)) {
                     return CONTINUE_MAINLOOP;
                 } else {
                     return BREAK_FAIL1;
                 }
             }
-            if(PREV_IS_A_LETTER(string,d,dend) != IS_A_LETTER(string,d,dend)) {
+            if(PREV_IS_A_LETTER(string,string_start+d,string_start+dend) != IS_A_LETTER(string,string_start+d,string_start+dend)) {
                 return CONTINUE_MAINLOOP;
             }
             return BREAK_FAIL1;
@@ -3851,35 +3858,35 @@ public class Pattern {
 
         private final int notwordbound() {
             if(d==0) {
-                if(IS_A_LETTER(string, d, dend)) {
+                if(IS_A_LETTER(string, string_start+d, string_start+dend)) {
                     return BREAK_FAIL1;
                 } else {
                     return CONTINUE_MAINLOOP;
                 }
             }
             if(d == dend) {
-                if(PREV_IS_A_LETTER(string, d, dend)) {
+                if(PREV_IS_A_LETTER(string, string_start+d, string_start+dend)) {
                     return BREAK_FAIL1;
                 } else {
                     return CONTINUE_MAINLOOP;
                 }
             }
-            if(PREV_IS_A_LETTER(string, d, dend) != IS_A_LETTER(string, d, dend)) {
+            if(PREV_IS_A_LETTER(string, string_start+d, string_start+dend) != IS_A_LETTER(string, string_start+d, string_start+dend)) {
                 return BREAK_FAIL1;
             }
             return CONTINUE_MAINLOOP;
         }
 
         private final int wordbeg() {
-            if(IS_A_LETTER(string, d, dend) && (d==0 || !PREV_IS_A_LETTER(string,d,dend))) {
+            if(IS_A_LETTER(string, string_start+d, string_start+dend) && (d==0 || !PREV_IS_A_LETTER(string,string_start+d,string_start+dend))) {
                 return CONTINUE_MAINLOOP;
             }
             return BREAK_FAIL1;
         }
 
         private final int wordend() {
-            if(d!=0 && PREV_IS_A_LETTER(string, d, dend)
-               && (!IS_A_LETTER(string, d, dend) || d == dend)) {
+            if(d!=0 && PREV_IS_A_LETTER(string, string_start+d, string_start+dend)
+               && (!IS_A_LETTER(string, string_start+d, string_start+dend) || d == dend)) {
                 return CONTINUE_MAINLOOP;
             }
             return BREAK_FAIL1;
@@ -3887,11 +3894,11 @@ public class Pattern {
 
         private final int wordchar() {
             if(d == dend) {return BREAK_FAIL1;}
-            if(!IS_A_LETTER(string,d,dend)) {
+            if(!IS_A_LETTER(string,string_start+d,string_start+dend)) {
                 return BREAK_FAIL1;
             }
-            if(ismbchar(string[d],ctx) && d + mbclen(string[d],ctx) - 1 < dend) {
-                d += mbclen(string[d],ctx) - 1;
+            if(ismbchar(string[string_start+d],ctx) && d + mbclen(string[string_start+d],ctx) - 1 < dend) {
+                d += mbclen(string[string_start+d],ctx) - 1;
             }
             d++;
             SET_REGS_MATCHED();
@@ -3900,11 +3907,11 @@ public class Pattern {
         
         private final int notwordchar() {
             if(d == dend) {return BREAK_FAIL1;}
-            if(IS_A_LETTER(string, d, dend)) {
+            if(IS_A_LETTER(string, string_start+d, string_start+dend)) {
                 return BREAK_FAIL1;
             }
-            if(ismbchar(string[d],ctx) && d + mbclen(string[d],ctx) - 1 < dend) {
-                d += mbclen(string[d],ctx) - 1;
+            if(ismbchar(string[string_start+d],ctx) && d + mbclen(string[string_start+d],ctx) - 1 < dend) {
+                d += mbclen(string[string_start+d],ctx) - 1;
             }
             d++;
             SET_REGS_MATCHED();
@@ -3925,7 +3932,7 @@ public class Pattern {
                      IS_A_LETTER(d,dix-1,dend)));
         }
 
-        public MatchEnvironment(Pattern p, byte[] string_arg, int size, int pos, int beg, Registers regs) {
+        public MatchEnvironment(Pattern p, byte[] string_arg, int string_start, int size, int pos, int beg, Registers regs) {
             this.size = size;
             this.beg = beg;
             this.p = p.buffer;
@@ -3934,6 +3941,7 @@ public class Pattern {
             this.pend = p.used;
             this.num_regs = p.re_nsub;
             this.string = string_arg;
+            this.string_start = string_start;
             this.optz = (int)p.options;
             this.self = p;
             this.ctx = p.ctx;
@@ -3982,8 +3990,8 @@ public class Pattern {
     /**
      * @mri re_match_exec
      */
-    public int match_exec(byte[] string_arg, int size, int pos, int beg, Registers regs) {
-        MatchEnvironment w = new MatchEnvironment(this,string_arg,size,pos,beg,regs);
+    public int match_exec(byte[] string_arg, int string_start, int size, int pos, int beg, Registers regs) {
+        MatchEnvironment w = new MatchEnvironment(this,string_arg,string_start,size,pos,beg,regs);
 
         /* This loops over pattern commands.  It exits by returning from the
            function if match is complete, or it drops through if match fails
@@ -4609,7 +4617,7 @@ public class Pattern {
     public static void tmain4(String[] args) throws Exception {
         byte[] ccc = args[1].getBytes("ISO-8859-1");
         Registers reg = new Registers();
-        System.out.println(Pattern.compile(args[0].getBytes()).search(ccc,ccc.length,0,ccc.length,reg));
+        System.out.println(Pattern.compile(args[0].getBytes()).search(ccc,0,ccc.length,0,ccc.length,reg));
         for(int i=0;i<reg.num_regs;i++) {
             System.err.println("[" + i + "]" + reg.beg[i] + ":" + reg.end[i] + "=" + new String(ccc,reg.beg[i],reg.end[i]-reg.beg[i]));
         }
@@ -4671,7 +4679,7 @@ public class Pattern {
         byte[] ss = args[1].getBytes("ISO-8859-1");
         Registers rgs = new Registers();
         for(int j=0;j<times;j++) {
-            p2.search(ss,ss.length,0,ss.length,rgs);
+            p2.search(ss,0,ss.length,0,ss.length,rgs);
         }
         long a2 = System.currentTimeMillis();
 

@@ -29,9 +29,8 @@ import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
-import org.jruby.regexp.PatternSyntaxException;
-import org.jruby.regexp.RegexpFactory;
-import org.jruby.regexp.RegexpPattern;
+import org.rej.PatternSyntaxException;
+import org.rej.Pattern;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -366,20 +365,9 @@ public class RuntimeHelpers {
         return (RubyModule)rubyModule;
     }
     
-    public static RegexpPattern regexpLiteral(Ruby runtime, String ptr, int options) {
-        IRubyObject noCaseGlobal = runtime.getGlobalVariables().get("$=");
-
-        int extraOptions = noCaseGlobal.isTrue() ? ReOptions.RE_OPTION_IGNORECASE : 0;
-
-        try {
-            if((options & 256) == 256 ) {
-                return RegexpFactory.getFactory("java").createPattern(ByteList.create(ptr), (options & ~256) | extraOptions, 0);
-            } else {
-                return runtime.getRegexpFactory().createPattern(ByteList.create(ptr), options | extraOptions, 0);
-            }
-        } catch(PatternSyntaxException e) {
-            throw runtime.newRegexpError(e.getMessage());
-        }
+    public static Pattern regexpLiteral(Ruby runtime, String ptr, int options) {
+        //TODO: implement correctly
+        return null;
     }
 
     public static IRubyObject setClassVariable(ThreadContext context, Ruby runtime, 
