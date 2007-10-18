@@ -465,11 +465,10 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             range = bl.realSize - _pos;
         }
         
-        byte[] cstr = bl.bytes;
-        result = ptr.search(cstr,bl.begin,bl.realSize,_pos,range,regs);
+        result = ptr.search(bl.bytes,bl.begin,bl.realSize,_pos,range,regs);
 
         if(result == -2) {
-            rb_reg_raise(cstr,bl.begin,bl.realSize,"Stack overflow in regexp matcher");
+            rb_reg_raise(bl.bytes,bl.begin,bl.realSize,"Stack overflow in regexp matcher");
         }
         if(result < 0) {
             currentFrame.setBackRef(runtime.getNil());
