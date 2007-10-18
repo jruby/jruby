@@ -149,4 +149,11 @@ class TestThread < Test::Unit::TestCase
     x.join
     assert_equal(2, x.value)
   end
+  
+  def test_dead_thread_priority
+    x = Thread.new {}
+    1 while x.alive?
+    x.priority = 5
+    assert_equal(5, x.priority)
+  end
 end
