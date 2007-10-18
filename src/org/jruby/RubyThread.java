@@ -67,6 +67,7 @@ import org.jruby.runtime.ObjectMarshal;
  */
 public class RubyThread extends RubyObject {
     private ThreadLike threadImpl;
+    private RubyFixnum priority;
     private Map threadLocalVariables = new HashMap();
     private boolean abortOnException;
     private IRubyObject finalResult;
@@ -507,7 +508,7 @@ public class RubyThread extends RubyObject {
     }
     
     public RubyFixnum priority() {
-        return getRuntime().newFixnum(threadImpl.getPriority());
+        return priority;
     }
 
     public IRubyObject priority_set(IRubyObject priority) {
@@ -520,8 +521,12 @@ public class RubyThread extends RubyObject {
             iPriority = Thread.MAX_PRIORITY;
         }
         
-        threadImpl.setPriority(iPriority);
-        return priority;
+        this.priority = RubyFixnum.newFixnum(getRuntime(), iPriority);
+        
+        if (threadImpl.isAlive()) {
+            threadImpl.setPriority(iPriority);
+        }
+        return this.priority;
     }
 
     public IRubyObject raise(IRubyObject[] args, Block block) {
