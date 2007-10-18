@@ -471,7 +471,11 @@ public class RubyString extends RubyObject {
         return new RubyString(runtime, runtime.getString(), str);
     }
     
-    private static RubyString newEmptyString(Ruby runtime, RubyClass metaClass) {
+    public static RubyString newEmptyString(Ruby runtime) {
+        return newEmptyString(runtime, runtime.getString());
+    }
+
+    public static RubyString newEmptyString(Ruby runtime, RubyClass metaClass) {
         RubyString empty = new RubyString(runtime, metaClass, ByteList.EMPTY_BYTELIST);
         empty.flags |= SHARED_BYTELIST_STR_F;
         return empty;

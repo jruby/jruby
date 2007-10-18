@@ -34,19 +34,21 @@ import java.nio.charset.CharsetEncoder;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import org.rej.Pattern;
+
 public class KCode {
-    public static final KCode NIL = new KCode(null, 0);
-    public static final KCode NONE = new KCode("NONE", 0);
-    public static final KCode UTF8 = new KCode("UTF8", 64);
-    public static final KCode SJIS = new KCode("SJIS", 48);
-    public static final KCode EUC = new KCode("EUC", 32);
+    public static final KCode NIL = new KCode(null, Pattern.ASCII);
+    public static final KCode NONE = new KCode("NONE", Pattern.ASCII);
+    public static final KCode UTF8 = new KCode("UTF8", Pattern.UTF8);
+    public static final KCode SJIS = new KCode("SJIS", Pattern.SJIS);
+    public static final KCode EUC = new KCode("EUC", Pattern.EUC);
 
     private String kcode;
-    private int code;
+    private Pattern.CompileContext ctx;
 
-    private KCode(String kcode, int code) {
+    private KCode(String kcode, Pattern.CompileContext ctx) {
+        this.ctx = ctx;
         this.kcode = kcode;
-        this.code = code;
     }
 
     public static KCode create(Ruby runtime, String lang) {
@@ -57,11 +59,9 @@ public class KCode {
         switch(lang.charAt(0)) {
         case 'E':
         case 'e':
-            runtime.getWarnings().warn("JRuby supports only Unicode regexp.");
             return EUC;
         case 'S':
         case 's':
-            runtime.getWarnings().warn("JRuby supports only Unicode regexp.");
             return SJIS;
         case 'U':
         case 'u':
@@ -75,6 +75,10 @@ public class KCode {
         return NIL;
     }
 
+    public Pattern.CompileContext getContext() {
+        return ctx;
+    }
+
     public IRubyObject kcode(Ruby runtime) {
         if (kcode == null) {
             return runtime.getNil();
@@ -85,25 +89,28 @@ public class KCode {
     public CharsetDecoder decoder() {
         if (this == UTF8) {
             return Charset.forName("UTF-8").newDecoder();
-        } 
-        
-        return Charset.forName("ISO-8859-1").newDecoder();
+        } else {
+            return Charset.forName("ISO-8859-1").newDecoder();
+        }
     }
     
     public CharsetEncoder encoder() {
         if (this == UTF8) {
             return Charset.forName("UTF-8").newEncoder();
+        } else {
+            return Charset.forName("ISO-8859-1").newEncoder();
         }
-        
-        return Charset.forName("ISO-8859-1").newEncoder();
-    }
-
-    public int bits() {
-        return code;
     }
 
     public int flags() {
         return 0;
+    }
+
+    public String name() {
+        if(kcode != null) {
+            return kcode.toLowerCase();
+        }
+        return null;
     }
 }
 	
