@@ -46,6 +46,7 @@ import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -446,47 +447,54 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         IRubyObject match;
         Registers regs = new Registers();
         int range;
-        
-        if(pos > str.getByteList().length() || pos < 0) {
-            getRuntime().getCurrentContext().getCurrentFrame().setBackRef(getRuntime().getNil());
-            return -1;
-        }
-        rb_reg_check(this);
-        
-        if(reverse) {
-            range = -pos;
-        } else {
-            range = str.getByteList().length() - pos;
-        }
         ByteList bl = str.getByteList();
+        final int _pos = pos;
+        final Ruby runtime = getRuntime();
+        
+        Frame currentFrame = runtime.getCurrentContext().getCurrentFrame();
+        
+        if(_pos > bl.realSize || _pos < 0) {
+            currentFrame.setBackRef(runtime.getNil());
+            return -1;
+         }
+        rb_reg_check(this);
+                
+        if(reverse) {
+            range = -_pos;
+        } else {
+            range = bl.realSize - _pos;
+        }
+        
         byte[] cstr = bl.bytes;
-        result = ptr.search(cstr,bl.begin,bl.realSize,pos,range,regs);
+        result = ptr.search(cstr,bl.begin,bl.realSize,_pos,range,regs);
 
         if(result == -2) {
             rb_reg_raise(cstr,bl.begin,bl.realSize,"Stack overflow in regexp matcher");
         }
         if(result < 0) {
-            getRuntime().getCurrentContext().getCurrentFrame().setBackRef(getRuntime().getNil());
+            currentFrame.setBackRef(runtime.getNil());
             return result;
         }
-        match = getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
-        if(match.isNil()) {
-            match = new RubyMatchData(getRuntime());
+
+        match = currentFrame.getBackRef();
+
+        if(match.isNil() || ((RubyMatchData)match).used()) {
+            match = new RubyMatchData(runtime);
         } else {
-            if(getRuntime().getSafeLevel() >= 3) {
+            if(runtime.getSafeLevel() >= 3) {
                 match.setTaint(true);
             } else {
                 match.setTaint(false);
             }
         }
 
-        ((RubyMatchData)match).regs = regs.copy();
+        ((RubyMatchData)match).regs = regs;
 
-        RubyString ss = str.makeShared(0, str.getByteList().realSize);
+        RubyString ss = str.strDup();
         ss.freeze();
         ((RubyMatchData)match).str = ss;
 
-        getRuntime().getCurrentContext().getCurrentFrame().setBackRef(match);
+        currentFrame.setBackRef(match);
             
         match.infectBy(this);
         match.infectBy(str);

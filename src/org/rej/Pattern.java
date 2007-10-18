@@ -1723,6 +1723,10 @@ public class Pattern {
               }
               System.err.println();
             */
+
+            for(int i=0;i<self.pool.length;i++) {
+                self.pool[i] = new int[(regnum*NUM_REG_ITEMS + NUM_NONREG_ITEMS)*NFAILURES];
+            }
         }
 
 
@@ -2485,6 +2489,9 @@ public class Pattern {
         options = flags;
     }
 
+    private int[][] pool = new int[4][];
+    private int poolIndex = 0;
+
     private byte[] buffer;	  /* Space holding the compiled pattern commands.  */
     private int allocated;	  /* Size of space that `buffer' points to. */
     private int used;		  /* Length of portion of buffer actually occupied  */
@@ -2831,9 +2838,11 @@ public class Pattern {
     private final static int NON_GREEDY = 1;
     private final static int REG_UNSET_VALUE = -1;
 
-    private final static int NUM_NONREG_ITEMS = 4;
-    private final static int NUM_REG_ITEMS = 3;
-    private final static int NUM_COUNT_ITEMS = 2;
+    protected final static int NUM_NONREG_ITEMS = 4;
+    protected final static int NUM_REG_ITEMS = 3;
+    protected final static int NUM_COUNT_ITEMS = 2;
+
+    protected final static int NFAILURES=80;
 
     private static class MatchEnvironment {
         public byte[] p;
@@ -2883,7 +2892,16 @@ public class Pattern {
 
         public final void init_stack() {
             /* Initialize the stack. */
-            stacka = new int[(num_regs*3 + 4)*160];
+            int i = -1;
+            synchronized(self) {
+                i = self.poolIndex++;
+            }
+            if(i < self.pool.length) {
+                stacka = self.pool[i];
+            } else {
+                stacka = new int[(num_regs*NUM_REG_ITEMS + NUM_NONREG_ITEMS)*NFAILURES];
+            }
+
             stackb = stacka;
             stackp = 0;
             stacke = stackb.length;
@@ -3993,14 +4011,14 @@ public class Pattern {
     public int match_exec(byte[] string_arg, int string_start, int size, int pos, int beg, Registers regs) {
         MatchEnvironment w = new MatchEnvironment(this,string_arg,string_start,size,pos,beg,regs);
 
-        /* This loops over pattern commands.  It exits by returning from the
-           function if match is complete, or it drops through if match fails
-           at this starting point in the input data.  */
+        // This loops over pattern commands.  It exits by returning from the
+        // function if match is complete, or it drops through if match fails
+        // at this starting point in the input data.  
         boolean gotoRestoreBestRegs = false;
         do {
             mainLoop: for(;;) {
                 fail1: do {
-                    /* End of pattern means we might have succeeded.  */
+                    // End of pattern means we might have succeeded.  
                     if(w.pix == w.pend || gotoRestoreBestRegs) {
                         if(!gotoRestoreBestRegs) {
                             if(w.restore_best_regs()==1) {
@@ -4012,6 +4030,8 @@ public class Pattern {
 
                         w.convert_regs(regs);
 
+                        uninit_stack();
+
                         return w.d - w.pos;
                     }
 
@@ -4021,6 +4041,7 @@ public class Pattern {
                     case BREAK_FAIL1:
                         break fail1;
                     case RETURN_M2:
+                        uninit_stack();
                         return -2;
                     }
                     continue mainLoop;
@@ -4040,9 +4061,16 @@ public class Pattern {
             }
         } while(gotoRestoreBestRegs);
 
+        uninit_stack();
         return -1;
     }
 
+    private void uninit_stack() {
+        synchronized(this) {
+            this.poolIndex--;
+        }
+    }
+    
 
     /**
      * @mri slow_match
@@ -4169,10 +4197,10 @@ public class Pattern {
         int j,k;
         int is_a_succeed_n;
         
-        int[] stacka = new int[160];
+        int[] stacka = new int[NFAILURES];
         int[] stackb = stacka;
         int stackp = 0;
-        int stacke = 160;
+        int stacke = NFAILURES;
         long optz = options;
 
         Arrays.fill(fastmap, 0, 256, (byte)0);
