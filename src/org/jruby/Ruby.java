@@ -1475,6 +1475,7 @@ public final class Ruby {
         createSysErr(IErrno.ECONNREFUSED, "ECONNREFUSED");
         createSysErr(IErrno.ECONNRESET, "ECONNRESET");
         createSysErr(IErrno.EADDRINUSE, "EADDRINUSE");
+        createSysErr(IErrno.ECONNABORTED, "ECONNABORTED");
     }
 
     /**
