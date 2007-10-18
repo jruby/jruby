@@ -209,6 +209,20 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return re;
     }
 
+    @JRubyMethod(name = "compile_rej", required = 1, meta = true)
+    public static RubyRegexp compile_rej(IRubyObject recv, IRubyObject pattern) throws Exception {
+        ByteList bl = pattern.convertToString().getByteList();
+
+        org.rej.Pattern.compile(bl.bytes, bl.begin, bl.realSize);
+        
+        RubyClass klass = (RubyClass)recv;
+        RubyRegexp re = (RubyRegexp) klass.allocate();
+        
+        //        re.callInit(args, Block.NULL_BLOCK);
+        
+        return re;
+    }
+
     @JRubyMethod(name = "initialize", optional = 3, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 1, 3);
