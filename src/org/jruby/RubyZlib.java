@@ -938,7 +938,7 @@ public class RubyZlib {
         };
         
         @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
-        private static RubyGzipWriter newGzipWriter(IRubyObject recv, IRubyObject[] args, Block block) {
+        public static RubyGzipWriter newGzipWriter(IRubyObject recv, IRubyObject[] args, Block block) {
             RubyClass klass = (RubyClass)recv;
             
             RubyGzipWriter result = (RubyGzipWriter)klass.allocate();
