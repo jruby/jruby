@@ -106,8 +106,6 @@ public class Block {
     public boolean isLambda = false;
     
     protected Arity arity;
-    
-    public Frame oldFrame;
 
     public static Block createBlock(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
         return new Block(iterNode,
