@@ -1453,7 +1453,7 @@ public class ASTInterpreter {
                             //state.runtime.getGlobalVariables().set("$!", state.runtime.getNil());
                             //state.threadContext.setRaisedException(null);
                             continue RescuedBlock;
-                        } catch (JumpException je) {
+                        } catch (RaiseException je) {
                             anotherExceptionRaised = true;
                             throw je;
                         }
