@@ -1550,15 +1550,14 @@ public class EvaluationState {
                     if (isRescueHandled(runtime, context, raisedException, exceptionNodesList, self, aBlock)) {
                         try {
                             return evalInternal(runtime,context, rescueNode, self, aBlock);
+                        } catch (RaiseException re) {
+                            anotherExceptionRaised = true;
+                            throw re;
                         } catch (JumpException je) {
                             if (je.getJumpType() == JumpException.JumpType.RetryJump) {
-                                // should be handled in the finally block below
-                                //state.runtime.getGlobalVariables().set("$!", state.runtime.getNil());
-                                //state.threadContext.setRaisedException(null);
                                 continue RescuedBlock;
                                 
                             } else {
-                                anotherExceptionRaised = true;
                                 throw je;
                             }
                         }

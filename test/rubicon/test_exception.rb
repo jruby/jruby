@@ -107,4 +107,17 @@ class TestException < Test::Unit::TestCase
     assert_equal(ArgumentError, exception_setting_backtrace.class)
     assert_equal(nil, backtrace_in_thread)
   end
+
+  # test that $! gets cleared when "next"ing in a rescue block
+  def test_exception_cleared_when_non_local_flow_control
+    1.times do
+      begin
+        raise
+      rescue
+        next
+      end
+    end
+    
+    assert_equal(nil, $!)
+  end
 end
