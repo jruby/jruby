@@ -54,6 +54,6 @@ public class BuiltinScript implements Library {
 
         if (in == null) throw runtime.newIOError("Resource not found: " + resourceName);
 
-        runtime.evalScript(new BufferedReader(new InputStreamReader(in)), name);
+        runtime.loadScript(name, new BufferedReader(new InputStreamReader(in)));
     }
 }
