@@ -40,6 +40,7 @@ test_string_to_number
 test_symbol
 test_thread
 test_variables
+test_vietnamese_charset
 #test_trace_func
 test_zlib
 test_yaml
