@@ -53,7 +53,7 @@ public class RubyGC {
         return result;        
     }
 
-    @JRubyMethod(name = "start", name2 = "garbage_collect", module = true)
+    @JRubyMethod(name = {"start", "garbage_collect"}, module = true)
     public static IRubyObject start(IRubyObject recv) {
         System.gc();
         return recv.getRuntime().getNil();

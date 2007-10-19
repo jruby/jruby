@@ -318,7 +318,7 @@ public class RubyString extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "to_s", name2 = "to_str")
+    @JRubyMethod(name = {"to_s", "to_str"})
     public IRubyObject to_s() {
         if (getMetaClass().getRealClass() != getRuntime().getString()) {
             return strDup(getRuntime().getString());
@@ -556,7 +556,7 @@ public class RubyString extends RubyObject {
     /** rb_str_replace_m
      *
      */
-    @JRubyMethod(name = "replace", name2 = "initialize_copy", required = 1)
+    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1)
     public RubyString replace(IRubyObject other) {
         modifyCheck();
 

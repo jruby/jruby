@@ -55,7 +55,7 @@ public class RubyClassPathVariable extends RubyObject {
         super(runtime, runtime.getObject());
     }
 
-    @JRubyMethod(name = "append", name2 = "<<", required = 1)
+    @JRubyMethod(name = {"append", "<<"}, required = 1)
     public IRubyObject append(IRubyObject obj) throws Exception {
         String ss = obj.convertToString().toString();
         URL url = getURL(ss);
@@ -71,7 +71,7 @@ public class RubyClassPathVariable extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "size", name2 = "length")
+    @JRubyMethod(name = {"size", "length"})
     public IRubyObject size() {
         return getRuntime().newFixnum(getRuntime().getJRubyClassLoader().getURLs().length);
     }

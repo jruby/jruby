@@ -22,16 +22,11 @@ import org.jruby.runtime.Visibility;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface JRubyMethod {
-    String name() default "";
-    String name2() default "";
-    String name3() default "";
-    String name4() default "";
-    String name5() default "";
-    String name6() default "";
+    String[] name() default {};
     int required() default 0;
     int optional() default 0;
     boolean rest() default false;
-    String alias() default "";
+    String[] alias() default {};
     boolean meta() default false;
     boolean module() default false;
     boolean frame() default false;

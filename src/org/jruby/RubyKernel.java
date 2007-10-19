@@ -596,12 +596,12 @@ public class RubyKernel {
         return recv.getRuntime().newBinding();
     }
 
-    @JRubyMethod(name = "block_given?", name2 = "iterator?", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"block_given?", "iterator?"}, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static RubyBoolean block_given_p(IRubyObject recv, Block block) {
         return recv.getRuntime().newBoolean(recv.getRuntime().getCurrentContext().getPreviousFrame().getBlock().isGiven());
     }
 
-    @JRubyMethod(name = "sprintf", name2 = "format", required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"sprintf", "format"}, required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
             throw recv.getRuntime().newArgumentError("sprintf must have at least one argument");
@@ -615,7 +615,7 @@ public class RubyKernel {
         return str.op_format(newArgs);
     }
 
-    @JRubyMethod(name = "raise", name2 = "fail", optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"raise", "fail"}, optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args, Block block) {
         // FIXME: Pass block down?
         Ruby runtime = recv.getRuntime();
@@ -877,7 +877,7 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
     
-    @JRubyMethod(name = "proc", name2 = "lambda", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"proc", "lambda"}, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static RubyProc proc(IRubyObject recv, Block block) {
         return recv.getRuntime().newProc(true, block);
     }
@@ -1115,7 +1115,7 @@ public class RubyKernel {
         return runtime.newFixnum(runtime.getRandom().nextInt((int) ceil));
     }
 
-    @JRubyMethod(name = "system", name2 = "exec", required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"system","exec"}, required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int resultCode;

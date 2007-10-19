@@ -681,7 +681,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_size
      * 
      */
-    @JRubyMethod(name = "size", name2 = "length")
+    @JRubyMethod(name = {"size", "length"})
     public RubyFixnum rb_size() {
         return getRuntime().newFixnum(size);
     }
@@ -775,7 +775,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_aset
      * 
      */
-    @JRubyMethod(name = "[]=", name2 = "store", required = 2)
+    @JRubyMethod(name = {"[]=", "store"}, required = 2)
     public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
         modify();
 
@@ -846,7 +846,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_has_key
      * 
      */
-    @JRubyMethod(name = "has_key?", name2 = "key?", name3 = "include?", name4 = "member?", required = 1)
+    @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
     public RubyBoolean has_key_p(IRubyObject key) {
         return internalGetEntry(key) == null ? getRuntime().getFalse() : getRuntime().getTrue();
     }
@@ -854,7 +854,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_has_value
      * 
      */
-    @JRubyMethod(name = "has_value?", name2 = "value?", required = 1)
+    @JRubyMethod(name = {"has_value?", "value?"}, required = 1)
     public RubyBoolean has_value_p(IRubyObject value) {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
@@ -989,7 +989,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_indexes
      * 
      */
-    @JRubyMethod(name = "indexes", name2 = "indices", rest = true)
+    @JRubyMethod(name = {"indexes", "indices"}, rest = true)
     public RubyArray indices(IRubyObject[] indices) {
         RubyArray values = RubyArray.newArray(getRuntime(), indices.length);
 
@@ -1234,7 +1234,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_update
      * 
      */
-    @JRubyMethod(name = "merge!", name2 = "update", required = 1, frame = true)
+    @JRubyMethod(name = {"merge!", "update"}, required = 1, frame = true)
     public RubyHash merge_bang(IRubyObject other, Block block) {
         modify();
 
@@ -1280,7 +1280,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_replace
      * 
      */
-    @JRubyMethod(name = "replace", name2 = "initialize_copy", required = 1)
+    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1)
     public RubyHash replace(IRubyObject other) {
         RubyHash otherHash = other.convertToHash();
 

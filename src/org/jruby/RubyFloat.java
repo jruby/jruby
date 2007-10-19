@@ -259,7 +259,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_mod
      * 
      */
-    @JRubyMethod(name = "%", name2 = "modulo", required = 1)
+    @JRubyMethod(name = {"%", "modulo"}, required = 1)
     public IRubyObject op_mod(IRubyObject other) {
     	if (other instanceof RubyNumeric) {
             double y = ((RubyNumeric) other).getDoubleValue();
@@ -449,7 +449,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_truncate
      * 
      */
-    @JRubyMethod(name = "truncate", name2 = "to_i", name3 = "to_int")
+    @JRubyMethod(name = {"truncate", "to_i", "to_int"})
     public IRubyObject truncate() {
         double f = value;
         if (f > 0.0) f = Math.floor(f);

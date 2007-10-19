@@ -241,7 +241,7 @@ public abstract class RubyMatchData extends RubyObject {
     /** match_size
      *
      */
-    @JRubyMethod(name = "size", name2 = "length")
+    @JRubyMethod(name = {"size", "length"})
     public IRubyObject size() {
         return getRuntime().newFixnum(getSize());
     }

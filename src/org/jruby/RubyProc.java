@@ -172,7 +172,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
     }
 
     // ENEBO: For method def others are Java to java versions
-    @JRubyMethod(name = "call", name2 = "[]", rest = true, frame = true)
+    @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)
     public IRubyObject call(IRubyObject[] args, Block unusedBlock) {
         return call(args, null, Block.NULL_BLOCK);
     }

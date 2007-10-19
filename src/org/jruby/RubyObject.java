@@ -885,7 +885,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * <i>CRuby function: rb_obj_id</i>
      * FIXME: Should this be renamed to match its ruby name?
      */
-    @JRubyMethod(name = "object_id", name2 = "__id__", module = true)
+    @JRubyMethod(name = {"object_id", "__id__"}, module = true)
     public synchronized IRubyObject id() {
         return getRuntime().newFixnum(getRuntime().getObjectSpace().idOf(this));
     }
@@ -1099,7 +1099,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_is_kind_of
      *
      */
-    @JRubyMethod(name = "kind_of?", name2 = "is_a?", required = 1, module = true)
+    @JRubyMethod(name = {"kind_of?", "is_a?"}, required = 1, module = true)
     public RubyBoolean kind_of_p(IRubyObject type) {
         // TODO: Generalize this type-checking code into IRubyObject helper.
         if (!(type instanceof RubyModule)) {
@@ -1291,7 +1291,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      * @return the result of invoking the method identified by aSymbol.
      */
-    @JRubyMethod(name = "send", name2 = "__send__", required = 1, rest = true, module = true)
+    @JRubyMethod(name = {"send", "__send__"}, required = 1, rest = true, module = true)
     public IRubyObject send(IRubyObject[] args, Block block) {
         if (args.length < 1) {
             throw getRuntime().newArgumentError("no method name given");

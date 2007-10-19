@@ -444,7 +444,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_replace
      *
      */
-    @JRubyMethod(name = "replace", name2 = "initialize_copy", required = 1)
+    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1)
     public IRubyObject replace(IRubyObject orig) {
         modifyCheck();
 
@@ -982,7 +982,7 @@ public class RubyArray extends RubyObject implements List {
 
     /** rb_ary_aref
      */
-    @JRubyMethod(name = "[]", name2 = "slice", required = 1, optional = 1)
+    @JRubyMethod(name = {"[]", "slice"}, required = 1, optional = 1)
     public IRubyObject aref(IRubyObject[] args) {
         long beg, len;
 
@@ -1527,7 +1527,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_indexes
      * 
      */
-    @JRubyMethod(name = "indexes", name2 = "indices", required = 1, rest = true)
+    @JRubyMethod(name = {"indexes", "indices"}, required = 1, rest = true)
     public IRubyObject indexes(IRubyObject[] args) {
         getRuntime().getWarnings().warn("Array#indexes is deprecated; use Array#values_at");
 
@@ -1574,7 +1574,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_collect
      *
      */
-    @JRubyMethod(name = "collect", name2 = "map", frame = true)
+    @JRubyMethod(name = {"collect", "map"}, frame = true)
     public RubyArray collect(Block block) {
         Ruby runtime = getRuntime();
         
@@ -1593,7 +1593,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_collect_bang
      *
      */
-    @JRubyMethod(name = "collect!", name2 = "map!", frame = true)
+    @JRubyMethod(name = {"collect!", "map!"}, frame = true)
     public RubyArray collect_bang(Block block) {
         modify();
         ThreadContext context = getRuntime().getCurrentContext();

@@ -101,7 +101,7 @@ public class RubyMethod extends RubyObject {
     /** Call the method.
      * 
      */
-    @JRubyMethod(name = "call", name2 = "[]", rest = true, frame = true)
+    @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)
     public IRubyObject call(IRubyObject[] args, Block block) {
     	assert args != null;
         ThreadContext tc = getRuntime().getCurrentContext();
@@ -200,7 +200,7 @@ public class RubyMethod extends RubyObject {
         return unboundMethod;
     }
     
-    @JRubyMethod(name = "inspect", name2 = "to_s")
+    @JRubyMethod(name = {"inspect", "to_s"})
     public IRubyObject inspect() {
         String cname = getMetaClass().getRealClass().getName();
         RubyString str = getRuntime().newString("#<" + cname + ": " + originModule.getName() + "#" + methodName + ">");

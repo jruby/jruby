@@ -604,7 +604,7 @@ public class RubyIO extends RubyObject {
         return this; 
     }
 
-    @JRubyMethod(name = "fileno", name2 = "to_i")
+    @JRubyMethod(name = {"fileno", "to_i"})
     public RubyFixnum fileno() {
         return getRuntime().newFixnum(handler.getFileno());
     }
@@ -657,7 +657,7 @@ public class RubyIO extends RubyObject {
         return handler.hasPendingBuffered();
     }
     
-    @JRubyMethod(name = "pos", name2 = "tell")
+    @JRubyMethod(name = {"pos", "tell"})
     public RubyFixnum pos() {
         try {
             return getRuntime().newFixnum(handler.pos());
@@ -827,7 +827,7 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "eof?", name2 = "eof")
+    @JRubyMethod(name = {"eof?", "eof"})
     public RubyBoolean eof_p() {
         try {
             boolean isEOF = handler.isEOF(); 
@@ -839,7 +839,7 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "tty?", name2 = "isatty?")
+    @JRubyMethod(name = {"tty?", "isatty?"})
     public RubyBoolean tty_p() {
         // TODO: this is less than ideal but might be as close as we'll get
         int fileno = handler.getFileno();
@@ -1225,7 +1225,7 @@ public class RubyIO extends RubyObject {
     /** 
      * <p>Invoke a block for each line.</p>
      */
-    @JRubyMethod(name = "each_line", name2 = "each", optional = 1, frame = true)
+    @JRubyMethod(name = {"each_line", "each"}, optional = 1, frame = true)
     public RubyIO each_line(IRubyObject[] args, Block block) {
         IRubyObject rs;
         

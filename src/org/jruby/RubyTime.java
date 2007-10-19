@@ -162,7 +162,7 @@ public class RubyTime extends RubyObject {
         return newTime(getRuntime(),newCal);
     }
 
-    @JRubyMethod(name = "gmtime", name2 = "utc")
+    @JRubyMethod(name = {"gmtime", "utc"})
     public RubyTime gmtime() {
         cal.setTimeZone(TimeZone.getTimeZone(UTC));
         return this;
@@ -176,12 +176,12 @@ public class RubyTime extends RubyObject {
         return this;
     }
     
-    @JRubyMethod(name = "gmt?", name2 = "utc?", name3 = "gmtime?")
+    @JRubyMethod(name = {"gmt?", "utc?", "gmtime?"})
     public RubyBoolean gmt() {
         return getRuntime().newBoolean(cal.getTimeZone().getID().equals(UTC));
     }
     
-    @JRubyMethod(name = "getgm", name2 = "getutc")
+    @JRubyMethod(name = {"getgm", "getutc"})
     public RubyTime getgm() {
         Calendar newCal = (Calendar)cal.clone();
         newCal.setTimeZone(TimeZone.getTimeZone(UTC));
@@ -354,7 +354,7 @@ public class RubyTime extends RubyObject {
         return getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "asctime", name2 = "ctime")
+    @JRubyMethod(name = {"asctime", "ctime"})
     public RubyString asctime() {
         simpleDateFormat.setCalendar(cal);
         if (cal.get(Calendar.DAY_OF_MONTH) < 10) {
@@ -367,7 +367,7 @@ public class RubyTime extends RubyObject {
         return getRuntime().newString(result);
     }
 
-    @JRubyMethod(name = "to_s", name2 = "inspect")
+    @JRubyMethod(name = {"to_s", "inspect"})
     public IRubyObject to_s() {
         simpleDateFormat.setCalendar(cal);
         simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss z yyyy");
@@ -389,12 +389,12 @@ public class RubyTime extends RubyObject {
         return RubyFloat.newFloat(getRuntime(), time / 1000000.0);
     }
 
-    @JRubyMethod(name = "to_i", name2 = "tv_sec")
+    @JRubyMethod(name = {"to_i", "tv_sec"})
     public RubyInteger to_i() {
         return getRuntime().newFixnum(getTimeInMillis() / 1000);
     }
 
-    @JRubyMethod(name = "usec", name2 = "tv_usec")
+    @JRubyMethod(name = {"usec", "tv_usec"})
     public RubyInteger usec() {
         return getRuntime().newFixnum(microseconds());
     }
@@ -426,12 +426,12 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum(cal.get(Calendar.HOUR_OF_DAY));
     }
 
-    @JRubyMethod(name = "mday", name2 = "day")
+    @JRubyMethod(name = {"mday", "day"})
     public RubyInteger mday() {
         return getRuntime().newFixnum(cal.get(Calendar.DAY_OF_MONTH));
     }
 
-    @JRubyMethod(name = "month", name2 = "mon")
+    @JRubyMethod(name = {"month", "mon"})
     public RubyInteger month() {
         return getRuntime().newFixnum(cal.get(Calendar.MONTH) + 1);
     }
@@ -451,12 +451,12 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum(cal.get(Calendar.DAY_OF_YEAR));
     }
 
-    @JRubyMethod(name = "gmt_offset", name2 = "gmtoff", name3 = "utc_offset")
+    @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})
     public RubyInteger gmt_offset() {
         return getRuntime().newFixnum((int)(cal.get(Calendar.ZONE_OFFSET)/1000));
     }
     
-    @JRubyMethod(name = "isdst", name2 = "dst?")
+    @JRubyMethod(name = {"isdst", "dst?"})
     public RubyBoolean isdst() {
         return getRuntime().newBoolean(cal.getTimeZone().inDaylightTime(cal.getTime()));
     }
@@ -534,7 +534,7 @@ public class RubyTime extends RubyObject {
         return time;
     }
 
-    @JRubyMethod(name = "new", name2 = "now", rest = true, frame = true, meta = true)
+    @JRubyMethod(name = {"new", "now"}, rest = true, frame = true, meta = true)
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         IRubyObject obj = ((RubyClass)recv).allocate();
         obj.callMethod(recv.getRuntime().getCurrentContext(), "initialize", args, block);
@@ -583,12 +583,12 @@ public class RubyTime extends RubyObject {
         return time;
     }
 
-    @JRubyMethod(name = "local", name2 = "mktime", required = 1, optional = 9, meta = true)
+    @JRubyMethod(name = {"local", "mktime"}, required = 1, optional = 9, meta = true)
     public static RubyTime new_local(IRubyObject recv, IRubyObject[] args) {
         return createTime(recv, args, false);
     }
 
-    @JRubyMethod(name = "utc", name2 = "gm", required = 1, optional = 9, meta = true)
+    @JRubyMethod(name = {"utc", "gm"}, required = 1, optional = 9, meta = true)
     public static RubyTime new_utc(IRubyObject recv, IRubyObject[] args) {
         return createTime(recv, args, true);
     }

@@ -396,7 +396,7 @@ public class RubyFile extends RubyIO {
         return RubyFixnum.newFixnum(getRuntime(), result);
     }
 
-    @JRubyMethod(name2 = "atime", name3 = "ctime")
+    @JRubyMethod(name = {"mtime", "atime", "ctime"})
     public IRubyObject mtime() {
         return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(), this.path).getParentFile().lastModified());
     }
@@ -785,7 +785,7 @@ public class RubyFile extends RubyIO {
      *   [set]:  Matches a single char in a set (re: [...]).
      *
      */
-    @JRubyMethod(name2 = "fnmatch?", required = 2, optional = 1, meta = true)
+    @JRubyMethod(name = {"fnmatch", "fnmatch?"}, required = 2, optional = 1, meta = true)
     public static IRubyObject fnmatch(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int flags;
@@ -847,13 +847,13 @@ public class RubyFile extends RubyIO {
         }
     }
     
-    @JRubyMethod(name2 = "stat", required = 1, meta = true)
+    @JRubyMethod(name = {"lstat", "stat"}, required = 1, meta = true)
     public static IRubyObject lstat(IRubyObject recv, IRubyObject filename) {
         RubyString name = RubyString.stringValue(filename);
         return recv.getRuntime().newRubyFileStat(name.toString());
     }
     
-    @JRubyMethod(name2 = "atime", name3 = "ctime", required = 1, meta = true)
+    @JRubyMethod(name = {"mtime", "atime", "ctime"}, required = 1, meta = true)
     public static IRubyObject mtime(IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
         RubyString name = RubyString.stringValue(filename);
@@ -1043,7 +1043,7 @@ public class RubyFile extends RubyIO {
         return runtime.newFixnum(args.length - 2);
     }
     
-    @JRubyMethod(name2 = "delete", rest = true, meta = true)
+    @JRubyMethod(name = {"unlink", "delete"}, rest = true, meta = true)
     public static IRubyObject unlink(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         

@@ -206,7 +206,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_to_i
      * 
      */
-    @JRubyMethod(name = "to_i", name2 = "to_int", name3 = "floor", name4 = "ceil", name5 = "round", name6 = "truncate")
+    @JRubyMethod(name = {"to_i", "to_int", "floor", "ceil", "round", "truncate"})
     public RubyInteger to_i() {
         return this;
     }

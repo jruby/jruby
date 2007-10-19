@@ -78,7 +78,7 @@ public class RubyEnumerator extends RubyObject {
         enmr.defineAnnotatedMethod(RubyEnumerator.class, "each");
     }
 
-    @JRubyMethod(name = "to_enum", name2 = "enum_for", optional = 1, rest = true, frame = true)
+    @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true, frame = true)
     public static IRubyObject obj_to_enum(IRubyObject self, IRubyObject[] args, Block block) {
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
         newArgs[0] = self;

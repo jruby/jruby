@@ -275,12 +275,12 @@ public class RubyRange extends RubyObject {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "first", name2 = "begin")
+    @JRubyMethod(name = {"first", "begin"})
     public IRubyObject first() {
         return begin;
     }
 
-    @JRubyMethod(name = "last", name2 = "end")
+    @JRubyMethod(name = {"last", "end"})
     public IRubyObject last() {
         return end;
     }
@@ -489,7 +489,7 @@ public class RubyRange extends RubyObject {
         return false;
     }
 
-    @JRubyMethod(name = "include?", name2 = "member?", name3 = "===", required = 1, frame = true)
+    @JRubyMethod(name = {"include?", "member?", "==="}, required = 1, frame = true)
     public RubyBoolean include_p(IRubyObject obj, Block block) {
         RubyBoolean val = getRuntime().getFalse();
         if(r_le(begin,obj)) {

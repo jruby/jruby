@@ -533,34 +533,38 @@ public class RubyModule extends RubyObject {
         
         // if it's a singleton (metaclass) method or a module method, bind to metaclass
         if (jrubyMethod.meta()) {
-            if (jrubyMethod.name().equals("")) {
-                metaClass.addMethod(method.getName(), dynamicMethod);
+            String baseName;
+            if (jrubyMethod.name().length == 0) {
+                baseName = method.getName();
+                metaClass.addMethod(baseName, dynamicMethod);
             } else {
-                metaClass.addMethod(jrubyMethod.name(), dynamicMethod);
+                baseName = jrubyMethod.name()[0];
+                for (String name : jrubyMethod.name()) {
+                    metaClass.addMethod(name, dynamicMethod);
+                }
             }
-            if (!jrubyMethod.name2().equals("")) metaClass.addMethod(jrubyMethod.name2(), dynamicMethod);
-            if (!jrubyMethod.name3().equals("")) metaClass.addMethod(jrubyMethod.name3(), dynamicMethod);
-            if (!jrubyMethod.name4().equals("")) metaClass.addMethod(jrubyMethod.name4(), dynamicMethod);
-            if (!jrubyMethod.name5().equals("")) metaClass.addMethod(jrubyMethod.name5(), dynamicMethod);
-            if (!jrubyMethod.name6().equals("")) metaClass.addMethod(jrubyMethod.name6(), dynamicMethod);
 
-            if (!jrubyMethod.alias().equals("")) {
-                metaClass.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
+            if (jrubyMethod.alias().length > 0) {
+                for (String alias : jrubyMethod.alias()) {
+                    metaClass.defineAlias(alias, baseName);
+                }
             }
         } else {
-            if (jrubyMethod.name().equals("")) {
+            String baseName;
+            if (jrubyMethod.name().length == 0) {
+                baseName = method.getName();
                 module.addMethod(method.getName(), dynamicMethod);
             } else {
-                module.addMethod(jrubyMethod.name(), dynamicMethod);
+                baseName = jrubyMethod.name()[0];
+                for (String name : jrubyMethod.name()) {
+                    module.addMethod(name, dynamicMethod);
+                }
             }
-            if (!jrubyMethod.name2().equals("")) module.addMethod(jrubyMethod.name2(), dynamicMethod);
-            if (!jrubyMethod.name3().equals("")) module.addMethod(jrubyMethod.name3(), dynamicMethod);
-            if (!jrubyMethod.name4().equals("")) module.addMethod(jrubyMethod.name4(), dynamicMethod);
-            if (!jrubyMethod.name5().equals("")) module.addMethod(jrubyMethod.name5(), dynamicMethod);
-            if (!jrubyMethod.name6().equals("")) module.addMethod(jrubyMethod.name6(), dynamicMethod);
 
-            if (!jrubyMethod.alias().equals("")) {
-                module.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
+            if (jrubyMethod.alias().length > 0) {
+                for (String alias : jrubyMethod.alias()) {
+                    module.defineAlias(alias, baseName);
+                }
             }
             
             if (jrubyMethod.module()) {
@@ -570,19 +574,20 @@ public class RubyModule extends RubyObject {
                 
                 RubyModule singletonClass = getSingletonClass();
 
-                if (jrubyMethod.name().equals("")) {
+                if (jrubyMethod.name().length == 0) {
+                    baseName = method.getName();
                     singletonClass.addMethod(method.getName(), moduleMethod);
                 } else {
-                    singletonClass.addMethod(jrubyMethod.name(), moduleMethod);
+                    baseName = jrubyMethod.name()[0];
+                    for (String name : jrubyMethod.name()) {
+                        singletonClass.addMethod(name, moduleMethod);
+                    }
                 }
-                if (!jrubyMethod.name2().equals("")) singletonClass.addMethod(jrubyMethod.name2(), moduleMethod);
-                if (!jrubyMethod.name3().equals("")) singletonClass.addMethod(jrubyMethod.name3(), moduleMethod);
-                if (!jrubyMethod.name4().equals("")) singletonClass.addMethod(jrubyMethod.name4(), moduleMethod);
-                if (!jrubyMethod.name5().equals("")) singletonClass.addMethod(jrubyMethod.name5(), moduleMethod);
-                if (!jrubyMethod.name6().equals("")) singletonClass.addMethod(jrubyMethod.name6(), moduleMethod);
 
-                if (!jrubyMethod.alias().equals("")) {
-                    singletonClass.defineAlias(jrubyMethod.alias(), jrubyMethod.name());
+                if (jrubyMethod.alias().length > 0) {
+                    for (String alias : jrubyMethod.alias()) {
+                        singletonClass.defineAlias(alias, baseName);
+                    }
                 }
             }
         }

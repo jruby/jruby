@@ -100,7 +100,7 @@ public class RubyArgsFile extends RubyObject {
         return true;
     }
 
-    @JRubyMethod(name = "fileno", name2 = "to_i")
+    @JRubyMethod(name = {"fileno", "to_i"})
     public IRubyObject fileno() {
         if(currentFile == null && !nextArgsFile()) {
             throw getRuntime().newArgumentError("no stream");
@@ -282,7 +282,7 @@ public class RubyArgsFile extends RubyObject {
         return ((RubyIO)currentFile).rewind();
     }
 
-    @JRubyMethod(name = "eof", name2 = "eof?")
+    @JRubyMethod(name = {"eof", "eof?"})
     public IRubyObject eof() {
         if(currentFile != null && !nextArgsFile()) {
             return getRuntime().getTrue();

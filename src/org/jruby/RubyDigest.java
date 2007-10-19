@@ -196,7 +196,7 @@ public class RubyDigest {
             return this;
         }
 
-        @JRubyMethod(name = "update", name2 = "<<", required = 1)
+        @JRubyMethod(name = {"update", "<<"}, required = 1)
         public IRubyObject update(IRubyObject obj) {
             data.append(obj);
             return this;

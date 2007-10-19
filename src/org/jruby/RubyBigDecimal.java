@@ -265,7 +265,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return getRuntime().newFixnum(value.hashCode());
     }
 
-    @JRubyMethod(name = "%", name2 = "modulo", required = 1)
+    @JRubyMethod(name = {"%", "modulo"}, required = 1)
     public IRubyObject op_mod(IRubyObject arg) {
         RubyBigDecimal val = getVpValue(arg,false);
         return new RubyBigDecimal(getRuntime(),this.value.divideAndRemainder(val.value)[1]).setResult();
@@ -291,7 +291,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(getRuntime(),value.multiply(val.value)).setResult();
     }
     
-    @JRubyMethod(name = "**", name2 = "power", required = 1)
+    @JRubyMethod(name = {"**", "power"}, required = 1)
     public IRubyObject op_pow(IRubyObject arg) {
         if (!(arg instanceof RubyFixnum)) {
             throw getRuntime().newTypeError("wrong argument type " + arg.getMetaClass() + " (expected Fixnum)");
@@ -369,7 +369,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(getRuntime(), value.negate());
     }
     
-    @JRubyMethod(name = "/", name2 = "div", name3 = "quo", required = 1, optional = 1)
+    @JRubyMethod(name = {"/", "div", "quo"}, required = 1, optional = 1)
     public IRubyObject op_div(IRubyObject[] args) {
         int scale = 0;
         if(Arity.checkArgumentCount(getRuntime(), args,1,2) == 2) {

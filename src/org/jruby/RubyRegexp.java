@@ -198,7 +198,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return re;
     }
     
-    @JRubyMethod(name = "new", name2 = "compile", required = 1, optional = 2, meta = true)
+    @JRubyMethod(name = {"new", "compile"}, required = 1, optional = 2, meta = true)
     public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyClass klass = (RubyClass)recv;
         
@@ -297,7 +297,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_equal
      * 
      */
-    @JRubyMethod(name = "==", name2 = "eql?", required = 1)
+    @JRubyMethod(name = {"==", "eql?"}, required = 1)
     public IRubyObject op_equal(IRubyObject other) {
         if (other == this) {
             return getRuntime().getTrue();

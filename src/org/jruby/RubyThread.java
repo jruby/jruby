@@ -131,7 +131,7 @@ public class RubyThread extends RubyObject {
      * </pre>
      * <i>produces:</i> abxyzc
      */
-    @JRubyMethod(name = "new", name2 = "fork", rest = true, frame = true, meta = true)
+    @JRubyMethod(name = {"new", "fork"}, rest = true, frame = true, meta = true)
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         return startThread(recv, args, true, block);
     }
@@ -635,7 +635,7 @@ public class RubyThread extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "kill", name2 = "exit", name3 = "terminate")
+    @JRubyMethod(name = {"kill", "exit", "terminate"})
     public IRubyObject kill() {
     	// need to reexamine this
         RubyThread currentThread = getRuntime().getCurrentContext().getThread();
@@ -670,7 +670,7 @@ public class RubyThread extends RubyObject {
         return this;
     }
     
-    @JRubyMethod(name = "kill!", name2 = "exit!", name3 = "terminate!")
+    @JRubyMethod(name = {"kill!", "exit!", "terminate!"})
     public IRubyObject kill_bang() {
         throw getRuntime().newNotImplementedError("Thread#kill!, exit!, and terminate! are not safe and not supported");
     }
