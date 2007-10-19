@@ -127,6 +127,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private static final int VARS_ARRAY_INDEX = 7;
     private static final int NIL_INDEX = 8;
     private static final int EXCEPTION_INDEX = 9;
+    private static final int PREVIOUS_EXCEPTION_INDEX = 10;
     
     private String classname;
     private String sourcename;
@@ -359,7 +360,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         protected boolean withinProtection = false;
         
         // The current local variable count, to use for temporary locals during processing
-        protected int localVariable = EXCEPTION_INDEX + 1;
+        protected int localVariable = PREVIOUS_EXCEPTION_INDEX + 1;
 
         public abstract void beginMethod(ClosureCallback args, StaticScope scope);
 
@@ -1631,9 +1632,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             SkinnyMethodAdapter old_method = null;
             SkinnyMethodAdapter var_old_method = null;
             SkinnyMethodAdapter inv_old_method = null;
-            Label beforeMethodBody = new Label();
             Label afterMethodBody = new Label();
             Label catchRetry = new Label();
+            Label catchRaised = new Label();
+            Label catchJumps = new Label();
             Label exitRescue = new Label();
             boolean oldWithinProtection = withinProtection;
             withinProtection = true;
@@ -1646,8 +1648,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 getInvocationCompiler().setMethodAdapter(mv);
 
                 mv.visitCode();
-                
-                mv.label(beforeMethodBody);
 
                 // set up a local IRuby variable
                 mv.aload(THREADCONTEXT_INDEX);
@@ -1655,6 +1655,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.invokevirtual(cg.p(ThreadContext.class), "getRuntime", cg.sig(Ruby.class));
                 mv.dup();
                 mv.astore(RUNTIME_INDEX);
+                
+                // store previous exception for restoration if we rescue something
+                loadRuntime();
+                invokeUtilityMethod("getErrorInfo", cg.sig(IRubyObject.class, Ruby.class));
+                mv.astore(PREVIOUS_EXCEPTION_INDEX);
             
                 // grab nil for local variables
                 mv.invokevirtual(cg.p(Ruby.class), "getNil", cg.sig(IRubyObject.class));
@@ -1684,12 +1689,31 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.label(afterMethodBody);
                 mv.go_to(exitRescue);
                 
-                mv.trycatch(beforeMethodBody, afterMethodBody, catchRetry, cg.p(JumpException.RetryJump.class));
+                mv.trycatch(beforeBody, afterMethodBody, catchRetry, cg.p(JumpException.RetryJump.class));
                 mv.label(catchRetry);
                 mv.pop();
-                mv.go_to(beforeMethodBody);
+                mv.go_to(beforeBody);
+                
+                // any exceptions raised must continue to be raised, skipping $! restoration
+                mv.trycatch(beforeBody, afterMethodBody, catchRaised, cg.p(RaiseException.class));
+                mv.label(catchRaised);
+                mv.athrow();
+                
+                // and remaining jump exceptions should restore $!
+                mv.trycatch(beforeBody, afterMethodBody, catchJumps, cg.p(JumpException.class));
+                mv.label(catchJumps);
+                loadRuntime();
+                mv.aload(PREVIOUS_EXCEPTION_INDEX);
+                invokeUtilityMethod("setErrorInfo", cg.sig(void.class, Ruby.class, IRubyObject.class));
+                mv.athrow();
                 
                 mv.label(exitRescue);
+                
+                // restore the original exception
+                loadRuntime();
+                mv.aload(PREVIOUS_EXCEPTION_INDEX);
+                invokeUtilityMethod("setErrorInfo", cg.sig(void.class, Ruby.class, IRubyObject.class));
+                
                 mv.areturn();
                 mv.visitMaxs(1, 1);
                 mv.visitEnd();

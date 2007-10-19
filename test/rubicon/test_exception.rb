@@ -109,7 +109,6 @@ class TestException < Test::Unit::TestCase
   end
   
   # test that $! gets cleared when "next"ing in a rescue block
-=begin disabled until I can fix the compiler
   def test_exception_cleared_when_non_local_flow_control
     1.times do
       begin
@@ -121,5 +120,4 @@ class TestException < Test::Unit::TestCase
     
     assert_equal(nil, $!)
   end
-=end
 end

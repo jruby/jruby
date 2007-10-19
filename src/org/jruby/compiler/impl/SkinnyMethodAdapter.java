@@ -149,6 +149,10 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         mv.visitLabel(label);
     }
     
+    public void nop() {
+        mv.visitInsn(NOP);
+    }
+    
     public void pop() {
         mv.visitInsn(POP);
     }

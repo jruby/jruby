@@ -425,6 +425,13 @@ test_no_exception {
   test_equal(3, compile_and_run("x = begin; 1; raise; rescue TypeError; 2; rescue; 3; end"))
   test_equal(4, compile_and_run("x = begin; 1; rescue; 2; else; 4; end"))
   test_equal(4, compile_and_run("def foo; begin; return 4; rescue; end; return 3; end; foo"))
+  
+  # test that $! is getting reset/cleared appropriately
+  $! = nil
+  test_equal(nil, compile_and_run("begin; raise; rescue; end; $!"))
+  test_equal(nil, compile_and_run("1.times { begin; raise; rescue; next; end }; $!"))
+  test_ok(nil != compile_and_run("begin; raise; rescue; begin; raise; rescue; end; $!; end"))
+  test_ok(nil != compile_and_run("begin; raise; rescue; 1.times { begin; raise; rescue; next; end }; $!; end"))
 }
 
 # break in a while in an ensure

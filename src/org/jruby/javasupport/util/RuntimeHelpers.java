@@ -792,4 +792,12 @@ public class RuntimeHelpers {
             return value.callMethod(context, "=~", regexp);
         }
     }
+    
+    public static IRubyObject getErrorInfo(Ruby runtime) {
+        return runtime.getGlobalVariables().get("$!");
+    }
+    
+    public static void setErrorInfo(Ruby runtime, IRubyObject error) {
+        runtime.getGlobalVariables().set("$!", error);
+    }
 }
