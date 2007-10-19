@@ -76,3 +76,23 @@ test_equal("AF_INET", received[1][1][0])
 test_equal("127.0.0.1", received[1][1][3])
 
 # test_exception(SocketError) { UDPSocket.open.send("BANG!", -1, 'invalid.', port) }
+
+# test that raising inside an accepting thread doesn't nuke the socket
+tcp = TCPServer.new(nil, 5000)
+ok = false
+exception = nil
+t = Thread.new {
+  begin
+    tcp.accept
+  rescue Exception => e
+    exception = e
+    # this would normally blow up if the socket was demolished
+    tcp.close
+    ok = true
+  end
+}
+1 until t.alive?
+t.raise
+sleep 0.1
+test_ok ok
+test_ok RuntimeError === exception
