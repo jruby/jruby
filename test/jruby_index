@@ -13,6 +13,7 @@ test_case
 test_class
 test_comparable
 test_core_arities
+test_crazy_blocks
 test_date_time
 test_defined
 #test_digest2
