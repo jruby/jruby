@@ -98,6 +98,7 @@ test_symbol
 test_thread
 test_trace_func
 test_variables
+test_vietnamese_charset
 test_zlib
 test_yaml
 
