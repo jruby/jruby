@@ -36,3 +36,24 @@ test_no_exception {
   TCPServer.open('localhost', 2204) {|sock| test_equal(TCPServer, sock.class)}
   TCPServer.open('localhost', 2204) {}
 }
+
+# test that raising inside an accepting thread doesn't nuke the socket
+tcp = TCPServer.new(nil, 5000)
+ok = false
+exception = nil
+t = Thread.new {
+  begin
+    tcp.accept
+  rescue Exception => e
+    exception = e
+    # this would normally blow up if the socket was demolished
+    tcp.close
+    ok = true
+  end
+}
+1 until t.alive?
+t.raise
+sleep 0.1
+test_ok ok
+test_ok RuntimeError === exception
+
