@@ -81,18 +81,21 @@ test_equal("127.0.0.1", received[1][1][3])
 tcp = TCPServer.new(nil, 5000)
 ok = false
 exception = nil
+ready = false
 t = Thread.new {
   begin
+    ready = true
     tcp.accept
   rescue Exception => e
     exception = e
     # this would normally blow up if the socket was demolished
     tcp.close
     ok = true
+    ready = false
   end
 }
-1 until t.alive?
+Thread.pass until ready
 t.raise
-sleep 0.1
+Thread.pass while ready
 test_ok ok
 test_ok RuntimeError === exception
