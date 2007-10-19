@@ -1938,6 +1938,7 @@ public class RubyModule extends RubyObject {
 
     public RubyModule alias_method(IRubyObject newId, IRubyObject oldId) {
         defineAlias(newId.asSymbol(), oldId.asSymbol());
+        callMethod(getRuntime().getCurrentContext(), "method_added", newId);
         return this;
     }
 

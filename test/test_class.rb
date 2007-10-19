@@ -277,4 +277,17 @@ class TestClass < Test::Unit::TestCase
       M7A.module_eval { include C7 }
     end
   end
+
+  class AliasMethodTester
+    METHODS = []
+    def AliasMethodTester.method_added(name)
+      METHODS << name
+    end
+    alias_method :puts2, :puts
+  end
+
+  # JRUBY-1419
+  def test_alias_method_calls_method_added
+    assert_equal([:puts2], AliasMethodTester::METHODS)
+  end
 end
