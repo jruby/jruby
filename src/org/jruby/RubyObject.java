@@ -153,10 +153,9 @@ public class RubyObject implements Cloneable, IRubyObject {
         public void finalize() {
             if (finalized.compareAndSet(false, true)) {
                 if (finalizers != null) {
-                    IRubyObject idFixnum = getRuntime().newFixnum(id);
                     for (int i = 0; i < finalizers.size(); i++) {
                         ((RubyProc)finalizers.get(i)).call(
-                                new IRubyObject[] {idFixnum});
+                                new IRubyObject[] {RubyObject.this});
                     }
                 }
             }
