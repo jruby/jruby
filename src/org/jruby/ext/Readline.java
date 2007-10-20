@@ -124,7 +124,9 @@ public class Readline {
     public static IRubyObject s_readline(IRubyObject recv, IRubyObject prompt, IRubyObject add_to_hist) throws IOException {
         if (readline == null) initReadline(); // not overridden, let's go
         IRubyObject line = recv.getRuntime().getNil();
+        readline.getTerminal().disableEcho();
         String v = readline.readLine(prompt.toString());
+        readline.getTerminal().enableEcho();
         if(null != v) {
             if (add_to_hist.isTrue())
                 readline.getHistory().addToHistory(v);
