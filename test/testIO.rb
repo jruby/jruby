@@ -39,6 +39,22 @@ test_exception(IOError) { g.puts }
 g.close
 test_exception(IOError) { g.gets }
 
+# Puts a recursive array
+x = []
+x << 2 << x
+f = File.new(@file, "w")
+g = IO.new(f.fileno)
+g.puts x
+g.close
+
+f = File.new(@file, "r")
+g = IO.new(f.fileno)
+a = f.gets
+b = f.gets
+test_equal("2\n", a)
+test_equal("[...]\n", b)
+
+
 # In this case we will have f close (which will pull the rug
 # out from under g) and thus make g try the ops and fail
 f = File.open(@file)

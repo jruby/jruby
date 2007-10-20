@@ -995,8 +995,11 @@ public class RubyIO extends RubyObject {
             String line = null;
             if (args[i].isNil()) {
                 line = "nil";
-            } else if (args[i] instanceof RubyArray) {
-                puts(((RubyArray) args[i]).toJavaArray());
+            } else if(getRuntime().isInspecting(args[i])) {
+                line = "[...]";
+            }
+            else if (args[i] instanceof RubyArray) {
+                inspectPuts((RubyArray) args[i]);
                 continue;
             } else {
                 line = args[i].toString();
@@ -1005,6 +1008,15 @@ public class RubyIO extends RubyObject {
             		(line.endsWith("\n") ? "" : "\n")));
         }
         return getRuntime().getNil();
+    }
+    
+    private IRubyObject inspectPuts(RubyArray array) {
+        try {
+            getRuntime().registerInspecting(array);
+            return puts(array.toJavaArray());
+        } finally {
+            getRuntime().unregisterInspecting(array);
+        }
     }
 
     /** Read a line.
