@@ -52,6 +52,7 @@ public class RbConfigLibrary implements Library {
         RubyModule configModule = runtime.defineModule("Config");
         RubyHash configHash = RubyHash.newHash(runtime);
         configModule.defineConstant("CONFIG", configHash);
+        runtime.getObject().defineConstant("RbConfig", configModule);
 
         String[] versionParts = Constants.RUBY_VERSION.split("\\.");
         setConfig(configHash, "MAJOR", versionParts[0]);

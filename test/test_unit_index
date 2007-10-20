@@ -92,6 +92,7 @@ test_pack
 test_primitive_to_java
 test_process
 test_parsing
+test_rbconfig
 test_string_java_bytes
 test_string_printf
 test_symbol
