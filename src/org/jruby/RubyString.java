@@ -2357,15 +2357,15 @@ public class RubyString extends RubyObject {
             byte[]buff = value.bytes;            
             int p = ptr;
             
-            byte lastVal = rsep.bytes[rsep.begin+rslen-1];
+            byte lastVal = rslen == 0 ? 0 : rsep.bytes[rsep.begin+rslen-1];
 
             int s = p;
             p+=rslen;
 
             for(; p < pend; p++) {
-                if(ptr<p && buff[p-1] == lastVal &&
-                   (rslen <= 1 || 
-                    ByteList.memcmp(rsep.bytes, rsep.begin, rslen, buff, p-rslen, rslen) == 0)) {
+                if(ptr<p && (rslen ==0 || (buff[p-1] == lastVal &&
+                                            (rslen <= 1 || 
+                                             ByteList.memcmp(rsep.bytes, rsep.begin, rslen, buff, p-rslen, rslen) == 0)))) {
 
                     result.append(makeShared(s-ptr, (p - s) - rslen));
                     s = p;
