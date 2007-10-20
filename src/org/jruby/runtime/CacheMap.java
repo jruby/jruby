@@ -65,14 +65,10 @@ public class CacheMap {
         
         if (siteList == null) {
             siteList = new WeakHashSet<CallAdapter>();
-            synchronized (mappings) {
-                mappings.put(method, siteList);
-            }
+            mappings.put(method, siteList);
         }
 
-        synchronized (siteList) {
-            siteList.add(site);
-        }
+        siteList.add(site);
     }
     
     /**
@@ -90,12 +86,10 @@ public class CacheMap {
         if (siteList == null) {
             return;
         }
-        synchronized (siteList) {
-            for(Iterator<CallAdapter> iter = siteList.iterator(); iter.hasNext();) {
-                CallAdapter site = iter.next();
-                if (site != null) {
-                    site.removeCachedMethod();
-                }
+        for(Iterator<CallAdapter> iter = siteList.iterator(); iter.hasNext();) {
+            CallAdapter site = iter.next();
+            if (site != null) {
+                site.removeCachedMethod();
             }
         }
     }
