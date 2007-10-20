@@ -47,7 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class IOOutputStream extends OutputStream {
     private IRubyObject io;
-    private CallAdapter writeAdapter = new CallAdapter.DefaultCallAdapter("write", CallType.FUNCTIONAL);
+    private CallAdapter writeAdapter;
     private CallAdapter closeAdapter = new CallAdapter.DefaultCallAdapter("close", CallType.FUNCTIONAL);
 
     /**
@@ -56,7 +56,11 @@ public class IOOutputStream extends OutputStream {
      * @param io the ruby object
      */
     public IOOutputStream(final IRubyObject io) {
-        if(!io.respondsTo("write")) {
+        if(io.respondsTo("write")) {
+            writeAdapter = new CallAdapter.DefaultCallAdapter("write", CallType.FUNCTIONAL);
+        } else if (io.respondsTo("<<")) {
+            writeAdapter = new CallAdapter.DefaultCallAdapter("<<", CallType.FUNCTIONAL);
+        } else {
             throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"write\".");
         }
         this.io = io;

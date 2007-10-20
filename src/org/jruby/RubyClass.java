@@ -63,7 +63,6 @@ public class RubyClass extends RubyModule {
             }
         };
         
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyClass.class);
         classClass.undefineMethod("module_function");
         classClass.undefineMethod("append_features");
         classClass.undefineMethod("extend_object");

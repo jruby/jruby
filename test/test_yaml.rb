@@ -4,13 +4,32 @@
 #
 require 'test/unit'
 require 'yaml'
+require 'stringio'
 
 # [ruby-core:01946]
 module YAML_Tests
     StructTest = Struct::new( :c )
 end
 
-class YAML_Unit_Tests < Test::Unit::TestCase
+class TestYaml < Test::Unit::TestCase
+  def setup
+    @str = ""
+    @obj = [:a, :b, :c, :d]
+    @sio = StringIO.new(@str)
+  end
+
+  def test_yaml_dump_to_a_string_should_not_barf
+    assert_nothing_raised { YAML.dump(@obj, @str) }
+  end
+
+  def test_yaml_dump_to_a_stringIO_does_not_barf
+    assert_nothing_raised { YAML.dump(@obj, @sio) }
+  end
+
+  def test_yaml_dump_without_second_argument_does_not_barf
+    assert_nothing_raised { YAML.dump(@obj) }
+  end
+
 	#
 	# Convert between YAML and the object to verify correct parsing and
 	# emitting
