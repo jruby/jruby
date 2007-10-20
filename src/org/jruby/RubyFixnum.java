@@ -336,7 +336,7 @@ public class RubyFixnum extends RubyInteger {
     /** fix_mod
      * 
      */
-    @JRubyMethod(name = "%", required = 1, alias = "modulo")
+    @JRubyMethod(name = {"%", "modulo"}, required = 1)
     public IRubyObject op_mod(IRubyObject other) {
         if (other instanceof RubyFixnum) {
             // Java / and % are not the same as ruby

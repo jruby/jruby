@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -183,7 +184,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_succ
      * 
      */
-    @JRubyMethod(name = "succ", alias = "next")
+    @JRubyMethod(name = {"succ", "next"})
     public IRubyObject succ() {
         if (this instanceof RubyFixnum) {
             return RubyFixnum.newFixnum(getRuntime(), getLongValue() + 1L);

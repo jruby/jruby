@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -965,7 +966,7 @@ public class RubyString extends RubyObject {
     /** rb_str_length
      *
      */
-    @JRubyMethod(name = "length", alias = "size")
+    @JRubyMethod(name = {"length", "size"})
     public RubyFixnum length() {
         return getRuntime().newFixnum(value.length());
     }
@@ -993,7 +994,7 @@ public class RubyString extends RubyObject {
     /** rb_str_concat
      *
      */
-    @JRubyMethod(name = "concat", alias = "<<", required = 1)
+    @JRubyMethod(name = {"concat", "<<"}, required = 1)
     public RubyString concat(IRubyObject other) {
         if (other instanceof RubyFixnum) {
             long value = ((RubyFixnum) other).getLongValue();
@@ -1968,7 +1969,7 @@ public class RubyString extends RubyObject {
     /** rb_str_aref, rb_str_aref_m
      *
      */
-    @JRubyMethod(name = "[]", alias = "slice", required = 1, optional = 1)
+    @JRubyMethod(name = {"[]", "slice"}, required = 1, optional = 1)
     public IRubyObject op_aref(IRubyObject[] args) {
         if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             if (args[0] instanceof RubyRegexp) {
@@ -2123,12 +2124,12 @@ public class RubyString extends RubyObject {
         return result;
     }
 
-    @JRubyMethod(name = "succ", alias = "next")
+    @JRubyMethod(name = {"succ", "next"})
     public IRubyObject succ() {
         return strDup().succ_bang();
     }
 
-    @JRubyMethod(name = "succ!", alias = "next!")
+    @JRubyMethod(name = {"succ!", "next!"})
     public IRubyObject succ_bang() {
         if (value.length() == 0) return this;
 
@@ -3205,7 +3206,7 @@ public class RubyString extends RubyObject {
     /** rb_str_each_line
      *
      */
-    @JRubyMethod(name = "each_line", required = 0, optional = 1, frame = true, alias = "each")
+    @JRubyMethod(name = {"each_line", "each"}, required = 0, optional = 1, frame = true)
     public IRubyObject each_line(IRubyObject[] args, Block block) {
         byte newline;
         int p = value.begin;
@@ -3306,7 +3307,7 @@ public class RubyString extends RubyObject {
         return RubySymbol.newSymbol(getRuntime(), toString());
     }
 
-    @JRubyMethod(name = "to_sym", alias = "intern")
+    @JRubyMethod(name = {"to_sym", "intern"})
     public RubySymbol to_sym() {
         return intern();
     }

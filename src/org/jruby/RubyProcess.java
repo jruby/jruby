@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -54,14 +55,16 @@ public class RubyProcess {
         
         RubyModule process_uid = process.defineModuleUnder("UID");
         runtime.setProcUID(process_uid);
+        
+        RubyModule process_gid = process.defineModuleUnder("GID");
+        runtime.setProcGID(process_gid);
 
-        CallbackFactory processCallbackFactory = runtime.callbackFactory(RubyProcess.class);
         CallbackFactory process_statusCallbackFactory = runtime.callbackFactory(RubyProcess.RubyStatus.class);
-        CallbackFactory processUIDCallbackFactory = runtime.callbackFactory(RubyProcess.UID.class);
         
         process.defineAnnotatedMethods(RubyProcess.class);
         process_status.defineAnnotatedMethods(RubyStatus.class);
-        process_uid.defineAnnotatedMethods(UID.class);
+        process_uid.defineAnnotatedMethods(UserAndGroupID.class);
+        process_gid.defineAnnotatedMethods(UserAndGroupID.class);
 
 //    #ifdef HAVE_GETPRIORITY
 //        rb_define_const(rb_mProcess, "PRIO_PROCESS", INT2FIX(PRIO_PROCESS));
@@ -148,7 +151,7 @@ public class RubyProcess {
         }
     }
     
-    public static class UID {
+    public static class UserAndGroupID {
         @JRubyMethod(name = "change_privilege", required = 1, module = true)
         public static IRubyObject change_privilege(IRubyObject self, IRubyObject arg) {
             throw self.getRuntime().newNotImplementedError("Process::UID::change_privilege not implemented yet");
