@@ -236,7 +236,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_s_quote
      * 
      */
-    @JRubyMethod(name = "quote", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = {"quote", "escape"}, required = 1, optional = 1, meta = true)
     public static IRubyObject quote(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0 || args.length > 2) {
             throw recv.getRuntime().newArgumentError(0, args.length);
@@ -269,10 +269,6 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
     }
 
-    /**
-     * Utility version of quote that doesn't use encoding
-     */
-    @JRubyMethod(name = "escape", required = 1, meta = true)
     public static IRubyObject quote(IRubyObject recv, IRubyObject str) {        
         return recv.getRuntime().newString(escapeSpecialChars(str.toString())).infectBy(str);
     }
