@@ -1682,8 +1682,8 @@ public class RubyString extends RubyObject {
             if(repl.isTaint()) {
                 tainted = true;
             }
-            
-            this.value.unsafeReplace(this.value.begin + regs.beg[0], regs.end[0]-regs.beg[0], repl.value.bytes, repl.value.begin, regs.beg[0]);
+
+            this.value.unsafeReplace(this.value.begin + regs.beg[0], regs.end[0]-regs.beg[0], repl.value.bytes, repl.value.begin, repl.value.realSize);
             if(tainted) {
                 setTaint(true);
             }
@@ -2448,19 +2448,20 @@ public class RubyString extends RubyObject {
         if(!block.isGiven()) {
             RubyArray ary = runtime.newArray();
             while(!(result = scan_once(pattern, start)).isNil()) {
-                match = getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
+                match = context.getCurrentFrame().getBackRef();
                 ary.append(result);
             }
-            getRuntime().getCurrentContext().getPreviousFrame().setBackRef(match);
+            context.getPreviousFrame().setBackRef(match);
             return ary;
         }
 
         while(!(result = scan_once(pattern, start)).isNil()) {
-            match = getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
-            block.yield(getRuntime().getCurrentContext(),result);
-            getRuntime().getCurrentContext().getPreviousFrame().setBackRef(match);
+            match = context.getCurrentFrame().getBackRef();
+            context.getPreviousFrame().setBackRef(match);
+            block.yield(context,result);
+            context.getPreviousFrame().setBackRef(match);
         }
-        getRuntime().getCurrentContext().getPreviousFrame().setBackRef(match);
+        context.getPreviousFrame().setBackRef(match);
 
         return this;
     }

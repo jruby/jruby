@@ -63,6 +63,8 @@ public class Pattern {
 
     private static final byte[] re_syntax_table = new byte[256];
 
+    private static final int NUMBER_LENGTH = 2;
+
     static {
         char c;
         for(c=0; c<=0x7f; c++) {
@@ -2174,39 +2176,39 @@ public class Pattern {
 
     private final static void insert_op_2(byte op, byte[] b, int there, int current_end, int num_1, int num_2) {
         int pfrom = current_end;
-        int pto = current_end+5;
+        int pto = current_end + NUMBER_LENGTH*2 + 1;
 
-        System.arraycopy(b,there,b,there+5,pfrom-there);
+        System.arraycopy(b,there,b,there+NUMBER_LENGTH*2+1,pfrom-there);
 
         b[there] = op;
         STORE_NUMBER(b, there + 1, num_1);
-        STORE_NUMBER(b, there + 3, num_2);
+        STORE_NUMBER(b, there + NUMBER_LENGTH + 1, num_2);
     }
 
     private final static void store_jump_n(byte[] b, int from, byte opcode, int to, int n) {
         b[from] = opcode;
-        STORE_NUMBER(b, from + 1, to - (from + 3));
-        STORE_NUMBER(b, from + 3, n);
+        STORE_NUMBER(b, from + 1, to - (from + NUMBER_LENGTH + 1));
+        STORE_NUMBER(b, from + NUMBER_LENGTH + 1, n);
     }
 
     private final static void store_jump(byte[] b, int from, byte opcode, int to) {
         b[from] = opcode;
-        STORE_NUMBER(b, from+1, to-(from+3));
+        STORE_NUMBER(b, from+1, to-(from+NUMBER_LENGTH+1));
     }
 
     private final static void insert_jump_n(byte op, byte[] b, int from, int to, int current_end, int n) {
         int pfrom = current_end;
-        int pto = current_end+5;
+        int pto = current_end+NUMBER_LENGTH*2 + 1;
 
-        System.arraycopy(b,from,b,from+5,pfrom-from);
+        System.arraycopy(b,from,b,from+NUMBER_LENGTH*2 + 1,pfrom-from);
         store_jump_n(b, from, op, to, n);
     }
 
 
     private final static void insert_jump(byte op, byte[] b, int from, int to, int current_end) {
         int pfrom = current_end;
-        int pto = current_end+3;
-        System.arraycopy(b,from,b,from+3,pfrom-from);
+        int pto = current_end+NUMBER_LENGTH+1;
+        System.arraycopy(b,from,b,from+NUMBER_LENGTH+1,pfrom-from);
         store_jump(b, from, op, to);
     }
 

@@ -36,7 +36,6 @@ package org.jruby.test;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import org.jruby.TestRegexpTranslator;
 import org.jruby.ast.executable.YARVMachineTest;
 import org.jruby.ast.visitor.rewriter.VisitorTestSuite;
 import org.jruby.javasupport.TestJavaClass;
@@ -72,7 +71,6 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestCommandlineParser.class);
         suite.addTestSuite(TestRubyException.class);
         suite.addTestSuite(TestReflectionCallback.class);
-        suite.addTestSuite(TestRegexpTranslator.class);
         suite.addTestSuite(TestAdoptedThreading.class);
         suite.addTestSuite(TestRubyArray.class);
         suite.addTestSuite(TestVariableCreation.class);

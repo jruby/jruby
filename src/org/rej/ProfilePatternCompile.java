@@ -8,7 +8,7 @@ public class ProfilePatternCompile {
         Registers regs = new Registers();
         for(int j=0;j<10;j++) {
             long before = System.currentTimeMillis();
-            for(int i = 0; i < 1000000; i++) {
+            for(int i = 0; i < 4000000; i++) {
                 p.search(bs2,0,2,0,2,regs);
             }
             long time = System.currentTimeMillis() - before;
