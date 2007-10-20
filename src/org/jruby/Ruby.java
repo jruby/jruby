@@ -2339,21 +2339,30 @@ public final class Ruby {
     public static void setSecurityRestricted(boolean restricted) {
         securityRestricted = restricted;
     }
-
+    
     private static POSIX loadPosix() {
-        try {
-            HashMap options = new HashMap();
-            options.put(com.sun.jna.Library.OPTION_FUNCTION_MAPPER, new POSIXFunctionMapper());
-
-            boolean isWindows = System.getProperty("os.name").startsWith("Windows");
-            POSIX posix = (POSIX) Native.loadLibrary(isWindows ? "msvcrt" : "c", POSIX.class, options);
-            if (posix != null) {
-                return posix;
-            }
-        } catch (Throwable t) {
+        // check for native library support
+        boolean nativeEnabled = true;
+        if (System.getProperty("jruby.native.enabled") != null) {
+            nativeEnabled = Boolean.getBoolean("jruby.native.enabled");
         }
 
-        // on any error, fall back on our own stupid POSIX impl
+        if (nativeEnabled) {
+            try {
+                // confirm we have library link permissions for the C library
+                System.getSecurityManager().checkLink("*");
+                HashMap options = new HashMap();
+                options.put(com.sun.jna.Library.OPTION_FUNCTION_MAPPER, new POSIXFunctionMapper());
+
+                boolean isWindows = System.getProperty("os.name").startsWith("Windows");
+                POSIX posix = (POSIX) Native.loadLibrary(isWindows ? "msvcrt" : "c", POSIX.class, options);
+                if (posix != null) {
+                    return posix;
+                }
+            } catch (Throwable t) {
+            }
+        }
+        // on any error or if native is disabled, fall back on our own stupid POSIX impl
         return new JavaBasedPOSIX();
     }
     
