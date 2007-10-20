@@ -131,7 +131,7 @@
 
   <target name="generate-method-classes" depends="compile">
     <touch file="${build.dir}/__empty.rb"/>
-    <java classname="org.jruby.Main" fork="true">
+    <java classname="org.jruby.Main" fork="true" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
