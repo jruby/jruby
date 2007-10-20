@@ -28,6 +28,8 @@
 package org.jruby;
 
 import java.math.BigDecimal;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Arity;
@@ -666,6 +668,28 @@ public class RubyBigDecimal extends RubyNumeric {
 //      return 0;
 
     }
+  
+    public static boolean formatWithLeadingPlus(String format) {
+        return format.startsWith("+");
+    }
+
+    public static boolean formatWithLeadingSpace(String format) {
+        return format.startsWith(" ");
+    }
+
+    public static boolean formatWithFloatingPointNotation(String format) {
+        return format.endsWith("F");
+    }
+
+    public static int formatFractionalDigitGroups(String format) {
+        int groups = 0;
+        Pattern p = Pattern.compile("(\\+| )?(\\d+)(E|F)?");
+        Matcher m = p.matcher(format);
+        if (m.matches()) {
+            groups = Integer.parseInt(m.group(2));
+        }
+        return groups;
+    }
 
     @JRubyMethod(name = "to_s", optional = 1)
     public IRubyObject to_s(IRubyObject[] args) {
@@ -676,27 +700,11 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if(args.length != 0 && !args[0].isNil()) {
             String format = args[0].toString();
-            int start = 0;
-            int end = format.length();
-            if(format.length() > 0 && format.charAt(0) == '+') {
-                pos_sign = true;
-                start++;
-            } else if(format.length() > 0 && format.charAt(0) == ' ') {
-                pos_sign = true;
-                pos_space = true;
-                start++;
-            }
-            if(format.length() > 0 && format.charAt(format.length()-1) == 'F') {
-                engineering = false;
-                end--;
-            } else if(format.length() > 0 && format.charAt(format.length()-1) == 'E') {
-                engineering = true;
-                end--;
-            }
-            String nums = format.substring(start,end);
-            if(nums.length()>0) {
-                groups = Integer.parseInt(nums);
-            }
+            pos_space = formatWithLeadingSpace(format);
+            //pos_sign true for pos_space in order to make ternary expression work later -- yuck
+            pos_sign = formatWithLeadingPlus(format) || pos_space;
+            engineering = !formatWithFloatingPointNotation(format);
+            groups = formatFractionalDigitGroups(format);
         }
 
         String out = null;
