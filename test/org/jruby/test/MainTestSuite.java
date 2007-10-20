@@ -84,7 +84,6 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(ShellLauncherTest.class);
         suite.addTestSuite(TestRbConfigLibrary.class);
         suite.addTestSuite(TestParser.class);        
-        suite.addTestSuite(TestRubyBigDecimal.class);        
         return suite;
     }
 }
