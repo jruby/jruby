@@ -35,7 +35,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -61,7 +60,6 @@ public class RubyArgsFile extends RubyObject {
         CallbackFactory callbackFactory = getRuntime().callbackFactory(RubyArgsFile.class);
         
         RubyClass argfClass = getMetaClass();
-        argfClass.getRealClass().setAllocator(ARGF_ALLOCATOR);
 
         argfClass.defineAnnotatedMethods(RubyArgsFile.class);
         
@@ -75,12 +73,6 @@ public class RubyArgsFile extends RubyObject {
         // it passes tests now.
         //        currentFile = (RubyIO) getRuntime().getGlobalVariables().get("$stdin");
     }
-
-    private static ObjectAllocator ARGF_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyArgsFile(runtime);
-        }
-    };
 
     protected boolean nextArgsFile() {
         RubyArray args = (RubyArray)getRuntime().getGlobalVariables().get("$*");
