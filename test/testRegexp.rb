@@ -92,6 +92,8 @@ test_ok(a.size == 0)
 # In Ruby 1.8.5, quote can take an optional encoding arg
 test_equal("hel\\\\l\\*o\317\200", Regexp.quote("hel\\l*o\317\200", "n"))
 test_equal("hel\\\\l\\*o\317\200", Regexp.quote("hel\\l*o\317\200", "u"))
+test_equal("hel\\\\l\\*o\317\200", Regexp.escape("hel\\l*o\317\200", "n"))
+test_equal("hel\\\\l\\*o\317\200", Regexp.escape("hel\\l*o\317\200", "u"))
 
 # test matching \r
 test_equal("\r", /./.match("\r")[0])
