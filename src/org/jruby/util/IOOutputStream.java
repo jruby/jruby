@@ -45,6 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class IOOutputStream extends OutputStream {
     private IRubyObject io;
+    private String writeMethod;
 
     /**
      * Creates a new OutputStream with the object provided.
@@ -52,14 +53,18 @@ public class IOOutputStream extends OutputStream {
      * @param io the ruby object
      */
     public IOOutputStream(final IRubyObject io) {
-        if(!io.respondsTo("write")) {
+        if(io.respondsTo("write")) {
+            writeMethod = "write";
+        } else if (io.respondsTo("<<")) {
+            writeMethod = "<<";
+        } else {
             throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"write\".");
         }
         this.io = io;
     }
     
     public void write(final int bite) throws IOException {
-        io.callMethod(io.getRuntime().getCurrentContext(), "write", RubyString.newString(io.getRuntime(), new ByteList(new byte[]{(byte)bite},false)));
+        io.callMethod(io.getRuntime().getCurrentContext(), writeMethod, RubyString.newString(io.getRuntime(), new ByteList(new byte[]{(byte)bite},false)));
     }
 
     public void write(final byte[] b) throws IOException {
@@ -67,7 +72,7 @@ public class IOOutputStream extends OutputStream {
     }
 
     public void write(final byte[] b,final int off, final int len) throws IOException {
-        io.callMethod(io.getRuntime().getCurrentContext(),"write", RubyString.newString(io.getRuntime(), new ByteList(b, off, len, false)));
+        io.callMethod(io.getRuntime().getCurrentContext(), writeMethod, RubyString.newString(io.getRuntime(), new ByteList(b, off, len, false)));
     }
     
     public void close() throws IOException {
