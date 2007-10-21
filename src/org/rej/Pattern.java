@@ -1694,7 +1694,7 @@ public class Pattern {
                 int len = self.buffer[self.must];
 
                 for(i=1; i<len && i < len; i++) {
-                    if(self.buffer[self.must+i] == 0xff ||
+                    if(self.buffer[self.must+i] == (byte)0xff ||
                        (ctx.current_mbctype!=0 && ismbchar(self.buffer[self.must+i],ctx))) {
                         self.options |= RE_OPTIMIZE_NO_BM;
                         break;
@@ -1721,10 +1721,10 @@ public class Pattern {
             /*
               System.err.println("compiled into pattern of length: " + self.used);
               for(int i=0;i<self.used;i++) {
-              System.err.print(" "+(int)self.buffer[i]);
+              System.err.print(""+(int)self.buffer[i] + " ");
               }
               System.err.println();
-            */
+              */
 
             for(int i=0;i<self.pool.length;i++) {
                 self.pool[i] = new int[(regnum*NUM_REG_ITEMS + NUM_NONREG_ITEMS)*NFAILURES];
@@ -2443,6 +2443,9 @@ public class Pattern {
         new UTF8_StartPos()};
 
     public final static int mbc_startpos(byte[] string, int begin, int startpos, CompileContext ctx) {
+        while(begin+startpos >= string.length) {
+            startpos--;
+        }
         return startpositions[ctx.current_mbctype].startpos(string,begin,startpos);
     }
     
@@ -2450,6 +2453,14 @@ public class Pattern {
         /* Update the fastmap now if not correct already.  */
         if(fastmap_accurate==0) {
             compile_fastmap();
+            /*            System.err.println("fastmap: ");
+            for(int i=0;i<fastmap.length; i++) {
+                if((i % 30) == 0) {
+                    System.err.println();
+                }
+                System.err.print("" + fastmap[i] + " ");
+            }
+            System.err.println();*/
         }
 
         /* Adjust startpos for mbc string */
@@ -2553,6 +2564,14 @@ public class Pattern {
         /* Update the fastmap now if not correct already.  */
         if(fastmap!=null && fastmap_accurate==0) {
             compile_fastmap();
+            /*            System.err.println("fastmap: ");
+            for(int i=0;i<fastmap.length; i++) {
+                if((i % 30) == 0) {
+                    System.err.println();
+                }
+                System.err.print("" + fastmap[i] + " ");
+            }
+            System.err.println();*/
         }
 
         /* If the search isn't to be a backwards one, don't waste time in a
@@ -2566,7 +2585,7 @@ public class Pattern {
                 anchor = 1;
                 break;
             case begpos:
-                //                                System.err.println("doing match1");
+                //System.err.println("doing match1");
                 val = match(string, string_start, size, startpos, regs);
                 if (val >= 0) {
                     return startpos;
@@ -2582,7 +2601,7 @@ public class Pattern {
                     if(startpos > 0) {
                         return -1;
                     } else {
-                        //                                                System.err.println("doing match2");
+                        //System.err.println("doing match2");
                         val = match(string, string_start, size, 0, regs);
                         if(val >= 0) {
                             return 0;
@@ -2623,9 +2642,6 @@ public class Pattern {
                 } else {
                     //System.err.println("doing bm_search (" + (must+1) + "," + len + "," + pbeg + "," +(pend-pbeg)+")");
                     pos = bm_search(buffer, must+1, len, string, string_start+pbeg, pend-pbeg, must_skip, MAY_TRANSLATE()?ctx.translate:null);
-                    if(pos != -1) {
-                        pos-=string_start;
-                    }
                     //System.err.println("bm_search=" + pos);
                 }
                 if(pos == -1) {
@@ -2651,7 +2667,6 @@ public class Pattern {
                         if(range > 0) {	/* Searching forwards.  */
                             int irange = range;
                             pix = string_start+startpos;
-
                             startpos_adjust: while(range > 0) {
                                 c = (char)(string[pix++]&0xFF);
                                 if(ismbchar(c,ctx)) {
@@ -2691,7 +2706,9 @@ public class Pattern {
                     if((anchor!=0 || can_be_null==0) && range > 0 && size > 0 && startpos == size) {
                         return -1;
                     }
+                    //System.err.println("doing match_exec(string_start=" + string_start + ",size="+size+",startpos="+startpos+",initpos="+initpos);
                     val = match_exec(string, string_start, size, startpos, initpos, regs);
+                    //System.err.println("match_exec=" + val);
                     if(val >= 0) {
                         return startpos;
                     }
@@ -3035,7 +3052,7 @@ public class Pattern {
 
                 /* Compare that many; failure if mismatch, else move
                    past them.  */
-                if(((self.options & RE_OPTION_IGNORECASE) != 0) ? self.memcmp_translate(string, d, d2, mcnt)!=0 : self.memcmp(string, d, d2, mcnt)!=0) {
+                if(((self.options & RE_OPTION_IGNORECASE) != 0) ? self.memcmp_translate(string, string_start+d, string_start+d2, mcnt)!=0 : self.memcmp(string, string_start+d, string_start+d2, mcnt)!=0) {
                     return true;
                 }
                 d += mcnt;
@@ -3237,7 +3254,6 @@ public class Pattern {
 
         public final int anychar() {
             if(d == dend) {return 1;}
-
             if(ismbchar(string[string_start+d],ctx)) {
                 if(d + mbclen(string[string_start+d],ctx) > dend) {
                     return 1;
@@ -3477,13 +3493,14 @@ public class Pattern {
         public final int exactn() {
             /* Match the next few pattern characters exactly.
                mcnt is how many characters to match.  */
-            mcnt = p[pix++];
+            mcnt = p[pix++] & 0xff;
+            //            System.err.println("matching " + mcnt + " exact characters");
             /* This is written out as an if-else so we don't waste time
                testing `translate' inside the loop.  */
             if(TRANSLATE_P()) {
                 do {
                     if(d == dend) {return 1;}
-                    if(p[pix] == 0xff) {
+                    if(p[pix] == (byte)0xff) {
                         pix++;  
                         if(--mcnt==0
                            || d == dend
@@ -3515,7 +3532,7 @@ public class Pattern {
             } else {
                 do {
                     if(d == dend) {return 1;}
-                    if((p[pix]&0xFF) == 0xff) {
+                    if(p[pix] == (byte)0xff) {
                         pix++; mcnt--;
                     }
                     if(string[string_start+d++] != p[pix++]) {
@@ -3529,6 +3546,7 @@ public class Pattern {
 
         public final int main_switch() {
             //System.err.println("--executing " + (int)p[pix] + " at " + pix);
+            //System.err.println("-- -- for d: " + d + " and dend: " + dend);
             switch(p[pix++]) {
                 /* ( [or `(', as appropriate] is represented by start_memory,
                    ) by stop_memory.  Both of those commands are followed by
@@ -4033,7 +4051,6 @@ public class Pattern {
                         w.convert_regs(regs);
 
                         uninit_stack();
-
                         return w.d - w.pos;
                     }
 
@@ -4099,7 +4116,6 @@ public class Pattern {
         boolean fescape = false;
 
         char c = (char)(little[littleix]&0xFF);
-
         if(c == 0xff) {
             c = (char)(little[littleix+1]&0xFF);
             fescape = true;
@@ -4111,7 +4127,7 @@ public class Pattern {
             /* look for first character */
             if(fescape) {
                 while(bigix < bend) {
-                    if(big[bigix] == c) {
+                    if((big[bigix]&0xFF) == c) {
                         break;
                     }
                     bigix++;
@@ -4120,14 +4136,14 @@ public class Pattern {
                 while(bigix < bend) {
                     if(ismbchar(big[bigix],ctx)) {
                         bigix+=mbclen(big[bigix],ctx)-1;
-                    } else if(translate[big[bigix]] == c) {
+                    } else if(translate[big[bigix]&0xFF] == c) {
                         break;
                     }
                     bigix++;
                 }
             } else {
                 while(bigix < bend) {
-                    if(big[bigix] == c) {
+                    if((big[bigix]&0xFF) == c) {
                         break;
                     }
                     if(ismbchar(big[bigix],ctx)) {
@@ -4158,14 +4174,14 @@ public class Pattern {
             while(i < blen) {
                 k = i;
                 j = llen-1;
-                while(j >= 0 && translate[big[bigix+k]] == translate[little[littleix+j]]) {
+                while(j >= 0 && translate[big[bigix+k]&0xFF] == translate[little[littleix+j]&0xFF]) {
                     k--;
                     j--;
                 }
                 if(j < 0) {
                     return k+1;
                 }
-                i += skip[translate[big[bigix+i]]];
+                i += skip[translate[big[bigix+i]&0xFF]];
             }
             return -1;
         }
@@ -4179,7 +4195,7 @@ public class Pattern {
             if(j < 0) {
                 return k+1;
             }
-            i += skip[big[bigix+i]];
+            i += skip[big[bigix+i]&0xFF];
         }
         return -1;
     }
@@ -4218,17 +4234,17 @@ public class Pattern {
             }
             switch(p[pix++]) {
             case exactn:
-                if(p[pix+1] == 0xff) {
+                if(p[pix+1] == (byte)0xff) {
                     if(TRANSLATE_P(optz)) {
                         fastmap[ctx.translate[p[pix+2]]] = 2;
                     } else {
-                        fastmap[p[pix+2]] = 2;
+                        fastmap[p[pix+2]&0xFF] = 2;
                     }
                     options |= RE_OPTIMIZE_BMATCH;
                 } else if(TRANSLATE_P(optz)) {
                     fastmap[ctx.translate[p[pix+1]]] = 1;
                 } else {
-                    fastmap[p[pix+1]] = 1;
+                    fastmap[p[pix+1]&0xFF] = 1;
                 }
                 break;
             case begline:
@@ -4253,7 +4269,7 @@ public class Pattern {
                 optz &= ~RE_OPTION_IGNORECASE;
                 continue;
             case option_set:
-                options = p[pix++];
+                optz = p[pix++];
                 continue;
             case endline:
                 if(TRANSLATE_P(optz)) {

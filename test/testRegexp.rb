@@ -30,7 +30,6 @@ test_ok(str4 == $2)
 test_ok("(?-mix:pattern)" == /pattern/.to_s)
 test_ok("(?m-ix:pattern)" == /pattern/m.to_s)
 test_ok("(?mix:pattern)" == /pattern/mix.to_s)
-
 #########    test8   #################
 test_ok(/ab (?# comment )c/ =~ 'ab c')
 
@@ -49,7 +48,6 @@ test_equal('Bar', $1)
 
 ######## MatchData #############
 match_data = /(.)(.)(\d+)(\d)/.match("THX1138")
-
 test_equal(["HX1138", "H", "X", "113", "8"], match_data.to_a)
 test_equal(["H", "X", "113", "8"], match_data.captures)
 

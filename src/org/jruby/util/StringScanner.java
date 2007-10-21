@@ -115,7 +115,7 @@ public class StringScanner {
 		if(n >= regs.num_regs) {
 			return null;
 		}
-		return string.subSequence(regs.beg[n],regs.end[n]);
+		return string.subSequence(regs.beg[n]+lastPos,regs.end[n]+lastPos);
 	}
 	
 	public CharSequence preMatch() {
@@ -165,9 +165,9 @@ public class StringScanner {
                 regs = new Registers();
             }
             byte[] ccc = ByteList.plain(string);
-            if(pattern.search(ccc,0,ccc.length,pos,ccc.length,regs) == pos) {
+            if(pattern.search(ccc,pos,ccc.length-pos,0,ccc.length-pos,regs) == 0) {
                 matchStart = pos;
-                matchEnd = regs.end[0];
+                matchEnd = regs.end[0]+pos;
             } else {
                 resetMatchData();
             }
@@ -182,10 +182,10 @@ public class StringScanner {
                 regs = new Registers();
             }
             byte[] ccc = ByteList.plain(string);
-            if(pattern.search(ccc,0,ccc.length,pos,ccc.length,regs) >= pos) {
+            if(pattern.search(ccc,pos,ccc.length-pos,0,ccc.length-pos,regs) >= 0) {
                 lastPos = pos;
-                matchStart = regs.beg[0];
-                matchEnd = regs.end[0];
+                matchStart = regs.beg[0]+pos;
+                matchEnd = regs.end[0]+pos;
                 pos = matchEnd;
                 return string.subSequence(lastPos, pos);
             } else {
@@ -203,12 +203,12 @@ public class StringScanner {
                 regs = new Registers();
             }
             byte[] ccc = ByteList.plain(string);
-            if(pattern.search(ccc,0,ccc.length,pos,ccc.length,regs) == pos) {
+            if(pattern.search(ccc,pos,ccc.length-pos,0,ccc.length-pos,regs) == 0) {
                 lastPos = pos;
                 matchStart = pos;
-                pos = regs.end[0];
+                pos = regs.end[0]+lastPos;
                 matchEnd = pos;
-                return string.subSequence(regs.beg[0],regs.end[0]);
+                return string.subSequence(regs.beg[0]+lastPos,regs.end[0]+lastPos);
             } else {
                 lastPos = -1;
                 resetMatchData();
@@ -224,10 +224,10 @@ public class StringScanner {
                 regs = new Registers();
             }
             byte[] ccc = ByteList.plain(string);
-            if(pattern.search(ccc,0,ccc.length,pos,ccc.length,regs) == pos) {
+            if(pattern.search(ccc,pos,ccc.length-pos,0,ccc.length-pos,regs) == 0) {
                 matchStart = pos;
-                matchEnd = regs.end[0];
-                return string.subSequence(regs.beg[0],regs.end[0]);
+                matchEnd = regs.end[0]+pos;
+                return string.subSequence(regs.beg[0]+pos,regs.end[0]+pos);
             } else {
                 resetMatchData();
             }
@@ -242,10 +242,10 @@ public class StringScanner {
                 regs = new Registers();
             }
             byte[] ccc = ByteList.plain(string);
-            if(pattern.search(ccc,0,ccc.length,pos,ccc.length,regs) >= pos) {
-                matchStart = regs.beg[0];
-                matchEnd = regs.end[0];
-                return string.subSequence(pos,regs.end[0]);
+            if(pattern.search(ccc,pos,ccc.length-pos,0,ccc.length-pos,regs) >= 0) {
+                matchStart = regs.beg[0]+pos;
+                matchEnd = regs.end[0]+pos;
+                return string.subSequence(pos,matchEnd);
             } else {
                 resetMatchData();
             }
@@ -260,17 +260,16 @@ public class StringScanner {
                 regs = new Registers();
             }
             byte[] ccc = ByteList.plain(string);
-            if(pattern.search(ccc,0,ccc.length,pos,ccc.length,regs) == pos) {
+            if(pattern.search(ccc,pos,ccc.length-pos,0,ccc.length-pos,regs) == 0) {
                 lastPos = pos;
                 matchStart = pos;
-                pos = regs.end[0];
+                pos = regs.end[0]+lastPos;
                 matchEnd = pos;
-                return regs.end[0] - lastPos;
+                return regs.end[0] + lastPos - lastPos;
             } else {
                 resetMatchData();
             }
 		}
-		
 		return -1;
 	}
 	
@@ -280,10 +279,10 @@ public class StringScanner {
                 regs = new Registers();
             }
             byte[] ccc = ByteList.plain(string);
-            if(pattern.search(ccc,0,ccc.length,pos,ccc.length,regs) >= pos) {
+            if(pattern.search(ccc,pos,ccc.length-pos,0,ccc.length-pos,regs) >= 0) {
                 lastPos = pos;
-                pos = regs.end[0];
-                matchStart = regs.beg[0];
+                pos = regs.end[0]+lastPos;
+                matchStart = regs.beg[0]+lastPos;
                 matchEnd = pos;
                 return pos-lastPos;
             } else {
@@ -300,9 +299,9 @@ public class StringScanner {
                 regs = new Registers();
             }
             byte[] ccc = ByteList.plain(string);
-            if(pattern.search(ccc,0,ccc.length,pos,ccc.length,regs) >= pos) {
-                matchStart = regs.beg[0];
-                matchEnd = regs.end[0];
+            if(pattern.search(ccc,pos,ccc.length-pos,0,ccc.length-pos,regs) >= 0) {
+                matchStart = regs.beg[0]+pos;
+                matchEnd = regs.end[0]+pos;
                 return matchEnd-pos;
             } else {
                 resetMatchData();

@@ -107,6 +107,10 @@ public class RubyMatchData extends RubyObject {
         return arr;
     }
 
+    public IRubyObject group(long n) {
+        return RubyRegexp.nth_match((int)n, this);
+    }
+
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
         return anyToString();

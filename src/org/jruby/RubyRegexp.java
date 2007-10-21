@@ -256,7 +256,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             kcode = KCode.UTF8;
             break;
         }
-        ptr = make_regexp(regex, regex.begin, regex.realSize, options & 0xf, kcode.getContext());
+
+        int extra = getRuntime().getGlobalVariables().get("$=").isTrue() ? ReOptions.RE_OPTION_IGNORECASE : 0;
+        ptr = make_regexp(regex, regex.begin, regex.realSize, (options|extra) & 0xf, kcode.getContext());
         str = regex.makeShared(0, regex.realSize);
     }
 
@@ -278,6 +280,20 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         StringBuffer sb = new StringBuffer("/");
         rb_reg_expr_str(sb, s, start, len);
         sb.append("/");
+
+        if((ptr.options & ReOptions.RE_OPTION_MULTILINE) != 0) {
+            sb.append("m");
+        }
+        if((ptr.options & ReOptions.RE_OPTION_IGNORECASE) != 0) {
+            sb.append("i");
+        }
+        if((ptr.options & ReOptions.RE_OPTION_EXTENDED) != 0) {
+            sb.append("x");
+        }
+
+        if(kcode != null && kcode != getRuntime().getKCode()) {
+            sb.append(kcode.name().charAt(0));
+        }
         return sb;
     }
 
@@ -656,6 +672,10 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return str;
     }
 
+    ByteList getByteListSource() {
+        return this.str;
+    }
+
     /** rb_reg_inspect
      *
      */
@@ -844,7 +864,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         Pattern.CompileContext ctx = kcode.getContext();
         meta_found: do {
             for(; s<send; s++) {
-                c = bs.charAt(s);
+                c = (char)(bs.bytes[s]&0xFF);
                 if(Pattern.ismbchar(c,ctx)) {
                     int n = Pattern.mbclen(c,ctx);
                     while(n-- > 0 && s < send) {
@@ -870,7 +890,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         tix += (s-bs.begin);
 
         for(; s<send; s++) {
-            c = bs.charAt(s);
+            c = (char)(bs.bytes[s]&0xFF);
             if(Pattern.ismbchar(c,ctx)) {
                 int n = Pattern.mbclen(c,ctx);
                 while(n-- > 0 && s < send) {

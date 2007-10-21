@@ -1664,7 +1664,6 @@ public class RubyString extends RubyObject {
         if(pat.search(this, 0, false) >= 0) {
             match = getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
             regs = ((RubyMatchData)match).regs;
-
             if(iter) {
                 // for modifyCheck
                 byte [] sb = value.bytes; 
@@ -1682,7 +1681,6 @@ public class RubyString extends RubyObject {
             if(repl.isTaint()) {
                 tainted = true;
             }
-
             this.value.unsafeReplace(this.value.begin + regs.beg[0], regs.end[0]-regs.beg[0], repl.value.bytes, repl.value.begin, repl.value.realSize);
             if(tainted) {
                 setTaint(true);
@@ -1691,7 +1689,7 @@ public class RubyString extends RubyObject {
             return this;
         }
 
-        return this;
+        return getRuntime().getNil();
     }
 
     /** rb_str_gsub
@@ -1833,7 +1831,51 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "index", required = 1, optional = 1)
     public IRubyObject index(IRubyObject[] args) {
-        return index(args, false);
+        int pos;
+        boolean offset = false;
+        
+        if(Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
+            pos = RubyNumeric.fix2int(args[1]);
+        } else {
+            pos = 0;
+        }
+        if(pos < 0) {
+            pos += value.length();
+            if(pos < 0) {
+                if(args[0] instanceof RubyRegexp) {
+                    getRuntime().getCurrentContext().getPreviousFrame().setBackRef(getRuntime().getNil());
+                }
+                return getRuntime().getNil();
+            }
+        }
+
+        if (args[0] instanceof RubyRegexp) {
+            RubyRegexp sub = (RubyRegexp)args[0];
+            pos = sub.adjust_startpos(this, pos, false);
+            pos = sub.search(this, pos, false);
+        } else if (args[0] instanceof RubyFixnum) {
+            char c = (char) ((RubyFixnum) args[0]).getLongValue();
+            pos = value.indexOf(c, pos);
+        } else {
+            IRubyObject tmp = args[0].checkStringType();
+
+            if (tmp.isNil()) throw getRuntime().newTypeError("type mismatch: " + args[0].getMetaClass().getName() + " given");
+
+            ByteList sub = ((RubyString) tmp).value;
+
+            if (sub.length() > value.length()) return getRuntime().getNil();
+            // the empty string is always found at the beginning of a string (or at the end when rindex)
+            if (sub.realSize == 0) {
+                if(pos<value.realSize) {
+                    return getRuntime().newFixnum(pos);
+                } else {
+                    return getRuntime().getNil();
+                }
+            }
+            pos = value.indexOf(sub, pos);
+        }
+
+        return pos == -1 ? getRuntime().getNil() : getRuntime().newFixnum(pos);
     }
 
     /** rb_str_rindex_m
@@ -1841,46 +1883,40 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "rindex", required = 1, optional = 1)
     public IRubyObject rindex(IRubyObject[] args) {
-        return index(args, true);
-    }
-
-    /**
-     *	@fixme may be a problem with pos when doing reverse searches
-     */
-    private IRubyObject index(IRubyObject[] args, boolean reverse) {
-        //FIXME may be a problem with pos when doing reverse searches
         int pos;
         boolean offset = false;
         
-        if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
+        if(Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             pos = RubyNumeric.fix2int(args[1]);
-            if (pos > value.length()) {
-                if (reverse) {
-                    pos = value.length();
-                } else {
+            if(pos < 0) {
+                pos += value.length();
+                if(pos < 0) {
+                    if(args[0] instanceof RubyRegexp) {
+                        getRuntime().getCurrentContext().getPreviousFrame().setBackRef(getRuntime().getNil());
+                    }
                     return getRuntime().getNil();
                 }
-            } else {
-                if (pos < 0) {
-                    pos += value.length();
-                    if (pos < 0) return getRuntime().getNil();
-                }                 
             }
-            offset = true;           
-        } else {
-            pos = !reverse ? 0 : value.length();
-        }
-        
-        if (args[0] instanceof RubyRegexp) {
-            // save position we shouldn't look past
-            int doNotLookPastIfReverse = pos;
+            if(pos > this.value.realSize) {
+                pos = this.value.realSize;
+            }
 
+        } else {
+            pos = this.value.realSize;
+        }
+
+        if (args[0] instanceof RubyRegexp) {
             RubyRegexp sub = (RubyRegexp)args[0];
-            pos = sub.adjust_startpos(this, pos, false);
-            pos = sub.search(this, pos, false);
+            if(sub.getByteListSource().realSize > 0) {
+                pos = sub.adjust_startpos(this, pos, true);
+                pos = sub.search(this, pos, true);
+            }
+            if(pos >= 0) {
+                return getRuntime().newFixnum(pos);
+            }
         } else if (args[0] instanceof RubyFixnum) {
             char c = (char) ((RubyFixnum) args[0]).getLongValue();
-            pos = reverse ? value.lastIndexOf(c, pos) : value.indexOf(c, pos);
+            pos = value.lastIndexOf(c, pos);
         } else {
             IRubyObject tmp = args[0].checkStringType();
 
@@ -1892,12 +1928,11 @@ public class RubyString extends RubyObject {
             // the empty string is always found at the beginning of a string (or at the end when rindex)
             if (sub.realSize == 0) return getRuntime().newFixnum(pos);
 
-            pos = reverse ? value.lastIndexOf(sub, pos) : value.indexOf(sub, pos);
+            pos = value.lastIndexOf(sub, pos);
         }
 
         return pos == -1 ? getRuntime().getNil() : getRuntime().newFixnum(pos);
     }
-
 
     /* rb_str_substr */
     public IRubyObject substr(int beg, int len) {
@@ -2393,11 +2428,10 @@ public class RubyString extends RubyObject {
                     }
                     result.append(tmp);
                 }
-                if(!limit && lim <= ++i) {
+                if(limit && lim <= ++i) {
                     break;
                 }
             }
-
             if (value.realSize > 0 && (limit || value.realSize > beg || lim < 0)) {
                 if (value.realSize == beg) {
                     result.append(newEmptyString(runtime, getMetaClass()));
