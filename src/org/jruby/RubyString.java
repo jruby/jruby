@@ -1670,7 +1670,7 @@ public class RubyString extends RubyObject {
                 int slen = value.realSize;
 
                 ((RubyMatchData)match).use();
-                repl = block.yield(getRuntime().getCurrentContext(),RubyRegexp.nth_match(0,match)).convertToString();
+                repl = objAsString(block.yield(getRuntime().getCurrentContext(),RubyRegexp.nth_match(0,match)));
                 modifyCheck(sb,slen);
                 frozenCheck();
                 getRuntime().getCurrentContext().getCurrentFrame().setBackRef(match);
