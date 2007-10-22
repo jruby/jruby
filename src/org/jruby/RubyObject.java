@@ -601,10 +601,26 @@ public class RubyObject implements Cloneable, IRubyObject {
     		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
     	}
 
+    	if (!IdUtil.isInstanceVariable(varName)) {
+    		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
+    	}
+
     	IRubyObject variable = getInstanceVariable(varName);
 
     	// Pickaxe v2 says no var should show NameError, but ruby only sends back nil..
     	return variable == null ? getRuntime().getNil() : variable;
+    }
+
+    public IRubyObject instance_variable_defined_p(IRubyObject var) {
+    	String varName = var.asSymbol();
+
+        if (!IdUtil.isValidInstanceVariableName(varName)) {
+            throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
+        }
+
+    	IRubyObject variable = getInstanceVariable(varName);
+
+        return (variable != null) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     public IRubyObject getInstanceVariable(String name) {
@@ -615,7 +631,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     	String varName = var.asSymbol();
 
     	if (!IdUtil.isValidInstanceVariableName(varName)) {
-    		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
+    	    throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
     	}
 
     	return setInstanceVariable(var.asSymbol(), value);

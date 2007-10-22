@@ -394,3 +394,16 @@ test_ok(! ModuleForTestingIfMethodsAreDefined.protected_method_defined?(:a_priva
 test_ok(! ModuleForTestingIfMethodsAreDefined.private_method_defined?(:a_public_method))
 test_ok(! ModuleForTestingIfMethodsAreDefined.private_method_defined?(:a_protected_method))
 test_ok(ModuleForTestingIfMethodsAreDefined.private_method_defined?(:a_private_method))
+
+module Mod
+  @@one = 123
+  @@two = nil
+end
+
+test_exception(NameError) do 
+  Mod.class_variable_defined? :abc
+end
+
+test_ok !Mod.class_variable_defined?(:@@three)
+test_ok Mod.class_variable_defined?(:@@one)
+test_ok Mod.class_variable_defined?(:@@two)
