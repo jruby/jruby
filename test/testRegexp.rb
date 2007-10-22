@@ -169,3 +169,6 @@ helpers_dir = "/my/happy/helpers"
 extract = /^#{Regexp.quote(helpers_dir)}\/?(.*)_helper.rb$/
 test_equal "/^\\/my\\/happy\\/helpers\\/?(.*)_helper.rb$/", extract.inspect
 $KCODE = old_kcode
+
+# JRUBY-1236
+test_equal(0, "\n" =~ /\s/n)
