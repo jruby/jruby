@@ -70,19 +70,21 @@ public class JarredScript implements Library {
             JarInputStream in = new JarInputStream(new BufferedInputStream(jarFile.openStream()));
 
             Manifest mf = in.getManifest();
-            String rubyInit = mf.getMainAttributes().getValue("Ruby-Init");
-            if (rubyInit != null) {
-                JarEntry entry = in.getNextJarEntry();
-                while (entry != null && !entry.getName().equals(rubyInit)) {
-                    entry = in.getNextJarEntry();
-                }
-                if (entry != null) {
-                    IRubyObject old = runtime.getGlobalVariables().isDefined("$JAR_URL") ? runtime.getGlobalVariables().get("$JAR_URL") : runtime.getNil();
-                    try {
-                        runtime.getGlobalVariables().set("$JAR_URL", runtime.newString("jar:" + jarFile + "!/"));
-                        runtime.loadScript("init", new InputStreamReader(in));
-                    } finally {
-                        runtime.getGlobalVariables().set("$JAR_URL", old);
+            if (mf != null) {
+                String rubyInit = mf.getMainAttributes().getValue("Ruby-Init");
+                if (rubyInit != null) {
+                    JarEntry entry = in.getNextJarEntry();
+                    while (entry != null && !entry.getName().equals(rubyInit)) {
+                        entry = in.getNextJarEntry();
+                    }
+                    if (entry != null) {
+                        IRubyObject old = runtime.getGlobalVariables().isDefined("$JAR_URL") ? runtime.getGlobalVariables().get("$JAR_URL") : runtime.getNil();
+                        try {
+                            runtime.getGlobalVariables().set("$JAR_URL", runtime.newString("jar:" + jarFile + "!/"));
+                            runtime.loadScript("init", new InputStreamReader(in));
+                        } finally {
+                            runtime.getGlobalVariables().set("$JAR_URL", old);
+                        }
                     }
                 }
             }
