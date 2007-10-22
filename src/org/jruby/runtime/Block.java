@@ -108,10 +108,12 @@ public class Block {
     protected Arity arity;
 
     public static Block createBlock(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
+        Frame f = context.getCurrentFrame();
+        f.setPosition(context.getPosition());
         return new Block(iterNode,
                          self,
-                         context.getCurrentFrame(),
-                         context.getCurrentFrame().getVisibility(),
+                         f,
+                         f.getVisibility(),
                          context.getRubyClass(),
                          dynamicScope);
     }
