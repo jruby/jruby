@@ -97,6 +97,7 @@ test_rbconfig
 test_string_java_bytes
 test_string_printf
 test_symbol
+test_tb_yaml
 test_thread
 test_trace_func
 test_variables
