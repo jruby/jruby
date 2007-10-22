@@ -41,6 +41,7 @@ test_string_printf
 test_string_sub
 test_string_to_number
 test_symbol
+test_tb_yaml
 test_thread
 test_variables
 test_vietnamese_charset
