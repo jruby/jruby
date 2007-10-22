@@ -291,7 +291,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             sb.append("x");
         }
 
-        if(kcode != null && kcode != getRuntime().getKCode()) {
+        if(kcode != null && !kcode_default) {
             sb.append(kcode.name().charAt(0));
         }
         return sb;
@@ -1144,6 +1144,6 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     @JRubyMethod(name = "options")
     public IRubyObject options() {
-        return getRuntime().newFixnum(this.ptr.options);
+        return getRuntime().newFixnum(rb_reg_options());
     }
 }

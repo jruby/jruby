@@ -1708,16 +1708,6 @@ public class Pattern {
                 }
             }
 
-            self.regstart = new int[regnum];
-            self.regend = new int[regnum];
-            self.old_regstart = new int[regnum];
-            self.old_regend = new int[regnum];
-            self.reg_info = new RegisterInfoType[regnum];
-            for(int x=0;x<self.reg_info.length;x++) {
-                self.reg_info[x] = new RegisterInfoType();
-            }
-            self.best_regstart = new int[regnum];
-            self.best_regend = new int[regnum];
             /*
               System.err.println("compiled into pattern of length: " + self.used);
               for(int i=0;i<self.used;i++) {
@@ -2451,16 +2441,18 @@ public class Pattern {
     
     public int adjust_startpos(byte[] string, int begin, int size, int startpos, int range) {
         /* Update the fastmap now if not correct already.  */
-        if(fastmap_accurate==0) {
-            compile_fastmap();
-            /*            System.err.println("fastmap: ");
-            for(int i=0;i<fastmap.length; i++) {
-                if((i % 30) == 0) {
-                    System.err.println();
-                }
-                System.err.print("" + fastmap[i] + " ");
+        synchronized(this) {
+            if(fastmap_accurate==0) {
+                compile_fastmap();
+                /*            System.err.println("fastmap: ");
+                              for(int i=0;i<fastmap.length; i++) {
+                              if((i % 30) == 0) {
+                              System.err.println();
+                              }
+                              System.err.print("" + fastmap[i] + " ");
+                              }
+                              System.err.println();*/
             }
-            System.err.println();*/
         }
 
         /* Adjust startpos for mbc string */
@@ -2527,21 +2519,6 @@ public class Pattern {
                                  but at end of range or before a character
                                  listed in the fastmap.  */
 
-    /* stack & working area for re_match() */
-    private int[] regstart;
-    private int[] regend;
-    private int[] old_regstart;
-    private int[] old_regend;
-
-    private static class RegisterInfoType {
-        public char word;
-        public boolean is_active;
-        public boolean matched_something;
-    }
-
-    private RegisterInfoType[] reg_info;
-    private int[] best_regstart;
-    private int[] best_regend;
     
     public final boolean MAY_TRANSLATE() {
         return ((options&(RE_OPTION_IGNORECASE|RE_MAY_IGNORECASE))!=0 && ctx.translate!=null);
@@ -2562,16 +2539,18 @@ public class Pattern {
         }
 
         /* Update the fastmap now if not correct already.  */
-        if(fastmap!=null && fastmap_accurate==0) {
-            compile_fastmap();
-            /*            System.err.println("fastmap: ");
-            for(int i=0;i<fastmap.length; i++) {
-                if((i % 30) == 0) {
-                    System.err.println();
-                }
-                System.err.print("" + fastmap[i] + " ");
+        synchronized(this) {
+            if(fastmap!=null && fastmap_accurate==0) {
+                compile_fastmap();
+                /*            System.err.println("fastmap: ");
+                              for(int i=0;i<fastmap.length; i++) {
+                              if((i % 30) == 0) {
+                              System.err.println();
+                              }
+                              System.err.print("" + fastmap[i] + " ");
+                              }
+                              System.err.println();*/
             }
-            System.err.println();*/
         }
 
         /* If the search isn't to be a backwards one, don't waste time in a
@@ -2635,9 +2614,6 @@ public class Pattern {
                 if((options&RE_OPTIMIZE_NO_BM) != 0) {
                     //System.err.println("doing slow_search");
                     pos = slow_search(buffer, must+1, len, string, string_start+pbeg, pend-pbeg, MAY_TRANSLATE()?ctx.translate:null);
-                    if(pos != -1) {
-                        pos-=string_start;
-                    }
                     //System.err.println("slow_search=" + pos);
                 } else {
                     //System.err.println("doing bm_search (" + (must+1) + "," + len + "," + pbeg + "," +(pend-pbeg)+")");
@@ -2901,6 +2877,23 @@ public class Pattern {
 
         public Pattern self;
 
+        /* stack & working area for re_match() */
+        private int[] regstart;
+        private int[] regend;
+        private int[] old_regstart;
+        private int[] old_regend;
+
+        private static class RegisterInfoType {
+            public char word;
+            public boolean is_active;
+            public boolean matched_something;
+        }
+
+        private RegisterInfoType[] reg_info;
+        private int[] best_regstart;
+        int[] best_regend;
+
+
         public final boolean TRANSLATE_P() {
             return ((optz&RE_OPTION_IGNORECASE)!=0 && ctx.translate!=null);
         }
@@ -2932,11 +2925,11 @@ public class Pattern {
                inactive and mark them as not having matched anything or ever
                failed. */
             for(mcnt = 0; mcnt < num_regs; mcnt++) {
-                self.regstart[mcnt] = self.regend[mcnt]
-                    = self.old_regstart[mcnt] = self.old_regend[mcnt]
-                    = self.best_regstart[mcnt] = self.best_regend[mcnt] = REG_UNSET_VALUE;
-                self.reg_info[mcnt].is_active = false;
-                self.reg_info[mcnt].matched_something = false;
+                regstart[mcnt] = regend[mcnt]
+                    = old_regstart[mcnt] = old_regend[mcnt]
+                    = best_regstart[mcnt] = best_regend[mcnt] = REG_UNSET_VALUE;
+                reg_info[mcnt].is_active = false;
+                reg_info[mcnt].matched_something = false;
             }
         }
 
@@ -2961,7 +2954,7 @@ public class Pattern {
 
         public final void SET_REGS_MATCHED() {
             for(int this_reg = 0; this_reg < num_regs; this_reg++) {
-                self.reg_info[this_reg].matched_something = self.reg_info[this_reg].is_active;
+                reg_info[this_reg].matched_something = reg_info[this_reg].is_active;
             }
         }
 
@@ -2971,7 +2964,7 @@ public class Pattern {
             /* Find out how many registers are active or have been matched.
                (Aside from register zero, which is only set at the end.) */
             for(last_used_reg = num_regs-1; last_used_reg > 0; last_used_reg--) {
-                if(self.regstart[last_used_reg]!=REG_UNSET_VALUE) {
+                if(regstart[last_used_reg]!=REG_UNSET_VALUE) {
                     break;
                 }
             }
@@ -2989,9 +2982,9 @@ public class Pattern {
 
             /* Now push the info for each of those registers.  */
             for(this_reg = 1; this_reg <= last_used_reg; this_reg++) {
-                stackb[stackp++] = self.regstart[this_reg];
-                stackb[stackp++] = self.regend[this_reg];
-                stackb[stackp++] = self.reg_info[this_reg].word;
+                stackb[stackp++] = regstart[this_reg];
+                stackb[stackp++] = regend[this_reg];
+                stackb[stackp++] = reg_info[this_reg].word;
             }
 
             /* Push how many registers we saved.  */
@@ -3012,12 +3005,12 @@ public class Pattern {
                 return true;
             }
             /* Check if corresponding group is still open */
-            if(self.reg_info[regno].is_active) {
+            if(reg_info[regno].is_active) {
                 return true;
             }
 
             /* Where in input to try to start matching.  */
-            d2 = self.regstart[regno];
+            d2 = regstart[regno];
             if(d2 == REG_UNSET_VALUE) {
                 return true;
             }
@@ -3027,7 +3020,7 @@ public class Pattern {
                set to the place to stop, otherwise, for now have to use
                the end of the first string.  */
 
-            dend2 = self.regend[regno];
+            dend2 = regend[regno];
             if(dend2 == REG_UNSET_VALUE) {
                 return true;
             }
@@ -3108,17 +3101,17 @@ public class Pattern {
 
             /* Make the ones that weren't saved -1 or 0 again. */
             for(this_reg = num_regs - 1; this_reg > last_used_reg; this_reg--) {
-                self.regend[this_reg] = REG_UNSET_VALUE;
-                self.regstart[this_reg] = REG_UNSET_VALUE;
-                self.reg_info[this_reg].is_active = false;
-                self.reg_info[this_reg].matched_something = false;
+                regend[this_reg] = REG_UNSET_VALUE;
+                regstart[this_reg] = REG_UNSET_VALUE;
+                reg_info[this_reg].is_active = false;
+                reg_info[this_reg].matched_something = false;
             }
 
             /* And restore the rest from the stack.  */
             for( ; this_reg > 0; this_reg--) {
-                self.reg_info[this_reg].word = (char)stackb[--stackp];
-                self.regend[this_reg] = stackb[--stackp];
-                self.regstart[this_reg] = stackb[--stackp];
+                reg_info[this_reg].word = (char)stackb[--stackp];
+                regend[this_reg] = stackb[--stackp];
+                regstart[this_reg] = stackb[--stackp];
             }
             mcnt = stackb[--stackp];
             while(mcnt-->0) {
@@ -3170,15 +3163,15 @@ public class Pattern {
 
         private final void fix_regs() {
             for(mcnt = 0; mcnt < num_regs; mcnt++) {
-                self.regstart[mcnt] = self.best_regstart[mcnt];
-                self.regend[mcnt] = self.best_regend[mcnt];
+                regstart[mcnt] = best_regstart[mcnt];
+                regend[mcnt] = best_regend[mcnt];
             }
         }
 
         private final void fix_best_regs() {
             for(mcnt = 1; mcnt < num_regs; mcnt++) {
-                self.best_regstart[mcnt] = self.regstart[mcnt];
-                self.best_regend[mcnt] = self.regend[mcnt];
+                best_regstart[mcnt] = regstart[mcnt];
+                best_regend[mcnt] = regend[mcnt];
             }
         }
 
@@ -3187,13 +3180,13 @@ public class Pattern {
             if((self.options&RE_OPTION_LONGEST)!=0 && d != dend) {
                 if(best_regs_set) {/* non-greedy, no need to backtrack */
                     /* Restore best match.  */
-                    d = self.best_regend[0];
+                    d = best_regend[0];
                     fix_regs();
                     return 0;
                 }
                 while(stackp != 0 && stackb[stackp-1] == NON_GREEDY) {
                     if(best_regs_set) {/* non-greedy, no need to backtrack */
-                        d = self.best_regend[0];
+                        d = best_regend[0];
                         fix_regs();
                         return 0;
                     }
@@ -3203,16 +3196,16 @@ public class Pattern {
                     /* More failure points to try.  */
 
                     /* If exceeds best match so far, save it.  */
-                    if(!best_regs_set || (d > self.best_regend[0])) {
+                    if(!best_regs_set || (d > best_regend[0])) {
                         best_regs_set = true;
-                        self.best_regend[0] = d;	/* Never use regstart[0].  */
+                        best_regend[0] = d;	/* Never use regstart[0].  */
                         fix_best_regs();
                     }
                     return 1;
                 } /* If no failure points, don't restore garbage.  */
                 else if(best_regs_set) {
                     /* Restore best match.  */
-                    d = self.best_regend[0];
+                    d = best_regend[0];
                     fix_regs();
                 }
             }
@@ -3226,29 +3219,29 @@ public class Pattern {
                 regs.beg[0] = pos;
                 regs.end[0] = d;
                 for(mcnt = 1; mcnt < num_regs; mcnt++) {
-                    if(self.regend[mcnt] == REG_UNSET_VALUE) {
+                    if(regend[mcnt] == REG_UNSET_VALUE) {
                         regs.beg[mcnt] = -1;
                         regs.end[mcnt] = -1;
                         continue;
                     }
-                    regs.beg[mcnt] = self.regstart[mcnt];
-                    regs.end[mcnt] = self.regend[mcnt];
+                    regs.beg[mcnt] = regstart[mcnt];
+                    regs.end[mcnt] = regend[mcnt];
                 }
             }
         }
         
         public final void start_memory() {
-            self.old_regstart[p[pix]] = self.regstart[p[pix]];
-            self.regstart[p[pix]] = d;
-            self.reg_info[p[pix]].is_active = true;
-            self.reg_info[p[pix]].matched_something = false;
+            old_regstart[p[pix]] = regstart[p[pix]];
+            regstart[p[pix]] = d;
+            reg_info[p[pix]].is_active = true;
+            reg_info[p[pix]].matched_something = false;
             pix += 2;
         }
 
         public final void stop_memory() {
-            self.old_regend[p[pix]] = self.regend[p[pix]];
-            self.regend[p[pix]] = d;
-            self.reg_info[p[pix]].is_active = false;
+            old_regend[p[pix]] = regend[p[pix]];
+            regend[p[pix]] = d;
+            reg_info[p[pix]].is_active = false;
             pix += 2;
         }
 
@@ -3985,13 +3978,23 @@ public class Pattern {
             this.ctx = p.ctx;
             this.pos = pos;
 
+            regstart = new int[num_regs];
+            regend = new int[num_regs];
+            old_regstart = new int[num_regs];
+            old_regend = new int[num_regs];
+            reg_info = new RegisterInfoType[num_regs];
+            for(int x=0;x<reg_info.length;x++) {
+                reg_info[x] = new RegisterInfoType();
+            }
+            best_regstart = new int[num_regs];
+            best_regend = new int[num_regs];
+
             if(regs != null) {
                 regs.init_regs(num_regs);
             }
 
             init_stack();
             init_registers();
-
 
             /* Set up pointers to ends of strings.
                Don't allow the second string to be empty unless both are empty.  */
@@ -4075,7 +4078,7 @@ public class Pattern {
 
             if(w.best_regs_set) {
                 gotoRestoreBestRegs=true;
-                w.d = best_regend[0];
+                w.d = w.best_regend[0];
                 w.fix_regs();
             }
         } while(gotoRestoreBestRegs);

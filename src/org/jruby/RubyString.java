@@ -1780,7 +1780,9 @@ public class RubyString extends RubyObject {
                 bp = buf + len;
             }
             len = beg - offset;
+            
             System.arraycopy(value.bytes, cp, dest.bytes, bp, len);
+
             bp += len;
             System.arraycopy(vbuf.bytes, vbuf.begin, dest.bytes, bp, vbuf.realSize);
             bp += vbuf.realSize;
