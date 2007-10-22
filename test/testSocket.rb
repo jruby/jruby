@@ -48,7 +48,8 @@ received = []
 server_thread = Thread.start do
   server = UDPSocket.open
   server.bind(nil, port)
-  2.times { received << server.recvfrom(64) }
+  2.times { received << server.recvfrom(64) } 
+  server.close
 end
 
 sleep 2 # Give thread a chance to be ready for input
@@ -75,8 +76,31 @@ test_equal("AF_INET", received[1][1][0])
 #test_ok(/^localhost/ =~ received[1][1][2])
 test_equal("127.0.0.1", received[1][1][3])
 
+test_ok(sock.close)
+
 # test_exception(SocketError) { UDPSocket.open.send("BANG!", -1, 'invalid.', port) }
 
+# Test UDPSocket using recv instead of recvfrom
+
+# server thread echoes received data
+server_thread = Thread.start do
+  server_socket = UDPSocket.open
+  server_socket.bind(nil, port)
+  data, remote_info = server_socket.recvfrom(64)
+  server_socket.send(data, 0, remote_info[3], remote_info[1])
+  server_socket.close
+end
+
+sleep 2
+
+client_socket = UDPSocket.open
+client_socket.send("udp recv", 0, "localhost", port) 
+server_thread.join
+received = client_socket.recv(64)
+
+test_equal("udp recv", received)
+test_ok(client_socket.close)
+  
 # test that raising inside an accepting thread doesn't nuke the socket
 tcp = TCPServer.new(nil, 5000)
 ok = false
