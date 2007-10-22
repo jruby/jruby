@@ -1,6 +1,7 @@
 # Our own test/unit-based tests
 # NOTE: test_globals comes first here because it has tests that $? be nil
 test_globals
+test_argf
 test_array
 test_array_subclass_behavior
 test_autoload
