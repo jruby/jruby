@@ -1092,11 +1092,15 @@ public class RubyKernel {
             ceil = 0;
         } else if (args.length == 1) {
             if (args[0] instanceof RubyBignum) {
-                byte[] bytes = new byte[((RubyBignum) args[0]).getValue().toByteArray().length - 1];
+                byte[] bigCeilBytes = ((RubyBignum) args[0]).getValue().toByteArray();
+                BigInteger bigCeil = new BigInteger(bigCeilBytes).abs();
                 
-                runtime.getRandom().nextBytes(bytes);
+                byte[] randBytes = new byte[bigCeilBytes.length];
+                runtime.getRandom().nextBytes(randBytes);
                 
-                return new RubyBignum(runtime, new BigInteger(bytes).abs()); 
+                BigInteger result = new BigInteger(randBytes).abs().mod(bigCeil);
+                
+                return new RubyBignum(runtime, result); 
             }
              
             RubyInteger integerCeil = (RubyInteger)RubyKernel.new_integer(recv, args[0]); 
@@ -1109,7 +1113,7 @@ public class RubyKernel {
             return RubyFloat.newFloat(runtime, runtime.getRandom().nextDouble()); 
         }
         if (ceil > Integer.MAX_VALUE) {
-            return runtime.newFixnum(runtime.getRandom().nextLong() % ceil);
+            return runtime.newFixnum(Math.abs(runtime.getRandom().nextLong()) % ceil);
         }
             
         return runtime.newFixnum(runtime.getRandom().nextInt((int) ceil));
