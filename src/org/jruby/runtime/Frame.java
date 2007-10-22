@@ -146,7 +146,7 @@ public final class Frame {
     /**
      * @return the frames current position
      */
-    ISourcePosition getPosition() {
+    public ISourcePosition getPosition() {
         return position;
     }
 
@@ -183,7 +183,7 @@ public final class Frame {
      * 
      * @return the method name
      */
-    String getName() {
+    public String getName() {
         return name;
     }
 
