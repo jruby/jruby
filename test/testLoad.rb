@@ -11,6 +11,11 @@ if RUBY_PLATFORM=~/java/
   # Load jar file RubyInitTest.java
   require File::dirname(file) + "/RubyInitTest"
   test_ok($ruby_init)
+
+  # JRUBY-1229, allow loading jar files without manifest
+  test_no_exception {
+    require "test/jar_with_no_manifest.jar"
+  }
 end
 
 # Yes, the following line is supposed to appear twice
