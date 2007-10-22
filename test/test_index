@@ -68,7 +68,6 @@ testPackUnpack.rb
 testPipe.rb
 testPositions.rb
 testProc.rb
-testRandom.rb
 testRange.rb
 testRbConfig.rb
 testRedefine.rb
