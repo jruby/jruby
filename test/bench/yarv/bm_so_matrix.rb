@@ -3,9 +3,9 @@
 # $Id: matrix-ruby.code,v 1.4 2004/11/13 07:42:14 bfulgham Exp $
 # http://www.bagley.org/~doug/shootout/
 
-n = 120 #Integer(ARGV.shift || 1)
+n = 60 #Integer(ARGV.shift || 1)
 
-size = 60
+size = 30
 
 def mkmatrix(rows, cols)
     count = 1
