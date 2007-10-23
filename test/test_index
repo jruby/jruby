@@ -23,7 +23,6 @@ testIf.rb
 testInspect.rb
 testInstantiatingInterfaces.rb
 testInteger.rb
-testIO.rb
 testJavaArraySupport.rb
 testLine.rb
 testLine_block_comment.rb
