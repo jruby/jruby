@@ -2996,23 +2996,23 @@ public class Pattern {
             stackb[stackp++] = 0; /* non-greedy flag */
         }
 
-        public final boolean duplicate() {
+        public final int duplicate() {
             int regno = p[pix++];   /* Get which register to match against */
             int d2, dend2;
 
             /* Check if there's corresponding group */
             if(regno >= num_regs) {
-                return true;
+                return BREAK_FAIL1;
             }
             /* Check if corresponding group is still open */
             if(reg_info[regno].is_active) {
-                return true;
+                return BREAK_FAIL1;
             }
 
             /* Where in input to try to start matching.  */
             d2 = regstart[regno];
             if(d2 == REG_UNSET_VALUE) {
-                return true;
+                return BREAK_FAIL1;
             }
 
             /* Where to stop matching; if both the place to start and
@@ -3022,7 +3022,7 @@ public class Pattern {
 
             dend2 = regend[regno];
             if(dend2 == REG_UNSET_VALUE) {
-                return true;
+                return BREAK_FAIL1;
             }
 
             for(;;) {
@@ -3032,7 +3032,7 @@ public class Pattern {
                 }
 
                 /* If necessary, advance to next segment in data.  */
-                if(d == dend) {return true;}
+                if(d == dend) {return BREAK_FAIL1;}
 
                 /* How many characters left in this segment to match.  */
                 mcnt = dend - d;
@@ -3046,12 +3046,12 @@ public class Pattern {
                 /* Compare that many; failure if mismatch, else move
                    past them.  */
                 if(((self.options & RE_OPTION_IGNORECASE) != 0) ? self.memcmp_translate(string, string_start+d, string_start+d2, mcnt)!=0 : self.memcmp(string, string_start+d, string_start+d2, mcnt)!=0) {
-                    return true;
+                    return BREAK_FAIL1;
                 }
                 d += mcnt;
                 d2 += mcnt;
             }
-            return false;
+            return BREAK_NORMAL;
         }
 
         public final boolean is_in_list_sbc(int cx, byte[] b, int bix) {
@@ -3230,30 +3230,32 @@ public class Pattern {
             }
         }
         
-        public final void start_memory() {
+        public final int start_memory() {
             old_regstart[p[pix]] = regstart[p[pix]];
             regstart[p[pix]] = d;
             reg_info[p[pix]].is_active = true;
             reg_info[p[pix]].matched_something = false;
             pix += 2;
+            return CONTINUE_MAINLOOP;
         }
 
-        public final void stop_memory() {
+        public final int stop_memory() {
             old_regend[p[pix]] = regend[p[pix]];
             regend[p[pix]] = d;
             reg_info[p[pix]].is_active = false;
             pix += 2;
+            return CONTINUE_MAINLOOP;
         }
 
         public final int anychar() {
-            if(d == dend) {return 1;}
+            if(d == dend) {return BREAK_FAIL1;}
             if(ismbchar(string[string_start+d],ctx)) {
                 if(d + mbclen(string[string_start+d],ctx) > dend) {
-                    return 1;
+                    return BREAK_FAIL1;
                 }
                 SET_REGS_MATCHED();
                 d += mbclen(string[string_start+d],ctx);
-                return 0;
+                return BREAK_NORMAL;
             }
             if((optz&RE_OPTION_MULTILINE)==0
                && (TRANSLATE_P() ? ctx.translate[string[string_start+d]] : string[string_start+d]) == '\n') {
@@ -3270,7 +3272,7 @@ public class Pattern {
             int dsave = d + 1;
             int cc;
                     
-            if(d == dend) {return 1;}
+            if(d == dend) {return BREAK_FAIL1;}
                         
             c = (char)(string[string_start+d++]&0xFF);
             if(ismbchar(c,ctx)) {
@@ -3294,7 +3296,7 @@ public class Pattern {
                 not = !not;
             }
             
-            if(!not) {return 1;}
+            if(!not) {return BREAK_FAIL1;}
             
             pix += 1 + (char)(p[pix]&0xFF) + 2 + EXTRACT_UNSIGNED(p, pix + 1 + (char)(p[pix]&0xFF))*8;
             SET_REGS_MATCHED();
@@ -3302,16 +3304,16 @@ public class Pattern {
             if(part) {
                 d = dsave;
             }
-            return 0;
+            return CONTINUE_MAINLOOP;
         }
 
-        public final void anychar_repeat() {
+        public final int anychar_repeat() {
             for (;;) {
                 PUSH_FAILURE_POINT(pix,d);
-                if(d == dend) {return;}
+                if(d == dend) {return BREAK_FAIL1;}
                 if(ismbchar(string[string_start+d],ctx)) {
                     if(d + mbclen(string[string_start+d],ctx) > dend) {
-                        return;
+                        return BREAK_FAIL1;
                     }
                     SET_REGS_MATCHED();
                     d += mbclen(string[string_start+d],ctx);
@@ -3319,7 +3321,7 @@ public class Pattern {
                 }
                 if((optz&RE_OPTION_MULTILINE)==0 &&
                    (TRANSLATE_P() ? ctx.translate[string[string_start+d]] : string[string_start+d]) == '\n') {
-                    return;
+                    return BREAK_FAIL1;
                 }
                 SET_REGS_MATCHED();
                 d++;
@@ -3396,7 +3398,7 @@ public class Pattern {
             return 0;
         }
 
-        public final void push_dummy_failure() {
+        public final int push_dummy_failure() {
             /* See comments just above at `dummy_failure_jump' about the
                two zeroes.  */
             p1 = pix;
@@ -3416,9 +3418,10 @@ public class Pattern {
             } else {
                 PUSH_FAILURE_POINT(-1,0);
             }
+            return CONTINUE_MAINLOOP;
         }
 
-        public final void succeed_n() {
+        public final int succeed_n() {
             mcnt = EXTRACT_NUMBER(p, pix + 2);
             /* Originally, this is how many times we HAVE to succeed.  */
             if(mcnt != 0) {
@@ -3447,6 +3450,7 @@ public class Pattern {
                 pix+=2;
                 PUSH_FAILURE_POINT(pix+mcnt,d);
             }
+            return CONTINUE_MAINLOOP;
         }
 
         public final int jump_n() {
@@ -3471,34 +3475,34 @@ public class Pattern {
                 mcnt = EXTRACT_NUMBER(p, pix);
                 pix += 2;
                 if(mcnt < 0 && stackp > 2 && stackb[stackp-3] == d) {/* avoid infinite loop */
-                    return 1;
+                    return BREAK_FAIL1;
                 }
                 pix += mcnt;
-                return 0;
+                return CONTINUE_MAINLOOP;
             }
             /* If don't have to jump any more, skip over the rest of command.  */
             else {
                 pix += 4;
             }
-            return 0;
+            return CONTINUE_MAINLOOP;
         }
 
         public final int exactn() {
             /* Match the next few pattern characters exactly.
                mcnt is how many characters to match.  */
-            mcnt = p[pix++] & 0xff;
+            int mcnt = p[pix++] & 0xff;
             //            System.err.println("matching " + mcnt + " exact characters");
             /* This is written out as an if-else so we don't waste time
                testing `translate' inside the loop.  */
             if(TRANSLATE_P()) {
                 do {
-                    if(d == dend) {return 1;}
+                    if(d == dend) {return BREAK_FAIL1;}
                     if(p[pix] == (byte)0xff) {
                         pix++;  
                         if(--mcnt==0
                            || d == dend
                            || string[string_start+d++] != p[pix++]) {
-                            return 1;
+                            return BREAK_FAIL1;
                         }
                         continue;
                     }
@@ -3506,35 +3510,153 @@ public class Pattern {
                     if(ismbchar(c,ctx)) {
                         int n;
                         if(c != (char)(p[pix++]&0xFF)) {
-                            return 1;
+                            return BREAK_FAIL1;
                         }
                         for(n = mbclen(c,ctx) - 1; n > 0; n--) {
                             if(--mcnt==0
                                || d == dend
                                || string[string_start+d++] != p[pix++]) {
-                                return 1;
+                                return BREAK_FAIL1;
                             }
                         }
                         continue;
                     }
                     /* compiled code translation needed for ruby */
                     if(ctx.translate[c] != ctx.translate[p[pix++]&0xFF]) {
-                        return 1;
+                        return BREAK_FAIL1;
                     }
                 } while(--mcnt > 0);
             } else {
                 do {
-                    if(d == dend) {return 1;}
+                    if(d == dend) {return BREAK_FAIL1;}
                     if(p[pix] == (byte)0xff) {
                         pix++; mcnt--;
                     }
                     if(string[string_start+d++] != p[pix++]) {
-                        return 1;
+                        return BREAK_FAIL1;
                     }
                 } while(--mcnt > 0);
             }
             SET_REGS_MATCHED();
-            return 0;
+            return CONTINUE_MAINLOOP;
+        }
+
+        private final int start_nowidth() {
+            PUSH_FAILURE_POINT(-1,d);
+            if(stackp > RE_DUP_MAX) {
+                return RETURN_M2;
+            }
+            int mcnt = EXTRACT_NUMBER(p, pix);
+            pix+=2;
+            STORE_NUMBER(p, pix+mcnt, stackp);
+            return CONTINUE_MAINLOOP;
+        }
+
+        private final int stop_nowidth() {
+            int mcnt = EXTRACT_NUMBER(p, pix);
+            pix+=2;
+            stackp = mcnt;
+            d = stackb[stackp-3];
+            POP_FAILURE_POINT();
+            return CONTINUE_MAINLOOP;
+        }
+
+        private final int stop_backtrack() {
+            int mcnt = EXTRACT_NUMBER(p, pix);
+            pix+=2;
+            stackp = mcnt;
+            POP_FAILURE_POINT();
+            return CONTINUE_MAINLOOP;
+        }
+
+        private final int pop_and_fail() {
+            int mcnt = EXTRACT_NUMBER(p, pix+1);
+            stackp = mcnt;
+            POP_FAILURE_POINT();
+            return BREAK_FAIL1;
+        }
+
+        private final int begline() {
+            if(size == 0 || d == 0) {
+                return CONTINUE_MAINLOOP;
+            }
+            if(string[string_start+d-1] == '\n' && d != dend) {
+                return CONTINUE_MAINLOOP;
+            }
+            return BREAK_FAIL1;
+        }
+
+        private final int endline() {
+            if(d == dend) {
+                return CONTINUE_MAINLOOP;
+            } else if(string[string_start+d] == '\n') {
+                return CONTINUE_MAINLOOP;
+            }
+            return BREAK_FAIL1;
+        }
+
+        private final int begbuf() {
+            if(d==0) {
+                return CONTINUE_MAINLOOP;
+            }
+            return BREAK_FAIL1;
+        }
+
+        private final int endbuf() {
+            if(d == dend) {
+                return CONTINUE_MAINLOOP;
+            }
+            return BREAK_FAIL1;
+        }
+
+        private final int endbuf2() {
+            if(d == dend) {
+                return CONTINUE_MAINLOOP;
+            }
+            /* .. or newline just before the end of the data. */
+            if(string[string_start+d] == '\n' && d+1 == dend) {
+                return CONTINUE_MAINLOOP;
+            }
+            return BREAK_FAIL1;
+        }
+
+        private final int begpos() {
+            if(d == beg) {
+                return CONTINUE_MAINLOOP;
+            }
+            return BREAK_FAIL1;
+        }
+
+        private final int on_failure_jump() {
+            int mcnt = EXTRACT_NUMBER(p, pix);
+            pix+=2;
+            PUSH_FAILURE_POINT(pix+mcnt,d);
+            return CONTINUE_MAINLOOP;
+        }
+
+        private final int finalize_jump() {
+            if(stackp > 2 && stackb[stackp-3] == d) {
+                pix = stackb[stackp-4];
+                POP_FAILURE_POINT();
+                return CONTINUE_MAINLOOP;
+            }
+            POP_FAILURE_POINT();
+            return BREAK_NORMAL;
+        }
+
+        private final int casefold_on() {
+            optz |= RE_OPTION_IGNORECASE;
+            return CONTINUE_MAINLOOP;
+        }
+
+        private final int casefold_off() {
+            optz &= ~RE_OPTION_IGNORECASE;
+            return CONTINUE_MAINLOOP;
+        }
+
+        private final int option_set() {
+            optz = p[pix++];
+            return CONTINUE_MAINLOOP;
         }
 
         public final int main_switch() {
@@ -3546,101 +3668,44 @@ public class Pattern {
                    a register number in the next byte.  The text matched
                    within the ( and ) is recorded under that number.  */
             case start_memory:
-                start_memory();
-                return CONTINUE_MAINLOOP;
+                return start_memory();
             case stop_memory:
-                stop_memory();
-                return CONTINUE_MAINLOOP;
+                return stop_memory();
             case start_paren:
             case stop_paren:
                 return BREAK_NORMAL;
                 /* \<digit> has been turned into a `duplicate' command which is
                    followed by the numeric value of <digit> as the register number.  */
             case duplicate:
-                if(duplicate()) {
-                    return BREAK_FAIL1;
-                }
-                return BREAK_NORMAL;
+                return duplicate();
             case start_nowidth:
-                PUSH_FAILURE_POINT(-1,d);
-                if(stackp > RE_DUP_MAX) {
-                    return RETURN_M2;
-                }
-                mcnt = EXTRACT_NUMBER(p, pix);
-                pix+=2;
-                STORE_NUMBER(p, pix+mcnt, stackp);
-                return CONTINUE_MAINLOOP;
+                return start_nowidth();
             case stop_nowidth:
-                mcnt = EXTRACT_NUMBER(p, pix);
-                pix+=2;
-                stackp = mcnt;
-                d = stackb[stackp-3];
-                POP_FAILURE_POINT();
-                return CONTINUE_MAINLOOP;
+                return stop_nowidth();
             case stop_backtrack:
-                mcnt = EXTRACT_NUMBER(p, pix);
-                pix+=2;
-                stackp = mcnt;
-                POP_FAILURE_POINT();
-                return CONTINUE_MAINLOOP;
+                return stop_backtrack();
             case pop_and_fail:
-                mcnt = EXTRACT_NUMBER(p, pix+1);
-                stackp = mcnt;
-                POP_FAILURE_POINT();
-                return BREAK_FAIL1;
+                return pop_and_fail();
             case anychar:
-                if(anychar() == 1) {
-                    return BREAK_FAIL1;
-                }
-                return BREAK_NORMAL;
+                return anychar();
             case anychar_repeat:
-                anychar_repeat();
-                return BREAK_FAIL1;
+                return anychar_repeat();
             case charset:
             case charset_not: 
-                if(charset() == 1) {
-                    return BREAK_FAIL1;
-                }
-                return CONTINUE_MAINLOOP;
-
-
+                return charset();
             case begline:
-                if(size == 0 || d == 0) {
-                    return CONTINUE_MAINLOOP;
-                }
-                if(string[string_start+d-1] == '\n' && d != dend) {
-                    return CONTINUE_MAINLOOP;
-                }
-                return BREAK_FAIL1;
+                return begline();
             case endline:
-                if(d == dend) {
-                    return CONTINUE_MAINLOOP;
-                } else if(string[string_start+d] == '\n') {
-                    return CONTINUE_MAINLOOP;
-                }
-                return BREAK_FAIL1;
+                return endline();
                 /* Match at the very beginning of the string. */
             case begbuf:
-                if(d==0) {
-                    return CONTINUE_MAINLOOP;
-                }
-                return BREAK_FAIL1;
+                return begbuf();
                 /* Match at the very end of the data. */
             case endbuf:
-                if(d == dend) {
-                    return CONTINUE_MAINLOOP;
-                }
-                return BREAK_FAIL1;
+                return endbuf();
                 /* Match at the very end of the data. */
             case endbuf2:
-                if(d == dend) {
-                    return CONTINUE_MAINLOOP;
-                }
-                /* .. or newline just before the end of the data. */
-                if(string[string_start+d] == '\n' && d+1 == dend) {
-                    return CONTINUE_MAINLOOP;
-                }
-                return BREAK_FAIL1;
+                return endbuf2();
                 /* `or' constructs are handled by starting each alternative with
                    an on_failure_jump that points to the start of the next
                    alternative.  Each alternative except the last ends with a
@@ -3659,17 +3724,10 @@ public class Pattern {
                     
                 /* Match at the starting position. */
             case begpos:
-                if(d == beg) {
-                    return CONTINUE_MAINLOOP;
-                }
-                return BREAK_FAIL1;
-
+                return begpos();
             case on_failure_jump:
                 //                on_failure:
-                mcnt = EXTRACT_NUMBER(p, pix);
-                pix+=2;
-                PUSH_FAILURE_POINT(pix+mcnt,d);
-                return CONTINUE_MAINLOOP;
+                return on_failure_jump();
 
                 /* The end of a smart repeat has a maybe_finalize_jump back.
                    Change it either to a finalize_jump or an ordinary jump.  */
@@ -3692,12 +3750,10 @@ public class Pattern {
                    put on by the on_failure_jump.  */
 
             case finalize_jump:
-                if(stackp > 2 && stackb[stackp-3] == d) {
-                    pix = stackb[stackp-4];
-                    POP_FAILURE_POINT();
+                if(finalize_jump() == CONTINUE_MAINLOOP) {
                     return CONTINUE_MAINLOOP;
                 }
-                POP_FAILURE_POINT();
+
                 /* Note fall through.  */
 
                 /* We need this opcode so we can detect where alternatives end
@@ -3722,23 +3778,16 @@ public class Pattern {
                    popped.  For example, matching `(a|ab)*' against `aab'
                    requires that we match the `ab' alternative.  */
             case push_dummy_failure:
-                push_dummy_failure();
-                return CONTINUE_MAINLOOP;
+                return push_dummy_failure();
 
                 /* Have to succeed matching what follows at least n times.  Then
                    just handle like an on_failure_jump.  */
             case succeed_n: 
-                succeed_n();
-                return CONTINUE_MAINLOOP;
-
+                return succeed_n();
             case jump_n:
-                if(jump_n() == 1) {
-                    return BREAK_FAIL1;
-                }
-                return CONTINUE_MAINLOOP;
+                return jump_n();
             case set_number_at:
                 return set_number_at();
-
             case try_next:
                 return try_next();
             case finalize_push:
@@ -3750,14 +3799,11 @@ public class Pattern {
             case unused:
                 return CONTINUE_MAINLOOP;
             case casefold_on:
-                optz |= RE_OPTION_IGNORECASE;
-                return CONTINUE_MAINLOOP;
+                return casefold_on();
             case casefold_off:
-                optz &= ~RE_OPTION_IGNORECASE;
-                return CONTINUE_MAINLOOP;
+                return casefold_off();
             case option_set:
-                optz = p[pix++];
-                return CONTINUE_MAINLOOP;
+                return option_set();
             case wordbound:
                 return wordbound();
             case notwordbound:
@@ -3771,10 +3817,7 @@ public class Pattern {
             case notwordchar:
                 return notwordchar();
             case exactn:
-                if(exactn() == 1) {
-                    return BREAK_FAIL1;
-                }
-                return CONTINUE_MAINLOOP;
+                return exactn();
             }
             return BREAK_NORMAL;
         }
