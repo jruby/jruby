@@ -25,64 +25,63 @@ import java.util.Arrays;
 
 import static org.rej.Bytecodes.*;
 import static org.rej.REJConstants.*;
-import static org.rej.Pattern.err;
 import static org.rej.MBC.*;
 import static org.rej.Helpers.*;
 
 class CompilationEnvironment {
-    public CompileContext ctx;
-    public byte[] b;
-    public int bix;
-    public byte[] p;
-    public int pix;
-    public int pend;
-    public char c, c1;
-    public int p0;
-    public long optz;
-    public int[] numlen = new int[1];
-    public int nextp;
+    private CompileContext ctx;
+    private byte[] b;
+    private int bix;
+    private byte[] p;
+    private int pix;
+    private int pend;
+    private char c, c1;
+    private int p0;
+    private long optz;
+    private int[] numlen = new int[1];
+    private int nextp;
 
     /* Address of the count-byte of the most recently inserted `exactn'
        command.  This makes it possible to tell whether a new exact-match
        character can be added to that command or requires a new `exactn'
        command.  */
 
-    public int pending_exact = -1;
+    private int pending_exact = -1;
 
     /* Address of the place where a forward-jump should go to the end of
        the containing expression.  Each alternative of an `or', except the
        last, ends with a forward-jump of this sort.  */
 
-    public int fixup_alt_jump = -1;
+    private int fixup_alt_jump = -1;
         
     /* Address of start of the most recently finished expression.
        This tells postfix * where to find the start of its operand.  */
 
-    public int laststart = -1;
+    private int laststart = -1;
 
     /* In processing a repeat, 1 means zero matches is allowed.  */
 
-    public boolean zero_times_ok = false;
+    private boolean zero_times_ok = false;
 
     /* In processing a repeat, 1 means many matches is allowed.  */
 
-    public boolean many_times_ok = false;
+    private boolean many_times_ok = false;
 
-    public boolean greedy = false;
+    private boolean greedy = false;
 
     /* Address of beginning of regexp, or inside of last (.  */
 
-    public int begalt = 0;
+    private int begalt = 0;
 
     /* Place in the uncompiled pattern (i.e., the {) to
        which to go back if the interval is invalid.  */
-    public int beg_interval;
+    private int beg_interval;
 
     /* In processing an interval, at least this many matches must be made.  */
-    public int lower_bound;
+    private int lower_bound;
 
     /* In processing an interval, at most this many matches can be made.  */
-    public int upper_bound;
+    private int upper_bound;
 
     /* Stack of information saved by ( and restored by ).
        Five stack elements are pushed by each (:
@@ -92,27 +91,187 @@ class CompilationEnvironment {
        Fourth, the value of regnum.
        Fifth, the type of the paren. */
 
-    public int[] stacka = new int[40];
-    public int[] stackb = stacka;
-    public int stackp = 0;
-    public int stacke = 40;
+    private int[] stacka = new int[40];
+    private int[] stackb = stacka;
+    private int stackp = 0;
+    private int stacke = 40;
 
     /* Counts ('s as they are encountered.  Remembered for the matching ),
        where it becomes the register number to put in the stop_memory
        command.  */
 
-    public int regnum = 1;
+    private int regnum = 1;
 
-    public int range = 0;
-    public int had_mbchar = 0;
-    public int had_num_literal = 0;
-    public int had_char_class = 0;
+    private int range = 0;
+    private int had_mbchar = 0;
+    private int had_num_literal = 0;
+    private int had_char_class = 0;
 
-    public boolean gotoRepeat=false;
-    public boolean gotoNormalChar=false;
-    public boolean gotoNumericChar=false;
+    private boolean gotoRepeat=false;
+    private boolean gotoNormalChar=false;
+    private boolean gotoNumericChar=false;
 
-    public Pattern self;
+    private Pattern self;
+
+    public CompilationEnvironment(CompileContext ctx, byte[] buffer, byte[] pattern, int start, int end, long options, Pattern pat) {
+        this.ctx = ctx;
+        this.b = buffer;
+        this.bix = 0;
+        this.p = pattern;
+        this.pix = start;
+        this.pend = end;
+        this.c1 = 0;
+        this.optz = options;
+        this.self = pat;
+
+        self.fastmap_accurate = 0;
+        self.must = -1;
+        self.must_skip = null;
+
+        if(self.allocated == 0) {
+            self.allocated = INIT_BUF_SIZE;
+            /* EXTEND_BUFFER loses when allocated is 0.  */
+            self.buffer = new byte[INIT_BUF_SIZE];
+            this.b = self.buffer;
+        }
+    }
+
+    public void compile() {
+        mainParse: while(pix != pend) {
+            PATFETCH();
+
+            mainSwitch: do {
+                switch(c) {
+                case '$':
+                    dollar();
+                    break;
+
+                case '^':
+                    caret();
+                    break;
+
+                case '+':
+                case '?':
+                case '*':
+                    prepareRepeat();
+
+                    /* Star, etc. applied to an empty pattern is equivalent
+                       to an empty pattern.  */
+                    if(laststart==-1) {
+                        break;
+                    }
+                    
+                    if(greedy && many_times_ok && b[laststart] == anychar && bix-laststart <= 2) {
+                        if(b[bix - 1] == stop_paren) {
+                            bix--;
+                        }
+                        if(zero_times_ok) {
+                            b[laststart] = anychar_repeat;
+                        } else {
+                            BUFPUSH(anychar_repeat);
+                        }
+                        break;
+                    }
+
+                    mainRepeat();
+                    break;
+
+                case '.':
+                    dot();
+                    break;
+
+                case '[':
+                    prepareCharset();
+                    main_charset();
+                    compact_charset();
+                    break;
+
+                case '(':
+                    group_start();
+
+                    if(c == '#') {
+                        if(push_option!=0) {
+                            BUFPUSH(option_set);
+                            BUFPUSH((byte)optz);
+                        }
+                        if(casefold!=0) {
+                            if((optz & RE_OPTION_IGNORECASE) != 0) {
+                                BUFPUSH(casefold_on);
+                            } else {
+                                BUFPUSH(casefold_off);
+                            }
+                        }
+                        break;
+                    }
+
+                    group_start_end();
+                    break;
+                case ')':
+                    group_end();
+                    break;
+                case '|':
+                    alt();
+                    break;
+                case '{':
+                unfetch_interval: do {
+                    start_bounded_repeat();
+                    
+                    if(lower_bound < 0 || c != '}') {
+                        break unfetch_interval;
+                    }
+                    switch(continue_bounded_repeat()) {
+                    case 0:
+                        break;
+                    case 1:
+                        continue mainSwitch;
+                    case 2:
+                        break mainSwitch;
+                    }
+                    bounded_nontrivial();
+                    break mainSwitch;
+                } while(false);
+                unfetch_interval();
+                break mainSwitch;
+
+                case '\\':
+                    escape();
+                    break mainSwitch;
+                case '#':
+                    if((optz & RE_OPTION_EXTENDED) != 0) {
+                        while(pix != pend) {
+                            PATFETCH();
+                            if(c == '\n') {
+                                break;
+                            }
+                        }
+                        break mainSwitch;
+                    }
+                    gotoNormalChar = true;
+                    break mainSwitch;
+
+                case ' ':
+                case '\t':
+                case '\f':
+                case '\r':
+                case '\n':
+                    if((optz & RE_OPTION_EXTENDED) != 0) {
+                        break mainSwitch;
+                    }
+                default:
+                    if(c == ']') {
+                        self.re_warning("regexp has `]' without escape");
+                    } else if(c == '}') {
+                        self.re_warning("regexp has `}' without escape");
+                    }
+                    gotoNormalChar = true;
+                }
+            } while(gotoRepeat);
+
+            handle_num_or_normal();
+        }
+
+        finalize_compilation();
+    }
 
     public final void PATFETCH() {
         if(pix == pend) {

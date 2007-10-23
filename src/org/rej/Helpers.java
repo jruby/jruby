@@ -241,4 +241,8 @@ class Helpers {
         mbc_size += beg - end + 1;
         STORE_NUMBER(b,bix-2, mbc_size);
     }
+
+    public static void err(String msg) throws PatternSyntaxException {
+        throw new PatternSyntaxException(msg);
+    }
 }
