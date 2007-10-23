@@ -255,4 +255,17 @@ class TestBlock < Test::Unit::TestCase
   def test_block_that_breaks_while
     assert_nothing_raised { block_that_breaks_while { break }}
   end
+  
+  def yield_arg(arg)
+    yield arg
+  end
+  
+  def block_call_arg(arg,&block)
+    block.call arg
+  end
+  
+  def test_yield_arg_expansion
+    assert_equal 1, yield_arg([1,2]) { |a,b| a }
+    assert_equal 1, block_call_arg([1,2]) { |a,b| a }
+  end
 end
