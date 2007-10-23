@@ -289,16 +289,7 @@ public class UnmarshalStream extends BufferedInputStream {
     private IRubyObject userUnmarshal() throws IOException {
         String className = unmarshalObject().asSymbol();
         ByteList marshaled = unmarshalString();
-        RubyModule classInstance;
-        try {
-            classInstance = runtime.getClassFromPath(className);
-        } catch (RaiseException e) {
-            if (e.getException().isKindOf(runtime.getModule("NameError"))) {
-                throw runtime.newArgumentError("undefined class/module " + className);
-            } 
-                
-            throw e;
-        }
+        RubyModule classInstance = findClass(className);
         if (!classInstance.respondsTo("_load")) {
             throw runtime.newTypeError("class " + classInstance.getName() + " needs to have method `_load'");
         }
@@ -311,10 +302,26 @@ public class UnmarshalStream extends BufferedInputStream {
     private IRubyObject userNewUnmarshal() throws IOException {
         String className = unmarshalObject().asSymbol();
         IRubyObject marshaled = unmarshalObject();
-        RubyClass classInstance = runtime.getClass(className);
-        IRubyObject result = classInstance.newInstance(new IRubyObject[0], Block.NULL_BLOCK);
+        RubyClass classInstance = findClass(className);
+        IRubyObject result = classInstance.allocate();
         result.callMethod(getRuntime().getCurrentContext(),"marshal_load", marshaled);
         registerLinkTarget(result);
         return result;
+    }
+
+    private RubyClass findClass(String className) {
+        RubyModule classInstance;
+        try {
+            classInstance = runtime.getClassFromPath(className);
+        } catch (RaiseException e) {
+            if (e.getException().isKindOf(runtime.getModule("NameError"))) {
+                throw runtime.newArgumentError("undefined class/module " + className);
+            } 
+            throw e;
+        }
+        if (! (classInstance instanceof RubyClass)) {
+            throw runtime.newArgumentError(className + " does not refer class"); // sic
+        }
+        return (RubyClass) classInstance;
     }
 }
