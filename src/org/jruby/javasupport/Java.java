@@ -71,6 +71,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.collections.IntHashMap;
 
+import edu.emory.mathcs.backport.java.util.concurrent.ConcurrentHashMap;
+
 public class Java {
     public static RubyModule createJavaModule(Ruby runtime) {
         RubyModule javaModule = runtime.defineModule("Java");
@@ -826,7 +828,7 @@ public class Java {
         }
         
         return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJavaSupport().getJavaClassLoader(), interfaces, new InvocationHandler() {
-            private Map parameterTypeCache = new HashMap();
+            private Map parameterTypeCache = new ConcurrentHashMap();
             public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
                 Class[] parameterTypes = (Class[])parameterTypeCache.get(method);
                 if (parameterTypes == null) {
