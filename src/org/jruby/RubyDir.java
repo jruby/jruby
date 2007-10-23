@@ -292,8 +292,11 @@ public class RubyDir extends RubyObject {
             newDir = new File(newDir.getPath());
         }
         
-        return newDir.mkdirs() ? RubyFixnum.zero(recv.getRuntime()) :
-            RubyFixnum.one(recv.getRuntime());
+        if (newDir.mkdirs()) {
+          return RubyFixnum.zero(recv.getRuntime());
+        } else {
+          throw recv.getRuntime().newSystemCallError("mkdir failed");
+        }
     }
 
     /**

@@ -102,3 +102,13 @@ test_equal("testDir_4", pwd.split("/")[-1].strip)
 Dir.chdir("..")
 Dir.delete("testDir_4")
 # end http://jira.codehaus.org/browse/JRUBY-300
+
+
+#begin http://jira.codehaus.org/browse/JRUBY-1375
+Dir.mkdir("testDir_5") unless File.exists?("testDir_5")
+File.chmod(0400, 'testDir_5')
+test_exception(SystemCallError) do 
+  Dir.mkdir("testDir_5/another_dir")
+end
+Dir.delete("testDir_5")
+#end http://jira.codehaus.org/browse/JRUBY-1375
