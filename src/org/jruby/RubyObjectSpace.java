@@ -86,7 +86,7 @@ public class RubyObjectSpace {
         if (!(id instanceof RubyFixnum)) {
             throw recv.getRuntime().newTypeError(id, recv.getRuntime().getFixnum());
         }
-        RubyFixnum idFixnum = (RubyFixnum)id;
+        RubyFixnum idFixnum = (RubyFixnum) id;
         long longId = idFixnum.getLongValue();
         if (longId == 0) {
             return runtime.getFalse();
@@ -94,12 +94,14 @@ public class RubyObjectSpace {
             return runtime.getTrue();
         } else if (longId == 4) {
             return runtime.getNil();
-        } else if (longId % 2 != 0) { // odd
+        } else if (longId % 2 != 0) {
+            // odd
             return runtime.newFixnum((longId - 1) / 2);
         } else {
             IRubyObject object = runtime.getObjectSpace().id2ref(longId);
-            if (object == null)
-                runtime.newRangeError("not an id value");
+            if (object == null) {
+                return runtime.getNil();
+            }
             return object;
         }
     }
