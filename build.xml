@@ -118,7 +118,7 @@
   </target>
 
   <target name="compile-jruby" depends="compile.tasks, check-for-optional-packages">
-    <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" deprecation="true">
+    <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" deprecation="true" encoding="ISO-8859-1">
        <classpath refid="build.classpath"/>
        <src path="${src.dir}"/>
        <patternset refid="java.src.pattern"/>
