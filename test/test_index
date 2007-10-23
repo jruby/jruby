@@ -4,7 +4,6 @@ testClasses.rb
 testCompiler.rb
 testConstant.rb
 testDigest.rb
-testDir.rb
 testEnumerable.rb
 testEnumerator.rb
 testEnv.rb
