@@ -1410,7 +1410,7 @@ public class RubyYaccLexer {
                 break;
 
             case '_':
-                if (src.wasBeginOfLine() && src.matchString("_END__\n", false)) {
+                if (src.wasBeginOfLine() && src.matchString("_END__", false)) {
                 	parserSupport.getResult().setEndSeen(true);
                     return 0;
                 }
@@ -1419,7 +1419,7 @@ public class RubyYaccLexer {
 
             default:
                 if (!isIdentifierChar(c)) {
-                    throw new SyntaxException(getPosition(), "Invalid char `\\" + Integer.parseInt(""+c, 8) + "' in expression");
+                    throw new SyntaxException(getPosition(), "Invalid char `\\" + Integer.toOctalString(c & 0xff) + "' in expression");
                 }
             
                 tokenBuffer.setLength(0);

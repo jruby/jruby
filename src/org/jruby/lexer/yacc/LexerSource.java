@@ -47,7 +47,6 @@ import org.jruby.util.ByteList;
  */
 public class LexerSource {
     private static final int INITIAL_PUSHBACK_SIZE = 100;
-    private static final int INITIAL_LINEWIDTH_SIZE = 2048;
     
 	// Where we get new positions from.
 	private ISourcePositionFactory positionFactory;
@@ -61,12 +60,9 @@ public class LexerSource {
     // index of last character in pushback buffer
     private int bufLength = -1;
     
-    // How long is every line we have run across.  This makes it possible for us to unread() 
-    // past a read() line and still know what column we are at.
-    private int lineWidths[] = new int[INITIAL_LINEWIDTH_SIZE];
-
-    // index of last line width in line widths list
-    private int lineWidthsLength = -1;
+    // Character read before previous read
+    private int oneAgo = '\n';
+    private int twoAgo = 0;
     
     // The name of this source (e.g. a filename: foo.rb)
     private final String sourceName;
@@ -74,15 +70,9 @@ public class LexerSource {
     // Number of newlines read from the reader
     private int line = 0;
     
-    // Column of source.  
-    private int column = 0;
-    
     // How many bytes into the source are we?
     private int offset = 0;
 
-    // Flag to let us now in next read after a newline that we should reset column
-    private boolean nextCharIsOnANewLine = true;
-	
     /**
      * Create our food-source for the lexer
      * 
@@ -124,35 +114,13 @@ public class LexerSource {
             }
     	}
 
-    	// Reset column back to zero on first read of a line (note it will be-
-    	// come '1' by the time it leaves read().
-    	if (nextCharIsOnANewLine) {
-    		nextCharIsOnANewLine = false;
-    		column = 0;
-    	}
-    	
-    	offset++;
-    	column++;
-    	if (c == '\n') {
-    		line++;
-    		// Since we are not reading off of unread buffer we must at the
-    		// end of a new line for the first time.  Add it.
-    		if (length < 0) {
-                lineWidths[++lineWidthsLength] = column;
-                // If we outgrow our lineLength list then grow it
-                if (lineWidthsLength + 1 == lineWidths.length) {
-                    int[] newLineWidths = new int[lineWidths.length + INITIAL_LINEWIDTH_SIZE];
-                        
-                    System.arraycopy(lineWidths, 0, newLineWidths, 0, lineWidths.length);
-                        
-                    lineWidths = newLineWidths;
-                }                
-    		}
-    		
-    		nextCharIsOnANewLine = true;
-        } 
-            
-    	return c; 
+        twoAgo = oneAgo;
+        oneAgo = c;
+        offset++;
+
+        if (c == '\n') line++;
+        
+        return c; 
     }
 
     /**
@@ -162,27 +130,24 @@ public class LexerSource {
      * @param c to be put back onto the source
      */
     public void unread(char c) {
-        if (c != (char) 0) {
-            offset--;
-    	
-            if (c == '\n') {
-                line--;
-                column = lineWidths[line];
-                nextCharIsOnANewLine = true;
-            } else {
-                column--;
-            }
+        if (c == 0) return;
+        
+        offset--;
+        oneAgo = twoAgo;
+        twoAgo = 0;
+            
+        if (c == '\n') line--;
 
-            buf[++bufLength] = c;
-            // If we outgrow our pushback stack then grow it (this should only happen in
-            // pretty pathological cases).
-            if (bufLength + 1 == buf.length) {
-                char[] newBuf = new char[buf.length + INITIAL_PUSHBACK_SIZE];
-                
-                System.arraycopy(buf, 0, newBuf, 0, buf.length);
-                
-                buf = newBuf;                
-            }
+        buf[++bufLength] = c;
+        
+        // If we outgrow our pushback stack then grow it (this should only happen in pretty 
+        // pathological cases).
+        if (bufLength + 1 == buf.length) {
+            char[] newBuf = new char[buf.length + INITIAL_PUSHBACK_SIZE];
+
+            System.arraycopy(buf, 0, newBuf, 0, buf.length);
+
+            buf = newBuf;
         }
     }
     
@@ -206,15 +171,6 @@ public class LexerSource {
      */
     public int getLine() {
     	return line;
-    }
-    
-    /**
-     * Are we at beggining of line?
-     * 
-     * @return the column (0..x)
-     */
-    public int getColumn() {
-    	return column;
     }
     
     /**
@@ -268,7 +224,6 @@ public class LexerSource {
                 // we ate an extra character here (this accounting is normally done in read
                 // ), we should update position info.
                 offset++;
-                column++;
             }
         }
                    
@@ -334,11 +289,18 @@ public class LexerSource {
                 return false;
             }
         }
+        
+        char c = read();
+        if (c != '\n' && c != '\0') {
+            unread(c);
+            return false;
+        }
+
         return true;
     }
 
     public boolean wasBeginOfLine() {
-        return getColumn() == 1;
+        return twoAgo == '\n';
     }
 
     public char readEscape() throws IOException {
@@ -366,13 +328,27 @@ public class LexerSource {
                 unread(c);
                 return scanOct(3);
             case 'x' : // hex constant
-            	int hexOffset = getColumn();
-            	char hexValue = scanHex(2);
-            	
-            	// No hex value after the 'x'.
-            	if (hexOffset == getColumn()) {
-            	    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
-            	}
+                int i = 0;
+                //char hexValue = scanHex(2);
+
+                char hexValue = '\0';
+
+                for (; i < 2; i++) {
+                    char h1 = read();
+
+                    if (!RubyYaccLexer.isHexChar(h1)) {
+                        unread(h1);
+                        break;
+                    }
+
+                    hexValue <<= 4;
+                    hexValue |= Integer.parseInt(""+h1, 16) & 15;
+                }
+                
+                // No hex value after the 'x'.
+                if (i == 0) {
+                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+                }
                 return hexValue;
             case 'b' : // backspace
                 return '\010';
@@ -405,24 +381,6 @@ public class LexerSource {
             default :
                 return c;
         }
-    }
-
-    private char scanHex(int count) throws IOException {
-    	char value = '\0';
-
-    	for (int i = 0; i < count; i++) {
-    		char c = read();
-
-    		if (!RubyYaccLexer.isHexChar(c)) {
-        		unread(c);
-    			break;
-    		}
-
-    		value <<= 4;
-    		value |= Integer.parseInt(""+c, 16) & 15;
-    	}
-
-    	return value;
     }
 
     private char scanOct(int count) throws IOException {

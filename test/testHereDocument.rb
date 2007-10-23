@@ -81,3 +81,9 @@ value.sub!(/\A(\S*)(.*?)(\S*)\Z/m) do |m|
 EOT
 end
 test_equal('#$1 other #$3', value.chomp)
+
+# Note: This test must be last test of this file and the EOF beneath it must
+# not end in a newline.  Test HEREDOC terminating without newline.
+str = <<EOF
+ some text
+EOF

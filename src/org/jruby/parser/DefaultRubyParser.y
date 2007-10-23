@@ -495,7 +495,7 @@ command       : operation command_args  %prec tLOWEST {
 		  $$ = support.new_super($2, $1); // .setPosFrom($2);
 	      }
               | kYIELD command_args {
-                  $$ = support.new_yield(getPosition($1), $2);
+                  $$ = support.new_yield(support.union($1, $2), $2);
 	      }
 
 mlhs          : mlhs_basic
@@ -1015,6 +1015,10 @@ primary       : literal
                   $$ = $2;
 	      }
               | tLPAREN compstmt tRPAREN {
+                  if ($2 != null) {
+                      // compstmt position includes both parens around it
+                      ((ISourcePositionHolder) $2).setPosition(support.union($1, $3));
+                  }
 		  $$ = $2;
               }
               | primary_value tCOLON2 tCONSTANT {

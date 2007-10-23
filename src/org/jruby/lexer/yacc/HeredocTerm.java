@@ -52,7 +52,7 @@ public class HeredocTerm extends StrTerm {
         if (src.peek((char) RubyYaccLexer.EOF)) {
             throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
         }
-        if (src.wasBeginOfLine() && src.matchString(eos + '\n', indent)) {
+        if (src.wasBeginOfLine() && src.matchString(eos, indent)) {
             src.unreadMany(lastLine);
             lexer.yaccValue = new Token(eos, lexer.getPosition());
             return Tokens.tSTRING_END;
@@ -80,7 +80,7 @@ public class HeredocTerm extends StrTerm {
                 if (src.peek('\0')) {
                     throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
                 }
-            } while (!src.matchString(eos + '\n', indent));
+            } while (!src.matchString(eos, indent));
         } else {
             char c = src.read();
             ByteList buffer = new ByteList();
@@ -117,7 +117,7 @@ public class HeredocTerm extends StrTerm {
                 // We need to pushback so when whole match looks it did not
                 // lose a char during last EOF
                 src.unread(c);
-            } while (!src.matchString(eos + '\n', indent));
+            } while (!src.matchString(eos, indent));
             str = buffer;
         }
 
