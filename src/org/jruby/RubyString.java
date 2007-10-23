@@ -60,6 +60,7 @@ import org.jruby.util.KCode;
 import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
 
+import org.rej.MBC;
 import org.rej.Pattern;
 import org.rej.Registers;
 
@@ -2401,11 +2402,11 @@ public class RubyString extends RubyObject {
                         result.append(newEmptyString(runtime, getMetaClass()));
                         break;
                     } else if(last_null) {
-                        result.append(substr(beg, Pattern.mbclen(((char)(value.bytes[value.begin+beg]&0xFF)),((RubyRegexp)spat).getKCode().getContext())));
+                        result.append(substr(beg, MBC.mbclen(((char)(value.bytes[value.begin+beg]&0xFF)),((RubyRegexp)spat).getKCode().getContext())));
                         beg = start;
                     } else {
                         if(start < value.realSize) {
-                            start += Pattern.mbclen(((char)(value.bytes[value.begin+start]&0xFF)),((RubyRegexp)spat).getKCode().getContext());
+                            start += MBC.mbclen(((char)(value.bytes[value.begin+start]&0xFF)),((RubyRegexp)spat).getKCode().getContext());
                         } else {
                             start++;
                         }
@@ -2516,7 +2517,7 @@ public class RubyString extends RubyObject {
                  * Always consume at least one character of the input string
                  */
                 if(value.realSize > regs.end[0]) {
-                    start[0] = regs.end[0] + Pattern.mbclen(value.charAt(regs.end[0]),pat.getKCode().getContext());
+                    start[0] = regs.end[0] + MBC.mbclen(value.charAt(regs.end[0]),pat.getKCode().getContext());
                 } else {
                     start[0] = regs.end[0] + 1;
                 }

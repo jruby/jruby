@@ -34,19 +34,19 @@ import java.nio.charset.CharsetEncoder;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import org.rej.Pattern;
+import org.rej.CompileContext;
 
 public class KCode {
-    public static final KCode NIL = new KCode(null, Pattern.ASCII);
-    public static final KCode NONE = new KCode("NONE", Pattern.ASCII);
-    public static final KCode UTF8 = new KCode("UTF8", Pattern.UTF8);
-    public static final KCode SJIS = new KCode("SJIS", Pattern.SJIS);
-    public static final KCode EUC = new KCode("EUC", Pattern.EUC);
+    public static final KCode NIL = new KCode(null, CompileContext.ASCII);
+    public static final KCode NONE = new KCode("NONE", CompileContext.ASCII);
+    public static final KCode UTF8 = new KCode("UTF8", CompileContext.UTF8);
+    public static final KCode SJIS = new KCode("SJIS", CompileContext.SJIS);
+    public static final KCode EUC = new KCode("EUC", CompileContext.EUC);
 
     private String kcode;
-    private Pattern.CompileContext ctx;
+    private CompileContext ctx;
 
-    private KCode(String kcode, Pattern.CompileContext ctx) {
+    private KCode(String kcode, CompileContext ctx) {
         this.ctx = ctx;
         this.kcode = kcode;
     }
@@ -75,7 +75,7 @@ public class KCode {
         return NIL;
     }
 
-    public Pattern.CompileContext getContext() {
+    public CompileContext getContext() {
         return ctx;
     }
 

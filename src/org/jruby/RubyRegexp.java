@@ -57,9 +57,15 @@ import org.jruby.util.Sprintf;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 
+import org.rej.CompileContext;
 import org.rej.Pattern;
 import org.rej.PatternSyntaxException;
 import org.rej.Registers;
+import org.rej.MBC;
+
+import static org.rej.REJConstants.RE_OPTION_IGNORECASE;
+import static org.rej.REJConstants.RE_OPTION_MULTILINE;
+import static org.rej.REJConstants.RE_OPTION_EXTENDED;
 
 /**
  *
@@ -262,7 +268,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         str = regex.makeShared(0, regex.realSize);
     }
 
-    private final Pattern make_regexp(ByteList s, int start, int len, int flags, Pattern.CompileContext ctx) {
+    private final Pattern make_regexp(ByteList s, int start, int len, int flags, CompileContext ctx) {
         Pattern rp = new Pattern(new byte[16],16,new byte[256],flags);
         try {
             Pattern.compile(s.bytes,start,len,rp,ctx);
@@ -302,15 +308,15 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         boolean need_escape = false;
         p = start;
         pend = start+len;
-        Pattern.CompileContext ctx = kcode.getContext();
+        CompileContext ctx = kcode.getContext();
         while(p<pend) {
             if(s[p] == '/' || (!(' ' == s[p] || (!Character.isWhitespace(s[p]) && 
                                                  !Character.isISOControl(s[p]))) && 
-                               !Pattern.ismbchar(s[p],ctx))) {
+                               !MBC.ismbchar(s[p],ctx))) {
                 need_escape = true;
                 break;
             }
-            p += Pattern.mbclen(s[p],ctx);
+            p += MBC.mbclen(s[p],ctx);
         }
         if(!need_escape) {
             sb.append(new ByteList(s,start,len,false).toString());
@@ -318,15 +324,15 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             p = 0;
             while(p < pend) {
                 if(s[p] == '\\') {
-                    int n = Pattern.mbclen(s[p+1],ctx) + 1;
+                    int n = MBC.mbclen(s[p+1],ctx) + 1;
                     sb.append(new ByteList(s,p,n,false).toString());
                     p += n;
                     continue;
                 } else if(s[p] == '/') {
                     sb.append("\\/");
-                } else if(Pattern.ismbchar(s[p],ctx)) {
-                    sb.append(new ByteList(s,p,Pattern.mbclen(s[p],ctx),false).toString());
-                    p += Pattern.mbclen(s[p],ctx);
+                } else if(MBC.ismbchar(s[p],ctx)) {
+                    sb.append(new ByteList(s,p,MBC.mbclen(s[p],ctx),false).toString());
+                    p += MBC.mbclen(s[p],ctx);
                     continue;
                 } else if((' ' == s[p] || (!Character.isWhitespace(s[p]) && 
                                            !Character.isISOControl(s[p])))) {
@@ -424,7 +430,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                 if(args[1] instanceof RubyFixnum) {
                     flags = RubyNumeric.fix2int(args[1]);
                 } else if(args[1].isTrue()) {
-                    flags = Pattern.RE_OPTION_IGNORECASE;
+                    flags = RE_OPTION_IGNORECASE;
                 }
             }
             if(args.length == 3 && !args[2].isNil()) {
@@ -561,13 +567,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         ByteList srcbs = src.getByteList();
         e = bs.length();
         RubyString val = null;
-        Pattern.CompileContext ctx = kcode.getContext();
+        CompileContext ctx = kcode.getContext();
 
         while(s < e) {
             int ss = s;
             c = bs.charAt(s++);
-            if(Pattern.ismbchar(c,ctx)) {
-                s += Pattern.mbclen(c,ctx) - 1;
+            if(MBC.ismbchar(c,ctx)) {
+                s += MBC.mbclen(c,ctx) - 1;
                 continue;
             }
             if(c != '\\' || s == e) {
@@ -653,7 +659,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     @JRubyMethod(name = "casefold?")
     public IRubyObject casefold_p() {
         rb_reg_check(this);
-        if((ptr.options & Pattern.RE_OPTION_IGNORECASE) != 0) {
+        if((ptr.options & RE_OPTION_IGNORECASE) != 0) {
             return getRuntime().getTrue();
         }
         return getRuntime().getFalse();
@@ -687,7 +693,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
 
 
-    private final static int EMBEDDABLE = Pattern.RE_OPTION_MULTILINE|Pattern.RE_OPTION_IGNORECASE|Pattern.RE_OPTION_EXTENDED;
+    private final static int EMBEDDABLE = RE_OPTION_MULTILINE|RE_OPTION_IGNORECASE|RE_OPTION_EXTENDED;
 
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
@@ -706,11 +712,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                 if((l -= 2) > 0) {
                     do {
                         if(_str[p] == 'm') {
-                            options |= Pattern.RE_OPTION_MULTILINE;
+                            options |= RE_OPTION_MULTILINE;
                         } else if(_str[p] == 'i') {
-                            options |= Pattern.RE_OPTION_IGNORECASE;
+                            options |= RE_OPTION_IGNORECASE;
                         } else if(_str[p] == 'x') {
-                            options |= Pattern.RE_OPTION_EXTENDED;
+                            options |= RE_OPTION_EXTENDED;
                         } else {
                             break;
                         }
@@ -722,11 +728,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                     --l;
                     do {
                         if(_str[p] == 'm') {
-                            options &= ~Pattern.RE_OPTION_MULTILINE;
+                            options &= ~RE_OPTION_MULTILINE;
                         } else if(_str[p] == 'i') {
-                            options &= ~Pattern.RE_OPTION_IGNORECASE;
+                            options &= ~RE_OPTION_IGNORECASE;
                         } else if(_str[p] == 'x') {
-                            options &= ~Pattern.RE_OPTION_EXTENDED;
+                            options &= ~RE_OPTION_EXTENDED;
                         } else {
                             break;
                         }
@@ -784,11 +790,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         int pend = l;
         boolean need_escape = false;
         while(p<pend) {
-            if(str.bytes[p] == '/' || (!ISPRINT(str.bytes[p]) && !Pattern.ismbchar(str.bytes[p],kcode.getContext()))) {
+            if(str.bytes[p] == '/' || (!ISPRINT(str.bytes[p]) && !MBC.ismbchar(str.bytes[p],kcode.getContext()))) {
                 need_escape = true;
                 break;
             }
-            p += Pattern.mbclen(str.bytes[p],kcode.getContext());
+            p += MBC.mbclen(str.bytes[p],kcode.getContext());
         }
         if(!need_escape) {
             ss.cat(str.bytes,s,l);
@@ -796,7 +802,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             p = s; 
             while(p<pend) {
                 if(str.bytes[p] == '\\') {
-                    int n = Pattern.mbclen(str.bytes[p+1],kcode.getContext()) + 1;
+                    int n = MBC.mbclen(str.bytes[p+1],kcode.getContext()) + 1;
                     ss.cat(str.bytes,p,n);
                     p += n;
                     continue;
@@ -804,9 +810,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                     char c = '\\';
                     ss.cat((byte)c);
                     ss.cat(str.bytes,p,1);
-                } else if(Pattern.ismbchar(str.bytes[p],kcode.getContext())) {
-                    ss.cat(str.bytes,p,Pattern.mbclen(str.bytes[p],kcode.getContext()));
-                    p += Pattern.mbclen(str.bytes[p],kcode.getContext());
+                } else if(MBC.ismbchar(str.bytes[p],kcode.getContext())) {
+                    ss.cat(str.bytes,p,MBC.mbclen(str.bytes[p],kcode.getContext()));
+                    p += MBC.mbclen(str.bytes[p],kcode.getContext());
                     continue;
                 } else if(ISPRINT(str.bytes[p])) {
                     ss.cat(str.bytes,p,1);
@@ -861,12 +867,12 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         int s = bs.begin;
         char c;
         int send = s+bs.length();
-        Pattern.CompileContext ctx = kcode.getContext();
+        CompileContext ctx = kcode.getContext();
         meta_found: do {
             for(; s<send; s++) {
                 c = (char)(bs.bytes[s]&0xFF);
-                if(Pattern.ismbchar(c,ctx)) {
-                    int n = Pattern.mbclen(c,ctx);
+                if(MBC.ismbchar(c,ctx)) {
+                    int n = MBC.mbclen(c,ctx);
                     while(n-- > 0 && s < send) {
                         s++;
                     }
@@ -891,8 +897,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
         for(; s<send; s++) {
             c = (char)(bs.bytes[s]&0xFF);
-            if(Pattern.ismbchar(c,ctx)) {
-                int n = Pattern.mbclen(c,ctx);
+            if(MBC.ismbchar(c,ctx)) {
+                int n = MBC.mbclen(c,ctx);
                 while(n-- > 0 && s < send) {
                     b1.bytes[tix++] = bs.bytes[s++];
                 }
