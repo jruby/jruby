@@ -74,6 +74,7 @@ test_comparable
 test_core_arities
 test_date_time
 test_defined
+test_dir
 #test_digest2
 test_dup_clone_taint_freeze
 test_env

@@ -77,7 +77,13 @@ public class RubyFile extends RubyIO {
     private static final int FNM_PATHNAME = 2;
     private static final int FNM_DOTMATCH = 4;
     private static final int FNM_CASEFOLD = 8;
-    
+
+    private static final boolean IS_WINDOWS;
+    static {
+        String osname = System.getProperty("os.name");
+        IS_WINDOWS = osname != null && osname.toLowerCase().indexOf("windows") != -1;
+    }
+
     protected String path;
     private FileLock currentLock;
     
@@ -582,17 +588,47 @@ public class RubyFile extends RubyIO {
     
     public static IRubyObject dirname(IRubyObject recv, IRubyObject arg) {
         RubyString filename = RubyString.stringValue(arg);
-        String name = filename.toString().replace('\\', '/');
+        String jfilename = filename.toString();
+        String name = jfilename.replace('\\', '/');
+        boolean trimmedSlashes = false;
+
         while (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
+            trimmedSlashes = true;
             name = name.substring(0, name.length() - 1);
         }
-        //TODO deal with drive letters A: and UNC names
-        int index = name.lastIndexOf('/');
-        if (index == -1) return recv.getRuntime().newString(".");
-        if (index == 0) return recv.getRuntime().newString("/");
 
-        return recv.getRuntime().newString(name.substring(0, index)).infectBy(filename);
+        String result;
+        if (IS_WINDOWS && name.length() == 2 &&
+                isWindowsDriveLetter(name.charAt(0)) && name.charAt(1) == ':') {
+            // C:\ is returned unchanged (after slash trimming)
+            if (trimmedSlashes) {
+                result = jfilename.substring(0, 3);
+            } else {
+                result = jfilename.substring(0, 2) + '.';
+            }
+        } else {
+            //TODO deal with UNC names
+            int index = name.lastIndexOf('/');
+            if (index == -1) return recv.getRuntime().newString(".");
+            if (index == 0) return recv.getRuntime().newString("/");
+
+            // Include additional path separator (e.g. C:\myfile.txt becomes C:\, not C:)
+            if (IS_WINDOWS && index == 2 && 
+                    isWindowsDriveLetter(name.charAt(0)) && name.charAt(1) == ':') {
+                index++;
+            }
+            
+            result = jfilename.substring(0, index);
+         }
+
+         return recv.getRuntime().newString(result).infectBy(filename);
+
     }
+
+    private static boolean isWindowsDriveLetter(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    }
+
     
     /**
      * Returns the extension name of the file. An empty string is returned if 
