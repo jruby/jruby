@@ -40,7 +40,6 @@ testIf.rb
 testInspect.rb
 testInstantiatingInterfaces.rb
 testInteger.rb
-testIO.rb
 testJavaArraySupport.rb
 testKernel.rb
 testLine.rb
