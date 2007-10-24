@@ -153,8 +153,7 @@
               <include>test/**/*.txt</include>
               <include>test/*index</include>
               <include>test/**/*.yml</include>
-              <include>test/RubyInitTest.jar</include>
-              <include>test/requireTarget.jar</include>
+              <include>test/*.jar</include>
             </includes>
           </testResource>
           <testResource>
