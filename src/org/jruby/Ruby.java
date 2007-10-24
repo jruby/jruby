@@ -1161,6 +1161,9 @@ public final class Ruby {
     private void init() {
         ThreadContext tc = getCurrentContext();
 
+        defineGlobalVERBOSE();
+        defineGlobalDEBUG();
+
         this.regexpFactory = RegexpFactory.getFactory(this.config.getDefaultRegexpEngine());
 
         javaSupport = new JavaSupport(this);
@@ -2368,5 +2371,44 @@ public final class Ruby {
     
     public static POSIX getPosix() {
         return posix;
+    }
+    
+    private void defineGlobalVERBOSE() {
+        // $VERBOSE can be true, false, or nil.  Any non-false-nil value will get stored as true
+        getGlobalVariables().define("$VERBOSE", new IAccessor() {
+            public IRubyObject getValue() {
+                return getVerbose();
+            }
+
+            public IRubyObject setValue(IRubyObject newValue) {
+                if (newValue.isNil()) {
+                    setVerbose(newValue);
+                } else {
+                    setVerbose(newBoolean(newValue != getFalse()));
+                }
+
+                return newValue;
+            }
+        });
+    }
+
+    private void defineGlobalDEBUG() {
+        IAccessor d = new IAccessor() {
+            public IRubyObject getValue() {
+                return getDebug();
+            }
+
+            public IRubyObject setValue(IRubyObject newValue) {
+                if (newValue.isNil()) {
+                    setDebug(newValue);
+                } else {
+                    setDebug(newBoolean(newValue != getFalse()));
+                }
+
+                return newValue;
+            }
+            };
+        getGlobalVariables().define("$DEBUG", d);
+        getGlobalVariables().define("$-d", d);
     }
 }

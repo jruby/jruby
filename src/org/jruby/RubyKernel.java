@@ -786,7 +786,7 @@ public class RubyKernel {
     @JRubyMethod(name = "warn", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject warn(IRubyObject recv, IRubyObject message) {
         Ruby runtime = recv.getRuntime();
-        if (!runtime.getGlobalVariables().get("$VERBOSE").isNil()) {
+        if (runtime.getWarnings().isVerbose()) {
             IRubyObject out = runtime.getObject().fastGetConstant("STDERR");
             RubyIO io = (RubyIO) out.convertToType(runtime.getIO(), 0, "to_io", true); 
             io.puts(new IRubyObject[] { message });
