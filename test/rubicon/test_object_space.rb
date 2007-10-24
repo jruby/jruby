@@ -93,4 +93,28 @@ class TestObjectSpace < Test::Unit::TestCase
     assert_bag_equal([c, d], res)
   end
 
+  # Demonstrate NPE referencing gc'ed var in conditional (JRUBY-1125)
+  def test_object_ref_goes_away
+    # make an object
+    x = 'xxx'
+
+    # save the id
+    n = x.object_id
+
+    # nil the reference
+    x = nil
+
+    # force GC (and wait until var is gone)
+    GC.start
+    sleep 1
+
+    # straight reference should succeed
+    assert_nil(ObjectSpace._id2ref n)
+
+    # reference in conditional caused NPE
+    assert_nothing_raised {
+      if ObjectSpace._id2ref n
+      end
+    }
+  end
 end
