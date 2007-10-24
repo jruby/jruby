@@ -28,7 +28,7 @@ public abstract class REJConstants {
     public final static int REG_UNSET_VALUE = -1;
 
     public final static int NUM_NONREG_ITEMS = 4;
-    public final static int NUM_REG_ITEMS = 3;
+    public final static int NUM_REG_ITEMS = 2;
     public final static int NUM_COUNT_ITEMS = 2;
 
     public final static int NFAILURES=80;

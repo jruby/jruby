@@ -68,7 +68,6 @@ class MatchEnvironment {
     private int[] old_regend;
 
     private static class RegisterInfoType {
-        public char word;
         public boolean is_active;
         public boolean matched_something;
     }
@@ -76,6 +75,8 @@ class MatchEnvironment {
     private RegisterInfoType[] reg_info;
     private int[] best_regstart;
     private int[] best_regend;
+
+    private Registers regs;
 
     public MatchEnvironment(Pattern p, byte[] string_arg, int string_start, int size, int pos, int beg, Registers regs) {
         this.size = size;
@@ -90,6 +91,8 @@ class MatchEnvironment {
         this.self = p;
         this.ctx = p.ctx;
         this.pos = pos;
+
+        this.regs = regs;
 
         regstart = new int[num_regs];
         regend = new int[num_regs];
@@ -194,13 +197,9 @@ class MatchEnvironment {
         }
                         
         if(stacke - stackp <= (last_used_reg * NUM_REG_ITEMS + NUM_NONREG_ITEMS + 1)) {
-            int[] stackx;
-            int xlen = stacke;
-            stackx = new int[2*xlen];
-            System.arraycopy(stackb,0,stackx,0,xlen);
-            stackb = stackx;
-            stacke = 2*xlen;
+            expandStack();
         }
+
         stackb[stackp++] = num_failure_counts;
         num_failure_counts = 0;
 
@@ -208,12 +207,11 @@ class MatchEnvironment {
         for(this_reg = 1; this_reg <= last_used_reg; this_reg++) {
             stackb[stackp++] = regstart[this_reg];
             stackb[stackp++] = regend[this_reg];
-            stackb[stackp++] = reg_info[this_reg].word;
         }
 
         /* Push how many registers we saved.  */
         stackb[stackp++] = last_used_reg;
-                        
+
         stackb[stackp++] = pattern_place;
         stackb[stackp++] = string_place;
         stackb[stackp++] = (int)optz; /* current option status */
@@ -320,6 +318,7 @@ class MatchEnvironment {
         optz = stackb[--stackp];
         string_pos = stackb[--stackp];
         pix = stackb[--stackp];
+
         /* Restore register info.  */
         int last_used_reg = stackb[--stackp];
 
@@ -333,7 +332,6 @@ class MatchEnvironment {
 
         /* And restore the rest from the stack.  */
         for( ; this_reg > 0; this_reg--) {
-            reg_info[this_reg].word = (char)stackb[--stackp];
             regend[this_reg] = stackb[--stackp];
             regstart[this_reg] = stackb[--stackp];
         }
@@ -532,22 +530,29 @@ class MatchEnvironment {
     }
 
     public final int anychar_repeat() {
+        final boolean notMultiline = (optz&RE_OPTION_MULTILINE)==0;
+        final int posBefore = string_pos;
         for (;;) {
             PUSH_FAILURE_POINT(pix,string_pos);
-            if(string_pos == string_end) {return BREAK_FAIL1;}
+            if(string_pos == string_end) {
+                if(string_pos != posBefore) {
+                    SET_REGS_MATCHED();
+                }
+                return BREAK_FAIL1;
+            }
             if(ismbchar(string[string_pos],ctx)) {
                 if(string_pos + mbclen(string[string_pos],ctx) > string_end) {
                     return BREAK_FAIL1;
                 }
-                SET_REGS_MATCHED();
                 string_pos += mbclen(string[string_pos],ctx);
                 continue;
             }
-            if((optz&RE_OPTION_MULTILINE)==0 &&
-               (TRANSLATE_P() ? ctx.translate[string[string_pos]] : string[string_pos]) == '\n') {
+            if(notMultiline && string[string_pos] == '\n') {
+                if(string_pos != posBefore) {
+                    SET_REGS_MATCHED();
+                }
                 return BREAK_FAIL1;
             }
-            SET_REGS_MATCHED();
             string_pos++;
         }
     }
@@ -875,7 +880,7 @@ class MatchEnvironment {
         return CONTINUE_MAINLOOP;
     }
 
-    public final int run(Registers regs) {
+    public final int run() {
         // This loops over pattern commands.  It exits by returning from the
         // function if match is complete, or it drops through if match fails
         // at this starting point in the input data.  
@@ -900,8 +905,6 @@ class MatchEnvironment {
                     }
 
                     int var = BREAK_NORMAL;
-
-
 
 
                     //System.err.println("--executing " + (int)p[pix] + " at " + pix);
