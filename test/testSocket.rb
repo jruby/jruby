@@ -118,6 +118,7 @@ t = Thread.new {
     ready = false
   end
 }
+sleep 0.1 # on windows, if we don't pause before testing ready, this fails
 Thread.pass until ready
 t.raise
 Thread.pass while ready

@@ -8,6 +8,14 @@ ASTInspector = org.jruby.compiler.ASTInspector
 Block = org.jruby.runtime.Block
 IRubyObject = org.jruby.runtime.builtin.IRubyObject
 
+def silence_warnings
+  verb = $VERBOSE
+  $VERBOSE = nil
+  yield
+ensure
+  $VERBOSE = verb
+end
+
 def compile_to_class(src)
   node = JRuby.parse(src, "testCompiler#{src.object_id}", false)
   filename = node.position.file
@@ -383,8 +391,10 @@ expected = [[1, 2, 3, 4, 5, 6, 7, 8],
       [57, 58, 59, 60, 61, 62, 63, 64]]
 test_equal(expected, compile_and_run(big_triple_flip))
 
-# bug 1305, no values yielded to single-arg block assigns a null into the arg
-test_equal(NilClass, compile_and_run("def foo; yield; end; foo {|x| x.class}"))
+silence_warnings {
+  # bug 1305, no values yielded to single-arg block assigns a null into the arg
+  test_equal(NilClass, compile_and_run("def foo; yield; end; foo {|x| x.class}"))
+}
 
 # ensure that invalid classes and modules raise errors
 AFixnum = 1;
