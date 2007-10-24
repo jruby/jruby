@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Run from your JRuby home directory....More smarts needed here.
+
+###### Change these to tastes ######
+JAY=jay
+RUBY=ruby
+###### Do not change below ######
+
+PARSER_DIR=src/org/jruby/parser
+
+pushd $PARSER_DIR
+
+# Generate grammar as intermediate file
+$JAY DefaultRubyParser.y < skeleton.parser | grep -v "^//t" >DefaultRubyParser.out
+
+# Patch file to get around Java static initialization issues plus extract
+# a bunch of stuff to seperate file (yytables).
+$RUBY ../../../../bin/patch_parser.rb DefaultRubyParser.out > DefaultRubyParser.java
+rm -f DefaultRubyParser.out
+
+popd
