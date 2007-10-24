@@ -38,6 +38,8 @@ package org.jruby;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Block;
@@ -236,7 +238,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_s_quote
      * 
      */
-    @JRubyMethod(name = {"quote", "escape"}, required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = "quote", required = 1, optional = 1, meta = true)
     public static IRubyObject quote(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0 || args.length > 2) {
             throw recv.getRuntime().newArgumentError(0, args.length);
@@ -258,7 +260,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             // decode with the specified encoding, escape as appropriate, and reencode
             // FIXME: This could probably be more efficent.
             ByteList bytes = str.getByteList();
-            CharBuffer decoded = kcode.decoder().decode(ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), bytes.length()));
+            CharsetDecoder decoder = kcode.decoder();
+            decoder.onMalformedInput(CodingErrorAction.REPLACE);
+            CharBuffer decoded = decoder.decode(ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), bytes.length()));
             String escaped = escapeSpecialChars(decoded.toString());
             ByteBuffer encoded = kcode.encoder().encode(CharBuffer.wrap(escaped));
             
@@ -269,6 +273,10 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
     }
 
+    /**
+     * Utility version of quote that doesn't use encoding
+     */
+    @JRubyMethod(name = "escape", required = 1, meta = true)
     public static IRubyObject quote(IRubyObject recv, IRubyObject str) {        
         return recv.getRuntime().newString(escapeSpecialChars(str.toString())).infectBy(str);
     }
