@@ -28,22 +28,19 @@ import static org.rej.Bytecodes.*;
 
 class MatchEnvironment {
     private byte[] p;
-    private char c;
-    private int p1;
     private int pix;
-    private int pend;
+    private final int pend;
     private int optz;
-    private int num_regs;
-    private byte[] string;
-    private int string_start;
-    private int mcnt;
-    private int d;
-    private int dend;
+    private final int num_regs;
+    private final byte[] string;
+    private final int string_start;
+    private int string_pos;
+    private final int string_end;
     private int pos;
     private int beg;
-    private int size;
+    private final int size;
 
-    private CompileContext ctx;
+    private final CompileContext ctx;
 
     /* Failure point stack.  Each place that can handle a failure further
        down the line pushes a failure point on this stack.  It consists of
@@ -54,15 +51,15 @@ class MatchEnvironment {
        scanning the strings.  If the latter is zero, the failure point is a
        ``dummy''; if a failure happens and the failure point is a dummy, it
        gets discarded and the next next one is tried.  */
-    private int[] stacka;
+
     private int[] stackb;
     private int stackp;
     private int stacke;
-
+    
     private boolean best_regs_set = false;
     private int num_failure_counts = 0;
 
-    private Pattern self;
+    private final Pattern self;
 
     /* stack & working area for re_match() */
     private int[] regstart;
@@ -80,38 +77,78 @@ class MatchEnvironment {
     private int[] best_regstart;
     private int[] best_regend;
 
+    public MatchEnvironment(Pattern p, byte[] string_arg, int string_start, int size, int pos, int beg, Registers regs) {
+        this.size = size;
+        this.beg = beg;
+        this.p = p.buffer;
+        this.pix = 0;
+        this.pend = p.used;
+        this.num_regs = p.re_nsub;
+        this.string = string_arg;
+        this.string_start = string_start;
+        this.optz = (int)p.options;
+        this.self = p;
+        this.ctx = p.ctx;
+        this.pos = pos;
 
-    public final boolean TRANSLATE_P() {
+        regstart = new int[num_regs];
+        regend = new int[num_regs];
+        old_regstart = new int[num_regs];
+        old_regend = new int[num_regs];
+        reg_info = new RegisterInfoType[num_regs];
+        for(int x=0;x<reg_info.length;x++) {
+            reg_info[x] = new RegisterInfoType();
+        }
+        best_regstart = new int[num_regs];
+        best_regend = new int[num_regs];
+
+        if(regs != null) {
+            regs.init_regs(num_regs);
+        }
+
+        init_stack();
+        init_registers();
+
+        /* Set up pointers to ends of strings.
+           Don't allow the second string to be empty unless both are empty.  */
+
+        /* `p' scans through the pattern as `d' scans through the data. `string_end'
+           is the end of the input string that `d' points within. `d' is
+           advanced into the following input string whenever necessary, but
+           this happens before fetching; therefore, at the beginning of the
+           loop, `d' can be pointing at the end of a string, but it cannot
+           equal string2.  */
+
+        string_pos = string_start+pos; string_end = string_start+size;
+    }
+
+    private final boolean TRANSLATE_P() {
         return ((optz&RE_OPTION_IGNORECASE)!=0 && ctx.translate!=null);
     }
 
-    public final boolean MAY_TRANSLATE() {
-        return ((self.options&(RE_OPTION_IGNORECASE|RE_MAY_IGNORECASE))!=0 && ctx.translate!=null);
-    }
-
-    public final void init_stack() {
+    private final void init_stack() {
         /* Initialize the stack. */
+
         int i = -1;
         synchronized(self) {
             i = self.poolIndex++;
         }
         if(i < self.pool.length) {
-            stacka = self.pool[i];
+            stackb = self.pool[i];
         } else {
-            stacka = new int[(num_regs*NUM_REG_ITEMS + NUM_NONREG_ITEMS)*NFAILURES];
+            stackb = new int[(num_regs*NUM_REG_ITEMS + NUM_NONREG_ITEMS)*NFAILURES];
         }
 
-        stackb = stacka;
         stackp = 0;
         stacke = stackb.length;
     }
 
-    public final void init_registers() {
+    private final void init_registers() {
         /* Initialize subexpression text positions to -1 to mark ones that no
            ( or ( and ) or ) has been seen for. Also set all registers to
            inactive and mark them as not having matched anything or ever
            failed. */
-        for(mcnt = 0; mcnt < num_regs; mcnt++) {
+        for(int mcnt = 0; mcnt < num_regs; mcnt++) {
             regstart[mcnt] = regend[mcnt]
                 = old_regstart[mcnt] = old_regend[mcnt]
                 = best_regstart[mcnt] = best_regend[mcnt] = REG_UNSET_VALUE;
@@ -120,13 +157,13 @@ class MatchEnvironment {
         }
     }
 
-    public final void POP_FAILURE_COUNT() {
+    private final void POP_FAILURE_COUNT() {
         int ptr = stackb[--stackp];
         int count = stackb[--stackp];
         STORE_NUMBER(p, ptr, count);
     }
 
-    public final void POP_FAILURE_POINT() {
+    private final void POP_FAILURE_POINT() {
         long temp;
         stackp -= NUM_NONREG_ITEMS;	/* Remove failure points (and flag). */
         temp = stackb[--stackp];	/* How many regs pushed.  */
@@ -139,13 +176,13 @@ class MatchEnvironment {
         num_failure_counts = 0;	/* Reset num_failure_counts.  */
     }
 
-    public final void SET_REGS_MATCHED() {
+    private final void SET_REGS_MATCHED() {
         for(int this_reg = 0; this_reg < num_regs; this_reg++) {
             reg_info[this_reg].matched_something = reg_info[this_reg].is_active;
         }
     }
 
-    public final void PUSH_FAILURE_POINT(int pattern_place, int string_place) {
+    private final void PUSH_FAILURE_POINT(int pattern_place, int string_place) {
         int last_used_reg, this_reg;
 
         /* Find out how many registers are active or have been matched.
@@ -183,9 +220,9 @@ class MatchEnvironment {
         stackb[stackp++] = 0; /* non-greedy flag */
     }
 
-    public final int duplicate() {
+    private final int duplicate() {
         int regno = p[pix++];   /* Get which register to match against */
-        int d2, dend2;
+        int string_pos2, string_end2;
 
         /* Check if there's corresponding group */
         if(regno >= num_regs) {
@@ -197,8 +234,8 @@ class MatchEnvironment {
         }
 
         /* Where in input to try to start matching.  */
-        d2 = regstart[regno];
-        if(d2 == REG_UNSET_VALUE) {
+        string_pos2 = regstart[regno];
+        if(string_pos2 == REG_UNSET_VALUE) {
             return BREAK_FAIL1;
         }
 
@@ -207,46 +244,46 @@ class MatchEnvironment {
            set to the place to stop, otherwise, for now have to use
            the end of the first string.  */
 
-        dend2 = regend[regno];
-        if(dend2 == REG_UNSET_VALUE) {
+        string_end2 = regend[regno];
+        if(string_end2 == REG_UNSET_VALUE) {
             return BREAK_FAIL1;
         }
 
         for(;;) {
             /* At end of register contents => success */
-            if(d2 == dend2) {
+            if(string_pos2 == string_end2) {
                 break;
             }
 
             /* If necessary, advance to next segment in data.  */
-            if(d == dend) {return BREAK_FAIL1;}
+            if(string_pos == string_end) {return BREAK_FAIL1;}
 
             /* How many characters left in this segment to match.  */
-            mcnt = dend - d;
+            int mcnt = string_end - string_pos;
 
             /* Want how many consecutive characters we can match in
                one shot, so, if necessary, adjust the count.  */
-            if(mcnt > dend2 - d2) {
-                mcnt = dend2 - d2;
+            if(mcnt > string_end2 - string_pos2) {
+                mcnt = string_end2 - string_pos2;
             }
 
             /* Compare that many; failure if mismatch, else move
                past them.  */
-            if(((self.options & RE_OPTION_IGNORECASE) != 0) ? self.memcmp_translate(string, string_start+d, string_start+d2, mcnt)!=0 : memcmp(string, string_start+d, string_start+d2, mcnt)!=0) {
+            if(((self.options & RE_OPTION_IGNORECASE) != 0) ? self.memcmp_translate(string, string_pos, string_pos2, mcnt)!=0 : memcmp(string, string_pos, string_pos2, mcnt)!=0) {
                 return BREAK_FAIL1;
             }
-            d += mcnt;
-            d2 += mcnt;
+            string_pos += mcnt;
+            string_pos2 += mcnt;
         }
         return BREAK_NORMAL;
     }
 
-    public final boolean is_in_list_sbc(int cx, byte[] b, int bix) {
+    private static final boolean is_in_list_sbc(int cx, byte[] b, int bix) {
         int size = b[bix++]&0xFF;
         return cx/8 < size && ((b[bix + cx/8]&0xFF)&(1<<cx%8)) != 0;
     }
   
-    public final boolean is_in_list_mbc(int cx, byte[] b, int bix) {
+    private static final boolean is_in_list_mbc(int cx, byte[] b, int bix) {
         int size = b[bix++]&0xFF;
         bix+=size+2;
         size = EXTRACT_UNSIGNED(b,bix-2);
@@ -265,13 +302,13 @@ class MatchEnvironment {
         return i<size && EXTRACT_MBC(b,bix+i*8) <= cx;
     }        
 
-    public final boolean is_in_list(int cx, byte[] b, int bix) {
+    private final boolean is_in_list(int cx, byte[] b, int bix) {
         return is_in_list_sbc(cx, b, bix) || (ctx.current_mbctype!=0 ? is_in_list_mbc(cx, b, bix) : false);
     }
 
-    public final int handle_fail() {
+    private final int handle_fail() {
         /* A restart point is known.  Restart there and pop it. */
-        int last_used_reg, this_reg;
+        int this_reg;
 
         /* If this failure point is from a dummy_failure_point, just
            skip it.  */
@@ -281,10 +318,10 @@ class MatchEnvironment {
         }
         stackp--;		/* discard greedy flag */
         optz = stackb[--stackp];
-        d = stackb[--stackp];
+        string_pos = stackb[--stackp];
         pix = stackb[--stackp];
         /* Restore register info.  */
-        last_used_reg = stackb[--stackp];
+        int last_used_reg = stackb[--stackp];
 
         /* Make the ones that weren't saved -1 or 0 again. */
         for(this_reg = num_regs - 1; this_reg > last_used_reg; this_reg--) {
@@ -300,7 +337,7 @@ class MatchEnvironment {
             regend[this_reg] = stackb[--stackp];
             regstart[this_reg] = stackb[--stackp];
         }
-        mcnt = stackb[--stackp];
+        int mcnt = stackb[--stackp];
         while(mcnt-->0) {
             int ptr = stackb[--stackp];
             int count = stackb[--stackp];
@@ -310,7 +347,7 @@ class MatchEnvironment {
             int is_a_jump_n = 0;
             int failed_paren = 0;
 
-            p1 = pix;
+            int p1 = pix;
             /* If failed to a backwards jump that's part of a repetition
                loop, need to pop this failure point and use the next one.  */
             switch(p[p1]) {
@@ -335,7 +372,7 @@ class MatchEnvironment {
                         mcnt = EXTRACT_NUMBER(p, p1);
                         p1+=2;
 
-                        PUSH_FAILURE_POINT(p1+mcnt,d);
+                        PUSH_FAILURE_POINT(p1+mcnt,string_pos);
                         stackb[stackp-1] = NON_GREEDY;
                     }
                     return 0;
@@ -349,14 +386,14 @@ class MatchEnvironment {
     }
 
     private final void fix_regs() {
-        for(mcnt = 0; mcnt < num_regs; mcnt++) {
+        for(int mcnt = 0; mcnt < num_regs; mcnt++) {
             regstart[mcnt] = best_regstart[mcnt];
             regend[mcnt] = best_regend[mcnt];
         }
     }
 
     private final void fix_best_regs() {
-        for(mcnt = 1; mcnt < num_regs; mcnt++) {
+        for(int mcnt = 1; mcnt < num_regs; mcnt++) {
             best_regstart[mcnt] = regstart[mcnt];
             best_regend[mcnt] = regend[mcnt];
         }
@@ -364,16 +401,16 @@ class MatchEnvironment {
 
     public final int restore_best_regs() {
         /* If not end of string, try backtracking.  Otherwise done.  */
-        if((self.options&RE_OPTION_LONGEST)!=0 && d != dend) {
+        if((self.options&RE_OPTION_LONGEST)!=0 && string_pos != string_end) {
             if(best_regs_set) {/* non-greedy, no need to backtrack */
                 /* Restore best match.  */
-                d = best_regend[0];
+                string_pos = best_regend[0];
                 fix_regs();
                 return 0;
             }
             while(stackp != 0 && stackb[stackp-1] == NON_GREEDY) {
                 if(best_regs_set) {/* non-greedy, no need to backtrack */
-                    d = best_regend[0];
+                    string_pos = best_regend[0];
                     fix_regs();
                     return 0;
                 }
@@ -383,16 +420,16 @@ class MatchEnvironment {
                 /* More failure points to try.  */
 
                 /* If exceeds best match so far, save it.  */
-                if(!best_regs_set || (d > best_regend[0])) {
+                if(!best_regs_set || (string_pos > best_regend[0])) {
                     best_regs_set = true;
-                    best_regend[0] = d;	/* Never use regstart[0].  */
+                    best_regend[0] = string_pos;	/* Never use regstart[0].  */
                     fix_best_regs();
                 }
                 return 1;
             } /* If no failure points, don't restore garbage.  */
             else if(best_regs_set) {
                 /* Restore best match.  */
-                d = best_regend[0];
+                string_pos = best_regend[0];
                 fix_regs();
             }
         }
@@ -404,22 +441,22 @@ class MatchEnvironment {
            to indices.  */
         if(regs != null) {
             regs.beg[0] = pos;
-            regs.end[0] = d;
-            for(mcnt = 1; mcnt < num_regs; mcnt++) {
+            regs.end[0] = string_pos-string_start;
+            for(int mcnt = 1; mcnt < num_regs; mcnt++) {
                 if(regend[mcnt] == REG_UNSET_VALUE) {
                     regs.beg[mcnt] = -1;
                     regs.end[mcnt] = -1;
                     continue;
                 }
-                regs.beg[mcnt] = regstart[mcnt];
-                regs.end[mcnt] = regend[mcnt];
+                regs.beg[mcnt] = regstart[mcnt] - string_start;
+                regs.end[mcnt] = regend[mcnt] - string_start;
             }
         }
     }
         
     public final int start_memory() {
         old_regstart[p[pix]] = regstart[p[pix]];
-        regstart[p[pix]] = d;
+        regstart[p[pix]] = string_pos;
         reg_info[p[pix]].is_active = true;
         reg_info[p[pix]].matched_something = false;
         pix += 2;
@@ -428,44 +465,44 @@ class MatchEnvironment {
 
     public final int stop_memory() {
         old_regend[p[pix]] = regend[p[pix]];
-        regend[p[pix]] = d;
+        regend[p[pix]] = string_pos;
         reg_info[p[pix]].is_active = false;
         pix += 2;
         return CONTINUE_MAINLOOP;
     }
 
     public final int anychar() {
-        if(d == dend) {return BREAK_FAIL1;}
-        if(ismbchar(string[string_start+d],ctx)) {
-            if(d + mbclen(string[string_start+d],ctx) > dend) {
+        if(string_pos == string_end) {return BREAK_FAIL1;}
+        if(ismbchar(string[string_pos],ctx)) {
+            if(string_pos + mbclen(string[string_pos],ctx) > string_end) {
                 return BREAK_FAIL1;
             }
             SET_REGS_MATCHED();
-            d += mbclen(string[string_start+d],ctx);
+            string_pos += mbclen(string[string_pos],ctx);
             return BREAK_NORMAL;
         }
         if((optz&RE_OPTION_MULTILINE)==0
-           && (TRANSLATE_P() ? ctx.translate[string[string_start+d]] : string[string_start+d]) == '\n') {
+           && (TRANSLATE_P() ? ctx.translate[string[string_pos]] : string[string_pos]) == '\n') {
             return 1;
         }
         SET_REGS_MATCHED();
-        d++;
+        string_pos++;
         return 0;
     }
 
     public final int charset() {
         boolean not;	    /* Nonzero for charset_not.  */
         boolean part = false;	    /* true if matched part of mbc */
-        int dsave = d + 1;
+        int dsave = string_pos + 1;
         int cc;
                     
-        if(d == dend) {return BREAK_FAIL1;}
+        if(string_pos == string_end) {return BREAK_FAIL1;}
                         
-        c = (char)(string[string_start+d++]&0xFF);
+        char c = (char)(string[string_pos++]&0xFF);
         if(ismbchar(c,ctx)) {
-            if(d + mbclen(c,ctx) - 1 <= dend) {
+            if(string_pos + mbclen(c,ctx) - 1 <= string_end) {
                 cc = c;
-                c = self.MBC2WC(c, string, string_start+d);
+                c = self.MBC2WC(c, string, string_pos);
                 not = is_in_list_mbc(c, p, pix);
                 if(!not) {
                     part = not = is_in_list_sbc(cc, p, pix);
@@ -489,36 +526,35 @@ class MatchEnvironment {
         SET_REGS_MATCHED();
                     
         if(part) {
-            d = dsave;
+            string_pos = dsave;
         }
         return CONTINUE_MAINLOOP;
     }
 
     public final int anychar_repeat() {
         for (;;) {
-            PUSH_FAILURE_POINT(pix,d);
-            if(d == dend) {return BREAK_FAIL1;}
-            if(ismbchar(string[string_start+d],ctx)) {
-                if(d + mbclen(string[string_start+d],ctx) > dend) {
+            PUSH_FAILURE_POINT(pix,string_pos);
+            if(string_pos == string_end) {return BREAK_FAIL1;}
+            if(ismbchar(string[string_pos],ctx)) {
+                if(string_pos + mbclen(string[string_pos],ctx) > string_end) {
                     return BREAK_FAIL1;
                 }
                 SET_REGS_MATCHED();
-                d += mbclen(string[string_start+d],ctx);
+                string_pos += mbclen(string[string_pos],ctx);
                 continue;
             }
             if((optz&RE_OPTION_MULTILINE)==0 &&
-               (TRANSLATE_P() ? ctx.translate[string[string_start+d]] : string[string_start+d]) == '\n') {
+               (TRANSLATE_P() ? ctx.translate[string[string_pos]] : string[string_pos]) == '\n') {
                 return BREAK_FAIL1;
             }
             SET_REGS_MATCHED();
-            d++;
+            string_pos++;
         }
     }
 
     public final int maybe_finalize_jump() {
-        mcnt = EXTRACT_NUMBER(p,pix);
-        pix+=2;
-        p1 = pix;
+        int mcnt = EXTRACT_AND_INCR_PIX();
+        int p1 = pix;
 
         /* Compare the beginning of the repeat with what in the
            pattern follows its end. If we can establish that there
@@ -547,7 +583,7 @@ class MatchEnvironment {
         if(p1 == pend) {
             p[pix-3] = finalize_jump;
         } else if(p[p1] == exactn || p[p1] == endline) {
-            c = p[p1] == endline ? '\n' : (char)(p[p1+2]&0xFF);
+            char c = p[p1] == endline ? '\n' : (char)(p[p1+2]&0xFF);
             int p2 = pix+mcnt;
             /* p2[0] ... p2[2] are an on_failure_jump.
                Examine what follows that.  */
@@ -574,9 +610,8 @@ class MatchEnvironment {
         pix -= 2;		/* Point at relative address again.  */
         if(p[pix-1] != finalize_jump) {
             p[pix-1] = jump;	
-            mcnt = EXTRACT_NUMBER(p, pix);
-            pix += 2;
-            if(mcnt < 0 && stackp > 2 && stackb[stackp-3] == d) {/* avoid infinite loop */
+            mcnt = EXTRACT_AND_INCR_PIX();
+            if(mcnt < 0 && stackOutOfRange()) {/* avoid infinite loop */
                 return 1;
             }
             pix += mcnt;
@@ -588,7 +623,7 @@ class MatchEnvironment {
     public final int push_dummy_failure() {
         /* See comments just above at `dummy_failure_jump' about the
            two zeroes.  */
-        p1 = pix;
+        int p1 = pix;
         /* Skip over open/close-group commands.  */
         while(p1 + 2 < pend) {
             if(p[p1] == stop_memory ||
@@ -608,22 +643,30 @@ class MatchEnvironment {
         return CONTINUE_MAINLOOP;
     }
 
+    private final void expandStack() {
+        int[] stackx;
+        int xlen = stacke;
+        stackx = new int[2*xlen];
+        System.arraycopy(stackb,0,stackx,0,xlen);
+        stackb = stackx;
+        stacke = 2*xlen;
+    }
+
+    private final void expandStackIfNeeded() {
+        if(stacke - stackp <= NUM_COUNT_ITEMS) {
+            expandStack();
+        }
+    }
+
     public final int succeed_n() {
-        mcnt = EXTRACT_NUMBER(p, pix + 2);
+        int mcnt = EXTRACT_NUMBER(p, pix + 2);
         /* Originally, this is how many times we HAVE to succeed.  */
         if(mcnt != 0) {
             mcnt--;
             pix += 2;
 
-            c = (char)EXTRACT_NUMBER(p, pix);
-            if(stacke - stackp <= NUM_COUNT_ITEMS) {
-                int[] stackx;
-                int xlen = stacke;
-                stackx = new int[2*xlen];
-                System.arraycopy(stackb,0,stackx,0,xlen);
-                stackb = stackx;
-                stacke = 2*xlen;
-            }
+            char c = (char)EXTRACT_NUMBER(p, pix);
+            expandStackIfNeeded();
             stackb[stackp++] = c;
             stackb[stackp++] = pix;
             num_failure_counts++;
@@ -633,35 +676,26 @@ class MatchEnvironment {
                 
             PUSH_FAILURE_POINT(-1,0);
         } else  {
-            mcnt = EXTRACT_NUMBER(p, pix);
-            pix+=2;
-            PUSH_FAILURE_POINT(pix+mcnt,d);
+            mcnt = EXTRACT_AND_INCR_PIX();
+            PUSH_FAILURE_POINT(pix+mcnt,string_pos);
         }
         return CONTINUE_MAINLOOP;
     }
 
     public final int jump_n() {
-        mcnt = EXTRACT_NUMBER(p, pix + 2);
+        int mcnt = EXTRACT_NUMBER(p, pix + 2);
         /* Originally, this is how many times we CAN jump.  */
         if(mcnt!=0) {
             mcnt--;
 
-            c = (char)EXTRACT_NUMBER(p, pix+2);
-            if(stacke - stackp <= NUM_COUNT_ITEMS) {
-                int[] stackx;
-                int xlen = stacke;
-                stackx = new int[2*xlen];
-                System.arraycopy(stackb,0,stackx,0,xlen);
-                stackb = stackx;
-                stacke = 2*xlen;
-            }
+            char c = (char)EXTRACT_NUMBER(p, pix+2);
+            expandStackIfNeeded();
             stackb[stackp++] = c;
             stackb[stackp++] = pix+2;
             num_failure_counts++;
             STORE_NUMBER(p, pix + 2, mcnt);
-            mcnt = EXTRACT_NUMBER(p, pix);
-            pix += 2;
-            if(mcnt < 0 && stackp > 2 && stackb[stackp-3] == d) {/* avoid infinite loop */
+            mcnt = EXTRACT_AND_INCR_PIX();
+            if(mcnt < 0 && stackOutOfRange()) {/* avoid infinite loop */
                 return BREAK_FAIL1;
             }
             pix += mcnt;
@@ -683,17 +717,17 @@ class MatchEnvironment {
            testing `translate' inside the loop.  */
         if(TRANSLATE_P()) {
             do {
-                if(d == dend) {return BREAK_FAIL1;}
+                if(string_pos == string_end) {return BREAK_FAIL1;}
                 if(p[pix] == (byte)0xff) {
                     pix++;  
                     if(--mcnt==0
-                       || d == dend
-                       || string[string_start+d++] != p[pix++]) {
+                       || string_pos == string_end
+                       || string[string_pos++] != p[pix++]) {
                         return BREAK_FAIL1;
                     }
                     continue;
                 }
-                c = (char)(string[string_start+d++]&0xFF);
+                char c = (char)(string[string_pos++]&0xFF);
                 if(ismbchar(c,ctx)) {
                     int n;
                     if(c != (char)(p[pix++]&0xFF)) {
@@ -701,8 +735,8 @@ class MatchEnvironment {
                     }
                     for(n = mbclen(c,ctx) - 1; n > 0; n--) {
                         if(--mcnt==0
-                           || d == dend
-                           || string[string_start+d++] != p[pix++]) {
+                           || string_pos == string_end
+                           || string[string_pos++] != p[pix++]) {
                             return BREAK_FAIL1;
                         }
                     }
@@ -715,11 +749,11 @@ class MatchEnvironment {
             } while(--mcnt > 0);
         } else {
             do {
-                if(d == dend) {return BREAK_FAIL1;}
+                if(string_pos == string_end) {return BREAK_FAIL1;}
                 if(p[pix] == (byte)0xff) {
                     pix++; mcnt--;
                 }
-                if(string[string_start+d++] != p[pix++]) {
+                if(string[string_pos++] != p[pix++]) {
                     return BREAK_FAIL1;
                 }
             } while(--mcnt > 0);
@@ -729,29 +763,25 @@ class MatchEnvironment {
     }
 
     private final int start_nowidth() {
-        PUSH_FAILURE_POINT(-1,d);
+        PUSH_FAILURE_POINT(-1,string_pos);
         if(stackp > RE_DUP_MAX) {
             return RETURN_M2;
         }
-        int mcnt = EXTRACT_NUMBER(p, pix);
-        pix+=2;
+        int mcnt = EXTRACT_AND_INCR_PIX();
         STORE_NUMBER(p, pix+mcnt, stackp);
         return CONTINUE_MAINLOOP;
     }
 
     private final int stop_nowidth() {
-        int mcnt = EXTRACT_NUMBER(p, pix);
-        pix+=2;
+        int mcnt = EXTRACT_AND_INCR_PIX();
         stackp = mcnt;
-        d = stackb[stackp-3];
+        string_pos = stackb[stackp-3];
         POP_FAILURE_POINT();
         return CONTINUE_MAINLOOP;
     }
 
     private final int stop_backtrack() {
-        int mcnt = EXTRACT_NUMBER(p, pix);
-        pix+=2;
-        stackp = mcnt;
+        stackp = EXTRACT_AND_INCR_PIX();
         POP_FAILURE_POINT();
         return CONTINUE_MAINLOOP;
     }
@@ -764,65 +794,64 @@ class MatchEnvironment {
     }
 
     private final int begline() {
-        if(size == 0 || d == 0) {
+        if(size == 0 || string_pos == string_start) {
             return CONTINUE_MAINLOOP;
         }
-        if(string[string_start+d-1] == '\n' && d != dend) {
+        if(string[string_pos-1] == '\n' && string_pos != string_end) {
             return CONTINUE_MAINLOOP;
         }
         return BREAK_FAIL1;
     }
 
     private final int endline() {
-        if(d == dend) {
+        if(string_pos == string_end) {
             return CONTINUE_MAINLOOP;
-        } else if(string[string_start+d] == '\n') {
+        } else if(string[string_pos] == '\n') {
             return CONTINUE_MAINLOOP;
         }
         return BREAK_FAIL1;
     }
 
     private final int begbuf() {
-        if(d==0) {
+        if(string_pos==string_start) {
             return CONTINUE_MAINLOOP;
         }
         return BREAK_FAIL1;
     }
 
     private final int endbuf() {
-        if(d == dend) {
+        if(string_pos == string_end) {
             return CONTINUE_MAINLOOP;
         }
         return BREAK_FAIL1;
     }
 
     private final int endbuf2() {
-        if(d == dend) {
+        if(string_pos == string_end) {
             return CONTINUE_MAINLOOP;
         }
         /* .. or newline just before the end of the data. */
-        if(string[string_start+d] == '\n' && d+1 == dend) {
+        if(string[string_pos] == '\n' && string_pos+1 == string_end) {
             return CONTINUE_MAINLOOP;
         }
         return BREAK_FAIL1;
     }
 
     private final int begpos() {
-        if(d == beg) {
+        if(string_pos == beg) {
             return CONTINUE_MAINLOOP;
         }
         return BREAK_FAIL1;
     }
 
     private final int on_failure_jump() {
-        int mcnt = EXTRACT_NUMBER(p, pix);
-        pix+=2;
-        PUSH_FAILURE_POINT(pix+mcnt,d);
+        int mcnt = EXTRACT_AND_INCR_PIX();
+        PUSH_FAILURE_POINT(pix+mcnt,string_pos);
         return CONTINUE_MAINLOOP;
     }
 
     private final int finalize_jump() {
-        if(stackp > 2 && stackb[stackp-3] == d) {
+        if(stackp > 2 && stackb[stackp-3] == string_pos) {
             pix = stackb[stackp-4];
             POP_FAILURE_POINT();
             return CONTINUE_MAINLOOP;
@@ -867,7 +896,7 @@ class MatchEnvironment {
                         convert_regs(regs);
 
                         self.uninit_stack();
-                        return d - pos;
+                        return (string_pos-string_start) - pos;
                     }
 
                     int var = BREAK_NORMAL;
@@ -876,7 +905,7 @@ class MatchEnvironment {
 
 
                     //System.err.println("--executing " + (int)p[pix] + " at " + pix);
-                    //System.err.println("-- -- for d: " + d + " and dend: " + dend);
+                    //System.err.println("-- -- for d: " + string_pos + " and string_end: " + string_end);
                     switch(p[pix++]) {
                         /* ( [or `(', as appropriate] is represented by start_memory,
                            ) by stop_memory.  Both of those commands are followed by
@@ -1093,7 +1122,7 @@ class MatchEnvironment {
 
             if(best_regs_set) {
                 gotoRestoreBestRegs=true;
-                d = best_regend[0];
+                string_pos = best_regend[0];
                 fix_regs();
             }
         } while(gotoRestoreBestRegs);
@@ -1103,20 +1132,28 @@ class MatchEnvironment {
     }
 
     private final int jump() {
-        mcnt = EXTRACT_NUMBER(p, pix);
-        pix += 2;
-        if(mcnt < 0 && stackp > 2 && stackb[stackp-3] == d) {/* avoid infinite loop */
+        int mcnt = EXTRACT_AND_INCR_PIX();
+        if(mcnt < 0 && stackOutOfRange()) {/* avoid infinite loop */
             return BREAK_FAIL1;
         }
         pix += mcnt;
         return CONTINUE_MAINLOOP;
     }
 
+    private final int EXTRACT_AND_INCR_PIX() {
+        int val = EXTRACT_NUMBER(p, pix);
+        pix += 2;
+        return val;
+    }
+
+    private final boolean stackOutOfRange() {
+        return stackp > 2 && stackb[stackp-3] == string_pos;
+    }
+
     private final int dummy_failure_jump() {
         PUSH_FAILURE_POINT(-1,0);
-        mcnt = EXTRACT_NUMBER(p, pix);
-        pix += 2;
-        if(mcnt < 0 && stackp > 2 && stackb[stackp-3] == d) {/* avoid infinite loop */
+        int mcnt = EXTRACT_AND_INCR_PIX();
+        if(mcnt < 0 && stackOutOfRange()) {/* avoid infinite loop */
             return BREAK_FAIL1;
         }
         pix += mcnt;
@@ -1124,10 +1161,9 @@ class MatchEnvironment {
     }
 
     private final int try_next() {
-        mcnt = EXTRACT_NUMBER(p, pix);
-        pix += 2;
+        int mcnt = EXTRACT_AND_INCR_PIX();
         if(pix + mcnt < pend) {
-            PUSH_FAILURE_POINT(pix,d);
+            PUSH_FAILURE_POINT(pix,string_pos);
             stackb[stackp-1] = NON_GREEDY;
         }
         pix += mcnt;
@@ -1135,29 +1171,26 @@ class MatchEnvironment {
     }
 
     private final int set_number_at() {
-        mcnt = EXTRACT_NUMBER(p, pix);
-        pix+=2;
-        p1 = pix + mcnt;
-        mcnt = EXTRACT_NUMBER(p, pix);
-        pix+=2;
+        int mcnt = EXTRACT_AND_INCR_PIX();
+        int p1 = pix + mcnt;
+        mcnt = EXTRACT_AND_INCR_PIX();
         STORE_NUMBER(p, p1, mcnt);
         return CONTINUE_MAINLOOP;
     }
 
     private final int finalize_push() {
         POP_FAILURE_POINT();
-        mcnt = EXTRACT_NUMBER(p, pix);
-        pix+=2;
-        if(mcnt < 0 && stackp > 2 && stackb[stackp-3] == d) { /* avoid infinite loop */
+        int mcnt = EXTRACT_AND_INCR_PIX();
+        if(mcnt < 0 && stackOutOfRange()) { /* avoid infinite loop */
             return BREAK_FAIL1;
         }
-        PUSH_FAILURE_POINT(pix+mcnt,d);
+        PUSH_FAILURE_POINT(pix+mcnt,string_pos);
         stackb[stackp-1] = NON_GREEDY;
         return CONTINUE_MAINLOOP;
     }
 
     private final int finalize_push_n() {
-        mcnt = EXTRACT_NUMBER(p, pix + 2); 
+        int mcnt = EXTRACT_NUMBER(p, pix + 2); 
         /* Originally, this is how many times we CAN jump.  */
         if(mcnt>0) {
             int posx, i;
@@ -1168,16 +1201,15 @@ class MatchEnvironment {
             if(i > 0) {
                 mcnt = EXTRACT_NUMBER(p, pix);
                 pix += 2;
-                if(mcnt < 0 && stackp > 2 && stackb[stackp-3] == d) {/* avoid infinite loop */
+                if(mcnt < 0 && stackOutOfRange()) {/* avoid infinite loop */
                     return BREAK_FAIL1;
                 }
                 pix += mcnt;
                 return CONTINUE_MAINLOOP;
             }
             POP_FAILURE_POINT();
-            mcnt = EXTRACT_NUMBER(p,pix);
-            pix+=2;
-            PUSH_FAILURE_POINT(pix+mcnt,d);
+            mcnt = EXTRACT_AND_INCR_PIX();
+            PUSH_FAILURE_POINT(pix+mcnt,string_pos);
             stackb[stackp-1] = NON_GREEDY;
             pix += 2;		/* skip n */
         }
@@ -1189,85 +1221,85 @@ class MatchEnvironment {
     }
 
     private final int wordbound() {
-        if(d == 0) {
-            if(d == dend) {return BREAK_FAIL1;}
-            if(IS_A_LETTER(string,string_start+d,string_start+dend)) {
+        if(string_pos == 0) {
+            if(string_pos == string_end) {return BREAK_FAIL1;}
+            if(IS_A_LETTER(string,string_pos,string_end)) {
                 return CONTINUE_MAINLOOP;
             } else {
                 return BREAK_FAIL1;
             }
         }
-        if(d == dend) {
-            if(PREV_IS_A_LETTER(string,string_start+d,string_start+dend)) {
+        if(string_pos == string_end) {
+            if(PREV_IS_A_LETTER(string,string_pos,string_end)) {
                 return CONTINUE_MAINLOOP;
             } else {
                 return BREAK_FAIL1;
             }
         }
-        if(PREV_IS_A_LETTER(string,string_start+d,string_start+dend) != IS_A_LETTER(string,string_start+d,string_start+dend)) {
+        if(PREV_IS_A_LETTER(string,string_pos,string_end) != IS_A_LETTER(string,string_pos,string_end)) {
             return CONTINUE_MAINLOOP;
         }
         return BREAK_FAIL1;
     }
 
     private final int notwordbound() {
-        if(d==0) {
-            if(IS_A_LETTER(string, string_start+d, string_start+dend)) {
+        if(string_pos==0) {
+            if(IS_A_LETTER(string, string_pos, string_end)) {
                 return BREAK_FAIL1;
             } else {
                 return CONTINUE_MAINLOOP;
             }
         }
-        if(d == dend) {
-            if(PREV_IS_A_LETTER(string, string_start+d, string_start+dend)) {
+        if(string_pos == string_end) {
+            if(PREV_IS_A_LETTER(string, string_pos, string_end)) {
                 return BREAK_FAIL1;
             } else {
                 return CONTINUE_MAINLOOP;
             }
         }
-        if(PREV_IS_A_LETTER(string, string_start+d, string_start+dend) != IS_A_LETTER(string, string_start+d, string_start+dend)) {
+        if(PREV_IS_A_LETTER(string, string_pos, string_end) != IS_A_LETTER(string, string_pos, string_end)) {
             return BREAK_FAIL1;
         }
         return CONTINUE_MAINLOOP;
     }
 
     private final int wordbeg() {
-        if(IS_A_LETTER(string, string_start+d, string_start+dend) && (d==0 || !PREV_IS_A_LETTER(string,string_start+d,string_start+dend))) {
+        if(IS_A_LETTER(string, string_pos, string_end) && (string_pos==0 || !PREV_IS_A_LETTER(string,string_pos,string_end))) {
             return CONTINUE_MAINLOOP;
         }
         return BREAK_FAIL1;
     }
 
     private final int wordend() {
-        if(d!=0 && PREV_IS_A_LETTER(string, string_start+d, string_start+dend)
-           && (!IS_A_LETTER(string, string_start+d, string_start+dend) || d == dend)) {
+        if(string_pos!=0 && PREV_IS_A_LETTER(string, string_pos, string_end)
+           && (!IS_A_LETTER(string, string_pos, string_end) || string_pos == string_end)) {
             return CONTINUE_MAINLOOP;
         }
         return BREAK_FAIL1;
     }
 
     private final int wordchar() {
-        if(d == dend) {return BREAK_FAIL1;}
-        if(!IS_A_LETTER(string,string_start+d,string_start+dend)) {
+        if(string_pos == string_end) {return BREAK_FAIL1;}
+        if(!IS_A_LETTER(string,string_pos,string_end)) {
             return BREAK_FAIL1;
         }
-        if(ismbchar(string[string_start+d],ctx) && d + mbclen(string[string_start+d],ctx) - 1 < dend) {
-            d += mbclen(string[string_start+d],ctx) - 1;
+        if(ismbchar(string[string_pos],ctx) && string_pos + mbclen(string[string_pos],ctx) - 1 < string_end) {
+            string_pos += mbclen(string[string_pos],ctx) - 1;
         }
-        d++;
+        string_pos++;
         SET_REGS_MATCHED();
         return CONTINUE_MAINLOOP;
     }
         
     private final int notwordchar() {
-        if(d == dend) {return BREAK_FAIL1;}
-        if(IS_A_LETTER(string, string_start+d, string_start+dend)) {
+        if(string_pos == string_end) {return BREAK_FAIL1;}
+        if(IS_A_LETTER(string, string_pos, string_end)) {
             return BREAK_FAIL1;
         }
-        if(ismbchar(string[string_start+d],ctx) && d + mbclen(string[string_start+d],ctx) - 1 < dend) {
-            d += mbclen(string[string_start+d],ctx) - 1;
+        if(ismbchar(string[string_pos],ctx) && string_pos + mbclen(string[string_pos],ctx) - 1 < string_end) {
+            string_pos += mbclen(string[string_pos],ctx) - 1;
         }
-        d++;
+        string_pos++;
         SET_REGS_MATCHED();
         return CONTINUE_MAINLOOP;
     }
@@ -1286,53 +1318,7 @@ class MatchEnvironment {
                  IS_A_LETTER(d,dix-1,dend)));
     }
 
-    public MatchEnvironment(Pattern p, byte[] string_arg, int string_start, int size, int pos, int beg, Registers regs) {
-        this.size = size;
-        this.beg = beg;
-        this.p = p.buffer;
-        this.pix = 0;
-        this.p1=-1;
-        this.pend = p.used;
-        this.num_regs = p.re_nsub;
-        this.string = string_arg;
-        this.string_start = string_start;
-        this.optz = (int)p.options;
-        this.self = p;
-        this.ctx = p.ctx;
-        this.pos = pos;
-
-        regstart = new int[num_regs];
-        regend = new int[num_regs];
-        old_regstart = new int[num_regs];
-        old_regend = new int[num_regs];
-        reg_info = new RegisterInfoType[num_regs];
-        for(int x=0;x<reg_info.length;x++) {
-            reg_info[x] = new RegisterInfoType();
-        }
-        best_regstart = new int[num_regs];
-        best_regend = new int[num_regs];
-
-        if(regs != null) {
-            regs.init_regs(num_regs);
-        }
-
-        init_stack();
-        init_registers();
-
-        /* Set up pointers to ends of strings.
-           Don't allow the second string to be empty unless both are empty.  */
-
-        /* `p' scans through the pattern as `d' scans through the data. `dend'
-           is the end of the input string that `d' points within. `d' is
-           advanced into the following input string whenever necessary, but
-           this happens before fetching; therefore, at the beginning of the
-           loop, `d' can be pointing at the end of a string, but it cannot
-           equal string2.  */
-
-        d = pos; dend = size;
-    }
-
-    public final int fail() {
+    private final int fail() {
         //fail:
         do {
             if(stackp != 0) {
