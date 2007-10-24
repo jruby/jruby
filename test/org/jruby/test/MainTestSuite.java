@@ -43,6 +43,7 @@ import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
 import org.jruby.runtime.callback.TestReflectionCallback;
 import org.jruby.util.ByteListTest;
+import org.jruby.util.JRubyThreadContextTest;
 import org.jruby.util.RawArgParserTest;
 import org.jruby.util.ShellLauncherTest;
 
@@ -85,6 +86,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestRbConfigLibrary.class);
         suite.addTestSuite(TestParser.class);    
         suite.addTestSuite(TestRubyBigDecimal.class);
+        suite.addTestSuite(JRubyThreadContextTest.class);
         return suite;
     }
 }

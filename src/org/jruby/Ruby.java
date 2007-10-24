@@ -260,7 +260,7 @@ public final class Ruby {
 
     // Java support
     private JavaSupport javaSupport;
-    private static JRubyClassLoader jrubyClassLoader;
+    private JRubyClassLoader jrubyClassLoader;
 
     private static boolean securityRestricted = false;
 
