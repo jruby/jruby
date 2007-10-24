@@ -113,7 +113,7 @@ public class RaiseException extends JumpException {
         if (runtime.hasEventHooks()) {
             runtime.callEventHooks(
                     context,
-                    EventHook.RUBY_EVENT_RETURN,
+                    EventHook.RUBY_EVENT_RAISE,
                     context.getPosition().getFile(),
                     context.getPosition().getStartLine(),
                     context.getFrameName(),
