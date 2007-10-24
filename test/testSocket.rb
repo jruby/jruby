@@ -114,10 +114,13 @@ t = Thread.new {
     exception = e
     # this would normally blow up if the socket was demolished
     tcp.close
+  ensure
     closed_latch.count_down
   end
 }
 accepted_latch.await
 t.raise
 closed_latch.await
+$stderr.print exception.inspect + "\n"
+$stderr.print exception.backtrace.join("\n") + "\n"
 test_ok RuntimeError === exception
