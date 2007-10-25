@@ -33,6 +33,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.jruby.Ruby;
 import java.lang.reflect.Method;
+import org.jruby.RubyInstanceConfig;
 
 /**
  * Test that the thread context classloader can be changed.
@@ -66,8 +67,12 @@ public class JRubyThreadContextTest extends TestCase {
 
         // change the thread context to include the class
         SimpleClassLoader simpleLoader = new SimpleClassLoader();
-        Thread.currentThread().setContextClassLoader(simpleLoader);
-        ruby = Ruby.getDefaultInstance();
+        final JRubyClassLoader myLoader = new JRubyClassLoader(simpleLoader);
+        ruby = Ruby.newInstance(new RubyInstanceConfig() {
+            public JRubyClassLoader getJRubyClassLoader() {
+                return myLoader;
+            }
+        });
 
         try {
             ruby.getJRubyClassLoader().loadClass("org.jruby.GiveMeAString");
@@ -105,10 +110,18 @@ public class JRubyThreadContextTest extends TestCase {
         ClassLoader v1 = new VersionedClassLoader("First");
         ClassLoader v2 = new VersionedClassLoader("Second");
 
-        Thread.currentThread().setContextClassLoader(v1);
-        Ruby ruby1 = Ruby.getDefaultInstance();
-        Thread.currentThread().setContextClassLoader(v2);
-        Ruby ruby2 = Ruby.getDefaultInstance();
+        final JRubyClassLoader myLoader1 = new JRubyClassLoader(v1);
+        Ruby ruby1 = Ruby.newInstance(new RubyInstanceConfig() {
+            public JRubyClassLoader getJRubyClassLoader() {
+                return myLoader1;
+            }
+        });
+        final JRubyClassLoader myLoader2 = new JRubyClassLoader(v2);
+        Ruby ruby2 = Ruby.newInstance(new RubyInstanceConfig() {
+            public JRubyClassLoader getJRubyClassLoader() {
+                return myLoader2;
+            }
+        });
 
         assertEquals("First", getMessage(ruby1));
         assertEquals("Second", getMessage(ruby2));

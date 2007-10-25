@@ -33,6 +33,7 @@ import java.util.Map;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.CommandlineParser;
+import org.jruby.util.JRubyClassLoader;
 
 public class RubyInstanceConfig {
     private InputStream input          = System.in;
@@ -50,6 +51,7 @@ public class RubyInstanceConfig {
     private final boolean samplingEnabled;
 
     private final String defaultRegexpEngine;
+    private final JRubyClassLoader defaultJRubyClassLoader;
     
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
@@ -91,6 +93,7 @@ public class RubyInstanceConfig {
         }
 
         defaultRegexpEngine = System.getProperty("jruby.regexp","jregex");
+        defaultJRubyClassLoader = Ruby.defaultJRubyClassLoader;
     }
 
     public LoadServiceCreator getLoadServiceCreator() {
@@ -187,5 +190,9 @@ public class RubyInstanceConfig {
 
     public String getDefaultRegexpEngine() {
         return defaultRegexpEngine;
+    }
+    
+    public JRubyClassLoader getJRubyClassLoader() {
+        return defaultJRubyClassLoader;
     }
 }

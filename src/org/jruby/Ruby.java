@@ -260,6 +260,7 @@ public final class Ruby {
 
     // Java support
     private JavaSupport javaSupport;
+    public static final JRubyClassLoader defaultJRubyClassLoader = new JRubyClassLoader(Thread.currentThread().getContextClassLoader());
     private JRubyClassLoader jrubyClassLoader;
 
     private static boolean securityRestricted = false;
@@ -307,7 +308,8 @@ public final class Ruby {
         this.err                = config.getError();
         this.objectSpaceEnabled = config.isObjectSpaceEnabled();
         this.profile            = config.getProfile();
-        this.currentDirectory   = config.getCurrentDirectory();;
+        this.currentDirectory   = config.getCurrentDirectory();
+        this.jrubyClassLoader   = config.getJRubyClassLoader();
     }
 
     /**
