@@ -31,5 +31,6 @@ public @interface JRubyMethod {
     boolean module() default false;
     boolean frame() default false;
     boolean scope() default false;
+    boolean rite() default false;
     Visibility visibility() default Visibility.PUBLIC;
 }

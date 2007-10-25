@@ -49,6 +49,7 @@ public class RubyInstanceConfig {
     private final boolean jitLoggingVerbose;
     private final int jitThreshold;
     private final boolean samplingEnabled;
+    private final boolean rite;
 
     private final String defaultRegexpEngine;
     private final JRubyClassLoader defaultJRubyClassLoader;
@@ -76,6 +77,7 @@ public class RubyInstanceConfig {
         }
 
         samplingEnabled = System.getProperty("jruby.sampling.enabled") != null && Boolean.getBoolean("jruby.sampling.enabled");
+        rite = System.getProperty("jruby.rite") != null && Boolean.getBoolean("jruby.rite");
         
         if (Ruby.isSecurityRestricted()) {
             jitEnabled = false;
@@ -138,6 +140,10 @@ public class RubyInstanceConfig {
 
     public InputStream getInput() {
         return input;
+    }
+
+    public boolean isRite() {
+        return rite;
     }
 
     public void setOutput(PrintStream newOutput) {
