@@ -184,3 +184,16 @@ test_equal(0, sleep(0))
 
 ###### Kernel#system
 test_ok !system("nonexistentcmd")
+
+###### Kernel#load should not load from current dir as require does
+begin
+  File.open(File.expand_path('.') +'/file_to_be_loaded.rb','w' ) do |f|
+    f.puts "raise"
+  end
+  $LOAD_PATH.delete_if{|dir| dir=='.'}
+  test_exception(LoadError) {
+    load 'file_to_be_loaded.rb'
+  }
+ensure
+  File.delete(File.expand_path('.') +'/file_to_be_loaded.rb')
+end
