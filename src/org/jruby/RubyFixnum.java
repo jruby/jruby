@@ -681,6 +681,21 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject freeze() {
         return this;
     }
+    
+    // Piece of mri rb_to_id
+    public String asSymbol() {
+        getRuntime().getWarnings().warn("do not use Fixnums as Symbols");
+        
+        // FIXME: I think this chunk is equivalent to MRI id2name (and not our public method 
+        // id2name).  Make into method if used more than once.  
+        RubySymbol symbol = RubySymbol.getSymbolLong(getRuntime(), value);
+        
+        if (symbol != null) {
+            throw getRuntime().newArgumentError("" + value + " is not a symbol");
+        }
+        
+        return symbol.asSymbol();
+    }
 
     public static RubyFixnum unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         return input.getRuntime().newFixnum(input.unmarshalInt());

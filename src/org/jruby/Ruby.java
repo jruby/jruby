@@ -282,7 +282,7 @@ public final class Ruby {
 
     private KCode kcode = KCode.NONE;
 
-    public int symbolLastId = 0;
+    public int symbolLastId = 128;
     public int moduleLastId = 0;
 
     private Object respondToMethod;
