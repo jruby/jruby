@@ -73,6 +73,10 @@ class MatchEnvironment {
 
     private Registers registers;
 
+    private boolean shouldCaseTranslate;
+    private boolean isMultiLine;
+    private boolean isLongestMatch;
+
     public MatchEnvironment(Pattern p, byte[] string, int stringStart, int size, int pos, int beg, Registers registers) {
         this.size = size;
         this.beg = beg;
@@ -116,6 +120,9 @@ class MatchEnvironment {
            equal string2.  */
 
         stringIndex = stringStart+pos; stringEnd = stringStart+size;
+        this.shouldCaseTranslate = shouldCaseTranslate();
+        this.isMultiLine = (optionFlags&RE_OPTION_MULTILINE)!=0;
+        this.isLongestMatch = (optionFlags&RE_OPTION_LONGEST)!=0;
     }
 
     private final boolean shouldCaseTranslate() {
@@ -258,7 +265,7 @@ class MatchEnvironment {
 
             /* Compare that many; failure if mismatch, else move
                past them.  */
-            if(((self.options & RE_OPTION_IGNORECASE) != 0) ? self.memcmp_translate(string, stringIndex, stringPosition2, mcnt)!=0 : memcmp(string, stringIndex, stringPosition2, mcnt)!=0) {
+            if(shouldCaseTranslate ? self.memcmp_translate(string, stringIndex, stringPosition2, mcnt)!=0 : memcmp(string, stringIndex, stringPosition2, mcnt)!=0) {
                 return BREAK_WITH_FAIL1;
             }
             stringIndex += mcnt;
@@ -386,7 +393,7 @@ class MatchEnvironment {
 
     public final int restoreBestRegisters() {
         /* If not end of string, try backtracking.  Otherwise done.  */
-        if((self.options&RE_OPTION_LONGEST)!=0 && stringIndex != stringEnd) {
+        if(isLongestMatch && stringIndex != stringEnd) {
             if(bestRegistersSet) {/* non-greedy, no need to backtrack */
                 /* Restore best match.  */
                 stringIndex = bestRegisterEnd[0];
@@ -440,7 +447,7 @@ class MatchEnvironment {
         return CONTINUE_MAINLOOP;
     }
 
-    public final int anychar() {
+    public final int bytecode_anychar() {
         if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
         if(ismbchar(string[stringIndex],ctx)) {
             if(stringIndex + mbclen(string[stringIndex],ctx) > stringEnd) {
@@ -450,8 +457,8 @@ class MatchEnvironment {
             stringIndex += mbclen(string[stringIndex],ctx);
             return BREAK_NORMALLY;
         }
-        if((optionFlags&RE_OPTION_MULTILINE)==0
-           && (shouldCaseTranslate() ? ctx.translate[string[stringIndex]] : string[stringIndex]) == '\n') {
+        if(!isMultiLine
+           && (shouldCaseTranslate ? ctx.translate[string[stringIndex]] : string[stringIndex]) == '\n') {
             return 1;
         }
         setMatchedRegisters();
@@ -502,7 +509,7 @@ class MatchEnvironment {
 
     public final void bytecode_anychar_repeat() {
         final int posBefore = stringIndex;
-        if((optionFlags&RE_OPTION_MULTILINE)==0) {
+        if(!isMultiLine) {
             for (;;) {
                 pushFailurePoint(patternIndex,stringIndex);
                 //            System.err.println("anychar_repeat: " + DESCRIBE_FAILURE_POINT());
@@ -512,14 +519,15 @@ class MatchEnvironment {
                     }
                     return;
                 }
-                if(ismbchar(string[stringIndex],ctx)) {
-                    if(stringIndex + mbclen(string[stringIndex],ctx) > stringEnd) {
+                byte c = string[stringIndex];
+                if(ismbchar(c,ctx)) {
+                    if(stringIndex + mbclen(c,ctx) > stringEnd) {
                         return;
                     }
-                    stringIndex += mbclen(string[stringIndex],ctx);
+                    stringIndex += mbclen(c,ctx);
                     continue;
                 }
-                if(string[stringIndex] == '\n') {
+                if(c == '\n') {
                     if(stringIndex != posBefore) {
                         setMatchedRegisters();
                     }
@@ -538,11 +546,12 @@ class MatchEnvironment {
                     }
                     return;
                 }
-                if(ismbchar(string[stringIndex],ctx)) {
-                    if(stringIndex + mbclen(string[stringIndex],ctx) > stringEnd) {
+                byte c = string[stringIndex];
+                if(ismbchar(c,ctx)) {
+                    if(stringIndex + mbclen(c,ctx) > stringEnd) {
                         return;
                     }
-                    stringIndex += mbclen(string[stringIndex],ctx);
+                    stringIndex += mbclen(c,ctx);
                     continue;
                 }
                 stringIndex++;
@@ -715,10 +724,11 @@ class MatchEnvironment {
         //            System.err.println("matching " + mcnt + " exact characters");
         /* This is written out as an if-else so we don't waste time
            testing `translate' inside the loop.  */
-        if(shouldCaseTranslate()) {
+        if(shouldCaseTranslate) {
             do {
                 if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
-                if(pattern[patternIndex] == (byte)0xff) {
+                char pc = (char)(pattern[patternIndex]&0xFF);
+                if(pc == 0xff) {
                     patternIndex++;  
                     if(--mcnt==0
                        || stringIndex == stringEnd
@@ -730,7 +740,8 @@ class MatchEnvironment {
                 char c = (char)(string[stringIndex++]&0xFF);
                 if(ismbchar(c,ctx)) {
                     int n;
-                    if(c != (char)(pattern[patternIndex++]&0xFF)) {
+                    patternIndex++;
+                    if(c != pc) {
                         return BREAK_WITH_FAIL1;
                     }
                     for(n = mbclen(c,ctx) - 1; n > 0; n--) {
@@ -750,10 +761,13 @@ class MatchEnvironment {
         } else {
             do {
                 if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
-                if(pattern[patternIndex] == (byte)0xff) {
+                byte pc = pattern[patternIndex];
+                if(pc == (byte)0xff) {
                     patternIndex++; mcnt--;
+                    pc = pattern[patternIndex];
                 }
-                if(string[stringIndex++] != pattern[patternIndex++]) {
+                patternIndex++;
+                if(string[stringIndex++] != pc) {
                     return BREAK_WITH_FAIL1;
                 }
             } while(--mcnt > 0);
@@ -888,16 +902,21 @@ class MatchEnvironment {
 
     private final int bytecode_casefold_on() {
         optionFlags |= RE_OPTION_IGNORECASE;
+        this.shouldCaseTranslate = shouldCaseTranslate();
         return CONTINUE_MAINLOOP;
     }
 
     private final int bytecode_casefold_off() {
         optionFlags &= ~RE_OPTION_IGNORECASE;
+        this.shouldCaseTranslate = false;
         return CONTINUE_MAINLOOP;
     }
 
     private final int bytecode_option_set() {
         optionFlags = pattern[patternIndex++];
+        this.shouldCaseTranslate = shouldCaseTranslate();
+        this.isMultiLine = (optionFlags&RE_OPTION_MULTILINE)!=0;
+        this.isLongestMatch = (optionFlags&RE_OPTION_LONGEST)!=0;
         return CONTINUE_MAINLOOP;
     }
 
@@ -962,7 +981,7 @@ class MatchEnvironment {
                         var = bytecode_pop_and_fail();
                         break;
                     case anychar:
-                        var = anychar();
+                        var = bytecode_anychar();
                         break;
                     case anychar_repeat: 
                         bytecode_anychar_repeat();
