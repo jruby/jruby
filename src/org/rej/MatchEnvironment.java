@@ -64,8 +64,6 @@ class MatchEnvironment {
     /* stack & working area for re_match() */
     private int[] regstart;
     private int[] regend;
-    private int[] old_regstart;
-    private int[] old_regend;
 
     private static class RegisterInfoType {
         public boolean is_active;
@@ -92,12 +90,12 @@ class MatchEnvironment {
         this.ctx = p.ctx;
         this.pos = pos;
 
+        //        System.err.println(Bytecodes.describe(this.p,pix,pend));
+
         this.regs = regs;
 
         regstart = new int[num_regs];
         regend = new int[num_regs];
-        old_regstart = new int[num_regs];
-        old_regend = new int[num_regs];
         reg_info = new RegisterInfoType[num_regs];
         for(int x=0;x<reg_info.length;x++) {
             reg_info[x] = new RegisterInfoType();
@@ -153,7 +151,6 @@ class MatchEnvironment {
            failed. */
         for(int mcnt = 0; mcnt < num_regs; mcnt++) {
             regstart[mcnt] = regend[mcnt]
-                = old_regstart[mcnt] = old_regend[mcnt]
                 = best_regstart[mcnt] = best_regend[mcnt] = REG_UNSET_VALUE;
             reg_info[mcnt].is_active = false;
             reg_info[mcnt].matched_something = false;
@@ -372,6 +369,7 @@ class MatchEnvironment {
 
                         PUSH_FAILURE_POINT(p1+mcnt,string_pos);
                         stackb[stackp-1] = NON_GREEDY;
+                        //System.err.println("handle_fail: " + DESCRIBE_FAILURE_POINT());
                     }
                     return 0;
                 }
@@ -407,28 +405,14 @@ class MatchEnvironment {
                 return 0;
             }
             while(stackp != 0 && stackb[stackp-1] == NON_GREEDY) {
-                if(best_regs_set) {/* non-greedy, no need to backtrack */
-                    string_pos = best_regend[0];
-                    fix_regs();
-                    return 0;
-                }
                 POP_FAILURE_POINT();
             }
             if(stackp != 0) {
                 /* More failure points to try.  */
-
-                /* If exceeds best match so far, save it.  */
-                if(!best_regs_set || (string_pos > best_regend[0])) {
-                    best_regs_set = true;
-                    best_regend[0] = string_pos;	/* Never use regstart[0].  */
-                    fix_best_regs();
-                }
+                best_regs_set = true;
+                best_regend[0] = string_pos;	/* Never use regstart[0].  */
+                fix_best_regs();
                 return 1;
-            } /* If no failure points, don't restore garbage.  */
-            else if(best_regs_set) {
-                /* Restore best match.  */
-                string_pos = best_regend[0];
-                fix_regs();
             }
         }
         return 0;
@@ -453,7 +437,6 @@ class MatchEnvironment {
     }
         
     public final int start_memory() {
-        old_regstart[p[pix]] = regstart[p[pix]];
         regstart[p[pix]] = string_pos;
         reg_info[p[pix]].is_active = true;
         reg_info[p[pix]].matched_something = false;
@@ -462,7 +445,6 @@ class MatchEnvironment {
     }
 
     public final int stop_memory() {
-        old_regend[p[pix]] = regend[p[pix]];
         regend[p[pix]] = string_pos;
         reg_info[p[pix]].is_active = false;
         pix += 2;
@@ -529,31 +511,53 @@ class MatchEnvironment {
         return CONTINUE_MAINLOOP;
     }
 
-    public final int anychar_repeat() {
-        final boolean notMultiline = (optz&RE_OPTION_MULTILINE)==0;
+    public final void anychar_repeat() {
         final int posBefore = string_pos;
-        for (;;) {
-            PUSH_FAILURE_POINT(pix,string_pos);
-            if(string_pos == string_end) {
-                if(string_pos != posBefore) {
-                    SET_REGS_MATCHED();
+        if((optz&RE_OPTION_MULTILINE)==0) {
+            for (;;) {
+                PUSH_FAILURE_POINT(pix,string_pos);
+                //            System.err.println("anychar_repeat: " + DESCRIBE_FAILURE_POINT());
+                if(string_pos == string_end) {
+                    if(string_pos != posBefore) {
+                        SET_REGS_MATCHED();
+                    }
+                    return;
                 }
-                return BREAK_FAIL1;
-            }
-            if(ismbchar(string[string_pos],ctx)) {
-                if(string_pos + mbclen(string[string_pos],ctx) > string_end) {
-                    return BREAK_FAIL1;
+                if(ismbchar(string[string_pos],ctx)) {
+                    if(string_pos + mbclen(string[string_pos],ctx) > string_end) {
+                        return;
+                    }
+                    string_pos += mbclen(string[string_pos],ctx);
+                    continue;
                 }
-                string_pos += mbclen(string[string_pos],ctx);
-                continue;
-            }
-            if(notMultiline && string[string_pos] == '\n') {
-                if(string_pos != posBefore) {
-                    SET_REGS_MATCHED();
+                if(string[string_pos] == '\n') {
+                    if(string_pos != posBefore) {
+                        SET_REGS_MATCHED();
+                    }
+                    return;
                 }
-                return BREAK_FAIL1;
+                string_pos++;
             }
-            string_pos++;
+
+        } else {
+            for (;;) {
+                PUSH_FAILURE_POINT(pix,string_pos);
+                //            System.err.println("anychar_repeat: " + DESCRIBE_FAILURE_POINT());
+                if(string_pos == string_end) {
+                    if(string_pos != posBefore) {
+                        SET_REGS_MATCHED();
+                    }
+                    return;
+                }
+                if(ismbchar(string[string_pos],ctx)) {
+                    if(string_pos + mbclen(string[string_pos],ctx) > string_end) {
+                        return;
+                    }
+                    string_pos += mbclen(string[string_pos],ctx);
+                    continue;
+                }
+                string_pos++;
+            }
         }
     }
 
@@ -644,6 +648,7 @@ class MatchEnvironment {
             p[pix-1] = unused;
         } else {
             PUSH_FAILURE_POINT(-1,0);
+            //System.err.println("push_dummy_failure: " + DESCRIBE_FAILURE_POINT());
         }
         return CONTINUE_MAINLOOP;
     }
@@ -684,6 +689,7 @@ class MatchEnvironment {
             mcnt = EXTRACT_AND_INCR_PIX();
             PUSH_FAILURE_POINT(pix+mcnt,string_pos);
         }
+        //System.err.println("succeed_n: " + DESCRIBE_FAILURE_POINT());
         return CONTINUE_MAINLOOP;
     }
 
@@ -767,8 +773,33 @@ class MatchEnvironment {
         return CONTINUE_MAINLOOP;
     }
 
+    private final String DESCRIBE_FAILURE_POINT() {
+        StringBuffer result = new StringBuffer(">>FailurePoint:").append("\n");
+        int top = stackp;
+        result.append("  Greedy: ").append(stackb[--top] == 0).append("\n");
+        result.append("  Optz: ").append(stackb[--top]).append("\n");
+        result.append("  String: ").append(stackb[--top]).append("\n");
+        result.append("  Pattern: ").append(stackb[--top]).append("\n");
+        int last_used_reg = stackb[--top];
+        result.append("  Regs: ").append(last_used_reg).append("\n");
+        for(int this_reg = 1; this_reg <= last_used_reg; this_reg++) {
+            int regend = stackb[--top];
+            int regstart = stackb[--top];
+            result.append("   [").append(this_reg).append("]=").append(regstart).append("-").append(regend).append("\n");
+        }
+        int num_failures = stackb[--top];
+        result.append("  Failures: ").append(num_failures).append("\n");
+        for(int fail = 0; fail < num_failures; fail++) {
+            int ptr = stackb[--top];
+            int count = stackb[--top];
+            result.append("   pattern[").append(ptr).append("]=").append(count).append("\n");
+        }
+        return result.toString();
+    }
+
     private final int start_nowidth() {
         PUSH_FAILURE_POINT(-1,string_pos);
+        //System.err.println("start_nowidth: " + DESCRIBE_FAILURE_POINT());
         if(stackp > RE_DUP_MAX) {
             return RETURN_M2;
         }
@@ -852,6 +883,7 @@ class MatchEnvironment {
     private final int on_failure_jump() {
         int mcnt = EXTRACT_AND_INCR_PIX();
         PUSH_FAILURE_POINT(pix+mcnt,string_pos);
+        //System.err.println("on_failure_jump: " + DESCRIBE_FAILURE_POINT());
         return CONTINUE_MAINLOOP;
     }
 
@@ -907,7 +939,7 @@ class MatchEnvironment {
                     int var = BREAK_NORMAL;
 
 
-                    //System.err.println("--executing " + (int)p[pix] + " at " + pix);
+                    //                    System.err.println("--executing " + Bytecodes.NAMES[(int)p[pix]] + " at " + pix);
                     //System.err.println("-- -- for d: " + string_pos + " and string_end: " + string_end);
                     switch(p[pix++]) {
                         /* ( [or `(', as appropriate] is represented by start_memory,
@@ -943,9 +975,9 @@ class MatchEnvironment {
                     case anychar:
                         var = anychar();
                         break;
-                    case anychar_repeat:
-                        var = anychar_repeat();
-                        break;
+                    case anychar_repeat: 
+                        anychar_repeat();
+                        break fail1;
                     case charset:
                     case charset_not: 
                         var = charset();
@@ -1155,6 +1187,7 @@ class MatchEnvironment {
 
     private final int dummy_failure_jump() {
         PUSH_FAILURE_POINT(-1,0);
+        //System.err.println("dummy_failure_jump: " + DESCRIBE_FAILURE_POINT());
         int mcnt = EXTRACT_AND_INCR_PIX();
         if(mcnt < 0 && stackOutOfRange()) {/* avoid infinite loop */
             return BREAK_FAIL1;
@@ -1168,6 +1201,7 @@ class MatchEnvironment {
         if(pix + mcnt < pend) {
             PUSH_FAILURE_POINT(pix,string_pos);
             stackb[stackp-1] = NON_GREEDY;
+            //System.err.println("try_next: " + DESCRIBE_FAILURE_POINT());
         }
         pix += mcnt;
         return CONTINUE_MAINLOOP;
@@ -1189,6 +1223,7 @@ class MatchEnvironment {
         }
         PUSH_FAILURE_POINT(pix+mcnt,string_pos);
         stackb[stackp-1] = NON_GREEDY;
+        //System.err.println("finalize_push: " + DESCRIBE_FAILURE_POINT());
         return CONTINUE_MAINLOOP;
     }
 
@@ -1214,6 +1249,7 @@ class MatchEnvironment {
             mcnt = EXTRACT_AND_INCR_PIX();
             PUSH_FAILURE_POINT(pix+mcnt,string_pos);
             stackb[stackp-1] = NON_GREEDY;
+            //System.err.println("fainluze_push_n: " + DESCRIBE_FAILURE_POINT());
             pix += 2;		/* skip n */
         }
         /* If don't have to push any more, skip over the rest of command.  */

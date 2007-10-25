@@ -24,6 +24,85 @@ package org.rej;
 abstract class Bytecodes {
     private Bytecodes(){}
 
+    public final static String[] NAMES = {
+        "unused",
+        "exactn",
+        "begline",
+        "endline",
+        "begbuf",
+        "endbuf",
+        "endbuf2",
+        "begpos",
+        "jump",
+        "jump_past_alt",
+        "on_failure_jump",
+        "finalize_jump",
+        "maybe_finalize_jump",
+        "dummy_failure_jump",
+        "push_dummy_failure",
+        "succeed_n",
+        "jump_n",
+        "try_next",
+        "finalize_push",
+        "finalize_push_n",
+        "set_number_at",
+        "anychar",
+        "anychar_repeat",
+        "charset",
+        "charest_not",
+        "start_memory",
+        "stop_memory",
+        "start_paren",
+        "stop_paren",
+        "casefold_on",
+        "casefold_off",
+        "option_set",
+        "start_nowidth",
+        "stop_nowidth",
+        "pop_and_fail",
+        "stop_backtrack",
+        "duplicate",
+        "wordchar",
+        "notwordchar",
+        "wordbeg",
+        "wordend",
+        "wordbound",
+        "notwordbound"};
+
+    public static String describe(final byte[] pattern, final int start, final int length) {
+        final int pend = start+length;
+        int p = start;
+
+        StringBuffer result = new StringBuffer();
+        System.err.println("pattern is " + length + " bytes long");
+        while(p < pend) {
+            result.append("-").append(NAMES[pattern[p]]).append("\n");
+            switch(pattern[p++]) {
+            case anychar_repeat:
+                break;
+            case exactn: {
+                int mcnt = pattern[p++]&0xFF;
+                result.append(" ").append(mcnt).append(" characters to match").append("\n");
+                result.append("  \"");
+                for(int i=0;i<mcnt;i++) {
+                    if(pattern[p] == (byte)0xff) {
+                        p++;
+                        result.append("\\").append(pattern[p++]&0xFF);
+                    } else {
+                        result.append((char)(pattern[p++]&0xFF));
+                    }
+                }
+                result.append("\"\n");
+                break;
+            }
+            default:
+                result.append(" can't handle arguments for this node").append("\n");
+                return result.toString();
+            }
+        }
+        return result.toString();
+    }
+
     /* These are the command codes that appear in compiled regular
        expressions, one per byte.  Some command codes are followed by
        argument bytes.  A command code can specify any interpretation
