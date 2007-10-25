@@ -202,7 +202,7 @@ public class LoadService {
 
         Library library = null;
         
-        library = findLibrary(file);
+        library = findLibrary(file, false);
 
         if (library == null) {
             library = findLibraryWithClassloaders(file);
@@ -255,7 +255,7 @@ public class LoadService {
         
         // First try suffixes with normal loading
         for (int i = 0; i < extensionsToSearch.length; i++) {
-            library = findLibrary(file + extensionsToSearch[i]);
+            library = findLibrary(file + extensionsToSearch[i], true);
             if (library != null) {
                 loadName = file + extensionsToSearch[i];
                 break;
@@ -380,12 +380,12 @@ e.printStackTrace();
 		registerBuiltin(libraryName + JRUBY_BUILTIN_SUFFIX, new BuiltinScript(libraryName));
 	}
 
-    private Library findLibrary(String file) {
+    private Library findLibrary(String file, boolean checkCWD) {
         if (builtinLibraries.containsKey(file)) {
             return (Library) builtinLibraries.get(file);
         }
         
-        LoadServiceResource resource = findFile(file);
+        LoadServiceResource resource = findFile(file, checkCWD);
         if (resource == null) {
             return null;
         }
@@ -418,7 +418,7 @@ e.printStackTrace();
      * @param name the file to find, this is a path name
      * @return the correct file
      */
-    private LoadServiceResource findFile(String name) {
+    private LoadServiceResource findFile(String name, boolean checkCWD) {
         // if a jar URL, return load service resource directly without further searching
         if (name.startsWith("jar:")) {
             try {
@@ -428,18 +428,20 @@ e.printStackTrace();
             }
         }
 
-        // check current directory; if file exists, retrieve URL and return resource
-        try {
-            JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), name);
-            if (file.isFile() && file.isAbsolute()) {
-                try {
-                    return new LoadServiceResource(file.toURI().toURL(), name);
-                } catch (MalformedURLException e) {
-                    throw runtime.newIOErrorFromException(e);
+        if (checkCWD) {
+            // check current directory; if file exists, retrieve URL and return resource
+            try {
+                JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), name);
+                if (file.isFile() && file.isAbsolute()) {
+                    try {
+                        return new LoadServiceResource(file.toURI().toURL(), name);
+                    } catch (MalformedURLException e) {
+                        throw runtime.newIOErrorFromException(e);
+                    }
                 }
+            } catch (IllegalArgumentException illArgEx) {
+            } catch (SecurityException secEx) {
             }
-        } catch (IllegalArgumentException illArgEx) {
-        } catch (SecurityException secEx) {
         }
         
 
