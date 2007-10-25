@@ -96,7 +96,7 @@ public class RubyMethod extends RubyObject {
         newMethod.methodName = methodName;
         newMethod.originModule = originModule;
         newMethod.originName = originName;
-        newMethod.method = method;
+        newMethod.method = method.getRealMethod();
         newMethod.receiver = receiver;
 
         return newMethod;

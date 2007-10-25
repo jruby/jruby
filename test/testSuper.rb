@@ -352,3 +352,17 @@ end
 Bar111.new.bar "one", "two", "three"
 test_equal "barbar", $__val[0]
 =end
+
+# Test weird likely-a-bug where method() will repurpose where super goes to
+class Foo222
+  def a; 'a'; end
+  def b; 'b'; end
+end
+
+class Bar222 < Foo222
+  def a; super; end
+  alias b a
+end
+
+test_equal('a', Bar222.new.b)
+test_equal('b', Bar222.new.method(:b).call)

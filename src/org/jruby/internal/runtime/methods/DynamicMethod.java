@@ -125,4 +125,8 @@ public abstract class DynamicMethod {
     public Arity getArity() {
         return Arity.optional();
     }
+    
+    public DynamicMethod getRealMethod() {
+        return this;
+    }
 }
