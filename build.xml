@@ -413,7 +413,6 @@ ${build.dir}/rubinius-spec/language/numbers_spec.rb
 ${build.dir}/rubinius-spec/language/redo_spec.rb
 ${build.dir}/rubinius-spec/language/return_spec.rb
 ${build.dir}/rubinius-spec/language/string_spec.rb
-${build.dir}/rubinius-spec/language/struct_spec.rb
 ${build.dir}/rubinius-spec/language/unless_spec.rb
 ${build.dir}/rubinius-spec/language/until_spec.rb
 ${build.dir}/rubinius-spec/language/while_spec.rb
@@ -469,7 +468,6 @@ test/externals/rubinius/spec/core/objectspace_spec.rb
 test/externals/rubinius/spec/core/proc_spec.rb
 test/externals/rubinius/spec/core/range_spec.rb
 test/externals/rubinius/spec/core/regexp_spec.rb
-test/externals/rubinius/spec/core/struct_spec.rb
 test/externals/rubinius/spec/core/symbol_spec.rb
 test/externals/rubinius/spec/core/true_spec.rb
 test/externals/rubinius/spec/language/assignment_spec.rb
@@ -504,7 +502,6 @@ test/externals/rubinius/spec/core/objectspace_spec.rb
 test/externals/rubinius/spec/core/proc_spec.rb
 test/externals/rubinius/spec/core/range_spec.rb
 test/externals/rubinius/spec/core/regexp_spec.rb
-test/externals/rubinius/spec/core/struct_spec.rb
 test/externals/rubinius/spec/core/symbol_spec.rb
 test/externals/rubinius/spec/core/true_spec.rb
 test/externals/rubinius/spec/language/assignment_spec.rb
