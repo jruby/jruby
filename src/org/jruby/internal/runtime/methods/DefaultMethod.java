@@ -190,8 +190,11 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                         methodCompiler = compiler.startMethod("__file__", args, staticScope, inspector);
                         ASTCompiler.compile(body, methodCompiler);
                     } else {
-                        // If we don't have a body, check for opt args; if no opt args, there's no logic in this method so don't do anything
-                        if (argsNode != null && argsNode.getOptArgs() != null) {
+                        // If we don't have a body, check for required or opt args
+                        // if opt args, they could have side effects
+                        // if required args, need to raise errors if too few args passed
+                        // otherwise, method does nothing, make it a nop
+                        if (argsNode != null && (argsNode.getRequiredArgsCount() > 0 || argsNode.getOptionalArgsCount() > 0)) {
                             methodCompiler = compiler.startMethod("__file__", args, staticScope, inspector);
                             methodCompiler.loadNil();
                         } else {
@@ -204,12 +207,15 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     compiler.endScript();
                     Class sourceClass = compiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
                     
-                    // if we're not doing any of the operations that still need a scope, use the scopeless config
-                    if (jitCallConfig == null && !(inspector.hasClosure() || inspector.hasScopeAwareMethods())) {
-                        // switch to a slightly faster call config
-                        jitCallConfig = CallConfiguration.JAVA_FULL;
-                    } else {
-                        jitCallConfig = CallConfiguration.RUBY_FULL;
+                    // if we haven't already decided on a do-nothing call
+                    if (jitCallConfig == null) {
+                        // if we're not doing any of the operations that still need a scope, use the scopeless config
+                        if (!(inspector.hasClosure() || inspector.hasScopeAwareMethods())) {
+                            // switch to a slightly faster call config
+                            jitCallConfig = CallConfiguration.JAVA_FULL;
+                        } else {
+                            jitCallConfig = CallConfiguration.RUBY_FULL;
+                        }
                     }
                     
                     // finally, grab the script

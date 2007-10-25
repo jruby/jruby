@@ -386,8 +386,74 @@
           <arg value="http://rubini.us/svn/rubinius/trunk/spec/"/>
           <arg value="rubinius-spec"/>
       </exec>
-    <antcall target="run-spec-compiled"><param name="SPEC" value="${build.dir}/rubinius-spec"/></antcall>
-    <antcall target="run-spec-interpreted"><param name="SPEC" value="${build.dir}/rubinius-spec"/></antcall>
+    <antcall target="run-spec-compiled"><param name="SPEC" value="
+${build.dir}/rubinius-spec/core/array_spec.rb
+${build.dir}/rubinius-spec/core/class_spec.rb
+${build.dir}/rubinius-spec/core/comparable_spec.rb
+${build.dir}/rubinius-spec/core/enumerable_spec.rb
+${build.dir}/rubinius-spec/core/env_spec.rb
+${build.dir}/rubinius-spec/core/false_spec.rb
+${build.dir}/rubinius-spec/core/integer_spec.rb
+${build.dir}/rubinius-spec/core/nil_spec.rb
+${build.dir}/rubinius-spec/core/objectspace_spec.rb
+${build.dir}/rubinius-spec/core/proc_spec.rb
+${build.dir}/rubinius-spec/core/process_spec.rb
+${build.dir}/rubinius-spec/core/regexp_spec.rb
+${build.dir}/rubinius-spec/core/true_spec.rb
+${build.dir}/rubinius-spec/language/array_spec.rb
+${build.dir}/rubinius-spec/language/assignment_spec.rb
+${build.dir}/rubinius-spec/language/case_spec.rb
+${build.dir}/rubinius-spec/language/def_spec.rb
+${build.dir}/rubinius-spec/language/defined_spec.rb
+${build.dir}/rubinius-spec/language/execution_spec.rb
+${build.dir}/rubinius-spec/language/for_spec.rb
+${build.dir}/rubinius-spec/language/hash_spec.rb
+${build.dir}/rubinius-spec/language/if_spec.rb
+${build.dir}/rubinius-spec/language/numbers_spec.rb
+${build.dir}/rubinius-spec/language/redo_spec.rb
+${build.dir}/rubinius-spec/language/return_spec.rb
+${build.dir}/rubinius-spec/language/string_spec.rb
+${build.dir}/rubinius-spec/language/symbol_spec.rb
+${build.dir}/rubinius-spec/language/unless_spec.rb
+${build.dir}/rubinius-spec/language/until_spec.rb
+${build.dir}/rubinius-spec/language/while_spec.rb
+${build.dir}/rubinius-spec/language/yield_spec.rb
+${build.dir}/rubinius-spec/library/enumerator_spec.rb
+${build.dir}/rubinius-spec/library/time_spec.rb"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="
+${build.dir}/rubinius-spec/core/array_spec.rb
+${build.dir}/rubinius-spec/core/class_spec.rb
+${build.dir}/rubinius-spec/core/comparable_spec.rb
+${build.dir}/rubinius-spec/core/enumerable_spec.rb
+${build.dir}/rubinius-spec/core/env_spec.rb
+${build.dir}/rubinius-spec/core/false_spec.rb
+${build.dir}/rubinius-spec/core/integer_spec.rb
+${build.dir}/rubinius-spec/core/nil_spec.rb
+${build.dir}/rubinius-spec/core/objectspace_spec.rb
+${build.dir}/rubinius-spec/core/proc_spec.rb
+${build.dir}/rubinius-spec/core/process_spec.rb
+${build.dir}/rubinius-spec/core/regexp_spec.rb
+${build.dir}/rubinius-spec/core/true_spec.rb
+${build.dir}/rubinius-spec/language/array_spec.rb
+${build.dir}/rubinius-spec/language/assignment_spec.rb
+${build.dir}/rubinius-spec/language/case_spec.rb
+${build.dir}/rubinius-spec/language/def_spec.rb
+${build.dir}/rubinius-spec/language/defined_spec.rb
+${build.dir}/rubinius-spec/language/execution_spec.rb
+${build.dir}/rubinius-spec/language/for_spec.rb
+${build.dir}/rubinius-spec/language/hash_spec.rb
+${build.dir}/rubinius-spec/language/if_spec.rb
+${build.dir}/rubinius-spec/language/numbers_spec.rb
+${build.dir}/rubinius-spec/language/redo_spec.rb
+${build.dir}/rubinius-spec/language/return_spec.rb
+${build.dir}/rubinius-spec/language/string_spec.rb
+${build.dir}/rubinius-spec/language/symbol_spec.rb
+${build.dir}/rubinius-spec/language/unless_spec.rb
+${build.dir}/rubinius-spec/language/until_spec.rb
+${build.dir}/rubinius-spec/language/while_spec.rb
+${build.dir}/rubinius-spec/language/yield_spec.rb
+${build.dir}/rubinius-spec/library/enumerator_spec.rb
+${build.dir}/rubinius-spec/library/time_spec.rb"/></antcall>
   </target>
   
   <target name="test-spec-compiled" depends="install-gems">
