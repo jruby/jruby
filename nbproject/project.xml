@@ -43,6 +43,21 @@
                     <target>debug-nb</target>
                 </action>
             </ide-actions>
+            <export>
+                <type>folder</type>
+                <location>${jruby.classes.dir}</location>
+                <build-target>jar</build-target>
+            </export>
+            <export>
+                <type>jar</type>
+                <location>${lib.dir}/jruby.jar</location>
+                <build-target>jar</build-target>
+            </export>
+            <export>
+                <type>folder</type>
+                <location>${test.classes.dir}</location>
+                <build-target>jar</build-target>
+            </export>
             <view>
                 <items>
                     <source-folder style="packages">
@@ -71,7 +86,7 @@
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
             <compilation-unit>
                 <package-root>${src.dir}</package-root>
-                <classpath mode="compile">${lib.dir}/bsf.jar:${lib.dir}/junit.jar:${lib.dir}/jline-0.9.91.jar:${lib.dir}/backport-util-concurrent.jar:${lib.dir}/ant.jar:${lib.dir}/asm-3.0.jar:${lib.dir}/asm-commons-3.0.jar:${lib.dir}/asm-util-3.0.jar:${lib.dir}/jna.jar</classpath>
+                <classpath mode="compile">lib/bsf.jar:lib/junit.jar:lib/jline-0.9.91.jar:lib/ant.jar:lib/asm-3.0.jar:lib/asm-commons-3.0.jar:lib/asm-util-3.0.jar:lib/jna.jar</classpath>
                 <built-to>${jruby.classes.dir}</built-to>
                 <built-to>${lib.dir}/jruby.jar</built-to>
                 <javadoc-built-to>${api.docs.dir}</javadoc-built-to>
@@ -80,7 +95,7 @@
             <compilation-unit>
                 <package-root>${test.dir}</package-root>
                 <unit-tests/>
-                <classpath mode="compile">${lib.dir}/bsf.jar:${lib.dir}/junit.jar:${jruby.classes.dir}</classpath>
+                <classpath mode="compile">lib/bsf.jar:lib/junit.jar:build/classes/jruby:lib/asm-3.0.jar</classpath>
                 <built-to>${test.classes.dir}</built-to>
                 <source-level>1.5</source-level>
             </compilation-unit>
