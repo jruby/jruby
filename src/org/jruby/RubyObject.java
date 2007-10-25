@@ -754,8 +754,9 @@ public class RubyObject implements Cloneable, IRubyObject {
             // Binding provided for scope, use it
             context.preEvalWithBinding(blockOfBinding);
             IRubyObject newSelf = context.getFrameSelf();
+            RubyString source = src.convertToString();
             Node node = 
-                getRuntime().parseEval(src.toString(), file, blockOfBinding.getDynamicScope(), lineNumber);
+                getRuntime().parseEval(source.getByteList(), file, blockOfBinding.getDynamicScope(), lineNumber);
 
             return ASTInterpreter.eval(getRuntime(), context, node, newSelf, blockOfBinding);
         } catch (JumpException.BreakJump bj) {
@@ -780,8 +781,9 @@ public class RubyObject implements Cloneable, IRubyObject {
         ISourcePosition savedPosition = context.getPosition();
 
         // no binding, just eval in "current" frame (caller's frame)
+        RubyString source = src.convertToString();
         try {
-            Node node = getRuntime().parseEval(src.toString(), file, context.getCurrentScope(), 0);
+            Node node = getRuntime().parseEval(source.getByteList(), file, context.getCurrentScope(), 0);
             
             return ASTInterpreter.eval(getRuntime(), context, node, this, Block.NULL_BLOCK);
         } catch (JumpException.BreakJump bj) {

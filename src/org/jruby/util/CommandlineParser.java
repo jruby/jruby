@@ -33,13 +33,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
@@ -237,11 +235,11 @@ public class CommandlineParser {
 		throw mee;
     }
 
-    public String inlineScript() {
+    public byte[] inlineScript() {
         try {
-            return new String(inlineScript.toString().getBytes("UTF-8"), "ISO-8859-1");
+            return inlineScript.toString().getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
-            return inlineScript.toString();
+            return inlineScript.toString().getBytes();
         }
     }
 
@@ -268,22 +266,22 @@ public class CommandlineParser {
         return hasInlineScript;
     }
 
-    public Reader getScriptSource() {
+    public InputStream getScriptSource() {
         try {
             // KCode.NONE is used because KCODE does not affect parse in Ruby 1.8
             // if Ruby 2.0 encoding pragmas are implemented, this will need to change
             if (hasInlineScript) {
                 if (scriptFileName != null) {
                     File file = new File(getScriptFileName());
-                    return new BufferedReader(new InputStreamReader(new FileInputStream(file), KCode.NONE.decoder()));
+                    return new FileInputStream(file);
                 }
                 
-                return new StringReader(inlineScript());
+                return new ByteArrayInputStream(inlineScript());
             } else if (isSourceFromStdin()) {
-                return new InputStreamReader(System.in, KCode.NONE.decoder());
+                return System.in;
             } else {
                 File file = new File(getScriptFileName());
-                return new BufferedReader(new InputStreamReader(new FileInputStream(file), KCode.NONE.decoder()));
+                return new FileInputStream(file);
             }
         } catch (IOException e) {
             throw new MainExitException(1, "Error opening script file: " + e.getMessage());

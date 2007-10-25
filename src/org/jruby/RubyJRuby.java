@@ -106,7 +106,7 @@ public class RubyJRuby {
                 }
             }
             return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), 
-               recv.getRuntime().parse(content.toString(), filename, null, 0, extraPositionInformation)), Block.NULL_BLOCK);
+               recv.getRuntime().parse(content.getByteList(), filename, null, 0, extraPositionInformation)), Block.NULL_BLOCK);
         }
     }
 
@@ -135,7 +135,7 @@ public class RubyJRuby {
                 }
             }
 
-            node = recv.getRuntime().parse(content.toString(), filename, null, 0, extraPositionInformation);
+            node = recv.getRuntime().parse(content.getByteList(), filename, null, 0, extraPositionInformation);
         }
 
         String classname;

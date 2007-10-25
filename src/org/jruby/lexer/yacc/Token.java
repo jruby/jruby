@@ -31,10 +31,17 @@ package org.jruby.lexer.yacc;
 public class Token implements ISourcePositionHolder {
 	ISourcePosition position = null;
 	Object value;
+	int type = 0;
 	
 	public Token(Object value, ISourcePosition position) {
+	    this.value = value;
+	    this.position = position;
+	}
+	
+	public Token(Object value, int type, ISourcePosition position) {
 		this.value = value;
 		this.position = position;
+		this.type = type;
 	}
 	
 	public void setValue(Object value) {
@@ -43,6 +50,10 @@ public class Token implements ISourcePositionHolder {
 	
 	public Object getValue() {
 		return value;
+	}
+	
+	public int getType() {
+	    return type;
 	}
 	
 	public ISourcePosition getPosition() {

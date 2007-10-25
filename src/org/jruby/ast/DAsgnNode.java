@@ -51,7 +51,7 @@ public class DAsgnNode extends AssignableNode implements INameNode {
 
     public DAsgnNode(ISourcePosition position, String name, int location, Node valueNode) {
         super(position, NodeType.DASGNNODE);
-        this.name = name.intern();
+        this.name = name;
         this.location = location;
         setValueNode(valueNode);
     }

@@ -39,22 +39,17 @@ package org.jruby;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.Reader;
 
-import org.jruby.ast.Node;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.parser.ParserSupport;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CommandlineParser;
-import org.jruby.ast.executable.RubiniusRunner;
-import org.jruby.ast.executable.YARVCompiledRunner;
 
 /**
  * Class used to launch the interpreter.
@@ -166,7 +161,7 @@ public class Main {
     }
 
     private int runInterpreter(CommandlineParser commandline) {
-        Reader reader   = commandline.getScriptSource();
+        InputStream in   = commandline.getScriptSource();
         String filename = commandline.displayedFileName();
         config.updateWithCommandline(commandline);
         final Ruby runtime = Ruby.newInstance(config);
@@ -176,7 +171,7 @@ public class Main {
         }
 
         try {
-            runInterpreter(runtime, reader, filename);
+            runInterpreter(runtime, in, filename);
             return 0;
         } catch (RaiseException rj) {
             RubyException raisedException = rj.getException();
@@ -217,25 +212,13 @@ public class Main {
         }
     }
 
-    private void runInterpreter(Ruby runtime, Reader reader, String filename) {
+    private void runInterpreter(Ruby runtime, InputStream in, String filename) {
         try {
             initializeRuntime(runtime, filename);
-            runtime.runFromMain(reader, filename, commandline);
+            runtime.runFromMain(in, filename, commandline);
         } finally {
             runtime.tearDown();
         }
-    }
-
-    private Node getParsedScript(Ruby runtime, Reader reader, String filename) {
-        // current scope is top-level scope (what we set TOPLEVEL_BINDING to).
-        Node result;
-        if (commandline.isInlineScript()) {
-            result = runtime.parseInline(reader, filename, runtime.getCurrentContext().getCurrentScope());
-        } else {
-            result = runtime.parseFile(reader, filename, runtime.getCurrentContext().getCurrentScope());
-        }
-        
-        return result;
     }
 
     private void initializeRuntime(final Ruby runtime, String filename) {

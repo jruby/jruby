@@ -48,7 +48,7 @@ public class TestCommandlineParser extends TestCase {
 	}
     public void testParsing() {
         CommandlineParser c = new CommandlineParser(new Main(System.in, out, err), new String[] { "-e", "hello", "-e", "world" });
-        assertEquals("hello\nworld\n", c.inlineScript());
+        assertEquals("hello\nworld\n", new String(c.inlineScript()));
         assertNull(c.getScriptFileName());
         assertEquals("-e", c.displayedFileName());
 
@@ -110,7 +110,7 @@ public class TestCommandlineParser extends TestCase {
         CommandlineParser parser = new CommandlineParser(new Main(System.in, out, err), args);
         assertEquals(1, parser.requiredLibraries().size());
         assertEquals("jruby/commands", parser.requiredLibraries().get(0));
-        assertEquals("JRuby::Commands.gem\n", parser.inlineScript());
+        assertEquals("JRuby::Commands.gem\n", new String(parser.inlineScript()));
     }
 
     public void testCommandAllowedOnlyOnceAndRemainderAreScriptArgs() {

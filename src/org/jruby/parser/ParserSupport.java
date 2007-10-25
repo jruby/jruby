@@ -92,6 +92,7 @@ import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.types.ILiteralNode;
+import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
@@ -100,7 +101,6 @@ import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
-import org.jruby.util.IdUtil;
 
 /** 
  *
@@ -127,6 +127,10 @@ public class ParserSupport {
     
     public StaticScope getCurrentScope() {
         return currentScope;
+    }
+    
+    public ParserConfiguration getConfiguration() {
+        return configuration;
     }
     
     public void popCurrentScope() {
@@ -156,91 +160,98 @@ public class ParserSupport {
     /**
      * We know for callers of this that it cannot be any of the specials checked in gettable.
      * 
-     * @param id to check its variable type
-     * @param position location of this position
+     * @param node to check its variable type
      * @return an AST node representing this new variable
      */
-    public Node gettable2(String id, ISourcePosition position) {
-        switch (IdUtil.getVarType(id)) {
-        case IdUtil.LOCAL_VAR:
-            return currentScope.declare(position, id);
-        case IdUtil.CONSTANT:
-            return new ConstNode(position, id);
-        case IdUtil.INSTANCE_VAR:
-            return new InstVarNode(position, id);
-        case IdUtil.CLASS_VAR:
-            return new ClassVarNode(position, id);
-        case IdUtil.GLOBAL_VAR:
-            return new GlobalVarNode(position, id);                
+    public Node gettable2(Node node) {
+        switch (node.nodeId) {
+        case DASGNNODE: // LOCALVAR
+        case LOCALASGNNODE:
+            return currentScope.declare(node.getPosition(), ((INameNode) node).getName());
+        case CONSTDECLNODE: // CONSTANT
+            return currentScope.declare(node.getPosition(), ((INameNode) node).getName());
+        case INSTASGNNODE: // INSTANCE VARIABLE
+            return new InstVarNode(node.getPosition(), ((INameNode) node).getName());
+        case CLASSVARDECLNODE:
+        case CLASSVARASGNNODE:
+            return new ClassVarNode(node.getPosition(), ((INameNode) node).getName());
+        case GLOBALASGNNODE:
+            return new GlobalVarNode(node.getPosition(), ((INameNode) node).getName());
         }
         
-        throw new SyntaxException(position, "identifier " + id + " is not valid");
+        throw new SyntaxException(node.getPosition(), "identifier " + ((INameNode) node).getName() + " is not valid");
     }
     
     /**
      * Create AST node representing variable type it represents.
      * 
-     * @param id to check its variable type
-     * @param position location of this position
+     * @param token to check its variable type
      * @return an AST node representing this new variable
      */
-    public Node gettable(String id, ISourcePosition position) {
-        if (id.equals("self")) {
-            return new SelfNode(position);
-        } else if (id.equals("nil")) {
-        	return new NilNode(position);
-        } else if (id.equals("true")) {
-        	return new TrueNode(position);
-        } else if (id.equals("false")) {
-        	return new FalseNode(position);
-        } else if (id.equals("__FILE__")) {
-            return new StrNode(position, ByteList.create(position.getFile()));
-        } else if (id.equals("__LINE__")) {
-            return new FixnumNode(position, position.getEndLine()+1);
-        } 
-          
-        return gettable2(id, position);
+    public Node gettable(Token token) {
+        switch (token.getType()) {
+        case Tokens.kSELF:
+            return new SelfNode(token.getPosition());
+        case Tokens.kNIL:
+            return new NilNode(token.getPosition());
+        case Tokens.kTRUE:
+            return new TrueNode(token.getPosition());
+        case Tokens.kFALSE:
+            return new FalseNode(token.getPosition());
+        case Tokens.k__FILE__:
+            return new StrNode(token.getPosition(), ByteList.create(token.getPosition().getFile()));
+        case Tokens.k__LINE__:
+            return new FixnumNode(token.getPosition(), token.getPosition().getEndLine()+1);
+        case Tokens.tIDENTIFIER:
+            return currentScope.declare(token.getPosition(), (String) token.getValue());
+        case Tokens.tCONSTANT:
+            return new ConstNode(token.getPosition(), (String) token.getValue());
+        case Tokens.tIVAR:
+            return new InstVarNode(token.getPosition(), (String) token.getValue());
+        case Tokens.tCVAR:
+            return new ClassVarNode(token.getPosition(), (String) token.getValue());
+        case Tokens.tGVAR:
+            return new GlobalVarNode(token.getPosition(), (String) token.getValue());
+        }
+
+        throw new SyntaxException(token.getPosition(), "identifier " + (String) token.getValue() + " is not valid");
     }
     
     public AssignableNode assignable(Token lhs, Node value) {
         checkExpression(value);
 
-        String id = (String) lhs.getValue();
-
-        if ("self".equals(id)) {
-            throw new SyntaxException(lhs.getPosition(), "Can't change the value of self");
-        } else if ("nil".equals(id)) {
-            throw new SyntaxException(lhs.getPosition(), "Can't assign to nil");
-        } else if ("true".equals(id)) {
-            throw new SyntaxException(lhs.getPosition(), "Can't assign to true");
-        } else if ("false".equals(id)) {
-            throw new SyntaxException(lhs.getPosition(), "Can't assign to false");
-        } else if ("__FILE__".equals(id)) {
-            throw new SyntaxException(lhs.getPosition(), "Can't assign to __FILE__");
-        } else if ("__LINE__".equals(id)) {
-            throw new SyntaxException(lhs.getPosition(), "Can't assign to __LINE__");
-        } else {
-            switch (IdUtil.getVarType(id)) {
-            case IdUtil.LOCAL_VAR:
-                return currentScope.assign(value != null ? union(lhs, value) : lhs.getPosition(), id, value);
-            case IdUtil.CONSTANT:
+        switch (lhs.getType()) {
+            case Tokens.kSELF:
+                throw new SyntaxException(lhs.getPosition(), "Can't change the value of self");
+            case Tokens.kNIL:
+                throw new SyntaxException(lhs.getPosition(), "Can't assign to nil");
+            case Tokens.kTRUE:
+                throw new SyntaxException(lhs.getPosition(), "Can't assign to true");
+            case Tokens.kFALSE:
+                throw new SyntaxException(lhs.getPosition(), "Can't assign to false");
+            case Tokens.k__FILE__:
+                throw new SyntaxException(lhs.getPosition(), "Can't assign to __FILE__");
+            case Tokens.k__LINE__:
+                throw new SyntaxException(lhs.getPosition(), "Can't assign to __LINE__");
+            case Tokens.tIDENTIFIER:
+                return currentScope.assign(value != null ? union(lhs, value) : lhs.getPosition(), (String) lhs.getValue(), value);
+            case Tokens.tCONSTANT:
                 if (isInDef() || isInSingle()) {
                     throw new SyntaxException(lhs.getPosition(), "dynamic constant assignment");
                 }
-                return new ConstDeclNode(lhs.getPosition(), id, null, value);
-            case IdUtil.INSTANCE_VAR:
-                return new InstAsgnNode(lhs.getPosition(), id, value);
-            case IdUtil.CLASS_VAR:
+                return new ConstDeclNode(lhs.getPosition(), (String) lhs.getValue(), null, value);
+            case Tokens.tIVAR:
+                return new InstAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
+            case Tokens.tCVAR:
                 if (isInDef() || isInSingle()) {
-                    return new ClassVarAsgnNode(lhs.getPosition(), id, value);
+                    return new ClassVarAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
                 }
-                return new ClassVarDeclNode(lhs.getPosition(), id, value);
-            case IdUtil.GLOBAL_VAR:
-                return new GlobalAsgnNode(lhs.getPosition(), id, value);
-            }
+                return new ClassVarDeclNode(lhs.getPosition(), (String) lhs.getValue(), value);
+            case Tokens.tGVAR:
+                return new GlobalAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
         }
 
-        throw new SyntaxException(lhs.getPosition(), "identifier " + id + " is not valid");
+        throw new SyntaxException(lhs.getPosition(), "identifier " + (String) lhs.getValue() + " is not valid");
     }
 
     /**
@@ -292,14 +303,17 @@ public class ParserSupport {
         return new RootNode(position, result.getScope(), newTopOfAST);
     }
     
+    /* MRI: block_append */
     public Node appendToBlock(Node head, Node tail) {
         if (tail == null) return head;
         if (head == null) return tail;
-        
-        //Mirko asks: This was added, and it breaks a lof of my code, is it really needed? 
-        //while (head instanceof NewlineNode) {
-        //    head = ((NewlineNode) head).getNextNode();
-        //}
+
+        // Reduces overhead in interp by not set position every single line we encounter. 
+        if (!configuration.hasExtraPositionInformation()) {
+            while (head instanceof NewlineNode) {
+                head = ((NewlineNode) head).getNextNode();
+            }
+        }
 
         if (!(head instanceof BlockNode)) {
             head = new BlockNode(head.getPosition()).add(head);
@@ -334,7 +348,7 @@ public class ParserSupport {
         checkExpression(firstNode);
         checkExpression(secondNode);
         
-        return new CallNode(union(firstNode.getPosition(), secondNode.getPosition()), firstNode, operator, new ArrayNode(secondNode.getPosition()).add(secondNode));
+        return new CallNode(union(firstNode.getPosition(), secondNode.getPosition()), firstNode, operator, new ArrayNode(secondNode.getPosition(), secondNode));
     }
 
     public Node getMatchNode(Node firstNode, Node secondNode) {
@@ -470,30 +484,28 @@ public class ParserSupport {
     }
     
     private boolean isExpression(Node node) {
-        expressionLoop: do {
+        do {
             if (node == null) return true;
             
             switch (node.nodeId) {
             case BEGINNODE:
                 node = ((BeginNode) node).getBodyNode();
-                continue expressionLoop;
+                break;
             case BLOCKNODE:
                 node = ((BlockNode) node).getLast();
-                continue expressionLoop;
+                break;
             case BREAKNODE:
                 node = ((BreakNode) node).getValueNode();
-                continue expressionLoop;
-            case CLASSNODE: case DEFNNODE: case DEFSNODE:
-            case MODULENODE: case NEXTNODE: case REDONODE:
-            case RETRYNODE: case RETURNNODE: case UNTILNODE:
-            case WHILENODE:
+                break;
+            case CLASSNODE: case DEFNNODE: case DEFSNODE: case MODULENODE: case NEXTNODE: 
+            case REDONODE: case RETRYNODE: case RETURNNODE: case UNTILNODE: case WHILENODE:
                 return false;
             case IFNODE:
                 return isExpression(((IfNode) node).getThenBody()) &&
                   isExpression(((IfNode) node).getElseBody());
             case NEWLINENODE:
                 node = ((NewlineNode) node).getNextNode();
-                continue expressionLoop;
+                break;
             default: // Node
                 return true;
             }
@@ -535,7 +547,7 @@ public class ParserSupport {
                 node = ((NewlineNode) node).getNextNode();
                 continue uselessLoop;
             case CALLNODE: {
-                String name = ((CallNode) node).getName().intern();
+                String name = ((CallNode) node).getName();
                 
                 if (name == "+" || name == "-" || name == "*" || name == "/" || name == "%" || 
                     name == "**" || name == "+@" || name == "-@" || name == "|" || name == "^" || 

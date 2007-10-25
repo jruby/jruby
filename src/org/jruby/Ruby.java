@@ -40,12 +40,13 @@
 package org.jruby;
 
 import com.sun.jna.Native;
+
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -349,8 +350,8 @@ public final class Ruby {
         return newInstance(config);
     }
 
-    public IRubyObject evalFile(Reader reader, String name) {
-        return eval(parseFile(reader, name, getCurrentContext().getCurrentScope()));
+    public IRubyObject evalFile(InputStream in, String name) {
+        return eval(parseFile(in, name, getCurrentContext().getCurrentScope()));
     }
     
     /**
@@ -383,24 +384,31 @@ public final class Ruby {
      * @return The last value of the script
      */
     public IRubyObject executeScript(String script, String filename) {
-        Reader reader = new StringReader(script);
-        Node node = parseInline(reader, filename, null);
+        byte[] bytes;
+        
+        try {
+            bytes = script.getBytes(KCode.NONE.getKCode());
+        } catch (UnsupportedEncodingException e) {
+            bytes = script.getBytes();
+        }
+
+        Node node = parseInline(new ByteArrayInputStream(bytes), filename, null);
         
         getCurrentContext().getCurrentFrame().setPosition(node.getPosition());
         return runNormally(node, false, false);
     }
     
-    public void runFromMain(Reader sourceReader, String filename, CommandlineParser commandLine) {
+    public void runFromMain(InputStream in, String filename, CommandlineParser commandLine) {
         if(commandLine.isYARVEnabled()) {
-            new YARVCompiledRunner(this,sourceReader,filename).run();
+            new YARVCompiledRunner(this, in, filename).run();
         } else if(commandLine.isRubiniusEnabled()) {
-            new RubiniusRunner(this,sourceReader,filename).run();
+            new RubiniusRunner(this, in, filename).run();
         } else {
             Node scriptNode;
             if (commandLine.isInlineScript()) {
-                scriptNode = parseInline(sourceReader, filename, getCurrentContext().getCurrentScope());
+                scriptNode = parseInline(in, filename, getCurrentContext().getCurrentScope());
             } else {
-                scriptNode = parseFile(sourceReader, filename, getCurrentContext().getCurrentScope());
+                scriptNode = parseFile(in, filename, getCurrentContext().getCurrentScope());
             }
             
             getCurrentContext().getCurrentFrame().setPosition(scriptNode.getPosition());
@@ -433,8 +441,7 @@ public final class Ruby {
             getGlobalVariables().set("$\\", getGlobalVariables().get("$/"));
         }
         
-        IRubyObject result = null;
-        outerLoop: while (RubyKernel.gets(getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
+        while (RubyKernel.gets(getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
             loop: while (true) { // Used for the 'redo' command
                 try {
                     if (processLineEnds) {
@@ -446,11 +453,11 @@ public final class Ruby {
                     }
                     
                     if (script != null) {
-                        result = runScript(script);
+                        runScript(script);
                     } else if (runner != null) {
-                        result = runYarv(runner);
+                        runYarv(runner);
                     } else {
-                        result = runInterpreter(scriptNode);
+                        runInterpreter(scriptNode);
                     }
                     
                     if (printing) RubyKernel.print(getKernel(), new IRubyObject[] {getGlobalVariables().get("$_")});
@@ -1561,23 +1568,51 @@ public final class Ruby {
         globalVariables.defineReadonly(name, new ValueAccessor(value));
     }
     
-    public Node parseFile(Reader content, String file, DynamicScope scope) {
-        return parser.parse(file, content, scope, new ParserConfiguration(0, false, false, true));
+    public Node parseFile(InputStream in, String file, DynamicScope scope) {
+        return parser.parse(file, in, scope, new ParserConfiguration(0, false, false, true));
     }
 
-    public Node parseInline(Reader content, String file, DynamicScope scope) {
-        return parser.parse(file, content, scope, new ParserConfiguration(0, false, true));
+    public Node parseInline(InputStream in, String file, DynamicScope scope) {
+        return parser.parse(file, in, scope, new ParserConfiguration(0, false, true));
     }
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
-        return parser.parse(file, new StringReader(content), scope, new ParserConfiguration(lineNumber, false));
+        byte[] bytes;
+        
+        try {
+            bytes = content.getBytes(KCode.NONE.getKCode());
+        } catch (UnsupportedEncodingException e) {
+            bytes = content.getBytes();
+        }
+        
+        return parser.parse(file, new ByteArrayInputStream(bytes), scope, 
+                new ParserConfiguration(lineNumber, false));
     }
 
     public Node parse(String content, String file, DynamicScope scope, int lineNumber, 
             boolean extraPositionInformation) {
-        return parser.parse(file, new StringReader(content), scope, 
+        byte[] bytes;
+        
+        try {
+            bytes = content.getBytes(KCode.NONE.getKCode());
+        } catch (UnsupportedEncodingException e) {
+            bytes = content.getBytes();
+        }
+
+        return parser.parse(file, new ByteArrayInputStream(bytes), scope, 
                 new ParserConfiguration(lineNumber, extraPositionInformation, false));
     }
+    
+    public Node parseEval(ByteList content, String file, DynamicScope scope, int lineNumber) {
+        return parser.parse(file, content, scope, new ParserConfiguration(lineNumber, false));
+    }
+
+    public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber, 
+            boolean extraPositionInformation) {
+        return parser.parse(file, content, scope, 
+                new ParserConfiguration(lineNumber, extraPositionInformation, false));
+    }
+
 
     public ThreadService getThreadService() {
         return threadService;
@@ -1738,7 +1773,7 @@ public final class Ruby {
      *  It can be used if you want to use JRuby as a Macro language.
      *
      */
-    public void loadFile(String scriptName, Reader source) {
+    public void loadFile(String scriptName, InputStream in) {
         if (!Ruby.isSecurityRestricted()) {
             File f = new File(scriptName);
             if(f.exists() && !f.isAbsolute() && !scriptName.startsWith("./")) {
@@ -1754,7 +1789,7 @@ public final class Ruby {
 
             context.preNodeEval(objectClass, self);
 
-            Node node = parseFile(source, scriptName, null);
+            Node node = parseFile(in, scriptName, null);
             ASTInterpreter.eval(this, context, node, self, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return;

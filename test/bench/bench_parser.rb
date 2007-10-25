@@ -13,7 +13,7 @@ puts "size: " + src.size.to_s
 
 fulltime = 0
 
-5.times do 
+10.times do 
   parsetime = Benchmark.measure { ITER_COUNT.times { JRuby.parse(src, "parse_rb.rb") } }.real
   
   puts "time: " + parsetime.to_s

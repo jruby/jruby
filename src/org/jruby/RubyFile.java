@@ -113,7 +113,7 @@ public class RubyFile extends RubyIO {
         });
     }
     
-    private RubyFile(Ruby runtime, String path, InputStream in) {
+    public RubyFile(Ruby runtime, String path, InputStream in) {
         super(runtime, runtime.getFile());
         this.path = path;
         try {

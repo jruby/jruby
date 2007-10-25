@@ -41,7 +41,7 @@ public class ParserConfiguration {
     private boolean inlineSource = false;
     // We parse evals more often in source so assume an eval parse.
     private boolean isEvalParse = true;
-    // Should positions added extra IDE-friendly information
+    // Should positions added extra IDE-friendly information and leave in all newline nodes
     private boolean extraPositionInformation = false;
     
     public ParserConfiguration(int lineNumber, boolean inlineSource) {
@@ -133,5 +133,4 @@ public class ParserConfiguration {
     public boolean isInlineSource() {
         return inlineSource;
     }
-
 }

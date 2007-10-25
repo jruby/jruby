@@ -47,21 +47,21 @@ public class BlockStaticScope extends StaticScope {
     }
     
     public StaticScope getLocalScope() {
-        return getEnclosingScope().getLocalScope();
+        return enclosingScope.getLocalScope();
     }
     
     public int isDefined(String name, int depth) {
         int slot = exists(name); 
-        if (slot >= 0) return (depth << 16) | exists(name);
+        if (slot >= 0) return (depth << 16) | slot;
         
-        return getEnclosingScope().isDefined(name, depth + 1);
+        return enclosingScope.isDefined(name, depth + 1);
     }
     
     /**
      * @see org.jruby.parser.StaticScope#getAllNamesInScope()
      */
     public String[] getAllNamesInScope(DynamicScope dynamicScope) {
-        String[] variables = getEnclosingScope().getAllNamesInScope(dynamicScope.getNextCapturedScope());
+        String[] variables = enclosingScope.getAllNamesInScope(dynamicScope.getNextCapturedScope());
         String[] ourVariables = getVariables();
         
         // we know variables cannot be null since localstaticscope will create a 0 length one.
@@ -82,7 +82,7 @@ public class BlockStaticScope extends StaticScope {
             return new DAsgnNode(position, name, ((depth << 16) | slot), value);
         }
 
-        return getEnclosingScope().assign(position, name, value, topScope, depth + 1);
+        return enclosingScope.assign(position, name, value, topScope, depth + 1);
     }
 
     public AssignableNode addAssign(ISourcePosition position, String name, Node value) {
@@ -99,6 +99,6 @@ public class BlockStaticScope extends StaticScope {
             return new DVarNode(position, ((depth << 16) | slot), name);
         }
         
-        return getEnclosingScope().declare(position, name, depth + 1);
+        return enclosingScope.declare(position, name, depth + 1);
     }
 }

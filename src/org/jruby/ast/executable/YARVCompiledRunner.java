@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast.executable;
 
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.IOException;
 
@@ -59,15 +60,15 @@ public class YARVCompiledRunner {
     private Map jumps = new IdentityHashMap();
     private Map labels = new HashMap();
 
-    public YARVCompiledRunner(Ruby runtime, Reader reader, String filename) {
+    public YARVCompiledRunner(Ruby runtime, InputStream in, String filename) {
         this.runtime = runtime;
-        char[] first = new char[4];
+        byte[] first = new byte[4];
         try {
-            reader.read(first);
+            in.read(first);
             if(first[0] != 'R' || first[1] != 'B' || first[2] != 'C' || first[3] != 'M') {
                 throw new RuntimeException("File is not a compiled YARV file");
             }
-            RubyFile f = new RubyFile(runtime,filename,reader);
+            RubyFile f = new RubyFile(runtime,filename,in);
             IRubyObject arr = runtime.getMarshal().callMethod(runtime.getCurrentContext(),"load",f);
             iseq = transformIntoSequence(arr);
         } catch(IOException e) {

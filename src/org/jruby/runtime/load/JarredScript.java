@@ -33,7 +33,6 @@ package org.jruby.runtime.load;
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -81,7 +80,7 @@ public class JarredScript implements Library {
                         IRubyObject old = runtime.getGlobalVariables().isDefined("$JAR_URL") ? runtime.getGlobalVariables().get("$JAR_URL") : runtime.getNil();
                         try {
                             runtime.getGlobalVariables().set("$JAR_URL", runtime.newString("jar:" + jarFile + "!/"));
-                            runtime.loadFile("init", new InputStreamReader(in));
+                            runtime.loadFile("init", in);
                         } finally {
                             runtime.getGlobalVariables().set("$JAR_URL", old);
                         }

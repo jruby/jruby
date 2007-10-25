@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.IArityNode;
@@ -50,16 +49,9 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
 
     public InstVarNode(ISourcePosition position, String name) {
         super(position, NodeType.INSTVARNODE);
-        this.name = name.intern();
+        this.name = name;
     }
     
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        
-        // deserialized strings are not interned; intern it now
-        name = name.intern();
-    }
-
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor

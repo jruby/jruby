@@ -60,7 +60,7 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
         this.receiverNode = receiverNode;
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        this.callAdapter = new CallAdapter.DefaultCallAdapter(name.intern(), CallType.NORMAL);
+        this.callAdapter = new CallAdapter.DefaultCallAdapter(name, CallType.NORMAL);
     }
     
     /**

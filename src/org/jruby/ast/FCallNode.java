@@ -56,7 +56,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         super(position, NodeType.FCALLNODE);
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        this.callAdapter = new CallAdapter.DefaultCallAdapter(name.intern(), CallType.FUNCTIONAL);
+        this.callAdapter = new CallAdapter.DefaultCallAdapter(name, CallType.FUNCTIONAL);
     }
     
     /**

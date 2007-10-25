@@ -115,18 +115,16 @@ import org.jruby.ast.ZArrayNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.types.ILiteralNode;
-import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
-import org.jruby.lexer.yacc.LexState;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.RubyYaccLexer;
+import org.jruby.lexer.yacc.RubyYaccLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.runtime.Visibility;
-import org.jruby.util.IdUtil;
 import org.jruby.util.ByteList;
 
 public class DefaultRubyParser {
@@ -380,16 +378,15 @@ stmt          : kALIAS fitem {
               | var_lhs tOP_ASGN command_call {
  	          support.checkExpression($3);
 
-	          String name = $<INameNode>1.getName();
 		  String asgnOp = (String) $2.getValue();
 		  if (asgnOp.equals("||")) {
 	              $1.setValueNode($3);
-	              $$ = new OpAsgnOrNode(support.union($1, $3), support.gettable2(name, $1.getPosition()), $1);
+	              $$ = new OpAsgnOrNode(support.union($1, $3), support.gettable2($1), $1);
 		  } else if (asgnOp.equals("&&")) {
 	              $1.setValueNode($3);
-                      $$ = new OpAsgnAndNode(support.union($1, $3), support.gettable2(name, $1.getPosition()), $1);
+                      $$ = new OpAsgnAndNode(support.union($1, $3), support.gettable2($1), $1);
 		  } else {
-                      $1.setValueNode(support.getOperatorCallNode(support.gettable2(name, $1.getPosition()), asgnOp, $3));
+                      $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
                       $1.setPosition(support.union($1, $3));
 		      $$ = $1;
 		  }
@@ -496,7 +493,7 @@ command       : operation command_args  %prec tLOWEST {
 		  $$ = support.new_super($2, $1); // .setPosFrom($2);
 	      }
               | kYIELD command_args {
-                  $$ = support.new_yield(getPosition($1), $2);
+                  $$ = support.new_yield(support.union($1, $2), $2);
 	      }
 
 mlhs          : mlhs_basic
@@ -680,17 +677,16 @@ arg           : lhs '=' arg {
 	      }
 	      | var_lhs tOP_ASGN arg {
 		  support.checkExpression($3);
-	          String name = $<INameNode>1.getName();
 		  String asgnOp = (String) $2.getValue();
 
 		  if (asgnOp.equals("||")) {
 	              $1.setValueNode($3);
-	              $$ = new OpAsgnOrNode(support.union($1, $3), support.gettable2(name, $1.getPosition()), $1);
+	              $$ = new OpAsgnOrNode(support.union($1, $3), support.gettable2($1), $1);
 		  } else if (asgnOp.equals("&&")) {
 	              $1.setValueNode($3);
-                      $$ = new OpAsgnAndNode(support.union($1, $3), support.gettable2(name, $1.getPosition()), $1);
+                      $$ = new OpAsgnAndNode(support.union($1, $3), support.gettable2($1), $1);
 		  } else {
-		      $1.setValueNode(support.getOperatorCallNode(support.gettable2(name, $1.getPosition()), asgnOp, $3));
+		      $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
                       $1.setPosition(support.union($1, $3));
 		      $$ = $1;
 		  }
@@ -1019,6 +1015,10 @@ primary       : literal
                   $$ = $2;
 	      }
               | tLPAREN compstmt tRPAREN {
+                  if ($2 != null) {
+                      // compstmt position includes both parens around it
+                      ((ISourcePositionHolder) $2).setPosition(support.union($1, $3));
+                  }
 		  $$ = $2;
               }
               | primary_value tCOLON2 tCONSTANT {
@@ -1518,26 +1518,26 @@ numeric        : tINTEGER | tFLOAT {
 // Token:variable - name (special and normal onces)
 variable       : tIDENTIFIER | tIVAR | tGVAR | tCONSTANT | tCVAR
                | kNIL { 
-		   $$ = new Token("nil", $1.getPosition());
+                   $$ = new Token("nil", Tokens.kNIL, $1.getPosition());
                }
                | kSELF {
-		   $$ = new Token("self", $1.getPosition());
+                   $$ = new Token("self", Tokens.kSELF, $1.getPosition());
                }
                | kTRUE { 
-		   $$ = new Token("true", $1.getPosition());
+                   $$ = new Token("true", Tokens.kTRUE, $1.getPosition());
                }
                | kFALSE {
-		   $$ = new Token("false", $1.getPosition());
+                   $$ = new Token("false", Tokens.kFALSE, $1.getPosition());
                }
                | k__FILE__ {
-		   $$ = new Token("__FILE__", $1.getPosition());
+                   $$ = new Token("__FILE__", Tokens.k__FILE__, $1.getPosition());
                }
                | k__LINE__ {
-		   $$ = new Token("__LINE__", $1.getPosition());
+                   $$ = new Token("__LINE__", Tokens.k__LINE__, $1.getPosition());
                }
 
 var_ref        : variable {
-		   $$ = support.gettable((String) $1.getValue(), $1.getPosition());
+                   $$ = support.gettable($1);
                }
 
 var_lhs	       : variable {
@@ -1601,6 +1601,9 @@ f_norm_arg     : tCONSTANT {
                    yyerror("formal argument cannot be a constant");
                }
                | tIVAR {
+                   yyerror("formal argument cannot be a global variable");
+               }
+               | tGVAR {
                    yyerror("formal argument cannot be an instance variable");
                }
                | tCVAR {
@@ -1608,9 +1611,7 @@ f_norm_arg     : tCONSTANT {
                }
                | tIDENTIFIER {
                    String identifier = (String) $1.getValue();
-                   if (IdUtil.getVarType(identifier) != IdUtil.LOCAL_VAR) {
-                       yyerror("formal argument must be local variable");
-                   } else if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
+                   if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
                        yyerror("duplicate argument name");
                    }
 
@@ -1631,9 +1632,7 @@ f_arg          : f_norm_arg {
 f_opt          : tIDENTIFIER '=' arg_value {
                    String identifier = (String) $1.getValue();
 
-                   if (IdUtil.getVarType(identifier) != IdUtil.LOCAL_VAR) {
-                       yyerror("formal argument must be local variable");
-                   } else if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
+                   if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
                        yyerror("duplicate optional argument name");
                    }
 		   support.getCurrentScope().getLocalScope().addVariable(identifier);
@@ -1652,9 +1651,7 @@ restarg_mark  : tSTAR2 | tSTAR
 f_rest_arg    : restarg_mark tIDENTIFIER {
                   String identifier = (String) $2.getValue();
 
-                  if (IdUtil.getVarType(identifier) != IdUtil.LOCAL_VAR) {
-                      yyerror("rest argument must be local variable");
-                   } else if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
+                  if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
                       yyerror("duplicate rest argument name");
                   }
 		  $1.setValue(new Integer(support.getCurrentScope().getLocalScope().addVariable(identifier)));
@@ -1670,9 +1667,7 @@ blkarg_mark   : tAMPER2 | tAMPER
 f_block_arg   : blkarg_mark tIDENTIFIER {
                   String identifier = (String) $2.getValue();
 
-                  if (IdUtil.getVarType(identifier) != IdUtil.LOCAL_VAR) {
-                      yyerror("block argument must be local variable");
-		  } else if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
+                  if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
                       yyerror("duplicate block argument name");
                   }
                   $$ = new BlockArgNode(support.union($1, $2), support.getCurrentScope().getLocalScope().addVariable(identifier), identifier);

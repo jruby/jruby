@@ -29,9 +29,9 @@
 package org.jruby.ast.visitor.rewriter;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -62,7 +62,7 @@ public class SourceRewriteTester extends TestSuite {
         StringWriter outputWriter = new StringWriter();
         ReWriteVisitor visitor = new ReWriteVisitor(outputWriter, original);
         ParserConfiguration configuration = new ParserConfiguration(0, true, false);
-        new Parser(null).parseRewriter("", new StringReader(original), configuration).accept(visitor); 
+        new Parser(null).parseRewriter("", new ByteArrayInputStream(original.getBytes()), configuration).accept(visitor); 
 		visitor.flushStream();
 		return outputWriter.getBuffer().toString();
 	}

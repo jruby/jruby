@@ -30,9 +30,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.io.StringReader;
 
 import junit.framework.TestCase;
 
@@ -67,7 +67,7 @@ public class TestRubyBase extends TestCase {
         runtime.getGlobalVariables().set("$stderr", lStream);
         
         runtime.runNormally(
-                runtime.parseFile(new StringReader(script), "test", runtime.getCurrentContext().getCurrentScope()), 
+                runtime.parseFile(new ByteArrayInputStream(script.getBytes()), "test", runtime.getCurrentContext().getCurrentScope()), 
                 false,
                 false);
         StringBuffer sb = new StringBuffer(new String(result.toByteArray()));

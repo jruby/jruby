@@ -53,8 +53,8 @@ public class OpAsgnNode extends Node {
         super(position, NodeType.OPASGNNODE);
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
-        this.variableCallAdapter = new CallAdapter.DefaultCallAdapter(variableName.intern(), CallType.NORMAL);
-        this.operatorCallAdapter = new CallAdapter.DefaultCallAdapter(operatorName.intern(), CallType.NORMAL);
+        this.variableCallAdapter = new CallAdapter.DefaultCallAdapter(variableName, CallType.NORMAL);
+        this.operatorCallAdapter = new CallAdapter.DefaultCallAdapter(operatorName, CallType.NORMAL);
         this.variableAsgnCallAdapter = new CallAdapter.DefaultCallAdapter((variableName + "=").intern(), CallType.NORMAL);
     }
 

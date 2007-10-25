@@ -9,16 +9,17 @@
 
 package org.jruby;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 
 import org.jruby.ast.Node;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.StandardASMCompiler;
+import org.jruby.util.KCode;
 
 /**
  *
@@ -49,7 +50,7 @@ public class JRubyC {
                 new FileInputStream(srcfile).read(chars);
                 // FIXME: encoding?
                 String content = new String(chars);
-                Node scriptNode = runtime.parseFile(new StringReader(content), filename, null);
+                Node scriptNode = runtime.parseFile(new ByteArrayInputStream(content.getBytes(KCode.NONE.getKCode())), filename, null);
 
                 ASTInspector inspector = new ASTInspector();
                 inspector.inspect(scriptNode);
