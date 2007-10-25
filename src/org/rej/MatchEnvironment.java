@@ -21,6 +21,8 @@
  */
 package org.rej;
 
+import java.util.Arrays;
+
 import static org.rej.REJConstants.*;
 import static org.rej.MBC.*;
 import static org.rej.Helpers.*;
@@ -64,13 +66,8 @@ class MatchEnvironment {
     /* stack & working area for re_match() */
     private int[] registerStart;
     private int[] registerEnd;
-
-    private static class RegisterInfoType {
-        public boolean isActive;
-        public boolean matchedSomething;
-    }
-
-    private RegisterInfoType[] registerInfo;
+    private boolean[] registerActive;
+    private boolean[] registerMatchedSomething;
     private int[] bestRegisterStart;
     private int[] bestRegisterEnd;
 
@@ -96,10 +93,8 @@ class MatchEnvironment {
 
         registerStart = new int[registerCount];
         registerEnd = new int[registerCount];
-        registerInfo = new RegisterInfoType[registerCount];
-        for(int x=0;x<registerInfo.length;x++) {
-            registerInfo[x] = new RegisterInfoType();
-        }
+        registerActive = new boolean[registerCount]; 
+        registerMatchedSomething = new boolean[registerCount];
         bestRegisterStart = new int[registerCount];
         bestRegisterEnd = new int[registerCount];
 
@@ -149,12 +144,10 @@ class MatchEnvironment {
            ( or ( and ) or ) has been seen for. Also set all registers to
            inactive and mark them as not having matched anything or ever
            failed. */
-        for(int mcnt = 0; mcnt < registerCount; mcnt++) {
-            registerStart[mcnt] = registerEnd[mcnt]
-                = bestRegisterStart[mcnt] = bestRegisterEnd[mcnt] = REG_UNSET_VALUE;
-            registerInfo[mcnt].isActive = false;
-            registerInfo[mcnt].matchedSomething = false;
-        }
+        Arrays.fill(registerStart, REG_UNSET_VALUE);
+        Arrays.fill(registerEnd, REG_UNSET_VALUE);
+        Arrays.fill(bestRegisterStart, REG_UNSET_VALUE);
+        Arrays.fill(bestRegisterEnd, REG_UNSET_VALUE);
     }
 
     private final void popFailureCount() {
@@ -178,7 +171,7 @@ class MatchEnvironment {
 
     private final void setMatchedRegisters() {
         for(int this_reg = 0; this_reg < registerCount; this_reg++) {
-            registerInfo[this_reg].matchedSomething = registerInfo[this_reg].isActive;
+            registerMatchedSomething[this_reg] = registerActive[this_reg];
         }
     }
 
@@ -200,11 +193,12 @@ class MatchEnvironment {
         failureStack[failureStackPointer++] = failureCountNums;
         failureCountNums = 0;
 
-        /* Now push the info for each of those registers.  */
-        for(thisRegister = 1; thisRegister <= lastUsedRegister; thisRegister++) {
-            failureStack[failureStackPointer++] = registerStart[thisRegister];
-            failureStack[failureStackPointer++] = registerEnd[thisRegister];
-        }
+        System.arraycopy(registerStart,1,failureStack,failureStackPointer,lastUsedRegister);
+        failureStackPointer+=lastUsedRegister;
+
+        System.arraycopy(registerEnd,1,failureStack,failureStackPointer,lastUsedRegister);
+        failureStackPointer+=lastUsedRegister;
+        
 
         /* Push how many registers we saved.  */
         failureStack[failureStackPointer++] = lastUsedRegister;
@@ -224,7 +218,7 @@ class MatchEnvironment {
             return BREAK_WITH_FAIL1;
         }
         /* Check if corresponding group is still open */
-        if(registerInfo[registerNumber].isActive) {
+        if(registerActive[registerNumber]) {
             return BREAK_WITH_FAIL1;
         }
 
@@ -319,19 +313,18 @@ class MatchEnvironment {
         /* Restore register info.  */
         int lastUsedRegister = failureStack[--failureStackPointer];
 
-        /* Make the ones that weren't saved -1 or 0 again. */
-        for(thisRegister = registerCount - 1; thisRegister > lastUsedRegister; thisRegister--) {
-            registerEnd[thisRegister] = REG_UNSET_VALUE;
-            registerStart[thisRegister] = REG_UNSET_VALUE;
-            registerInfo[thisRegister].isActive = false;
-            registerInfo[thisRegister].matchedSomething = false;
-        }
+        thisRegister = lastUsedRegister;
 
-        /* And restore the rest from the stack.  */
-        for( ; thisRegister > 0; thisRegister--) {
-            registerEnd[thisRegister] = failureStack[--failureStackPointer];
-            registerStart[thisRegister] = failureStack[--failureStackPointer];
-        }
+        Arrays.fill(registerStart, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
+        Arrays.fill(registerEnd, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
+        Arrays.fill(registerActive, lastUsedRegister+1, registerCount, false);
+        Arrays.fill(registerMatchedSomething, lastUsedRegister+1, registerCount, false);
+
+        failureStackPointer -= thisRegister;
+        System.arraycopy(failureStack, failureStackPointer, registerEnd, 1, thisRegister);
+        failureStackPointer -= thisRegister;
+        System.arraycopy(failureStack, failureStackPointer, registerStart, 1, thisRegister);
+
         int mcnt = failureStack[--failureStackPointer];
         while(mcnt-->0) {
             int ptr = failureStack[--failureStackPointer];
@@ -382,17 +375,13 @@ class MatchEnvironment {
     }
 
     private final void fixRegisters() {
-        for(int mcnt = 0; mcnt < registerCount; mcnt++) {
-            registerStart[mcnt] = bestRegisterStart[mcnt];
-            registerEnd[mcnt] = bestRegisterEnd[mcnt];
-        }
+        System.arraycopy(bestRegisterStart, 0, registerStart, 0, registerCount);
+        System.arraycopy(bestRegisterEnd, 0, registerEnd, 0, registerCount);
     }
 
     private final void fixBestRegisters() {
-        for(int mcnt = 1; mcnt < registerCount; mcnt++) {
-            bestRegisterStart[mcnt] = registerStart[mcnt];
-            bestRegisterEnd[mcnt] = registerEnd[mcnt];
-        }
+        System.arraycopy(registerStart, 1, bestRegisterStart, 1, registerCount-1);
+        System.arraycopy(registerEnd, 1, bestRegisterEnd, 1, registerCount-1);
     }
 
     public final int restoreBestRegisters() {
@@ -438,15 +427,15 @@ class MatchEnvironment {
         
     public final int bytecode_start_memory() {
         registerStart[pattern[patternIndex]] = stringIndex;
-        registerInfo[pattern[patternIndex]].isActive = true;
-        registerInfo[pattern[patternIndex]].matchedSomething = false;
+        registerActive[pattern[patternIndex]] = true;
+        registerMatchedSomething[pattern[patternIndex]] = false;
         patternIndex += 2;
         return CONTINUE_MAINLOOP;
     }
 
     public final int bytecode_stop_memory() {
         registerEnd[pattern[patternIndex]] = stringIndex;
-        registerInfo[pattern[patternIndex]].isActive = false;
+        registerActive[pattern[patternIndex]] = false;
         patternIndex += 2;
         return CONTINUE_MAINLOOP;
     }
