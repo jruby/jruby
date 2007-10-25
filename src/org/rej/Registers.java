@@ -32,7 +32,7 @@ public class Registers {
 
     public static final int RE_NREGS=10;
 
-    public void init_regs(int nregs) {
+    public void initRegisters(int nregs) {
         num_regs = nregs;
 
         if(nregs < RE_NREGS) {

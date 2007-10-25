@@ -515,7 +515,7 @@ public class Pattern {
 
     }
 
-    protected void uninit_stack() {
+    protected void uninitStack() {
         synchronized(this) {
             this.poolIndex--;
         }
@@ -719,7 +719,7 @@ public class Pattern {
             case dummy_failure_jump:
             case finalize_push:
             case finalize_push_n:
-                j = EXTRACT_NUMBER(p,pix);
+                j = extractNumber(p,pix);
                 pix += 2;
                 pix += j;	
                 if(j > 0) {
@@ -735,7 +735,7 @@ public class Pattern {
                     continue;
                 }
                 pix++;
-                j = EXTRACT_NUMBER(p,pix);
+                j = extractNumber(p,pix);
                 pix+=2;
                 pix += j;
                 if(stackp != 0 && stackb[stackp] == pix) {
@@ -751,7 +751,7 @@ public class Pattern {
             case succeed_n:
                 is_a_succeed_n = 1;
                 /* Get to the number of times to succeed.  */
-                k = EXTRACT_NUMBER(p, pix + 2);
+                k = extractNumber(p, pix + 2);
                 /* Increment p past the n for when k != 0.  */
                 if(k != 0) {
                     pix += 4;
@@ -759,7 +759,7 @@ public class Pattern {
                 }
                 /* fall through */
             case on_failure_jump:
-                j = EXTRACT_NUMBER(p,pix);
+                j = extractNumber(p,pix);
                 pix += 2;
                 if(pix + j < pend) {
                     if(stackp == stacke) {
@@ -775,7 +775,7 @@ public class Pattern {
                     can_be_null = 1;
                 }
                 if(is_a_succeed_n>0) {
-                    k = EXTRACT_NUMBER(p,pix);	/* Skip the n.  */
+                    k = extractNumber(p,pix);	/* Skip the n.  */
                     pix += 2;
                 }
                 continue;
@@ -871,11 +871,11 @@ public class Pattern {
               int c, beg, end;
 
               pix += p[pix-1] + 2;
-              size = EXTRACT_UNSIGNED(p,pix-2);
+              size = extractUnsigned(p,pix-2);
               for(j = 0; j < size; j++) {
-                  c = EXTRACT_MBC(p,pix+j*8);
+                  c = extractMultiByteCharacter(p,pix+j*8);
                   beg = WC2MBC1ST(c);
-                  c = EXTRACT_MBC(p,pix+j*8+4);
+                  c = extractMultiByteCharacter(p,pix+j*8+4);
                   end = WC2MBC1ST(c);
                   /* set bits for 1st bytes of multi-byte chars.  */
                   while(beg <= end) {
@@ -921,7 +921,7 @@ public class Pattern {
                     long c, beg;
                     int num_literal = 0;
                     pix += p[pix-1] + 2;
-                    size = EXTRACT_UNSIGNED(p,pix-2);
+                    size = extractUnsigned(p,pix-2);
                     if(size == 0) {
                         for(j = 0x80; j < 256; j++) {
                             if(ismbchar(j,ctx)) {
@@ -931,7 +931,7 @@ public class Pattern {
                         break;
                     }
                     for(j = 0,c = 0;j < size; j++) {
-                        int cc = EXTRACT_MBC(p,pix+j*8);
+                        int cc = extractMultiByteCharacter(p,pix+j*8);
                         beg = WC2MBC1ST(cc);
                         while(c <= beg) {
                             if(ismbchar((int)c, ctx)) {
@@ -939,7 +939,7 @@ public class Pattern {
                             }
                             c++;
                         }
-                        cc = EXTRACT_MBC(p,pix+j*8+4);
+                        cc = extractMultiByteCharacter(p,pix+j*8+4);
                         if(cc < 0xff) {
                             num_literal = 1;
                             while(c <= cc) {

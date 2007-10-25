@@ -321,19 +321,19 @@ class CompilationEnvironment {
         System.arraycopy(b,there,b,there+NUMBER_LENGTH*2+1,pfrom-there);
 
         b[there] = op;
-        STORE_NUMBER(b, there + 1, num_1);
-        STORE_NUMBER(b, there + NUMBER_LENGTH + 1, num_2);
+        storeNumber(b, there + 1, num_1);
+        storeNumber(b, there + NUMBER_LENGTH + 1, num_2);
     }
 
     private final static void store_jump_n(byte[] b, int from, byte opcode, int to, int n) {
         b[from] = opcode;
-        STORE_NUMBER(b, from + 1, to - (from + NUMBER_LENGTH + 1));
-        STORE_NUMBER(b, from + NUMBER_LENGTH + 1, n);
+        storeNumber(b, from + 1, to - (from + NUMBER_LENGTH + 1));
+        storeNumber(b, from + NUMBER_LENGTH + 1, n);
     }
 
     private final static void store_jump(byte[] b, int from, byte opcode, int to) {
         b[from] = opcode;
-        STORE_NUMBER(b, from+1, to-(from+NUMBER_LENGTH+1));
+        storeNumber(b, from+1, to-(from+NUMBER_LENGTH+1));
     }
 
     private final static void insert_jump_n(byte op, byte[] b, int from, int to, int current_end, int n) {
@@ -694,7 +694,7 @@ class CompilationEnvironment {
             if(!gotoRangeRepeat) {
                 size = -1;
                 last = -1;
-                if((size = EXTRACT_UNSIGNED(b,bix+32))!=0 || ctx.current_mbctype!=0) {
+                if((size = extractUnsigned(b,bix+32))!=0 || ctx.current_mbctype!=0) {
                     /* Ensure the space is enough to hold another interval
                        of multi-byte chars in charset(_not)?.  */
                     size = 32 + 2 + size*8 + 8;
@@ -844,9 +844,9 @@ class CompilationEnvironment {
             b[bix-1]--; 
         }
         if(b[bix-1] != 32) {
-            System.arraycopy(b,bix+32,b,bix+b[bix-1],2+EXTRACT_UNSIGNED(b,bix+32)*8);
+            System.arraycopy(b,bix+32,b,bix+b[bix-1],2+extractUnsigned(b,bix+32)*8);
         }
-        bix += b[bix-1] + 2 + EXTRACT_UNSIGNED(b,bix+b[bix-1])*8;
+        bix += b[bix-1] + 2 + extractUnsigned(b,bix+b[bix-1])*8;
         had_num_literal = 0;
     }
 
@@ -1073,13 +1073,13 @@ class CompilationEnvironment {
             BUFPUSH(pop_and_fail);
             /* back patch */
 
-            STORE_NUMBER(self.buffer,stackb[stackp-1], bix - stackb[stackp-1] - 2);
+            storeNumber(self.buffer,stackb[stackp-1], bix - stackb[stackp-1] - 2);
             stackp--;
             /* fall through */
         case '=':
             BUFPUSH(stop_nowidth);
             /* tell stack-pos place to start_nowidth */
-            STORE_NUMBER(self.buffer,stackb[stackp-1], bix - stackb[stackp-1] - 2);
+            storeNumber(self.buffer,stackb[stackp-1], bix - stackb[stackp-1] - 2);
             BUFPUSH((byte)0); /* space to hold stack pos */
             BUFPUSH((byte)0);
             stackp--;
@@ -1087,7 +1087,7 @@ class CompilationEnvironment {
         case '>':
             BUFPUSH(stop_backtrack);
             /* tell stack-pos place to start_nowidth */
-            STORE_NUMBER(self.buffer,stackb[stackp-1], bix - stackb[stackp-1] - 2);
+            storeNumber(self.buffer,stackb[stackp-1], bix - stackb[stackp-1] - 2);
             BUFPUSH((byte)0); /* space to hold stack pos */
             BUFPUSH((byte)0);
             stackp--;
@@ -1415,9 +1415,9 @@ class CompilationEnvironment {
                 b[bix-1]--;
             }
             if(b[bix-1] != 32) {
-                System.arraycopy(b,bix+32,b,bix+b[bix-1],  2 + EXTRACT_UNSIGNED(b,bix+32)*8);
+                System.arraycopy(b,bix+32,b,bix+b[bix-1],  2 + extractUnsigned(b,bix+32)*8);
             }
-            bix += b[bix-1] + 2 + EXTRACT_UNSIGNED(b, bix+b[bix-1])*8;
+            bix += b[bix-1] + 2 + extractUnsigned(b, bix+b[bix-1])*8;
             break;
         case 'w':
             laststart = bix;
@@ -1755,21 +1755,21 @@ class CompilationEnvironment {
             case charset_not:
                 mcnt = start[p++]&0xFF;
                 p += mcnt;
-                mcnt = EXTRACT_UNSIGNED(start, p);
+                mcnt = extractUnsigned(start, p);
                 p+=2;
                 while(mcnt-- > 0) {
                     p += 8;
                 }
                 break;
             case on_failure_jump:
-                mcnt = EXTRACT_NUMBER(start, p);
+                mcnt = extractNumber(start, p);
                 p+=2;
                 if(mcnt > 0) {
                     p += mcnt;
                 }
                 if(start[p-3] == jump) {
                     p -= 2;
-                    mcnt = EXTRACT_NUMBER(start, p);
+                    mcnt = extractNumber(start, p);
                     p+=2;
                     if(mcnt > 0) {
                         p += mcnt;
@@ -1780,7 +1780,7 @@ class CompilationEnvironment {
             case succeed_n: 
             case try_next:
             case jump:
-                mcnt = EXTRACT_NUMBER(start, p);
+                mcnt = extractNumber(start, p);
                 p+=2;
                 if(mcnt > 0) {
                     p += mcnt;

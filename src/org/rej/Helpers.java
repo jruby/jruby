@@ -23,7 +23,7 @@ package org.rej;
 
 class Helpers {
     private Helpers() {}
-    public final static void STORE_NUMBER(byte[] d, int dix, int number) {
+    public final static void storeNumber(byte[] d, int dix, int number) {
         d[dix] = (byte)(number&0xFF);
         d[dix+1] = (byte)((number >> 8)&0xFF);
         int vv = ((d[dix] & 0377) + ((d[dix+1]&0xFF) << 8));
@@ -48,14 +48,14 @@ class Helpers {
         d[dix+3] = (byte)(((c)>>> 0) & 0xff);
     }
 
-    public final static int EXTRACT_MBC(byte[] p, int pix) {
+    public final static int extractMultiByteCharacter(byte[] p, int pix) {
         return (p[pix]&0xFF)<<24 |
             (p[pix+1]&0xFF) <<16 |
             (p[pix+2]&0xFF) <<8 |
             (p[pix+3]&0xFF);
     }
 
-    public final static int EXTRACT_NUMBER(byte[] b, int p) {
+    public final static int extractNumber(byte[] b, int p) {
         int vv = (b[p] & 0xFF) | ((b[p+1]&0xFF) << 8);
         if((vv & 0x8000) != 0) {
             vv |= 0xFFFF0000;
@@ -63,7 +63,7 @@ class Helpers {
         return vv;
     }
 
-    public final static int EXTRACT_UNSIGNED(byte[] b, int p) {
+    public final static int extractUnsigned(byte[] b, int p) {
         return (b[p] & 0377) | ((b[p+1]&0xFF) << 8);
     }
 
@@ -203,7 +203,7 @@ class Helpers {
 
     final static void set_list_bits(long c1, long c2, byte[] b, int bix) {
         char sbc_size = (char)(b[bix-1]&0xFF);
-        int mbc_size = EXTRACT_UNSIGNED(b,bix+sbc_size);
+        int mbc_size = extractUnsigned(b,bix+sbc_size);
         int beg,end,upb;
         if(c1 > c2) {
             return;
@@ -211,7 +211,7 @@ class Helpers {
         bix+=(sbc_size+2);
         for(beg=0,upb=mbc_size;beg<upb;) {
             int mid = (beg+upb)>>>1;
-            if((c1-1) > EXTRACT_MBC(b,bix+(mid*8+4))) {
+            if((c1-1) > extractMultiByteCharacter(b,bix+(mid*8+4))) {
                 beg = mid+1;
             } else {
                 upb = mid;
@@ -219,18 +219,18 @@ class Helpers {
         }
         for(end=beg,upb=mbc_size; end<upb; ) {
             int mid = (end+upb)>>>1;
-            if(c2 >= (EXTRACT_MBC(b,bix+(mid*8))-1)) {
+            if(c2 >= (extractMultiByteCharacter(b,bix+(mid*8))-1)) {
                 end = mid+1;
             } else {
                 upb = mid;
             }
         }
         if(beg != end) {
-            if(c1 > EXTRACT_MBC(b,bix+(beg*8))) {
-                c1 = EXTRACT_MBC(b,bix+(beg*8));
+            if(c1 > extractMultiByteCharacter(b,bix+(beg*8))) {
+                c1 = extractMultiByteCharacter(b,bix+(beg*8));
             }
-            if(c2 < EXTRACT_MBC(b,bix+((end - 1)*8+4))) {
-                c2 = EXTRACT_MBC(b,bix+((end - 1)*8+4));
+            if(c2 < extractMultiByteCharacter(b,bix+((end - 1)*8+4))) {
+                c2 = extractMultiByteCharacter(b,bix+((end - 1)*8+4));
             }
         }
         if(end < mbc_size && end != beg + 1) {
@@ -239,7 +239,7 @@ class Helpers {
         STORE_MBC(b,bix+(beg*8 + 0),c1);
         STORE_MBC(b,bix+(beg*8 + 4),c2);
         mbc_size += beg - end + 1;
-        STORE_NUMBER(b,bix-2, mbc_size);
+        storeNumber(b,bix-2, mbc_size);
     }
 
     public static void err(String msg) throws PatternSyntaxException {
