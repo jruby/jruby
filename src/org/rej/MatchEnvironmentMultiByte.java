@@ -210,6 +210,8 @@ class MatchEnvironmentMultiByte {
         /* Push how many registers we saved.  */
         failureStack[failureStackPointer++] = lastUsedRegister;
 
+        failureStack[failureStackPointer++] = 0; //Used for failure places that should match more than once
+
         failureStack[failureStackPointer++] = patternPlace;
         failureStack[failureStackPointer++] = stringPlace;
         failureStack[failureStackPointer++] = (int)optionFlags; /* current option status */
@@ -316,6 +318,8 @@ class MatchEnvironmentMultiByte {
         optionFlags = failureStack[--failureStackPointer];
         stringIndex = failureStack[--failureStackPointer];
         patternIndex = failureStack[--failureStackPointer];
+
+        failureStackPointer--;
 
         /* Restore register info.  */
         int lastUsedRegister = failureStack[--failureStackPointer];

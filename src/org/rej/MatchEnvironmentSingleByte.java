@@ -205,10 +205,11 @@ class MatchEnvironmentSingleByte {
 
         System.arraycopy(registerEnd,1,failureStack,failureStackPointer,lastUsedRegister);
         failureStackPointer+=lastUsedRegister;
-        
 
         /* Push how many registers we saved.  */
         failureStack[failureStackPointer++] = lastUsedRegister;
+
+        failureStack[failureStackPointer++] = 0; //Used for failure places that should match more than once
 
         failureStack[failureStackPointer++] = patternPlace;
         failureStack[failureStackPointer++] = stringPlace;
@@ -282,6 +283,7 @@ class MatchEnvironmentSingleByte {
     private final int handleFailure() {
         /* A restart point is known.  Restart there and pop it. */
         int thisRegister;
+        int res;
 
         /* If this failure point is from a dummy_failure_point, just
            skip it.  */
@@ -289,72 +291,97 @@ class MatchEnvironmentSingleByte {
             popFailurePoint();
             return 0;
         }
-        failureStackPointer--;		/* discard greedy flag */
-        optionFlags = failureStack[--failureStackPointer];
-        stringIndex = failureStack[--failureStackPointer];
-        patternIndex = failureStack[--failureStackPointer];
 
-        /* Restore register info.  */
-        int lastUsedRegister = failureStack[--failureStackPointer];
+        if((res=failureStack[failureStackPointer-5]) > 0) {
+            // Assume options don't change for this failure
+            stringIndex = failureStack[failureStackPointer-3] + res;
+            patternIndex = failureStack[failureStackPointer-4];
 
-        thisRegister = lastUsedRegister;
+            int lastUsedRegister = failureStack[failureStackPointer-6];
 
-        Arrays.fill(registerStart, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
-        Arrays.fill(registerEnd, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
-        Arrays.fill(registerActive, lastUsedRegister+1, registerCount, false);
-        Arrays.fill(registerMatchedSomething, lastUsedRegister+1, registerCount, false);
+            thisRegister = lastUsedRegister;
 
-        failureStackPointer -= thisRegister;
-        System.arraycopy(failureStack, failureStackPointer, registerEnd, 1, thisRegister);
-        failureStackPointer -= thisRegister;
-        System.arraycopy(failureStack, failureStackPointer, registerStart, 1, thisRegister);
+            Arrays.fill(registerStart, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
+            Arrays.fill(registerEnd, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
+            Arrays.fill(registerActive, lastUsedRegister+1, registerCount, false);
+            Arrays.fill(registerMatchedSomething, lastUsedRegister+1, registerCount, false);
+            
+            System.arraycopy(failureStack, failureStackPointer-(6+thisRegister), registerEnd, 1, thisRegister);
+            System.arraycopy(failureStack, failureStackPointer-(6+2*thisRegister), registerStart, 1, thisRegister);
 
-        int mcnt = failureStack[--failureStackPointer];
-        while(mcnt-->0) {
-            int ptr = failureStack[--failureStackPointer];
-            int count = failureStack[--failureStackPointer];
-            storeNumber(pattern, ptr, count);
-        }
-        if(patternIndex < patternEnd) {
-            int isA_jump_n = 0;
-            int failedParen = 0;
+            failureStack[failureStackPointer-5]--;
+        } else {
+            failureStackPointer--;		/* discard greedy flag */
+            optionFlags = failureStack[--failureStackPointer];
+            stringIndex = failureStack[--failureStackPointer];
+            patternIndex = failureStack[--failureStackPointer];
 
-            int patternIndex1 = patternIndex;
-            /* If failed to a backwards jump that's part of a repetition
-               loop, need to pop this failure point and use the next one.  */
-            switch(pattern[patternIndex1]) {
-            case jump_n:
-            case finalize_push_n:
-                isA_jump_n = 1;
-            case maybe_finalize_jump:
-            case finalize_jump:
-            case finalize_push:
-            case jump:
-                patternIndex1++;
-                mcnt = extractNumber(pattern,patternIndex1);
-                patternIndex1+=2;
-                if(mcnt >= 0) {
-                    break;	/* should be backward jump */
-                }
-                patternIndex1 += mcnt;
-                if((isA_jump_n!=0 && pattern[patternIndex1] == succeed_n) ||
-                   (isA_jump_n==0 && pattern[patternIndex1] == on_failure_jump)) {
-                    if(failedParen!=0) {
-                        patternIndex1++;
-                        mcnt = extractNumber(pattern, patternIndex1);
-                        patternIndex1+=2;
+            failureStackPointer--;		/* discard failure point count for now */
 
-                        pushFailurePoint(patternIndex1+mcnt,stringIndex);
-                        failureStack[failureStackPointer-1] = NON_GREEDY;
-                        //System.err.println("handle_fail: " + DESCRIBE_FAILURE_POINT());
+            /* Restore register info.  */
+            int lastUsedRegister = failureStack[--failureStackPointer];
+
+            thisRegister = lastUsedRegister;
+
+            Arrays.fill(registerStart, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
+            Arrays.fill(registerEnd, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
+            Arrays.fill(registerActive, lastUsedRegister+1, registerCount, false);
+            Arrays.fill(registerMatchedSomething, lastUsedRegister+1, registerCount, false);
+
+            failureStackPointer -= thisRegister;
+            System.arraycopy(failureStack, failureStackPointer, registerEnd, 1, thisRegister);
+            failureStackPointer -= thisRegister;
+            System.arraycopy(failureStack, failureStackPointer, registerStart, 1, thisRegister);
+
+            int mcnt = failureStack[--failureStackPointer];
+            while(mcnt-->0) {
+                int ptr = failureStack[--failureStackPointer];
+                int count = failureStack[--failureStackPointer];
+                storeNumber(pattern, ptr, count);
+            }
+
+            if(patternIndex < patternEnd) {
+                int isA_jump_n = 0;
+                int failedParen = 0;
+
+                int patternIndex1 = patternIndex;
+                /* If failed to a backwards jump that's part of a repetition
+                   loop, need to pop this failure point and use the next one.  */
+                switch(pattern[patternIndex1]) {
+                case jump_n:
+                case finalize_push_n:
+                    isA_jump_n = 1;
+                case maybe_finalize_jump:
+                case finalize_jump:
+                case finalize_push:
+                case jump:
+                    patternIndex1++;
+                    mcnt = extractNumber(pattern,patternIndex1);
+                    patternIndex1+=2;
+                    if(mcnt >= 0) {
+                        break;	/* should be backward jump */
                     }
-                    return 0;
+                    patternIndex1 += mcnt;
+                    if((isA_jump_n!=0 && pattern[patternIndex1] == succeed_n) ||
+                       (isA_jump_n==0 && pattern[patternIndex1] == on_failure_jump)) {
+                        if(failedParen!=0) {
+                            patternIndex1++;
+                            mcnt = extractNumber(pattern, patternIndex1);
+                            patternIndex1+=2;
+
+                            pushFailurePoint(patternIndex1+mcnt,stringIndex);
+                            failureStack[failureStackPointer-1] = NON_GREEDY;
+                            //System.err.println("handle_fail: " + DESCRIBE_FAILURE_POINT());
+                        }
+                        return 0;
+                    }
+                default:
+                    /* do nothing */;
+                    return 1;
                 }
-            default:
-                /* do nothing */;
-                return 1;
             }
         }
+
         return 1;
     }
 
@@ -466,14 +493,15 @@ class MatchEnvironmentSingleByte {
 
     public final void bytecode_anychar_repeat() {
         final int posBefore = stringIndex;
+        pushFailurePoint(patternIndex,stringIndex);
         if(!isMultiLine) {
             for (;;) {
-                pushFailurePoint(patternIndex,stringIndex);
                 //            System.err.println("anychar_repeat: " + DESCRIBE_FAILURE_POINT());
                 if(stringIndex == stringEnd) {
                     if(stringIndex != posBefore) {
                         setMatchedRegisters();
                     }
+                    failureStack[failureStackPointer-5] = stringIndex - posBefore;
                     return;
                 }
                 byte c = string[stringIndex];
@@ -481,6 +509,7 @@ class MatchEnvironmentSingleByte {
                     if(stringIndex != posBefore) {
                         setMatchedRegisters();
                     }
+                    failureStack[failureStackPointer-5] = stringIndex - posBefore;
                     return;
                 }
                 stringIndex++;
@@ -488,12 +517,12 @@ class MatchEnvironmentSingleByte {
 
         } else {
             for (;;) {
-                pushFailurePoint(patternIndex,stringIndex);
                 //            System.err.println("anychar_repeat: " + DESCRIBE_FAILURE_POINT());
                 if(stringIndex == stringEnd) {
                     if(stringIndex != posBefore) {
                         setMatchedRegisters();
                     }
+                    failureStack[failureStackPointer-5] = stringIndex - posBefore;
                     return;
                 }
                 byte c = string[stringIndex];
@@ -707,6 +736,7 @@ class MatchEnvironmentSingleByte {
         result.append("  Optz: ").append(failureStack[--top]).append("\n");
         result.append("  String: ").append(failureStack[--top]).append("\n");
         result.append("  Pattern: ").append(failureStack[--top]).append("\n");
+        result.append("  Repeat: ").append(failureStack[--top]).append("\n");
         int last_used_reg = failureStack[--top];
         result.append("  Regs: ").append(last_used_reg).append("\n");
         for(int this_reg = 1; this_reg <= last_used_reg; this_reg++) {
