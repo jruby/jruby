@@ -28,7 +28,7 @@ import static org.rej.MBC.*;
 import static org.rej.Helpers.*;
 import static org.rej.Bytecodes.*;
 
-class MatchEnvironment {
+class MatchEnvironmentSingleByte {
     private byte[] pattern;
     private int patternIndex;
     private final int patternEnd;
@@ -77,7 +77,7 @@ class MatchEnvironment {
     private boolean isMultiLine;
     private boolean isLongestMatch;
 
-    public MatchEnvironment(Pattern p, byte[] string, int stringStart, int size, int pos, int beg, Registers registers) {
+    public MatchEnvironmentSingleByte(Pattern p, byte[] string, int stringStart, int size, int pos, int beg, Registers registers) {
         this.size = size;
         this.beg = beg;
         this.pattern = p.buffer;
@@ -274,32 +274,9 @@ class MatchEnvironment {
         return BREAK_NORMALLY;
     }
 
-    private static final boolean singleByteCharacterIsInList(int cx, byte[] b, int bix) {
+    private static final boolean isInList(int cx, byte[] b, int bix) {
         int size = b[bix++]&0xFF;
         return cx/8 < size && ((b[bix + cx/8]&0xFF)&(1<<cx%8)) != 0;
-    }
-  
-    private static final boolean multiByteCharacterIsInList(int cx, byte[] b, int bix) {
-        int size = b[bix++]&0xFF;
-        bix+=size+2;
-        size = extractUnsigned(b,bix-2);
-        if(size == 0) {
-            return false;
-        }
-        int i,j;
-        for(i=0,j=size;i<j;) {
-            int k = (i+j)>>1;
-            if(cx > extractMultiByteCharacter(b,bix+k*8+4)) {
-                i = k+1;
-            } else {
-                j = k;
-            }
-        }
-        return i<size && extractMultiByteCharacter(b,bix+i*8) <= cx;
-    }        
-
-    private final boolean isInList(int cx, byte[] b, int bix) {
-        return singleByteCharacterIsInList(cx, b, bix) || (ctx.current_mbctype!=0 ? multiByteCharacterIsInList(cx, b, bix) : false);
     }
 
     private final int handleFailure() {
@@ -449,14 +426,6 @@ class MatchEnvironment {
 
     public final int bytecode_anychar() {
         if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
-        if(ismbchar(string[stringIndex],ctx)) {
-            if(stringIndex + mbclen(string[stringIndex],ctx) > stringEnd) {
-                return BREAK_WITH_FAIL1;
-            }
-            setMatchedRegisters();
-            stringIndex += mbclen(string[stringIndex],ctx);
-            return BREAK_NORMALLY;
-        }
         if(!isMultiLine
            && (shouldCaseTranslate ? ctx.translate[string[stringIndex]] : string[stringIndex]) == '\n') {
             return 1;
@@ -475,23 +444,11 @@ class MatchEnvironment {
         if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
                         
         char c = (char)(string[stringIndex++]&0xFF);
-        if(ismbchar(c,ctx)) {
-            if(stringIndex + mbclen(c,ctx) - 1 <= stringEnd) {
-                cc = c;
-                c = self.MBC2WC(c, string, stringIndex);
-                not = multiByteCharacterIsInList(c, pattern, patternIndex);
-                if(!not) {
-                    part = not = singleByteCharacterIsInList(cc, pattern, patternIndex);
-                }
-            } else {
-                not = isInList(c, pattern, patternIndex);
-            }
-        } else {
-            if(shouldCaseTranslate()) {
-                c = ctx.translate[c];
-            }
-            not = isInList(c, pattern, patternIndex);
+        if(shouldCaseTranslate()) {
+            c = ctx.translate[c];
         }
+        not = isInList(c, pattern, patternIndex);
+
         if(pattern[patternIndex-1] == charset_not) {
             not = !not;
         }
@@ -520,13 +477,6 @@ class MatchEnvironment {
                     return;
                 }
                 byte c = string[stringIndex];
-                if(ismbchar(c,ctx)) {
-                    if(stringIndex + mbclen(c,ctx) > stringEnd) {
-                        return;
-                    }
-                    stringIndex += mbclen(c,ctx);
-                    continue;
-                }
                 if(c == '\n') {
                     if(stringIndex != posBefore) {
                         setMatchedRegisters();
@@ -547,13 +497,6 @@ class MatchEnvironment {
                     return;
                 }
                 byte c = string[stringIndex];
-                if(ismbchar(c,ctx)) {
-                    if(stringIndex + mbclen(c,ctx) > stringEnd) {
-                        return;
-                    }
-                    stringIndex += mbclen(c,ctx);
-                    continue;
-                }
                 stringIndex++;
             }
         }
@@ -599,10 +542,6 @@ class MatchEnvironment {
             } else if(pattern[p2+3] == charset ||
                       pattern[p2+3] == charset_not) {
                 boolean not;
-                if(ismbchar(c,ctx)) {
-                    int pp = patternIndex1+3;
-                    c = self.MBC2WC(c, pattern, pp);
-                }
                 /* `is_in_list()' is TRUE if c would match */
                 /* That means it is not safe to finalize.  */
                 not = isInList(c, pattern, p2 + 4);
@@ -738,21 +677,6 @@ class MatchEnvironment {
                     continue;
                 }
                 char c = (char)(string[stringIndex++]&0xFF);
-                if(ismbchar(c,ctx)) {
-                    int n;
-                    patternIndex++;
-                    if(c != pc) {
-                        return BREAK_WITH_FAIL1;
-                    }
-                    for(n = mbclen(c,ctx) - 1; n > 0; n--) {
-                        if(--mcnt==0
-                           || stringIndex == stringEnd
-                           || string[stringIndex++] != pattern[patternIndex++]) {
-                            return BREAK_WITH_FAIL1;
-                        }
-                    }
-                    continue;
-                }
                 /* compiled code translation needed for ruby */
                 if(ctx.translate[c] != ctx.translate[pattern[patternIndex++]&0xFF]) {
                     return BREAK_WITH_FAIL1;
@@ -1330,9 +1254,6 @@ class MatchEnvironment {
         if(!isALetter(string,stringIndex,stringEnd)) {
             return BREAK_WITH_FAIL1;
         }
-        if(ismbchar(string[stringIndex],ctx) && stringIndex + mbclen(string[stringIndex],ctx) - 1 < stringEnd) {
-            stringIndex += mbclen(string[stringIndex],ctx) - 1;
-        }
         stringIndex++;
         setMatchedRegisters();
         return CONTINUE_MAINLOOP;
@@ -1343,26 +1264,17 @@ class MatchEnvironment {
         if(isALetter(string, stringIndex, stringEnd)) {
             return BREAK_WITH_FAIL1;
         }
-        if(ismbchar(string[stringIndex],ctx) && stringIndex + mbclen(string[stringIndex],ctx) - 1 < stringEnd) {
-            stringIndex += mbclen(string[stringIndex],ctx) - 1;
-        }
         stringIndex++;
         setMatchedRegisters();
         return CONTINUE_MAINLOOP;
     }
 
     private final boolean isALetter(byte[] d, int dix, int dend) {
-        return re_syntax_table[d[dix]&0xFF] == Sword ||
-            (ctx.current_mbctype != 0 ? 
-             (ctx.re_mbctab[d[dix]&0xFF] != 0 && (d[dix+mbclen(d[dix],ctx)]&0xFF)<=dend):
-             re_syntax_table[d[dix]&0xFF] == Sword2);
+        return re_syntax_table[d[dix]&0xFF] == Sword;
     }
 
     private final boolean previousIsALetter(byte[] d, int dix, int dend) {
-        return ((ctx.current_mbctype == MBCTYPE_SJIS)?
-                isALetter(d,dix-(((dix-1)!=0&&ismbchar(d[dix-2],ctx))?2:1),dend):
-                ((ctx.current_mbctype!=0 && ((d[dix-1]&0xFF) >= 0x80)) ||
-                 isALetter(d,dix-1,dend)));
+        return re_syntax_table[d[dix-1]&0xFF] == Sword;
     }
 
     private final int fail() {

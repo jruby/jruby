@@ -511,8 +511,11 @@ public class Pattern {
      * @mri re_match_exec
      */
     public int match_exec(byte[] string_arg, int string_start, int size, int pos, int beg, Registers regs) {
-        return new MatchEnvironment(this,string_arg,string_start,size,pos,beg,regs).run();
-
+        if(this.ctx.single_byte) {
+            return new MatchEnvironmentSingleByte(this,string_arg,string_start,size,pos,beg,regs).run();
+        } else {
+            return new MatchEnvironmentMultiByte(this,string_arg,string_start,size,pos,beg,regs).run();
+        }
     }
 
     protected void uninitStack() {

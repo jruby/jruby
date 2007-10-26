@@ -27,20 +27,22 @@ public class CompileContext {
     public final char[] translate;
     public final int current_mbctype;
     public final byte[] re_mbctab;
+    public final boolean single_byte;
     public CompileContext() {
-        this(null,MBCTYPE_ASCII,mbctab_ascii);
+        this(null,MBCTYPE_ASCII,mbctab_ascii,true);
     }
     public CompileContext(char[] t) {
-        this(t,MBCTYPE_ASCII,mbctab_ascii);
+        this(t,MBCTYPE_ASCII,mbctab_ascii,true);
     }
-    public CompileContext(char[] t, int mbc, byte[] mbctab) {
+    public CompileContext(char[] t, int mbc, byte[] mbctab, boolean single_byte) {
         this.translate = t;
         this.current_mbctype = mbc;
         this.re_mbctab = mbctab;
+        this.single_byte = single_byte;
     }
 
-    public final static CompileContext ASCII = new CompileContext(ASCII_TRANSLATE_TABLE, MBCTYPE_ASCII, mbctab_ascii);
-    public final static CompileContext UTF8 = new CompileContext(ASCII_TRANSLATE_TABLE, MBCTYPE_UTF8, mbctab_utf8);
-    public final static CompileContext SJIS = new CompileContext(ASCII_TRANSLATE_TABLE, MBCTYPE_SJIS, mbctab_sjis);
-    public final static CompileContext EUC = new CompileContext(ASCII_TRANSLATE_TABLE, MBCTYPE_EUC, mbctab_euc);
+    public final static CompileContext ASCII = new CompileContext(ASCII_TRANSLATE_TABLE, MBCTYPE_ASCII, mbctab_ascii,true);
+    public final static CompileContext UTF8 = new CompileContext(ASCII_TRANSLATE_TABLE, MBCTYPE_UTF8, mbctab_utf8,false);
+    public final static CompileContext SJIS = new CompileContext(ASCII_TRANSLATE_TABLE, MBCTYPE_SJIS, mbctab_sjis,false);
+    public final static CompileContext EUC = new CompileContext(ASCII_TRANSLATE_TABLE, MBCTYPE_EUC, mbctab_euc,false);
 }
