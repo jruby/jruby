@@ -268,6 +268,10 @@ public class CommandlineParser {
                 
                 return new StringReader(inlineScript());
             } else if (isSourceFromStdin()) {
+                if (isVerbose()) {
+                    // -v can't be used with stdin, return null
+                    return null;
+                }
                 return new InputStreamReader(System.in, KCode.NONE.decoder());
             } else {
                 File file = new File(getScriptFileName());
@@ -334,7 +338,6 @@ public class CommandlineParser {
 
     protected void setShowVersion(boolean showVersion) {
         this.showVersion = showVersion;
-        this.shouldRunInterpreter = false;
     }
 
     public String[] getScriptArguments() {

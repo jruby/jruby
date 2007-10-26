@@ -1374,19 +1374,8 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         SkinnyMethodAdapter mv = getMethodAdapter();
         
         mv.ldc(name);
-        invokeIRubyObject("getInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class)));
         
-        // check if it's null; if so, load nil
-        mv.dup();
-        Label notNull = new Label();
-        mv.ifnonnull(notNull);
-        
-        // pop the dup'ed null
-        mv.pop();
-        // replace it with nil
-        loadNil();
-        
-        mv.label(notNull);
+        invokeUtilityMethod("getInstanceVariable", cg.sig(IRubyObject.class, cg.params(IRubyObject.class, String.class)));
     }
     
     public void assignInstanceVariable(String name) {

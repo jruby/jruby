@@ -225,4 +225,14 @@ public class CompilerHelpers {
             throw runtime.newArgumentError("wrong # of arguments(" + given + " for " + maximum + ")");
         }
     }
+    
+    public static IRubyObject getInstanceVariable(IRubyObject self, String name) {
+        IRubyObject variable = self.getInstanceVariable(name);
+        
+        if (variable != null) return variable;
+        
+        self.getRuntime().getWarnings().warning("instance variable " + name + " not initialized");
+        
+        return self.getRuntime().getNil();
+    }
 }

@@ -1228,7 +1228,11 @@ public class EvaluationState {
         InstVarNode iVisited = (InstVarNode) node;
         IRubyObject variable = self.getInstanceVariable(iVisited.getName());
    
-        return variable == null ? runtime.getNil() : variable;
+        if (variable == null) {
+            variable = runtime.getNil();
+            runtime.getWarnings().warning(iVisited.getPosition(), "instance variable " + iVisited.getName() + " not initialized");
+        }
+        return variable;
     }
 
     private static IRubyObject localAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

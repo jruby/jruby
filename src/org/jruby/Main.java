@@ -169,7 +169,16 @@ public class Main {
         config.updateWithCommandline(commandline);
         final Ruby runtime = Ruby.newInstance(config);
         runtime.setKCode(commandline.getKCode());
-
+        
+        if (commandline.isVerbose()) {
+            runtime.setVerbose(runtime.getTrue());
+        }
+        
+        // no script to run, return succes
+        if (reader == null) {
+            return 0;
+        }
+        
         try {
             runInterpreter(runtime, reader, filename);
             return 0;

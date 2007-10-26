@@ -432,7 +432,7 @@ public class RubyModule extends RubyObject {
         if (module != null) {
             IRubyObject variable = module.getInstanceVariable(name);
 
-            return variable == null ? getRuntime().getNil() : variable;
+            if (variable != null) return variable;
         }
 
         throw getRuntime().newNameError("uninitialized class variable " + name + " in " + getName(), name);
