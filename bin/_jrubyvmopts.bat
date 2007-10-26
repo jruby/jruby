@@ -7,24 +7,28 @@ set _DFLT_VM_OPTS=-Xverify:none
 
 :vmoptsLoop
 set _ARG=%1
-set _CMP=
 rem remove surrounding quotes
-for %%i in (%_ARG%) do set _CMP=%%~i
+set _CMP=%~1
+
 if "%_CMP%" == "" goto vmoptsDone
 
 if not "%_CMP:~0,2%" == "-J" (
   set _RUBY_OPTS=%_RUBY_OPTS% %_ARG%
   goto vmoptsNext
 )
-set _VAL=%_ARG:~2%
+
+set _VAL=%_CMP:~2%
+
 if "%_VAL:~0,4%" == "-Xmx" (
   set _MEM=%_VAL%
   goto vmoptsNext
 )
+
 if "%_VAL:~0,4%" == "-Xss" (
   set _STK=%_VAL%
   goto vmoptsNext
 )
+
 set _VM_OPTS=%_VM_OPTS% %_VAL%
 
 :vmoptsNext
