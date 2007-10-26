@@ -173,7 +173,7 @@ public class MethodBlock extends Block{
         Block newBlock = new MethodBlock(self, frame.duplicate(), cref, visibility, klass, 
                 dynamicScope.cloneScope(), callback, method);
         
-        newBlock.isLambda = isLambda;
+        newBlock.type = type;
 
         return newBlock;
     }

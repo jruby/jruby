@@ -47,17 +47,17 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyProc extends RubyObject {
     private Block block = Block.NULL_BLOCK;
-    private boolean isLambda;
+    private Block.Type type;
 
-    public RubyProc(Ruby runtime, RubyClass rubyClass, boolean isLambda) {
+    public RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
         super(runtime, rubyClass);
         
-        this.isLambda = isLambda;
+        this.type = type;
     }
     
     private static ObjectAllocator PROC_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyProc instance = RubyProc.newProc(runtime, false);
+            RubyProc instance = RubyProc.newProc(runtime, Block.Type.PROC);
 
             instance.setMetaClass(klass);
 
@@ -87,11 +87,11 @@ public class RubyProc extends RubyObject {
 
     // Proc class
 
-    public static RubyProc newProc(Ruby runtime, boolean isLambda) {
-        return new RubyProc(runtime, runtime.getClass("Proc"), isLambda);
+    public static RubyProc newProc(Ruby runtime, Block.Type type) {
+        return new RubyProc(runtime, runtime.getClass("Proc"), type);
     }
-    public static RubyProc newProc(Ruby runtime, Block block, boolean isLambda) {
-        RubyProc proc = new RubyProc(runtime, runtime.getClass("Proc"), isLambda);
+    public static RubyProc newProc(Ruby runtime, Block block, Block.Type type) {
+        RubyProc proc = new RubyProc(runtime, runtime.getClass("Proc"), type);
         proc.callInit(NULL_ARRAY, block);
         
         return proc;
@@ -103,19 +103,19 @@ public class RubyProc extends RubyObject {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
         }
         
-        if (isLambda && procBlock == null) {
+        if (type == Block.Type.LAMBDA && procBlock == null) {
             // TODO: warn "tried to create Proc object without a block"
         }
         
         block = procBlock.cloneBlock();
-        block.isLambda = isLambda;
+        block.type = type;
         block.setProcObject(this);
 
         return this;
     }
     
     protected IRubyObject doClone() {
-    	RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getClass("Proc"), isLambda);
+    	RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getClass("Proc"), type);
     	
     	newProc.block = getBlock();
     	
@@ -159,27 +159,23 @@ public class RubyProc extends RubyObject {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         
-        try {
-            if (block.isLambda) {
-                block.arity().checkArity(getRuntime(), args);
-            }
-            
+        try {            
             Block newBlock = block.cloneBlock();
             if (self != null) newBlock.setSelf(self);
             
-            // if lambda, set new jump target in (duped) frame for returns
-            if (newBlock.isLambda) newBlock.getFrame().setJumpTarget(this);
+            // lambda wants return
+            if (newBlock.type == Block.Type.LAMBDA) newBlock.getFrame().setJumpTarget(this);
             
             return newBlock.call(context, args);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-                if (block.isLambda) return (IRubyObject) je.getValue();
+                if (block.type == Block.Type.LAMBDA) return (IRubyObject) je.getValue();
                 
                 throw runtime.newLocalJumpError("break", (IRubyObject)je.getValue(), "break from proc-closure");
             } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 Object target = je.getTarget();
                 
-                if (target == this || block.isLambda) return (IRubyObject) je.getValue();
+                if (target == this || block.type == Block.Type.LAMBDA) return (IRubyObject) je.getValue();
                 
                 if (target == null) {
                     throw runtime.newLocalJumpError("return", (IRubyObject)je.getValue(), "unexpected return");

@@ -1192,23 +1192,36 @@ public class RubyModule extends RubyObject {
 
         if (visibility.isModuleFunction()) visibility = Visibility.PRIVATE;
 
-        if (args.length == 1 || args[1].isKindOf(getRuntime().getClass("Proc"))) {
+        if (args.length == 1) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
-            RubyProc proc = (args.length == 1) ? getRuntime().newProc(false, block) : (RubyProc)args[1];
+            RubyProc proc = getRuntime().newProc(Block.Type.LAMBDA, block);
             body = proc;
 
-            proc.getBlock().isLambda = true;
+            proc.getBlock().type = Block.Type.LAMBDA;
             proc.getBlock().getFrame().setKlazz(this);
             proc.getBlock().getFrame().setName(name);
 
             newMethod = new ProcMethod(this, proc, visibility);
-        } else if (args[1].isKindOf(getRuntime().getClass("Method"))) {
-            RubyMethod method = (RubyMethod)args[1];
-            body = method;
+        } else if (args.length == 2) {
+            if (args[1].isKindOf(getRuntime().getClass("Proc"))) {
+                // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
+                RubyProc proc = (RubyProc)args[1];
+                body = proc;
 
-            newMethod = new MethodMethod(this, method.unbind(null), visibility);
+                proc.getBlock().getFrame().setKlazz(this);
+                proc.getBlock().getFrame().setName(name);
+
+                newMethod = new ProcMethod(this, proc, visibility);
+            } else if (args[1].isKindOf(getRuntime().getClass("Method"))) {
+                RubyMethod method = (RubyMethod)args[1];
+                body = method;
+
+                newMethod = new MethodMethod(this, method.unbind(null), visibility);
+            } else {
+                throw getRuntime().newTypeError("wrong argument type " + args[1].getType().getName() + " (expected Proc/Method)");
+            }
         } else {
-            throw getRuntime().newTypeError("wrong argument type " + args[0].getType().getName() + " (expected Proc/Method)");
+            throw getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
         }
 
         addMethod(name, newMethod);

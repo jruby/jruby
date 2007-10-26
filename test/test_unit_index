@@ -67,6 +67,7 @@ test_autoload
 test_backquote
 test_bignum
 test_block
+test_block_arg_processing
 test_cache_map_leak
 test_case
 test_class

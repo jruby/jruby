@@ -119,8 +119,8 @@ public final class DefaultMethod extends DynamicMethod {
             if (block.getProcObject() != null) {
                 blockArg = (RubyProc) block.getProcObject();
             } else {
-                blockArg = runtime.newProc(false, block);
-                blockArg.getBlock().isLambda = block.isLambda;
+                blockArg = runtime.newProc(Block.Type.PROC, block);
+                blockArg.getBlock().type = Block.Type.PROC;
             }
             // We pass depth zero since we know this only applies to newly created local scope
             context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), blockArg, 0);

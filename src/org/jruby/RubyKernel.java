@@ -209,7 +209,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject at_exit(IRubyObject recv, Block block) {
-        return recv.getRuntime().pushExitBlock(recv.getRuntime().newProc(false, block));
+        return recv.getRuntime().pushExitBlock(recv.getRuntime().newProc(Block.Type.PROC, block));
     }
 
     public static IRubyObject autoload_p(final IRubyObject recv, IRubyObject symbol) {
@@ -897,7 +897,7 @@ public class RubyKernel {
         }
         
         if (args.length == 1) {
-            proc = RubyProc.newProc(recv.getRuntime(), block, false);
+            proc = RubyProc.newProc(recv.getRuntime(), block, Block.Type.PROC);
         }
         if (args.length == 2) {
             proc = (RubyProc)args[1].convertToType(recv.getRuntime().getClass("Proc"), 0, "to_proc", true);
@@ -950,7 +950,7 @@ public class RubyKernel {
     
     
     public static RubyProc proc(IRubyObject recv, Block block) {
-        return recv.getRuntime().newProc(true, block);
+        return recv.getRuntime().newProc(Block.Type.LAMBDA, block);
     }
 
     public static IRubyObject loop(IRubyObject recv, Block block) {

@@ -51,6 +51,18 @@ import org.jruby.util.collections.SinglyLinkedList;
  *  Internal live representation of a block ({...} or do ... end).
  */
 public class Block {
+    public static class Type {
+        public static final int NORMAL_VALUE = 1;
+        public static final int PROC_VALUE = 2;
+        public static final int LAMBDA_VALUE = 3;
+        public static final Type NORMAL = new Type(NORMAL_VALUE);
+        public static final Type PROC = new Type(PROC_VALUE);
+        public static final Type LAMBDA = new Type(LAMBDA_VALUE);
+        
+        public final int value;
+        public Type(int value) { this.value = value; }
+    }
+    
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
@@ -99,7 +111,7 @@ public class Block {
      */
     private RubyProc proc = null;
     
-    public boolean isLambda = false;
+    public Type type = Type.NORMAL;
     
     protected Arity arity;
 
@@ -171,14 +183,34 @@ public class Block {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        if (!isLambda && args.length == 1 && args[0] instanceof RubyArray && iterNode != null) {
-            Node vNode = iterNode.getVarNode();
-            
-            if (vNode != null && vNode.nodeId == NodeTypes.MULTIPLEASGNNODE) {
-                args = ((RubyArray) args[0]).toJavaArray();
-            }
-        }
+        switch (type.value) {
+        case Type.NORMAL_VALUE: {
+            if (args.length == 1 && args[0] instanceof RubyArray && iterNode != null) {
+                Node vNode = iterNode.getVarNode();
 
+                if (vNode != null && vNode.nodeId == NodeTypes.MULTIPLEASGNNODE) {
+                    args = ((RubyArray) args[0]).toJavaArray();
+                }
+            }
+            break;
+        }
+        case Type.PROC_VALUE: {
+            if (args.length == 1 && args[0] instanceof RubyArray && iterNode != null) {
+                Node vNode = iterNode.getVarNode();
+ 
+                if (vNode.nodeId == NodeTypes.MULTIPLEASGNNODE) {
+                    // if we only have *arg, we leave it wrapped in the array
+                    if (((MultipleAsgnNode)vNode).getArgsNode() == null) {
+                        args = ((RubyArray) args[0]).toJavaArray();
+                    }
+                }
+            }
+            break;
+        }
+        case Type.LAMBDA_VALUE:
+            arity().checkArity(context.getRuntime(), args);
+            break;
+        }
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
     }
     
@@ -304,7 +336,7 @@ public class Block {
         Block newBlock = new Block(iterNode, self, frame.duplicate(), cref, visibility, klass, 
                 dynamicScope.cloneScope());
         
-        newBlock.isLambda = isLambda;
+        newBlock.type = type;
 
         return newBlock;
     }

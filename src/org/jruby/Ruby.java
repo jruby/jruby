@@ -1529,10 +1529,10 @@ public final class Ruby {
         return RubyNumeric.newNumeric(this);
     }
 
-    public RubyProc newProc(boolean isLambda, Block block) {
-        if (!isLambda && block.getProcObject() != null) return block.getProcObject();
+    public RubyProc newProc(Block.Type type, Block block) {
+        if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
 
-        RubyProc proc =  RubyProc.newProc(this, isLambda);
+        RubyProc proc =  RubyProc.newProc(this, type);
 
         proc.callInit(IRubyObject.NULL_ARRAY, block);
 

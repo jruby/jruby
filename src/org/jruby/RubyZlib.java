@@ -720,7 +720,7 @@ public class RubyZlib {
 
         public static IRubyObject open(IRubyObject recv, RubyString filename, Block block) throws IOException {
             Ruby runtime = recv.getRuntime();
-            IRubyObject proc = block.isGiven() ? runtime.newProc(false, block) : runtime.getNil();
+            IRubyObject proc = block.isGiven() ? runtime.newProc(Block.Type.PROC, block) : runtime.getNil();
             RubyGzipReader io = newInstance(
                     recv,
                     new IRubyObject[]{ runtime.getClass("File").callMethod(
@@ -956,7 +956,7 @@ public class RubyZlib {
                 if (args.length > 2) strategy = args[2];
             }
 
-            IRubyObject proc = block.isGiven() ? runtime.newProc(false, block) : runtime.getNil();
+            IRubyObject proc = block.isGiven() ? runtime.newProc(Block.Type.PROC, block) : runtime.getNil();
             RubyGzipWriter io = newGzipWriter(
                     recv,
                     new IRubyObject[]{ runtime.getClass("File").callMethod(
