@@ -484,8 +484,8 @@ public class RuntimeHelpers {
         if (block.getProcObject() != null) {
             blockArg = block.getProcObject();
         } else {
-            blockArg = runtime.newProc(false, block);
-            blockArg.getBlock().isLambda = block.isLambda;
+            blockArg = runtime.newProc(Block.Type.PROC, block);
+            blockArg.getBlock().type = Block.Type.PROC;
         }
         
         return blockArg;
@@ -782,7 +782,7 @@ public class RuntimeHelpers {
     }
     
     public static void registerEndBlock(CompiledSharedScopeBlock block, Ruby runtime) {
-        runtime.pushExitBlock(runtime.newProc(true, block));
+        runtime.pushExitBlock(runtime.newProc(Block.Type.LAMBDA, block));
     }
     
     public static IRubyObject match3(RubyRegexp regexp, IRubyObject value, ThreadContext context) {

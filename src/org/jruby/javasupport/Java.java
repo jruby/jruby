@@ -665,7 +665,7 @@ public class Java {
         if (args.length > 1) {
             handler = (RubyProc)args[1];
         } else {
-            handler = recv.getRuntime().newProc(false, block);
+            handler = recv.getRuntime().newProc(Block.Type.PROC, block);
         }
         recv.getRuntime().getJavaSupport().defineExceptionHandler(name, handler);
 
@@ -763,7 +763,7 @@ public class Java {
     	if (args[size] instanceof RubyProc) {
     		proc = (RubyProc) args[size];
     	} else {
-    		proc = recv.getRuntime().newProc(false, block);
+    		proc = recv.getRuntime().newProc(Block.Type.PROC, block);
     		size++;
     	}
     	

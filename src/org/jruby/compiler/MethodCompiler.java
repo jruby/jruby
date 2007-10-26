@@ -57,9 +57,6 @@ public interface MethodCompiler {
     public VariableCompiler getVariableCompiler();
     
     public InvocationCompiler getInvocationCompiler();
-
-    public void assignLocalVariableBlockArg(int argIndex, int varIndex);
-    public void assignLocalVariableBlockArg(int argIndex, int varIndex, int depth);
     
     /**
      * Retrieve the current "self" and put a reference on top of the stack.

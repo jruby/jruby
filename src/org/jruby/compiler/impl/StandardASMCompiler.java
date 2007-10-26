@@ -484,32 +484,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             return invocationCompiler;
         }
 
-        public void assignLocalVariableBlockArg(int argIndex, int varIndex) {
-            // this is copying values, but it would be more efficient to just use the args in-place
-            method.aload(DYNAMIC_SCOPE_INDEX);
-            method.ldc(new Integer(varIndex));
-            method.aload(ARGS_INDEX);
-            method.ldc(new Integer(argIndex));
-            method.arrayload();
-            method.iconst_0();
-            method.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
-        }
-
-        public void assignLocalVariableBlockArg(int argIndex, int varIndex, int depth) {
-            if (depth == 0) {
-                assignLocalVariableBlockArg(argIndex, varIndex);
-                return;
-            }
-
-            method.aload(DYNAMIC_SCOPE_INDEX);
-            method.ldc(new Integer(varIndex));
-            method.aload(ARGS_INDEX);
-            method.ldc(new Integer(argIndex));
-            method.arrayload();
-            method.ldc(new Integer(depth));
-            method.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
-        }
-
         public void assignConstantInCurrent(String name) {
             loadThreadContext();
             method.ldc(name);

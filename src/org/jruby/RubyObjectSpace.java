@@ -67,7 +67,7 @@ public class RubyObjectSpace {
                 proc = (RubyProc)args[1].convertToType(runtime.getProc(), 0, "to_proc", true);
             }
         } else {
-            proc = runtime.newProc(false, block);
+            proc = runtime.newProc(Block.Type.PROC, block);
         }
         IRubyObject obj = args[0];
         runtime.getObjectSpace().addFinalizer(obj, proc);

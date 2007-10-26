@@ -579,7 +579,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (block.isGiven()) {
             if (args.length > 0) throw getRuntime().newArgumentError("wrong number of arguments");
-            ifNone = getRuntime().newProc(false, block);
+            ifNone = getRuntime().newProc(Block.Type.PROC, block);
             flags |= PROCDEFAULT_HASH_F;
         } else {
             Arity.checkArgumentCount(getRuntime(), args, 0, 1);

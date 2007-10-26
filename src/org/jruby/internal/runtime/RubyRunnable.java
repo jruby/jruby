@@ -50,7 +50,7 @@ public class RubyRunnable implements Runnable {
         this.runtime = rubyThread.getRuntime();
         ThreadContext tc = runtime.getCurrentContext();
         
-        proc = runtime.newProc(false, currentBlock);
+        proc = runtime.newProc(Block.Type.PROC, currentBlock);
         currentFrame = tc.getCurrentFrame();
         this.arguments = args;
     }

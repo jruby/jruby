@@ -1346,7 +1346,7 @@ public class ASTInterpreter {
         
         Block block = SharedScopeBlock.createSharedScopeBlock(context, iVisited, context.getCurrentScope(), self);
         
-        runtime.pushExitBlock(runtime.newProc(true, block));
+        runtime.pushExitBlock(runtime.newProc(Block.Type.LAMBDA, block));
         
         return runtime.getNil();
     }

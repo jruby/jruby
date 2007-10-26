@@ -88,7 +88,7 @@ public class CompiledSharedScopeBlock extends SharedScopeBlock {
             }
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-            return isLambda ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+            return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
         } finally {
             frame.setVisibility(oldVis);
             post(context);
@@ -139,7 +139,7 @@ public class CompiledSharedScopeBlock extends SharedScopeBlock {
         Block newBlock = new CompiledSharedScopeBlock(self, frame.duplicate(), visibility, klass, 
                 dynamicScope, arity, callback, hasMultipleArgsHead, argumentType);
         
-        newBlock.isLambda = isLambda;
+        newBlock.type = type;
         
         return newBlock;
     }

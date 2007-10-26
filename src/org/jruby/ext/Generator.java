@@ -232,7 +232,7 @@ public class Generator {
         if(Arity.checkArgumentCount(self.getRuntime(), args,0,1) == 1) {
             d.setEnum(args[0]);
         } else {
-            d.setProc(self.getRuntime().newProc(false, Block.NULL_BLOCK));
+            d.setProc(self.getRuntime().newProc(Block.Type.PROC, Block.NULL_BLOCK));
         }
         return self;
     }

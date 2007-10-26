@@ -57,7 +57,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public class AssignmentVisitor {
-    public static IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, Node node, IRubyObject value, Block block, boolean check) {
+    public static IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, Node node, IRubyObject value, Block block, boolean checkArity) {
         IRubyObject result = null;
         
         switch (node.nodeId) {
@@ -89,7 +89,7 @@ public class AssignmentVisitor {
             localAsgnNode(context, node, value);
             break;
         case MULTIPLEASGNNODE:
-            result = multipleAsgnNode(runtime, context, self, node, value, check);
+            result = multipleAsgnNode(runtime, context, self, node, value, checkArity);
             break;
         default:
             throw new RuntimeException("Invalid node encountered in interpreter: \"" + node.getClass().getName() + "\", please report this at www.jruby.org");
@@ -189,7 +189,7 @@ public class AssignmentVisitor {
         context.getCurrentScope().setValue(iVisited.getIndex(), value, iVisited.getDepth());
     }
 
-    public static IRubyObject multiAssign(Ruby runtime, ThreadContext context, IRubyObject self, MultipleAsgnNode node, RubyArray value, boolean callAsProc) {
+    public static IRubyObject multiAssign(Ruby runtime, ThreadContext context, IRubyObject self, MultipleAsgnNode node, RubyArray value, boolean checkArity) {
         // Assign the values.
         int valueLen = value.getLength();
         int varLen = node.getHeadNode() == null ? 0 : node.getHeadNode().size();
@@ -197,10 +197,10 @@ public class AssignmentVisitor {
         int j = 0;
         for (; j < valueLen && j < varLen; j++) {
             Node lNode = node.getHeadNode().get(j);
-            assign(runtime, context, self, lNode, value.eltInternal(j), Block.NULL_BLOCK, callAsProc);
+            assign(runtime, context, self, lNode, value.eltInternal(j), Block.NULL_BLOCK, checkArity);
         }
 
-        if (callAsProc && j < varLen) {
+        if (checkArity && j < varLen) {
             throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
         }
 
@@ -209,16 +209,16 @@ public class AssignmentVisitor {
             if (argsNode.nodeId == NodeType.STARNODE) {
                 // no check for '*'
             } else if (varLen < valueLen) {
-                assign(runtime, context, self, argsNode, value.subseqLight(varLen, valueLen), Block.NULL_BLOCK, callAsProc);
+                assign(runtime, context, self, argsNode, value.subseqLight(varLen, valueLen), Block.NULL_BLOCK, checkArity);
             } else {
-                assign(runtime, context, self, argsNode, RubyArray.newArrayLight(runtime, 0), Block.NULL_BLOCK, callAsProc);
+                assign(runtime, context, self, argsNode, RubyArray.newArrayLight(runtime, 0), Block.NULL_BLOCK, checkArity);
             }
-        } else if (callAsProc && valueLen < varLen) {
+        } else if (checkArity && valueLen < varLen) {
             throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
         }
 
         while (j < varLen) {
-            assign(runtime, context, self, node.getHeadNode().get(j++), runtime.getNil(), Block.NULL_BLOCK, callAsProc);
+            assign(runtime, context, self, node.getHeadNode().get(j++), runtime.getNil(), Block.NULL_BLOCK, checkArity);
         }
         
         return value;
