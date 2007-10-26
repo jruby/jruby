@@ -228,6 +228,23 @@ class TestIO < Test::Unit::TestCase
     end
   end
 
+  def test_puts_and_warn_redirection
+    require 'stringio'
+    begin
+      $stdout = StringIO.new
+      $stderr = StringIO.new
+      $stdout.print ":"
+      $stderr.print ":"
+      puts "hi"
+      warn "hello"
+      assert_equal ":hi\n", $stdout.string
+      assert_equal ":hello\n", $stderr.string
+    ensure
+      $stderr = STDERR
+      $stdout = STDOUT
+    end
+  end
+
   private
   def ensure_files(*files)
     files.each {|f| File.open(f, "w") {|g| g << " " } }
