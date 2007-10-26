@@ -1,4 +1,5 @@
 @echo off
+setlocal
 rem ---------------------------------------------------------------------------
 call "%~dp0_jrubyvars" %*
 
@@ -6,3 +7,4 @@ call "%~dp0_jrubyvars" %*
 set E=%ERRORLEVEL%
 
 call "%~dp0_jrubycleanup"
+endlocal

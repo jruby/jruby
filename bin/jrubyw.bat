@@ -2,6 +2,7 @@
 
 rem This script just makes jruby.bat run with javaw
 
+setlocal
 set JAVA_COMMAND=javaw
 call "%~dp0_jrubyvars" %*
 
@@ -9,3 +10,4 @@ call "%~dp0_jrubyvars" %*
 set E=%ERRORLEVEL%
 
 call "%~dp0_jrubycleanup"
+endlocal
