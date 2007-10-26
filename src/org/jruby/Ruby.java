@@ -1587,6 +1587,10 @@ public final class Ruby {
         return newRaiseException(getModule("Errno").getClass("EBADF"), "Bad file descriptor");
     }
 
+    public RaiseException newErrnoEPIPEError() {
+        return newRaiseException(getModule("Errno").getClass("EPIPE"), "Broken pipe");
+    }
+
     public RaiseException newErrnoECONNREFUSEDError() {
         return newRaiseException(getModule("Errno").getClass("ECONNREFUSED"), "Connection refused");
     }

@@ -625,6 +625,20 @@ public class RubyIO extends RubyObject {
         } catch (IOHandler.BadDescriptorException e) {
             return RubyFixnum.zero(getRuntime());
         } catch (IOException e) {
+            String message = e.getMessage();
+            if(message != null) {
+                if(message.equals("Broken pipe")) {
+                    throw getRuntime().newErrnoEPIPEError();
+                } else if(message.equals("not opened for writing")) {
+                    throw getRuntime().newIOError(message);
+                }
+            }
+
+            if(getRuntime().getDebug().isTrue()) {
+                getRuntime().getWarnings().warn("swallowed IO exception: " + e.toString());
+                e.printStackTrace();
+            }
+
             return RubyFixnum.zero(getRuntime());
         }
     }

@@ -97,6 +97,23 @@ public class IOHandlerNio extends IOHandler {
         }
     }
 
+    protected void checkReadable() throws IOException  {
+        checkOpen();
+        if (!modes.isReadable()) throw new IOException("not opened for reading");
+    }
+
+    protected void checkWritable() throws IOException  {
+        checkOpen();
+        if (!writable || !modes.isWritable()) throw new IOException("not opened for writing");
+    }
+
+    private boolean writable = true;
+
+    public void closeWrite() throws IOException {
+        checkOpen();
+        writable = false;
+    }
+
     /* Unbuffered operations */
     
     public void setBlocking(boolean block) throws IOException {
@@ -397,11 +414,14 @@ public class IOHandlerNio extends IOHandler {
     /* buffering independent */
     public void close() throws IOException {
 	/* flush output buffer before close */
+        checkOpen();
+        
 	if (outBuffer.position() > 0) {
 	    outBuffer.flip();
 	    flushOutBuffer();
 	}
 
+        isOpen = false;
         channel.close();
     }
     

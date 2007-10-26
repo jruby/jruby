@@ -160,6 +160,10 @@ public abstract class IOHandler {
     public abstract IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException;
     public abstract void close() throws IOException, BadDescriptorException;
     public abstract void flush() throws IOException, BadDescriptorException;
+
+    public void closeWrite() throws IOException {
+    }
+
     /**
      * <p>Flush and sync all writes to the filesystem.</p>
      * 
