@@ -88,6 +88,17 @@ public class RubyBasicSocket extends RubyIO {
         modes = handler.getModes();
     }
 
+    @Override
+    public IRubyObject close_write() {
+        try {
+            ((SocketChannel)this.socketChannel).socket().shutdownOutput();
+            handler.closeWrite();
+    	} catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
+        return getRuntime().getNil();
+    }
+
     public IRubyObject write_send(IRubyObject[] args) {
         return syswrite(args[0]);
     }

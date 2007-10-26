@@ -2069,6 +2069,10 @@ public final class Ruby {
         return newRaiseException(fastGetModule("Errno").fastGetClass("EBADF"), "Bad file descriptor");
     }
 
+    public RaiseException newErrnoEPIPEError() {
+        return newRaiseException(fastGetModule("Errno").fastGetClass("EPIPE"), "Broken pipe");
+    }
+
     public RaiseException newErrnoECONNREFUSEDError() {
         return newRaiseException(fastGetModule("Errno").fastGetClass("ECONNREFUSED"), "Connection refused");
     }
