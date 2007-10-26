@@ -15,9 +15,12 @@ module ::Kernel
       signal_class.send :attr_accessor, :prev_handler
       signal_object = signal_class.new(sig) rescue nil
       return unless signal_object
+      outer_thread = Thread.current
       signal_handler = Java::sun.misc.SignalHandler.impl do
         begin
           block.call
+        rescue SystemExit => e
+          outer_thread.raise(e) rescue nil
         ensure
           # re-register the handler
           signal_class.handle(signal_object, signal_handler)

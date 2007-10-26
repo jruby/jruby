@@ -47,7 +47,6 @@ public class RubySignal {
 
     @JRubyMethod(name = "trap", required = 1, optional = 1, frame = true, meta = true)
     public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        recv.getRuntime().getWarnings().warning("Signal.trap: Signals is currently not implemented in JRuby and will not work");
-        return recv.getRuntime().getNil();
+        return RubyKernel.trap(recv.getRuntime().getKernel(), args, unusedBlock);
     }
 }// RubySignal
