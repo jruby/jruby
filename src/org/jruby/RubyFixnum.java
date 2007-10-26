@@ -690,7 +690,7 @@ public class RubyFixnum extends RubyInteger {
         // id2name).  Make into method if used more than once.  
         RubySymbol symbol = RubySymbol.getSymbolLong(getRuntime(), value);
         
-        if (symbol != null) {
+        if (symbol == null) {
             throw getRuntime().newArgumentError("" + value + " is not a symbol");
         }
         
