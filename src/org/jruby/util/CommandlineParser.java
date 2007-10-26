@@ -268,7 +268,7 @@ public class CommandlineParser {
                 
                 return new StringReader(inlineScript());
             } else if (isSourceFromStdin()) {
-                if (isVerbose()) {
+                if (isShowVersion()) {
                     // -v can't be used with stdin, return null
                     return null;
                 }
