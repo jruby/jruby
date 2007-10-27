@@ -200,11 +200,13 @@ class MatchEnvironmentSingleByte {
         failureStack[failureStackPointer++] = failureCountNums;
         failureCountNums = 0;
 
-        System.arraycopy(registerStart,1,failureStack,failureStackPointer,lastUsedRegister);
-        failureStackPointer+=lastUsedRegister;
+        if(lastUsedRegister > 0) {
+            System.arraycopy(registerStart,1,failureStack,failureStackPointer,lastUsedRegister);
+            failureStackPointer+=lastUsedRegister;
 
-        System.arraycopy(registerEnd,1,failureStack,failureStackPointer,lastUsedRegister);
-        failureStackPointer+=lastUsedRegister;
+            System.arraycopy(registerEnd,1,failureStack,failureStackPointer,lastUsedRegister);
+            failureStackPointer+=lastUsedRegister;
+        }
 
         /* Push how many registers we saved.  */
         failureStack[failureStackPointer++] = lastUsedRegister;
@@ -301,13 +303,17 @@ class MatchEnvironmentSingleByte {
 
             thisRegister = lastUsedRegister;
 
-            Arrays.fill(registerStart, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
-            Arrays.fill(registerEnd, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
-            Arrays.fill(registerActive, lastUsedRegister+1, registerCount, false);
-            Arrays.fill(registerMatchedSomething, lastUsedRegister+1, registerCount, false);
-            
-            System.arraycopy(failureStack, failureStackPointer-(6+thisRegister), registerEnd, 1, thisRegister);
-            System.arraycopy(failureStack, failureStackPointer-(6+2*thisRegister), registerStart, 1, thisRegister);
+            if(registerCount - (lastUsedRegister+1) > 0) {
+                Arrays.fill(registerStart, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
+                Arrays.fill(registerEnd, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
+                Arrays.fill(registerActive, lastUsedRegister+1, registerCount, false);
+                Arrays.fill(registerMatchedSomething, lastUsedRegister+1, registerCount, false);
+            }
+
+            if(thisRegister > 0) {
+                System.arraycopy(failureStack, failureStackPointer-(6+thisRegister), registerEnd, 1, thisRegister);
+                System.arraycopy(failureStack, failureStackPointer-(6+2*thisRegister), registerStart, 1, thisRegister);
+            }
 
             failureStack[failureStackPointer-5]--;
         } else {
@@ -323,15 +329,19 @@ class MatchEnvironmentSingleByte {
 
             thisRegister = lastUsedRegister;
 
-            Arrays.fill(registerStart, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
-            Arrays.fill(registerEnd, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
-            Arrays.fill(registerActive, lastUsedRegister+1, registerCount, false);
-            Arrays.fill(registerMatchedSomething, lastUsedRegister+1, registerCount, false);
+            if(registerCount - (lastUsedRegister+1) > 0) {
+                Arrays.fill(registerStart, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
+                Arrays.fill(registerEnd, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
+                Arrays.fill(registerActive, lastUsedRegister+1, registerCount, false);
+                Arrays.fill(registerMatchedSomething, lastUsedRegister+1, registerCount, false);
+            }
 
-            failureStackPointer -= thisRegister;
-            System.arraycopy(failureStack, failureStackPointer, registerEnd, 1, thisRegister);
-            failureStackPointer -= thisRegister;
-            System.arraycopy(failureStack, failureStackPointer, registerStart, 1, thisRegister);
+            if(thisRegister > 0) {
+                failureStackPointer -= thisRegister;
+                System.arraycopy(failureStack, failureStackPointer, registerEnd, 1, thisRegister);
+                failureStackPointer -= thisRegister;
+                System.arraycopy(failureStack, failureStackPointer, registerStart, 1, thisRegister);
+            }
 
             int mcnt = failureStack[--failureStackPointer];
             while(mcnt-->0) {
