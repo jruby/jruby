@@ -233,6 +233,7 @@ public class Main {
     }
 
     private void initializeRuntime(final Ruby runtime, String filename) {
+        IRubyObject argumentArray = runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, commandline.getScriptArguments()));
         runtime.setVerbose(runtime.newBoolean(commandline.isVerbose()));
         runtime.setDebug(runtime.newBoolean(commandline.isDebug()));
 
@@ -250,10 +251,14 @@ public class Main {
         //
         //
 
+        
+        runtime.defineGlobalConstant("ARGV", argumentArray);
+
         defineGlobal(runtime, "$-p", commandline.isAssumePrinting());
         defineGlobal(runtime, "$-n", commandline.isAssumeLoop());
         defineGlobal(runtime, "$-a", commandline.isSplit());
         defineGlobal(runtime, "$-l", commandline.isProcessLineEnds());
+        runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
 
         IAccessor d = new ValueAccessor(runtime.newString(filename));
         runtime.getGlobalVariables().define("$PROGRAM_NAME", d);
