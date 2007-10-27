@@ -28,7 +28,6 @@ public class DOMScriptingApplet extends Applet {
             }};
             final Ruby runtime = Ruby.newInstance(config);
 
-            runtime.defineGlobalConstant("ARGV", runtime.newArray());
             //runtime.defineGlobalConstant("JSObject", JavaEmbedUtils.javaToRuby(runtime, JSObject.getWindow(this)));
             runtime.getLoadService().init(new ArrayList(0));
             

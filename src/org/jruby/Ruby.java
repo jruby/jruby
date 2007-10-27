@@ -279,6 +279,8 @@ public final class Ruby {
      * A list of finalizers, weakly referenced, to be executed on tearDown
      */
     private Map<Finalizable, Object> finalizers;
+    
+    private String[] argv;
 
     /**
      * Create and initialize a new JRuby Runtime.
@@ -297,6 +299,7 @@ public final class Ruby {
         this.profile            = config.getProfile();
         this.currentDirectory   = config.getCurrentDirectory();
         this.jrubyClassLoader   = config.getJRubyClassLoader();
+        this.argv               = config.getArgv();
     }
 
     /**
@@ -1299,6 +1302,15 @@ public final class Ruby {
         if (profile.allowClass("Fixnum")) RubyFixnum.createFixnumClass(this);
         if (profile.allowClass("Hash")) RubyHash.createHashClass(this);
         if (profile.allowClass("Array")) RubyArray.createArrayClass(this);
+        
+        // define ARGV and $* for this runtime
+        RubyArray argvArray = newArray();
+        for (int i = 0; i < argv.length; i++) {
+            argvArray.add(newString(argv[i]));
+        }
+        defineGlobalConstant("ARGV", argvArray);
+        getGlobalVariables().defineReadonly("$*", new ValueAccessor(argvArray));
+        
         if (profile.allowClass("Float")) RubyFloat.createFloatClass(this);
         if (profile.allowClass("Bignum")) RubyBignum.createBignumClass(this);
 
