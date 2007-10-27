@@ -107,6 +107,8 @@ test_variables
 test_vietnamese_charset
 test_zlib
 test_yaml
+# this test is last on purpose
+test_loading_builtin_libraries
 
 # BFTS working tests
 externals/bfts/test_array

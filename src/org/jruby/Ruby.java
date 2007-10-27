@@ -71,22 +71,9 @@ import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaSupport;
-import org.jruby.libraries.IConvLibrary;
-import org.jruby.libraries.JRubyLibrary;
-import org.jruby.libraries.NKFLibrary;
 import org.jruby.libraries.RbConfigLibrary;
-import org.jruby.libraries.StringIOLibrary;
-import org.jruby.libraries.StringScannerLibrary;
-import org.jruby.libraries.ZlibLibrary;
-import org.jruby.libraries.YamlLibrary;
-import org.jruby.libraries.EnumeratorLibrary;
-import org.jruby.libraries.BigDecimalLibrary;
-import org.jruby.libraries.DigestLibrary;
-import org.jruby.libraries.ThreadLibrary;
-import org.jruby.libraries.IOWaitLibrary;
 import org.jruby.ext.socket.RubySocket;
-import org.jruby.ext.Generator;
-import org.jruby.ext.Readline;
+import org.jruby.ext.LateLoadingLibrary;
 import org.jruby.parser.Parser;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
@@ -684,21 +671,21 @@ public final class Ruby {
         }
 
         final Library NO_OP_LIBRARY = new Library() {
-                public void load(Ruby runtime) throws IOException {
-                }
-            };
-
-        registerBuiltin("jruby.rb", new JRubyLibrary());
-        registerBuiltin("iconv.rb", new IConvLibrary());
-        registerBuiltin("nkf.rb", new NKFLibrary());
-        registerBuiltin("stringio.rb", new StringIOLibrary());
-        registerBuiltin("strscan.rb", new StringScannerLibrary());
-        registerBuiltin("zlib.rb", new ZlibLibrary());
-        registerBuiltin("yaml_internal.rb", new YamlLibrary());
-        registerBuiltin("enumerator.rb", new EnumeratorLibrary());
-        registerBuiltin("generator_internal.rb", new Generator.Service());
-        registerBuiltin("readline.rb", new Readline.Service());
-        registerBuiltin("thread.so", new ThreadLibrary());
+            public void load(Ruby runtime) throws IOException {
+            }
+        };
+        
+        registerBuiltin("jruby.rb", new LateLoadingLibrary("jruby", "org.jruby.libraries.JRubyLibrary", getJRubyClassLoader()));
+        registerBuiltin("iconv.rb", new LateLoadingLibrary("iconv", "org.jruby.libraries.IConvLibrary", getJRubyClassLoader()));
+        registerBuiltin("nkf.rb", new LateLoadingLibrary("nkf", "org.jruby.libraries.NKFLibrary", getJRubyClassLoader()));
+        registerBuiltin("stringio.rb", new LateLoadingLibrary("stringio", "org.jruby.libraries.StringIOLibrary", getJRubyClassLoader()));
+        registerBuiltin("strscan.rb", new LateLoadingLibrary("strscan", "org.jruby.libraries.StringScannerLibrary", getJRubyClassLoader()));
+        registerBuiltin("zlib.rb", new LateLoadingLibrary("zlib", "org.jruby.libraries.ZlibLibrary", getJRubyClassLoader()));
+        registerBuiltin("yaml_internal.rb", new LateLoadingLibrary("yaml_internal", "org.jruby.libraries.YamlLibrary", getJRubyClassLoader()));
+        registerBuiltin("enumerator.rb", new LateLoadingLibrary("enumerator", "org.jruby.libraries.EnumeratorLibrary", getJRubyClassLoader()));
+        registerBuiltin("generator_internal.rb", new LateLoadingLibrary("generator_internal", "org.jruby.ext.Generator$Service", getJRubyClassLoader()));
+        registerBuiltin("readline.rb", new LateLoadingLibrary("readline", "org.jruby.ext.Readline$Service", getJRubyClassLoader()));
+        registerBuiltin("thread.so", new LateLoadingLibrary("thread", "org.jruby.libraries.ThreadLibrary", getJRubyClassLoader()));
         registerBuiltin("openssl.so", new Library() {
                 public void load(Ruby runtime) throws IOException {
                     runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require",runtime.newString("rubygems"));
@@ -706,14 +693,14 @@ public final class Ruby {
                     runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require",runtime.newString("openssl.rb"));
                 }
             });
-        registerBuiltin("digest.so", new DigestLibrary());
-        registerBuiltin("digest.rb", new DigestLibrary());
-        registerBuiltin("digest/md5.rb", new DigestLibrary.MD5());
-        registerBuiltin("digest/rmd160.rb", new DigestLibrary.RMD160());
-        registerBuiltin("digest/sha1.rb", new DigestLibrary.SHA1());
-        registerBuiltin("digest/sha2.rb", new DigestLibrary.SHA2());
-        registerBuiltin("bigdecimal.rb", new BigDecimalLibrary());
-        registerBuiltin("io/wait.so", new IOWaitLibrary());
+        registerBuiltin("digest.so", new LateLoadingLibrary("digest", "org.jruby.libraries.DigestLibrary", getJRubyClassLoader()));
+        registerBuiltin("digest.rb", new LateLoadingLibrary("digest", "org.jruby.libraries.DigestLibrary", getJRubyClassLoader()));
+        registerBuiltin("digest/md5.rb", new LateLoadingLibrary("digest/md5", "org.jruby.libraries.DigestLibrary$MD5", getJRubyClassLoader()));
+        registerBuiltin("digest/rmd160.rb", new LateLoadingLibrary("digest/rmd160", "org.jruby.libraries.DigestLibrary$RMD160", getJRubyClassLoader()));
+        registerBuiltin("digest/sha1.rb", new LateLoadingLibrary("digest/sha1", "org.jruby.libraries.DigestLibrary$SHA1", getJRubyClassLoader()));
+        registerBuiltin("digest/sha2.rb", new LateLoadingLibrary("digest/sha2", "org.jruby.libraries.DigestLibrary$SHA2", getJRubyClassLoader()));
+        registerBuiltin("bigdecimal.rb", new LateLoadingLibrary("bigdecimal", "org.jruby.libraries.BigDecimalLibrary", getJRubyClassLoader()));
+        registerBuiltin("io/wait.so", new LateLoadingLibrary("io/wait", "org.jruby.libraries.IOWaitLibrary", getJRubyClassLoader()));
         registerBuiltin("etc.so", NO_OP_LIBRARY);
     }
 
