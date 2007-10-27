@@ -217,23 +217,23 @@ class MatchEnvironmentSingleByte {
         failureStack[failureStackPointer++] = 0; /* non-greedy flag */
     }
 
-    private final int bytecode_duplicate() {
+    private final boolean bytecode_duplicate() {
         int registerNumber = pattern[patternIndex++];   /* Get which register to match against */
         int stringPosition2, stringEnd2;
 
         /* Check if there's corresponding group */
         if(registerNumber >= registerCount) {
-            return BREAK_WITH_FAIL1;
+            return true;
         }
         /* Check if corresponding group is still open */
         if(registerActive[registerNumber]) {
-            return BREAK_WITH_FAIL1;
+            return true;
         }
 
         /* Where in input to try to start matching.  */
         stringPosition2 = registerStart[registerNumber];
         if(stringPosition2 == REG_UNSET_VALUE) {
-            return BREAK_WITH_FAIL1;
+            return true;
         }
 
         /* Where to stop matching; if both the place to start and
@@ -243,7 +243,7 @@ class MatchEnvironmentSingleByte {
 
         stringEnd2 = registerEnd[registerNumber];
         if(stringEnd2 == REG_UNSET_VALUE) {
-            return BREAK_WITH_FAIL1;
+            return true;
         }
 
         for(;;) {
@@ -253,7 +253,7 @@ class MatchEnvironmentSingleByte {
             }
 
             /* If necessary, advance to next segment in data.  */
-            if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
+            if(stringIndex == stringEnd) {return true;}
 
             /* How many characters left in this segment to match.  */
             int mcnt = stringEnd - stringIndex;
@@ -267,12 +267,12 @@ class MatchEnvironmentSingleByte {
             /* Compare that many; failure if mismatch, else move
                past them.  */
             if(shouldCaseTranslate ? self.memcmp_translate(string, stringIndex, stringPosition2, mcnt)!=0 : memcmp(string, stringIndex, stringPosition2, mcnt)!=0) {
-                return BREAK_WITH_FAIL1;
+                return true;
             }
             stringIndex += mcnt;
             stringPosition2 += mcnt;
         }
-        return BREAK_NORMALLY;
+        return false;
     }
 
     private static final boolean isInList(int cx, byte[] b, int bix) {
@@ -395,14 +395,14 @@ class MatchEnvironmentSingleByte {
         System.arraycopy(registerEnd, 1, bestRegisterEnd, 1, registerCount-1);
     }
 
-    public final int restoreBestRegisters() {
+    public final boolean restoreBestRegisters() {
         /* If not end of string, try backtracking.  Otherwise done.  */
         if(isLongestMatch && stringIndex != stringEnd) {
             if(bestRegistersSet) {/* non-greedy, no need to backtrack */
                 /* Restore best match.  */
                 stringIndex = bestRegisterEnd[0];
                 fixRegisters();
-                return 0;
+                return true;
             }
             while(failureStackPointer != 0 && failureStack[failureStackPointer-1] == NON_GREEDY) {
                 popFailurePoint();
@@ -412,13 +412,13 @@ class MatchEnvironmentSingleByte {
                 bestRegistersSet = true;
                 bestRegisterEnd[0] = stringIndex;	/* Never use regstart[0].  */
                 fixBestRegisters();
-                return 1;
+                return false;
             }
         }
-        return 0;
+        return true;
     }
 
-    public final void convertRegisters(Registers regs) {
+    private final void convertRegisters(Registers regs) {
         /* If caller wants register contents data back, convert it 
            to indices.  */
         if(regs != null) {
@@ -436,39 +436,37 @@ class MatchEnvironmentSingleByte {
         }
     }
         
-    public final int bytecode_start_memory() {
+    private final void bytecode_start_memory() {
         registerStart[pattern[patternIndex]] = stringIndex;
         registerActive[pattern[patternIndex]] = true;
         registerMatchedSomething[pattern[patternIndex]] = false;
         patternIndex += 2;
-        return CONTINUE_MAINLOOP;
     }
 
-    public final int bytecode_stop_memory() {
+    public final void bytecode_stop_memory() {
         registerEnd[pattern[patternIndex]] = stringIndex;
         registerActive[pattern[patternIndex]] = false;
         patternIndex += 2;
-        return CONTINUE_MAINLOOP;
     }
 
-    public final int bytecode_anychar() {
-        if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
+    public final boolean bytecode_anychar() {
+        if(stringIndex == stringEnd) {return true;}
         if(!isMultiLine
            && (shouldCaseTranslate ? ctx.translate[string[stringIndex]] : string[stringIndex]) == '\n') {
-            return 1;
+            return true;
         }
         setMatchedRegisters();
         stringIndex++;
-        return 0;
+        return false;
     }
 
-    public final int bytecode_charset() {
+    public final boolean bytecode_charset() {
         boolean not;	    /* Nonzero for charset_not.  */
         boolean part = false;	    /* true if matched part of mbc */
         int dsave = stringIndex + 1;
         int cc;
                     
-        if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
+        if(stringIndex == stringEnd) {return true;}
                         
         char c = (char)(string[stringIndex++]&0xFF);
         if(shouldCaseTranslate()) {
@@ -480,7 +478,7 @@ class MatchEnvironmentSingleByte {
             not = !not;
         }
             
-        if(!not) {return BREAK_WITH_FAIL1;}
+        if(!not) {return true;}
             
         patternIndex += 1 + (char)(pattern[patternIndex]&0xFF) + 2 + extractUnsigned(pattern, patternIndex + 1 + (char)(pattern[patternIndex]&0xFF))*8;
         setMatchedRegisters();
@@ -488,7 +486,7 @@ class MatchEnvironmentSingleByte {
         if(part) {
             stringIndex = dsave;
         }
-        return CONTINUE_MAINLOOP;
+        return false;
     }
 
     public final void bytecode_anychar_repeat() {
@@ -595,7 +593,7 @@ class MatchEnvironmentSingleByte {
         return 0;
     }
 
-    public final int bytecode_push_dummy_failure() {
+    public final void bytecode_push_dummy_failure() {
         /* See comments just above at `dummy_failure_jump' about the
            two zeroes.  */
         int p1 = patternIndex;
@@ -616,7 +614,6 @@ class MatchEnvironmentSingleByte {
             pushFailurePoint(-1,0);
             //System.err.println("push_dummy_failure: " + DESCRIBE_FAILURE_POINT());
         }
-        return CONTINUE_MAINLOOP;
     }
 
     private final void expandStack() {
@@ -634,7 +631,7 @@ class MatchEnvironmentSingleByte {
         }
     }
 
-    public final int bytecode_succeed_n() {
+    public final void bytecode_succeed_n() {
         int mcnt = extractNumber(pattern, patternIndex + 2);
         /* Originally, this is how many times we HAVE to succeed.  */
         if(mcnt != 0) {
@@ -656,10 +653,9 @@ class MatchEnvironmentSingleByte {
             pushFailurePoint(patternIndex+mcnt,stringIndex);
         }
         //System.err.println("succeed_n: " + DESCRIBE_FAILURE_POINT());
-        return CONTINUE_MAINLOOP;
     }
 
-    public final int bytecode_jump_n() {
+    public final boolean bytecode_jump_n() {
         int mcnt = extractNumber(pattern, patternIndex + 2);
         /* Originally, this is how many times we CAN jump.  */
         if(mcnt!=0) {
@@ -673,19 +669,19 @@ class MatchEnvironmentSingleByte {
             storeNumber(pattern, patternIndex + 2, mcnt);
             mcnt = extractNumberAndIncrementPatternIndex();
             if(mcnt < 0 && stackOutOfRange()) {/* avoid infinite loop */
-                return BREAK_WITH_FAIL1;
+                return true;
             }
             patternIndex += mcnt;
-            return CONTINUE_MAINLOOP;
+            return false;
         }
         /* If don't have to jump any more, skip over the rest of command.  */
         else {
             patternIndex += 4;
         }
-        return CONTINUE_MAINLOOP;
+        return false;
     }
 
-    public final int bytecode_exactn() {
+    public final boolean bytecode_exactn() {
         /* Match the next few pattern characters exactly.
            mcnt is how many characters to match.  */
         int mcnt = pattern[patternIndex++] & 0xff;
@@ -694,26 +690,26 @@ class MatchEnvironmentSingleByte {
            testing `translate' inside the loop.  */
         if(shouldCaseTranslate) {
             do {
-                if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
+                if(stringIndex == stringEnd) {return true;}
                 char pc = (char)(pattern[patternIndex]&0xFF);
                 if(pc == 0xff) {
                     patternIndex++;  
                     if(--mcnt==0
                        || stringIndex == stringEnd
                        || string[stringIndex++] != pattern[patternIndex++]) {
-                        return BREAK_WITH_FAIL1;
+                        return true;
                     }
                     continue;
                 }
                 char c = (char)(string[stringIndex++]&0xFF);
                 /* compiled code translation needed for ruby */
                 if(ctx.translate[c] != ctx.translate[pattern[patternIndex++]&0xFF]) {
-                    return BREAK_WITH_FAIL1;
+                    return true;
                 }
             } while(--mcnt > 0);
         } else {
             do {
-                if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
+                if(stringIndex == stringEnd) {return true;}
                 byte pc = pattern[patternIndex];
                 if(pc == (byte)0xff) {
                     patternIndex++; mcnt--;
@@ -721,12 +717,12 @@ class MatchEnvironmentSingleByte {
                 }
                 patternIndex++;
                 if(string[stringIndex++] != pc) {
-                    return BREAK_WITH_FAIL1;
+                    return true;
                 }
             } while(--mcnt > 0);
         }
         setMatchedRegisters();
-        return CONTINUE_MAINLOOP;
+        return false;
     }
 
     private final String describeFailurePoint() {
@@ -754,156 +750,115 @@ class MatchEnvironmentSingleByte {
         return result.toString();
     }
 
-    private final int bytecode_start_nowidth() {
+    private final void bytecode_start_nowidth() {
         pushFailurePoint(-1,stringIndex);
         //System.err.println("start_nowidth: " + DESCRIBE_FAILURE_POINT());
         int mcnt = extractNumberAndIncrementPatternIndex();
         storeNumber(pattern, patternIndex+mcnt, failureStackPointer);
-        return CONTINUE_MAINLOOP;
     }
 
-    private final int bytecode_stop_nowidth() {
+    private final void bytecode_stop_nowidth() {
         int mcnt = extractNumberAndIncrementPatternIndex();
         failureStackPointer = mcnt;
         stringIndex = failureStack[failureStackPointer-3];
         popFailurePoint();
-        return CONTINUE_MAINLOOP;
     }
 
-    private final int bytecode_stop_backtrack() {
+    private final void bytecode_stop_backtrack() {
         failureStackPointer = extractNumberAndIncrementPatternIndex();
         popFailurePoint();
-        return CONTINUE_MAINLOOP;
     }
 
-    private final int bytecode_pop_and_fail() {
+    private final void bytecode_pop_and_fail() {
         int mcnt = extractNumber(pattern, patternIndex+1);
         failureStackPointer = mcnt;
         popFailurePoint();
-        return BREAK_WITH_FAIL1;
     }
 
-    private final int bytecode_begline() {
+    private final boolean bytecode_begline() {
         if(size == 0 || stringIndex == stringStart) {
-            return CONTINUE_MAINLOOP;
+            return false;
         }
-        if(string[stringIndex-1] == '\n' && stringIndex != stringEnd) {
-            return CONTINUE_MAINLOOP;
-        }
-        return BREAK_WITH_FAIL1;
+        return !(string[stringIndex-1] == '\n' && stringIndex != stringEnd);
     }
 
-    private final int bytecode_endline() {
-        if(stringIndex == stringEnd) {
-            return CONTINUE_MAINLOOP;
-        } else if(string[stringIndex] == '\n') {
-            return CONTINUE_MAINLOOP;
-        }
-        return BREAK_WITH_FAIL1;
+    private final boolean bytecode_endline() {
+        return !(stringIndex == stringEnd || string[stringIndex] == '\n');
     }
 
-    private final int bytecode_begbuf() {
-        if(stringIndex==stringStart) {
-            return CONTINUE_MAINLOOP;
-        }
-        return BREAK_WITH_FAIL1;
+    private final boolean bytecode_begbuf() {
+        return stringIndex!=stringStart;
     }
 
-    private final int bytecode_endbuf() {
-        if(stringIndex == stringEnd) {
-            return CONTINUE_MAINLOOP;
-        }
-        return BREAK_WITH_FAIL1;
+    private final boolean bytecode_endbuf() {
+        return stringIndex != stringEnd;
     }
 
-    private final int bytecode_endbuf2() {
-        if(stringIndex == stringEnd) {
-            return CONTINUE_MAINLOOP;
-        }
-        /* .. or newline just before the end of the data. */
-        if(string[stringIndex] == '\n' && stringIndex+1 == stringEnd) {
-            return CONTINUE_MAINLOOP;
-        }
-        return BREAK_WITH_FAIL1;
+    private final boolean bytecode_endbuf2() {
+        return !(stringIndex == stringEnd || (string[stringIndex] == '\n' && stringIndex+1 == stringEnd));
     }
 
-    private final int bytecode_begpos() {
-        if(stringIndex == beg) {
-            return CONTINUE_MAINLOOP;
-        }
-        return BREAK_WITH_FAIL1;
+    private final boolean bytecode_begpos() {
+        return stringIndex != beg;
     }
 
-    private final int bytecode_on_failure_jump() {
+    private final void bytecode_on_failure_jump() {
         int mcnt = extractNumberAndIncrementPatternIndex();
         pushFailurePoint(patternIndex+mcnt,stringIndex);
         //System.err.println("on_failure_jump: " + DESCRIBE_FAILURE_POINT());
-        return CONTINUE_MAINLOOP;
     }
 
-    private final int bytecode_finalize_jump() {
+    private final boolean bytecode_finalize_jump() {
         if(failureStackPointer > 2 && failureStack[failureStackPointer-3] == stringIndex) {
             patternIndex = failureStack[failureStackPointer-4];
             popFailurePoint();
-            return CONTINUE_MAINLOOP;
+            return false;
         }
         popFailurePoint();
-        return BREAK_NORMALLY;
+        return true;
     }
 
-    private final int bytecode_casefold_on() {
+    private final void bytecode_casefold_on() {
         optionFlags |= RE_OPTION_IGNORECASE;
         this.shouldCaseTranslate = shouldCaseTranslate();
-        return CONTINUE_MAINLOOP;
     }
 
-    private final int bytecode_casefold_off() {
+    private final void bytecode_casefold_off() {
         optionFlags &= ~RE_OPTION_IGNORECASE;
         this.shouldCaseTranslate = false;
-        return CONTINUE_MAINLOOP;
     }
 
-    private final int bytecode_option_set() {
+    private final void bytecode_option_set() {
         optionFlags = pattern[patternIndex++];
         this.shouldCaseTranslate = shouldCaseTranslate();
         this.isMultiLine = (optionFlags&RE_OPTION_MULTILINE)!=0;
         this.isLongestMatch = (optionFlags&RE_OPTION_LONGEST)!=0;
-        return CONTINUE_MAINLOOP;
     }
 
     public final int run() {
-        // TODO: refactor logic to be "straighter"
-        /*
-before:
-  if end or restore best regs
-       will go into fail, or return
-main loop
-   will go to fail or continue mainloop
-fail:
-  either restore best current registers if set, or fail, or backtrack by continuing mainloop  
+        boolean fail = false;
 
-         */
-
-        mainLoop: for(;;) {
+        for(;;) { // Main loop
             if(patternIndex == patternEnd) {
-                if(restoreBestRegisters() != 1) {
-                    break;  // mainLoop
+                if(restoreBestRegisters()) {
+                    break;  // from main loop
                 }
+                fail = true;
             } else {
-                int var = BREAK_NORMALLY;
-
-                //                    System.err.println("--executing " + Bytecodes.NAMES[(int)p[pix]] + " at " + pix);
+                //System.err.println("--executing " + Bytecodes.NAMES[(int)p[pix]] + " at " + pix);
                 //System.err.println("-- -- for d: " + string_pos + " and string_end: " + string_end);
+                fail = false;
+
                 switch(pattern[patternIndex++]) {
                     /* ( [or `(', as appropriate] is represented by start_memory,
                        ) by stop_memory.  Both of those commands are followed by
                        a register number in the next byte.  The text matched
                        within the ( and ) is recorded under that number.  */
                 case start_memory:
-                    var = bytecode_start_memory();
+                    bytecode_start_memory();
                     break;
                 case stop_memory:
-                    var = bytecode_stop_memory();
+                    bytecode_stop_memory();
                     break;
                 case start_paren:
                 case stop_paren:
@@ -911,48 +866,49 @@ fail:
                     /* \<digit> has been turned into a `duplicate' command which is
                        followed by the numeric value of <digit> as the register number.  */
                 case duplicate:
-                    var = bytecode_duplicate();
+                    fail = bytecode_duplicate();
                     break;
                 case start_nowidth:
-                    var = bytecode_start_nowidth();
+                    bytecode_start_nowidth();
                     break;
                 case stop_nowidth:
-                    var = bytecode_stop_nowidth();
+                    bytecode_stop_nowidth();
                     break;
                 case stop_backtrack:
-                    var = bytecode_stop_backtrack();
+                    bytecode_stop_backtrack();
                     break;
                 case pop_and_fail:
-                    var = bytecode_pop_and_fail();
+                    bytecode_pop_and_fail();
+                    fail = true;
                     break;
                 case anychar:
-                    var = bytecode_anychar();
+                    fail = bytecode_anychar();
                     break;
                 case anychar_repeat: 
                     bytecode_anychar_repeat();
-                    var = BREAK_WITH_FAIL1;
+                    fail = true;
                     break;
                 case charset:
                 case charset_not: 
-                    var = bytecode_charset();
+                    fail = bytecode_charset();
                     break;
                 case begline:
-                    var = bytecode_begline();
+                    fail = bytecode_begline();
                     break;
                 case endline:
-                    var = bytecode_endline();
+                    fail = bytecode_endline();
                     break;
                     /* Match at the very beginning of the string. */
                 case begbuf:
-                    var = bytecode_begbuf();
+                    fail = bytecode_begbuf();
                     break;
                     /* Match at the very end of the data. */
                 case endbuf:
-                    var = bytecode_endbuf();
+                    fail = bytecode_endbuf();
                     break;
                     /* Match at the very end of the data. */
                 case endbuf2:
-                    var = bytecode_endbuf2();
+                    fail = bytecode_endbuf2();
                     break;
                     /* `or' constructs are handled by starting each alternative with
                        an on_failure_jump that points to the start of the next
@@ -972,11 +928,11 @@ fail:
                     
                     /* Match at the starting position. */
                 case begpos:
-                    var = bytecode_begpos();
+                    fail = bytecode_begpos();
                     break;
                 case on_failure_jump:
                     //                on_failure:
-                    var = bytecode_on_failure_jump();
+                    bytecode_on_failure_jump();
                     break;
 
                     /* The end of a smart repeat has a maybe_finalize_jump back.
@@ -984,9 +940,9 @@ fail:
                 case maybe_finalize_jump: {
                     int val = bytecode_maybe_finalize_jump();
                     if(val == 2) {
-                        continue mainLoop;
+                        break;
                     } else if(val == 1) {
-                        val = BREAK_WITH_FAIL1;
+                        fail = true;;
                         break;
                     }
                 }
@@ -1001,8 +957,8 @@ fail:
                        put on by the on_failure_jump.  */
 
                 case finalize_jump:
-                    if(bytecode_finalize_jump() == CONTINUE_MAINLOOP) {
-                        continue mainLoop;
+                    if(!bytecode_finalize_jump()) {
+                        break;
                     }
 
                     /* Note fall through.  */
@@ -1014,7 +970,7 @@ fail:
                     /* Jump without taking off any failure points.  */
                 case jump:
                     //      nofinalize:
-                    var = jump();
+                    fail = bytecode_jump();
                     break;
                 case dummy_failure_jump:
                     /* Normally, the on_failure_jump pushes a failure point, which
@@ -1022,7 +978,7 @@ fail:
                        finalize_jump, also, and with a pattern of, say, `a+', we
                        are skipping over the on_failure_jump, so we have to push
                        something meaningless for finalize_jump to pop.  */
-                    var = bytecode_dummy_failure_jump();
+                    fail = bytecode_dummy_failure_jump();
                     break;
 
                     /* At the end of an alternative, we need to push a dummy failure
@@ -1031,95 +987,91 @@ fail:
                        popped.  For example, matching `(a|ab)*' against `aab'
                        requires that we match the `ab' alternative.  */
                 case push_dummy_failure:
-                    var = bytecode_push_dummy_failure();
+                    bytecode_push_dummy_failure();
                     break;
                     /* Have to succeed matching what follows at least n times.  Then
                        just handle like an on_failure_jump.  */
                 case succeed_n: 
-                    var = bytecode_succeed_n();
+                    bytecode_succeed_n();
                     break;
                 case jump_n:
-                    var = bytecode_jump_n();
+                    fail = bytecode_jump_n();
                     break;
                 case set_number_at:
-                    var = bytecode_set_number_at();
+                    bytecode_set_number_at();
                     break;
                 case try_next:
-                    var = bytecode_try_next();
+                    bytecode_try_next();
                     break;
                 case finalize_push:
-                    var = bytecode_finalize_push();
+                    fail = bytecode_finalize_push();
                     break;
                 case finalize_push_n:
-                    var = bytecode_finalize_push_n();
+                    fail = bytecode_finalize_push_n();
                     break;
                     /* Ignore these.  Used to ignore the n of succeed_n's which
                        currently have n == 0.  */
                 case unused:
-                    var = CONTINUE_MAINLOOP;
                     break;
                 case casefold_on:
-                    var = bytecode_casefold_on();
+                    bytecode_casefold_on();
                     break;
                 case casefold_off:
-                    var = bytecode_casefold_off();
+                    bytecode_casefold_off();
                     break;
                 case option_set:
-                    var = bytecode_option_set();
+                    bytecode_option_set();
                     break;
                 case wordbound:
-                    var = bytecode_wordbound();
+                    fail = bytecode_wordbound();
                     break;
                 case notwordbound:
-                    var = bytecode_notwordbound();
+                    fail = bytecode_notwordbound();
                     break;
                 case wordbeg:
-                    var = bytecode_wordbeg();
+                    fail = bytecode_wordbeg();
                     break;
                 case wordend:
-                    var = bytecode_wordend();
+                    fail = bytecode_wordend();
                     break;
                 case wordchar:
-                    var = bytecode_wordchar();
+                    fail = bytecode_wordchar();
                     break;
                 case notwordchar:
-                    var = bytecode_notwordchar();
+                    fail = bytecode_notwordchar();
                     break;
                 case exactn:
-                    var = bytecode_exactn();
+                    fail = bytecode_exactn();
                     break;
-                }
-
-                if(var != BREAK_WITH_FAIL1) {
-                    continue mainLoop;
                 }
             }
 
-            if(fail() == -1) {
+            if(fail && isFail()) {
                 if(bestRegistersSet) {
                     stringIndex = bestRegisterEnd[0];
                     fixRegisters();
-                    break mainLoop;
+                    break; //Mainloop
                 } else {
                     self.uninitStack();
                     return -1;
                 }
             }
-        }        
+        }
 
         convertRegisters(registers);
+
         self.uninitStack();
 
         return (stringIndex-stringStart) - pos;
     }
 
-    private final int jump() {
+    private final boolean bytecode_jump() {
         int mcnt = extractNumberAndIncrementPatternIndex();
         if(mcnt < 0 && stackOutOfRange()) {/* avoid infinite loop */
-            return BREAK_WITH_FAIL1;
+            return true;
         }
         patternIndex += mcnt;
-        return CONTINUE_MAINLOOP;
+        return false;
     }
 
     private final int extractNumberAndIncrementPatternIndex() {
@@ -1132,18 +1084,18 @@ fail:
         return failureStackPointer > 2 && failureStack[failureStackPointer-3] == stringIndex;
     }
 
-    private final int bytecode_dummy_failure_jump() {
+    private final boolean bytecode_dummy_failure_jump() {
         pushFailurePoint(-1,0);
         //System.err.println("dummy_failure_jump: " + DESCRIBE_FAILURE_POINT());
         int mcnt = extractNumberAndIncrementPatternIndex();
         if(mcnt < 0 && stackOutOfRange()) {/* avoid infinite loop */
-            return BREAK_WITH_FAIL1;
+            return true;
         }
         patternIndex += mcnt;
-        return CONTINUE_MAINLOOP;
+        return false;
     }
 
-    private final int bytecode_try_next() {
+    private final void bytecode_try_next() {
         int mcnt = extractNumberAndIncrementPatternIndex();
         if(patternIndex + mcnt < patternEnd) {
             pushFailurePoint(patternIndex,stringIndex);
@@ -1151,30 +1103,28 @@ fail:
             //System.err.println("try_next: " + DESCRIBE_FAILURE_POINT());
         }
         patternIndex += mcnt;
-        return CONTINUE_MAINLOOP;
     }
 
-    private final int bytecode_set_number_at() {
+    private final void bytecode_set_number_at() {
         int mcnt = extractNumberAndIncrementPatternIndex();
         int p1 = patternIndex + mcnt;
         mcnt = extractNumberAndIncrementPatternIndex();
         storeNumber(pattern, p1, mcnt);
-        return CONTINUE_MAINLOOP;
     }
 
-    private final int bytecode_finalize_push() {
+    private final boolean bytecode_finalize_push() {
         popFailurePoint();
         int mcnt = extractNumberAndIncrementPatternIndex();
         if(mcnt < 0 && stackOutOfRange()) { /* avoid infinite loop */
-            return BREAK_WITH_FAIL1;
+            return true;
         }
         pushFailurePoint(patternIndex+mcnt,stringIndex);
         failureStack[failureStackPointer-1] = NON_GREEDY;
         //System.err.println("finalize_push: " + DESCRIBE_FAILURE_POINT());
-        return CONTINUE_MAINLOOP;
+        return false;
     }
 
-    private final int bytecode_finalize_push_n() {
+    private final boolean bytecode_finalize_push_n() {
         int mcnt = extractNumber(pattern, patternIndex + 2); 
         /* Originally, this is how many times we CAN jump.  */
         if(mcnt>0) {
@@ -1187,10 +1137,10 @@ fail:
                 mcnt = extractNumber(pattern, patternIndex);
                 patternIndex += 2;
                 if(mcnt < 0 && stackOutOfRange()) {/* avoid infinite loop */
-                    return BREAK_WITH_FAIL1;
+                    return true;
                 }
                 patternIndex += mcnt;
-                return CONTINUE_MAINLOOP;
+                return false;
             }
             popFailurePoint();
             mcnt = extractNumberAndIncrementPatternIndex();
@@ -1203,85 +1153,57 @@ fail:
         else {
             patternIndex += 4;
         }
-        return CONTINUE_MAINLOOP;
+        return false;
     }
 
-    private final int bytecode_wordbound() {
+    private final boolean bytecode_wordbound() {
         if(stringIndex == 0) {
-            if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
-            if(isALetter(string,stringIndex,stringEnd)) {
-                return CONTINUE_MAINLOOP;
-            } else {
-                return BREAK_WITH_FAIL1;
-            }
+            if(stringIndex == stringEnd) {return true;}
+            return !(isALetter(string,stringIndex,stringEnd));
         }
         if(stringIndex == stringEnd) {
-            if(previousIsALetter(string,stringIndex,stringEnd)) {
-                return CONTINUE_MAINLOOP;
-            } else {
-                return BREAK_WITH_FAIL1;
-            }
+            return !previousIsALetter(string,stringIndex,stringEnd);
         }
-        if(previousIsALetter(string,stringIndex,stringEnd) != isALetter(string,stringIndex,stringEnd)) {
-            return CONTINUE_MAINLOOP;
-        }
-        return BREAK_WITH_FAIL1;
+        return !(previousIsALetter(string,stringIndex,stringEnd) != isALetter(string,stringIndex,stringEnd));
     }
 
-    private final int bytecode_notwordbound() {
+    private final boolean bytecode_notwordbound() {
         if(stringIndex==0) {
-            if(isALetter(string, stringIndex, stringEnd)) {
-                return BREAK_WITH_FAIL1;
-            } else {
-                return CONTINUE_MAINLOOP;
-            }
+            return isALetter(string, stringIndex, stringEnd);
         }
         if(stringIndex == stringEnd) {
-            if(previousIsALetter(string, stringIndex, stringEnd)) {
-                return BREAK_WITH_FAIL1;
-            } else {
-                return CONTINUE_MAINLOOP;
-            }
+            return previousIsALetter(string, stringIndex, stringEnd);
         }
-        if(previousIsALetter(string, stringIndex, stringEnd) != isALetter(string, stringIndex, stringEnd)) {
-            return BREAK_WITH_FAIL1;
-        }
-        return CONTINUE_MAINLOOP;
+        return previousIsALetter(string, stringIndex, stringEnd) != isALetter(string, stringIndex, stringEnd);
     }
 
-    private final int bytecode_wordbeg() {
-        if(isALetter(string, stringIndex, stringEnd) && (stringIndex==0 || !previousIsALetter(string,stringIndex,stringEnd))) {
-            return CONTINUE_MAINLOOP;
-        }
-        return BREAK_WITH_FAIL1;
+    private final boolean bytecode_wordbeg() {
+        return !(isALetter(string, stringIndex, stringEnd) && (stringIndex==0 || !previousIsALetter(string,stringIndex,stringEnd)));
     }
 
-    private final int bytecode_wordend() {
-        if(stringIndex!=0 && previousIsALetter(string, stringIndex, stringEnd)
-           && (!isALetter(string, stringIndex, stringEnd) || stringIndex == stringEnd)) {
-            return CONTINUE_MAINLOOP;
-        }
-        return BREAK_WITH_FAIL1;
+    private final boolean bytecode_wordend() {
+        return !(stringIndex!=0 && previousIsALetter(string, stringIndex, stringEnd)
+                 && (!isALetter(string, stringIndex, stringEnd) || stringIndex == stringEnd));
     }
 
-    private final int bytecode_wordchar() {
-        if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
+    private final boolean bytecode_wordchar() {
+        if(stringIndex == stringEnd) {return true;}
         if(!isALetter(string,stringIndex,stringEnd)) {
-            return BREAK_WITH_FAIL1;
+            return true;
         }
         stringIndex++;
         setMatchedRegisters();
-        return CONTINUE_MAINLOOP;
+        return false;
     }
         
-    private final int bytecode_notwordchar() {
-        if(stringIndex == stringEnd) {return BREAK_WITH_FAIL1;}
+    private final boolean bytecode_notwordchar() {
+        if(stringIndex == stringEnd) {return true;}
         if(isALetter(string, stringIndex, stringEnd)) {
-            return BREAK_WITH_FAIL1;
+            return true;
         }
         stringIndex++;
         setMatchedRegisters();
-        return CONTINUE_MAINLOOP;
+        return false;
     }
 
     private final boolean isALetter(byte[] d, int dix, int dend) {
@@ -1292,20 +1214,15 @@ fail:
         return re_syntax_table[d[dix-1]&0xFF] == Sword;
     }
 
-    private final int fail() {
-        //fail:
-        do {
+    private final boolean isFail() {
+        while(true) {
             if(failureStackPointer != 0) {
                 if(handleFailure() == 1) {
-                    return 0;
+                    return false;
                 }
             } else {
-                return -1; /* Matching at this starting point really fails.  */
+                return true; /* Matching at this starting point really fails.  */
             }
-        } while(true);
+        }
     }
-
-    private final static int BREAK_NORMALLY = 0;
-    private final static int BREAK_WITH_FAIL1 = 1;
-    private final static int CONTINUE_MAINLOOP = 2;
 }
