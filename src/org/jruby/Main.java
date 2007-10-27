@@ -50,6 +50,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CommandlineParser;
+import org.jruby.util.SimpleSampler;
 
 /**
  * Class used to launch the interpreter.
@@ -166,8 +167,18 @@ public class Main {
         config.updateWithCommandline(commandline);
         final Ruby runtime = Ruby.newInstance(config);
         runtime.setKCode(commandline.getKCode());
-        if(config.isSamplingEnabled()) {
-            org.jruby.util.SimpleSampler.startSampleThread();
+        
+        if (config.isSamplingEnabled()) {
+            SimpleSampler.startSampleThread();
+        }
+        
+        if (commandline.isVerbose()) {
+            runtime.setVerbose(runtime.getTrue());
+        }
+
+        if (in == null) {
+            // no script to run, return success
+            return 0;
         }
 
         try {

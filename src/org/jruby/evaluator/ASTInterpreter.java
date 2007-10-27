@@ -1130,7 +1130,11 @@ public class ASTInterpreter {
         InstVarNode iVisited = (InstVarNode) node;
         IRubyObject variable = self.fastGetInstanceVariable(iVisited.getName());
    
-        return variable == null ? runtime.getNil() : variable;
+        if (variable != null) return variable;
+        
+        runtime.getWarnings().warning(iVisited.getPosition(), "instance variable " + iVisited.getName() + " not initialized");
+        
+        return runtime.getNil();
     }
 
     private static IRubyObject localAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

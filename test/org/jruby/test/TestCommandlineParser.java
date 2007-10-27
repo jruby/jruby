@@ -39,23 +39,25 @@ import org.jruby.Main;
 import org.jruby.util.CommandlineParser;
 
 public class TestCommandlineParser extends TestCase {
-	private PrintStream out;
-	private PrintStream err;
 
-	public void setUp() {
-		out = new PrintStream(new ByteArrayOutputStream());
-		err = new PrintStream(new ByteArrayOutputStream());
-	}
+    private PrintStream out;
+    private PrintStream err;
+
+    public void setUp() {
+        out = new PrintStream(new ByteArrayOutputStream());
+        err = new PrintStream(new ByteArrayOutputStream());
+    }
+
     public void testParsing() {
-        CommandlineParser c = new CommandlineParser(new Main(System.in, out, err), new String[] { "-e", "hello", "-e", "world" });
+        CommandlineParser c = new CommandlineParser(new Main(System.in, out, err), new String[]{"-e", "hello", "-e", "world"});
         assertEquals("hello\nworld\n", new String(c.inlineScript()));
         assertNull(c.getScriptFileName());
         assertEquals("-e", c.displayedFileName());
 
-        c = new CommandlineParser(new Main(System.in, out, err), new String[] { "--version" });
+        c = new CommandlineParser(new Main(System.in, out, err), new String[]{"--version"});
         assertTrue(c.isShowVersion());
 
-        c = new CommandlineParser(new Main(System.in, out, err), new String[] { "-n", "myfile.rb" });
+        c = new CommandlineParser(new Main(System.in, out, err), new String[]{"-n", "myfile.rb"});
         assertTrue(c.isAssumeLoop());
         assertEquals("myfile.rb", c.getScriptFileName());
         assertEquals("myfile.rb", c.displayedFileName());
@@ -64,49 +66,35 @@ public class TestCommandlineParser extends TestCase {
         assertEquals("-", c.displayedFileName());
     }
 
-
-
     public void testParsingWithDashDash() {
-      class TestableCommandlineParser extends CommandlineParser {
+        class TestableCommandlineParser extends CommandlineParser {
 
-        public TestableCommandlineParser(String[] arguments) {
-          super(new Main(System.in, out, err), arguments);
+            public TestableCommandlineParser(String[] arguments) {
+                super(new Main(System.in, out, err), arguments);
+            }
         }
-      }
-      CommandlineParser c = new TestableCommandlineParser(new String[] { "-I", "someLoadPath", "--", "simple.rb", "-v", "--version" });
-      assertEquals("someLoadPath", c.loadPaths().get(0));
-      assertEquals("simple.rb",c.getScriptFileName());
-      assertEquals("simple.rb", c.displayedFileName());
-      assertTrue("Should not be verbose. The -v flag should be a parameter to the script, not the jruby interpreter", !c.isVerbose());
-      assertEquals("Script should have two parameters",2,c.getScriptArguments().length);
-      assertEquals("-v",c.getScriptArguments()[0]);
-      assertEquals("--version",c.getScriptArguments()[1]);
-    }
-
-    public void testPrintVersionDoesNotRunInterpreter() {
-        String[] args = new String[] { "-v" };
-        CommandlineParser parser = new CommandlineParser(new Main(System.in, out, err), args);
-        assertTrue(parser.isShowVersion());
-        assertFalse(parser.isShouldRunInterpreter());
-
-        args = new String[] { "--version" };
-        parser = new CommandlineParser(new Main(System.in, out, err), args);
-        assertTrue(parser.isShowVersion());
-        assertFalse(parser.isShouldRunInterpreter());
+        CommandlineParser c = new TestableCommandlineParser(new String[]{"-I", "someLoadPath", "--", "simple.rb", "-v", "--version"});
+        assertEquals("someLoadPath", c.loadPaths().get(0));
+        assertEquals("simple.rb", c.getScriptFileName());
+        assertEquals("simple.rb", c.displayedFileName());
+        assertTrue("Should not be verbose. The -v flag should be a parameter to the script, not the jruby interpreter", !c.isVerbose());
+        assertEquals("Script should have two parameters", 2, c.getScriptArguments().length);
+        assertEquals("-v", c.getScriptArguments()[0]);
+        assertEquals("--version", c.getScriptArguments()[1]);
     }
 
     public void testHelpDoesNotRunIntepreter() {
-        String[] args = new String[] { "-h" };
+        String[] args = new String[]{"-h"};
         CommandlineParser parser = new CommandlineParser(new Main(System.in, out, err), args);
         assertFalse(parser.isShouldRunInterpreter());
 
-        args = new String[] { "--help" };
+        args = new String[]{"--help"};
         parser = new CommandlineParser(new Main(System.in, out, err), args);
         assertFalse(parser.isShouldRunInterpreter());
     }
 
     public void testCommandTakesOneArgument() {
-        String[] args = new String[] { "--command", "gem" };
+        String[] args = new String[]{"--command", "gem"};
         CommandlineParser parser = new CommandlineParser(new Main(System.in, out, err), args);
         assertEquals(1, parser.requiredLibraries().size());
         assertEquals("jruby/commands", parser.requiredLibraries().get(0));
@@ -114,7 +102,7 @@ public class TestCommandlineParser extends TestCase {
     }
 
     public void testCommandAllowedOnlyOnceAndRemainderAreScriptArgs() {
-        String[] args = new String[] { "--command", "gem", "--command", "irb" };
+        String[] args = new String[]{"--command", "gem", "--command", "irb"};
         CommandlineParser parser = new CommandlineParser(new Main(System.in, out, err), args);
         assertEquals(2, parser.getScriptArguments().length);
         assertEquals("--command", parser.getScriptArguments()[0]);

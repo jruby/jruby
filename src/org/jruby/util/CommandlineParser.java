@@ -278,6 +278,10 @@ public class CommandlineParser {
                 
                 return new ByteArrayInputStream(inlineScript());
             } else if (isSourceFromStdin()) {
+                // can't use -v and stdin
+                if (isShowVersion()) {
+                    return null;
+                }
                 return System.in;
             } else {
                 File file = new File(getScriptFileName());
@@ -344,7 +348,6 @@ public class CommandlineParser {
 
     protected void setShowVersion(boolean showVersion) {
         this.showVersion = showVersion;
-        this.shouldRunInterpreter = false;
     }
 
     public String[] getScriptArguments() {
