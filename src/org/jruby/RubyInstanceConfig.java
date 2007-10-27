@@ -42,6 +42,7 @@ public class RubyInstanceConfig {
     private boolean objectSpaceEnabled = true;
     private String currentDirectory;
     private Map environment;
+    private String[] argv = {};
 
     private final boolean jitEnabled;
     private final boolean jitLogging;
@@ -100,6 +101,7 @@ public class RubyInstanceConfig {
 
     public void updateWithCommandline(CommandlineParser cmdline) {
         this.objectSpaceEnabled = this.objectSpaceEnabled && cmdline.isObjectSpaceEnabled();
+        this.argv = cmdline.getScriptArguments();
     }
 
     public boolean isJitEnabled() {
@@ -172,5 +174,13 @@ public class RubyInstanceConfig {
 
     public Map getEnvironment() {
         return environment;
+    }
+    
+    public String[] getArgv() {
+        return argv;
+    }
+    
+    public void setArgv(String[] argv) {
+        this.argv = argv;
     }
 }

@@ -63,6 +63,11 @@ public class TestRuby extends TestRubyBase {
         runtime = Ruby.getDefaultInstance();
     }
     
+    public void testArgvIsNonNil() throws Exception {
+        assert(!runtime.getObject().getConstant("ARGV").isNil());
+        assert(!runtime.getGlobalVariables().get("$*").isNil());
+    }
+    
     public void testVarAndMet() throws Exception {
         runtime.getLoadService().init(new ArrayList());
         eval("load 'test/testVariableAndMethod.rb'");

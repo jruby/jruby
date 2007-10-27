@@ -27,7 +27,7 @@ public class IRBConsole extends JFrame {
         super(title);
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         final IRBConsole console = new IRBConsole("JRuby IRB Console");
         final PipedInputStream pipeIn = new PipedInputStream();
 
@@ -57,12 +57,10 @@ public class IRBConsole extends JFrame {
             setOutput(new PrintStream(tar));
             setError(new PrintStream(tar));
             setObjectSpaceEnabled(false);
-            }};
+            setArgv(args);
+        }};
         final Ruby runtime = Ruby.newInstance(config);
 
-        IRubyObject argumentArray = runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, args));
-        runtime.defineGlobalConstant("ARGV", argumentArray);
-        runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
         runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(System.identityHashCode(runtime))));
         runtime.getLoadService().init(new ArrayList());
 

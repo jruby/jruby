@@ -256,7 +256,6 @@ public class Main {
     }
 
     private void initializeRuntime(final Ruby runtime, String filename) {
-        IRubyObject argumentArray = runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, commandline.getScriptArguments()));
         runtime.setVerbose(runtime.newBoolean(commandline.isVerbose()));
         runtime.setDebug(runtime.newBoolean(commandline.isDebug()));
 
@@ -265,13 +264,11 @@ public class Main {
 
         runtime.getObject().setConstant("$VERBOSE",
                 commandline.isVerbose() ? runtime.getTrue() : runtime.getNil());
-        runtime.defineGlobalConstant("ARGV", argumentArray);
 
         defineGlobal(runtime, "$-p", commandline.isAssumePrinting());
         defineGlobal(runtime, "$-n", commandline.isAssumeLoop());
         defineGlobal(runtime, "$-a", commandline.isSplit());
         defineGlobal(runtime, "$-l", commandline.isProcessLineEnds());
-        runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
         // TODO this is a fake cause we have no real process number in Java
         runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(runtime.hashCode())));
 

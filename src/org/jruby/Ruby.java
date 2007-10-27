@@ -208,6 +208,8 @@ public final class Ruby {
      * A list of finalizers, weakly referenced, to be executed on tearDown
      */
     private Map finalizers;
+    
+    private String[] argv;
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -219,7 +221,8 @@ public final class Ruby {
         this.err                = config.getError();
         this.objectSpaceEnabled = config.isObjectSpaceEnabled();
         this.profile            = config.getProfile();
-        this.currentDirectory   = config.getCurrentDirectory();;
+        this.currentDirectory   = config.getCurrentDirectory();
+        this.argv               = config.getArgv();
     }
 
     /**
@@ -766,6 +769,14 @@ public final class Ruby {
         RubyIO.createIOClass(this);
 
         if (profile.allowClass("Array")) arrayClass = RubyArray.createArrayClass(this);
+        
+        // define ARGV and $* for this runtime
+        RubyArray argvArray = newArray();
+        for (int i = 0; i < argv.length; i++) {
+            argvArray.add(newString(argv[i]));
+        }
+        defineGlobalConstant("ARGV", argvArray);
+        getGlobalVariables().defineReadonly("$*", new ValueAccessor(argvArray));
 
         RubyClass structClass = null;
         if (profile.allowClass("Struct")) structClass = RubyStruct.createStructClass(this);
