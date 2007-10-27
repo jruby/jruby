@@ -2354,6 +2354,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                         cg.params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, int.class, int.class, int.class, int.class, CallConfiguration.class)));
             }
         }
+        
+        public void rethrowIfSystemExit() {
+            method.invokevirtual(cg.p(RubyException.class), "getMetaClass", cg.sig(RubyClass.class));
+            loadRuntime();
+            method.ldc("SystemExit");
+            method.invokevirtual(cg.p(Ruby.class), "getClass", cg.sig(RubyClass.class, String.class));
+            Label ifEnd = new Label();
+            method.if_acmpne(ifEnd);
+            loadException();
+            method.athrow();
+            method.label(ifEnd);
+        }
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {

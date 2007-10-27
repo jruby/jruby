@@ -52,14 +52,13 @@ public class IRBApplet extends Applet {
             setOutput(new PrintStream(tar));
             setError(new PrintStream(tar));
             setObjectSpaceEnabled(false);
+            setArgv(new String[] {"-f"});
         }};
         
         Ruby.setSecurityRestricted(true); // We are in a very limited context. Tighten that belt...
         
         final Ruby runtime = Ruby.newInstance(config);
         
-        runtime.defineGlobalConstant("ARGV", runtime.newArrayNoCopy(new IRubyObject[] {
-                runtime.newString("-f") }));
         runtime.getLoadService().init(new ArrayList(0));
         
         tar.hookIntoRuntime(runtime);

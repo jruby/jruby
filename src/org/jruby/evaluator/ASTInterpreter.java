@@ -1430,6 +1430,10 @@ public class ASTInterpreter {
                 // falsely set $! to nil and this sets it back to something valid.  This should 
                 // get fixed at the same time we address bug #1296484.
                 runtime.getGlobalVariables().set("$!", raisedException);
+                
+                if (runtime.getClass("SystemExit") == raisedException.getMetaClass()) {
+                    throw raiseJump;
+                }                
 
                 RescueBodyNode rescueNode = iVisited.getRescueNode();
 

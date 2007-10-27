@@ -452,6 +452,7 @@ public interface MethodCompiler {
     public void checkWhenWithSplat();
     public void createNewEndBlock(ClosureCallback body);
     public void runBeginBlock(StaticScope scope, ClosureCallback body);
+    public void rethrowIfSystemExit();
     
     public MethodCompiler chainToMethod(String name, ASTInspector inspector);
 }
