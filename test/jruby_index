@@ -53,3 +53,5 @@ test_vietnamese_charset
 #test_trace_func
 test_zlib
 test_yaml
+# this test is last intentionally
+test_loading_builtin_libraries
