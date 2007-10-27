@@ -757,9 +757,6 @@ class MatchEnvironmentSingleByte {
     private final int bytecode_start_nowidth() {
         pushFailurePoint(-1,stringIndex);
         //System.err.println("start_nowidth: " + DESCRIBE_FAILURE_POINT());
-        if(failureStackPointer > RE_DUP_MAX) {
-            return RETURN_OUT_OF_MEMORY;
-        }
         int mcnt = extractNumberAndIncrementPatternIndex();
         storeNumber(pattern, patternIndex+mcnt, failureStackPointer);
         return CONTINUE_MAINLOOP;
@@ -875,257 +872,245 @@ class MatchEnvironmentSingleByte {
     }
 
     public final int run() {
-        // This loops over pattern commands.  It exits by returning from the
-        // function if match is complete, or it drops through if match fails
-        // at this starting point in the input data.  
-        boolean gotoRestoreBestRegs = false;
-        do {
-            mainLoop: for(;;) {
-                fail1: do {
-                    // End of pattern means we might have succeeded.  
-                    if(patternIndex == patternEnd || gotoRestoreBestRegs) {
-                        if(!gotoRestoreBestRegs) {
-                            if(restoreBestRegisters()==1) {
-                                break fail1;
-                            }
-                        } else {
-                            gotoRestoreBestRegs = false;
-                        }
+        // TODO: refactor logic to be "straighter"
+        /*
+before:
+  if end or restore best regs
+       will go into fail, or return
+main loop
+   will go to fail or continue mainloop
+fail:
+  either restore best current registers if set, or fail, or backtrack by continuing mainloop  
 
-                        convertRegisters(registers);
+         */
 
-                        self.uninitStack();
-                        return (stringIndex-stringStart) - pos;
-                    }
+        mainLoop: for(;;) {
+            if(patternIndex == patternEnd) {
+                if(restoreBestRegisters() != 1) {
+                    break;  // mainLoop
+                }
+            } else {
+                int var = BREAK_NORMALLY;
 
-                    int var = BREAK_NORMALLY;
-
-
-                    //                    System.err.println("--executing " + Bytecodes.NAMES[(int)p[pix]] + " at " + pix);
-                    //System.err.println("-- -- for d: " + string_pos + " and string_end: " + string_end);
-                    switch(pattern[patternIndex++]) {
-                        /* ( [or `(', as appropriate] is represented by start_memory,
-                           ) by stop_memory.  Both of those commands are followed by
-                           a register number in the next byte.  The text matched
-                           within the ( and ) is recorded under that number.  */
-                    case start_memory:
-                        var = bytecode_start_memory();
-                        break;
-                    case stop_memory:
-                        var = bytecode_stop_memory();
-                        break;
-                    case start_paren:
-                    case stop_paren:
-                        break;
-                        /* \<digit> has been turned into a `duplicate' command which is
-                           followed by the numeric value of <digit> as the register number.  */
-                    case duplicate:
-                        var = bytecode_duplicate();
-                        break;
-                    case start_nowidth:
-                        var = bytecode_start_nowidth();
-                        break;
-                    case stop_nowidth:
-                        var = bytecode_stop_nowidth();
-                        break;
-                    case stop_backtrack:
-                        var = bytecode_stop_backtrack();
-                        break;
-                    case pop_and_fail:
-                        var = bytecode_pop_and_fail();
-                        break;
-                    case anychar:
-                        var = bytecode_anychar();
-                        break;
-                    case anychar_repeat: 
-                        bytecode_anychar_repeat();
-                        break fail1;
-                    case charset:
-                    case charset_not: 
-                        var = bytecode_charset();
-                        break;
-                    case begline:
-                        var = bytecode_begline();
-                        break;
-                    case endline:
-                        var = bytecode_endline();
-                        break;
-                        /* Match at the very beginning of the string. */
-                    case begbuf:
-                        var = bytecode_begbuf();
-                        break;
-                        /* Match at the very end of the data. */
-                    case endbuf:
-                        var = bytecode_endbuf();
-                        break;
-                        /* Match at the very end of the data. */
-                    case endbuf2:
-                        var = bytecode_endbuf2();
-                        break;
-                        /* `or' constructs are handled by starting each alternative with
-                           an on_failure_jump that points to the start of the next
-                           alternative.  Each alternative except the last ends with a
-                           jump to the joining point.  (Actually, each jump except for
-                           the last one really jumps to the following jump, because
-                           tensioning the jumps is a hassle.)  */
+                //                    System.err.println("--executing " + Bytecodes.NAMES[(int)p[pix]] + " at " + pix);
+                //System.err.println("-- -- for d: " + string_pos + " and string_end: " + string_end);
+                switch(pattern[patternIndex++]) {
+                    /* ( [or `(', as appropriate] is represented by start_memory,
+                       ) by stop_memory.  Both of those commands are followed by
+                       a register number in the next byte.  The text matched
+                       within the ( and ) is recorded under that number.  */
+                case start_memory:
+                    var = bytecode_start_memory();
+                    break;
+                case stop_memory:
+                    var = bytecode_stop_memory();
+                    break;
+                case start_paren:
+                case stop_paren:
+                    break;
+                    /* \<digit> has been turned into a `duplicate' command which is
+                       followed by the numeric value of <digit> as the register number.  */
+                case duplicate:
+                    var = bytecode_duplicate();
+                    break;
+                case start_nowidth:
+                    var = bytecode_start_nowidth();
+                    break;
+                case stop_nowidth:
+                    var = bytecode_stop_nowidth();
+                    break;
+                case stop_backtrack:
+                    var = bytecode_stop_backtrack();
+                    break;
+                case pop_and_fail:
+                    var = bytecode_pop_and_fail();
+                    break;
+                case anychar:
+                    var = bytecode_anychar();
+                    break;
+                case anychar_repeat: 
+                    bytecode_anychar_repeat();
+                    var = BREAK_WITH_FAIL1;
+                    break;
+                case charset:
+                case charset_not: 
+                    var = bytecode_charset();
+                    break;
+                case begline:
+                    var = bytecode_begline();
+                    break;
+                case endline:
+                    var = bytecode_endline();
+                    break;
+                    /* Match at the very beginning of the string. */
+                case begbuf:
+                    var = bytecode_begbuf();
+                    break;
+                    /* Match at the very end of the data. */
+                case endbuf:
+                    var = bytecode_endbuf();
+                    break;
+                    /* Match at the very end of the data. */
+                case endbuf2:
+                    var = bytecode_endbuf2();
+                    break;
+                    /* `or' constructs are handled by starting each alternative with
+                       an on_failure_jump that points to the start of the next
+                       alternative.  Each alternative except the last ends with a
+                       jump to the joining point.  (Actually, each jump except for
+                       the last one really jumps to the following jump, because
+                       tensioning the jumps is a hassle.)  */
                     
-                        /* The start of a stupid repeat has an on_failure_jump that points
-                           past the end of the repeat text. This makes a failure point so 
-                           that on failure to match a repetition, matching restarts past
-                           as many repetitions have been found with no way to fail and
-                           look for another one.  */
+                    /* The start of a stupid repeat has an on_failure_jump that points
+                       past the end of the repeat text. This makes a failure point so 
+                       that on failure to match a repetition, matching restarts past
+                       as many repetitions have been found with no way to fail and
+                       look for another one.  */
                     
-                        /* A smart repeat is similar but loops back to the on_failure_jump
-                           so that each repetition makes another failure point.  */
+                    /* A smart repeat is similar but loops back to the on_failure_jump
+                       so that each repetition makes another failure point.  */
                     
-                        /* Match at the starting position. */
-                    case begpos:
-                        var = bytecode_begpos();
-                        break;
-                    case on_failure_jump:
-                        //                on_failure:
-                        var = bytecode_on_failure_jump();
-                        break;
+                    /* Match at the starting position. */
+                case begpos:
+                    var = bytecode_begpos();
+                    break;
+                case on_failure_jump:
+                    //                on_failure:
+                    var = bytecode_on_failure_jump();
+                    break;
 
-                        /* The end of a smart repeat has a maybe_finalize_jump back.
-                           Change it either to a finalize_jump or an ordinary jump.  */
-                    case maybe_finalize_jump:
-                        switch(bytecode_maybe_finalize_jump()) {
-                        case 1:
-                            break fail1;
-                        case 2:
-                            continue mainLoop;
-                        }
-
-                        /* Note fall through.  */
-
-                        /* The end of a stupid repeat has a finalize_jump back to the
-                           start, where another failure point will be made which will
-                           point to after all the repetitions found so far.  */
-                    
-                        /* Take off failure points put on by matching on_failure_jump 
-                           because didn't fail.  Also remove the register information
-                           put on by the on_failure_jump.  */
-
-                    case finalize_jump:
-                        if(bytecode_finalize_jump() == CONTINUE_MAINLOOP) {
-                            continue mainLoop;
-                        }
-
-                        /* Note fall through.  */
-
-                        /* We need this opcode so we can detect where alternatives end
-                           in `group_match_null_string_p' et al.  */
-                    case jump_past_alt:
-                        /* fall through */
-                        /* Jump without taking off any failure points.  */
-                    case jump:
-                        //      nofinalize:
-                        var = jump();
-                        break;
-                    case dummy_failure_jump:
-                        /* Normally, the on_failure_jump pushes a failure point, which
-                           then gets popped at finalize_jump.  We will end up at
-                           finalize_jump, also, and with a pattern of, say, `a+', we
-                           are skipping over the on_failure_jump, so we have to push
-                           something meaningless for finalize_jump to pop.  */
-                        var = bytecode_dummy_failure_jump();
-                        break;
-
-                        /* At the end of an alternative, we need to push a dummy failure
-                           point in case we are followed by a `finalize_jump', because
-                           we don't want the failure point for the alternative to be
-                           popped.  For example, matching `(a|ab)*' against `aab'
-                           requires that we match the `ab' alternative.  */
-                    case push_dummy_failure:
-                        var = bytecode_push_dummy_failure();
-                        break;
-                        /* Have to succeed matching what follows at least n times.  Then
-                           just handle like an on_failure_jump.  */
-                    case succeed_n: 
-                        var = bytecode_succeed_n();
-                        break;
-                    case jump_n:
-                        var = bytecode_jump_n();
-                        break;
-                    case set_number_at:
-                        var = bytecode_set_number_at();
-                        break;
-                    case try_next:
-                        var = bytecode_try_next();
-                        break;
-                    case finalize_push:
-                        var = bytecode_finalize_push();
-                        break;
-                    case finalize_push_n:
-                        var = bytecode_finalize_push_n();
-                        break;
-                        /* Ignore these.  Used to ignore the n of succeed_n's which
-                           currently have n == 0.  */
-                    case unused:
-                        var = CONTINUE_MAINLOOP;
-                        break;
-                    case casefold_on:
-                        var = bytecode_casefold_on();
-                        break;
-                    case casefold_off:
-                        var = bytecode_casefold_off();
-                        break;
-                    case option_set:
-                        var = bytecode_option_set();
-                        break;
-                    case wordbound:
-                        var = bytecode_wordbound();
-                        break;
-                    case notwordbound:
-                        var = bytecode_notwordbound();
-                        break;
-                    case wordbeg:
-                        var = bytecode_wordbeg();
-                        break;
-                    case wordend:
-                        var = bytecode_wordend();
-                        break;
-                    case wordchar:
-                        var = bytecode_wordchar();
-                        break;
-                    case notwordchar:
-                        var = bytecode_notwordchar();
-                        break;
-                    case exactn:
-                        var = bytecode_exactn();
-                        break;
-                    }
-
-
-                    switch(var) {
-                    case CONTINUE_MAINLOOP:
+                    /* The end of a smart repeat has a maybe_finalize_jump back.
+                       Change it either to a finalize_jump or an ordinary jump.  */
+                case maybe_finalize_jump: {
+                    int val = bytecode_maybe_finalize_jump();
+                    if(val == 2) {
                         continue mainLoop;
-                    case BREAK_WITH_FAIL1:
-                        break fail1;
-                    case RETURN_OUT_OF_MEMORY:
-                        self.uninitStack();
-                        return -2;
+                    } else if(val == 1) {
+                        val = BREAK_WITH_FAIL1;
+                        break;
                     }
-                    continue mainLoop;
-                } while(false);
+                }
+                    /* Note fall through.  */
 
-                if(fail() == -1) {
-                    break mainLoop;
-                } else {
+                    /* The end of a stupid repeat has a finalize_jump back to the
+                       start, where another failure point will be made which will
+                       point to after all the repetitions found so far.  */
+                    
+                    /* Take off failure points put on by matching on_failure_jump 
+                       because didn't fail.  Also remove the register information
+                       put on by the on_failure_jump.  */
+
+                case finalize_jump:
+                    if(bytecode_finalize_jump() == CONTINUE_MAINLOOP) {
+                        continue mainLoop;
+                    }
+
+                    /* Note fall through.  */
+
+                    /* We need this opcode so we can detect where alternatives end
+                       in `group_match_null_string_p' et al.  */
+                case jump_past_alt:
+                    /* fall through */
+                    /* Jump without taking off any failure points.  */
+                case jump:
+                    //      nofinalize:
+                    var = jump();
+                    break;
+                case dummy_failure_jump:
+                    /* Normally, the on_failure_jump pushes a failure point, which
+                       then gets popped at finalize_jump.  We will end up at
+                       finalize_jump, also, and with a pattern of, say, `a+', we
+                       are skipping over the on_failure_jump, so we have to push
+                       something meaningless for finalize_jump to pop.  */
+                    var = bytecode_dummy_failure_jump();
+                    break;
+
+                    /* At the end of an alternative, we need to push a dummy failure
+                       point in case we are followed by a `finalize_jump', because
+                       we don't want the failure point for the alternative to be
+                       popped.  For example, matching `(a|ab)*' against `aab'
+                       requires that we match the `ab' alternative.  */
+                case push_dummy_failure:
+                    var = bytecode_push_dummy_failure();
+                    break;
+                    /* Have to succeed matching what follows at least n times.  Then
+                       just handle like an on_failure_jump.  */
+                case succeed_n: 
+                    var = bytecode_succeed_n();
+                    break;
+                case jump_n:
+                    var = bytecode_jump_n();
+                    break;
+                case set_number_at:
+                    var = bytecode_set_number_at();
+                    break;
+                case try_next:
+                    var = bytecode_try_next();
+                    break;
+                case finalize_push:
+                    var = bytecode_finalize_push();
+                    break;
+                case finalize_push_n:
+                    var = bytecode_finalize_push_n();
+                    break;
+                    /* Ignore these.  Used to ignore the n of succeed_n's which
+                       currently have n == 0.  */
+                case unused:
+                    var = CONTINUE_MAINLOOP;
+                    break;
+                case casefold_on:
+                    var = bytecode_casefold_on();
+                    break;
+                case casefold_off:
+                    var = bytecode_casefold_off();
+                    break;
+                case option_set:
+                    var = bytecode_option_set();
+                    break;
+                case wordbound:
+                    var = bytecode_wordbound();
+                    break;
+                case notwordbound:
+                    var = bytecode_notwordbound();
+                    break;
+                case wordbeg:
+                    var = bytecode_wordbeg();
+                    break;
+                case wordend:
+                    var = bytecode_wordend();
+                    break;
+                case wordchar:
+                    var = bytecode_wordchar();
+                    break;
+                case notwordchar:
+                    var = bytecode_notwordchar();
+                    break;
+                case exactn:
+                    var = bytecode_exactn();
+                    break;
+                }
+
+                if(var != BREAK_WITH_FAIL1) {
                     continue mainLoop;
                 }
-            }        
-
-            if(bestRegistersSet) {
-                gotoRestoreBestRegs=true;
-                stringIndex = bestRegisterEnd[0];
-                fixRegisters();
             }
-        } while(gotoRestoreBestRegs);
 
+            if(fail() == -1) {
+                if(bestRegistersSet) {
+                    stringIndex = bestRegisterEnd[0];
+                    fixRegisters();
+                    break mainLoop;
+                } else {
+                    self.uninitStack();
+                    return -1;
+                }
+            }
+        }        
+
+        convertRegisters(registers);
         self.uninitStack();
-        return -1;
+
+        return (stringIndex-stringStart) - pos;
     }
 
     private final int jump() {
@@ -1323,5 +1308,4 @@ class MatchEnvironmentSingleByte {
     private final static int BREAK_NORMALLY = 0;
     private final static int BREAK_WITH_FAIL1 = 1;
     private final static int CONTINUE_MAINLOOP = 2;
-    private final static int RETURN_OUT_OF_MEMORY = 3;
 }
