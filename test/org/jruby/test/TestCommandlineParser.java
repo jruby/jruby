@@ -83,18 +83,6 @@ public class TestCommandlineParser extends TestCase {
       assertEquals("--version",c.getScriptArguments()[1]);
     }
 
-    public void testPrintVersionDoesNotRunInterpreter() {
-        String[] args = new String[] { "-v" };
-        CommandlineParser parser = new CommandlineParser(new Main(System.in, out, err), args);
-        assertTrue(parser.isShowVersion());
-        assertFalse(parser.isShouldRunInterpreter());
-
-        args = new String[] { "--version" };
-        parser = new CommandlineParser(new Main(System.in, out, err), args);
-        assertTrue(parser.isShowVersion());
-        assertFalse(parser.isShouldRunInterpreter());
-    }
-
     public void testHelpDoesNotRunIntepreter() {
         String[] args = new String[] { "-h" };
         CommandlineParser parser = new CommandlineParser(new Main(System.in, out, err), args);
