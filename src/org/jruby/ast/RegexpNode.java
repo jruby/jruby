@@ -83,9 +83,9 @@ public class RegexpNode extends Node implements ILiteralNode {
     public RegexpPattern getPattern(Ruby runtime, int extra_options) throws PatternSyntaxException {
         if (pattern == null) {
             if((options & 256) == 256 ) {
-                pattern = RegexpFactory.getFactory("java").createPattern(value, options & ~256, (options&~256) | extra_options);
+                pattern = RegexpFactory.getFactory("java").createPattern(value, (options&~256) | extra_options, 0);
             } else {
-                pattern = runtime.getRegexpFactory().createPattern(value, options, options | extra_options);
+                pattern = runtime.getRegexpFactory().createPattern(value, options | extra_options, 0);
             }
         }
         return pattern;
