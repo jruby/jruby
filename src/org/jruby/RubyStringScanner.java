@@ -103,7 +103,7 @@ public class RubyStringScanner extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "eos?")
+    @JRubyMethod(name = {"eos?", "empty?"})
     public RubyBoolean eos_p() {
         return trueOrFalse(scanner.isEndOfString());
     }
