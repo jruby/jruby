@@ -439,6 +439,23 @@ public class RubyRange extends RubyObject {
                 block.yield(context, currentObject);
                 currentObject = currentObject.callMethod(context, MethodIndex.OP_PLUS, "+", stepNum);
             }
+        } else if(begin instanceof RubyString && end instanceof RubyString) {
+          compareMethod = MethodIndex.EQUALEQUAL;
+          boolean pastEnd = false;
+          RubyString afterEnd = (RubyString) end.callMethod(context, "succ");
+          while(pastEnd == false) {
+              if(isExclusive && currentObject.callMethod(context, compareMethod, (String)MethodIndex.NAMES[compareMethod], end).isTrue()) {
+                  break;
+              }
+              block.yield(context, currentObject);
+              for (int i = 0; i < stepSize; i++) {
+                  currentObject = currentObject.callMethod(context, "succ");
+                  if(currentObject.callMethod(context, compareMethod, (String)MethodIndex.NAMES[compareMethod], afterEnd).isTrue()) {
+                    pastEnd = true;
+                    break;
+                  } 
+              }
+          }
         } else {
             while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES[compareMethod], end).isTrue()) {
                 block.yield(context, currentObject);
