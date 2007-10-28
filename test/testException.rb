@@ -14,9 +14,9 @@ begin
   end
 rescue Exception => boom
   result =  boom.backtrace.collect {|trace| 
-	res = trace.index(':')
+	res = trace.index(/:[0-9]/)
 	res = res.succ
-	resend = trace.index(':',res)
+	resend = trace.index(/:[0-9]/,res)
 	if resend
 	  trace[res, resend-res].to_i  #return value from block
 	else
