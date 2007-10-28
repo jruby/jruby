@@ -49,6 +49,15 @@ test_member(false, az_excl, 'bb')
 ##### step #####
 test_exception(ArgumentError) { (1..2).step(-1) }
 
+r = Range.new('a','d',false)
+sum = 0
+r.step(3) { sum += 1}
+test_equal(2,sum)
+
+r = Range.new('a','d',false)
+sum = 0
+r.step(27) { sum += 1}
+test_equal(1,sum)
 
 # exclusive tests
 r = Range.new('A', 'J', false)
