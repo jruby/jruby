@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import java.nio.charset.CharsetDecoder;
 import org.jruby.ast.Node;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ASTCompiler;
@@ -48,9 +49,9 @@ public class JRubyC {
                 int size = (int)srcfile.length();
                 byte[] chars = new byte[size];
                 new FileInputStream(srcfile).read(chars);
-                // FIXME: encoding?
+                // FIXME: -K encoding?
                 String content = new String(chars);
-                Node scriptNode = runtime.parseFile(new ByteArrayInputStream(content.getBytes(KCode.NONE.getKCode())), filename, null);
+                Node scriptNode = runtime.parseFile(new ByteArrayInputStream(content.getBytes("ISO-8859-1")), filename, null);
 
                 ASTInspector inspector = new ASTInspector();
                 inspector.inspect(scriptNode);
@@ -73,6 +74,7 @@ public class JRubyC {
                 compiler.writeClass(destfile);
             }
         } catch (IOException ioe) {
+            ioe.printStackTrace();
             System.err.println("Error -- IO exception during compile: " + ioe.getMessage());
         } catch (NotCompilableException nce) {
             System.err.println("Error -- Not compilable: " + nce.getMessage());
