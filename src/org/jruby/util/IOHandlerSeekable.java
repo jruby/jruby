@@ -71,6 +71,8 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
         this.cwd = runtime.getCurrentDirectory();
         JRubyFile theFile = JRubyFile.create(cwd,path);
         
+        if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();
+        
         if (modes.isCreate()) theFile.createNewFile();
         
         if(!theFile.exists()) {

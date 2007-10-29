@@ -51,6 +51,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DirectoryAsFileException;
 import org.jruby.util.Chmod;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerNull;
@@ -278,6 +279,8 @@ public class RubyFile extends RubyIO {
             registerIOHandler(handler);
         } catch (InvalidValueException e) {
         	throw getRuntime().newErrnoEINVALError();
+        } catch (DirectoryAsFileException e) {
+        	throw getRuntime().newErrnoEISDirError();
         } catch (FileNotFoundException e) {
         	throw getRuntime().newErrnoENOENTError();
         } catch (IOException e) {

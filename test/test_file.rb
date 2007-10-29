@@ -274,7 +274,10 @@ class TestFile < Test::Unit::TestCase
     File.delete(filename)
 
     assert_raises(IOError) { File.new(filename, File::CREAT) << 'b' }
+
     File.delete(filename)
+
+    assert_raises(Errno::EISDIR) { File.new(".", "w") }
   end
 
   # http://jira.codehaus.org/browse/JRUBY-1231
