@@ -48,6 +48,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -356,6 +357,13 @@ public class RubyFile extends RubyIO {
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length == 0) {
             throw getRuntime().newArgumentError(0, 1);
+        }
+        else if (args.length < 3) {
+            IRubyObject fd = args[0].convertToTypeWithCheck(getRuntime().getFixnum(), MethodIndex.TO_INT, "to_int");
+            if (!fd.isNil()) {
+                args[0] = fd;
+                return super.initialize(args, block);
+            }
         }
 
         getRuntime().checkSafeString(args[0]);
