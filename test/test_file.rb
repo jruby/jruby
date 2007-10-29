@@ -280,6 +280,12 @@ class TestFile < Test::Unit::TestCase
     assert_raises(Errno::EISDIR) { File.new(".", "w") }
   end
 
+  # http://jira.codehaus.org/browse/JRUBY-1023
+  def test_file_reuse_fileno
+    fh = File.new(STDIN.fileno, 'r')
+    assert_equal(STDIN.fileno, fh.fileno)
+  end
+
   # http://jira.codehaus.org/browse/JRUBY-1231
   def test_file_directory_empty_name
     assert !File.directory?("")

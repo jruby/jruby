@@ -383,6 +383,13 @@ public class RubyFile extends RubyIO {
 	    if (args.length == 0) {
 	        throw getRuntime().newArgumentError(0, 1);
 	    }
+	    else if (args.length < 3) {
+	        IRubyObject fd = args[0].convertToTypeWithCheck(getRuntime().getFixnum(), MethodIndex.TO_INT, "to_int");
+	        if (!fd.isNil()) {
+	            args[0] = fd;
+	            return super.initialize(args, block);
+	        }
+	    }
 
 	    getRuntime().checkSafeString(args[0]);
 	    path = args[0].toString();
