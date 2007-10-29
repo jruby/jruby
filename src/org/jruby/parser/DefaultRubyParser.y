@@ -1324,7 +1324,8 @@ opt_ensure    : kENSURE compstmt {
 
 literal       : numeric
               | symbol {
-                  $$ = new SymbolNode($1.getPosition(), (String) $1.getValue());
+                  // FIXME: We may be intern'ing more than once.
+                  $$ = new SymbolNode($1.getPosition(), ((String) $1.getValue()).intern());
               }
               | dsym
 
