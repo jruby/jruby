@@ -208,10 +208,16 @@ public class RubyDigest {
             return RubyString.newString(getRuntime(), algo.digest(ByteList.plain(data)));
         }
 
-        @JRubyMethod(name = "hexdigest")
+        @JRubyMethod(name = {"hexdigest", "to_s"})
         public IRubyObject hexdigest() {
             algo.reset();
             return RubyString.newString(getRuntime(), ByteList.plain(toHex(algo.digest(ByteList.plain(data)))));
+        }
+
+        @JRubyMethod(name = "inspect")
+        public IRubyObject inspect() {
+            algo.reset();
+            return RubyString.newString(getRuntime(), ByteList.plain("#<" + getMetaClass().getRealClass().getName() + ": " + toHex(algo.digest(ByteList.plain(data))) + ">"));
         }
 
         @JRubyMethod(name = "==", required = 1)
