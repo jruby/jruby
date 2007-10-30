@@ -267,7 +267,7 @@ public class RubyThread extends RubyObject {
         }
     }
 
-    private RubyThread(Ruby runtime, RubyClass type) {
+    protected RubyThread(Ruby runtime, RubyClass type) {
         super(runtime, type);
         this.threadService = runtime.getThreadService();
         // set to default thread group
@@ -682,14 +682,16 @@ public class RubyThread extends RubyObject {
     public void exceptionRaised(RaiseException exception) {
         assert isCurrent();
 
-        Ruby runtime = exception.getException().getRuntime();
-        if (abortOnException(runtime)) {
+        RubyException rubyException = exception.getException();
+        Ruby runtime = rubyException.getRuntime();
+        if (rubyException.getMetaClass() == runtime.getClass("SystemExit")) {
+            threadService.getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
+        } else if (abortOnException(runtime)) {
             // FIXME: printError explodes on some nullpointer
             //getRuntime().getRuntime().printError(exception.getException());
-        	// TODO: Doesn't SystemExit have its own method to make this less wordy..
-            RubyException re = RubyException.newException(getRuntime(), getRuntime().getClass("SystemExit"), exception.getMessage());
-            re.setInstanceVariable("status", getRuntime().newFixnum(1));
-            threadService.getMainThread().raise(new IRubyObject[]{re}, Block.NULL_BLOCK);
+            RubyException systemExit = RubySystemExit.newInstance(runtime, 1);
+            systemExit.message = rubyException.message;
+            threadService.getMainThread().raise(new IRubyObject[] {systemExit}, Block.NULL_BLOCK);
             return;
         } else if (runtime.getDebug().isTrue()) {
             runtime.printError(exception.getException());
