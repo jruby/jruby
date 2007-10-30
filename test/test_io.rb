@@ -15,6 +15,8 @@ class TestIO < Test::Unit::TestCase
 
   def test_erroneous_io_usage
     assert_raises(ArgumentError) { IO.new }
+    # commented out until JRUBY-1048 is completed
+    #assert_raises(StandardError) { IO.new(123) }
     assert_raises(TypeError) { IO.new "FROGGER" }
     assert_raises(TypeError) { IO.foreach 3 }
   end
