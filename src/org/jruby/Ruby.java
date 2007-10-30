@@ -1200,7 +1200,7 @@ public final class Ruby {
         registerBuiltin("java.rb", new Library() {
                 public void load(Ruby runtime) throws IOException {
                     Java.createJavaModule(runtime);
-                    new BuiltinScript("javasupport").load(runtime);
+                    runtime.getLoadService().smartLoad("builtin/javasupport");
                     RubyClassPathVariable.createClassPathVariable(runtime);
                 }
             });

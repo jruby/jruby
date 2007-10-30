@@ -99,6 +99,11 @@
             <include name="**/*.rb"/>
         </fileset>
     </copy>
+    <copy todir="${jruby.classes.dir}/builtin">
+        <fileset dir="${lib.dir}/ruby/site_ruby/1.8/builtin">
+            <include name="**/*.rb"/>
+        </fileset>
+    </copy>
     
     <tstamp>
         <format property="build.date" pattern="yyyy-MM-dd"/>
