@@ -34,13 +34,6 @@ class Module
   # to try that package when constants are missing.
   # DEPRECATED: This method conflicts with rake and is not recommended for general use.
   def import(package_name)
-    import_java(package_name);
-  end
-  
-  # Imports the package specified by +package_name+, first by trying to scan JAR resources
-  # for the file in question, and failing that by adding a const_missing hook
-  # to try that package when constants are missing.
-  def import_java(package_name)
     return super(package_name) if package_name.respond_to?(:java_class) || package_name.split(/\./).last =~ /^[A-Z]/
 
     package_name = package_name._name if package_name.respond_to?(:_name)
@@ -56,6 +49,13 @@ class Module
       
       JavaUtilities.create_proxy_class(class_name, fqclass, self)
     end
+  end
+  
+  # Imports the package specified by +package_name+, first by trying to scan JAR resources
+  # for the file in question, and failing that by adding a const_missing hook
+  # to try that package when constants are missing.
+  def import_java(package_name)
+    import(package_name)
   end
 
   def java_alias(new_id, old_id)
