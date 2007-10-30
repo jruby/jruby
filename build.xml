@@ -498,7 +498,7 @@ test/externals/rubinius/spec/parser"/></antcall>
     </javadoc>
   </target>
 
-  <patternset id="dist.bin.files">
+  <patternset id="dist.bindir.files">
     <include name="bin/*jruby*"/>
     <include name="bin/*gem*"/>
     <include name="bin/*jirb*"/>
@@ -523,6 +523,14 @@ test/externals/rubinius/spec/parser"/></antcall>
     <exclude name="lib/ruby/**"/>
   </patternset>
 
+  <patternset id="dist.bin.files">
+    <patternset refid="dist.files"/>
+    <exclude name="lib/emma.jar"/>
+    <exclude name="lib/emma_ant.jar"/>
+    <exclude name="lib/junit.jar"/>
+    <exclude name="lib/jarjar-0.7.jar"/>
+  </patternset>
+
   <patternset id="dist.src.files">
     <patternset refid="dist.files"/>
     <include name="src/**"/>
@@ -540,7 +548,7 @@ test/externals/rubinius/spec/parser"/></antcall>
     <mkdir dir="dist"/>
     <copy todir="dist">
       <fileset dir="${basedir}">
-        <patternset refid="dist.bin.files"/>
+        <patternset refid="dist.bindir.files"/>
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
@@ -555,7 +563,7 @@ test/externals/rubinius/spec/parser"/></antcall>
         <include name="lib/**"/>
       </tarfileset>
       <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
-        <patternset refid="dist.files"/>
+        <patternset refid="dist.bin.files"/>
       </tarfileset>
     </tar>
     <zip destfile="jruby-bin-${version.jruby}.zip">
@@ -566,7 +574,7 @@ test/externals/rubinius/spec/parser"/></antcall>
         <include name="lib/**"/>
       </zipfileset>
       <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
-        <patternset refid="dist.files"/>
+        <patternset refid="dist.bin.files"/>
       </zipfileset>
     </zip>
   </target>
@@ -575,7 +583,7 @@ test/externals/rubinius/spec/parser"/></antcall>
     <mkdir dir="dist"/>
     <copy todir="dist">
       <fileset dir="${basedir}">
-        <patternset refid="dist.bin.files"/>
+        <patternset refid="dist.bindir.files"/>
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
@@ -620,6 +628,7 @@ test/externals/rubinius/spec/parser"/></antcall>
 
   <target name="clean" depends="init" description="clean almost everything">
     <delete dir="${build.dir}"/>
+    <delete dir="${dist.dir}"/>
     <delete quiet="false">
         <fileset dir="${lib.dir}" includes="jruby*.jar"/>
     </delete>
