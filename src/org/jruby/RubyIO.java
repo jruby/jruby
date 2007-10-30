@@ -286,6 +286,7 @@ public class RubyIO extends RubyObject {
         // we could invoke jruby differently to allow stdin to return true
         // on this.  This would allow things like cgi.rb to work properly.
         
+        ioMetaClass.defineMethod("open", callbackFactory.getOptSingletonMethod("open"));
         ioMetaClass.defineMethod("foreach", callbackFactory.getOptSingletonMethod("foreach"));
         ioMetaClass.defineMethod("read", callbackFactory.getOptSingletonMethod("read"));
         ioMetaClass.defineMethod("readlines", callbackFactory.getOptSingletonMethod("readlines"));
@@ -587,6 +588,23 @@ public class RubyIO extends RubyObject {
         
         return this;
     }
+	
+    public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = recv.getRuntime();
+        RubyIO io = new RubyIO(runtime, (RubyClass) recv);
+        io.initialize(args, block);
+
+        if (block.isGiven()) {
+            try {
+                return block.yield(runtime.getCurrentContext(), io);
+            } finally {
+                io.close();
+            }
+        }
+
+        return io;
+    }
+
 	
 	// This appears to be some windows-only mode.  On a java platform this is a no-op
 	public IRubyObject binmode() {
