@@ -40,7 +40,7 @@ public class RubyInstanceConfig {
     private PrintStream output         = System.out;
     private PrintStream error          = System.err;
     private Profile profile            = Profile.DEFAULT;
-    private boolean objectSpaceEnabled = true;
+    private boolean objectSpaceEnabled = false;
     private String currentDirectory;
     private Map environment;
     private String[] argv = {};
@@ -112,7 +112,7 @@ public class RubyInstanceConfig {
     }
 
     public void updateWithCommandline(CommandlineParser cmdline) {
-        this.objectSpaceEnabled = this.objectSpaceEnabled && cmdline.isObjectSpaceEnabled();
+        this.objectSpaceEnabled = this.objectSpaceEnabled || cmdline.isObjectSpaceEnabled();
         this.argv = cmdline.getScriptArguments();
     }
 

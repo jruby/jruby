@@ -66,7 +66,7 @@ public class CommandlineParser {
     private String[] scriptArguments = null;
     private boolean shouldRunInterpreter = true;
 
-    private boolean objectSpaceEnabled = true;
+    private boolean objectSpaceEnabled = false;
     private boolean compilerEnabled = false;
     private boolean yarv = false;
     private boolean rubinius = false;
@@ -103,7 +103,7 @@ public class CommandlineParser {
     }
 
     private boolean isInterpreterArgument(String argument) {
-        return argument.charAt(0) == '-' && !endOfArguments;
+        return (argument.charAt(0) == '-' || argument.charAt(0) == '+') && !endOfArguments;
     }
 
     private void processArgument() {
@@ -137,7 +137,11 @@ public class CommandlineParser {
                     assumeLoop = true;
                     break;
                 case 'O' :
-                    objectSpaceEnabled = false;
+                    if (argument.charAt(0) == '-') {
+                        objectSpaceEnabled = false;
+                    } else if (argument.charAt(0) == '+') {
+                        objectSpaceEnabled = true;
+                    }
                     break;
                 case 'C' :
                     compilerEnabled = true;

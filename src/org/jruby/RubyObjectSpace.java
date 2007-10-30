@@ -120,7 +120,7 @@ public class RubyObjectSpace {
         int count = 0;
         if (rubyClass != runtime.getClassClass()) {
             if (!runtime.isObjectSpaceEnabled()) {
-                runtime.getWarnings().warn("ObjectSpace is disabled; each_object will only work with Class");
+                throw runtime.newRuntimeError("ObjectSpace is disabled; each_object will only work with Class, pass +O to enable");
             }
             iter = recv.getRuntime().getObjectSpace().iterator(rubyClass);
             

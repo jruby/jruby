@@ -300,6 +300,7 @@
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <arg value="-I"/>
       <arg value="test/externals/rubinius/spec"/>
       <arg value="-S"/>
@@ -319,6 +320,7 @@
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.jit.threshold" value="0"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <arg value="-I"/>
       <arg value="test/externals/rubinius/spec"/>
       <arg value="-S"/>
@@ -542,6 +544,7 @@ test/externals/rubinius/spec/parser"/></antcall>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
       <sysproperty key="jruby.jit.enabled" value="false"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
       
@@ -580,6 +583,7 @@ test/externals/rubinius/spec/parser"/></antcall>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
       <sysproperty key="jruby.jit.enabled" value="false"/>
       <sysproperty key="jruby.relection" value="true"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
       
@@ -618,6 +622,7 @@ test/externals/rubinius/spec/parser"/></antcall>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
       <sysproperty key="jruby.jit.enabled" value="true"/>
       <sysproperty key="jruby.jit.threshold" value="0"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
       
@@ -662,6 +667,7 @@ test/externals/rubinius/spec/parser"/></antcall>
       <sysproperty key="jruby.jit.enabled" value="true"/>
       <sysproperty key="jruby.jit.threshold" value="0"/>
       <sysproperty key="jruby.reflection" value="true"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
       
