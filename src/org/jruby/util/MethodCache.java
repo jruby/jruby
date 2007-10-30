@@ -28,12 +28,14 @@
 
 package org.jruby.util;
 
+import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
 public class MethodCache {
+    private static final Reference NULL_REFERENCE = new WeakReference(null);
     private static int CACHE_SIZE = 0x800;
     private static int CACHE_MASK = 0x7ff;
     
@@ -63,9 +65,9 @@ public class MethodCache {
     private void clearAllEntries() {
         for (int i = 0; i < CACHE_SIZE; i++) {
             cache[i] = new CacheEntry();
-            cache[i].klass = null;
+            cache[i].klass = NULL_REFERENCE;
             cache[i].mid = null;
-            cache[i].method = null;
+            cache[i].method = NULL_REFERENCE;
         }
     }
     
@@ -93,7 +95,7 @@ public class MethodCache {
         
         for (int i = 0; i < CACHE_SIZE; i++) {
             CacheEntry entry = cache[i];
-            if (id.equals(entry.mid) && entry.klass != null && entry.klass.get() == c) {
+            if (id.equals(entry.mid) && entry.klass.get() == c) {
                 entry.mid = null;
             }
         }
@@ -119,15 +121,15 @@ public class MethodCache {
         
         for (int i = 0; i < CACHE_SIZE; i++) {
             CacheEntry entry = cache[i]; 
-            if (entry.klass != null && entry.klass.get() == c) {
+            if (entry.klass.get() == c) {
                 entry.mid = null;
             }
         }
     }
     
     public static class CacheEntry {
-        public WeakReference klass;
+        public Reference klass = NULL_REFERENCE;
         public String mid;
-        public WeakReference method;
+        public Reference method = NULL_REFERENCE;
     }
 }
