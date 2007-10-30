@@ -29,6 +29,7 @@ package org.jruby;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -43,8 +44,8 @@ public class RubySignal {
         mSignal.getMetaClass().defineMethod("trap", cf.getOptSingletonMethod("trap"));
     }
 
-    public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        recv.getRuntime().getWarnings().warning("Signal.trap: Signals is currently not implemented in JRuby and will not work");
-        return recv.getRuntime().getNil();
+    public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block block) {
+        recv.getRuntime().getLoadService().require("jsignal");
+        return recv.getRuntime().getKernel().callMethod(recv.getRuntime().getCurrentContext(), "__jtrap", args, CallType.FUNCTIONAL, block);
     }
 }// RubySignal
