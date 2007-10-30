@@ -93,7 +93,7 @@ public class MethodCache {
         
         for (int i = 0; i < CACHE_SIZE; i++) {
             CacheEntry entry = cache[i];
-            if (id.equals(entry.mid) && entry.klass.get() == c) {
+            if (id.equals(entry.mid) && entry.klass != null && entry.klass.get() == c) {
                 entry.mid = null;
             }
         }
@@ -119,7 +119,7 @@ public class MethodCache {
         
         for (int i = 0; i < CACHE_SIZE; i++) {
             CacheEntry entry = cache[i]; 
-            if (entry.klass.get() == c) {
+            if (entry.klass != null && entry.klass.get() == c) {
                 entry.mid = null;
             }
         }
