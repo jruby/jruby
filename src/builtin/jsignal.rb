@@ -12,7 +12,6 @@ module ::Kernel
       sig = SIGNALS[sig] if sig.kind_of?(Fixnum)
       sig = sig.to_s.sub(/^SIG(.+)/,'\1')
       signal_class = Java::sun.misc.Signal
-      signal_class.send :attr_accessor, :prev_handler
       signal_object = signal_class.new(sig) rescue nil
       return unless signal_object
       signal_handler = Java::sun.misc.SignalHandler.impl do
@@ -25,7 +24,7 @@ module ::Kernel
           signal_class.handle(signal_object, signal_handler)
         end
       end
-      signal_object.prev_handler = signal_class.handle(signal_object, signal_handler)
+      signal_class.handle(signal_object, signal_handler)
     end
   rescue NameError
     def __jtrap(*args, &block)
