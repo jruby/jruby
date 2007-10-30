@@ -548,6 +548,23 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "open", required = 1, optional = 1, frame = true, meta = true)
+    public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = recv.getRuntime();
+        RubyIO io = new RubyIO(runtime, (RubyClass) recv);
+        io.initialize(args, block);
+
+        if (block.isGiven()) {
+            try {
+                return block.yield(runtime.getCurrentContext(), io);
+            } finally {
+                io.close();
+            }
+        }
+
+        return io;
+    }
+
     // This appears to be some windows-only mode.  On a java platform this is a no-op
     @JRubyMethod(name = "binmode")
     public IRubyObject binmode() {

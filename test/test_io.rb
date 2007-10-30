@@ -186,6 +186,36 @@ class TestIO < Test::Unit::TestCase
     f.close
   end
 
+  def test_open
+    ensure_files @file
+
+    assert_raises(ArgumentError) { io = IO.open }
+
+    f = File.open(@file)
+    assert_raises(ArgumentError) { io = IO.open(f.fileno, "r", :gratuitous) }
+    io = IO.open(f.fileno, "r")
+    assert_equal(f.fileno, io.fileno)
+    assert(!io.closed?)
+    io.close
+    assert(io.closed?)
+
+    assert(!f.closed?)
+    assert_raises(Errno::EBADF) { f.close }
+  end
+
+  def test_open_with_block
+    ensure_files @file
+
+    f = File.open(@file)
+    IO.open(f.fileno, "r") do |io|
+      assert_equal(f.fileno, io.fileno)
+      assert(!io.closed?)
+    end
+
+    assert(!f.closed?)
+    assert_raises(Errno::EBADF) { f.close }
+  end
+
   def test_delete
     ensure_files @file, @file2, @file3
     # Test deleting files
