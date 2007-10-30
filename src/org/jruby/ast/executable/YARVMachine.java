@@ -433,15 +433,15 @@ public class YARVMachine {
                 if (context.getCurrentVisibility() == Visibility.MODULE_FUNCTION) {
                     RubyModule singleton = containingClass.getSingletonClass();
                     singleton.addMethod(mname, new WrapperMethod(singleton, newMethod, Visibility.PUBLIC));
-                    containingClass.callMethod(context, "singleton_method_added", runtime.newSymbol(mname));
+                    containingClass.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(mname));
                 }
     
                 // 'class << state.self' and 'class << obj' uses defn as opposed to defs
                 if (containingClass.isSingleton()) {
                     ((MetaClass) containingClass).getAttached().callMethod(context, 
-                            "singleton_method_added", runtime.newSymbol(mname));
+                            "singleton_method_added", runtime.fastNewSymbol(mname));
                 } else {
-                    containingClass.callMethod(context, "method_added", runtime.newSymbol(mname));
+                    containingClass.callMethod(context, "method_added", runtime.fastNewSymbol(mname));
                 }
                 push(runtime.getNil());
                 runtime.incGlobalState();

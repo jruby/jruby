@@ -21,6 +21,7 @@
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006-2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -955,24 +956,24 @@ public class RubyModule extends RubyObject {
     }
 
     // FIXME: create AttrReaderMethod, AttrWriterMethod, for faster attr access
-    private void addAccessor(String name, boolean readable, boolean writeable) {
-        ThreadContext tc = getRuntime().getCurrentContext();
+    private void addAccessor(String internedName, boolean readable, boolean writeable) {
+        final Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
 
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
-        Visibility attributeScope = tc.getCurrentVisibility();
+        Visibility attributeScope = context.getCurrentVisibility();
         if (attributeScope == Visibility.PRIVATE) {
             //FIXME warning
         } else if (attributeScope == Visibility.MODULE_FUNCTION) {
             attributeScope = Visibility.PRIVATE;
             // FIXME warning
         }
-        final String variableName = ("@" + name).intern();
-        final Ruby runtime = getRuntime();
-        ThreadContext context = getRuntime().getCurrentContext();
+        final String variableName = ("@" + internedName).intern();
         if (readable) {
-            addMethod(name, new JavaMethod(this, Visibility.PUBLIC) {
+            // FIXME: should visibility be set to current visibility?
+            addMethod(internedName, new JavaMethod(this, Visibility.PUBLIC) {
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    if (args.length != 0) Arity.raiseArgumentError(getRuntime(), args.length, 0, 0);
+                    if (args.length != 0) Arity.raiseArgumentError(runtime, args.length, 0, 0);
 
                     IRubyObject variable = self.fastGetInstanceVariable(variableName);
 
@@ -983,14 +984,15 @@ public class RubyModule extends RubyObject {
                     return Arity.noArguments();
                 }
             });
-            callMethod(context, "method_added", RubySymbol.newSymbol(getRuntime(), name));
+            callMethod(context, "method_added", runtime.fastNewSymbol(internedName));
         }
         if (writeable) {
-            name = (name + "=").intern();
-            addMethod(name, new JavaMethod(this, Visibility.PUBLIC) {
+            internedName = (internedName + "=").intern();
+            // FIXME: should visibility be set to current visibility?
+            addMethod(internedName, new JavaMethod(this, Visibility.PUBLIC) {
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     // ENEBO: Can anyone get args to be anything but length 1?
-                    if (args.length != 1) Arity.raiseArgumentError(getRuntime(), args.length, 1, 1);
+                    if (args.length != 1) Arity.raiseArgumentError(runtime, args.length, 1, 1);
 
                     return self.fastSetInstanceVariable(variableName, args[0]);
                 }
@@ -999,7 +1001,7 @@ public class RubyModule extends RubyObject {
                     return Arity.singleArgument();
                 }
             });
-            callMethod(context, "method_added", RubySymbol.newSymbol(getRuntime(), name));
+            callMethod(context, "method_added", runtime.fastNewSymbol(internedName));
         }
     }
 
@@ -1130,7 +1132,7 @@ public class RubyModule extends RubyObject {
 
         addMethod(name, newMethod);
 
-        RubySymbol symbol = RubySymbol.newSymbol(getRuntime(), name);
+        RubySymbol symbol = getRuntime().fastNewSymbol(name);
         ThreadContext context = getRuntime().getCurrentContext();
 
         if (tc.getPreviousVisibility() == Visibility.MODULE_FUNCTION) {
@@ -1609,7 +1611,7 @@ public class RubyModule extends RubyObject {
                 DynamicMethod method = searchMethod(name);
                 assert !method.isUndefined() : "undefined method '" + name + "'";
                 getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), method, Visibility.PUBLIC));
-                callMethod(context, "singleton_method_added", RubySymbol.newSymbol(getRuntime(), name));
+                callMethod(context, "singleton_method_added", getRuntime().fastNewSymbol(name));
             }
         }
         return this;
@@ -2117,7 +2119,7 @@ public class RubyModule extends RubyObject {
         }
 
         return callMethod(getRuntime().getCurrentContext(),
-                "const_missing", RubySymbol.newSymbol(getRuntime(), name));
+                "const_missing", getRuntime().newSymbol(name));
     }
     
     public IRubyObject fastGetConstant(String internedName) {
@@ -2153,7 +2155,7 @@ public class RubyModule extends RubyObject {
         }
 
         return callMethod(getRuntime().getCurrentContext(),
-                "const_missing", RubySymbol.newSymbol(getRuntime(), internedName));
+                "const_missing", getRuntime().fastNewSymbol(internedName));
     }
 
     // not actually called anywhere (all known uses call the fast version)
@@ -2189,7 +2191,7 @@ public class RubyModule extends RubyObject {
         };
 
         return callMethod(getRuntime().getCurrentContext(),
-                "const_missing", RubySymbol.newSymbol(getRuntime(), internedName));
+                "const_missing", getRuntime().fastNewSymbol(internedName));
     }
     /**
      * Set the named constant on this module. Also, if the value provided is another Module and

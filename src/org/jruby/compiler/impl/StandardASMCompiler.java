@@ -609,44 +609,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void createNewSymbol(String name) {
             loadRuntime();
             method.ldc(name);
-            invokeIRuby("newSymbol", cg.sig(RubySymbol.class, cg.params(String.class)));
-        }
-
-        public void createNewSymbol(int id, String name) {
-            loadRuntime(); 
-            if(id != -1) {
-                method.ldc(id);
-                method.invokestatic(cg.p(RubySymbol.class), "getSymbol", cg.sig(RubySymbol.class, cg.params(Ruby.class, int.class)));
-            } else {
-                String symField = getNewConstant(cg.ci(int.class), "lit_sym_", new Integer(-1));
-
-                // in current method, load the field to see if we've created a Pattern yet
-                method.aload(THIS); 
-                method.getfield(classname, symField, cg.ci(int.class));
-
-                Label alreadyCreated = new Label();
-                method.ldc(-1);
-                method.if_icmpne(alreadyCreated);
-
-                method.ldc(name); 
-                invokeIRuby("newSymbol", cg.sig(RubySymbol.class, cg.params(String.class)));
-                method.dup(); 
-                method.aload(THIS);
-                method.swap(); 
-                method.invokevirtual(cg.p(RubySymbol.class), "getId", cg.sig(int.class, cg.params())); 
-                method.putfield(classname, symField, cg.ci(int.class)); 
-                Label ret = new Label();
-                method.go_to(ret); 
-
-                method.visitLabel(alreadyCreated); 
-
-                method.aload(THIS);
-                method.getfield(classname, symField, cg.ci(int.class)); 
-
-                method.invokestatic(cg.p(RubySymbol.class), "getSymbol", cg.sig(RubySymbol.class, cg.params(Ruby.class, int.class)));
-
-                method.visitLabel(ret);
-            }
+            invokeIRuby("fastNewSymbol", cg.sig(RubySymbol.class, cg.params(String.class)));
         }
 
         public void createNewArray(boolean lightweight) {

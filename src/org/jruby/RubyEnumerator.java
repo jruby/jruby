@@ -96,7 +96,7 @@ public class RubyEnumerator extends RubyObject {
     public IRubyObject initialize(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 1, -1);
         object = args[0];
-        method = args.length > 1 ? args[1] : getRuntime().newSymbol("each");
+        method = args.length > 1 ? args[1] : getRuntime().fastNewSymbol("each");
         if (args.length > 2) {
             methodArgs = new IRubyObject[Math.max(0, args.length - 2)];
             System.arraycopy(args, 2, methodArgs, 0, args.length - 2);
@@ -119,7 +119,7 @@ public class RubyEnumerator extends RubyObject {
     @JRubyMethod(name = "enum_with_index")
     public static IRubyObject each_with_index(IRubyObject self) {
         return self.getRuntime().getEnumerable().fastGetConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
-                               new IRubyObject[] { self, self.getRuntime().newSymbol("each_with_index") });
+                               new IRubyObject[] { self, self.getRuntime().fastNewSymbol("each_with_index") });
     }
 
     @JRubyMethod(name = "each_slice", required = 1, frame = true)
@@ -172,12 +172,12 @@ public class RubyEnumerator extends RubyObject {
     @JRubyMethod(name = "enum_slice", required = 1)
     public static IRubyObject enum_slice(IRubyObject self, IRubyObject arg) {
         return self.getRuntime().getEnumerable().fastGetConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
-                                     new IRubyObject[] { self, self.getRuntime().newSymbol("each_slice"), arg });
+                                     new IRubyObject[] { self, self.getRuntime().fastNewSymbol("each_slice"), arg });
     }
 
     @JRubyMethod(name = "enum_cons", required = 1)
     public static IRubyObject enum_cons(IRubyObject self, IRubyObject arg) {
         return self.getRuntime().getEnumerable().fastGetConstant("Enumerator").callMethod(self.getRuntime().getCurrentContext(), "new", 
-                               new IRubyObject[] { self, self.getRuntime().newSymbol("each_cons"), arg });
+                               new IRubyObject[] { self, self.getRuntime().fastNewSymbol("each_cons"), arg });
     }
 }

@@ -138,15 +138,15 @@ public class RuntimeHelpers {
             containingClass.getSingletonClass().addMethod(name,
                     new WrapperMethod(containingClass.getSingletonClass(), method,
                     Visibility.PUBLIC));
-            containingClass.callMethod(context, "singleton_method_added", runtime.newSymbol(name));
+            containingClass.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
         }
         
         // 'class << state.self' and 'class << obj' uses defn as opposed to defs
         if (containingClass.isSingleton()) {
             ((MetaClass) containingClass).getAttached().callMethod(
-                    context, "singleton_method_added", runtime.newSymbol(name));
+                    context, "singleton_method_added", runtime.fastNewSymbol(name));
         } else {
-            containingClass.callMethod(context, "method_added", runtime.newSymbol(name));
+            containingClass.callMethod(context, "method_added", runtime.fastNewSymbol(name));
         }
         
         return runtime.getNil();
@@ -187,7 +187,7 @@ public class RuntimeHelpers {
         method.setCallConfig(callConfig);
         
         rubyClass.addMethod(name, method);
-        receiver.callMethod(context, "singleton_method_added", runtime.newSymbol(name));
+        receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
         
         return runtime.getNil();
     }
@@ -291,7 +291,7 @@ public class RuntimeHelpers {
 
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = RubySymbol.newSymbol(self.getRuntime(), name);
+        newArgs[0] = context.getRuntime().newSymbol(name);
 
         return receiver.callMethod(context, "method_missing", newArgs, block);
     }
@@ -308,7 +308,7 @@ public class RuntimeHelpers {
 
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = RubySymbol.newSymbol(self.getRuntime(), name);
+        newArgs[0] = context.getRuntime().newSymbol(name);
 
         return receiver.callMethod(context, "method_missing", newArgs, block);
     }

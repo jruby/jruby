@@ -408,7 +408,7 @@ public class ASTInterpreter {
         if (module == null) throw runtime.newTypeError("no class to make alias");
    
         module.defineAlias(iVisited.getNewName(), iVisited.getOldName());
-        module.callMethod(context, "method_added", runtime.newSymbol(iVisited.getNewName()));
+        module.callMethod(context, "method_added", runtime.fastNewSymbol(iVisited.getNewName()));
    
         return runtime.getNil();
     }
@@ -811,15 +811,15 @@ public class ASTInterpreter {
                     name,
                     new WrapperMethod(containingClass.getSingletonClass(), newMethod,
                             Visibility.PUBLIC));
-            containingClass.callMethod(context, "singleton_method_added", runtime.newSymbol(name));
+            containingClass.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
         }
    
         // 'class << state.self' and 'class << obj' uses defn as opposed to defs
         if (containingClass.isSingleton()) {
             ((MetaClass) containingClass).getAttached().callMethod(
-                    context, "singleton_method_added", runtime.newSymbol(iVisited.getName()));
+                    context, "singleton_method_added", runtime.fastNewSymbol(iVisited.getName()));
         } else {
-            containingClass.callMethod(context, "method_added", runtime.newSymbol(name));
+            containingClass.callMethod(context, "method_added", runtime.fastNewSymbol(name));
         }
    
         return runtime.getNil();
@@ -854,7 +854,7 @@ public class ASTInterpreter {
                 (ArgsNode) iVisited.getArgsNode(), Visibility.PUBLIC);
    
         rubyClass.addMethod(name, newMethod);
-        receiver.callMethod(context, "singleton_method_added", runtime.newSymbol(name));
+        receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
    
         return runtime.getNil();
     }
@@ -1573,19 +1573,7 @@ public class ASTInterpreter {
     }
     
     private static IRubyObject symbolNode(Ruby runtime, Node node) {
-        
-        SymbolNode snode = (SymbolNode)node;
-        int id = snode.getId();
-        if(id != -1) {
-            return RubySymbol.getSymbol(runtime, id);
-        } else {
-            RubySymbol sym = runtime.newSymbol(snode.getName());
-            snode.setId(sym.getId());
-            return sym;
-        }
-        
-
-        //        return runtime.newSymbol(((SymbolNode) node).getName());
+        return ((SymbolNode)node).getSymbol(runtime);
     }
     
     private static IRubyObject toAryNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
