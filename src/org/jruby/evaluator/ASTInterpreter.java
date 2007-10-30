@@ -1431,6 +1431,10 @@ public class ASTInterpreter {
                 // get fixed at the same time we address bug #1296484.
                 runtime.getGlobalVariables().set("$!", raisedException);
 
+                if (raisedException.isKindOf(runtime.fastGetClass("SystemExit"))) {
+                    throw raiseJump;
+                }
+
                 RescueBodyNode rescueNode = iVisited.getRescueNode();
 
                 while (rescueNode != null) {

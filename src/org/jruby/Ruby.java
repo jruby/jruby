@@ -2199,9 +2199,7 @@ public final class Ruby {
     }
 
     public RaiseException newSystemExit(int status) {
-        RubyClass exc = fastGetClass("SystemExit");
-        IRubyObject[]exArgs = new IRubyObject[]{newFixnum(status), newString("exit")};
-        return new RaiseException((RubyException)exc.newInstance(exArgs, Block.NULL_BLOCK));
+        return new RaiseException(RubySystemExit.newInstance(this, status));
     }
 
     public RaiseException newIOError(String message) {

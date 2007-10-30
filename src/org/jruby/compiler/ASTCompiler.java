@@ -2778,8 +2778,10 @@ public class ASTCompiler {
                     public void branch(MethodCompiler context) {
                         context.loadException();
                         context.unwrapRaiseException();
+                        context.duplicateCurrentValue();
                         context.assignGlobalVariable("$!");
                         context.consumeCurrentValue();
+                        context.rethrowIfSystemExit();
                         compileRescueBody(rescueNode.getRescueNode(), context);
                     }
                 };

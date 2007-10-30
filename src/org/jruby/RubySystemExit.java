@@ -49,7 +49,15 @@ public class RubySystemExit extends RubyException {
         systemExitClass.defineAnnotatedMethods(RubySystemExit.class);
         
         return systemExitClass;
-    }    
+    }  
+    
+    public static RubySystemExit newInstance(Ruby runtime, int status) {
+        RubyClass exc = runtime.fastGetClass("SystemExit");
+        IRubyObject[] exArgs = new IRubyObject[] {
+                runtime.newFixnum(status),
+                runtime.newString("exit") };
+        return (RubySystemExit) exc.newInstance(exArgs, Block.NULL_BLOCK);
+    }
 
     protected RubySystemExit(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);

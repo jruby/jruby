@@ -49,7 +49,6 @@ import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
-import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyRange;
@@ -2316,6 +2315,19 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 invokeUtilityMethod("def", cg.sig(IRubyObject.class, 
                         cg.params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, int.class, int.class, int.class, int.class, CallConfiguration.class)));
             }
+        }
+
+        public void rethrowIfSystemExit() {
+            loadRuntime();
+            method.ldc("SystemExit");
+            method.invokevirtual(cg.p(Ruby.class), "fastGetClass", cg.sig(RubyClass.class, String.class));
+            method.invokevirtual(cg.p(RubyException.class), "isKindOf", cg.sig(boolean.class, cg.params(RubyModule.class)));
+            method.iconst_0();
+            Label ifEnd = new Label();
+            method.if_icmpeq(ifEnd);
+            loadException();
+            method.athrow();
+            method.label(ifEnd);
         }
     }
 
