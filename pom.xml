@@ -143,6 +143,12 @@
               <include>**/*.rb</include>
             </includes>
           </resource>
+          <resource>
+            <directory>${project.basedir}/../../lib/ruby/site_ruby/1.8</directory>
+            <includes>
+              <include>builtin/**/*.rb</include>
+            </includes>
+          </resource>
         </resources>
         <testResources>
           <testResource>
@@ -153,8 +159,7 @@
               <include>test/**/*.txt</include>
               <include>test/*index</include>
               <include>test/**/*.yml</include>
-              <include>test/RubyInitTest.jar</include>
-              <include>test/requireTarget.jar</include>
+              <include>test/*.jar</include>
             </includes>
           </testResource>
           <testResource>

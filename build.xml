@@ -418,7 +418,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   
   <target name="run-junit-interpreted" description="runs junit tests">
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
-    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true">
+    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
         <path refid="build.classpath"/>
@@ -435,7 +435,7 @@ test/externals/rubinius/spec/parser"/></antcall>
       <sysproperty key="jruby.jit.enabled" value="false"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
-    	
+
       <jvmarg value="-ea"/>
 
       <formatter type="xml"/>
@@ -451,7 +451,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   
   <target name="run-junit-compiled" description="runs junit tests">
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
-    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true">
+    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
         <path refid="build.classpath"/>
