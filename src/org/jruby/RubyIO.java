@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
+import java.lang.ref.Reference;
 import java.nio.channels.Channel;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
@@ -163,7 +164,11 @@ public class RubyIO extends RubyObject {
     }
     
     public IOHandler getIOHandlerByFileno(int aFileno) {
-        return (IOHandler) ((WeakReference) getRuntime().getIoHandlers().get(new Integer(aFileno))).get();
+        Reference reference = ((Reference) getRuntime().getIoHandlers().get(new Integer(aFileno)));
+        if (reference == null) {
+            return null;
+        }
+        return (IOHandler) reference.get();
     }
     
     // FIXME can't use static; would interfere with other runtimes in the same JVM
