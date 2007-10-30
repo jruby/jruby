@@ -49,6 +49,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyRange;
@@ -274,9 +275,19 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         method.newobj(classname);
         method.dup();
         method.invokespecial(classname, "<init>", cg.sig(Void.TYPE));
+        
+        // instance config for the script run
+        method.newobj(cg.p(RubyInstanceConfig.class));
+        method.dup();
+        method.invokespecial(cg.p(RubyInstanceConfig.class), "<init>", "()V");
+        
+        // set argv from main's args
+        method.dup();
+        method.aload(0);
+        method.invokevirtual(cg.p(RubyInstanceConfig.class), "setArgv", cg.sig(void.class, String[].class));
 
         // invoke run with threadcontext and topself
-        method.invokestatic(cg.p(Ruby.class), "getDefaultInstance", cg.sig(Ruby.class));
+        method.invokestatic(cg.p(Ruby.class), "newInstance", cg.sig(Ruby.class, RubyInstanceConfig.class));
         method.dup();
 
         method.invokevirtual(RUBY, "getCurrentContext", cg.sig(ThreadContext.class));
