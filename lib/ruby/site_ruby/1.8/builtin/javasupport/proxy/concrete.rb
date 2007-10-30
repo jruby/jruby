@@ -1,3 +1,4 @@
+# :nodoc:
 class ConcreteJavaProxy < JavaProxy
   class << self
     alias_method :new_proxy, :new

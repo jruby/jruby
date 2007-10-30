@@ -3,6 +3,7 @@ class ExceptionExtender
     @exception_class = Java::JavaClass.for_name('java.lang.Exception')
   end
   
+  # :nodoc:
   def extend_proxy(proxy_class)
     if @exception_class.assignable_from? proxy_class.java_class
       class << proxy_class

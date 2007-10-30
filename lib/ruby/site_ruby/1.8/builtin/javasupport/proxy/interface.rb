@@ -1,4 +1,5 @@
 class JavaInterfaceExtender
+  # :nodoc:
   def initialize(java_class_name, &block)
     @java_class = Java::JavaClass.for_name(java_class_name)
     @block = block
@@ -51,6 +52,8 @@ class InterfaceJavaProxy < JavaProxy
 end
 
 # TODO: I think we can drop this now
+# :nodoc:
+# DEPRECATED
 class MultipleInterfaceJavaProxy
   attr_reader :interfaces
     
@@ -95,6 +98,7 @@ class MultipleInterfaceJavaProxy
 end
 
 # template for Java interface modules, not used directly
+# :nodoc:
 module JavaInterfaceTemplate
  class << self
   attr :java_class

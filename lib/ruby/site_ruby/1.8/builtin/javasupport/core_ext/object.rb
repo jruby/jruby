@@ -55,6 +55,7 @@ class Object
   end
   
   # TODO: this can go away now, but people may be using it
+  # DEPRECATED
   def java_kind_of?(other)
     return true if self.kind_of?(other)
     return false unless self.respond_to?(:java_class) && other.respond_to?(:java_class) &&
@@ -63,5 +64,7 @@ class Object
   end
   
   alias :import :include_class
+  alias :import_java :include_class
   private :import
+  private :import_java
 end

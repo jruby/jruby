@@ -1,3 +1,4 @@
+# :nodoc:
 module Java
  class << self
    def const_missing(sym)
@@ -21,6 +22,7 @@ module Java
 
 end
  
+# :nodoc:
 module JavaPackageModuleTemplate  
   class << self
 
