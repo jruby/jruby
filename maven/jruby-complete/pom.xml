@@ -247,6 +247,7 @@
                     <path refid="maven.plugin.classpath"/>
                     <pathelement location="${project.basedir}/../../test/requireTest.jar"/>
                   </classpath>
+                  <jvmarg value="-ea"/>
                   <formatter type="plain"/>
                   <formatter type="xml"/>
                   <formatter type="brief" usefile="false"/>
