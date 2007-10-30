@@ -57,13 +57,10 @@
       <version>3.0</version>
       <scope>provided</scope>
     </dependency>
-    <!-- TODO: replace this JNA system dependency with a real one -->
     <dependency>
-      <groupId>com.sun.jna</groupId>
+      <groupId>org.jruby.extras</groupId>
       <artifactId>jna</artifactId>
-      <version>incomplete</version>
-      <systemPath>${project.basedir}/../../lib/jna.jar</systemPath>
-      <scope>system</scope>
+      <version>jruby-pre</version>
     </dependency>
   </dependencies>
 
@@ -110,6 +107,11 @@
                   <groupId>jline</groupId>
                   <artifactId>jline</artifactId>
                   <version>0.9.91</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.jruby.extras</groupId>
+                  <artifactId>jna</artifactId>
+                  <version>jruby-pre</version>
                 </artifactItem>
               </artifactItems>
               <outputDirectory>${project.build.outputDirectory}</outputDirectory>

@@ -45,13 +45,10 @@
       <artifactId>asm-tree</artifactId>
       <version>3.0</version>
     </dependency>
-    <!-- TODO: replace this JNA system dependency with a real one -->
     <dependency>
-      <groupId>com.sun.jna</groupId>
+      <groupId>org.jruby.extras</groupId>
       <artifactId>jna</artifactId>
-      <version>incomplete</version>
-      <systemPath>${project.basedir}/../../lib/jna.jar</systemPath>
-      <scope>system</scope>
+      <version>jruby-pre</version>
     </dependency>
   </dependencies>
 
