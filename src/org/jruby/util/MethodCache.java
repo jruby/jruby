@@ -28,6 +28,7 @@
 
 package org.jruby.util;
 
+import java.lang.ref.WeakReference;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -80,9 +81,9 @@ public class MethodCache {
     public void putMethod(RubyModule c, String id, DynamicMethod m) {
         int index = cacheIndex(c, id);
         
-        cache[index].klass = c;
+        cache[index].klass = new WeakReference(c);
         cache[index].mid = id;
-        cache[index].method = m;
+        cache[index].method = new WeakReference(m);
     }
     
     public void removeMethod(RubyClass c, String id) { 
@@ -92,7 +93,7 @@ public class MethodCache {
         
         for (int i = 0; i < CACHE_SIZE; i++) {
             CacheEntry entry = cache[i];
-            if (id.equals(entry.mid) && entry.klass == c) {
+            if (id.equals(entry.mid) && entry.klass.get() == c) {
                 entry.mid = null;
             }
         }
@@ -118,15 +119,15 @@ public class MethodCache {
         
         for (int i = 0; i < CACHE_SIZE; i++) {
             CacheEntry entry = cache[i]; 
-            if (entry.klass == c) {
+            if (entry.klass.get() == c) {
                 entry.mid = null;
             }
         }
     }
     
     public static class CacheEntry {
-        public RubyModule klass;
+        public WeakReference klass;
         public String mid;
-        public DynamicMethod method;
+        public WeakReference method;
     }
 }

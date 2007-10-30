@@ -752,8 +752,8 @@ public class RubyModule extends RubyObject {
     public DynamicMethod searchMethod(String name) {
         MethodCache cache = getRuntime().getMethodCache();
         MethodCache.CacheEntry entry = cache.getMethod(this, name);
-        if (entry.klass == this && name.equals(entry.mid)) {
-            return entry.method;
+        if (entry.klass != null && entry.klass.get() == this && name.equals(entry.mid)) {
+            return (DynamicMethod)entry.method.get();
         }
         
         for (RubyModule searchModule = this; searchModule != null; searchModule = searchModule.getSuperClass()) {
