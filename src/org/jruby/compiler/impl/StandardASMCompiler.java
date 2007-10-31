@@ -144,6 +144,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     
     Map<String, String> sourcePositions = new HashMap<String, String>();
     Map<String, String> byteLists = new HashMap<String, String>();
+    Map<String, String> symbols = new HashMap<String, String>();
     
     /** Creates a new instance of StandardCompilerContext */
     public StandardASMCompiler(String classname, String sourcename) {
@@ -617,9 +618,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void createNewSymbol(String name) {
+            method.aload(0);
             loadRuntime();
-            method.ldc(name);
-            invokeIRuby("fastNewSymbol", cg.sig(RubySymbol.class, cg.params(String.class)));
+            String methodName = cacheSymbol(name);
+            method.invokevirtual(classname, methodName, 
+                    cg.sig(RubySymbol.class, cg.params(Ruby.class)));
         }
 
         public void createNewArray(boolean lightweight) {
@@ -2701,5 +2704,42 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         return fieldName;
+    }
+    
+    public String cacheSymbol(String symbol) {
+        String methodName = symbols.get(symbol);
+        if (methodName == null) {
+            String fieldName = getNewConstant(cg.ci(RubySymbol.class), "symbol");
+            
+            methodName = "getSymbol" + fieldName;
+            symbols.put(symbol, methodName);
+            
+            ClassVisitor cv = getClassVisitor();
+            
+            SkinnyMethodAdapter symMethod = new SkinnyMethodAdapter(
+                    cv.visitMethod(ACC_PRIVATE | ACC_SYNTHETIC, methodName, 
+                            cg.sig(RubySymbol.class, Ruby.class), null, null));
+            symMethod.start();
+            symMethod.aload(0);
+            symMethod.getfield(classname, fieldName, cg.ci(RubySymbol.class));
+            symMethod.dup();
+            symMethod.astore(2);
+            
+            Label ifNullEnd = new Label();
+            symMethod.ifnull(ifNullEnd);
+            symMethod.aload(2);
+            symMethod.areturn();
+            symMethod.label(ifNullEnd);
+            symMethod.aload(0);
+            symMethod.aload(1);
+            symMethod.ldc(symbol);
+            symMethod.invokevirtual(cg.p(Ruby.class), "fastNewSymbol", cg.sig(RubySymbol.class, String.class));
+            symMethod.dup_x1();
+            symMethod.putfield(classname, fieldName, cg.ci(RubySymbol.class));
+            symMethod.areturn();
+            symMethod.end();
+        }
+        
+        return methodName;
     }
 }
