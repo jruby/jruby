@@ -108,7 +108,7 @@ fi
 # ----- Execute The Requested Command -----------------------------------------
 
 
-JAVA_MEM=-Xmx256m
+JAVA_MEM=-Xmx512m
 JAVA_STACK=-Xss1024k
 
 # Split out any -J argument for passing to the JVM.
