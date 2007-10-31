@@ -311,7 +311,11 @@ public class ParserSupport {
         // Reduces overhead in interp by not set position every single line we encounter. 
         if (!configuration.hasExtraPositionInformation()) {
             while (head instanceof NewlineNode) {
-                head = ((NewlineNode) head).getNextNode();
+                Node nextNode = ((NewlineNode) head).getNextNode();
+                
+                if (!(nextNode instanceof NewlineNode)) break;
+                
+                head = nextNode;
             }
         }
 
