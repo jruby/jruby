@@ -57,6 +57,57 @@
     <testSourceDirectory>${basedir}/../../test</testSourceDirectory>
     <plugins>
       <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>asm</groupId>
+                  <artifactId>asm</artifactId>
+                  <version>3.0</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>asm</groupId>
+                  <artifactId>asm-commons</artifactId>
+                  <version>3.0</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>asm</groupId>
+                  <artifactId>asm-util</artifactId>
+                  <version>3.0</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>asm</groupId>
+                  <artifactId>asm-analysis</artifactId>
+                  <version>3.0</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>asm</groupId>
+                  <artifactId>asm-tree</artifactId>
+                  <version>3.0</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>jline</groupId>
+                  <artifactId>jline</artifactId>
+                  <version>0.9.91</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.jruby.extras</groupId>
+                  <artifactId>jna</artifactId>
+                  <version>jruby-pre</version>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
@@ -90,6 +141,36 @@
                 <delete file="${project.build.directory}/__empty.rb" quiet="true"/>
               </tasks>
             </configuration>
+          </execution>
+          <execution>
+            <id>jarjar</id>
+            <phase>package</phase>
+            <configuration>
+              <tasks>
+                <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
+                  classpath="${project.basedir}/../../build_lib/jarjar-0.7.jar"/>
+                <delete>
+                  <fileset dir="${project.build.directory}"
+                    includes="${project.build.finalName}.jar"/>
+                </delete>
+                <jarjar destfile="${project.build.directory}/${project.build.finalName}.jar">
+                  <fileset dir="${project.build.outputDirectory}">
+                    <include name="**/*.class"/>
+                    <include name="**/*.properties"/>
+                    <include name="**/*.rb"/>
+                    <exclude name="org/jruby/util/ant/**/*.class"/>
+                  </fileset>
+                  <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+                  <manifest>
+                    <attribute name="Built-By" value="${user.name}"/>
+                    <attribute name="Main-Class" value="${jruby.main.class}"/>
+                  </manifest>
+                </jarjar>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
           </execution>
           <execution>
             <id>tests</id>

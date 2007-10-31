@@ -140,10 +140,6 @@
             <phase>process-resources</phase>
             <configuration>
               <tasks>
-                <!-- TODO: remove this manual unzipping of JNA -->
-                <unzip src="${project.basedir}/../../lib/jna.jar"
-                  dest="${project.build.outputDirectory}" />
-                <delete file="${project.build.outputDirectory}/META-INF/MANIFEST.MF"/>
                 <mkdir dir="${project.build.outputDirectory}/META-INF/jruby.home"/>
                 <copy todir="${project.build.outputDirectory}/META-INF/jruby.home">
                   <fileset dir="${project.basedir}/../..">
@@ -190,7 +186,7 @@
             <configuration>
               <tasks>
                 <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
-                  classpath="${project.basedir}/../../lib/jarjar-0.7.jar"/>
+                  classpath="${project.basedir}/../../build_lib/jarjar-0.7.jar"/>
                 <java jar="${project.build.directory}/${project.build.finalName}.jar" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
                   <sysproperty key="jruby.home" value="${project.build.outputDirectory}/META-INF/jruby.home"/>
                   <arg value="--command"/>
