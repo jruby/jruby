@@ -94,6 +94,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.visitVarInsn(ALOAD, 4);
         mv.visitVarInsn(ALOAD, 5);
         mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", COMPILED_SUPER_SIG);
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
         mv.visitInsn(RETURN);
         mv.visitMaxs(0,0);
         mv.visitEnd();
@@ -109,6 +111,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.visitVarInsn(ALOAD, 1);
         mv.visitVarInsn(ALOAD, 2);
         mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", JAVA_SUPER_SIG);
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
         mv.visitInsn(RETURN);
         mv.visitMaxs(0,0);
         mv.visitEnd();
@@ -178,6 +182,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 
                 mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
                 mv.visitCode();
+                Label line = new Label();
+                mv.visitLineNumber(0, line);
                 
                 // check arity
                 Label arityError = new Label();
@@ -403,6 +409,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 
                 mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
                 mv.visitCode();
+                Label line = new Label();
+                mv.visitLineNumber(0, line);
                 
                 // invoke pre method stuff
                 mv.aload(0); // load method to get callconfig
