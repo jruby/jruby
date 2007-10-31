@@ -233,9 +233,9 @@ public class RubyFile extends RubyIO {
         fileMetaClass.defineFastMethod("join", callbackFactory.getFastOptSingletonMethod("join"));
         fileMetaClass.defineFastMethod("lstat", callbackFactory.getFastSingletonMethod("lstat", IRubyObject.class));
         // atime and ctime are implemented like mtime, since we don't have an atime API in Java
-        fileMetaClass.defineFastMethod("atime", callbackFactory.getFastSingletonMethod("mtime", IRubyObject.class));
+        fileMetaClass.defineFastMethod("atime", callbackFactory.getFastSingletonMethod("atime", IRubyObject.class));
         fileMetaClass.defineFastMethod("mtime", callbackFactory.getFastSingletonMethod("mtime", IRubyObject.class));
-        fileMetaClass.defineFastMethod("ctime", callbackFactory.getFastSingletonMethod("mtime", IRubyObject.class));
+        fileMetaClass.defineFastMethod("ctime", callbackFactory.getFastSingletonMethod("atime", IRubyObject.class));
         fileMetaClass.defineMethod("open", callbackFactory.getOptSingletonMethod("open"));
         fileMetaClass.defineFastMethod("rename", callbackFactory.getFastSingletonMethod("rename", IRubyObject.class, IRubyObject.class));
         fileMetaClass.defineFastMethod("size?", callbackFactory.getFastSingletonMethod("size_p", IRubyObject.class));
@@ -251,8 +251,8 @@ public class RubyFile extends RubyIO {
         fileClass.defineFastMethod("chmod", callbackFactory.getFastMethod("chmod", IRubyObject.class));
         fileClass.defineFastMethod("chown", callbackFactory.getFastMethod("chown", IRubyObject.class));
         // atime and ctime are implemented like mtime, since we don't have an atime API in Java
-        fileClass.defineFastMethod("atime", callbackFactory.getFastMethod("mtime"));
-        fileClass.defineFastMethod("ctime", callbackFactory.getFastMethod("mtime"));
+        fileClass.defineFastMethod("atime", callbackFactory.getFastMethod("atime"));
+        fileClass.defineFastMethod("ctime", callbackFactory.getFastMethod("atime"));
         fileClass.defineFastMethod("mtime", callbackFactory.getFastMethod("mtime"));
         fileClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         fileClass.defineFastMethod("path", callbackFactory.getFastMethod("path"));
@@ -442,8 +442,12 @@ public class RubyFile extends RubyIO {
         return getRuntime().newFixnum(0);
     }
 
-    public IRubyObject mtime() {
+    public IRubyObject atime() {
         return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(),this.path).getParentFile().lastModified());
+    }
+
+    public IRubyObject mtime() {
+        return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(),this.path).lastModified());
     }
     
     public RubyString path() {
@@ -957,6 +961,18 @@ public class RubyFile extends RubyIO {
         }
         
         return runtime.newTime(file.lastModified());
+    }
+
+    public static IRubyObject atime(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        RubyString name = RubyString.stringValue(filename);
+        JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), name.toString());
+
+        if (!file.exists()) {
+            throw runtime.newErrnoENOENTError("No such file or directory - " + name.toString());
+        }
+        
+        return runtime.newTime(file.getParentFile().lastModified());
     }
     
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
