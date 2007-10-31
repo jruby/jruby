@@ -17,7 +17,7 @@
  * Copyright (C) 2004 Joey Gibson <joey@joeygibson.com>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -110,7 +110,7 @@ public class RubyFileStat extends RubyObject {
         fileStatClass.defineFastMethod("writable?", callbackFactory.getFastMethod("writable"));
         //        fileStatClass.defineMethod("writable_real?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("zero?", callbackFactory.getMethod(""));
-    	
+
         return fileStatClass;
     }
 
@@ -122,6 +122,12 @@ public class RubyFileStat extends RubyObject {
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
         Ruby runtime = getRuntime();
         String filename = fname.toString();
+
+        if (RubyFile.IS_WINDOWS && filename.length() == 2
+            && filename.charAt(1) == ':' && Character.isLetter(filename.charAt(0))) {
+            filename += "/";
+        }
+
         JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), filename);
 
         if (!file.exists()) {
@@ -134,15 +140,15 @@ public class RubyFileStat extends RubyObject {
         isFile = runtime.newBoolean(file.isFile());
         ftype = file.isDirectory()? runtime.newString("directory") : (file.isFile() ? runtime.newString("file") : null);
 
-    	// implementation to lowest common denominator...Windows has no file mode, but C ruby returns either 0100444 or 0100666
-    	int baseMode = 0100000;
-    	if (file.canRead()) {
+        // implementation to lowest common denominator...Windows has no file mode, but C ruby returns either 0100444 or 0100666
+        int baseMode = 0100000;
+        if (file.canRead()) {
             baseMode += READ;
-    	}    	
-    	if (file.canWrite()) {
+        }
+        if (file.canWrite()) {
             baseMode += WRITE;
-    	}
-    	mode = runtime.newFixnum(baseMode);
+        }
+        mode = runtime.newFixnum(baseMode);
         mtime = runtime.newTime(file.lastModified());
         ctime = runtime.newTime(file.getParentFile().lastModified());
         isReadable = runtime.newBoolean(file.canRead());
@@ -152,7 +158,7 @@ public class RubyFileStat extends RubyObject {
         isSymlink = runtime.getFalse();
         return this;
     }
-    
+
     public RubyFixnum blksize() {
         return blksize;
     }
@@ -164,20 +170,20 @@ public class RubyFileStat extends RubyObject {
     public RubyBoolean file_p() {
         return isFile;
     }
-    
+
     public RubyString ftype() {
         return ftype;
     }
-    
+
     // Limitation: We have no pure-java way of getting inode.  webrick needs this defined to work.
     public IRubyObject ino() {
         return getRuntime().newFixnum(0);
     }
-    
+
     public IRubyObject mode() {
         return mode;
     }
-    
+
     public IRubyObject mtime() {
         return mtime;
     }
@@ -185,19 +191,19 @@ public class RubyFileStat extends RubyObject {
     public IRubyObject ctime() {
         return ctime;
     }
-    
+
     public IRubyObject readable_p() {
         return isReadable;
     }
-    
+
     public IRubyObject size() {
         return size;
     }
-    
+
     public IRubyObject symlink_p() {
         return isSymlink;
     }
-    
+
     public IRubyObject writable() {
     	return isWritable;
     }
