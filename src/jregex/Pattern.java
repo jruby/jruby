@@ -162,7 +162,41 @@ public class Pattern implements Serializable,REFlags{
    protected void compile(String regex,int flags) throws PatternSyntaxException{
       stringRepr=regex;
       Term.makeTree(regex,flags,this);
+      //      printTree(root, 0);
    }
+    private void printTree(Term val, int depth) {
+        for(int i=0;i<depth;i++) {
+            System.err.print(" ");
+        }
+        if(val == null) {
+            System.err.println("null");
+        } else if(depth > 15) {
+            System.err.println("to deep");
+        } else {
+            System.err.println("" + val.type + "==" + val);
+            if(val.next != null) {
+                for(int i=0;i<depth;i++) {
+                    System.err.print("-");
+                }
+                System.err.println("-next:");
+                printTree(val.next, depth+1);
+            }
+            if(val.failNext != null) {
+            for(int i=0;i<depth;i++) {
+                System.err.print("-");
+            }
+            System.err.println("-failNext:");
+            printTree(val.failNext, depth+1);
+            }
+            if(val.target != null) {
+            for(int i=0;i<depth;i++) {
+                System.err.print("-");
+            }
+            System.err.println("-target:");
+            printTree(val.target, depth+1);
+            }
+        }
+    }
    
   /**
    * How many capturing groups this expression includes?

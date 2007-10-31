@@ -1288,7 +1288,7 @@ new Exception().printStackTrace();
                   break;
                }
                case Term.REPEAT_0_INF:{
-//System.out.println("REPEAT, i="+i+", term.minCount="+term.minCount+", term.maxCount="+term.maxCount);
+                   //System.out.println("REPEAT, i="+i+", term.minCount="+term.minCount+", term.maxCount="+term.maxCount);
                   //i+=(cnt=repeat(data,i,end,term.target));
                   if((cnt=repeat(data,i,end,term.target))<=0){
                      term=term.next;
@@ -2055,7 +2055,7 @@ new Exception().printStackTrace();
    }
    
    private static final int findBack(char[] data,int off,int maxCount,Term term){
-//System.out.print("off="+off+", maxCount="+maxCount+", term="+term);
+ //System.out.print("off="+off+", maxCount="+maxCount+", term="+term);
       switch(term.type){
          case Term.CHAR:{
             char c=term.c;

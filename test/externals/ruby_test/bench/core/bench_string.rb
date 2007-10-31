@@ -5,7 +5,7 @@
 ###############################################################
 require "benchmark"
 
-MAX = 50000
+MAX = 5_000_000
 
 Benchmark.bm(30) do |x|
    x.report("String.new"){
@@ -254,7 +254,7 @@ Benchmark.bm(30) do |x|
 
    x.report("String#insert"){
       string = "hello"
-      MAX.times{ string.insert(2, "world") }
+      (MAX/10).times{ string.insert(2, "world") }
    }
 
    x.report("String#intern"){

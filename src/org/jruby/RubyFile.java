@@ -410,9 +410,14 @@ public class RubyFile extends RubyIO {
         return RubyFixnum.newFixnum(getRuntime(), result);
     }
 
-    @JRubyMethod(name = {"mtime", "atime", "ctime"})
-    public IRubyObject mtime() {
+    @JRubyMethod(name = {"atime", "ctime"})
+    public IRubyObject atime() {
         return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(), this.path).getParentFile().lastModified());
+    }
+
+    @JRubyMethod(name = {"mtime"})
+    public IRubyObject mtime() {
+        return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(), this.path).lastModified());
     }
 
     @JRubyMethod
@@ -921,7 +926,20 @@ public class RubyFile extends RubyIO {
         return recv.getRuntime().newRubyFileStat(name.toString());
     }
     
-    @JRubyMethod(name = {"mtime", "atime", "ctime"}, required = 1, meta = true)
+    @JRubyMethod(name = {"atime", "ctime"}, required = 1, meta = true)
+    public static IRubyObject atime(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        RubyString name = RubyString.stringValue(filename);
+        JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), name.toString());
+
+        if (!file.exists()) {
+            throw runtime.newErrnoENOENTError("No such file or directory - " + name.toString());
+        }
+        
+        return runtime.newTime(file.getParentFile().lastModified());
+    }
+    
+    @JRubyMethod(name = {"mtime"}, required = 1, meta = true)
     public static IRubyObject mtime(IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
         RubyString name = RubyString.stringValue(filename);
