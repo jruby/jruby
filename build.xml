@@ -11,11 +11,12 @@
   <property file="default.build.properties"/>
 
   <path id="build.classpath">
-    <fileset dir="${lib.dir}" includes="*.jar" excludes="jruby*.jar"/>
+    <fileset dir="${build.lib.dir}" includes="*.jar"/>
+    <fileset dir="${lib.dir}" includes="bsf.jar"/>
   </path>
 
   <!-- directory that contains emma.jar and emma_ant.jar: -->
-  <property name="emma.dir" value="${lib.dir}" />
+  <property name="emma.dir" value="${build.lib.dir}" />
 
   <path id="emma.classpath">
     <pathelement location="${emma.dir}/emma.jar" />
@@ -147,17 +148,26 @@
   </target>
 
   <target name="jar-jruby" unless="jar-up-to-date">
-    <antcall target="generate-method-classes" inheritall="true"/>
-    <jar destfile="${lib.dir}/jruby.jar" compress="true">
-      <fileset dir="${jruby.classes.dir}">
-        <exclude name="org/jruby/util/ant/**/*.class"/>
-      </fileset>
-      <manifest>
-        <attribute name="Built-By" value="${user.name}"/>
-        <attribute name="Main-Class" value="org.jruby.Main"/>
-        <attribute name="Class-Path" value="asm-3.0.jar asm-commons-3.0.jar asm-util-3.0.jar asm-analysis-3.0.jar asm-tree-3.0.jar jline-0.9.91.jar bsf.jar backport-util-concurrent.jar"/>
-      </manifest>
-    </jar>
+      <antcall target="generate-method-classes" inheritall="true"/>
+      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-0.7.jar"/>
+      <jarjar destfile="${lib.dir}/jruby.jar">
+        <fileset dir="${jruby.classes.dir}">
+          <exclude name="org/jruby/util/ant/**/*.class"/>
+        </fileset>
+        <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
+        <zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
+        <zipfileset src="${build.lib.dir}/jna.jar"/>
+        <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+        <manifest>
+          <attribute name="Built-By" value="${user.name}"/>
+          <attribute name="Main-Class" value="org.jruby.Main"/>
+        </manifest>
+      </jarjar>
   </target>
 
   <target name="jar-1.4" depends="jar-jruby">
@@ -175,7 +185,7 @@
     <target name="jar-complete" depends="generate-method-classes" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
       <property name="mainclass" value="org.jruby.Main"/>
       <property name="filename" value="jruby-complete.jar"/>
-      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${lib.dir}/jarjar-0.7.jar"/>
+      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-0.7.jar"/>
       <jarjar destfile="${lib.dir}/${filename}">
         <fileset dir="${jruby.classes.dir}">
           <exclude name="org/jruby/util/ant/**/*.class"/>
@@ -183,14 +193,14 @@
         <fileset dir="${basedir}/lib/ruby/1.8">
           <include name="**/*.rb"/>
         </fileset>
-        <zipfileset src="${lib.dir}/asm-3.0.jar"/>
-        <zipfileset src="${lib.dir}/asm-commons-3.0.jar"/>
-        <zipfileset src="${lib.dir}/asm-util-3.0.jar"/>
-        <zipfileset src="${lib.dir}/asm-analysis-3.0.jar"/>
-        <zipfileset src="${lib.dir}/asm-tree-3.0.jar"/>
-        <zipfileset src="${lib.dir}/jline-0.9.91.jar"/>
-      	<zipfileset src="${lib.dir}/backport-util-concurrent.jar"/>
-        <zipfileset src="${lib.dir}/jna.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
+      	<zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
+        <zipfileset src="${build.lib.dir}/jna.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
         <zipfileset dir="${basedir}" prefix="META-INF/jruby.home">
           <include name="bin/*"/>
@@ -210,7 +220,7 @@
     <target name="jar-light" depends="generate-method-classes" description="Create the 'light' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
         <property name="mainclass" value="org.jruby.Main"/>
         <property name="filename" value="jruby-light.jar"/>
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${lib.dir}/jarjar-0.7.jar"/>
+        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-0.7.jar"/>
       <jarjar destfile="${lib.dir}/${filename}">
         <fileset dir="${jruby.classes.dir}">
           <include name="**/*.class"/>
@@ -237,13 +247,13 @@
               <exclude name="**/xmlrpc/**"/>
               <exclude name="**/xsd/**"/>
         </fileset>
-          <zipfileset src="${lib.dir}/asm-3.0.jar"/>
-          <zipfileset src="${lib.dir}/asm-analysis-3.0.jar"/>
-          <zipfileset src="${lib.dir}/asm-commons-3.0.jar"/>
-          <zipfileset src="${lib.dir}/asm-jar-3.0.jar"/>
-          <zipfileset src="${lib.dir}/asm-util-3.0.jar"/>
-          <zipfileset src="${lib.dir}/jline-0.9.91.jar"/>
-      	  <zipfileset src="${lib.dir}/backport-util-concurrent.jar"/>
+          <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
+          <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
+          <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
+          <zipfileset src="${build.lib.dir}/asm-jar-3.0.jar"/>
+          <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
+          <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
+      	  <zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="${mainclass}"/>
@@ -261,9 +271,6 @@
   <target name="jar" depends="init" description="Create the jruby.jar file">
     <antcall target="jar-jruby" inheritall="true"/>
   </target>
-
-  <target name="jar.standalone" depends="generate-method-classes, jar"
-    description="Create a standalone jruby.jar file using libraries from RUBY_HOME/lib/ruby/1.8"/>
 
   <target name="compile-test" depends="jar" description="Compile the unit tests">
     <javac destdir="${test.classes.dir}" deprecation="true" debug="true" 
@@ -533,7 +540,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   </target>
   
   <target name="run-junit-interpreted" description="runs junit tests">
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
+    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
     <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
@@ -571,7 +578,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   </target>
   
   <target name="run-junit-reflected-interpreted" description="runs junit tests">
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
+    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
     <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="256M" showoutput="true" timeout="180000">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
@@ -610,7 +617,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   </target>
   
   <target name="run-junit-compiled" description="runs junit tests">
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
+    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
     <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
@@ -654,7 +661,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   </target>
   
   <target name="run-junit-reflected-compiled" description="runs junit tests">
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
+    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
     <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="256M" showoutput="true" timeout="180000">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
