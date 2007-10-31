@@ -2,7 +2,7 @@ require 'test/unit'
 require 'rbconfig'
 
 class TestDir < Test::Unit::TestCase
-  WINDOWS = Config::CONFIG['host_os'] =~ /Windows/
+  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
 
   def setup
     @save_dir = Dir.pwd
@@ -106,6 +106,15 @@ class TestDir < Test::Unit::TestCase
   if WINDOWS
     def test_drive_letter_dirname_leaves_trailing_slash
       assert_equal "C:/", File.dirname('C:/Temp')
+      assert_equal "c:\\", File.dirname('c:\temp')
+    end
+
+    def test_pathname_realpath_works_with_drive_letters
+      require 'pathname'
+      assert_nothing_raised do
+        Pathname.new('C:\windows').realpath.to_s
+        Pathname.new('C:\windows\..\windows').realpath.to_s
+      end      
     end
   else
     # http://jira.codehaus.org/browse/JRUBY-1375

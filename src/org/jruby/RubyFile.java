@@ -78,7 +78,7 @@ public class RubyFile extends RubyIO {
     private static final int FNM_DOTMATCH = 4;
     private static final int FNM_CASEFOLD = 8;
 
-    private static final boolean IS_WINDOWS;
+    static final boolean IS_WINDOWS;
     static {
         String osname = System.getProperty("os.name");
         IS_WINDOWS = osname != null && osname.toLowerCase().indexOf("windows") != -1;
@@ -475,6 +475,30 @@ public class RubyFile extends RubyIO {
         Arity.checkArgumentCount(recv.getRuntime(), args, 1, 2);
         
         String name = RubyString.stringValue(args[0]).toString();
+
+        // MRI-compatible basename handling for windows drive letter paths
+        if (IS_WINDOWS) {
+            if (name.length() > 1 && name.charAt(1) == ':' && Character.isLetter(name.charAt(0))) {
+                switch (name.length()) {
+                case 2:
+                    return recv.getRuntime().newString("").infectBy(args[0]);
+                case 3:
+                    return recv.getRuntime().newString(name.substring(2)).infectBy(args[0]);
+                default:
+                    switch (name.charAt(2)) {
+                    case '/':
+                    case '\\':
+                        break;
+                    default:
+                        // strip c: away from relative-pathed name
+                        name = name.substring(2);
+                        break;
+                    }
+                    break;
+                }
+            }
+        }
+
         while (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
             name = name.substring(0, name.length() - 1);
         }
