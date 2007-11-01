@@ -41,6 +41,7 @@ public class RubyInstanceConfig {
     private PrintStream error          = System.err;
     private Profile profile            = Profile.DEFAULT;
     private boolean objectSpaceEnabled = false;
+    private boolean runRubyInProcess   = true;
     private String currentDirectory;
     private Map environment;
     private String[] argv = {};
@@ -88,7 +89,10 @@ public class RubyInstanceConfig {
         } else {
             String enabledValue = System.getProperty("jruby.jit.enabled");
             String threshold = System.getProperty("jruby.jit.threshold");
-           
+
+            if (System.getProperty("jruby.launch.inproc") != null) {
+                runRubyInProcess = Boolean.getBoolean("jruby.launch.inproc");
+            }
             jitEnabled = enabledValue == null ? true : Boolean.getBoolean("jruby.jit.enabled");
             jitLogging = Boolean.getBoolean("jruby.jit.logging");
             jitLoggingVerbose = Boolean.getBoolean("jruby.jit.logging.verbose");
@@ -134,6 +138,14 @@ public class RubyInstanceConfig {
     
     public int getJitThreshold() {
         return jitThreshold;
+    }
+    
+    public boolean isRunRubyInProcess() {
+        return runRubyInProcess;
+    }
+    
+    public void setRunRubyInProcess(boolean flag) {
+        this.runRubyInProcess = flag;
     }
 
     public void setInput(InputStream newInput) {

@@ -10,11 +10,9 @@ rem Can you believe I'm rewriting batch arg processing in batch files because ba
 rem file arg processing sucks so bad? Can you believe this is even possible?
 rem http://support.microsoft.com/kb/71247
 
-rem @echo on
-
 rem escape any quotes. use -q == ", -d == -.
 set _ARGS=%*
-if "%_ARGS%" == "" goto vmoptsDone
+if not defined _ARGS goto vmoptsDone
 set _ARGS=%_ARGS:-=-d%
 set _ARGS=%_ARGS:"=-q%
 rem prequote all args for 'for' statement

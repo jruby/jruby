@@ -31,6 +31,8 @@ test_io
 test_nkf
 test_java_accessible_object
 test_java_extension
+test_jruby_internals
+test_launching_by_shell_script
 test_local_jump_error
 test_method_missing
 test_methods
