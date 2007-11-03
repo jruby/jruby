@@ -1253,7 +1253,7 @@ public class RubyHash extends RubyObject implements Map {
                      for (RubyHashEntry entry = ltable[i]; (entry = otherHash.checkIter(ltable, entry)) != null; entry = entry.next) {
                          IRubyObject value;
                          IRubyObject key = entry.key;
-                         if (internalGet(entry.key) != null)
+                         if (internalGet(key) != null)
                              value = block.yield(context, RubyArray.newArrayNoCopy(runtime, new IRubyObject[]{key, op_aref(key), entry.value}));
                          else
                              value = entry.value;
