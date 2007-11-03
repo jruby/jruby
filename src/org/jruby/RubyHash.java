@@ -1144,7 +1144,7 @@ public class RubyHash extends RubyObject implements Map {
             for (int i = 0; i < ltable.length; i++) {            
                 for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     IRubyObject key = entry.key;
-                    if (block.yield(context, runtime.newArray(entry.key, entry.value), null, null, true).isTrue()) {
+                    if (block.yield(context, runtime.newArray(key, entry.value), null, null, true).isTrue()) {
                         result.append(runtime.newArray(key, entry.value));
                     }
                 }
@@ -1169,7 +1169,7 @@ public class RubyHash extends RubyObject implements Map {
             for (int i = 0; i < ltable.length; i++) {            
                 for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     IRubyObject key = entry.key;
-                    if (block.yield(context, RubyArray.newArray(runtime, entry.key, entry.value), null, null, true).isTrue())
+                    if (block.yield(context, RubyArray.newArray(runtime, key, entry.value), null, null, true).isTrue())
                         delete(key, block);
                 }
             }
@@ -1254,7 +1254,7 @@ public class RubyHash extends RubyObject implements Map {
                          IRubyObject value;
                          IRubyObject key = entry.key;
                          if (internalGet(entry.key) != null)
-                             value = block.yield(context, RubyArray.newArrayNoCopy(runtime, new IRubyObject[]{entry.key, op_aref(entry.key), entry.value}));
+                             value = block.yield(context, RubyArray.newArrayNoCopy(runtime, new IRubyObject[]{key, op_aref(key), entry.value}));
                          else
                              value = entry.value;
                          op_aset(key, value);
