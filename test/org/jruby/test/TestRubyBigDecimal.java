@@ -5,21 +5,21 @@ import org.jruby.RubyBigDecimal;
 
 public class TestRubyBigDecimal extends TestCase {
   public void testFormatWithLeadingPlus() {
-    assertTrue(RubyBigDecimal.formatWithLeadingPlus("+"));
-    assertFalse(RubyBigDecimal.formatWithLeadingPlus(" "));
-    assertFalse(RubyBigDecimal.formatWithLeadingPlus("1"));
+    assertTrue(RubyBigDecimal.formatHasLeadingPlus("+"));
+    assertFalse(RubyBigDecimal.formatHasLeadingPlus(" "));
+    assertFalse(RubyBigDecimal.formatHasLeadingPlus("1"));
   }
 
   public void testFormatWithLeadingSpace() {
-    assertFalse(RubyBigDecimal.formatWithLeadingSpace("+"));
-    assertTrue(RubyBigDecimal.formatWithLeadingSpace(" "));
-    assertFalse(RubyBigDecimal.formatWithLeadingSpace("1"));
+    assertFalse(RubyBigDecimal.formatHasLeadingSpace("+"));
+    assertTrue(RubyBigDecimal.formatHasLeadingSpace(" "));
+    assertFalse(RubyBigDecimal.formatHasLeadingSpace("1"));
   }
 
   public void testFormatWithFloatingPointNotation() {
-    assertFalse(RubyBigDecimal.formatWithFloatingPointNotation("5E"));
-    assertTrue(RubyBigDecimal.formatWithFloatingPointNotation("5F"));
-    assertFalse(RubyBigDecimal.formatWithFloatingPointNotation("5"));
+    assertFalse(RubyBigDecimal.formatHasFloatingPointNotation("5E"));
+    assertTrue(RubyBigDecimal.formatHasFloatingPointNotation("5F"));
+    assertFalse(RubyBigDecimal.formatHasFloatingPointNotation("5"));
   }
 
   public void testFormatFractionalDigitGroups() {

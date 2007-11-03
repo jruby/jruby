@@ -636,48 +636,18 @@ public class RubyBigDecimal extends RubyNumeric {
       if (abs.compareTo(BigDecimal.valueOf(0))== 0) {
         return "0.0";
       }
-      //TODO: match the MRI code below!
-      //TODO: refactor the overly-long branches in to_s so we can reuse the sign processing here
       return null;
-//      if(VpIsNaN(a)) {
-//          sprintf(psz,SZ_NaN);
-//          return 1;
-//      }
-//
-//      if(VpIsPosInf(a)) {
-//          if(fPlus==1) {
-//             *psz++ = ' ';
-//          } else if(fPlus==2) {
-//             *psz++ = '+';
-//          }
-//          sprintf(psz,SZ_INF);
-//          return 1;
-//      }
-//      if(VpIsNegInf(a)) {
-//          sprintf(psz,SZ_NINF);
-//          return 1;
-//      }
-//      if(VpIsZero(a)) {
-//          if(VpIsPosZero(a)) {
-//              if(fPlus==1)      sprintf(psz, " 0.0");
-//              else if(fPlus==2) sprintf(psz, "+0.0");
-//              else              sprintf(psz, "0.0");
-//          } else    sprintf(psz, "-0.0");
-//          return 1;
-//      }
-//      return 0;
-
     }
   
-    public static boolean formatWithLeadingPlus(String format) {
+    public static boolean formatHasLeadingPlus(String format) {
         return format.startsWith("+");
     }
 
-    public static boolean formatWithLeadingSpace(String format) {
+    public static boolean formatHasLeadingSpace(String format) {
         return format.startsWith(" ");
     }
 
-    public static boolean formatWithFloatingPointNotation(String format) {
+    public static boolean formatHasFloatingPointNotation(String format) {
         return format.endsWith("F");
     }
 
@@ -700,10 +670,10 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if(args.length != 0 && !args[0].isNil()) {
             String format = args[0].toString();
-            pos_space = formatWithLeadingSpace(format);
+            pos_space = formatHasLeadingSpace(format);
             //pos_sign true for pos_space in order to make ternary expression work later -- yuck
-            pos_sign = formatWithLeadingPlus(format) || pos_space;
-            engineering = !formatWithFloatingPointNotation(format);
+            pos_sign = formatHasLeadingPlus(format) || pos_space;
+            engineering = !formatHasFloatingPointNotation(format);
             groups = formatFractionalDigitGroups(format);
         }
 
@@ -772,7 +742,6 @@ public class RubyBigDecimal extends RubyNumeric {
                     index += groups;
                 }
                 if(null != after) {
-                    System.out.println("AFTER: " + after);
                     build.append(".");
                     index = 0;
                     sep = "";
