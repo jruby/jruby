@@ -39,7 +39,7 @@ public class BlockStaticScope extends StaticScope {
     private static final long serialVersionUID = -3882063260379968149L;
 
     public BlockStaticScope(StaticScope parentScope) {
-        super(parentScope);
+        super(parentScope, new String[0]);
     }
 
     public BlockStaticScope(StaticScope parentScope, String[] names) {
