@@ -54,7 +54,7 @@ public class TestObjectSpace extends TestCase {
 
     public void setUp() throws Exception {
         super.setUp();
-        runtime = Ruby.getDefaultInstance();
+        runtime = Ruby.newInstance();
         target = new ObjectSpace();
     }
 

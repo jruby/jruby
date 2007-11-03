@@ -98,7 +98,7 @@ public class ScriptTestSuite extends TestSuite {
     }
 
     private static Ruby setupInterpreter() {
-        Ruby runtime = Ruby.getDefaultInstance();
+        Ruby runtime = Ruby.newInstance();
         
         runtime.getLoadService().init(new ArrayList());
         

@@ -50,7 +50,7 @@ public class TestKernel extends TestRubyBase {
     }
 
     public void setUp() {
-        runtime = Ruby.getDefaultInstance();
+        runtime = Ruby.newInstance();
         runtime.getLoadService().init(new ArrayList());
     }
 

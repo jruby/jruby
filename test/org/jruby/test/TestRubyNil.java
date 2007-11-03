@@ -52,7 +52,7 @@ public class TestRubyNil extends TestCase {
     } 
     
     public void setUp() {
-        runtime = Ruby.getDefaultInstance();
+        runtime = Ruby.newInstance();
         rubyNil = (RubyNil)runtime.getNil();
     }
     

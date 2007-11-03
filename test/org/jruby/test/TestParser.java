@@ -7,7 +7,7 @@ public class TestParser extends TestRubyBase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        runtime = Ruby.getDefaultInstance();
+        runtime = Ruby.newInstance();
     }
     
     public void testWarningLineNumber() throws Exception {

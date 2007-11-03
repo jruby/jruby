@@ -42,7 +42,7 @@ public class TestRubyArray extends TestRubyBase {
 
     public void setUp() throws Exception {
         if (runtime == null) {
-        	runtime = Ruby.getDefaultInstance();
+        	runtime = Ruby.newInstance();
         }
         eval("$h = ['foo','bar']");
     }

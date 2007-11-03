@@ -6,7 +6,7 @@ public class TestRbConfigLibrary extends TestRubyBase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        runtime = Ruby.getDefaultInstance();
+        runtime = Ruby.newInstance();
     }
     
     public void testConfigTargetOs() throws Exception {

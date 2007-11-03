@@ -303,11 +303,18 @@ public final class Ruby {
     }
 
     /**
+     * @deprecated use #newInstance()
+     */
+    public static Ruby getDefaultInstance() {
+        return newInstance();
+    }
+
+    /**
      * Returns a default instance of the JRuby runtime.
      *
      * @return the JRuby runtime
      */
-    public static Ruby getDefaultInstance() {
+    public static Ruby newInstance() {
         return newInstance(new RubyInstanceConfig());
     }
 

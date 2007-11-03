@@ -57,7 +57,7 @@ public class JRubyThreadContextTest extends TestCase {
      * Check that the thread context can be different between Ruby instances
      */
     public void testThreadContextPerRuntime() {
-        Ruby ruby = Ruby.getDefaultInstance();
+        Ruby ruby = Ruby.newInstance();
         try {
             ruby.getJRubyClassLoader().loadClass("org.jruby.GiveMeAString");
             fail("org.jruby.GiveMeAString is on the classpath!?");
@@ -85,7 +85,7 @@ public class JRubyThreadContextTest extends TestCase {
 //     * Check that the thread context can be different between requests on the same Ruby instance
 //     */
 //    public void testThreadContextPerRequest() {
-//        Ruby ruby = Ruby.getDefaultInstance();
+//        Ruby ruby = Ruby.newInstance();
 //        try {
 //            ruby.getJRubyClassLoader().loadClass("org.jruby.GiveMeAString");
 //            fail("org.jruby.GiveMeAString is on the classpath!?");
@@ -135,7 +135,7 @@ public class JRubyThreadContextTest extends TestCase {
 //        ClassLoader v1 = new VersionedClassLoader("First");
 //        ClassLoader v2 = new VersionedClassLoader("Second");
 //
-//        Ruby ruby = Ruby.getDefaultInstance();
+//        Ruby ruby = Ruby.newInstance();
 //
 //        Thread.currentThread().setContextClassLoader(v1);
 //        assertEquals("First", getMessage(ruby));

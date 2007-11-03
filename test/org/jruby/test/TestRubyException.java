@@ -45,7 +45,7 @@ public class TestRubyException extends TestCase {
 	private RubyException exception;
 
 	public void setUp() {
-		interpreter = Ruby.getDefaultInstance();
+		interpreter = Ruby.newInstance();
 		exception = new RubyException(interpreter, interpreter.getClass("StandardError"), "test");
 	}
 

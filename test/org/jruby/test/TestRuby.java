@@ -60,7 +60,7 @@ public class TestRuby extends TestRubyBase {
     }
 
     public void setUp() {
-        runtime = Ruby.getDefaultInstance();
+        runtime = Ruby.newInstance();
     }
     
     public void testArgvIsNonNil() throws Exception {

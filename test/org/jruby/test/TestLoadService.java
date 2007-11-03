@@ -39,7 +39,7 @@ public class TestLoadService extends TestRubyBase {
 
     private LoadService loadService;
     public void setUp() {
-        runtime = Ruby.getDefaultInstance();
+        runtime = Ruby.newInstance();
         loadService = (LoadService) runtime.getLoadService();
         
         loadService.init(new ArrayList());

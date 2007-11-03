@@ -29,7 +29,7 @@ import org.jruby.util.KCode;
 public class JRubyC {
     
     public static void main(String args[]) {
-        Ruby runtime = Ruby.getDefaultInstance();
+        Ruby runtime = Ruby.newInstance();
         
         try {
             if (args.length < 1) {

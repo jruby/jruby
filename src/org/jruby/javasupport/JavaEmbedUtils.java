@@ -50,7 +50,7 @@ public class JavaEmbedUtils {
 	 * @return an instance
 	 */
 	public static Ruby initialize(List loadPaths) {
-        Ruby runtime = Ruby.getDefaultInstance();
+        Ruby runtime = Ruby.newInstance();
         runtime.getLoadService().init(loadPaths);
         runtime.getLoadService().require("java");
         
