@@ -1672,6 +1672,8 @@ public class RubyYaccLexer {
                     }
                     yaccValue = getInteger(tokenBuffer.toString(), 2);
                     return Tokens.tINTEGER;
+                case 'o':
+                    c = src.read();
                 case '0' : case '1' : case '2' : case '3' : case '4' : //Octal
                 case '5' : case '6' : case '7' : case '_' : 
                     for (;; c = src.read()) {
