@@ -51,7 +51,7 @@ public class RubyPrecision {
         return precisionModule;
     }
 
-    public static IRubyObject induced_from(IRubyObject receiver, IRubyObject source) {
+    public static IRubyObject induced_from(IRubyObject receiver, IRubyObject source, Block block) {
         throw receiver.getRuntime().newTypeError("Undefined conversion from " + source.getMetaClass().getName() + " into " + ((RubyClass)receiver).getName());
     }
 
