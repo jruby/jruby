@@ -156,4 +156,9 @@ class TestThread < Test::Unit::TestCase
     x.priority = 5
     assert_equal(5, x.priority)
   end
+  
+  def test_join_returns_thread
+    x = Thread.new {}
+    assert_nothing_raised { x.join.to_s }
+  end
 end

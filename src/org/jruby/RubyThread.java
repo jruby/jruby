@@ -351,7 +351,7 @@ public class RubyThread extends RubyObject {
             // than or equal to zero returns immediately; returns nil
             timeoutMillis = (long)(1000.0D * args[0].convertToFloat().getValue());
             if (timeoutMillis <= 0) {
-                return null;
+                return this;
             }
         }
         if (isCurrent()) {
@@ -372,7 +372,7 @@ public class RubyThread extends RubyObject {
         if (exitingException != null) {
             throw exitingException;
         }
-        return null;
+        return this;
     }
 
     @JRubyMethod(name = "value")
