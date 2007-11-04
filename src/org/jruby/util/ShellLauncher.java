@@ -103,7 +103,11 @@ public class ShellLauncher {
                 setEnvironment(environmentMap(env));
                 setCurrentDirectory(pwd.toString());
             }};
-            processThread = new Thread(this, "ScriptThreadProcess: " + argArray[0]);
+            String procName = "piped";
+            if (argArray.length > 0) {
+                procName = argArray[0];
+            }
+            processThread = new Thread(this, "ScriptThreadProcess: " + procName);
             processThread.start();
         }
 
