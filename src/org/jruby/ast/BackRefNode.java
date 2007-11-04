@@ -45,14 +45,14 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *    - $' what follows the last successful match
  */
 public class BackRefNode extends Node {
-	/**
-	 * the character which generated the back reference
-	 **/
+    /**
+     * the character which generated the back reference
+     **/
     private final char type;
 
-    public BackRefNode(ISourcePosition position, char type) {
+    public BackRefNode(ISourcePosition position, int type) {
         super(position, NodeType.BACKREFNODE);
-        this.type = type;
+        this.type = (char) type;
     }
 
     /**
