@@ -12,8 +12,8 @@ public class CapturingByteListLexerSource extends ByteListLexerSource {
     }
     
     @Override
-    public char read() throws IOException {
-        char c = super.read();
+    public int read() throws IOException {
+        int c = super.read();
         captureFeature(c);
         return c;
     }

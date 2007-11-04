@@ -173,12 +173,12 @@ public abstract class LexerSource {
     public abstract String matchMarkerNoCase(ByteList marker) throws IOException;
 
     public abstract ByteList readIdentifer() throws IOException;
-    public abstract char read() throws IOException;
+    public abstract int read() throws IOException;
     public abstract ByteList readUntil(char c) throws IOException;
     public abstract ByteList readLineBytes() throws IOException;
-    public abstract char skipUntil(char c) throws IOException;
-    public abstract void unread(char c);
+    public abstract int skipUntil(int c) throws IOException;
+    public abstract void unread(int c);
     public abstract void unreadMany(CharSequence line);
-    public abstract boolean peek(char c) throws IOException;
+    public abstract boolean peek(int c) throws IOException;
     public abstract boolean wasBeginOfLine();
 }

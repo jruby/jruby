@@ -50,13 +50,13 @@ import org.jruby.util.ByteList;
  */
 public class HeredocTerm extends StrTerm {
     // Marker delimiting heredoc boundary
-	private final ByteList marker;
-	
-	// Expand variables, Indentation of final marker
-	private final int flags;
-	
-	// Portion of line right after beginning marker
-	private final ByteList lastLine;
+    private final ByteList marker;
+
+    // Expand variables, Indentation of final marker
+    private final int flags;
+
+    // Portion of line right after beginning marker
+    private final ByteList lastLine;
     
     public HeredocTerm(ByteList marker, int func, ByteList lastLine) {
         this.marker = marker;
@@ -68,7 +68,7 @@ public class HeredocTerm extends StrTerm {
         boolean indent = (flags & RubyYaccLexer.STR_FUNC_INDENT) != 0;
         ByteList str = new ByteList();
 
-        if (src.peek((char) RubyYaccLexer.EOF)) syntaxError(src);
+        if (src.peek(RubyYaccLexer.EOF)) syntaxError(src);
 
         // Found end marker for this heredoc
         if (src.wasBeginOfLine() && src.matchMarker(marker, indent)) {
@@ -83,10 +83,10 @@ public class HeredocTerm extends StrTerm {
             do {
                 str.append(src.readLineBytes());
                 str.append('\n');
-                if (src.peek('\0')) syntaxError(src);
+                if (src.peek(RubyYaccLexer.EOF)) syntaxError(src);
             } while (!src.matchMarker(marker, indent));
         } else {
-            char c = src.read();
+            int c = src.read();
             ByteList buffer = new ByteList();
             if (c == '#') {
                 switch (c = src.read()) {

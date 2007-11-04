@@ -35,27 +35,27 @@ import org.jruby.util.ByteList;
 
 public class StringTerm extends StrTerm {
     // Expand variables, Indentation of final marker
-	private int flags;
+    private int flags;
 
-	// Start of string ([, (, {, <, ', ", \n) 
+    // Start of string ([, (, {, <, ', ", \n) 
     private final char begin;
-    
+
     // End of string (], ), }, >, ', ", \0)
     private final char end;
 
     // How many strings are nested in the current string term
     private int nest;
 
-    public StringTerm(int flags, char begin, char end) {
+    public StringTerm(int flags, int begin, int end) {
         this.flags = flags;
-        this.end = end;
-        this.begin = begin;
-        this.nest = 0;
+        this.begin = (char) begin;
+        this.end   = (char) end;
+        this.nest  = 0;
     }
 
     public int parseString(RubyYaccLexer lexer, LexerSource src) throws java.io.IOException {
         boolean spaceSeen = false;
-        char c;
+        int c;
 
         // FIXME: How much more obtuse can this be?
         // Heredoc already parsed this and saved string...Do not parse..just return
@@ -98,7 +98,7 @@ public class StringTerm extends StrTerm {
         if (begin == '\0' && flags == 0) {
             ByteList buffer = new ByteList();
             src.unread(c);
-            if (parseSimpleStringIntoBuffer(lexer, src, buffer) == 0) {
+            if (parseSimpleStringIntoBuffer(src, buffer) == RubyYaccLexer.EOF) {
                 throw new SyntaxException(src.getPosition(), "unterminated string meets end of file");
             }
             
@@ -131,7 +131,7 @@ public class StringTerm extends StrTerm {
         }
         src.unread(c);
         
-        if (parseStringIntoBuffer(lexer, src, buffer) == 0) {
+        if (parseStringIntoBuffer(lexer, src, buffer) == RubyYaccLexer.EOF) {
             throw new SyntaxException(src.getPosition(), "unterminated string meets end of file");
         }
 
@@ -142,7 +142,7 @@ public class StringTerm extends StrTerm {
     private int parseRegexpFlags(final LexerSource src) throws java.io.IOException {
         char kcode = 0;
         int options = 0;
-        char c;
+        int c;
         StringBuilder unknownFlags = new StringBuilder(10);
 
         for (c = src.read(); c != RubyYaccLexer.EOF
@@ -189,8 +189,8 @@ public class StringTerm extends StrTerm {
         return options | kcode;
     }
     
-    public char parseSimpleStringIntoBuffer(RubyYaccLexer lexer, LexerSource src, ByteList buffer) throws java.io.IOException {
-        char c;
+    public int parseSimpleStringIntoBuffer(LexerSource src, ByteList buffer) throws java.io.IOException {
+        int c;
 
         while ((c = src.read()) != RubyYaccLexer.EOF) {
             if (c == end) {
@@ -207,12 +207,12 @@ public class StringTerm extends StrTerm {
         return c;
     }
     
-    public char parseStringIntoBuffer(RubyYaccLexer lexer, LexerSource src, ByteList buffer) throws java.io.IOException {
+    public int parseStringIntoBuffer(RubyYaccLexer lexer, LexerSource src, ByteList buffer) throws java.io.IOException {
         boolean qwords = (flags & RubyYaccLexer.STR_FUNC_QWORDS) != 0;
         boolean expand = (flags & RubyYaccLexer.STR_FUNC_EXPAND) != 0;
         boolean escape = (flags & RubyYaccLexer.STR_FUNC_ESCAPE) != 0;
         boolean regexp = (flags & RubyYaccLexer.STR_FUNC_REGEXP) != 0;
-        char c;
+        int c;
 
         while ((c = src.read()) != RubyYaccLexer.EOF) {
             if (begin != '\0' && c == begin) {
@@ -224,7 +224,7 @@ public class StringTerm extends StrTerm {
                 }
                 nest--;
             } else if (c == '#' && expand && !src.peek('\n')) {
-                char c2 = src.read();
+                int c2 = src.read();
 
                 if (c2 == '$' || c2 == '@' || c2 == '{') {
                     src.unread(c2);
@@ -272,7 +272,7 @@ public class StringTerm extends StrTerm {
 
     // Was a goto in original ruby lexer
     private void escaped(LexerSource src, ByteList buffer) throws java.io.IOException {
-        char c;
+        int c;
 
         switch (c = src.read()) {
         case '\\':
@@ -286,7 +286,7 @@ public class StringTerm extends StrTerm {
     }
 
     private void parseEscapeIntoBuffer(LexerSource src, ByteList buffer) throws java.io.IOException {
-        char c;
+        int c;
 
         switch (c = src.read()) {
         case '\n':
@@ -346,7 +346,7 @@ public class StringTerm extends StrTerm {
             buffer.append(new byte[] { '\\', 'c' });
             escaped(src, buffer);
             break;
-        case 0:
+        case RubyYaccLexer.EOF:
             throw new SyntaxException(src.getPosition(), "Invalid escape character syntax");
         default:
             if (c != '\\' || c != end) {

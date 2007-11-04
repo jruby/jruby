@@ -45,14 +45,14 @@ public class InputStreamLexerSource extends LexerSource {
      * 
      * @return next character to viewed by the source
      */
-    public char read() throws IOException {
+    public int read() throws IOException {
         int c;
         if (bufLength >= 0) {
             c = buf[bufLength--];
         } else {
             c = wrappedRead();
             
-            if (c == -1) return '\0';
+            if (c == -1) return RubyYaccLexer.EOF;
         }
 
         twoAgo = oneAgo;
@@ -61,7 +61,7 @@ public class InputStreamLexerSource extends LexerSource {
         
         if (c == '\n') line++;
             
-        return (char) c; 
+        return c; 
     }
 
     /**
@@ -70,8 +70,8 @@ public class InputStreamLexerSource extends LexerSource {
      * 
      * @param  to be put back onto the source
      */
-    public void unread(char c) {
-        if (c == 0) return;
+    public void unread(int c) {
+        if (c == RubyYaccLexer.EOF) return;
             
         offset--;
         oneAgo = twoAgo;
@@ -79,7 +79,7 @@ public class InputStreamLexerSource extends LexerSource {
             
         if (c == '\n') line--;
 
-        buf[++bufLength] = c;
+        buf[++bufLength] = (char) c;
         
         // If we outgrow our pushback stack then grow it (this should only happen in pretty 
         // pathological cases).
@@ -98,8 +98,8 @@ public class InputStreamLexerSource extends LexerSource {
      * @return true if the same
      * @throws IOException
      */
-    public boolean peek(char to) throws IOException {
-        char c = read();
+    public boolean peek(int to) throws IOException {
+        int c = read();
         unread(c);
         return c == to;
     }
@@ -149,7 +149,7 @@ public class InputStreamLexerSource extends LexerSource {
     public ByteList readLineBytes() throws IOException {
         ByteList bytelist = new ByteList(80);
 
-        for (char c = read(); c != '\n' && c != '\0'; c = read()) {
+        for (int c = read(); c != '\n' && c != RubyYaccLexer.EOF; c = read()) {
             bytelist.append(c);
         }
         
@@ -157,8 +157,8 @@ public class InputStreamLexerSource extends LexerSource {
     }
     
     @Override
-    public char skipUntil(char c) throws IOException {
-        for (c = read(); c != '\n' && c != '\0'; c = read()) {}
+    public int skipUntil(int c) throws IOException {
+        for (c = read(); c != '\n' && c != RubyYaccLexer.EOF; c = read()) {}
         
         return c;
     }
@@ -176,8 +176,8 @@ public class InputStreamLexerSource extends LexerSource {
         ByteList buffer = new ByteList(length + 1);
         
         if (indent) {
-            char c;
-            while ((c = read()) != '\0') {
+            int c;
+            while ((c = read()) != RubyYaccLexer.EOF) {
                 if (!Character.isWhitespace(c) || c == '\n') {
                     unread(c);
                     break;
@@ -186,7 +186,7 @@ public class InputStreamLexerSource extends LexerSource {
             }
         }
         
-        char c;
+        int c;
         for (int i = 0; i < length; i++) {
             c = read();
             buffer.append(c);
@@ -197,7 +197,7 @@ public class InputStreamLexerSource extends LexerSource {
         }
         
         c = read();
-        if (c != '\0' && c != '\n') return false;
+        if (c != RubyYaccLexer.EOF && c != '\n') return false;
         
         return true;
     }
@@ -208,7 +208,7 @@ public class InputStreamLexerSource extends LexerSource {
         
         for (int i = 0; i < match.length(); i++) {
             char c = match.charAt(i);
-            char r = read();
+            int r = read();
             buf.append(r);
             
             if (Character.toLowerCase(c) != r && Character.toUpperCase(c) != r) {
@@ -248,13 +248,13 @@ public class InputStreamLexerSource extends LexerSource {
     @Override
     public ByteList readUntil(char marker) throws IOException {
         ByteList list = new ByteList(20);
-        char c;
+        int c;
         
-        for (c = read(); c != marker && c != '\0'; c = read()) {
+        for (c = read(); c != marker && c != RubyYaccLexer.EOF; c = read()) {
             list.append(c);
         }
         
-        if (c == 0) return null;
+        if (c == RubyYaccLexer.EOF) return null;
         
         unread(c);
         
@@ -264,7 +264,7 @@ public class InputStreamLexerSource extends LexerSource {
     @Override
     public ByteList readIdentifer() throws IOException {
         ByteList tokenBuffer = new ByteList();
-        char c;        
+        int c;        
         for (c = read(); RubyYaccLexer.isIdentifierChar(c); c = read()) {
             tokenBuffer.append(c);
         }

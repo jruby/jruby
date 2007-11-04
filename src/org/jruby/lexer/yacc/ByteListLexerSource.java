@@ -29,8 +29,8 @@ public class ByteListLexerSource extends LexerSource {
         int start = index;
         
         if (indent) {
-            char c;
-            while ((c = read()) != '\0') {
+            int c;
+            while ((c = read()) != RubyYaccLexer.EOF) {
                 if (!Character.isWhitespace(c) || c == '\n') {
                     index--;
                     break;
@@ -46,13 +46,13 @@ public class ByteListLexerSource extends LexerSource {
         }
 
         char c = (char) internalRead();
-        if (c != '\0' && c != '\n') return false;
+        if (c != RubyYaccLexer.EOF && c != '\n') return false;
 
         return true;
     }
 
     @Override
-    public boolean peek(char c) throws IOException {
+    public boolean peek(int c) throws IOException {
         // PEEK(EOF)?
         if (index >= realSize) return false;
         
@@ -60,11 +60,11 @@ public class ByteListLexerSource extends LexerSource {
     }
     
     private byte internalRead() {
-        return index >= realSize ? 0 : bytes[index++]; 
+        return index >= realSize ? RubyYaccLexer.EOF : bytes[index++]; 
     }
 
     @Override
-    public char read() throws IOException {
+    public int read() throws IOException {
         byte c = internalRead();
             
         // If \r\n then just pass along \n (windows). 
@@ -88,14 +88,14 @@ public class ByteListLexerSource extends LexerSource {
             break;
         }
 
-        return (char) c;
+        return c;
     }
 
     @Override
     public ByteList readLineBytes() throws IOException {
         int count = 0;
 
-        for (char c = read(); c != '\n' && c != '\0'; c = read()) {
+        for (int c = read(); c != '\n' && c != RubyYaccLexer.EOF; c = read()) {
             count++;
         }
         
@@ -103,15 +103,15 @@ public class ByteListLexerSource extends LexerSource {
     }
     
     @Override
-    public char skipUntil(char c) throws IOException {
-        for (c = read(); c != '\n' && c != '\0'; c = read()) {}
+    public int skipUntil(int c) throws IOException {
+        for (c = read(); c != '\n' && c != RubyYaccLexer.EOF; c = read()) {}
         
         return c;
     }
 
     @Override
-    public void unread(char c) {
-        if (c == 0) return;
+    public void unread(int c) {
+        if (c == RubyYaccLexer.EOF) return;
         
         index--;
             
@@ -139,7 +139,7 @@ public class ByteListLexerSource extends LexerSource {
         
         for (int i = 0; i < match.length(); i++) {
             char c = match.charAt(i);
-            char r = read();
+            int r = read();
             buf.append(r);
             
             if (Character.toLowerCase(c) != r && Character.toUpperCase(c) != r) {
