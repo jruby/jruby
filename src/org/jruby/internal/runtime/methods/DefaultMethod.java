@@ -99,7 +99,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         Ruby runtime = context.getRuntime();
 
-        if (runtime.getInstanceConfig().isJitEnabled()) {
+        if (runtime.getInstanceConfig().getCompileMode().shouldJIT()) {
             runJIT(runtime, context, name);
         }
         

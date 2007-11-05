@@ -36,17 +36,40 @@ import org.jruby.util.CommandlineParser;
 import org.jruby.util.JRubyClassLoader;
 
 public class RubyInstanceConfig {
+    public enum CompileMode {
+        JIT, FORCE, OFF;
+        
+        public boolean shouldPrecompileCLI() {
+            switch (this) {
+            case JIT: case FORCE:
+                return true;
+            }
+            return false;
+        }
+        
+        public boolean shouldJIT() {
+            switch (this) {
+            case JIT: case FORCE:
+                return true;
+            }
+            return false;
+        }
+        
+        public boolean shouldPrecompileAll() {
+            return this == FORCE;
+        }
+    }
     private InputStream input          = System.in;
     private PrintStream output         = System.out;
     private PrintStream error          = System.err;
     private Profile profile            = Profile.DEFAULT;
     private boolean objectSpaceEnabled = false;
+    private CompileMode compileMode = CompileMode.JIT;
     private boolean runRubyInProcess   = true;
     private String currentDirectory;
     private Map environment;
     private String[] argv = {};
 
-    private final boolean jitEnabled;
     private final boolean jitLogging;
     private final boolean jitLoggingVerbose;
     private final int jitThreshold;
@@ -82,18 +105,34 @@ public class RubyInstanceConfig {
         rite = System.getProperty("jruby.rite") != null && Boolean.getBoolean("jruby.rite");
         
         if (Ruby.isSecurityRestricted()) {
-            jitEnabled = false;
+            compileMode = CompileMode.OFF;
             jitLogging = false;
             jitLoggingVerbose = false;
             jitThreshold = -1;
         } else {
-            String enabledValue = System.getProperty("jruby.jit.enabled");
             String threshold = System.getProperty("jruby.jit.threshold");
 
             if (System.getProperty("jruby.launch.inproc") != null) {
                 runRubyInProcess = Boolean.getBoolean("jruby.launch.inproc");
             }
-            jitEnabled = enabledValue == null ? true : Boolean.getBoolean("jruby.jit.enabled");
+            boolean jitProperty = System.getProperty("jruby.jit.enabled") != null;
+            if (jitProperty) {
+                error.print("jruby.jit.enabled property is deprecated; use jruby.compile.mode=(OFF|JIT|FORCE) for -C, default, and +C flags");
+                compileMode = Boolean.getBoolean("jruby.jit.enabled") ? CompileMode.JIT : CompileMode.OFF;
+            } else {
+                String jitModeProperty = System.getProperty("jruby.compile.mode", "JIT");
+                
+                if (jitModeProperty.equals("OFF")) {
+                    compileMode = CompileMode.OFF;
+                } else if (jitModeProperty.equals("JIT")) {
+                    compileMode = CompileMode.JIT;
+                } else if (jitModeProperty.equals("FORCE")) {
+                    compileMode = CompileMode.FORCE;
+                } else {
+                    error.print("jruby.jit.mode property must be OFF, JIT, FORCE, or unset; defaulting to JIT");
+                    compileMode = CompileMode.JIT;
+                }
+            }
             jitLogging = Boolean.getBoolean("jruby.jit.logging");
             jitLoggingVerbose = Boolean.getBoolean("jruby.jit.logging.verbose");
             jitThreshold = threshold == null ? 20 : Integer.parseInt(threshold); 
@@ -118,10 +157,15 @@ public class RubyInstanceConfig {
     public void updateWithCommandline(CommandlineParser cmdline) {
         this.objectSpaceEnabled = this.objectSpaceEnabled || cmdline.isObjectSpaceEnabled();
         this.argv = cmdline.getScriptArguments();
+        this.compileMode = cmdline.getCompileMode();
     }
 
-    public boolean isJitEnabled() {
-        return jitEnabled;
+    public CompileMode getCompileMode() {
+        return compileMode;
+    }
+    
+    public void setCompileMode(CompileMode compileMode) {
+        this.compileMode = compileMode;
     }
 
     public boolean isJitLogging() {

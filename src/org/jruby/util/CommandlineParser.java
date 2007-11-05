@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.Main;
+import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.exceptions.MainExitException;
 
 public class CommandlineParser {
@@ -67,7 +68,7 @@ public class CommandlineParser {
     private boolean shouldRunInterpreter = true;
 
     private boolean objectSpaceEnabled = false;
-    private boolean compilerEnabled = false;
+    private CompileMode compileMode = CompileMode.JIT;
     private boolean yarv = false;
     private boolean rubinius = false;
     private boolean yarvCompile = false;
@@ -144,7 +145,11 @@ public class CommandlineParser {
                     }
                     break;
                 case 'C' :
-                    compilerEnabled = true;
+                    if (argument.charAt(0) == '-') {
+                        compileMode = CompileMode.OFF;
+                    } else if (argument.charAt(0) == '+') {
+                        compileMode = CompileMode.FORCE;
+                    }
                     break;
                 case 'y' :
                     yarv = true;
@@ -366,8 +371,8 @@ public class CommandlineParser {
         return objectSpaceEnabled;
     }
     
-    public boolean isCompilerEnabled() {
-        return compilerEnabled;
+    public CompileMode getCompileMode() {
+        return compileMode;
     }
 
     public boolean isYARVEnabled() {

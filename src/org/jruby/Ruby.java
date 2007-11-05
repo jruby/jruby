@@ -391,7 +391,7 @@ public final class Ruby {
         Node node = parseInline(new ByteArrayInputStream(bytes), filename, null);
         
         getCurrentContext().getCurrentFrame().setPosition(node.getPosition());
-        return runNormally(node, false, false);
+        return runNormally(node, false);
     }
     
     public void runFromMain(InputStream in, String filename, CommandlineParser commandLine) {
@@ -411,18 +411,19 @@ public final class Ruby {
 
             if (commandLine.isAssumePrinting() || commandLine.isAssumeLoop()) {
                 runWithGetsLoop(scriptNode, commandLine.isAssumePrinting(), commandLine.isProcessLineEnds(),
-                        commandLine.isSplit(), commandLine.isCompilerEnabled(), commandLine.isYARVCompileEnabled());
+                        commandLine.isSplit(), commandLine.isYARVCompileEnabled());
             } else {
-                runNormally(scriptNode, commandLine.isCompilerEnabled(), commandLine.isYARVCompileEnabled());
+                runNormally(scriptNode, commandLine.isYARVCompileEnabled());
             }
         }
     }
     
-    public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split, boolean compile, boolean yarvCompile) {
+    public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split, boolean yarvCompile) {
         ThreadContext context = getCurrentContext();
         
         Script script = null;
         YARVCompiledRunner runner = null;
+        boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || !yarvCompile) {
             script = tryCompile(scriptNode);
             if (compile && script == null) {
@@ -473,12 +474,14 @@ public final class Ruby {
         return getNil();
     }
     
-    public IRubyObject runNormally(Node scriptNode, boolean compile, boolean yarvCompile) {
+    public IRubyObject runNormally(Node scriptNode, boolean yarvCompile) {
         Script script = null;
         YARVCompiledRunner runner = null;
-        if (compile || (config.isJitEnabled() && !yarvCompile)) {
+        boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
+        boolean forceCompile = getInstanceConfig().getCompileMode().shouldPrecompileAll();
+        if (compile) {
             script = tryCompile(scriptNode);
-            if (compile && script == null) {
+            if (forceCompile && script == null) {
                 System.err.println("Error, could not compile; pass -J-Djruby.jit.logging.verbose=true for more details");
                 return getNil();
             }
@@ -1772,12 +1775,7 @@ public final class Ruby {
             }
         }
     }
-
-    /** This method compiles and interprets a Ruby script.
-     *
-     *  It can be used if you want to use JRuby as a Macro language.
-     *
-     */
+    
     public void loadFile(String scriptName, InputStream in) {
         if (!Ruby.isSecurityRestricted()) {
             File f = new File(scriptName);
@@ -1796,6 +1794,39 @@ public final class Ruby {
 
             Node node = parseFile(in, scriptName, null);
             ASTInterpreter.eval(this, context, node, self, Block.NULL_BLOCK);
+        } catch (JumpException.ReturnJump rj) {
+            return;
+        } finally {
+            context.postNodeEval();
+        }
+    }
+    
+    public void compileAndLoadFile(String filename, InputStream in) {
+        // FIXME: what is this for?
+//        if (!Ruby.isSecurityRestricted()) {
+//            File f = new File(scriptName);
+//            if(f.exists() && !f.isAbsolute() && !scriptName.startsWith("./")) {
+//                scriptName = "./" + scriptName;
+//            };
+//        }
+        IRubyObject self = getTopSelf();
+        ThreadContext context = getCurrentContext();
+
+        try {
+            secure(4); /* should alter global state */
+
+            context.preNodeEval(objectClass, self);
+            
+            Node scriptNode = parseFile(in, filename, getCurrentContext().getCurrentScope());
+            
+            getCurrentContext().getCurrentFrame().setPosition(scriptNode.getPosition());
+            
+            Script script = tryCompile(scriptNode);
+            if (script == null) {
+                System.err.println("Error, could not compile; pass -J-Djruby.jit.logging.verbose=true for more details");
+            }
+
+            runScript(script);
         } catch (JumpException.ReturnJump rj) {
             return;
         } finally {
