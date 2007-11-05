@@ -230,6 +230,9 @@ public final class Ruby {
     private RubyClass systemCallError = null;
     private RubyModule errnoModule = null;
     private IRubyObject topSelf;
+    
+    // record separator var, to speed up io ops that use it
+    private GlobalVariable recordSeparatorVar;
 
     // former java.lang.System concepts now internalized for MVM
     private String currentDirectory;
@@ -2499,5 +2502,13 @@ public final class Ruby {
             };
         getGlobalVariables().define("$DEBUG", d);
         getGlobalVariables().define("$-d", d);
+    }
+    
+    public void setRecordSeparatorVar(GlobalVariable recordSeparatorVar) {
+        this.recordSeparatorVar = recordSeparatorVar;
+    }
+    
+    public GlobalVariable getRecordSeparatorVar() {
+        return recordSeparatorVar;
     }
 }

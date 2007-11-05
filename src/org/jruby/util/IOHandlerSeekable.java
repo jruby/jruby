@@ -102,6 +102,80 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
         return modes.isWritable() ? "rw" : "r";
     }
 
+    public ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException {
+        checkReadable();
+
+        if (separatorString == null) {
+            return getsEntireStream();
+        }
+
+        final ByteList separator = (separatorString == PARAGRAPH_DELIMETER) ?
+            ByteList.create("\n\n") : separatorString;
+
+        byte c = (byte)read();
+        if (c == -1) {
+            return null;
+        }
+
+        ByteList buf = new ByteList();
+        buf.append(c);
+        
+        byte first = separator.bytes[separator.begin];
+
+        LineLoop : while (true) {
+            ReadLoop: while (true) {
+                byte[] bytes = buffer.array();
+                int offset = buffer.position();
+                int max = offset + buffer.remaining();
+                
+                // iterate over remainder of buffer until we find a match
+                for (int i = offset; i <= max; i++) {
+                    c = bytes[i];
+                    if (c == first) {
+                        // terminate and advance buffer when we find our char
+                        buf.append(bytes, offset, i - offset);
+                        if (i > max) {
+                            buffer.clear();
+                        } else {
+                            buffer.position(i + 1);
+                        }
+                        break ReadLoop;
+                    }
+                }
+                
+                // no match, append remainder of buffer and continue with next block
+                buf.append(bytes, offset, buffer.remaining());
+                buffer.clear();
+                int read = channel.read(buffer);
+                buffer.flip();
+                if (read == -1) break LineLoop;
+            }
+            
+            // found a match above, check if remaining separator characters match, appending as we go
+            for (int i = 0; i < separator.realSize; i++) {
+                if (c == -1) {
+                    break LineLoop;
+                } else if (c != separator.bytes[separator.begin + i]) {
+                    continue LineLoop;
+                }
+                buf.append(c);
+                if (i < separator.realSize - 1) {
+                    c = (byte)read();
+                }
+            }
+            break;
+        }
+
+        if (separatorString == PARAGRAPH_DELIMETER) {
+            while (c == separator.bytes[separator.begin]) {
+                c = (byte)read();
+            }
+            ungetc(c);
+        }
+
+        return buf;
+    }
+
     private void reopen() throws IOException {
         long pos = pos();
 
