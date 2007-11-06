@@ -2457,8 +2457,6 @@ public final class Ruby {
                     return posix;
                 }
             } catch (Throwable t) {
-                t.printStackTrace();
-                System.out.println("ERR: " + t);
             }
         }
         // on any error or if native is disabled, fall back on our own stupid POSIX impl
