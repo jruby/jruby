@@ -174,10 +174,6 @@ public class RubyNil extends RubyObject {
         return recv.getRuntime().newBoolean(obj.isTrue());
     }
 
-    public IRubyObject freeze() {
-        return this;
-    }
-    
     @JRubyMethod(name = "nil?")
     public IRubyObject nil_p() {
         return getRuntime().getTrue();

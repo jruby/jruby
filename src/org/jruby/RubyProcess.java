@@ -210,7 +210,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "getpgrp", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject getpgrp(IRubyObject recv) {
-        throw recv.getRuntime().newNotImplementedError("Process#getpgrp not yet implemented");
+        return recv.getRuntime().newFixnum(Ruby.getPosix().getpgrp());
     }
 
     @JRubyMethod(name = "groups=", required = 1, module = true, visibility = Visibility.PRIVATE)
@@ -250,7 +250,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "euid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject euid(IRubyObject recv) {
-        throw recv.getRuntime().newNotImplementedError("Process#euid not yet implemented");
+        return recv.getRuntime().newFixnum(Ruby.getPosix().geteuid());
     }
 
     @JRubyMethod(name = "uid=", required = 1, module = true, visibility = Visibility.PRIVATE)
@@ -260,7 +260,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "gid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject gid(IRubyObject recv) {
-        throw recv.getRuntime().newNotImplementedError("Process#gid not yet implemented");
+        return recv.getRuntime().newFixnum(Ruby.getPosix().getgid());
     }
 
     @JRubyMethod(name = "maxgroups", module = true, visibility = Visibility.PRIVATE)
@@ -275,7 +275,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "uid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject uid(IRubyObject recv) {
-        throw recv.getRuntime().newNotImplementedError("Process#uid not yet implemented");
+        return recv.getRuntime().newFixnum(Ruby.getPosix().getuid());
     }
 
     @JRubyMethod(name = "waitpid2", rest = true, module = true, visibility = Visibility.PRIVATE)
@@ -295,7 +295,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "ppid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject ppid(IRubyObject recv) {
-        throw recv.getRuntime().newNotImplementedError("Process#ppid not yet implemented");
+        return recv.getRuntime().newFixnum(Ruby.getPosix().getppid());
     }
 
     @JRubyMethod(name = "gid=", required = 1, module = true, visibility = Visibility.PRIVATE)
@@ -325,7 +325,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "getpgid", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject getpgid(IRubyObject recv, IRubyObject arg) {
-        throw recv.getRuntime().newNotImplementedError("Process#getpgid not yet implemented");
+        return recv.getRuntime().newFixnum(Ruby.getPosix().getpgid());
     }
 
     @JRubyMethod(name = "getrlimit", required = 1, module = true, visibility = Visibility.PRIVATE)
@@ -335,7 +335,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "egid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject egid(IRubyObject recv) {
-        throw recv.getRuntime().newNotImplementedError("Process#egid not yet implemented");
+        return recv.getRuntime().newFixnum(Ruby.getPosix().getegid());
     }
 
     @JRubyMethod(name = "kill", rest = true, module = true, visibility = Visibility.PRIVATE)

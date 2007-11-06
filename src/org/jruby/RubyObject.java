@@ -520,6 +520,8 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public String asSymbol() {
+        IRubyObject asString = checkStringType();
+        if(!asString.isNil()) return ((RubyString)asString).asSymbol();
         throw getRuntime().newTypeError(inspect().toString() + " is not a symbol");
     }
 
@@ -1020,7 +1022,9 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (getRuntime().getSafeLevel() >= 4 && isTaint()) {
             throw getRuntime().newSecurityError("Insecure: can't freeze object");
         }
-        setFrozen(true);
+        
+        if (!this.isImmediate()) setFrozen(true);
+
         return this;
     }
 

@@ -478,6 +478,7 @@ test/externals/rubinius/spec/core/integer_spec.rb
 test/externals/rubinius/spec/core/io_spec.rb
 test/externals/rubinius/spec/core/matchdata_spec.rb
 test/externals/rubinius/spec/core/nil_spec.rb
+test/externals/rubinius/spec/core/object_spec.rb
 test/externals/rubinius/spec/core/objectspace_spec.rb
 test/externals/rubinius/spec/core/proc_spec.rb
 test/externals/rubinius/spec/core/range_spec.rb
@@ -513,6 +514,7 @@ test/externals/rubinius/spec/core/integer_spec.rb
 test/externals/rubinius/spec/core/io_spec.rb
 test/externals/rubinius/spec/core/matchdata_spec.rb
 test/externals/rubinius/spec/core/nil_spec.rb
+test/externals/rubinius/spec/core/object_spec.rb
 test/externals/rubinius/spec/core/objectspace_spec.rb
 test/externals/rubinius/spec/core/proc_spec.rb
 test/externals/rubinius/spec/core/range_spec.rb

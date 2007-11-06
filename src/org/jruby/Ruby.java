@@ -97,7 +97,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
-import org.jruby.util.BuiltinScript;
 import org.jruby.util.ByteList;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOInputStream;
@@ -801,7 +800,7 @@ public final class Ruby {
         this.mathModule = mathModule;
     }    
 
-    public RubyModule getMarshal() {;
+    public RubyModule getMarshal() {
         return marshalModule;
     }
     void setMarshal(RubyModule marshalModule) {
@@ -1784,7 +1783,7 @@ public final class Ruby {
             File f = new File(scriptName);
             if(f.exists() && !f.isAbsolute() && !scriptName.startsWith("./")) {
                 scriptName = "./" + scriptName;
-            };
+            }
         }
 
         IRubyObject self = getTopSelf();
@@ -2445,7 +2444,10 @@ public final class Ruby {
         if (nativeEnabled) {
             try {
                 // confirm we have library link permissions for the C library
-                System.getSecurityManager().checkLink("*");
+                SecurityManager manager = System.getSecurityManager();
+                if (manager != null) {
+                    manager.checkLink("*");
+                }
                 HashMap options = new HashMap();
                 options.put(com.sun.jna.Library.OPTION_FUNCTION_MAPPER, new POSIXFunctionMapper());
 
@@ -2455,6 +2457,8 @@ public final class Ruby {
                     return posix;
                 }
             } catch (Throwable t) {
+                t.printStackTrace();
+                System.out.println("ERR: " + t);
             }
         }
         // on any error or if native is disabled, fall back on our own stupid POSIX impl
