@@ -37,7 +37,6 @@ import java.io.PipedOutputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -53,9 +52,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author nicksieger
  */
 public class ShellLauncher {
-
-    private static final Pattern PATH_SEPARATORS = Pattern.compile("[/\\\\]");
-
     private Ruby runtime;
 
     /** Creates a new instance of ShellLauncher */
@@ -241,6 +237,7 @@ public class ShellLauncher {
                 }
             } catch (Exception e) {
             }
+//            System.out.println("thread " + Thread.currentThread() + " exiting");
         }
         public void quit() {
             this.quit = true;
