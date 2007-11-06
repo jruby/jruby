@@ -126,15 +126,15 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
             ReadLoop: while (true) {
                 byte[] bytes = buffer.array();
                 int offset = buffer.position();
-                int max = offset + buffer.remaining();
+                int max = buffer.limit();
                 
                 // iterate over remainder of buffer until we find a match
-                for (int i = offset; i <= max; i++) {
+                for (int i = offset; i < max; i++) {
                     c = bytes[i];
                     if (c == first) {
                         // terminate and advance buffer when we find our char
                         buf.append(bytes, offset, i - offset);
-                        if (i > max) {
+                        if (i >= max) {
                             buffer.clear();
                         } else {
                             buffer.position(i + 1);
