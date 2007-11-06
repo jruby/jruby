@@ -404,7 +404,7 @@ public final class Ruby {
             new RubiniusRunner(this, in, filename).run();
         } else {
             Node scriptNode;
-            if (commandLine.isInlineScript() || commandLine.isSourceFromStdin()) {
+            if (commandLine.isInlineScript()) {
                 scriptNode = parseInline(in, filename, getCurrentContext().getCurrentScope());
             } else {
                 scriptNode = parseFile(in, filename, getCurrentContext().getCurrentScope());
@@ -485,7 +485,7 @@ public final class Ruby {
         if (compile) {
             script = tryCompile(scriptNode);
             if (forceCompile && script == null) {
-                config.getError().println("Error, could not compile; pass -J-Djruby.jit.logging.verbose=true for more details");
+                System.err.println("Error, could not compile; pass -J-Djruby.jit.logging.verbose=true for more details");
                 return getNil();
             }
         } else if (yarvCompile) {
@@ -523,27 +523,27 @@ public final class Ruby {
             script = (Script)compiler.loadClass(this.getJRubyClassLoader()).newInstance();
 
             if (config.isJitLogging()) {
-                config.getError().println("compiled: " + node.getPosition().getFile());
+                System.err.println("compiled: " + node.getPosition().getFile());
             }
         } catch (NotCompilableException nce) {
             if (config.isJitLoggingVerbose()) {
-                config.getError().println("Error -- Not compileable: " + nce.getMessage());
+                System.err.println("Error -- Not compileable: " + nce.getMessage());
             }
         } catch (ClassNotFoundException e) {
             if (config.isJitLoggingVerbose()) {
-                config.getError().println("Error -- Not compileable: " + e.getMessage());
+                System.err.println("Error -- Not compileable: " + e.getMessage());
             }
         } catch (InstantiationException e) {
             if (config.isJitLoggingVerbose()) {
-                config.getError().println("Error -- Not compileable: " + e.getMessage());
+                System.err.println("Error -- Not compileable: " + e.getMessage());
             }
         } catch (IllegalAccessException e) {
             if (config.isJitLoggingVerbose()) {
-                config.getError().println("Error -- Not compileable: " + e.getMessage());
+                System.err.println("Error -- Not compileable: " + e.getMessage());
             }
         } catch (Throwable t) {
             if (config.isJitLoggingVerbose()) {
-                config.getError().println("coult not compile: " + node.getPosition().getFile() + " because of: \"" + t.getMessage() + "\"");
+                System.err.println("coult not compile: " + node.getPosition().getFile() + " because of: \"" + t.getMessage() + "\"");
             }
         }
         
@@ -560,7 +560,7 @@ public final class Ruby {
             }
             return new YARVCompiledRunner(this,compiler.getInstructionSequence("<main>",p.getFile(),"toplevel"));
         } catch (NotCompilableException nce) {
-            config.getError().println("Error -- Not compileable: " + nce.getMessage());
+            System.err.println("Error -- Not compileable: " + nce.getMessage());
             return null;
         } catch (JumpException.ReturnJump rj) {
             return null;

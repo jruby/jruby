@@ -95,10 +95,6 @@ public class Main {
         }
     }
 
-    public RubyInstanceConfig getConfig() {
-        return config;
-    }
-
     public int run(String[] args) {
         commandline = new CommandlineParser(this, args);
 
@@ -215,10 +211,10 @@ public class Main {
             // This map can be used at development-time to log profiling information
             // that must be updated as the execution runs.
             if (!Ruby.isSecurityRestricted() && !runtime.getRuntimeInformation().isEmpty()) {
-                config.getError().println("Runtime information dump:");
+                System.err.println("Runtime information dump:");
 
                 for (Object key: runtime.getRuntimeInformation().keySet()) {
-                    config.getError().println("[" + key + "]: " + runtime.getRuntimeInformation().get(key));
+                    System.err.println("[" + key + "]: " + runtime.getRuntimeInformation().get(key));
                 }
             }
             if(config.isSamplingEnabled()) {

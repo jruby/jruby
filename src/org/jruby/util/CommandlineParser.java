@@ -267,7 +267,7 @@ public class CommandlineParser {
         return isShouldRunInterpreter();
     }
     
-    public boolean isSourceFromStdin() {
+    private boolean isSourceFromStdin() {
         return getScriptFileName() == null;
     }
     
@@ -291,7 +291,7 @@ public class CommandlineParser {
                 if (isShowVersion()) {
                     return null;
                 }
-                return main.getConfig().getInput();
+                return System.in;
             } else {
                 File file = new File(getScriptFileName());
                 return new FileInputStream(file);
