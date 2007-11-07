@@ -634,7 +634,7 @@ public class RubyTime extends RubyObject {
     
     private static final String[] months = {"jan", "feb", "mar", "apr", "may", "jun",
                                             "jul", "aug", "sep", "oct", "nov", "dec"};
-    private static final long[] time_min = {1, 0, 0, 0, 0};
+    private static final long[] time_min = {1, 0, 0, 0, Long.MIN_VALUE};
     private static final long[] time_max = {31, 23, 59, 60, Long.MAX_VALUE};
 
     private static final int ARG_SIZE = 7;
@@ -715,15 +715,29 @@ public class RubyTime extends RubyObject {
             cal = Calendar.getInstance(RubyTime.getLocalTimeZone(runtime));
         }
         cal.set(year, month, int_args[0], int_args[1], int_args[2], int_args[3]);
-        cal.set(Calendar.MILLISECOND, int_args[4] / 1000);
-        
+        cal.set(Calendar.MILLISECOND, 0);
+
+        // Ignores usec if 8 args (for compatibility with parsedate) or if not supplied.
+        if (args.length == 8 || args[6].isNil()) {
+            RubyTime time = new RubyTime(runtime, (RubyClass) recv, cal);
+            time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            return time;
+        }
+
+        int usec = int_args[4] % 1000;
+        int msec = int_args[4] / 1000;
+        if (int_args[4] < 0) {
+            msec -= 1;
+            usec += 1000;
+        }
+        cal.add(Calendar.MILLISECOND, msec);
+
         if (cal.getTimeInMillis() / 1000 < -0x80000000) {
             throw runtime.newArgumentError("time out of range");
         }
-        
+
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, cal);
-        
-        time.setUSec(int_args[4] % 1000);
+        time.setUSec(usec);
         time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
 
         return time;
