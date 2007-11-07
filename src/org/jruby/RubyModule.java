@@ -151,7 +151,7 @@ public class RubyModule extends RubyObject {
 
     // ClassId is the name of the class/module sans where it is located.
     // If it is null, then it an anonymous class.
-    private String classId;
+    protected String classId;
 
 
     // CONSTANT TABLE
@@ -451,7 +451,17 @@ public class RubyModule extends RubyObject {
         }
     }
     
+    private static final boolean indexedMethods = Boolean.getBoolean("jruby.indexed.methods");
+    
     public void defineAnnotatedMethods(Class clazz) {
+        if (indexedMethods) {
+            defineAnnotatedMethodsIndexed(clazz);
+        } else {
+            defineAnnotatedMethodsIndividually(clazz);
+        }
+    }
+    
+    public void defineAnnotatedMethodsIndividually(Class clazz) {
         Method[] declaredMethods = clazz.getDeclaredMethods();
         MethodFactory methodFactory = MethodFactory.createFactory(getRuntime().getJRubyClassLoader());
         for (Method method: declaredMethods) {
@@ -459,77 +469,89 @@ public class RubyModule extends RubyObject {
         }
     }
     
+    private void defineAnnotatedMethodsIndexed(Class clazz) {
+        MethodFactory methodFactory = MethodFactory.createFactory(getRuntime().getJRubyClassLoader());
+        methodFactory.defineIndexedAnnotatedMethods(this, clazz, methodDefiningCallback);
+    }
+    
+    private static MethodFactory.MethodDefiningCallback methodDefiningCallback = new MethodFactory.MethodDefiningCallback() {
+        public void define(RubyModule module, Method method, DynamicMethod dynamicMethod) {
+            JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
+            if(module.getRuntime().getInstanceConfig().isRite() == jrubyMethod.rite()) {
+                RubyModule metaClass = module.metaClass;
+
+                if (jrubyMethod.meta()) {
+                    String baseName;
+                    if (jrubyMethod.name().length == 0) {
+                        baseName = method.getName();
+                        metaClass.addMethod(baseName, dynamicMethod);
+                    } else {
+                        baseName = jrubyMethod.name()[0];
+                        for (String name : jrubyMethod.name()) {
+                            metaClass.addMethod(name, dynamicMethod);
+                        }
+                    }
+
+                    if (jrubyMethod.alias().length > 0) {
+                        for (String alias : jrubyMethod.alias()) {
+                            metaClass.defineAlias(alias, baseName);
+                        }
+                    }
+                } else {
+                    String baseName;
+                    if (jrubyMethod.name().length == 0) {
+                        baseName = method.getName();
+                        module.addMethod(method.getName(), dynamicMethod);
+                    } else {
+                        baseName = jrubyMethod.name()[0];
+                        for (String name : jrubyMethod.name()) {
+                            module.addMethod(name, dynamicMethod);
+                        }
+                    }
+
+                    if (jrubyMethod.alias().length > 0) {
+                        for (String alias : jrubyMethod.alias()) {
+                            module.defineAlias(alias, baseName);
+                        }
+                    }
+
+                    if (jrubyMethod.module()) {
+                        // module/singleton methods are all defined public
+                        DynamicMethod moduleMethod = dynamicMethod.dup();
+                        moduleMethod.setVisibility(Visibility.PUBLIC);
+
+                        RubyModule singletonClass = module.getSingletonClass();
+
+                        if (jrubyMethod.name().length == 0) {
+                            baseName = method.getName();
+                            singletonClass.addMethod(method.getName(), moduleMethod);
+                        } else {
+                            baseName = jrubyMethod.name()[0];
+                            for (String name : jrubyMethod.name()) {
+                                singletonClass.addMethod(name, moduleMethod);
+                            }
+                        }
+
+                        if (jrubyMethod.alias().length > 0) {
+                            for (String alias : jrubyMethod.alias()) {
+                                singletonClass.defineAlias(alias, baseName);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+    
     public boolean defineAnnotatedMethod(Method method, MethodFactory methodFactory) {
         JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
 
         if (jrubyMethod == null) return false;
 
         if(getRuntime().getInstanceConfig().isRite() == jrubyMethod.rite()) {
-            // select current module or module's metaclass for singleton methods
-            RubyModule module = this;
-
             DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, method);
-        
-            // if it's a singleton (metaclass) method or a module method, bind to metaclass
-            if (jrubyMethod.meta()) {
-                String baseName;
-                if (jrubyMethod.name().length == 0) {
-                    baseName = method.getName();
-                    metaClass.addMethod(baseName, dynamicMethod);
-                } else {
-                    baseName = jrubyMethod.name()[0];
-                    for (String name : jrubyMethod.name()) {
-                        metaClass.addMethod(name, dynamicMethod);
-                    }
-                }
-
-                if (jrubyMethod.alias().length > 0) {
-                    for (String alias : jrubyMethod.alias()) {
-                        metaClass.defineAlias(alias, baseName);
-                    }
-                }
-            } else {
-                String baseName;
-                if (jrubyMethod.name().length == 0) {
-                    baseName = method.getName();
-                    module.addMethod(method.getName(), dynamicMethod);
-                } else {
-                    baseName = jrubyMethod.name()[0];
-                    for (String name : jrubyMethod.name()) {
-                        module.addMethod(name, dynamicMethod);
-                    }
-                }
-
-                if (jrubyMethod.alias().length > 0) {
-                    for (String alias : jrubyMethod.alias()) {
-                        module.defineAlias(alias, baseName);
-                    }
-                }
+            methodDefiningCallback.define(this, method, dynamicMethod);
             
-                if (jrubyMethod.module()) {
-                    // module/singleton methods are all defined public
-                    DynamicMethod moduleMethod = dynamicMethod.dup();
-                    moduleMethod.setVisibility(Visibility.PUBLIC);
-                
-                    RubyModule singletonClass = getSingletonClass();
-
-                    if (jrubyMethod.name().length == 0) {
-                        baseName = method.getName();
-                        singletonClass.addMethod(method.getName(), moduleMethod);
-                    } else {
-                        baseName = jrubyMethod.name()[0];
-                        for (String name : jrubyMethod.name()) {
-                            singletonClass.addMethod(name, moduleMethod);
-                        }
-                    }
-
-                    if (jrubyMethod.alias().length > 0) {
-                        for (String alias : jrubyMethod.alias()) {
-                            singletonClass.defineAlias(alias, baseName);
-                        }
-                    }
-                }
-            }
             return true;
         }
         return false;

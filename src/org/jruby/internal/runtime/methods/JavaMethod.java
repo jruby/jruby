@@ -41,9 +41,16 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
     private Class[] argumentTypes;
     private String javaName;
     private boolean isSingleton;
+    protected final int methodIndex;
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility) {
         super(implementationClass, visibility, CallConfiguration.JAVA_FULL);
+        methodIndex = -1;
+    }
+
+    public JavaMethod(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+        super(implementationClass, visibility, CallConfiguration.JAVA_FULL);
+        this.methodIndex = methodIndex;
     }
 
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block);

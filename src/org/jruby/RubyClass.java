@@ -212,7 +212,10 @@ public class RubyClass extends RubyModule {
      */
     @JRubyMethod(name = "initialize", optional = 1, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (superClass != null) throw getRuntime().newTypeError("already initialized class");
+        if (superClass != null) {
+            System.out.println(classId);
+            throw getRuntime().newTypeError("already initialized class");
+        }
  
         IRubyObject superObject;
         if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 0) {

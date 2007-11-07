@@ -45,9 +45,7 @@ public class DumpingInvocationMethodFactory extends InvocationMethodFactory {
         this.dumpPath = path;
     }
 
-    protected Class endCall(Ruby runtime, ClassWriter cw, MethodVisitor mv, String name) {
-        mv.visitMaxs(0,0);
-        mv.visitEnd();
+    protected Class endClass(Ruby runtime, ClassWriter cw, String name) {
         cw.visitEnd();
         byte[] code = cw.toByteArray();
         String cname = name.replace('.','/');
