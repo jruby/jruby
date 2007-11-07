@@ -772,16 +772,15 @@ public class RubyHash extends RubyObject implements Map {
 
         if (!(key instanceof RubyString)) {
             internalPut(key, value);
-            return value;
-        }
-
-        RubyHashEntry entry = null;
-        if ((entry = internalGetEntry(key)) != NO_ENTRY) {
-            entry.value = value;
         } else {
-          IRubyObject realKey = ((RubyString)key).strDup();
-            realKey.setFrozen(true);
-          internalPut(realKey, value, false);
+            final RubyHashEntry entry = internalGetEntry(key);
+            if (entry != NO_ENTRY) {
+                entry.value = value;
+            } else {
+                IRubyObject realKey = ((RubyString)key).strDup();
+                realKey.setFrozen(true);
+                internalPut(realKey, value, false);
+            }
         }
 
         return value;
