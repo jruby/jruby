@@ -248,7 +248,6 @@
                   <formatter type="xml"/>
                   <formatter type="brief" usefile="false"/>
                   <sysproperty key="java.awt.headless" value="true"/>
-                  <sysproperty key="jruby.jit.enabled" value="false"/>
                   <sysproperty key="basedir" value="${basedir}"/>
                   <sysproperty key="jruby.home" value="${basedir}/../.."/>
                   <sysproperty key="jruby.base" value="${basedir}/../.."/>
