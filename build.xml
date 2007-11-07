@@ -137,10 +137,20 @@
 
   <target name="generate-method-classes" depends="compile">
     <touch file="${build.dir}/__empty.rb"/>
+    <!-- individual invokers -->
     <java classname="org.jruby.Main" fork="true" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
+      <arg value="-rjava"/>
+      <arg value="${build.dir}/__empty.rb"/>
+    </java>
+    <!-- indexed invokers -->
+    <java classname="org.jruby.Main" fork="true" failonerror="true">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.indexed.methods" value="true"/>
       <arg value="-rjava"/>
       <arg value="${build.dir}/__empty.rb"/>
     </java>
