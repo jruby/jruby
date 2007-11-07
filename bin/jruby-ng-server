@@ -4,16 +4,10 @@
 #
 # Environment Variable Prequisites
 #
-#   JRUBY_BASE    (Optional) Base directory for resolving dynamic portions
-#                 of a JRuby installation.  If not present, resolves to
-#                 the same directory that JRUBY_HOME points to.
-#
 #   JRUBY_HOME    (Optional) May point at your JRuby "build" directory.
 #                 If not present, the current working directory is assumed.
 #
 #   JRUBY_OPTS    (Optional) Default JRuby command line args
-#   JRUBY_SHELL   Where/What is system shell
-#
 #   JAVA_HOME     Must point at your Java Development Kit installation.
 #
 # -----------------------------------------------------------------------------
@@ -86,16 +80,14 @@ else
     CP_DELIMETER=":"
 
     # add necessary jars for command-line execution
-    for j in "$JRUBY_HOME"/lib/*.jar; do
-        if [ "$CP" ]; then
-            CP="$CP$CP_DELIMETER$j"
-            else
-            CP="$j"
-        fi
-    done
+    if [ "$CP" ]; then
+        CP="$CP$CP_DELIMETER$JRUBY_HOME/bin/nailgun/jruby-nailgun.jar"
+        else
+        CP="$JRUBY_HOME/bin/nailgun/jruby-nailgun.jar"
+    fi
     
     if $cygwin; then
-	CP=`cygpath -p -w "$CP"`
+        CP=`cygpath -p -w "$CP"`
     fi
 fi
 
@@ -152,9 +144,8 @@ if $cygwin; then
   JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
 fi
 
-exec "$JAVA_CMD" $JAVA_OPTS -classpath "$CP"	\
-  "-Djruby.base=$JRUBY_BASE" "-Djruby.home=$JRUBY_HOME"				\
-  "-Djruby.lib=$JRUBY_BASE/lib" -Djruby.script=jruby				\
-  "-Djruby.shell=$JRUBY_SHELL"  						\
+exec "$JAVA_CMD" $JAVA_OPTS -classpath "$CP" \
+  "-Djruby.base=$JRUBY_BASE" "-Djruby.home=$JRUBY_HOME" \
+  "-Djruby.lib=$JRUBY_BASE/lib" -Djruby.script=jruby \
+  "-Djruby.shell=$JRUBY_SHELL" \
   com.martiansoftware.nailgun.NGServer $ng_args
-

@@ -170,9 +170,7 @@
         <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
         <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
-        <zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
-        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
@@ -212,7 +210,6 @@
         <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
       	<zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
-        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
         <zipfileset dir="${basedir}" prefix="META-INF/jruby.home">
           <include name="bin/*"/>
@@ -228,51 +225,6 @@
       </jarjar>
     </target>
 
-
-    <target name="jar-light" depends="generate-method-classes" description="Create the 'light' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
-        <property name="mainclass" value="org.jruby.Main"/>
-        <property name="filename" value="jruby-light.jar"/>
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-0.7.jar"/>
-      <jarjar destfile="${lib.dir}/${filename}">
-        <fileset dir="${jruby.classes.dir}">
-          <include name="**/*.class"/>
-        <include name="**/*.properties"/>
-          <exclude name="org/jruby/util/ant/**/*.class"/>
-        </fileset>
-        <fileset dir="${basedir}/lib/ruby/1.8">
-          <include name="**/*.rb"/>
-              <exclude name="**/rdoc/**"/>
-              <exclude name="**/cgi/**"/>
-              <exclude name="**/bigdecimal/**"/>
-              <exclude name="**/drb/**"/>
-              <exclude name="**/io/**"/>
-              <exclude name="**/net/**"/>
-              <exclude name="**/racc/**"/>
-              <exclude name="**/rexml/**"/>
-              <exclude name="**/rinda/**"/>
-              <exclude name="**/runit/**"/>
-              <exclude name="**/shell/**"/>
-              <exclude name="**/soap/**"/>
-              <exclude name="**/test/**"/>
-              <exclude name="**/uri/**"/>
-              <exclude name="**/webrick/**"/>
-              <exclude name="**/xmlrpc/**"/>
-              <exclude name="**/xsd/**"/>
-        </fileset>
-          <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
-          <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
-          <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
-          <zipfileset src="${build.lib.dir}/asm-jar-3.0.jar"/>
-          <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
-          <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
-        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
-      	  <zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
-        <manifest>
-          <attribute name="Built-By" value="${user.name}"/>
-          <attribute name="Main-Class" value="${mainclass}"/>
-        </manifest>
-      </jarjar>
-    </target>
 
     <target name="jar-console" depends="generate-method-classes" description="Create the jruby graphical console jar">
           <antcall target="jar-light">
@@ -924,5 +876,48 @@ test/externals/rubinius/spec/parser"/></antcall>
       <jvmarg value="${profiler.info.jvmargs.agent}"/>
       <arg value="testapp/script/server"/>
     </java>
+  </target>
+
+  <target name="need-ng">
+    <condition property="should.build.ng">
+      <and>
+        <os family="unix"/>
+        <not><available file="${basedir}/bin/nailgun/ng"/></not>
+      </and>
+    </condition>
+  </target>
+
+  <target name="build-ng" depends="need-ng" if="should.build.ng">
+    <exec executable="make" dir="${basedir}/bin/nailgun"/>
+  </target>
+
+  <target name="jruby-nailgun" depends="generate-method-classes,build-ng"
+    description="Set up JRuby to be run with Nailgun (jruby-ng, jruby-ng-server)">
+    <mkdir dir="${build.dir}/nailmain"/>
+    <javac srcdir="${basedir}/bin/nailgun/src/java" destdir="${build.dir}/nailmain"
+      classpath="${basedir}/bin/nailgun/nailgun-0.7.1.jar:${lib.dir}/jruby.jar" debug="true"
+      source="${javac.version}" target="${javac.version}"
+      deprecation="true" encoding="UTF-8" />
+    <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
+      classpath="${build.lib.dir}/jarjar-0.7.jar"/>
+    <jarjar destfile="${basedir}/bin/nailgun/jruby-nailgun.jar">
+      <fileset dir="${jruby.classes.dir}">
+        <exclude name="org/jruby/util/ant/**/*.class"/>
+      </fileset>
+      <fileset dir="${build.dir}/nailmain"/>
+      <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
+      <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
+      <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
+      <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
+      <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
+      <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
+      <zipfileset src="${build.lib.dir}/jna.jar"/>
+      <zipfileset src="${basedir}/bin/nailgun/nailgun-0.7.1.jar"/>
+      <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}"/>
+        <attribute name="Main-Class" value="org.jruby.Main"/>
+      </manifest>
+    </jarjar>
   </target>
 </project>

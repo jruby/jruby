@@ -2,12 +2,6 @@
 # -----------------------------------------------------------------------------
 # jruby-ng - Start Script for the JRuby interpreter, using NailGun
 #
-# Environment Variable Prequisites
-#
-#   JRUBY_BASE    (Optional) Base directory for resolving dynamic portions
-#                 of a JRuby installation.  If not present, resolves to
-#                 the same directory that JRUBY_HOME points to.
-#
 #   JRUBY_HOME    (Optional) May point at your JRuby "build" directory.
 #                 If not present, the current working directory is assumed.
 #
@@ -63,5 +57,4 @@ if $cygwin; then
   JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
 fi
 
-exec $JRUBY_HOME/bin/nailgun/ng org.jruby.Main $JRUBY_OPTS "$@"
-
+exec $JRUBY_HOME/bin/nailgun/ng org.jruby.util.NailMain $JRUBY_OPTS "$@"

@@ -37,8 +37,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import com.martiansoftware.nailgun.NGContext;
-
 import java.io.InputStream;
 import java.io.PrintStream;
 
@@ -89,32 +87,13 @@ public class Main {
         }
     }
 
-    public static void nailMain(NGContext context) {
-        Main main = new Main();
-        int status = main.run(context);
-        if (status != 0) {
-            context.exit(status);
-        }
-    }
-
     public int run(String[] args) {
         config.processArguments(args);
         
         return run();
     }
 
-    public int run(NGContext context) {
-        context.assertLoopbackClient();
-        config.processArguments(context.getArgs());
-        
-        // populate commandline with NG-provided stuff
-        config.setCurrentDirectory(context.getWorkingDirectory());
-        config.setEnvironment(context.getEnv());
-
-        return run();
-    }
-
-    private int run() {
+    public int run() {
         if (config.isShowVersion()) {
             showVersion();
         }
