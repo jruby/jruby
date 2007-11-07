@@ -509,7 +509,7 @@ public class RubyInstanceConfig {
             // if Ruby 2.0 encoding pragmas are implemented, this will need to change
             if (hasInlineScript) {
                 if (scriptFileName != null) {
-                    File file = new File(getScriptFileName());
+                    File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
                     return new FileInputStream(file);
                 }
                 
@@ -521,7 +521,7 @@ public class RubyInstanceConfig {
                 }
                 return System.in;
             } else {
-                File file = new File(getScriptFileName());
+                File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
                 return new FileInputStream(file);
             }
         } catch (IOException e) {
