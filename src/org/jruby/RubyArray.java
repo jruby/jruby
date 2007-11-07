@@ -2013,7 +2013,7 @@ public class RubyArray extends RubyObject implements List {
         int j = 0;
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (hash.fastDelete(v) != null) store(j++, v);
+            if (hash.fastDelete(v)) store(j++, v);
         }
         realLength = j;
         return this;
@@ -2058,7 +2058,7 @@ public class RubyArray extends RubyObject implements List {
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (hash.fastDelete(v) != null) ary3.append(v);
+            if (hash.fastDelete(v)) ary3.append(v);
         }
 
         return ary3;
@@ -2076,11 +2076,11 @@ public class RubyArray extends RubyObject implements List {
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (set.fastDelete(v) != null) ary3.append(v);
+            if (set.fastDelete(v)) ary3.append(v);
         }
         for (int i = 0; i < ary2.realLength; i++) {
             IRubyObject v = ary2.elt(i);
-            if (set.fastDelete(v) != null) ary3.append(v);
+            if (set.fastDelete(v)) ary3.append(v);
         }
         return ary3;
     }

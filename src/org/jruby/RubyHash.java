@@ -210,7 +210,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final int INITIAL_THRESHOLD = JAVASOFT_INITIAL_CAPACITY - (JAVASOFT_INITIAL_CAPACITY >> 2);
     private static final int MAXIMUM_CAPACITY = 1 << 30;
 
-    private static final RubyHashEntry NO_ENTRY = new RubyHashEntry(0, null, null, null);
+    private static final RubyHashEntry NO_ENTRY = new RubyHashEntry(0, NEVER, null, null);
 
     static final class RubyHashEntry implements Map.Entry {
         private IRubyObject key;
@@ -335,6 +335,8 @@ public class RubyHash extends RubyObject implements Map {
     // ------------------------------
     public static long collisions = 0;
 
+    // put implementation
+
     private final void internalPut(final IRubyObject key, final IRubyObject value) {
         internalPut(key, value, true);
     }
@@ -360,6 +362,8 @@ public class RubyHash extends RubyObject implements Map {
         size++;
     }
 
+    // get implementation
+
     private final IRubyObject internalGet(IRubyObject key) { // specialized for value
         return internalGetEntry(key).value;
     }
@@ -373,68 +377,61 @@ public class RubyHash extends RubyObject implements Map {
         return NO_ENTRY;
     }
 
-    private final RubyHashEntry internalDelete(IRubyObject key) {
-        final int hash = hashValue(key.hashCode());
+    // delete implementation
+
+    private final RubyHashEntry internalDelete(final IRubyObject key) {
+        return internalDelete(hashValue(key.hashCode()), MATCH_KEY, key);
+    }
+
+    private final RubyHashEntry internalDeleteEntry(final RubyHashEntry entry) {
+        // n.b. we need to recompute the hash in case the key object was modified
+        return internalDelete(hashValue(entry.key.hashCode()), MATCH_ENTRY, entry);
+    }
+
+    private final RubyHashEntry internalDelete(final int hash, final EntryMatchType matchType, final Object obj) {
         final int i = bucketIndex(hash, table.length);
+
         RubyHashEntry entry = table[i];
-
-        if (entry == null) return null;
-
-        IRubyObject k;
-        if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) {
-            table[i] = entry.next;
-            size--;
-            return entry;
-        }
-        for (; entry.next != null; entry = entry.next) {
-            RubyHashEntry tmp = entry.next;
-            if (tmp.hash == hash && ((k = tmp.key) == key || key.eql(k))) {
-                entry.next = entry.next.next;
-                size--;
-                return tmp;
-            }
-        }
-        return null;
-    }
-
-    private final RubyHashEntry internalDeleteSafe(IRubyObject key) {
-        final int hash = hashValue(key.hashCode());
-        RubyHashEntry entry = table[bucketIndex(hash, table.length)];
-
-        if (entry == null) return null;
-        IRubyObject k;
-
-        for (; entry != null; entry = entry.next) {
-            if (entry.key != NEVER && entry.hash == hash && ((k = entry.key) == key || key.eql(k))) {
-                entry.key = NEVER; // make it a skip node
-                size--;
-                return entry;
-    }
-        }
-        return null;
-    }
-
-    private final RubyHashEntry internalDeleteEntry(RubyHashEntry entry) {
-        final int hash = hashValue(entry.key.hashCode());
-        final int i = bucketIndex(hash, table.length);
-        RubyHashEntry prev = table[i];
-        RubyHashEntry e = prev;
-        while (e != null){
-            RubyHashEntry next = e.next;
-            if (e.hash == hash && e.equals(entry)) {
-                size--;
-                if(iterLevel > 0){
-                    if (prev == e) table[i] = next; else prev.next = next;
-                } else {
-                    e.key = NEVER;
+        if (entry != null) {
+            RubyHashEntry prior = null;
+            for (; entry != null; prior = entry, entry = entry.next) {
+                if (entry.hash == hash && matchType.matches(entry, obj)) {
+                    final RubyHashEntry next = entry.next;
+                    if (iterLevel > 0) {
+                        entry.key = NEVER;
+                        flags |= DELETED_HASH_F;
+                    } else {
+                        if (prior != null) {
+                            prior.next = entry.next;
+                        } else {
+                            table[i] = entry.next;
+                        }
+                    }
+                    size--;
+                    return entry;
                 }
-                return e;
             }
-            prev = e;
-            e = next;
         }
-        return e;
+
+        return NO_ENTRY;
     }
+
+    private static abstract class EntryMatchType {
+        public abstract boolean matches(final RubyHashEntry entry, final Object obj);
+    }
+
+    private static final EntryMatchType MATCH_KEY = new EntryMatchType() {
+        public boolean matches(final RubyHashEntry entry, final Object obj) {
+            final IRubyObject key = entry.key;
+            return obj == key || ((IRubyObject)obj).eql(key);
+        }
+    };
+
+    private static final EntryMatchType MATCH_ENTRY = new EntryMatchType() {
+        public boolean matches(final RubyHashEntry entry, final Object obj) {
+            return entry.equals(obj);
+        }
+    };
 
     private final void internalCleanupSafe() { // synchronized ?
         for (int i=0; i < table.length; i++) {
@@ -490,8 +487,7 @@ public class RubyHash extends RubyObject implements Map {
 
         switch (status) {
         case ST_DELETE:
-            internalDeleteSafe(entry.key);
-            flags |= DELETED_HASH_F;
+            internalDelete(entry.key);
         case ST_CONTINUE:
             break;
         case ST_STOP:
@@ -1089,8 +1085,7 @@ public class RubyHash extends RubyObject implements Map {
             for (int i = 0; i < ltable.length; i++) {
                 for (RubyHashEntry entry = ltable[i]; (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
                     RubyArray result = RubyArray.newArray(getRuntime(), entry.key, entry.value);
-                    internalDeleteSafe(entry.key);
-                    flags |= DELETED_HASH_F;
+                    internalDelete(entry.key);
                     return result;
                 }
             }
@@ -1100,8 +1095,8 @@ public class RubyHash extends RubyObject implements Map {
         return ifNone;
     }
 
-    public final RubyHashEntry fastDelete(IRubyObject key) {
-        return internalDelete(key);
+    public final boolean fastDelete(IRubyObject key) {
+        return internalDelete(key) != NO_ENTRY;
     }
 
     /** rb_hash_delete
@@ -1111,14 +1106,9 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject delete(IRubyObject key, Block block) {
         modify();
 
-        RubyHashEntry entry;
-        if (iterLevel > 0) {
-            if ((entry = internalDeleteSafe(key)) != null) {
-                flags |= DELETED_HASH_F;
-                return entry.value;
-            }
-        } else if ((entry = internalDelete(key)) != null) return entry.value;
-
+        final RubyHashEntry entry = internalDelete(key);
+        if (entry != NO_ENTRY) return entry.value;
+ 
         if (block.isGiven()) return block.yield(getRuntime().getCurrentContext(), key);
         return getRuntime().getNil();
     }
@@ -1403,15 +1393,7 @@ public class RubyHash extends RubyObject implements Map {
 
     public Object remove(Object key) {
         IRubyObject rubyKey = JavaUtil.convertJavaToRuby(getRuntime(), key);
-        RubyHashEntry entry;
-        if (iterLevel > 0) {
-            entry = internalDeleteSafe(rubyKey);
-            flags |= DELETED_HASH_F;
-        } else {
-            entry = internalDelete(rubyKey);
-        }
-
-        return entry != null ? entry.value : null;
+        return internalDelete(rubyKey).value;
     }
 
     public void putAll(Map map) {
@@ -1457,8 +1439,7 @@ public class RubyHash extends RubyObject implements Map {
 
         public void remove() {
             if (current == null) throw new IllegalStateException();
-            internalDeleteSafe(current.key);
-            flags |= DELETED_HASH_F;
+            internalDelete(current.key);
         }
     }
 
@@ -1601,7 +1582,7 @@ public class RubyHash extends RubyObject implements Map {
         }
         public boolean remove(Object o) {
             if (!(o instanceof ConversionMapEntry)) return false;
-            return internalDeleteEntry(((ConversionMapEntry)o).entry) != null;
+            return internalDeleteEntry(((ConversionMapEntry)o).entry) != NO_ENTRY;
         }
         public int size() {
             return size;
@@ -1635,7 +1616,7 @@ public class RubyHash extends RubyObject implements Map {
         }
         public boolean remove(Object o) {
             if (!(o instanceof RubyHashEntry)) return false;
-            return internalDeleteEntry((RubyHashEntry)o) != null;
+            return internalDeleteEntry((RubyHashEntry)o) != NO_ENTRY;
         }
         public int size() {
             return size;
