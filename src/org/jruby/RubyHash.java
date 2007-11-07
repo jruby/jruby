@@ -210,6 +210,8 @@ public class RubyHash extends RubyObject implements Map {
     private static final int INITIAL_THRESHOLD = JAVASOFT_INITIAL_CAPACITY - (JAVASOFT_INITIAL_CAPACITY >> 2);
     private static final int MAXIMUM_CAPACITY = 1 << 30;
 
+    private static final RubyHashEntry NO_ENTRY = new RubyHashEntry(0, null, null, null);
+
     static final class RubyHashEntry implements Map.Entry {
         private IRubyObject key; 
         private IRubyObject value; 
@@ -361,12 +363,7 @@ public class RubyHash extends RubyObject implements Map {
 	}
 
     private final IRubyObject internalGet(IRubyObject key) { // specialized for value
-        final int hash = hashValue(key.hashCode());
-        for (RubyHashEntry entry = table[bucketIndex(hash, table.length)]; entry != null; entry = entry.next) {
-            IRubyObject k;
-            if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) return entry.value;
-	}
-        return null;
+        return internalGetEntry(key).value;
     }
 
     private final RubyHashEntry internalGetEntry(IRubyObject key) {
@@ -375,7 +372,7 @@ public class RubyHash extends RubyObject implements Map {
             IRubyObject k;
             if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) return entry;
         }
-        return null;
+        return NO_ENTRY;
     }
 
     private final RubyHashEntry internalDelete(IRubyObject key) {
@@ -785,7 +782,7 @@ public class RubyHash extends RubyObject implements Map {
         } 
 
         RubyHashEntry entry = null;        
-        if ((entry = internalGetEntry(key)) != null) {
+        if ((entry = internalGetEntry(key)) != NO_ENTRY) {
             entry.value = value;
         } else {
           IRubyObject realKey = ((RubyString)key).strDup();
@@ -848,7 +845,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
     public RubyBoolean has_key_p(IRubyObject key) {
-        return internalGetEntry(key) == null ? getRuntime().getFalse() : getRuntime().getTrue();
+        return internalGetEntry(key) == NO_ENTRY ? getRuntime().getFalse() : getRuntime().getTrue();
     }
 
     /** rb_hash_has_value
@@ -1602,7 +1599,7 @@ public class RubyHash extends RubyObject implements Map {
             ConversionMapEntry entry = (ConversionMapEntry)o;
             if (entry.entry.key == NEVER) return false;
             RubyHashEntry candidate = internalGetEntry(entry.entry.key);
-            return candidate != null && candidate.equals(entry.entry);
+            return candidate != NO_ENTRY && candidate.equals(entry.entry);
         }
         public boolean remove(Object o) {
             if (!(o instanceof ConversionMapEntry)) return false;
@@ -1636,7 +1633,7 @@ public class RubyHash extends RubyObject implements Map {
             RubyHashEntry entry = (RubyHashEntry)o;
             if (entry.key == NEVER) return false;
             RubyHashEntry candidate = internalGetEntry(entry.key);
-            return candidate != null && candidate.equals(entry);
+            return candidate != NO_ENTRY && candidate.equals(entry);
         }
         public boolean remove(Object o) {
             if (!(o instanceof RubyHashEntry)) return false;
