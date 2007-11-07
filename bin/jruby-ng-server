@@ -81,9 +81,9 @@ else
 
     # add necessary jars for command-line execution
     if [ "$CP" ]; then
-        CP="$CP$CP_DELIMETER$JRUBY_HOME/bin/nailgun/jruby-nailgun.jar"
+        CP="$CP$CP_DELIMETER$JRUBY_HOME/tool/nailgun/jruby-nailgun.jar"
         else
-        CP="$JRUBY_HOME/bin/nailgun/jruby-nailgun.jar"
+        CP="$JRUBY_HOME/tool/nailgun/jruby-nailgun.jar"
     fi
     
     if $cygwin; then

@@ -57,4 +57,4 @@ if $cygwin; then
   JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
 fi
 
-exec $JRUBY_HOME/bin/nailgun/ng org.jruby.util.NailMain $JRUBY_OPTS "$@"
+exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $JRUBY_OPTS "$@"

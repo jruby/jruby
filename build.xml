@@ -879,29 +879,31 @@ test/externals/rubinius/spec/parser"/></antcall>
     </java>
   </target>
 
+  <property name="nailgun.home" value="${basedir}/tool/nailgun"/>
+
   <target name="need-ng">
     <condition property="should.build.ng">
       <and>
         <os family="unix"/>
-        <not><available file="${basedir}/bin/nailgun/ng"/></not>
+        <not><available file="${nailgun.home}/ng"/></not>
       </and>
     </condition>
   </target>
 
   <target name="build-ng" depends="need-ng" if="should.build.ng">
-    <exec executable="make" dir="${basedir}/bin/nailgun"/>
+    <exec executable="make" dir="${nailgun.home}"/>
   </target>
 
   <target name="jruby-nailgun" depends="generate-method-classes,build-ng"
     description="Set up JRuby to be run with Nailgun (jruby-ng, jruby-ng-server)">
     <mkdir dir="${build.dir}/nailmain"/>
-    <javac srcdir="${basedir}/bin/nailgun/src/java" destdir="${build.dir}/nailmain"
-      classpath="${basedir}/bin/nailgun/nailgun-0.7.1.jar:${lib.dir}/jruby.jar" debug="true"
+    <javac srcdir="${nailgun.home}/src/java" destdir="${build.dir}/nailmain"
+      classpath="${nailgun.home}/nailgun-0.7.1.jar:${jruby.classes.dir}" debug="true"
       source="${javac.version}" target="${javac.version}"
       deprecation="true" encoding="UTF-8" />
     <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
       classpath="${build.lib.dir}/jarjar-0.7.jar"/>
-    <jarjar destfile="${basedir}/bin/nailgun/jruby-nailgun.jar">
+    <jarjar destfile="${nailgun.home}/jruby-nailgun.jar">
       <fileset dir="${jruby.classes.dir}">
         <exclude name="org/jruby/util/ant/**/*.class"/>
       </fileset>
@@ -913,7 +915,7 @@ test/externals/rubinius/spec/parser"/></antcall>
       <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
       <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
       <zipfileset src="${build.lib.dir}/jna.jar"/>
-      <zipfileset src="${basedir}/bin/nailgun/nailgun-0.7.1.jar"/>
+      <zipfileset src="${nailgun.home}/nailgun-0.7.1.jar"/>
       <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
