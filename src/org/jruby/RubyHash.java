@@ -336,28 +336,26 @@ public class RubyHash extends RubyObject implements Map {
     public static long collisions = 0;
 
     private final void internalPut(final IRubyObject key, final IRubyObject value) {
+        internalPut(key, value, true);
+    }
+
+    private final void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
         checkResize();
         final int hash = hashValue(key.hashCode());
         final int i = bucketIndex(hash, table.length);
 
         // if (table[i] != null) collisions++;
 
-        for (RubyHashEntry entry = table[i]; entry != null; entry = entry.next) {
-            IRubyObject k;
-            if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) {
-                entry.value = value;
-                return;
+        if (checkForExisting) {
+            for (RubyHashEntry entry = table[i]; entry != null; entry = entry.next) {
+                IRubyObject k;
+                if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) {
+                    entry.value = value;
+                    return;
+                }
             }
         }
 
-        table[i] = new RubyHashEntry(hash, key, value, table[i]);
-        size++;
-    }
-
-    private final void internalPutDirect(final IRubyObject key, final IRubyObject value){
-        checkResize();
-        final int hash = hashValue(key.hashCode());
-        final int i = bucketIndex(hash, table.length);
         table[i] = new RubyHashEntry(hash, key, value, table[i]);
         size++;
     }
@@ -787,7 +785,7 @@ public class RubyHash extends RubyObject implements Map {
         } else {
           IRubyObject realKey = ((RubyString)key).strDup();
             realKey.setFrozen(true);
-          internalPutDirect(realKey, value);
+          internalPut(realKey, value, false);
         }
 
         return value;
