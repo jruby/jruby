@@ -86,7 +86,7 @@
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
             <compilation-unit>
                 <package-root>${src.dir}</package-root>
-                <classpath mode="compile">lib/bsf.jar:build_lib/junit.jar:build_lib/jline-0.9.91.jar:build_lib/asm-3.0.jar:build_lib/asm-commons-3.0.jar:build_lib/asm-util-3.0.jar:build_lib/jna.jar</classpath>
+                <classpath mode="compile">lib/bsf.jar:build_lib/junit.jar:build_lib/jline-0.9.91.jar:build_lib/asm-3.0.jar:build_lib/asm-commons-3.0.jar:build_lib/asm-util-3.0.jar:build_lib/jna.jar:build_lib/nailgun-0.7.1.jar</classpath>
                 <built-to>${jruby.classes.dir}</built-to>
                 <built-to>${lib.dir}/jruby.jar</built-to>
                 <javadoc-built-to>${api.docs.dir}</javadoc-built-to>

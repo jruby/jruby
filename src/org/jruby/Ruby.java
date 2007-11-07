@@ -106,7 +106,6 @@ import org.jruby.util.KCode;
 import org.jruby.util.MethodCache;
 import org.jruby.util.NormalizedFile;
 import org.jruby.regexp.RegexpFactory;
-import org.jruby.util.CommandlineParser;
 
 /**
  * The jruby runtime.
@@ -396,14 +395,14 @@ public final class Ruby {
         return runNormally(node, false);
     }
     
-    public void runFromMain(InputStream in, String filename, CommandlineParser commandLine) {
-        if(commandLine.isYARVEnabled()) {
+    public void runFromMain(InputStream in, String filename) {
+        if(config.isYARVEnabled()) {
             new YARVCompiledRunner(this, in, filename).run();
-        } else if(commandLine.isRubiniusEnabled()) {
+        } else if(config.isRubiniusEnabled()) {
             new RubiniusRunner(this, in, filename).run();
         } else {
             Node scriptNode;
-            if (commandLine.isInlineScript()) {
+            if (config.isInlineScript()) {
                 scriptNode = parseInline(in, filename, getCurrentContext().getCurrentScope());
             } else {
                 scriptNode = parseFile(in, filename, getCurrentContext().getCurrentScope());
@@ -411,11 +410,11 @@ public final class Ruby {
             
             getCurrentContext().getCurrentFrame().setPosition(scriptNode.getPosition());
 
-            if (commandLine.isAssumePrinting() || commandLine.isAssumeLoop()) {
-                runWithGetsLoop(scriptNode, commandLine.isAssumePrinting(), commandLine.isProcessLineEnds(),
-                        commandLine.isSplit(), commandLine.isYARVCompileEnabled());
+            if (config.isAssumePrinting() || config.isAssumeLoop()) {
+                runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
+                        config.isSplit(), config.isYARVCompileEnabled());
             } else {
-                runNormally(scriptNode, commandLine.isYARVCompileEnabled());
+                runNormally(scriptNode, config.isYARVCompileEnabled());
             }
         }
     }

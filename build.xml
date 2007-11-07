@@ -172,6 +172,7 @@
         <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
         <zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
+        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
@@ -211,6 +212,7 @@
         <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
       	<zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
+        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
         <zipfileset dir="${basedir}" prefix="META-INF/jruby.home">
           <include name="bin/*"/>
@@ -263,6 +265,7 @@
           <zipfileset src="${build.lib.dir}/asm-jar-3.0.jar"/>
           <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
           <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
+        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
       	  <zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>

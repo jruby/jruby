@@ -94,10 +94,6 @@ else
         fi
     done
     
-    # add nailgun jar to CP
-    ng="$JRUBY_HOME/bin/nailgun-0.7.1.jar"
-    CP="$CP$CP_DELIMETER$ng"
-
     if $cygwin; then
 	CP=`cygpath -p -w "$CP"`
     fi
@@ -118,7 +114,7 @@ JAVA_STACK=-Xss1024k
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
 java_args=()
-ruby_args=()
+ng_args=()
     while [ $# -gt 0 ]
 do
     case "$1" in
@@ -133,14 +129,8 @@ do
             java_args=("${java_args[@]}" "${1:2}")
         fi
         ;;
-     # Match switches that take an argument
-     -e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
-     # Match same switches with argument stuck together
-     -e*|-I*|-S*) ruby_args=("${ruby_args[@]}" "$1" ) ;;
-     # Abort processing on the double dash
-     --) break ;;
      # Other opts go to ruby
-     -*) ruby_args=("${ruby_args[@]}" "$1") ;;
+     -*) ng_args=("${ng_args[@]}" "$1") ;;
      # Abort processing on first non-opt arg
      *) break ;;
     esac
@@ -148,10 +138,10 @@ do
 done
 
 # Append the rest of the arguments
-ruby_args=("${ruby_args[@]}" "$@")
+ng_args=("${ng_args[@]}" "$@")
 
 # Put the ruby_args back into the position arguments $1, $2 etc
-set -- "${ruby_args[@]}"
+set -- "${ng_args[@]}"
 
 JAVA_OPTS="$JAVA_OPTS ${java_args[@]} $JAVA_MEM $JAVA_STACK"
 
@@ -166,5 +156,5 @@ exec "$JAVA_CMD" $JAVA_OPTS -classpath "$CP"	\
   "-Djruby.base=$JRUBY_BASE" "-Djruby.home=$JRUBY_HOME"				\
   "-Djruby.lib=$JRUBY_BASE/lib" -Djruby.script=jruby				\
   "-Djruby.shell=$JRUBY_SHELL"  						\
-  com.martiansoftware.nailgun.NGServer
+  com.martiansoftware.nailgun.NGServer $ng_args
 

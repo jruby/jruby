@@ -35,8 +35,7 @@ import java.io.PrintStream;
 
 import junit.framework.TestCase;
 
-import org.jruby.Main;
-import org.jruby.util.CommandlineParser;
+import org.jruby.RubyInstanceConfig;
 
 public class TestCommandlineParser extends TestCase {
 
@@ -49,53 +48,61 @@ public class TestCommandlineParser extends TestCase {
     }
 
     public void testParsing() {
-        CommandlineParser c = new CommandlineParser(new Main(System.in, out, err), new String[]{"-e", "hello", "-e", "world"});
+        RubyInstanceConfig c = new RubyInstanceConfig();
+        c.processArguments(new String[]{"-e", "hello", "-e", "world"});
         assertEquals("hello\nworld\n", new String(c.inlineScript()));
         assertNull(c.getScriptFileName());
         assertEquals("-e", c.displayedFileName());
 
-        c = new CommandlineParser(new Main(System.in, out, err), new String[]{"--version"});
+        c = new RubyInstanceConfig();
+        c.processArguments(new String[]{"--version"});
         assertTrue(c.isShowVersion());
 
-        c = new CommandlineParser(new Main(System.in, out, err), new String[]{"-n", "myfile.rb"});
+        c = new RubyInstanceConfig();
+        c.processArguments(new String[]{"-n", "myfile.rb"});
         assertTrue(c.isAssumeLoop());
         assertEquals("myfile.rb", c.getScriptFileName());
         assertEquals("myfile.rb", c.displayedFileName());
 
-        c = new CommandlineParser(new Main(System.in, out, err), new String[0]);
+        c = new RubyInstanceConfig();
+        c.processArguments(new String[0]);
         assertEquals("-", c.displayedFileName());
     }
 
     public void testParsingWithDashDash() {
-        class TestableCommandlineParser extends CommandlineParser {
+        class TestableCommandlineParser extends RubyInstanceConfig {
 
             public TestableCommandlineParser(String[] arguments) {
-                super(new Main(System.in, out, err), arguments);
+                super();
+                processArguments(arguments);
             }
         }
-        CommandlineParser c = new TestableCommandlineParser(new String[]{"-I", "someLoadPath", "--", "simple.rb", "-v", "--version"});
+        RubyInstanceConfig c = new TestableCommandlineParser(new String[]{"-I", "someLoadPath", "--", "simple.rb", "-v", "--version"});
         assertEquals("someLoadPath", c.loadPaths().get(0));
         assertEquals("simple.rb", c.getScriptFileName());
         assertEquals("simple.rb", c.displayedFileName());
         assertTrue("Should not be verbose. The -v flag should be a parameter to the script, not the jruby interpreter", !c.isVerbose());
-        assertEquals("Script should have two parameters", 2, c.getScriptArguments().length);
-        assertEquals("-v", c.getScriptArguments()[0]);
-        assertEquals("--version", c.getScriptArguments()[1]);
+        assertEquals("Script should have two parameters", 2, c.getArgv().length);
+        assertEquals("-v", c.getArgv()[0]);
+        assertEquals("--version", c.getArgv()[1]);
     }
 
     public void testHelpDoesNotRunIntepreter() {
         String[] args = new String[]{"-h"};
-        CommandlineParser parser = new CommandlineParser(new Main(System.in, out, err), args);
+        RubyInstanceConfig parser = new RubyInstanceConfig();
+        parser.processArguments(args);
         assertFalse(parser.isShouldRunInterpreter());
 
         args = new String[]{"--help"};
-        parser = new CommandlineParser(new Main(System.in, out, err), args);
+        parser = new RubyInstanceConfig();
+        parser.processArguments(args);
         assertFalse(parser.isShouldRunInterpreter());
     }
 
     public void testCommandTakesOneArgument() {
         String[] args = new String[]{"--command", "gem"};
-        CommandlineParser parser = new CommandlineParser(new Main(System.in, out, err), args);
+        RubyInstanceConfig parser = new RubyInstanceConfig();
+        parser.processArguments(args);
         assertEquals(1, parser.requiredLibraries().size());
         assertEquals("jruby/commands", parser.requiredLibraries().get(0));
         assertEquals("JRuby::Commands.gem\n", new String(parser.inlineScript()));
@@ -103,9 +110,10 @@ public class TestCommandlineParser extends TestCase {
 
     public void testCommandAllowedOnlyOnceAndRemainderAreScriptArgs() {
         String[] args = new String[]{"--command", "gem", "--command", "irb"};
-        CommandlineParser parser = new CommandlineParser(new Main(System.in, out, err), args);
-        assertEquals(2, parser.getScriptArguments().length);
-        assertEquals("--command", parser.getScriptArguments()[0]);
-        assertEquals("irb", parser.getScriptArguments()[1]);
+        RubyInstanceConfig parser = new RubyInstanceConfig();
+        parser.processArguments(args);
+        assertEquals(2, parser.getArgv().length);
+        assertEquals("--command", parser.getArgv()[0]);
+        assertEquals("irb", parser.getArgv()[1]);
     }
 }
