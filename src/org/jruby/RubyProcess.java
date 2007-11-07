@@ -361,6 +361,6 @@ public class RubyProcess {
 
     @JRubyMethod(name = "pid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject pid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(System.identityHashCode(recv.getRuntime()));
+        return recv.getRuntime().newFixnum(Ruby.getPosix().getpid());
     }
 }
