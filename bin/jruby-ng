@@ -63,10 +63,5 @@ if $cygwin; then
   JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
 fi
 
-exec ng org.jruby.Main $JRUBY_OPTS "$@"
-exec "$JAVA_CMD" $JAVA_OPTS -classpath "$CP"	\
-  "-Djruby.base=$JRUBY_BASE" "-Djruby.home=$JRUBY_HOME"				\
-  "-Djruby.lib=$JRUBY_BASE/lib" -Djruby.script=jruby				\
-  "-Djruby.shell=$JRUBY_SHELL"  						\
-  org.jruby.Main $JRUBY_OPTS "$@"
+exec $JRUBY_HOME/bin/nailgun/ng org.jruby.Main $JRUBY_OPTS "$@"
 
