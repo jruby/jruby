@@ -756,6 +756,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   <patternset id="dist.src.files">
     <patternset refid="dist.files"/>
     <include name="src/**"/>
+    <include name="build_lib/**"/>
     <include name="test/**"/>
     <include name="build.xml"/>
     <include name="build-config.xml"/>
