@@ -30,10 +30,7 @@ package org.jruby.runtime.callback;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jruby.RubyClass;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlockCallback;
@@ -151,7 +148,14 @@ public class ReflectionCallbackFactory extends CallbackFactory {
                     } catch (IllegalArgumentException ex) {
                         throw new RuntimeException(ex);
                     } catch (InvocationTargetException ex) {
-                        throw new RuntimeException(ex);
+                        Throwable cause = ex.getCause();
+                        if (cause instanceof RuntimeException) {
+                            throw (RuntimeException) cause;
+                        } else if (cause instanceof Error) {
+                            throw (Error) cause;
+                        } else {
+                            throw new RuntimeException(ex);
+                        }
                     }
                 }
             };

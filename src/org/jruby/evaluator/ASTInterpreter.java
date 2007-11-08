@@ -802,7 +802,8 @@ public class ASTInterpreter {
         scope.determineModule();
         
         DefaultMethod newMethod = new DefaultMethod(containingClass, scope, 
-                iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), visibility);
+                iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), 
+                visibility, iVisited.getPosition());
    
         containingClass.addMethod(name, newMethod);
    
@@ -851,7 +852,7 @@ public class ASTInterpreter {
         scope.determineModule();
       
         DefaultMethod newMethod = new DefaultMethod(rubyClass, scope, iVisited.getBodyNode(), 
-                (ArgsNode) iVisited.getArgsNode(), Visibility.PUBLIC);
+                (ArgsNode) iVisited.getArgsNode(), Visibility.PUBLIC, iVisited.getPosition());
    
         rubyClass.addMethod(name, newMethod);
         receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));

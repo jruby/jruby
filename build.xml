@@ -561,7 +561,6 @@ test/externals/rubinius/spec/parser"/></antcall>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
       <sysproperty key="jruby.compile.mode" value="OFF"/>
-      <sysproperty key="jruby.relection" value="true"/>
       <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />

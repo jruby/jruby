@@ -75,9 +75,10 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     private int restArg;
     private boolean hasOptArgs;
     private CallConfiguration jitCallConfig;
+    private ISourcePosition position;
 
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
-            ArgsNode argsNode, Visibility visibility) {
+            ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
         super(implementationClass, visibility, CallConfiguration.RUBY_FULL);
         this.body = body;
         this.staticScope = staticScope;
@@ -85,6 +86,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         this.requiredArgsCount = argsNode.getRequiredArgsCount();
         this.restArg = argsNode.getRestArg();
         this.hasOptArgs = argsNode.getOptArgs() != null;
+        this.position = position;
 		
         assert argsNode != null;
     }
@@ -319,8 +321,6 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     }
     
     private void traceCall(ThreadContext context, Ruby runtime, String name) {
-        ISourcePosition position = body != null ? body.getPosition() : context.getPosition();
-        
         runtime.callEventHooks(context, EventHook.RUBY_EVENT_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
     }
 
@@ -329,6 +329,6 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     }
     
     public DynamicMethod dup() {
-        return new DefaultMethod(getImplementationClass(), staticScope, body, argsNode, getVisibility());
+        return new DefaultMethod(getImplementationClass(), staticScope, body, argsNode, getVisibility(), position);
     }
 }
