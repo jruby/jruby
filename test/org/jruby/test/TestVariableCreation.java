@@ -9,7 +9,7 @@ public class TestVariableCreation  extends TestCase {
     private static Ruby r;
     private static RaiseException failed;
 	public  void testLocalVars() {
-        r = Ruby.getDefaultInstance();
+        r = Ruby.newInstance();
 		// define new method		
 		r.evalScriptlet("a = 1\n");
 		r.evalScriptlet("a.to_s");

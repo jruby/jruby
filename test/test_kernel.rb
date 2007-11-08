@@ -207,12 +207,33 @@ class TestKernel < Test::Unit::TestCase
     attr_accessor :target_required
     def to_str() "#{File.dirname(__FILE__)}/require_target.rb" end
   end
+
   def test_load_should_call_to_str_on_arg
     $target_required = false
     Kernel.load ToStrPointToRequireTarget.new
     assert $target_required
 
     assert_raises(TypeError) { Kernel.load Object.new }
+  end
+
+  def test_shall_load_from_load_path
+    tmp = ENV["TEMP"] || ENV["TMP"] || ENV["TMPDIR"] || "/tmp"
+    Dir.chdir(tmp) do
+      load_path_save = $LOAD_PATH
+      begin
+        File.open(File.expand_path('.') +'/file_to_be_loaded','w' ) do |f|
+          f.puts "raise"
+        end
+        $LOAD_PATH.delete_if{|dir| dir=='.'}
+        assert_raise(LoadError) {
+          load 'file_to_be_loaded'
+        }
+      ensure
+        File.delete(File.expand_path('.') +'/file_to_be_loaded')
+        $LOAD_PATH.clear
+        $LOAD_PATH << load_path_save
+      end
+    end
   end
 
   def test_local_variables

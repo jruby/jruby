@@ -80,10 +80,11 @@ public class KCode {
     }
 
     public IRubyObject kcode(Ruby runtime) {
-        if (kcode == null) {
-            return runtime.getNil();
-        }
-        return runtime.newString(kcode);
+        return kcode == null ? runtime.getNil() : runtime.newString(kcode); 
+    }
+    
+    public String getKCode() {
+        return kcode;
     }
     
     public CharsetDecoder decoder() {

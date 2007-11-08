@@ -114,14 +114,14 @@ public class RubyFileTest {
         return recv.getRuntime().newBoolean(newFile(filename).isDirectory());
     }
     
-    @JRubyMethod(name = "exist?", name2 = "exists?", required = 1, module = true)
+    @JRubyMethod(name = {"exist?", "exists?"}, required = 1, module = true)
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {
         return recv.getRuntime().newBoolean(newFile(filename).exists());
     }
 
     // We do both readable and readable_real through the same method because
     // in our java process effective and real userid will always be the same.
-    @JRubyMethod(name = "readable?", name2 = "readable_real?", required = 1, module = true)
+    @JRubyMethod(name = {"readable?", "readable_real?"}, required = 1, module = true)
     public static RubyBoolean readable_p(IRubyObject recv, IRubyObject filename) {
         return filename.getRuntime().newBoolean(newFile(filename).canRead());
     }
@@ -171,7 +171,7 @@ public class RubyFileTest {
 
     // We do both writable and writable_real through the same method because
     // in our java process effective and real userid will always be the same.
-    @JRubyMethod(name = "writable?", name2 = "writable_real?", required = 1, module = true)
+    @JRubyMethod(name = {"writable?", "writable_real?"}, required = 1, module = true)
     public static RubyBoolean writable_p(IRubyObject recv, IRubyObject filename) {
         return filename.getRuntime().newBoolean(newFile(filename).canWrite());
     }

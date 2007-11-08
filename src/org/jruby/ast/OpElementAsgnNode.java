@@ -59,7 +59,7 @@ public class OpElementAsgnNode extends Node {
         this.receiverNode = receiverNode;
         this.argsNode = argsNode;
         this.valueNode = valueNode;
-        callAdapter = new CallAdapter.DefaultCallAdapter(operatorName.intern(), CallType.NORMAL);
+        callAdapter = new CallAdapter.DefaultCallAdapter(operatorName, CallType.NORMAL);
     }
     
     /**

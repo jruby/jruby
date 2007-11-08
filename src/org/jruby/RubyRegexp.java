@@ -175,7 +175,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return true;
     }
 
-    @JRubyMethod(name = "==", name2 = "eql?", required = 1)
+    @JRubyMethod(name = {"==", "eql?"}, required = 1)
     public IRubyObject op_equal(IRubyObject other) {
         if(this == other) {
             return getRuntime().getTrue();
@@ -839,7 +839,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_s_quote
      * 
      */
-    @JRubyMethod(name = "quote", name2="escape", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = {"quote", "escape"}, required = 1, optional = 1, meta = true)
     public static RubyString quote(IRubyObject recv, IRubyObject[] args) {
         IRubyObject str;
         IRubyObject kcode = null;
@@ -1138,7 +1138,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return rr;
     }
 
-    @JRubyMethod(name = "new", name2 = "compile", required = 1, optional = 2, meta = true)
+    @JRubyMethod(name = {"new", "compile"}, required = 1, optional = 2, meta = true)
     public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyClass klass = (RubyClass)recv;
         

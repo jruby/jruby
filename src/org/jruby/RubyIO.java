@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -39,6 +40,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
 import java.nio.channels.Pipe;
@@ -165,7 +167,11 @@ public class RubyIO extends RubyObject {
     }
     
     public IOHandler getIOHandlerByFileno(int aFileno) {
-        return (IOHandler) ((WeakReference) getRuntime().getIoHandlers().get(new Integer(aFileno))).get();
+        Reference reference = ((Reference) getRuntime().getIoHandlers().get(new Integer(aFileno)));
+        if (reference == null) {
+            return null;
+        }
+        return (IOHandler) reference.get();
     }
     
     // FIXME can't use static; would interfere with other runtimes in the same JVM
@@ -445,20 +451,14 @@ public class RubyIO extends RubyObject {
         isOpen = true;
         return this;
     }
-    /** Read a line.
-     * 
-     */
-    // TODO: Most things loop over this and always pass it the same arguments
-    // meaning they are an invariant of the loop.  Think about fixing this.
-    public IRubyObject internalGets(IRubyObject[] args) {
-        checkReadable();
-
+    
+    private ByteList getSeparatorForGets(IRubyObject[] args) {
         IRubyObject sepVal;
 
         if (args.length > 0) {
             sepVal = args[0];
         } else {
-            sepVal = getRuntime().getGlobalVariables().get("$/");
+            sepVal = getRuntime().getRecordSeparatorVar().get();
         }
         
         ByteList separator = sepVal.isNil() ? null : ((RubyString) sepVal).getByteList();
@@ -466,19 +466,33 @@ public class RubyIO extends RubyObject {
         if (separator != null && separator.realSize == 0) {
             separator = IOHandler.PARAGRAPH_DELIMETER;
         }
+        
+        return separator;
+    }
 
-        try {
-						
+    /** Read a line.
+     * 
+     */
+    // TODO: Most things loop over this and always pass it the same arguments
+    // meaning they are an invariant of the loop.  Think about fixing this.
+    public IRubyObject internalGets(IRubyObject[] args) {
+        return internalGets(getSeparatorForGets(args));
+    }
+
+    public IRubyObject internalGets(ByteList separator) {
+        checkReadable();
+        
+        try {		
             ByteList newLine = handler.gets(separator);
 
-		    if (newLine != null) {
-		        lineNumber++;
-		        getRuntime().getGlobalVariables().set("$.", getRuntime().newFixnum(lineNumber));
-		        RubyString result = RubyString.newString(getRuntime(), newLine);
-		        result.taint();
-   
-		        return result;
-		    }
+            if (newLine != null) {
+                lineNumber++;
+                getRuntime().getGlobalVariables().set("$.", getRuntime().newFixnum(lineNumber));
+                RubyString result = RubyString.newString(getRuntime(), newLine);
+                result.taint();
+
+                return result;
+            }
 		    
             return getRuntime().getNil();
         } catch (EOFException e) {
@@ -489,7 +503,6 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newIOError(e.getMessage());
         }
     }
-
     // IO class methods.
 
     @JRubyMethod(name = "initialize", required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE)
@@ -542,6 +555,23 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "open", required = 1, optional = 1, frame = true, meta = true)
+    public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = recv.getRuntime();
+        RubyIO io = new RubyIO(runtime, (RubyClass) recv);
+        io.initialize(args, block);
+
+        if (block.isGiven()) {
+            try {
+                return block.yield(runtime.getCurrentContext(), io);
+            } finally {
+                io.close();
+            }
+        }
+
+        return io;
+    }
+
     // This appears to be some windows-only mode.  On a java platform this is a no-op
     @JRubyMethod(name = "binmode")
     public IRubyObject binmode() {
@@ -587,6 +617,20 @@ public class RubyIO extends RubyObject {
         } catch (IOHandler.BadDescriptorException e) {
             return RubyFixnum.zero(getRuntime());
         } catch (IOException e) {
+            String message = e.getMessage();
+            if(message != null) {
+                if(message.equals("Broken pipe")) {
+                    throw getRuntime().newErrnoEPIPEError();
+                } else if(message.equals("not opened for writing")) {
+                    throw getRuntime().newIOError(message);
+                }
+            }
+
+            if(getRuntime().getDebug().isTrue()) {
+                getRuntime().getWarnings().warn("swallowed IO exception: " + e.toString());
+                e.printStackTrace();
+            }
+
             return RubyFixnum.zero(getRuntime());
         }
     }
@@ -604,7 +648,7 @@ public class RubyIO extends RubyObject {
         return this; 
     }
 
-    @JRubyMethod(name = "fileno", name2 = "to_i")
+    @JRubyMethod(name = "fileno", alias = "to_i")
     public RubyFixnum fileno() {
         return getRuntime().newFixnum(handler.getFileno());
     }
@@ -657,7 +701,7 @@ public class RubyIO extends RubyObject {
         return handler.hasPendingBuffered();
     }
     
-    @JRubyMethod(name = "pos", name2 = "tell")
+    @JRubyMethod(name = {"pos", "tell"})
     public RubyFixnum pos() {
         try {
             return getRuntime().newFixnum(handler.pos());
@@ -827,7 +871,7 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "eof?", name2 = "eof")
+    @JRubyMethod(name = {"eof?", "eof"})
     public RubyBoolean eof_p() {
         try {
             boolean isEOF = handler.isEOF(); 
@@ -839,7 +883,7 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "tty?", name2 = "isatty?")
+    @JRubyMethod(name = {"tty?", "isatty?"})
     public RubyBoolean tty_p() {
         // TODO: this is less than ideal but might be as close as we'll get
         int fileno = handler.getFileno();
@@ -995,8 +1039,11 @@ public class RubyIO extends RubyObject {
             String line = null;
             if (args[i].isNil()) {
                 line = "nil";
-            } else if (args[i] instanceof RubyArray) {
-                puts(((RubyArray) args[i]).toJavaArray());
+            } else if(getRuntime().isInspecting(args[i])) {
+                line = "[...]";
+            }
+            else if (args[i] instanceof RubyArray) {
+                inspectPuts((RubyArray) args[i]);
                 continue;
             } else {
                 line = args[i].toString();
@@ -1005,6 +1052,15 @@ public class RubyIO extends RubyObject {
             		(line.endsWith("\n") ? "" : "\n")));
         }
         return getRuntime().getNil();
+    }
+    
+    private IRubyObject inspectPuts(RubyArray array) {
+        try {
+            getRuntime().registerInspecting(array);
+            return puts(array.toJavaArray());
+        } finally {
+            getRuntime().unregisterInspecting(array);
+        }
     }
 
     /** Read a line.
@@ -1225,21 +1281,22 @@ public class RubyIO extends RubyObject {
     /** 
      * <p>Invoke a block for each line.</p>
      */
-    @JRubyMethod(name = "each_line", name2 = "each", optional = 1, frame = true)
+    @JRubyMethod(name = {"each_line", "each"}, optional = 1, frame = true)
     public RubyIO each_line(IRubyObject[] args, Block block) {
-        IRubyObject rs;
+        RubyString rs = null;
         
         if (args.length == 0) {
-            rs = getRuntime().getGlobalVariables().get("$/");
+            rs = getRuntime().getRecordSeparatorVar().get().asString();
         } else {
             Arity.checkArgumentCount(getRuntime(), args, 1, 1);
-            rs = args[0];
-            if (!rs.isNil()) rs = rs.convertToString();
+            IRubyObject arg = args[0];
+            if (!arg.isNil()) rs = arg.convertToString();
         }
         
-        ThreadContext context = getRuntime().getCurrentContext();        
-        for (IRubyObject line = internalGets(args); !line.isNil(); 
-        	line = internalGets(args)) {
+        ThreadContext context = getRuntime().getCurrentContext(); 
+        ByteList separator = getSeparatorForGets(args);
+        for (IRubyObject line = internalGets(separator); !line.isNil(); 
+        	line = internalGets(separator)) {
             block.yield(context, line);
         }
         
@@ -1249,21 +1306,21 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "readlines", optional = 1)
     public RubyArray readlines(IRubyObject[] args) {
-        IRubyObject[] separatorArgument;
+        ByteList separator;
         if (args.length > 0) {
             if (!args[0].isKindOf(getRuntime().getNilClass()) &&
                 !args[0].isKindOf(getRuntime().getString())) {
                 throw getRuntime().newTypeError(args[0], 
                         getRuntime().getString());
             } 
-            separatorArgument = new IRubyObject[] { args[0] };
+            separator = getSeparatorForGets(new IRubyObject[] { args[0] });
         } else {
-            separatorArgument = IRubyObject.NULL_ARRAY;
+            separator = getSeparatorForGets(IRubyObject.NULL_ARRAY);
         }
 
         RubyArray result = getRuntime().newArray();
         IRubyObject line;
-        while (! (line = internalGets(separatorArgument)).isNil()) {
+        while (! (line = internalGets(separator)).isNil()) {
             result.append(line);
         }
         return result;

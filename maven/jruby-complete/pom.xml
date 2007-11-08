@@ -57,13 +57,10 @@
       <version>3.0</version>
       <scope>provided</scope>
     </dependency>
-    <!-- TODO: replace this JNA system dependency with a real one -->
     <dependency>
-      <groupId>com.sun.jna</groupId>
+      <groupId>org.jruby.extras</groupId>
       <artifactId>jna</artifactId>
-      <version>incomplete</version>
-      <systemPath>${project.basedir}/../../lib/jna.jar</systemPath>
-      <scope>system</scope>
+      <version>jruby-pre</version>
     </dependency>
   </dependencies>
 
@@ -111,6 +108,11 @@
                   <artifactId>jline</artifactId>
                   <version>0.9.91</version>
                 </artifactItem>
+                <artifactItem>
+                  <groupId>org.jruby.extras</groupId>
+                  <artifactId>jna</artifactId>
+                  <version>jruby-pre</version>
+                </artifactItem>
               </artifactItems>
               <outputDirectory>${project.build.outputDirectory}</outputDirectory>
             </configuration>
@@ -138,10 +140,6 @@
             <phase>process-resources</phase>
             <configuration>
               <tasks>
-                <!-- TODO: remove this manual unzipping of JNA -->
-                <unzip src="${project.basedir}/../../lib/jna.jar"
-                  dest="${project.build.outputDirectory}" />
-                <delete file="${project.build.outputDirectory}/META-INF/MANIFEST.MF"/>
                 <mkdir dir="${project.build.outputDirectory}/META-INF/jruby.home"/>
                 <copy todir="${project.build.outputDirectory}/META-INF/jruby.home">
                   <fileset dir="${project.basedir}/../..">
@@ -188,7 +186,7 @@
             <configuration>
               <tasks>
                 <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
-                  classpath="${project.basedir}/../../lib/jarjar-0.7.jar"/>
+                  classpath="${project.basedir}/../../build_lib/jarjar-0.7.jar"/>
                 <java jar="${project.build.directory}/${project.build.finalName}.jar" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
                   <sysproperty key="jruby.home" value="${project.build.outputDirectory}/META-INF/jruby.home"/>
                   <arg value="--command"/>
@@ -245,15 +243,17 @@
                     <path refid="maven.plugin.classpath"/>
                     <pathelement location="${project.basedir}/../../test/requireTest.jar"/>
                   </classpath>
+                  <jvmarg value="-ea"/>
                   <formatter type="plain"/>
                   <formatter type="xml"/>
                   <formatter type="brief" usefile="false"/>
                   <sysproperty key="java.awt.headless" value="true"/>
-                  <sysproperty key="jruby.jit.enabled" value="false"/>
                   <sysproperty key="basedir" value="${basedir}"/>
                   <sysproperty key="jruby.home" value="${basedir}/../.."/>
                   <sysproperty key="jruby.base" value="${basedir}/../.."/>
                   <sysproperty key="jruby.lib" value="${basedir}/../../lib"/>
+                  <sysproperty key="jruby.objectspace.enabled" value="true"/>
+                  <env key="CLASSPATH" value="${project.build.outputDirectory}"/>
                   <test name="org.jruby.test.MainTestSuite" unless="maven.test.skip"
                       todir="${project.build.directory}/surefire-reports"/>
                   <test name="org.jruby.test.ScriptTestSuite" unless="maven.test.skip"

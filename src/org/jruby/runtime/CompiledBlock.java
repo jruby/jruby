@@ -29,6 +29,7 @@ package org.jruby.runtime;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -70,10 +71,27 @@ public class CompiledBlock extends Block {
     }
     
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        if (!isLambda && args.length == 1 && args[0] instanceof RubyArray) {
-            if (argumentType == MULTIPLE_ASSIGNMENT) {
-                args = ((RubyArray) args[0]).toJavaArray();
+        switch (type) {
+        case NORMAL: {
+            assert false : "can this happen?";
+            if (args.length == 1 && args[0] instanceof RubyArray) {
+                if (argumentType == MULTIPLE_ASSIGNMENT || argumentType == SINGLE_RESTARG) {
+                    args = ((RubyArray) args[0]).toJavaArray();
+                }
+                break;
             }
+        }
+        case PROC: {
+            if (args.length == 1 && args[0] instanceof RubyArray) {
+                if (argumentType == MULTIPLE_ASSIGNMENT && argumentType != SINGLE_RESTARG) {
+                    args = ((RubyArray) args[0]).toJavaArray();
+                }
+            }
+            break;
+        }
+        case LAMBDA:
+            arity().checkArity(context.getRuntime(), args);
+            break;
         }
 
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
@@ -106,7 +124,7 @@ public class CompiledBlock extends Block {
             }
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-            return isLambda ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+            return type == Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
         } finally {
             frame.setVisibility(oldVis);
             post(context);
@@ -134,6 +152,7 @@ public class CompiledBlock extends Block {
         case ZERO_ARGS:
             return IRubyObject.NULL_ARRAY;
         case MULTIPLE_ASSIGNMENT:
+        case SINGLE_RESTARG:
             return new IRubyObject[] {value};
         default:
             int length = arrayLength(value);
@@ -157,6 +176,7 @@ public class CompiledBlock extends Block {
         case ZERO_ARGS:
             return IRubyObject.NULL_ARRAY;
         case MULTIPLE_ASSIGNMENT:
+        case SINGLE_RESTARG:
             return new IRubyObject[] {ArgsUtil.convertToRubyArray(context.getRuntime(), value, hasMultipleArgsHead)};
         default:
         // FIXME: the test below would be enabled if we could avoid processing block args for the cases where we don't have any args
@@ -181,7 +201,7 @@ public class CompiledBlock extends Block {
                 hasMultipleArgsHead,
                 argumentType);
         
-        newBlock.isLambda = isLambda;
+        newBlock.type = type;
         
         return newBlock;
     }

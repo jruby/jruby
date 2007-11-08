@@ -65,14 +65,10 @@ public class CacheMap {
         
         if (siteList == null) {
             siteList = new WeakHashSet<CallAdapter>();
-            synchronized (mappings) {
-                mappings.put(method, siteList);
-            }
+            mappings.put(method, siteList);
         }
 
-        synchronized (siteList) {
-            siteList.add(site);
-        }
+        siteList.add(site);
     }
     
     /**
@@ -90,12 +86,10 @@ public class CacheMap {
         if (siteList == null) {
             return;
         }
-        synchronized (siteList) {
-            for(Iterator<CallAdapter> iter = siteList.iterator(); iter.hasNext();) {
-                CallAdapter site = iter.next();
-                if (site != null) {
-                    site.removeCachedMethod();
-                }
+        for(Iterator<CallAdapter> iter = siteList.iterator(); iter.hasNext();) {
+            CallAdapter site = iter.next();
+            if (site != null) {
+                site.removeCachedMethod();
             }
         }
     }
@@ -103,20 +97,18 @@ public class CacheMap {
     /**
      * Remove method caches for all methods in a module 
      */
-    public void moduleIncluded(RubyModule targetModule, RubyModule includedModule) {
-        synchronized (mappings) {
-            for (Iterator i = includedModule.getMethods().keySet().iterator(); i.hasNext(); ) {
-                String methodName = (String) i.next();
+    public synchronized void moduleIncluded(RubyModule targetModule, RubyModule includedModule) {
+        for (Iterator i = includedModule.getMethods().keySet().iterator(); i.hasNext(); ) {
+            String methodName = (String) i.next();
 
-                for(RubyModule current = targetModule; current != null; current = current.getSuperClass()) {
-                    if (current == includedModule) continue;
-                    DynamicMethod method = (DynamicMethod)current.getMethods().get(methodName);
-                    if (method != null) {
-                        Set<CallAdapter> adapters = mappings.remove(method);
-                        if (adapters != null) {
-                            for(CallAdapter adapter : adapters) {
-                                adapter.removeCachedMethod();
-                            }
+            for(RubyModule current = targetModule; current != null; current = current.getSuperClass()) {
+                if (current == includedModule) continue;
+                DynamicMethod method = (DynamicMethod)current.getMethods().get(methodName);
+                if (method != null) {
+                    Set<CallAdapter> adapters = mappings.remove(method);
+                    if (adapters != null) {
+                        for(CallAdapter adapter : adapters) {
+                            adapter.removeCachedMethod();
                         }
                     }
                 }

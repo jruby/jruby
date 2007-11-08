@@ -28,6 +28,8 @@
 
 package org.jruby.util;
 
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -35,20 +37,21 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 public class MethodCache {
 
     public static class CacheEntry {
-        public RubyModule klass = null;
+        private static final Reference NULL_REFERENCE = new WeakReference(null);
+        public Reference<RubyModule> klass = NULL_REFERENCE;
         public String methodName = null;
-        public DynamicMethod method = null;
+        public Reference<DynamicMethod> method = NULL_REFERENCE;
 
         void put(RubyModule klass, String methodName, DynamicMethod method) {
-            this.klass = klass;
+            this.klass = new WeakReference(klass);
             this.methodName = methodName;
-            this.method = method;
+            this.method = new WeakReference(method);
         }
 
         void clear() {
-            this.klass = null;
+            this.klass = NULL_REFERENCE;
             this.methodName = null;
-            this.method = null;
+            this.method = NULL_REFERENCE;
         }
     }
 
@@ -76,7 +79,7 @@ public class MethodCache {
             return;
         }
         for (int i = 0; i < CACHE_SIZE; i++ ) {
-            if (cache[i].klass == module) {
+            if (cache[i].klass.get() == module) {
                 cache[i].clear();
             }
         }
@@ -97,7 +100,7 @@ public class MethodCache {
         
         for (int i = CACHE_SIZE; --i >= 0; ) {
             CacheEntry entry = cache[i];
-            if (c == entry.klass && id.equals(entry.methodName)) {
+            if (c == entry.klass.get() && id.equals(entry.methodName)) {
                 entry.methodName = null;
             }
         }
@@ -123,7 +126,7 @@ public class MethodCache {
         
         for (int i = CACHE_SIZE; --i >= 0; ) {
             CacheEntry entry = cache[i]; 
-            if (entry.klass == klass) {
+            if (entry.klass.get() == klass) {
                 entry.methodName = null;
             }
         }

@@ -44,6 +44,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -664,7 +665,7 @@ public class Java {
         if (args.length > 1) {
             handler = (RubyProc)args[1];
         } else {
-            handler = recv.getRuntime().newProc(false, block);
+            handler = recv.getRuntime().newProc(Block.Type.PROC, block);
         }
         recv.getRuntime().getJavaSupport().defineExceptionHandler(name, handler);
 
@@ -762,7 +763,7 @@ public class Java {
     	if (args[size] instanceof RubyProc) {
     		proc = (RubyProc) args[size];
     	} else {
-    		proc = recv.getRuntime().newProc(false, block);
+    		proc = recv.getRuntime().newProc(Block.Type.PROC, block);
     		size++;
     	}
     	
@@ -776,7 +777,7 @@ public class Java {
         }
         
         return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJavaSupport().getJavaClassLoader(), interfaces, new InvocationHandler() {
-            private Map parameterTypeCache = new HashMap();
+            private Map parameterTypeCache = new ConcurrentHashMap();
             public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
                 Class[] parameterTypes = (Class[])parameterTypeCache.get(method);
                 if (parameterTypes == null) {

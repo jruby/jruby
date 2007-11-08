@@ -45,7 +45,7 @@ public class RubyStringScanner extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "contact", name2 = "<<", required = 1)
+    @JRubyMethod(name = {"contact", "<<"}, required = 1)
     public IRubyObject concat(IRubyObject obj) {
         scanner.append(obj.convertToString().getValue());
         return this;
@@ -80,7 +80,7 @@ public class RubyStringScanner extends RubyObject {
         return stringOrNil(scanner.group(RubyFixnum.fix2int(num)));
     }
 
-    @JRubyMethod(name = "bol?", name2 = "beginning_of_line")
+    @JRubyMethod(name = {"bol?", "beginning_of_line"})
     public RubyBoolean bol_p() {
         return trueOrFalse(scanner.isBeginningOfLine());
     }
@@ -103,7 +103,7 @@ public class RubyStringScanner extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "eos?")
+    @JRubyMethod(name = {"eos?", "empty?"})
     public RubyBoolean eos_p() {
         return trueOrFalse(scanner.isEndOfString());
     }

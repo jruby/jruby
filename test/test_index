@@ -4,7 +4,6 @@ testClasses.rb
 testCompiler.rb
 testConstant.rb
 testDigest.rb
-testDir.rb
 testEnumerable.rb
 testEnumerator.rb
 testEnv.rb
@@ -24,7 +23,6 @@ testIf.rb
 testInspect.rb
 testInstantiatingInterfaces.rb
 testInteger.rb
-testIO.rb
 testJavaArraySupport.rb
 testLine.rb
 testLine_block_comment.rb
@@ -49,7 +47,6 @@ testPackUnpack.rb
 testPipe.rb
 testPositions.rb
 testProc.rb
-testRandom.rb
 testRange.rb
 testRbConfig.rb
 testRedefine.rb

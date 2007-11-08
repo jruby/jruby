@@ -45,7 +45,7 @@ public class ArgumentNode extends Node implements INameNode {
     public ArgumentNode(ISourcePosition position, String identifier) {
         super(position, NodeType.ARGUMENTNODE);
         
-        this.identifier = identifier.intern();
+        this.identifier = identifier;
     }
     
     public Instruction accept(NodeVisitor visitor) {

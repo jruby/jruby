@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.compliance
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -43,6 +43,7 @@ import java.util.regex.Pattern;
 
 import org.jruby.Main;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -102,7 +103,11 @@ public class ShellLauncher {
                 setEnvironment(environmentMap(env));
                 setCurrentDirectory(pwd.toString());
             }};
-            processThread = new Thread(this, "ScriptThreadProcess: " + argArray[0]);
+            String procName = "piped";
+            if (argArray.length > 0) {
+                procName = argArray[0];
+            }
+            processThread = new Thread(this, "ScriptThreadProcess: " + procName);
             processThread.start();
         }
 
@@ -176,46 +181,36 @@ public class ShellLauncher {
     }
     
     public Process run(IRubyObject[] rawArgs) throws IOException {
-        String shell = runtime.evalScriptlet("require 'rbconfig'; Config::CONFIG['SHELL']").toString();
-        rawArgs[0] = runtime.newString(repairDirSeps(rawArgs[0].toString()));
+        String shell = getShell(runtime);
         Process aProcess = null;
         File pwd = new File(runtime.getCurrentDirectory());
+        String[] args = parseCommandLine(runtime, rawArgs);
 
-        if (shouldRunInProcess(rawArgs[0].toString())) {
-            List args = parseCommandLine(rawArgs);
-            String command = (String)args.get(0);
-
+        if (shouldRunInProcess(runtime, args[0])) {
+            String command = args[0];
             // snip off ruby or jruby command from list of arguments
             // leave alone if the command is the name of a script
             int startIndex = command.endsWith(".rb") ? 0 : 1;
-            if(command.trim().endsWith("irb")) {
+            if (command.trim().endsWith("irb")) {
                 startIndex = 0;
-                args.set(0,runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb");
+                args[0] = runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb";
             }
-            String[] argArray = (String[])args.subList(startIndex,args.size()).toArray(new String[0]);
-            ScriptThreadProcess ipScript = new ScriptThreadProcess(argArray, getCurrentEnv(), pwd);
+            String[] newargs = new String[args.length - startIndex];
+            System.arraycopy(args, startIndex, newargs, 0, newargs.length);
+            ScriptThreadProcess ipScript = new ScriptThreadProcess(newargs, getCurrentEnv(), pwd);
             ipScript.start();
             aProcess = ipScript;
-        } else if (shouldRunInShell(shell, rawArgs)) {
-            // execute command with sh -c or cmd.exe /c
+        } else if (shouldRunInShell(shell, args)) {
+            // execute command with sh -c
             // this does shell expansion of wildcards
-            String shellSwitch = shell.endsWith("sh") ? "-c" : "/c";
             String[] argArray = new String[3];
+            String cmdline = rawArgs[0].toString();
             argArray[0] = shell;
-            argArray[1] = shellSwitch;
-            argArray[2] = rawArgs[0].toString();
+            argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
+            argArray[2] = cmdline;
             aProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(), pwd);
         } else {
-            // execute command directly, no wildcard expansion
-            if (rawArgs.length > 1) {
-                String[] argArray = new String[rawArgs.length];
-                for (int i=0;i<rawArgs.length;i++) {
-                    argArray[i] = rawArgs[i].toString();
-                }
-                aProcess = Runtime.getRuntime().exec(argArray,getCurrentEnv(), pwd);
-            } else {
-                aProcess = Runtime.getRuntime().exec(rawArgs[0].toString(), getCurrentEnv(), pwd);
-            }
+            aProcess = Runtime.getRuntime().exec(args, getCurrentEnv(), pwd);        
         }
         return aProcess;
     }
@@ -277,62 +272,43 @@ public class ShellLauncher {
 
     }
 
-    /**
-     * For the first full token on the command, most likely the actual executable to run, replace
-     * all dir separators with that which is appropriate for the current platform. Return the new
-     * with this executable string at the beginning.
-     *
-     * @param command The all-forward-slashes command to be "fixed"
-     * @return The "fixed" full command line
-     */
-    private String repairDirSeps(String command) {
-        String executable = "", remainder = "";
-        command = command.trim();
-        if (command.startsWith("'")) {
-            String [] tokens = command.split("'", 3);
-            executable = "'"+tokens[1]+"'";
-            if (tokens.length > 2)
-                remainder = tokens[2];
-        } else if (command.startsWith("\"")) {
-            String [] tokens = command.split("\"", 3);
-            executable = "\""+tokens[1]+"\"";
-            if (tokens.length > 2)
-                remainder = tokens[2];
+    private String[] parseCommandLine(Ruby runtime, IRubyObject[] rawArgs) {
+        String[] args;
+        if (rawArgs.length == 1) {
+            RubyArray parts = (RubyArray) runtime.evalScriptlet(
+                "require 'jruby/path_helper'; JRuby::PathHelper"
+                ).callMethod(runtime.getCurrentContext(),
+                "smart_split_command", rawArgs);
+            args = new String[parts.getLength()];
+            for (int i = 0; i < parts.getLength(); i++) {
+                args[i] = parts.entry(i).toString();
+            }
         } else {
-            String [] tokens = command.split(" ", 2);
-            executable = tokens[0];
-            if (tokens.length > 1)
-                remainder = " "+tokens[1];
+            args = new String[rawArgs.length];
+            for (int i = 0; i < rawArgs.length; i++) {
+                args[i] = rawArgs[i].toString();
+            }
         }
-
-        // Matcher.replaceAll treats backslashes in the replacement string as escaped characters
-        String replacement = File.separator;
-        if (File.separatorChar == '\\')
-            replacement = "\\\\";
-
-        return PATH_SEPARATORS.matcher(executable).replaceAll(replacement) + remainder;
-    }
-
-    private List parseCommandLine(IRubyObject[] rawArgs) {
-        String[] args = new String[rawArgs.length];
-        for (int i = 0; i < rawArgs.length; i ++) {
-            args[i] = rawArgs[i].toString();
-        }
-        return new RawArgParser(args).getArgs();
+        return args;
     }
 
     /**
      * Only run an in-process script if the script name has "ruby", ".rb", or "irb" in the name
      */
-    private boolean shouldRunInProcess(String command) {
-        command = command.trim();
-        String [] spaceDelimitedTokens = command.split(" ", 2);
-        String [] slashDelimitedTokens = spaceDelimitedTokens[0].split("/");
-        String finalToken = slashDelimitedTokens[slashDelimitedTokens.length-1];
+    private boolean shouldRunInProcess(Ruby runtime, String command) {
+        if (!runtime.getInstanceConfig().isRunRubyInProcess()) {
+            return false;
+        }
+        String[] slashDelimitedTokens = command.split("/");
+        String finalToken = slashDelimitedTokens[slashDelimitedTokens.length - 1];
         return (finalToken.indexOf("ruby") != -1 || finalToken.endsWith(".rb") || finalToken.endsWith("irb"));
     }
 
-    private boolean shouldRunInShell(String shell, IRubyObject[] rawArgs) {
-        return shell != null && rawArgs.length == 1 && rawArgs[0].toString().indexOf(" ") >= 0;
+    private boolean shouldRunInShell(String shell, String[] args) {
+        return shell != null && args.length > 1 && !new File(args[0]).exists();
+    }
+
+    private String getShell(Ruby runtime) {
+        return runtime.evalScriptlet("require 'rbconfig'; Config::CONFIG['SHELL']").toString();
     }
 }

@@ -34,7 +34,6 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -44,8 +43,10 @@ public class RubyArgsFile extends RubyObject {
         super(runtime, runtime.getObject());
     }
 
-    private IRubyObject currentFile = null;
+    private IRubyObject currentFile;
     private int currentLineNumber;
+    private boolean startedProcessing = false; 
+    private boolean finishedProcessing = false;
     
     public void setCurrentLineNumber(int newLineNumber) {
         this.currentLineNumber = newLineNumber;
@@ -57,38 +58,32 @@ public class RubyArgsFile extends RubyObject {
         getRuntime().defineReadonlyVariable("$<", this);
         getRuntime().defineGlobalConstant("ARGF", this);
         
-        CallbackFactory callbackFactory = getRuntime().callbackFactory(RubyArgsFile.class);
-        
         RubyClass argfClass = getMetaClass();
-
         argfClass.defineAnnotatedMethods(RubyArgsFile.class);
-        
         getRuntime().defineReadonlyVariable("$FILENAME", getRuntime().newString("-"));
-
-        // This is ugly.  nextArgsFile both checks existence of another
-        // file and the setup of any files.  On top of that it handles
-        // the logic for figuring out stdin versus a list of files.
-        // I hacked this to make a null currentFile indicate that things
-        // have not been set up yet.  This seems fragile, but it at least
-        // it passes tests now.
-        //        currentFile = (RubyIO) getRuntime().getGlobalVariables().get("$stdin");
     }
 
     protected boolean nextArgsFile() {
-        RubyArray args = (RubyArray)getRuntime().getGlobalVariables().get("$*");
-
-        if (args.getLength() == 0) {
-            if (currentFile == null) { 
-                currentFile = getRuntime().getGlobalVariables().get("$stdin");
-                ((RubyString) getRuntime().getGlobalVariables().get("$FILENAME")).setValue(new StringBuffer("-"));
-                currentLineNumber = 0;
-                return true;
-            }
-
+        if (finishedProcessing) {
             return false;
         }
 
-        String filename = ((RubyString) args.shift()).toString();
+        RubyArray args = (RubyArray)getRuntime().getGlobalVariables().get("$*");
+
+        if (args.getLength() == 0) {
+            if (!startedProcessing) { 
+                currentFile = getRuntime().getGlobalVariables().get("$stdin");
+                ((RubyString) getRuntime().getGlobalVariables().get("$FILENAME")).setValue(new StringBuffer("-"));
+                currentLineNumber = 0;
+                startedProcessing = true;
+                return true;
+            } else {
+                finishedProcessing = true;
+                return false;
+            }
+        }
+
+        String filename = args.shift().toString();
         ((RubyString) getRuntime().getGlobalVariables().get("$FILENAME")).setValue(new StringBuffer(filename));
 
         if (filename.equals("-")) {
@@ -97,12 +92,13 @@ public class RubyArgsFile extends RubyObject {
             currentFile = new RubyFile(getRuntime(), filename); 
         }
 
+        startedProcessing = true;
         return true;
     }
 
-    @JRubyMethod(name = "fileno", name2 = "to_i")
+    @JRubyMethod(name = {"fileno", "to_i"})
     public IRubyObject fileno() {
-        if(currentFile == null && !nextArgsFile()) {
+        if(!startedProcessing && !nextArgsFile()) {
             throw getRuntime().newArgumentError("no stream");
         }
         return ((RubyIO)currentFile).fileno();
@@ -127,7 +123,7 @@ public class RubyArgsFile extends RubyObject {
         
         while (line instanceof RubyNil) {
             currentFile.callMethod(context, "close");
-            if (! nextArgsFile()) {
+            if (!nextArgsFile()) {
                 currentFile = null;
                 return line;
         	}
@@ -205,9 +201,9 @@ public class RubyArgsFile extends RubyObject {
     }
 
     /** Invoke a block for each line.
-     * 
+     *
      */
-    @JRubyMethod(name = "each_line", optional = 1, frame = true)
+    @JRubyMethod(name = "each_line", alias = {"each"}, optional = 1, frame = true)
     public IRubyObject each_line(IRubyObject[] args, Block block) {
         IRubyObject nextLine = internalGets(args);
         
@@ -218,13 +214,12 @@ public class RubyArgsFile extends RubyObject {
         
         return this;
     }
-    
+
     @JRubyMethod(name = "file")
     public IRubyObject file() {
         if(currentFile == null && !nextArgsFile()) {
             return getRuntime().getNil();
         }
-        
         return currentFile;
     }
 
@@ -266,7 +261,7 @@ public class RubyArgsFile extends RubyObject {
         return getRuntime().newFixnum(currentLineNumber);
     }
 
-    @JRubyMethod(name = "tell")
+    @JRubyMethod(name = "tell", alias = {"pos"})
     public IRubyObject tell() {
         if(currentFile == null && !nextArgsFile()) {
             throw getRuntime().newArgumentError("no stream to tell");
@@ -282,11 +277,12 @@ public class RubyArgsFile extends RubyObject {
         return ((RubyIO)currentFile).rewind();
     }
 
-    @JRubyMethod(name = "eof", name2 = "eof?")
+    @JRubyMethod(name = {"eof", "eof?"})
     public IRubyObject eof() {
         if(currentFile != null && !nextArgsFile()) {
             return getRuntime().getTrue();
         }
+
         return ((RubyIO)currentFile).eof_p();
     }
 
@@ -395,7 +391,7 @@ public class RubyArgsFile extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "filename")
+    @JRubyMethod(name = "filename", alias = {"path"})
     public RubyString filename() {
         return (RubyString)getRuntime().getGlobalVariables().get("$FILENAME");
     }

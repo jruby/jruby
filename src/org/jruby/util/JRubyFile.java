@@ -103,11 +103,20 @@ public class JRubyFile extends File {
     }
 
     public String getParent() {
-        return super.getParent().replace(File.separatorChar, '/');
+        String par = super.getParent();
+        if (par != null) {
+            par = par.replace(File.separatorChar, '/');
+        }
+        return par;
     }
 
     public File getParentFile() {
-        return new JRubyFile(getParent());
+        String par = getParent();
+        if (par == null) {
+            return this;
+        } else {
+            return new JRubyFile(par);
+        }
     }
     
     public static File[] listRoots() {

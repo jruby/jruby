@@ -46,6 +46,32 @@ class TestTraceFunc < Test::Unit::TestCase
   def bogus_method
   end
 
+  def sample_method(a, b)
+    a + b
+  end
+
+  def test_method_trace
+    output = []
+    
+    set_trace_func proc { |event, file, line, id, binding, classname|
+      output << sprintf("%10s %s:%-2d %18s %14s", event, file, line, id, classname)
+    }
+    
+    sample_method(1, 1)
+    
+    set_trace_func nil
+    
+    expected = ["      line ./test/test_trace_func.rb:60  test_method_trace  TestTraceFunc",
+                "      call ./test/test_trace_func.rb:49      sample_method  TestTraceFunc",
+                "      line ./test/test_trace_func.rb:50      sample_method  TestTraceFunc",
+                "    c-call ./test/test_trace_func.rb:50                  +         Fixnum",
+                "  c-return ./test/test_trace_func.rb:50                  +         Fixnum",
+                "    return ./test/test_trace_func.rb:51      sample_method  TestTraceFunc",
+                "      line ./test/test_trace_func.rb:62  test_method_trace  TestTraceFunc",
+                "    c-call ./test/test_trace_func.rb:62     set_trace_func         Kernel"];
+    assert_equal(expected, output)
+  end
+
   def test_trace_binding
     a = true
     expected = [["a", "expected", "results"],
@@ -68,3 +94,4 @@ class TestTraceFunc < Test::Unit::TestCase
     assert_equal(expected, results)
   end
 end
+

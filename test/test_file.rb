@@ -28,7 +28,13 @@ class TestFile < Test::Unit::TestCase
 
   # JRUBY-1116: these are currently broken on windows
   # what are these testing anyway?!?!
-  unless Config::CONFIG['target_os'] =~ /Windows/
+  if Config::CONFIG['target_os'] =~ /Windows|mswin/
+    def test_windows_basename
+      assert_equal "", File.basename("c:")
+      assert_equal "\\", File.basename("c:\\")
+      assert_equal "abc", File.basename("c:abc")
+    end
+  else
     def test_expand_path
       assert_equal("/bin", File.expand_path("../../bin", "/foo/bar"))
       assert_equal("/foo/bin", File.expand_path("../bin", "/foo/bar"))
@@ -52,7 +58,7 @@ class TestFile < Test::Unit::TestCase
       assert_equal(File.join(Dir.pwd, "bin"), File.expand_path("../../bin", "tmp/x"))
       assert_equal("/bin", File.expand_path("./../foo/./.././../bin", "/a/b"))
     end
-  end # unless windows
+  end # if windows
 
   def test_dirname
     assert_equal(".", File.dirname(""))
@@ -275,6 +281,12 @@ class TestFile < Test::Unit::TestCase
 
     assert_raises(IOError) { File.new(filename, File::CREAT) << 'b' }
     File.delete(filename)
+  end
+
+  # http://jira.codehaus.org/browse/JRUBY-1023
+  def test_file_reuse_fileno
+    fh = File.new(STDIN.fileno, 'r')
+    assert_equal(STDIN.fileno, fh.fileno)
   end
 
   # http://jira.codehaus.org/browse/JRUBY-1231

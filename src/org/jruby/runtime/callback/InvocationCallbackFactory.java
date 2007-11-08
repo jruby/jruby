@@ -114,6 +114,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, SUPER_CLASS, "<init>", "()V");
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
         mv.visitInsn(RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
@@ -127,7 +129,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, cg.p(Dispatcher.class), "<init>", "()V");
-        
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
         
         // create our array
         mv.aload(0);
@@ -168,6 +171,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, FAST_SUPER_CLASS, "<init>", "()V");
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
         mv.visitInsn(RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
@@ -183,6 +188,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, cg.p(Object.class), "<init>", "()V");
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitFieldInsn(PUTFIELD, namePath, "$scriptObject", cg.ci(Object.class));
@@ -204,6 +211,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", CALL_SIG, null, null);
         ;
         mv.visitCode();
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitTypeInsn(CHECKCAST, typePath);
         return mv;
@@ -213,6 +222,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", CALL_SIG, null, null);
         ;
         mv.visitCode();
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
         mv.visitVarInsn(ALOAD, 1);
         checkCast(mv, IRubyObject.class);
         return mv;
@@ -222,6 +233,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", FAST_CALL_SIG, null, null);
         ;
         mv.visitCode();
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitTypeInsn(CHECKCAST, typePath);
         return mv;
@@ -232,6 +245,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 IRubyObject[].class, CallType.class, Block.class)), null, null);
         ;
         mv.visitCode();
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
         mv.visitVarInsn(ALOAD, 2);
         mv.visitTypeInsn(CHECKCAST, typePath);
         return mv;
@@ -241,6 +256,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", FAST_CALL_SIG, null, null);
         ;
         mv.visitCode();
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitTypeInsn(CHECKCAST, IRUB);
         return mv;
@@ -250,6 +267,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", BLOCK_CALL_SIG, null, null);
         ;
         mv.visitCode();
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
         return mv;
     }
 

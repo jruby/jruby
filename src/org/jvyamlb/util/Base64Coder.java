@@ -55,7 +55,12 @@ public class Base64Coder {
      * @return   A String with the Base64 encoded data.
      */
     public static String encode(final String s) {
-        return new String(encode(s.getBytes()));
+        try {
+            return new String(encode(s.getBytes("ISO-8859-1")));
+        } catch(Exception e) {
+            // Theoritically shouldn't happen
+            return null;
+        }
     }
 
     /**

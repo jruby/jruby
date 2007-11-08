@@ -282,7 +282,7 @@ class MatchEnvironmentSingleByte {
         return cx/8 < size && ((b[bix + cx/8]&0xFF)&(1<<cx%8)) != 0;
     }
 
-    private final int handleFailure() {
+    private final boolean handleFailure() {
         /* A restart point is known.  Restart there and pop it. */
         int thisRegister;
         int res;
@@ -291,7 +291,7 @@ class MatchEnvironmentSingleByte {
            skip it.  */
         if(failureStack[failureStackPointer-4] == -1 || (bestRegistersSet && failureStack[failureStackPointer-1] == NON_GREEDY)) {
             popFailurePoint();
-            return 0;
+            return false;
         }
 
         if((res=failureStack[failureStackPointer-5]) > 0) {
@@ -383,16 +383,16 @@ class MatchEnvironmentSingleByte {
                             failureStack[failureStackPointer-1] = NON_GREEDY;
                             //System.err.println("handle_fail: " + DESCRIBE_FAILURE_POINT());
                         }
-                        return 0;
+                        return false;
                     }
                 default:
                     /* do nothing */;
-                    return 1;
+                    return true;
                 }
             }
         }
 
-        return 1;
+        return true;
     }
 
     private final void fixRegisters() {
@@ -1225,14 +1225,11 @@ class MatchEnvironmentSingleByte {
     }
 
     private final boolean isFail() {
-        while(true) {
-            if(failureStackPointer != 0) {
-                if(handleFailure() == 1) {
-                    return false;
-                }
-            } else {
-                return true; /* Matching at this starting point really fails.  */
+        while(failureStackPointer != 0) {
+            if(handleFailure()) {
+                return false;
             }
         }
+        return true; /* Matching at this starting point really fails.  */
     }
 }

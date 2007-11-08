@@ -50,7 +50,7 @@ public class VCallNode extends Node implements INameNode {
     public VCallNode(ISourcePosition position, String name) {
         super(position, NodeType.VCALLNODE);
 
-        this.callAdapter = new CallAdapter.DefaultCallAdapter(name.intern(), CallType.VARIABLE);
+        this.callAdapter = new CallAdapter.DefaultCallAdapter(name, CallType.VARIABLE);
     }
     
     /**

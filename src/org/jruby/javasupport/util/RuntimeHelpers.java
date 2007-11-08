@@ -137,15 +137,15 @@ public class RuntimeHelpers {
             containingClass.getSingletonClass().addMethod(name,
                     new WrapperMethod(containingClass.getSingletonClass(), method,
                     Visibility.PUBLIC));
-            containingClass.callMethod(context, "singleton_method_added", runtime.newSymbol(name));
+            containingClass.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
         }
         
         // 'class << state.self' and 'class << obj' uses defn as opposed to defs
         if (containingClass.isSingleton()) {
             ((MetaClass) containingClass).getAttached().callMethod(
-                    context, "singleton_method_added", runtime.newSymbol(name));
+                    context, "singleton_method_added", runtime.fastNewSymbol(name));
         } else {
-            containingClass.callMethod(context, "method_added", runtime.newSymbol(name));
+            containingClass.callMethod(context, "method_added", runtime.fastNewSymbol(name));
         }
         
         return runtime.getNil();
@@ -186,7 +186,7 @@ public class RuntimeHelpers {
         method.setCallConfig(callConfig);
         
         rubyClass.addMethod(name, method);
-        receiver.callMethod(context, "singleton_method_added", runtime.newSymbol(name));
+        receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
         
         return runtime.getNil();
     }
@@ -290,7 +290,7 @@ public class RuntimeHelpers {
 
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = RubySymbol.newSymbol(self.getRuntime(), name);
+        newArgs[0] = context.getRuntime().newSymbol(name);
 
         return receiver.callMethod(context, "method_missing", newArgs, block);
     }
@@ -307,7 +307,7 @@ public class RuntimeHelpers {
 
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = RubySymbol.newSymbol(self.getRuntime(), name);
+        newArgs[0] = context.getRuntime().newSymbol(name);
 
         return receiver.callMethod(context, "method_missing", newArgs, block);
     }
@@ -472,8 +472,8 @@ public class RuntimeHelpers {
         if (block.getProcObject() != null) {
             blockArg = block.getProcObject();
         } else {
-            blockArg = runtime.newProc(false, block);
-            blockArg.getBlock().isLambda = block.isLambda;
+            blockArg = runtime.newProc(Block.Type.PROC, block);
+            blockArg.getBlock().type = Block.Type.PROC;
         }
         
         return blockArg;
@@ -736,13 +736,20 @@ public class RuntimeHelpers {
     
     public static IRubyObject getInstanceVariable(Ruby runtime, IRubyObject self, String name) {
         IRubyObject result = self.getInstanceVariable(name);
-        if (result == null) return runtime.getNil();
-        return result;
+        
+        if (result != null) return result;
+        
+        runtime.getWarnings().warning("instance variable " + name + " not initialized");
+        
+        return runtime.getNil();
     }
     
     public static IRubyObject fastGetInstanceVariable(Ruby runtime, IRubyObject self, String internedName) {
         IRubyObject result;
         if ((result = self.fastGetInstanceVariable(internedName)) != null) return result;
+        
+        runtime.getWarnings().warning("instance variable " + internedName + " not initialized");
+        
         return runtime.getNil();
     }
     
@@ -770,7 +777,7 @@ public class RuntimeHelpers {
     }
     
     public static void registerEndBlock(CompiledSharedScopeBlock block, Ruby runtime) {
-        runtime.pushExitBlock(runtime.newProc(true, block));
+        runtime.pushExitBlock(runtime.newProc(Block.Type.LAMBDA, block));
     }
     
     public static IRubyObject match3(RubyRegexp regexp, IRubyObject value, ThreadContext context) {
@@ -779,5 +786,13 @@ public class RuntimeHelpers {
         } else {
             return value.callMethod(context, "=~", regexp);
         }
+    }
+    
+    public static IRubyObject getErrorInfo(Ruby runtime) {
+        return runtime.getGlobalVariables().get("$!");
+    }
+    
+    public static void setErrorInfo(Ruby runtime, IRubyObject error) {
+        runtime.getGlobalVariables().set("$!", error);
     }
 }

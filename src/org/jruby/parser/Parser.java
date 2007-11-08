@@ -31,7 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
-import java.io.Reader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -40,10 +41,12 @@ import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
 import org.jruby.common.NullWarnings;
+import org.jruby.lexer.yacc.ByteListLexerSource;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -55,7 +58,7 @@ public class Parser {
         this.runtime = runtime;
     }
     
-    public Node parseRewriter(String file, Reader content, 
+    public Node parseRewriter(String file, InputStream content, 
             ParserConfiguration configuration) throws SyntaxException {
 
         DefaultRubyParser parser = RubyParserPool.getInstance().borrowParser();
@@ -70,7 +73,70 @@ public class Parser {
     }
     
     @SuppressWarnings("unchecked")
-    public Node parse(String file, Reader content, DynamicScope blockScope,
+    public Node parse(String file, ByteList content, DynamicScope blockScope,
+            ParserConfiguration configuration) {
+        // Make a shared copy in case someone modifies this bytelist while we are parsing
+        content = new ByteList(content, false);
+        IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
+        RubyArray list = null;
+        
+        if (!configuration.isEvalParse() && scriptLines != null) {
+            if (scriptLines instanceof RubyHash) {
+                RubyString filename = runtime.newString(file);
+                IRubyObject object = ((RubyHash) scriptLines).op_aref(filename);
+                
+                list = (RubyArray) (object instanceof RubyArray ? object : runtime.newArray()); 
+                
+                ((RubyHash) scriptLines).op_aset(filename, list);
+            }
+        }
+
+        // We only need to pass in current scope if we are evaluating as a block (which
+        // is only done for evals).  We need to pass this in so that we can appropriately scope
+        // down to captured scopes when we are parsing.
+        if (blockScope != null) {
+            configuration.parseAsBlock(blockScope);
+        }
+        
+        DefaultRubyParser parser = null;
+        RubyParserResult result = null;
+        try {
+            parser = RubyParserPool.getInstance().borrowParser();
+            parser.setWarnings(runtime.getWarnings());
+            LexerSource lexerSource = ByteListLexerSource.getSource(file, content, list, configuration);
+            result = parser.parse(configuration, lexerSource);
+            if (result.getEndOffset() >= 0) {
+                org.jruby.runtime.builtin.IRubyObject verbose = runtime.getVerbose();
+                runtime.setVerbose(runtime.getNil());
+                content.begin = content.begin +  result.getEndOffset();
+                runtime.defineGlobalConstant("DATA", new RubyFile(runtime, file, new ByteArrayInputStream(content.bytes())));
+                runtime.setVerbose(verbose);
+                result.setEndOffset(-1);
+            }
+        } catch (SyntaxException e) {
+            StringBuffer buffer = new StringBuffer(100);
+            buffer.append(e.getPosition().getFile()).append(':');
+            buffer.append(e.getPosition().getEndLine() + 1).append(": ");
+            buffer.append(e.getMessage());
+            throw runtime.newSyntaxError(buffer.toString());
+        } finally {
+            RubyParserPool.getInstance().returnParser(parser);
+        }
+        
+        // If variables were added then we may need to grow the dynamic scope to match the static
+        // one.
+        // FIXME: Make this so we only need to check this for blockScope != null.  We cannot
+        // currently since we create the DynamicScope for a LocalStaticScope before parse begins.
+        // Refactoring should make this fixable.
+        if (result.getScope() != null) {
+            result.getScope().growIfNeeded();
+        }
+
+        return result.getAST();
+    }
+    
+    @SuppressWarnings("unchecked")
+    public Node parse(String file, InputStream content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         IRubyObject scriptLines = runtime.getObject().fastGetConstantAt("SCRIPT_LINES__");
         RubyArray list = null;
@@ -100,12 +166,12 @@ public class Parser {
             parser.setWarnings(runtime.getWarnings());
             LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
             result = parser.parse(configuration, lexerSource);
-            if (result.isEndSeen()) {
+            if (result.getEndOffset() >= 0) {
                 org.jruby.runtime.builtin.IRubyObject verbose = runtime.getVerbose();
                 runtime.setVerbose(runtime.getNil());
             	runtime.defineGlobalConstant("DATA", new RubyFile(runtime, file, content));
                 runtime.setVerbose(verbose);
-            	result.setEndSeen(false);
+            	result.setEndOffset(-1);
             }
         } catch (SyntaxException e) {
             StringBuffer buffer = new StringBuffer(100);

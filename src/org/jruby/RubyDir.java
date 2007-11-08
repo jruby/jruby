@@ -130,7 +130,7 @@ public class RubyDir extends RubyObject {
      * with each filename is passed to the block in turn. In this case, Nil is
      * returned.  
      */
-    @JRubyMethod(name = "glob", name2 = "[]", required = 1, optional = 1, frame = true, meta = true)
+    @JRubyMethod(name = {"glob", "[]"}, required = 1, optional = 1, frame = true, meta = true)
     public static IRubyObject glob(IRubyObject recv, IRubyObject[] args, Block block) {
         String cwd = recv.getRuntime().getCurrentDirectory();
         int flags = 0;
@@ -237,7 +237,7 @@ public class RubyDir extends RubyObject {
      * Deletes the directory specified by <code>path</code>.  The directory must
      * be empty.
      */
-    @JRubyMethod(name = "rmdir", name2 = "unlink", name3 = "delete", required = 1, meta = true)
+    @JRubyMethod(name = {"rmdir", "unlink", "delete"}, required = 1, meta = true)
     public static IRubyObject rmdir(IRubyObject recv, IRubyObject path) {
         JRubyFile directory = getDir(recv.getRuntime(), path.convertToString().toString(), true);
         
@@ -265,7 +265,7 @@ public class RubyDir extends RubyObject {
     }
 
     /** Returns the current directory. */
-    @JRubyMethod(name = "getwd", name2 = "pwd", meta = true)
+    @JRubyMethod(name = {"getwd", "pwd"}, meta = true)
     public static RubyString getwd(IRubyObject recv) {
         return recv.getRuntime().newString(recv.getRuntime().getCurrentDirectory());
     }
@@ -292,8 +292,11 @@ public class RubyDir extends RubyObject {
             newDir = new File(newDir.getPath());
         }
         
-        return newDir.mkdirs() ? RubyFixnum.zero(recv.getRuntime()) :
-            RubyFixnum.one(recv.getRuntime());
+        if (newDir.mkdirs()) {
+          return RubyFixnum.zero(recv.getRuntime());
+        } else {
+          throw recv.getRuntime().newSystemCallError("mkdir failed");
+        }
     }
 
     /**
@@ -351,7 +354,7 @@ public class RubyDir extends RubyObject {
     /**
      * Returns the current position in the directory.
      */
-    @JRubyMethod(name = "tell", name2 = "pos")
+    @JRubyMethod(name = {"tell", "pos"})
     public RubyInteger tell() {
         checkDir();
         return getRuntime().newFixnum(pos);

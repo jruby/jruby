@@ -8,9 +8,6 @@ require 'rbconfig'
 $matzrubyonly = false
 $rubyonly = false
 
-$matzruby_program = "ruby"
-$ruby_program = "jruby -J-server -O"
-
 $results  = []
 
 # prepare 'wc.input'
@@ -71,7 +68,11 @@ end
 
 def matzruby_exec file
   print 'matz'
-  benchmark file, $matzruby_program
+  rubylib = ENV['RUBYLIB']
+  ENV['RUBYLIB'] = ''
+  r = benchmark file, $matzruby_program
+  ENV['RUBYLIB'] = rubylib
+  r
 end
 
 if $0 == __FILE__

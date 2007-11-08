@@ -39,22 +39,16 @@ package org.jruby;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.Reader;
 
-import org.jruby.ast.Node;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.javasupport.JavaUtil;
-import org.jruby.parser.ParserSupport;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CommandlineParser;
-import org.jruby.ast.executable.RubiniusRunner;
-import org.jruby.ast.executable.YARVCompiledRunner;
+import org.jruby.util.SimpleSampler;
 
 /**
  * Class used to launch the interpreter.
@@ -66,17 +60,11 @@ import org.jruby.ast.executable.YARVCompiledRunner;
  * @author  jpetersen
  */
 public class Main {
-    private CommandlineParser commandline;
     private boolean hasPrintedUsage = false;
     private RubyInstanceConfig config;
-    // ENEBO: We used to have in, but we do not use it in this class anywhere
-    private PrintStream out;
-    private PrintStream err;
 
     public Main(RubyInstanceConfig config) {
         this.config = config;
-        this.out    = config.getOutput();
-        this.err    = config.getError();
     }
 
     public Main(final InputStream in, final PrintStream out, final PrintStream err) {
@@ -100,83 +88,99 @@ public class Main {
     }
 
     public int run(String[] args) {
-        commandline = new CommandlineParser(this, args);
+        config.processArguments(args);
+        
+        return run();
+    }
 
-        if (commandline.isShowVersion()) {
+    public int run() {
+        if (config.isShowVersion()) {
             showVersion();
         }
 
-        if (! commandline.shouldRunInterpreter() ) {
+        if (! config.shouldRunInterpreter() ) {
+            if (config.shouldPrintUsage()) {
+                printUsage();
+            }
             return 0;
         }
 
         long now = -1;
-        if (commandline.isBenchmarking()) {
+        if (config.isBenchmarking()) {
             now = System.currentTimeMillis();
         }
 
         int status;
 
         try {
-            status = runInterpreter(commandline);
+            status = runInterpreter();
         } catch (MainExitException mee) {
-            err.println(mee.getMessage());
+            config.getOutput().println(mee.getMessage());
             if (mee.isUsageError()) {
                 printUsage();
             }
             status = mee.getStatus();
         }
 
-        if (commandline.isBenchmarking()) {
-            out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
+        if (config.isBenchmarking()) {
+            config.getOutput().println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
         }
 
         return status;
     }
 
     private void showVersion() {
-        out.print("ruby ");
-        out.print(Constants.RUBY_VERSION);
-        out.print(" (");
-        out.print(Constants.COMPILE_DATE + " rev " + Constants.REVISION);
-        out.print(") [");
-        out.print(System.getProperty("os.arch") + "-jruby" + Constants.VERSION);
-        out.println("]");
+        config.getOutput().print("ruby ");
+        config.getOutput().print(Constants.RUBY_VERSION);
+        config.getOutput().print(" (");
+        config.getOutput().print(Constants.COMPILE_DATE + " rev " + Constants.REVISION);
+        config.getOutput().print(") [");
+        config.getOutput().print(System.getProperty("os.arch") + "-jruby" + Constants.VERSION);
+        config.getOutput().println("]");
     }
 
     public void printUsage() {
         if (!hasPrintedUsage) {
-            out.println("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]");
-            out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
-            out.println("    -b              benchmark mode, times the script execution");
-            out.println("    -Jjava option   pass an option on to the JVM (e.g. -J-Xmx512m)");
-            out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
-            out.println("    --              optional -- before rubyfile.rb for compatibility with ruby");
-            out.println("    -d              set debugging flags (set $DEBUG to true)");
-            out.println("    -v              print version number, then turn on verbose mode");
-            out.println("    -O              run with ObjectSpace disabled (improves performance)");
-            out.println("    -S cmd          run the specified command in JRuby's bin dir");
-            out.println("    -C              pre-compile scripts before running (EXPERIMENTAL)");
-            out.println("    -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)");
-            out.println("    -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)");
-            out.println("    -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)");
-            out.println("    --command word  Execute ruby-related shell command (i.e., irb, gem)");
+            config.getOutput().println("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]");
+            config.getOutput().println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
+            config.getOutput().println("    -b              benchmark mode, times the script execution");
+            config.getOutput().println("    -Jjava option   pass an option on to the JVM (e.g. -J-Xmx512m)");
+            config.getOutput().println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
+            config.getOutput().println("    --              optional -- before rubyfile.rb for compatibility with ruby");
+            config.getOutput().println("    -d              set debugging flags (set $DEBUG to true)");
+            config.getOutput().println("    -v              print version number, then turn on verbose mode");
+            config.getOutput().println("    -O              run with ObjectSpace disabled (improves performance)");
+            config.getOutput().println("    -S cmd          run the specified command in JRuby's bin dir");
+            config.getOutput().println("    -C              pre-compile scripts before running (EXPERIMENTAL)");
+            config.getOutput().println("    -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)");
+            config.getOutput().println("    -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)");
+            config.getOutput().println("    -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)");
+            config.getOutput().println("    --command word  Execute ruby-related shell command (i.e., irb, gem)");
             hasPrintedUsage = true;
         }
     }
 
-    private int runInterpreter(CommandlineParser commandline) {
-        Reader reader   = commandline.getScriptSource();
-        String filename = commandline.displayedFileName();
-        config.updateWithCommandline(commandline);
+    private int runInterpreter() {
+        InputStream in   = config.getScriptSource();
+        String filename = config.displayedFileName();
         final Ruby runtime = Ruby.newInstance(config);
-        runtime.setKCode(commandline.getKCode());
-        if(config.isSamplingEnabled()) {
-            org.jruby.util.SimpleSampler.startSampleThread();
+        runtime.setKCode(config.getKCode());
+        
+        if (config.isSamplingEnabled()) {
+            SimpleSampler.startSampleThread();
+        }
+        
+        if (config.isVerbose()) {
+            runtime.setVerbose(runtime.getTrue());
+        }
+
+        if (in == null) {
+            // no script to run, return success
+            return 0;
         }
 
         try {
-            runInterpreter(runtime, reader, filename);
+            runInterpreter(runtime, in, filename);
             return 0;
         } catch (RaiseException rj) {
             RubyException raisedException = rj.getException();
@@ -217,34 +221,18 @@ public class Main {
         }
     }
 
-    private void runInterpreter(Ruby runtime, Reader reader, String filename) {
+    private void runInterpreter(Ruby runtime, InputStream in, String filename) {
         try {
-            initializeRuntime(runtime, filename);
-            runtime.runFromMain(reader, filename, commandline);
+            initializeRuntime(runtime, config, filename);
+            runtime.runFromMain(in, filename);
         } finally {
             runtime.tearDown();
         }
     }
 
-    private Node getParsedScript(Ruby runtime, Reader reader, String filename) {
-        // current scope is top-level scope (what we set TOPLEVEL_BINDING to).
-        Node result;
-        if (commandline.isInlineScript()) {
-            result = runtime.parseInline(reader, filename, runtime.getCurrentContext().getCurrentScope());
-        } else {
-            result = runtime.parseFile(reader, filename, runtime.getCurrentContext().getCurrentScope());
-        }
-        
-        return result;
-    }
-
-    private void initializeRuntime(final Ruby runtime, String filename) {
-        IRubyObject argumentArray = runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, commandline.getScriptArguments()));
+    private void initializeRuntime(final Ruby runtime, RubyInstanceConfig commandline, String filename) {
         runtime.setVerbose(runtime.newBoolean(commandline.isVerbose()));
         runtime.setDebug(runtime.newBoolean(commandline.isDebug()));
-
-        defineGlobalVERBOSE(runtime);
-        defineGlobalDEBUG(runtime);
 
         //
         // FIXME: why "constant" and not global variable? this doesn't seem right,
@@ -260,14 +248,10 @@ public class Main {
         //
         //
 
-        
-        runtime.defineGlobalConstant("ARGV", argumentArray);
-
         defineGlobal(runtime, "$-p", commandline.isAssumePrinting());
         defineGlobal(runtime, "$-n", commandline.isAssumeLoop());
         defineGlobal(runtime, "$-a", commandline.isSplit());
         defineGlobal(runtime, "$-l", commandline.isProcessLineEnds());
-        runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
 
         IAccessor d = new ValueAccessor(runtime.newString(filename));
         runtime.getGlobalVariables().define("$PROGRAM_NAME", d);
@@ -278,45 +262,6 @@ public class Main {
         for (String scriptName : commandline.requiredLibraries()) {
             RubyKernel.require(runtime.getTopSelf(), runtime.newString(scriptName), Block.NULL_BLOCK);
         }
-    }
-
-    private void defineGlobalVERBOSE(final Ruby runtime) {
-        // $VERBOSE can be true, false, or nil.  Any non-false-nil value will get stored as true
-        runtime.getGlobalVariables().define("$VERBOSE", new IAccessor() {
-            public IRubyObject getValue() {
-                return runtime.getVerbose();
-            }
-
-            public IRubyObject setValue(IRubyObject newValue) {
-                if (newValue.isNil()) {
-                    runtime.setVerbose(newValue);
-                } else {
-                    runtime.setVerbose(runtime.newBoolean(newValue != runtime.getFalse()));
-                }
-
-                return newValue;
-            }
-        });
-    }
-
-    private void defineGlobalDEBUG(final Ruby runtime) {
-        IAccessor d = new IAccessor() {
-            public IRubyObject getValue() {
-                return runtime.getDebug();
-            }
-
-            public IRubyObject setValue(IRubyObject newValue) {
-                if (newValue.isNil()) {
-                    runtime.setDebug(newValue);
-                } else {
-                    runtime.setDebug(runtime.newBoolean(newValue != runtime.getFalse()));
-                }
-
-                return newValue;
-            }
-            };
-        runtime.getGlobalVariables().define("$DEBUG", d);
-        runtime.getGlobalVariables().define("$-d", d);
     }
 
     private void defineGlobal(Ruby runtime, String name, boolean value) {

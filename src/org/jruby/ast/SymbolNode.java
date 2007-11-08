@@ -34,6 +34,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubySymbol;
+
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -45,12 +48,12 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class SymbolNode extends Node implements ILiteralNode, INameNode {
 	private String name;
-    private int id = -1;
+    private RubySymbol symbol;
 
-	public SymbolNode(ISourcePosition position, String name) {
+    public SymbolNode(ISourcePosition position, String name) {
 	    super(position, NodeType.SYMBOLNODE);
-	    this.name = name.intern();
-	}
+	    this.name = name;
+    }
 
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitSymbolNode(this);
@@ -68,11 +71,9 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
         return EMPTY_LIST;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
+    public RubySymbol getSymbol(Ruby runtime) {
+        RubySymbol sym;
+        if ((sym = symbol) != null) return sym;
+        return symbol = runtime.fastNewSymbol(name);
     }
 }

@@ -45,7 +45,7 @@ public class TestRubyObject extends TestCase {
     }
 
     public void setUp() {
-        runtime = Ruby.getDefaultInstance();
+        runtime = Ruby.newInstance();
         rubyObject = new RubyObject(runtime, runtime.getObject());
     }
 

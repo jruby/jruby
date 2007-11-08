@@ -30,13 +30,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.InputStream;
 import org.jruby.Ruby;
 import org.jruby.runtime.load.LoadServiceResource;
-import org.jruby.util.KCode;
 
 public class ExternalScript implements Library {
     private final LoadServiceResource resource;
@@ -47,11 +45,14 @@ public class ExternalScript implements Library {
 
     public void load(Ruby runtime) {
         try {
-            // KCode.NONE is used because KCODE does not affect parse in Ruby 1.8
-            // if Ruby 2.0 encoding pragmas are implemented, this will need to change
-            Reader reader = new BufferedReader(new InputStreamReader(resource.getURL().openStream(), KCode.NONE.decoder()));
-            runtime.loadFile(resource.getName(), reader);
-            reader.close();
+            InputStream in = new BufferedInputStream(resource.getURL().openStream());
+            if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
+                runtime.compileAndLoadFile(resource.getName(), in);
+            } else {
+                runtime.loadFile(resource.getName(), in);
+            }
+            // FIXME: This should be in finally
+            in.close();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         }

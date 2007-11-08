@@ -1521,7 +1521,7 @@ nil,
 ['LocalAsgnNode', 0, 0, 0, 15],
 ['CallNode', 0, 0, 4, 15],
 ['FixnumNode', 0, 0, 4, 5],
-['ArrayNode', 0, 0, 9, 15],
+['ArrayNode', 0, 0, 8, 15],
 nil,
 ['CallNode', 0, 0, 9, 14],
 ['FixnumNode', 0, 0, 9, 10],
@@ -1692,4 +1692,27 @@ nil,
 test_tree(list, <<END)
 def []
 end
+END
+
+list = [
+nil,
+  nil,
+    ['CallNode',0,0,0,9],
+      nil,
+        ['VCallNode',0,0,1,2],
+      ['ArrayNode',0,0,7,9],
+        ['FixnumNode',0,0,7,9]
+]
+test_tree(list, <<END, "call in parens")
+(x) >> 10
+END
+
+list = [
+nil,
+  nil,
+    ['YieldNode',0,0,0,7],
+      ['VCallNode',0,0,6,7]
+]
+test_tree(list, <<END, "bare yield")
+yield x
 END

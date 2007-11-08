@@ -1,6 +1,20 @@
 require 'test/unit'
 
 class TestPack < Test::Unit::TestCase  
+  def setup
+    @char_array  = %w/alpha beta gamma/
+    @int_array   = [-1, 0, 1, 128]
+    @float_array = [-1.5, 0.0, 1.5, 128.5]
+    @bignum1      = 2**63
+  end
+
+  def teardown
+    @char_array  = nil
+    @int_array   = nil
+    @float_array = nil
+    @bignum1     = nil
+  end
+
   def test_pack_w
     assert_equal( "\005", [5].pack('w'))
     assert_equal( "\203t", [500].pack('w'))
@@ -11,10 +25,42 @@ class TestPack < Test::Unit::TestCase
   end
   
   def test_pack_M
-     assert_equal("alpha=\n", %w/alpha beta gamma/.pack("M")) # ok
-     assert_equal("-1=\n", [-1, 0, 1, 128].pack("M"))
-     assert_equal("1=\n", [1].pack("M"))
-     assert_equal("-1.5=\n", [-1.5, 0.0, 1.5, 128.5].pack("M"))
-     assert_equal("9223372036854775808=\n", [9223372036854775808].pack("M"))
+    assert_equal("alpha=\n", %w/alpha beta gamma/.pack("M")) # ok
+    assert_equal("-1=\n", [-1, 0, 1, 128].pack("M"))
+    assert_equal("1=\n", [1].pack("M"))
+    assert_equal("-1.5=\n", [-1.5, 0.0, 1.5, 128.5].pack("M"))
+    assert_equal("9223372036854775808=\n", [9223372036854775808].pack("M"))
+  end
+
+  def endian(data, n=4)
+    [1].pack('I') == [1].pack('N') ? data.gsub(/.{#{n}}/){ |s| s.reverse } : data
+  end
+
+  def test_pack_q
+    assert_equal(endian("\000\000\000\000\000\000\000\000", 8), [0].pack("q"))
+    assert_equal(endian("\001\000\000\000\000\000\000\000", 8), [1].pack("q"))
+    assert_equal(endian("\377\377\377\377\377\377\377\377", 8), [-1].pack("q"))
+    assert_equal(endian("\377\377\377\377\377\377\377\377", 8), @int_array.pack("q"))
+    assert_equal(endian("\377\377\377\377\377\377\377\377", 8), @float_array.pack("q"))
+    assert_equal(endian("\000\000\000\000\000\000\000\200", 8), [@bignum1].pack("q"))
+  end
+
+  def test_pack_q_expected_errors
+    assert_raises(TypeError){ @char_array.pack("q") }
+    assert_raises(RangeError){ [(2**128)].pack("q") }
+  end
+
+  def test_pack_Q
+    assert_equal(endian("\000\000\000\000\000\000\000\000", 8), [0].pack("Q"))
+    assert_equal(endian("\001\000\000\000\000\000\000\000", 8), [1].pack("Q"))
+    assert_equal(endian("\377\377\377\377\377\377\377\377", 8), [-1].pack("Q"))
+    assert_equal(endian("\377\377\377\377\377\377\377\377", 8), @int_array.pack("Q"))
+    assert_equal(endian("\377\377\377\377\377\377\377\377", 8), @float_array.pack("Q"))
+    assert_equal(endian("\000\000\000\000\000\000\000\200", 8), [@bignum1].pack("Q"))
+  end
+
+  def test_pack_Q_expected_errors
+    assert_raises(TypeError){ @char_array.pack("Q") }
+    assert_raises(RangeError){ [(2**128)].pack("Q") }
   end
 end

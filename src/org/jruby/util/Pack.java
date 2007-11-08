@@ -45,6 +45,7 @@ import java.nio.charset.CodingErrorAction;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBignum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
@@ -65,6 +66,27 @@ public class Pack {
     private static final byte[] sHexDigits;
     private static final int[] b64_xtable = new int[256];
     private static final Converter[] converters = new Converter[256];
+
+    private static final BigInteger QUAD_MIN = BigInteger.valueOf(Long.MIN_VALUE);
+    private static final BigInteger QUAD_MAX = new BigInteger("ffffffffffffffff", 16);
+
+    /*
+     * convert into longs, returning unsigned 64-bit values as signed longs
+     * ( num2long raises a RangeError on values > Long.MAX_VALUE )
+     */
+    private static long num2quad(IRubyObject arg) {
+        if (arg == arg.getRuntime().getNil()) {
+            return 0L;
+        }
+        else if (arg instanceof RubyBignum) {
+            BigInteger big = ((RubyBignum)arg).getValue();
+            if (big.compareTo(QUAD_MIN) < 0 || big.compareTo(QUAD_MAX) > 0) {
+                throw arg.getRuntime().newRangeError("bignum too big to convert into `quad int'");
+            }
+            return big.longValue();
+        }
+        return RubyNumeric.num2long(arg);
+    }
 
     static {
         hex_table = ByteList.plain("0123456789ABCDEF");
@@ -193,6 +215,7 @@ public class Pack {
         converters['I'] = tmp; // unsigned int, native
         converters['L'] = tmp; // unsigned long (bugs?)
         converters['N'] = tmp; // long, network
+
         tmp = new Converter(4) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(decodeIntBigEndian(enc));
@@ -205,6 +228,30 @@ public class Pack {
         };
         converters['l'] = tmp; // long, native
         converters['i'] = tmp; // int, native
+
+        tmp = new Converter(8) {
+            public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
+                long l = decodeLongLittleEndian(enc);
+                return RubyBignum.newBignum(runtime,
+                    BigInteger.valueOf(l).and(new BigInteger("FFFFFFFFFFFFFFFF", 16)));
+            }
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                long l = num2quad(o);
+                encodeLongBigEndian(result, l);
+            }
+        };
+        converters['Q'] = tmp;
+
+        tmp = new Converter(8) {
+            public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
+                return RubyBignum.newBignum(runtime, decodeLongLittleEndian(enc));
+            }
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                long l = num2quad(o);
+                encodeLongBigEndian(result, l);
+            }
+        };
+        converters['q'] = tmp;
     }
 
     /**
@@ -1222,6 +1269,14 @@ public class Pack {
      * <tr>
      *   <td valign="top">p</td>
      *   <td valign="top">Pointer to a null-terminated string</td>
+     * </tr>
+     * <tr>
+     *   <td valign="top">Q</td>
+     *   <td valign="top">Unsigned 64-bit number</td>
+     * </tr>
+     * <tr>
+     *   <td valign="top">q</td>
+     *   <td valign="top">64-bit number</td>
      * </tr>
      * <tr>
      *   <td valign="top">S</td>

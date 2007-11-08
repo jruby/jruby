@@ -156,6 +156,8 @@ test_equal(Object, object.class)
 Marshal.dump([1,2,3], 2)
 test_exception(ArgumentError) { Marshal.dump([1,2,3], 1) }
 
+test_exception(ArgumentError) { Marshal.load("\004\010U:\eCompletelyUnknownClass\"\nboing") }
+
 o = Object.new
 a = Marshal.load(Marshal.dump([o, o, o, o]))
 test_ok(a[0] == a[1])

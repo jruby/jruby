@@ -143,7 +143,19 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw sockerr(this, "recvfrom: name or service not known");
         }
 	}
-	
+
+        @Override
+        public IRubyObject recv(IRubyObject[] args) {
+	    try {
+	        int length = RubyNumeric.fix2int(args[0]);
+	        ByteBuffer buf = ByteBuffer.allocate(length);
+	        ((DatagramChannel) this.getChannel()).receive(buf);
+	        return getRuntime().newString(new ByteList(buf.array(), 0, buf.position()));
+            } catch (IOException e) {
+                throw sockerr(this, "recv: name or service not known");
+            }
+        }
+        
 	public IRubyObject send(IRubyObject[] args) {
 	    try {
 	        if (args.length >= 3) { // host and port given

@@ -31,7 +31,7 @@ public abstract class REJConstants {
     public final static int NUM_REG_ITEMS = 2;
     public final static int NUM_COUNT_ITEMS = 2;
 
-    public final static int NFAILURES=80;
+    public final static int NFAILURES=50;
 
     public final static int INIT_BUF_SIZE = 23;
 

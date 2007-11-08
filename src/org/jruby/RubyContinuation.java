@@ -44,7 +44,7 @@ public class RubyContinuation {
         runtime.setContinuation(cContinuation);
     }
 
-    @JRubyMethod(name = "call", name2 = "[]", rest = true, frame = true)
+    @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)
     public static IRubyObject call(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         recv.getRuntime().getWarnings().warn("Continuation.call: Continuations are not implemented in JRuby and will not work");
 

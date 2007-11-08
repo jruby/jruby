@@ -1,6 +1,7 @@
 # Our own test/unit-based tests
 # NOTE: test_globals comes first here because it has tests that $? be nil
 test_globals
+test_argf
 test_array
 test_array_subclass_behavior
 test_autoload
@@ -8,13 +9,16 @@ test_backquote
 test_big_decimal
 test_bignum
 test_block
+test_block_arg_processing
 test_cache_map_leak
 test_case
 test_class
 test_comparable
 test_core_arities
+test_crazy_blocks
 test_date_time
 test_defined
+test_dir
 #test_digest2
 test_dup_clone_taint_freeze
 test_env
@@ -23,9 +27,13 @@ test_flip
 test_hash
 test_higher_javasupport
 test_iconv
+test_io
 test_nkf
 test_java_accessible_object
 test_java_extension
+test_jruby_internals
+test_launching_by_shell_script
+test_local_jump_error
 test_method_missing
 test_methods
 #test_openssl

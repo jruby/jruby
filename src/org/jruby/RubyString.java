@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -320,7 +321,7 @@ public class RubyString extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "to_s", name2 = "to_str")
+    @JRubyMethod(name = {"to_s", "to_str"})
     public IRubyObject to_s() {
         if (getMetaClass().getRealClass() != getRuntime().getString()) {
             return strDup(getRuntime().getString());
@@ -562,7 +563,7 @@ public class RubyString extends RubyObject {
     /** rb_str_replace_m
      *
      */
-    @JRubyMethod(name = "replace", name2 = "initialize_copy", required = 1)
+    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1)
     public RubyString replace(IRubyObject other) {
         modifyCheck();
 
@@ -978,7 +979,7 @@ public class RubyString extends RubyObject {
     /** rb_str_length
      *
      */
-    @JRubyMethod(name = "length", alias = "size")
+    @JRubyMethod(name = {"length", "size"})
     public RubyFixnum length() {
         return getRuntime().newFixnum(value.length());
     }
@@ -1006,7 +1007,7 @@ public class RubyString extends RubyObject {
     /** rb_str_concat
      *
      */
-    @JRubyMethod(name = "concat", alias = "<<", required = 1)
+    @JRubyMethod(name = {"concat", "<<"}, required = 1)
     public RubyString concat(IRubyObject other) {
         if (other instanceof RubyFixnum) {
             long value = ((RubyFixnum) other).getLongValue();
@@ -1964,7 +1965,7 @@ public class RubyString extends RubyObject {
     /** rb_str_aref, rb_str_aref_m
      *
      */
-    @JRubyMethod(name = "[]", alias = "slice", required = 1, optional = 1)
+    @JRubyMethod(name = {"[]", "slice"}, required = 1, optional = 1)
     public IRubyObject op_aref(IRubyObject[] args) {
         if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             if (args[0] instanceof RubyRegexp) {
@@ -2117,12 +2118,12 @@ public class RubyString extends RubyObject {
         return result;
     }
 
-    @JRubyMethod(name = "succ", alias = "next")
+    @JRubyMethod(name = {"succ", "next"})
     public IRubyObject succ() {
         return strDup().succ_bang();
     }
 
-    @JRubyMethod(name = "succ!", alias = "next!")
+    @JRubyMethod(name = {"succ!", "next!"})
     public IRubyObject succ_bang() {
         if (value.length() == 0) return this;
 
@@ -2352,15 +2353,15 @@ public class RubyString extends RubyObject {
             byte[]buff = value.bytes;            
             int p = ptr;
             
-            byte lastVal = rsep.bytes[rsep.begin+rslen-1];
+            byte lastVal = rslen == 0 ? 0 : rsep.bytes[rsep.begin+rslen-1];
 
             int s = p;
             p+=rslen;
 
             for(; p < pend; p++) {
-                if(ptr<p && buff[p-1] == lastVal &&
-                   (rslen <= 1 || 
-                    ByteList.memcmp(rsep.bytes, rsep.begin, rslen, buff, p-rslen, rslen) == 0)) {
+                if(ptr<p && (rslen ==0 || (buff[p-1] == lastVal &&
+                                            (rslen <= 1 || 
+                                             ByteList.memcmp(rsep.bytes, rsep.begin, rslen, buff, p-rslen, rslen) == 0)))) {
 
                     result.append(makeShared(s-ptr, (p - s) - rslen));
                     s = p;
@@ -3178,7 +3179,7 @@ public class RubyString extends RubyObject {
     /** rb_str_each_line
      *
      */
-    @JRubyMethod(name = "each_line", required = 0, optional = 1, frame = true, alias = "each")
+    @JRubyMethod(name = {"each_line", "each"}, required = 0, optional = 1, frame = true)
     public IRubyObject each_line(IRubyObject[] args, Block block) {
         byte newline;
         int p = value.begin;
@@ -3276,10 +3277,10 @@ public class RubyString extends RubyObject {
         if (s.indexOf('\0') >= 0) {
             throw getRuntime().newArgumentError("symbol string may not contain '\\0'");
         }
-        return RubySymbol.newSymbol(getRuntime(), toString());
+        return getRuntime().newSymbol(s);
     }
 
-    @JRubyMethod(name = "to_sym", alias = "intern")
+    @JRubyMethod(name = {"to_sym", "intern"})
     public RubySymbol to_sym() {
         return intern();
     }

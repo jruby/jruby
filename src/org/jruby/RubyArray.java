@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -444,7 +445,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_replace
      *
      */
-    @JRubyMethod(name = "replace", name2 = "initialize_copy", required = 1)
+    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1)
     public IRubyObject replace(IRubyObject orig) {
         modifyCheck();
 
@@ -982,7 +983,7 @@ public class RubyArray extends RubyObject implements List {
 
     /** rb_ary_aref
      */
-    @JRubyMethod(name = "[]", name2 = "slice", required = 1, optional = 1)
+    @JRubyMethod(name = {"[]", "slice"}, required = 1, optional = 1)
     public IRubyObject aref(IRubyObject[] args) {
         long beg, len;
 
@@ -1527,7 +1528,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_indexes
      * 
      */
-    @JRubyMethod(name = "indexes", name2 = "indices", required = 1, rest = true)
+    @JRubyMethod(name = {"indexes", "indices"}, required = 1, rest = true)
     public IRubyObject indexes(IRubyObject[] args) {
         getRuntime().getWarnings().warn("Array#indexes is deprecated; use Array#values_at");
 
@@ -1574,7 +1575,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_collect
      *
      */
-    @JRubyMethod(name = "collect", name2 = "map", frame = true)
+    @JRubyMethod(name = {"collect", "map"}, frame = true)
     public RubyArray collect(Block block) {
         Ruby runtime = getRuntime();
         
@@ -1593,7 +1594,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_collect_bang
      *
      */
-    @JRubyMethod(name = "collect!", name2 = "map!", frame = true)
+    @JRubyMethod(name = {"collect!", "map!"}, frame = true)
     public RubyArray collect_bang(Block block) {
         modify();
         ThreadContext context = getRuntime().getCurrentContext();
@@ -2012,7 +2013,7 @@ public class RubyArray extends RubyObject implements List {
         int j = 0;
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (hash.fastDelete(v) != null) store(j++, v);
+            if (hash.fastDelete(v)) store(j++, v);
         }
         realLength = j;
         return this;
@@ -2057,7 +2058,7 @@ public class RubyArray extends RubyObject implements List {
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (hash.fastDelete(v) != null) ary3.append(v);
+            if (hash.fastDelete(v)) ary3.append(v);
         }
 
         return ary3;
@@ -2075,11 +2076,11 @@ public class RubyArray extends RubyObject implements List {
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (set.fastDelete(v) != null) ary3.append(v);
+            if (set.fastDelete(v)) ary3.append(v);
         }
         for (int i = 0; i < ary2.realLength; i++) {
             IRubyObject v = ary2.elt(i);
-            if (set.fastDelete(v) != null) ary3.append(v);
+            if (set.fastDelete(v)) ary3.append(v);
         }
         return ary3;
     }
@@ -2187,7 +2188,7 @@ public class RubyArray extends RubyObject implements List {
     }
 
     // Satisfy java.util.List interface (for Java integration)
-	public int size() {
+    public int size() {
         return realLength;
     }
 

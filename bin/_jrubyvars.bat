@@ -46,11 +46,11 @@ set JAVA_COMMAND=java
 
 if not "%OS%" == "Windows_NT" goto noTitle
 rem set _STARTJAVA=start "JRuby" "%JAVA_HOME%\bin\java"
-set _STARTJAVA="%JAVA_HOME%\bin\%JAVA_COMMAND%"
+set _STARTJAVA=%JAVA_HOME%\bin\%JAVA_COMMAND%
 goto gotTitle
 :noTitle
 rem set _STARTJAVA=start "%JAVA_HOME%\bin\java"
-set _STARTJAVA="%JAVA_HOME%\bin\%JAVA_COMMAND%"
+set _STARTJAVA=%JAVA_HOME%\bin\%JAVA_COMMAND%
 :gotTitle
 
 rem ----- Set up the VM options
@@ -59,7 +59,7 @@ set _RUNJAVA="%JAVA_HOME%\bin\java"
 
 rem ----- Set Up The Runtime Classpath ----------------------------------------
 
-for %%i in ("%JRUBY_HOME%\lib\*.jar") do @call "%~dp0_jrubysetcp" %%i
+for %%i in ("%JRUBY_HOME%\lib\*.jar") do @call :setcp %%i
 
 if not "%CLASSPATH%" == "" goto gotCP
 set CLASSPATH=%CP%
@@ -67,6 +67,20 @@ goto doneCP
 :gotCP
 set CLASSPATH=%CP%;%CLASSPATH%
 :doneCP
+
+goto :EOF
+
+rem Setcp subroutine
+:setcp
+if not "%CP%" == "" goto add
+
+set CP=%*
+goto :EOF
+
+:add
+set CP=%CP%;%*
+
+goto :EOF
 
 rem echo Using JRUBY_BASE: %JRUBY_BASE%
 rem echo Using JRUBY_HOME: %JRUBY_HOME%

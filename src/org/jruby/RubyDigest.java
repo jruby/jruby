@@ -196,7 +196,7 @@ public class RubyDigest {
             return this;
         }
 
-        @JRubyMethod(name = "update", name2 = "<<", required = 1)
+        @JRubyMethod(name = {"update", "<<"}, required = 1)
         public IRubyObject update(IRubyObject obj) {
             data.append(obj);
             return this;
@@ -208,10 +208,16 @@ public class RubyDigest {
             return RubyString.newString(getRuntime(), algo.digest(ByteList.plain(data)));
         }
 
-        @JRubyMethod(name = "hexdigest")
+        @JRubyMethod(name = {"hexdigest", "to_s"})
         public IRubyObject hexdigest() {
             algo.reset();
             return RubyString.newString(getRuntime(), ByteList.plain(toHex(algo.digest(ByteList.plain(data)))));
+        }
+
+        @JRubyMethod(name = "inspect")
+        public IRubyObject inspect() {
+            algo.reset();
+            return RubyString.newString(getRuntime(), ByteList.plain("#<" + getMetaClass().getRealClass().getName() + ": " + toHex(algo.digest(ByteList.plain(data))) + ">"));
         }
 
         @JRubyMethod(name = "==", required = 1)

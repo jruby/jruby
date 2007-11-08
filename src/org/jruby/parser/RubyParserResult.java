@@ -42,14 +42,17 @@ import org.jruby.runtime.DynamicScope;
 /**
  */
 public class RubyParserResult {
-    private final List<Node> beginNodes = new ArrayList<Node>();
+    final public static List<Node> EMPTY_BEGIN_LIST = new ArrayList<Node>();
+    final public static List<CommentNode> EMPTY_COMMENT_LIST = new ArrayList<CommentNode>();
+    private List<Node> beginNodes;
     private Node ast;
-    private boolean endSeen;
-    private List<CommentNode> commentNodes = new ArrayList<CommentNode>();
+    // __END__ marker offset (-1 means none present)
+    private int endOffset = -1;
+    private List<CommentNode> commentNodes;
     private DynamicScope scope;
 
     public List<CommentNode> getCommentNodes() {
-        return commentNodes;
+        return commentNodes == null ? EMPTY_COMMENT_LIST : commentNodes;
     }
     
     public Node getAST() {
@@ -73,22 +76,24 @@ public class RubyParserResult {
     }
 
     public void addComment(CommentNode node) {
+        if (commentNodes == null) commentNodes = new ArrayList<CommentNode>();
         commentNodes.add(node);
     }
     
     public void addBeginNode(PreExeNode node) {
+        if (beginNodes == null) beginNodes = new ArrayList<Node>();
     	beginNodes.add(node);
     }
     
     public List<Node> getBeginNodes() {
-        return beginNodes;
+        return beginNodes == null ? EMPTY_BEGIN_LIST : beginNodes;
     }
     
-    public boolean isEndSeen() {
-    	return endSeen;
+    public int getEndOffset() {
+    	return endOffset;
     }
     
-    public void setEndSeen(boolean endSeen) {
-    	this.endSeen = endSeen;
+    public void setEndOffset(int endOffset) {
+    	this.endOffset = endOffset;
     }
 }

@@ -94,7 +94,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "at_exit", frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject at_exit(IRubyObject recv, Block block) {
-        return recv.getRuntime().pushExitBlock(recv.getRuntime().newProc(false, block));
+        return recv.getRuntime().pushExitBlock(recv.getRuntime().newProc(Block.Type.PROC, block));
     }
 
     @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = Visibility.PRIVATE)
@@ -596,12 +596,12 @@ public class RubyKernel {
         return recv.getRuntime().newBinding();
     }
 
-    @JRubyMethod(name = "block_given?", name2 = "iterator?", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"block_given?", "iterator?"}, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static RubyBoolean block_given_p(IRubyObject recv, Block block) {
         return recv.getRuntime().newBoolean(recv.getRuntime().getCurrentContext().getPreviousFrame().getBlock().isGiven());
     }
 
-    @JRubyMethod(name = "sprintf", name2 = "format", required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"sprintf", "format"}, required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
             throw recv.getRuntime().newArgumentError("sprintf must have at least one argument");
@@ -615,7 +615,7 @@ public class RubyKernel {
         return str.op_format(newArgs);
     }
 
-    @JRubyMethod(name = "raise", name2 = "fail", optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"raise", "fail"}, optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args, Block block) {
         // FIXME: Pass block down?
         Ruby runtime = recv.getRuntime();
@@ -780,16 +780,15 @@ public class RubyKernel {
     @JRubyMethod(name = "trap", required = 1, frame = true, optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block block) {
         recv.getRuntime().getLoadService().require("jsignal");
-        return recv.callMethod(recv.getRuntime().getCurrentContext(), "trap", args, CallType.FUNCTIONAL, block);
+        return recv.callMethod(recv.getRuntime().getCurrentContext(), "__jtrap", args, CallType.FUNCTIONAL, block);
     }
     
     @JRubyMethod(name = "warn", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject warn(IRubyObject recv, IRubyObject message) {
         Ruby runtime = recv.getRuntime();
-        if (!runtime.getGlobalVariables().get("$VERBOSE").isNil()) {
-            IRubyObject out = runtime.getObject().fastGetConstant("STDERR");
-            RubyIO io = (RubyIO) out.convertToType(runtime.getIO(), 0, "to_io", true); 
-            io.puts(new IRubyObject[] { message });
+        if (!runtime.getVerbose().isNil()) {
+            IRubyObject out = runtime.getGlobalVariables().get("$stderr");
+            out.callMethod(runtime.getCurrentContext(), "puts", new IRubyObject[] { message });
         }
         return recv.getRuntime().getNil();
     }
@@ -822,7 +821,7 @@ public class RubyKernel {
         }
         
         if (args.length == 1) {
-            proc = RubyProc.newProc(recv.getRuntime(), block, false);
+            proc = RubyProc.newProc(recv.getRuntime(), block, Block.Type.PROC);
         }
         if (args.length == 2) {
             proc = (RubyProc)args[1].convertToType(recv.getRuntime().getProc(), 0, "to_proc", true);
@@ -877,9 +876,9 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
     
-    @JRubyMethod(name = "proc", name2 = "lambda", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"proc", "lambda"}, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static RubyProc proc(IRubyObject recv, Block block) {
-        return recv.getRuntime().newProc(true, block);
+        return recv.getRuntime().newProc(Block.Type.LAMBDA, block);
     }
 
     @JRubyMethod(name = "loop", frame = true, module = true, visibility = Visibility.PRIVATE)
@@ -1092,11 +1091,15 @@ public class RubyKernel {
             ceil = 0;
         } else if (args.length == 1) {
             if (args[0] instanceof RubyBignum) {
-                byte[] bytes = new byte[((RubyBignum) args[0]).getValue().toByteArray().length - 1];
+                byte[] bigCeilBytes = ((RubyBignum) args[0]).getValue().toByteArray();
+                BigInteger bigCeil = new BigInteger(bigCeilBytes).abs();
                 
-                runtime.getRandom().nextBytes(bytes);
+                byte[] randBytes = new byte[bigCeilBytes.length];
+                runtime.getRandom().nextBytes(randBytes);
                 
-                return new RubyBignum(runtime, new BigInteger(bytes).abs()); 
+                BigInteger result = new BigInteger(randBytes).abs().mod(bigCeil);
+                
+                return new RubyBignum(runtime, result); 
             }
              
             RubyInteger integerCeil = (RubyInteger)RubyKernel.new_integer(recv, args[0]); 
@@ -1109,13 +1112,13 @@ public class RubyKernel {
             return RubyFloat.newFloat(runtime, runtime.getRandom().nextDouble()); 
         }
         if (ceil > Integer.MAX_VALUE) {
-            return runtime.newFixnum(runtime.getRandom().nextLong() % ceil);
+            return runtime.newFixnum(Math.abs(runtime.getRandom().nextLong()) % ceil);
         }
             
         return runtime.newFixnum(runtime.getRandom().nextInt((int) ceil));
     }
 
-    @JRubyMethod(name = "system", name2 = "exec", required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"system","exec"}, required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int resultCode;

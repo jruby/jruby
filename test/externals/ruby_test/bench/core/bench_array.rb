@@ -6,7 +6,7 @@
 #######################################################################
 require "benchmark"
 
-MAX = 200000
+MAX = 2_000_000
 
 Benchmark.bm(35) do |x|
    x.report("Array[]"){
@@ -250,7 +250,7 @@ Benchmark.bm(35) do |x|
    # Pathological in Ruby 1.8.3 and earlier
    x.report("Array#insert"){
       array = [1,2,3,4]
-      MAX.times{ array.insert(2, "a", "b") }
+      (MAX/10).times{ array.insert(2, "a", "b") }
    }
 
    x.report("Array#join"){

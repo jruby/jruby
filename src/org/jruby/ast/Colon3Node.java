@@ -31,7 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.INameNode;
@@ -48,21 +47,14 @@ public class Colon3Node extends Node implements INameNode {
 
     public Colon3Node(ISourcePosition position, String name) {
         super(position, NodeType.COLON3NODE);
-        this.name = name.intern();
+        this.name = name;
     }
     
     public Colon3Node(ISourcePosition position, NodeType id, String name) {
         super(position, id);
-        this.name = name.intern();
+        this.name = name;
     }
     
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        
-        // deserialized strings are not interned; intern it now
-        name = name.intern();
-    }
-
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor

@@ -564,9 +564,10 @@ public final class ThreadContext {
      */
     public static IRubyObject createBacktraceFromFrames(Ruby runtime, Frame[] backtraceFrames) {
         RubyArray backtrace = runtime.newArray();
-        int traceSize = backtraceFrames.length;
         
-        if (traceSize <= 0) return backtrace;
+        if (backtraceFrames == null || backtraceFrames.length <= 0) return backtrace;
+        
+        int traceSize = backtraceFrames.length;
 
         for (int i = traceSize - 1; i > 0; i--) {
             Frame frame = backtraceFrames[i];
@@ -765,7 +766,6 @@ public final class ThreadContext {
     }
     
     public void preForBlock(Block block, RubyModule klass) {
-        block.oldFrame = getNextFrame();
         pushFrame(block.getFrame());
         getCurrentFrame().setVisibility(block.getVisibility());
         pushScope(block.getDynamicScope());
@@ -773,7 +773,6 @@ public final class ThreadContext {
     }
     
     public void preYieldSpecificBlock(Block block, RubyModule klass) {
-        block.oldFrame = getNextFrame();
         pushFrame(block.getFrame());
         getCurrentFrame().setVisibility(block.getVisibility());
         pushScope(block.getDynamicScope().cloneScope());
@@ -781,7 +780,6 @@ public final class ThreadContext {
     }
     
     public void preYieldLightBlock(Block block, RubyModule klass) {
-        block.oldFrame = getNextFrame();
         pushFrame(block.getFrame());
         getCurrentFrame().setVisibility(block.getVisibility());
         pushScope(block.getDynamicScope());
@@ -804,13 +802,13 @@ public final class ThreadContext {
     
     public void postYield(Block block) {
         popScope();
-        popFrameReal(block.oldFrame);
+        popFrameReal();
         popRubyClass();
     }
     
     public void postYieldLight(Block block) {
         popScope();
-        popFrameReal(block.oldFrame);
+        popFrameReal();
         popRubyClass();
     }
     

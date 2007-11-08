@@ -297,4 +297,17 @@ class TestClass < Test::Unit::TestCase
   def test_define_method_with_instance_eval_has_correct_self
     assert_equal('here', Foo.new.boo)
   end
+
+  class AliasMethodTester
+    METHODS = []
+    def AliasMethodTester.method_added(name)
+      METHODS << name
+    end
+    alias_method :puts2, :puts
+  end
+
+  # JRUBY-1419
+  def test_alias_method_calls_method_added
+    assert_equal([:puts2], AliasMethodTester::METHODS)
+  end
 end

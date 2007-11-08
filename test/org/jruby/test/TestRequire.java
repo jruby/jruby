@@ -41,7 +41,7 @@ public class TestRequire extends TestRubyBase {
         super(name);
     }
     public void setUp() {
-        runtime = Ruby.getDefaultInstance();
+        runtime = Ruby.newInstance();
         runtime.getLoadService().init(new ArrayList());
     }
 

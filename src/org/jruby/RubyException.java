@@ -192,7 +192,7 @@ public class RubyException extends RubyObject {
         return message;
     }
 
-    @JRubyMethod(name2 = "message")
+    @JRubyMethod(name = {"to_str", "message"})
     public IRubyObject to_str() {
         return callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
     }

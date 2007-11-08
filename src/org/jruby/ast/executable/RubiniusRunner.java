@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast.executable;
 
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.IOException;
 
@@ -51,36 +52,36 @@ public class RubiniusRunner implements Runnable {
 
     public final static int RUBINIUS_BYTECODE_VERSION = 3;
 
-    public RubiniusRunner(Ruby runtime, Reader reader, String filename) {
+    public RubiniusRunner(Ruby runtime, InputStream in, String filename) {
         try {
             this.runtime = runtime;
-            readMagic(reader);
-            readVersion(reader);
-            readRest(reader);
-            reader.close();
+            readMagic(in);
+            readVersion(in);
+            readRest(in);
+            in.close();
         } catch(IOException e) {
             throw new RuntimeException("Couldn't read script: " + e);
         }
     }
 
-    private final void readMagic(Reader reader) throws IOException {
-        char[] first = new char[4];
-        reader.read(first);
+    private final void readMagic(InputStream in) throws IOException {
+        byte[] first = new byte[4];
+        in.read(first);
         if(first[0] != 'R' || first[1] != 'B' || first[2] != 'I' || first[3] != 'X') {
             throw new RuntimeException("File is not a compiled Rubinius file");
         }
     }
 
-    private final void readVersion(Reader reader) throws IOException {
-        int version = readInt(reader);
+    private final void readVersion(InputStream in) throws IOException {
+        int version = readInt(in);
         if(version != RUBINIUS_BYTECODE_VERSION) {
             throw new RuntimeException("Can't run Rubinius code with version " + version);
         }
     }
 
-    public static int readInt(Reader reader) throws IOException {
-        char[] theInt = new char[4];
-        reader.read(theInt);
+    public static int readInt(InputStream in) throws IOException {
+        byte[] theInt = new byte[4];
+        in.read(theInt);
         int val = 0;
         val += (theInt[0]<<24);
         val += (theInt[1]<<16);
@@ -91,64 +92,64 @@ public class RubiniusRunner implements Runnable {
 
     private Map methods = new HashMap();
 
-    private final void readRest(Reader reader) throws IOException {
+    private final void readRest(InputStream in) throws IOException {
         RubiniusCMethod obj = null;
-        while((obj = unmarshalCMethod(reader)) != null) {
+        while((obj = unmarshalCMethod(in)) != null) {
             methods.put(obj.name, obj);
         }
     }
 
-    private final char[] unmarshalCharArray(Reader reader) throws IOException {
-        int length = readInt(reader);
-        char[] arr = new char[length];
-        reader.read(arr);
+    private final byte[] unmarshalCharArray(InputStream in) throws IOException {
+        int length = readInt(in);
+        byte[] arr = new byte[length];
+        in.read(arr);
         return arr;
     }
 
-    private final String unmarshalString(Reader reader) throws IOException {
-        int length = readInt(reader);
-        char[] arr = new char[length];
-        reader.read(arr);
+    private final String unmarshalString(InputStream in) throws IOException {
+        int length = readInt(in);
+        byte[] arr = new byte[length];
+        in.read(arr);
         return String.valueOf(arr);
     }
 
-    private final int unmarshalInt(Reader reader) throws IOException {
-        int neg = reader.read();
-        int val = readInt(reader);
+    private final int unmarshalInt(InputStream in) throws IOException {
+        int neg = in.read();
+        int val = readInt(in);
         if(neg == 'n') {
             val = -val;
         }
         return val;
     }
 
-    private final IRubyObject[] unmarshalTuple(Reader reader) throws IOException {
-        int length = readInt(reader);
+    private final IRubyObject[] unmarshalTuple(InputStream in) throws IOException {
+        int length = readInt(in);
         IRubyObject[] vals = new IRubyObject[length];
         for(int i=0;i<length;i++) {
-            vals[i] = unmarshal(reader);
+            vals[i] = unmarshal(in);
         }
         return vals;
     }
 
-    private final RubiniusCMethod unmarshalCMethod(Reader reader) throws IOException {
-        RubyArray obj = (RubyArray)unmarshal(reader);
+    private final RubiniusCMethod unmarshalCMethod(InputStream in) throws IOException {
+        RubyArray obj = (RubyArray)unmarshal(in);
         if(obj == null) {
             return null;
         }
         return new RubiniusCMethod(obj);
     }
 
-    private final IRubyObject unmarshal(Reader reader)  throws IOException {
-        int tag = reader.read();
+    private final IRubyObject unmarshal(InputStream in)  throws IOException {
+        int tag = in.read();
         int len = -1;
-        char[] data;
+        byte[] data;
         switch(tag) {
-        case 'i': return runtime.newFixnum(unmarshalInt(reader));
-        case 's': return runtime.newString(unmarshalString(reader));
-        case 'x': return runtime.newSymbol(unmarshalString(reader));
-        case 'p': return runtime.newArray(unmarshalTuple(reader));
-        case 'b': return runtime.newString(unmarshalString(reader)); 
-        case 'm': return runtime.newArray(unmarshalTuple(reader));
+        case 'i': return runtime.newFixnum(unmarshalInt(in));
+        case 's': return runtime.newString(unmarshalString(in));
+        case 'x': return runtime.newSymbol(unmarshalString(in));
+        case 'p': return runtime.newArray(unmarshalTuple(in));
+        case 'b': return runtime.newString(unmarshalString(in)); 
+        case 'm': return runtime.newArray(unmarshalTuple(in));
         case 'B': System.err.println("B"); return null;
         case 'd': System.err.println("d"); return null;
         case 'r': System.err.println("r"); return null;

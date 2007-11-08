@@ -275,12 +275,12 @@ public class RubyRange extends RubyObject {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "first", name2 = "begin")
+    @JRubyMethod(name = {"first", "begin"})
     public IRubyObject first() {
         return begin;
     }
 
-    @JRubyMethod(name = "last", name2 = "end")
+    @JRubyMethod(name = {"last", "end"})
     public IRubyObject last() {
         return end;
     }
@@ -454,6 +454,19 @@ public class RubyRange extends RubyObject {
                 block.yield(context, currentObject);
                 currentObject = currentObject.callMethod(context, MethodIndex.OP_PLUS, "+", stepNum);
             }
+        } else if(begin instanceof RubyString && end instanceof RubyString) {
+          RubyString afterEnd = isExclusive ? (RubyString) end : (RubyString) end.callMethod(context, "succ");
+          boolean pastEnd = isExclusive && currentObject.callMethod(context, MethodIndex.EQUALEQUAL, "==", end).isTrue();  
+          while(pastEnd == false) {
+              block.yield(context, currentObject);
+              for (int i = 0; i < stepSize; i++) {
+                  currentObject = currentObject.callMethod(context, "succ");
+                  if(currentObject.callMethod(context, MethodIndex.EQUALEQUAL, "==", afterEnd).isTrue()) {
+                    pastEnd = true;
+                    break;
+                  } 
+              }
+          }
         } else {
             while (currentObject.callMethod(context, compareMethod, (String)MethodIndex.NAMES.get(compareMethod), end).isTrue()) {
                 block.yield(context, currentObject);
@@ -489,7 +502,7 @@ public class RubyRange extends RubyObject {
         return false;
     }
 
-    @JRubyMethod(name = "include?", name2 = "member?", name3 = "===", required = 1, frame = true)
+    @JRubyMethod(name = {"include?", "member?", "==="}, required = 1, frame = true)
     public RubyBoolean include_p(IRubyObject obj, Block block) {
         RubyBoolean val = getRuntime().getFalse();
         if(r_le(begin,obj)) {

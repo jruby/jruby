@@ -200,7 +200,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
         if (args[size] instanceof RubyProc) {
             proc = (RubyProc) args[size];
         } else {
-            proc = getRuntime().newProc(false,block);
+            proc = getRuntime().newProc(Block.Type.PROC,block);
             size++;
         }
 

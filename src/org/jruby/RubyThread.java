@@ -69,6 +69,7 @@ import org.jruby.runtime.Visibility;
  */
 public class RubyThread extends RubyObject {
     private ThreadLike threadImpl;
+    private RubyFixnum priority;
     private Map threadLocalVariables = new HashMap();
     private boolean abortOnException;
     private IRubyObject finalResult;
@@ -130,7 +131,7 @@ public class RubyThread extends RubyObject {
      * </pre>
      * <i>produces:</i> abxyzc
      */
-    @JRubyMethod(name = "new", name2 = "fork", rest = true, frame = true, meta = true)
+    @JRubyMethod(name = {"new", "fork"}, rest = true, frame = true, meta = true)
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         return startThread(recv, args, true, block);
     }
@@ -296,7 +297,7 @@ public class RubyThread extends RubyObject {
         if (originalKey instanceof RubySymbol) {
             return originalKey;
         } else if (originalKey instanceof RubyString) {
-            return RubySymbol.newSymbol(getRuntime(), originalKey.asSymbol());
+            return getRuntime().fastNewSymbol(originalKey.asSymbol());
         } else if (originalKey instanceof RubyFixnum) {
             getRuntime().getWarnings().warn("Do not use Fixnums as Symbols");
             throw getRuntime().newArgumentError(originalKey + " is not a symbol");
@@ -350,7 +351,7 @@ public class RubyThread extends RubyObject {
             // than or equal to zero returns immediately; returns nil
             timeoutMillis = (long)(1000.0D * args[0].convertToFloat().getValue());
             if (timeoutMillis <= 0) {
-                return null;
+                return this;
             }
         }
         if (isCurrent()) {
@@ -371,7 +372,7 @@ public class RubyThread extends RubyObject {
         if (exitingException != null) {
             throw exitingException;
         }
-        return null;
+        return this;
     }
 
     @JRubyMethod(name = "value")
@@ -500,7 +501,7 @@ public class RubyThread extends RubyObject {
     
     @JRubyMethod(name = "priority")
     public RubyFixnum priority() {
-        return getRuntime().newFixnum(threadImpl.getPriority());
+        return priority;
     }
 
     @JRubyMethod(name = "priority=", required = 1)
@@ -514,8 +515,12 @@ public class RubyThread extends RubyObject {
             iPriority = Thread.MAX_PRIORITY;
         }
         
-        threadImpl.setPriority(iPriority);
-        return priority;
+        this.priority = RubyFixnum.newFixnum(getRuntime(), iPriority);
+        
+        if (threadImpl.isAlive()) {
+            threadImpl.setPriority(iPriority);
+        }
+        return this.priority;
     }
 
     @JRubyMethod(name = "raise", optional = 1, frame = true)
@@ -630,7 +635,7 @@ public class RubyThread extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "kill", name2 = "exit", name3 = "terminate")
+    @JRubyMethod(name = {"kill", "exit", "terminate"})
     public IRubyObject kill() {
     	// need to reexamine this
         RubyThread currentThread = getRuntime().getCurrentContext().getThread();
@@ -665,7 +670,7 @@ public class RubyThread extends RubyObject {
         return this;
     }
     
-    @JRubyMethod(name = "kill!", name2 = "exit!", name3 = "terminate!")
+    @JRubyMethod(name = {"kill!", "exit!", "terminate!"})
     public IRubyObject kill_bang() {
         throw getRuntime().newNotImplementedError("Thread#kill!, exit!, and terminate! are not safe and not supported");
     }
@@ -682,14 +687,16 @@ public class RubyThread extends RubyObject {
     public void exceptionRaised(RaiseException exception) {
         assert isCurrent();
 
-        Ruby runtime = exception.getException().getRuntime();
-        if (abortOnException(runtime)) {
+        RubyException rubyException = exception.getException();
+        Ruby runtime = rubyException.getRuntime();
+        if (rubyException.isKindOf(runtime.fastGetClass("SystemExit"))) {
+            threadService.getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
+        } else if (abortOnException(runtime)) {
             // FIXME: printError explodes on some nullpointer
             //getRuntime().getRuntime().printError(exception.getException());
-        	// TODO: Doesn't SystemExit have its own method to make this less wordy..
-            RubyException re = RubyException.newException(getRuntime(), getRuntime().fastGetClass("SystemExit"), exception.getMessage());
-            re.fastSetInternalVariable("status", getRuntime().newFixnum(1));
-            threadService.getMainThread().raise(new IRubyObject[] {re}, Block.NULL_BLOCK);
+            RubyException systemExit = RubySystemExit.newInstance(runtime, 1);
+            systemExit.message = rubyException.message;
+            threadService.getMainThread().raise(new IRubyObject[] {systemExit}, Block.NULL_BLOCK);
             return;
         } else if (runtime.getDebug().isTrue()) {
             runtime.printError(exception.getException());

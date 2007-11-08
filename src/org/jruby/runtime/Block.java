@@ -55,6 +55,9 @@ public class Block {
     public static final int ZERO_ARGS = 0;
     public static final int MULTIPLE_ASSIGNMENT = 1;
     public static final int ARRAY = 2;
+    public static final int SINGLE_RESTARG = 3;
+    
+    public enum Type { NORMAL, PROC, LAMBDA }
     
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
@@ -103,17 +106,17 @@ public class Block {
      */
     private RubyProc proc = null;
     
-    public boolean isLambda = false;
+    public Type type = Type.NORMAL;
     
     protected Arity arity;
-    
-    public Frame oldFrame;
 
     public static Block createBlock(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
+        Frame f = context.getCurrentFrame();
+        f.setPosition(context.getPosition());
         return new Block(iterNode,
                          self,
-                         context.getCurrentFrame(),
-                         context.getCurrentFrame().getVisibility(),
+                         f,
+                         f.getVisibility(),
                          context.getRubyClass(),
                          dynamicScope);
     }
@@ -177,12 +180,34 @@ public class Block {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        if (!isLambda && args.length == 1 && args[0] instanceof RubyArray && iterNode != null) {
-            Node vNode = iterNode.getVarNode();
-            
-            if (vNode.nodeId == NodeType.MULTIPLEASGNNODE) {
-                args = ((RubyArray) args[0]).toJavaArray();
+        switch (type) {
+        case NORMAL: {
+            assert false : "can this happen?";
+            if (args.length == 1 && args[0] instanceof RubyArray && iterNode != null) {
+                Node vNode = iterNode.getVarNode();
+
+                if (vNode.nodeId == NodeType.MULTIPLEASGNNODE) {
+                    args = ((RubyArray) args[0]).toJavaArray();
+                }
             }
+            break;
+        }
+        case PROC: {
+            if (args.length == 1 && args[0] instanceof RubyArray && iterNode != null) {
+                Node vNode = iterNode.getVarNode();
+
+                if (vNode.nodeId == NodeType.MULTIPLEASGNNODE) {
+                    // if we only have *arg, we leave it wrapped in the array
+                    if (((MultipleAsgnNode)vNode).getArgsNode() == null) {
+                        args = ((RubyArray) args[0]).toJavaArray();
+                    }
+                }
+            }
+            break;
+        }
+        case LAMBDA:
+            arity().checkArity(context.getRuntime(), args);
+            break;
         }
 
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
@@ -245,7 +270,7 @@ public class Block {
             }
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-            return isLambda ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+            return type == Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
         } finally {
             frame.setVisibility(oldVis);
             post(context);
@@ -307,7 +332,7 @@ public class Block {
         Block newBlock = new Block(iterNode, self, frame.duplicate(), visibility, klass, 
                 dynamicScope.cloneScope());
         
-        newBlock.isLambda = isLambda;
+        newBlock.type = type;
 
         return newBlock;
     }
@@ -403,6 +428,7 @@ public class Block {
         switch (nodeId) {
         case ZEROARGNODE: return ZERO_ARGS;
         case MULTIPLEASGNNODE: return MULTIPLE_ASSIGNMENT;
+        case SVALUENODE: return SINGLE_RESTARG;
         }
         return ARRAY;
     }

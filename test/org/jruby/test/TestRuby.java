@@ -60,7 +60,12 @@ public class TestRuby extends TestRubyBase {
     }
 
     public void setUp() {
-        runtime = Ruby.getDefaultInstance();
+        runtime = Ruby.newInstance();
+    }
+    
+    public void testArgvIsNonNil() throws Exception {
+        assert(!runtime.getObject().getConstant("ARGV").isNil());
+        assert(!runtime.getGlobalVariables().get("$*").isNil());
     }
     
     public void testVarAndMet() throws Exception {

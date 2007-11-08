@@ -39,7 +39,6 @@ import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
@@ -63,7 +62,6 @@ public class RubyClass extends RubyModule {
             }
         };
         
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyClass.class);
         classClass.undefineMethod("module_function");
         classClass.undefineMethod("append_features");
         classClass.undefineMethod("extend_object");
@@ -214,7 +212,10 @@ public class RubyClass extends RubyModule {
      */
     @JRubyMethod(name = "initialize", optional = 1, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (superClass != null) throw getRuntime().newTypeError("already initialized class");
+        if (superClass != null) {
+            System.out.println(classId);
+            throw getRuntime().newTypeError("already initialized class");
+        }
  
         IRubyObject superObject;
         if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 0) {

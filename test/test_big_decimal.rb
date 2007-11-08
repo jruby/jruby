@@ -1,7 +1,13 @@
 require 'test/unit'
 require 'bigdecimal'
 
-class TestArray < Test::Unit::TestCase
+class TestBigDecimal < Test::Unit::TestCase
+
+  def test_bad_to_s_format_strings
+    bd = BigDecimal.new("1")
+    assert_equal("0.1E1", bd.to_s)
+    assert_equal("+0.1E1", bd.to_s("+-2"))
+  end
 
   def test_no_singleton_methods_on_bigdecimal
     num = BigDecimal.new("0.001")

@@ -411,7 +411,7 @@ public class JavaClass extends JavaObject {
                 len += 1;
                 IRubyObject[] newArgs = new IRubyObject[args.length+1];
                 System.arraycopy(args, 0, newArgs, 0, args.length);
-                newArgs[args.length] = RubyProc.newProc(self.getRuntime(), block, true);
+                newArgs[args.length] = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
                 args = newArgs;
             }
             IRubyObject[] convertedArgs = new IRubyObject[len+1];

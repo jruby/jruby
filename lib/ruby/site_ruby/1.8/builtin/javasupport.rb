@@ -45,5 +45,6 @@ require 'builtin/javasupport/core_ext'
 require 'builtin/java/collections'
 require 'builtin/java/interfaces'
 require 'builtin/java/exceptions'
+require 'builtin/java/regex'
 # AST code pulls in concrete java.util.ArrayList
 require 'builtin/java/ast'

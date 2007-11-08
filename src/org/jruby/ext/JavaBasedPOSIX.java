@@ -11,6 +11,8 @@ package org.jruby.ext;
 
 import java.io.File;
 import java.io.IOException;
+
+import org.jruby.Ruby;
 import org.jruby.util.Chmod;
 
 /**
@@ -18,6 +20,12 @@ import org.jruby.util.Chmod;
  * @author headius
  */
 public class JavaBasedPOSIX implements POSIX {
+    private Ruby runtime;
+    
+    public Ruby getRuntime() {
+        return runtime;
+    }
+    
     public int chmod(String filename, int mode) {
         return Chmod.chmod(new File(filename), Integer.toOctalString(mode));
     }
@@ -43,8 +51,36 @@ public class JavaBasedPOSIX implements POSIX {
         return -1;
     }
 
+    public int getegid() {
+        throw getRuntime().newNotImplementedError("getegid unsupported on this platform");
+    }
+    
+    public int geteuid() {
+        throw getRuntime().newNotImplementedError("geteuid unsupported on this platform");
+    }
+
+    public int getgid() {
+        throw getRuntime().newNotImplementedError("getgid unsupported on this platform");
+    }
+
+    public int getpgid() {
+        throw getRuntime().newNotImplementedError("getpgid unsupported on this platform");
+    }
+
+    public int getpgrp() {
+        throw getRuntime().newNotImplementedError("getpgrp unsupported on this platform");
+    }
+
     public int getpid() {
       return Runtime.getRuntime().hashCode();
+    }
+
+    public int getppid() {
+        throw getRuntime().newNotImplementedError("getppid unsupported on this platform");
+    }
+
+    public int getuid() {
+        throw getRuntime().newNotImplementedError("getuid unsupported on this platform");
     }
 
 }

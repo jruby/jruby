@@ -28,6 +28,8 @@
 package org.jruby;
 
 import java.math.BigDecimal;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Arity;
@@ -265,7 +267,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return getRuntime().newFixnum(value.hashCode());
     }
 
-    @JRubyMethod(name = "%", name2 = "modulo", required = 1)
+    @JRubyMethod(name = {"%", "modulo"}, required = 1)
     public IRubyObject op_mod(IRubyObject arg) {
         RubyBigDecimal val = getVpValue(arg,false);
         return new RubyBigDecimal(getRuntime(),this.value.divideAndRemainder(val.value)[1]).setResult();
@@ -291,7 +293,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(getRuntime(),value.multiply(val.value)).setResult();
     }
     
-    @JRubyMethod(name = "**", name2 = "power", required = 1)
+    @JRubyMethod(name = {"**", "power"}, required = 1)
     public IRubyObject op_pow(IRubyObject arg) {
         if (!(arg instanceof RubyFixnum)) {
             throw getRuntime().newTypeError("wrong argument type " + arg.getMetaClass() + " (expected Fixnum)");
@@ -369,7 +371,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(getRuntime(), value.negate());
     }
     
-    @JRubyMethod(name = "/", name2 = "div", name3 = "quo", required = 1, optional = 1)
+    @JRubyMethod(name = {"/", "div", "quo"}, required = 1, optional = 1)
     public IRubyObject op_div(IRubyObject[] args) {
         int scale = 0;
         if(Arity.checkArgumentCount(getRuntime(), args,1,2) == 2) {
@@ -634,37 +636,29 @@ public class RubyBigDecimal extends RubyNumeric {
       if (abs.compareTo(BigDecimal.valueOf(0))== 0) {
         return "0.0";
       }
-      //TODO: match the MRI code below!
-      //TODO: refactor the overly-long branches in to_s so we can reuse the sign processing here
       return null;
-//      if(VpIsNaN(a)) {
-//          sprintf(psz,SZ_NaN);
-//          return 1;
-//      }
-//
-//      if(VpIsPosInf(a)) {
-//          if(fPlus==1) {
-//             *psz++ = ' ';
-//          } else if(fPlus==2) {
-//             *psz++ = '+';
-//          }
-//          sprintf(psz,SZ_INF);
-//          return 1;
-//      }
-//      if(VpIsNegInf(a)) {
-//          sprintf(psz,SZ_NINF);
-//          return 1;
-//      }
-//      if(VpIsZero(a)) {
-//          if(VpIsPosZero(a)) {
-//              if(fPlus==1)      sprintf(psz, " 0.0");
-//              else if(fPlus==2) sprintf(psz, "+0.0");
-//              else              sprintf(psz, "0.0");
-//          } else    sprintf(psz, "-0.0");
-//          return 1;
-//      }
-//      return 0;
+    }
+  
+    public static boolean formatHasLeadingPlus(String format) {
+        return format.startsWith("+");
+    }
 
+    public static boolean formatHasLeadingSpace(String format) {
+        return format.startsWith(" ");
+    }
+
+    public static boolean formatHasFloatingPointNotation(String format) {
+        return format.endsWith("F");
+    }
+
+    public static int formatFractionalDigitGroups(String format) {
+        int groups = 0;
+        Pattern p = Pattern.compile("(\\+| )?(\\d+)(E|F)?");
+        Matcher m = p.matcher(format);
+        if (m.matches()) {
+            groups = Integer.parseInt(m.group(2));
+        }
+        return groups;
     }
 
     @JRubyMethod(name = "to_s", optional = 1)
@@ -676,27 +670,11 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if(args.length != 0 && !args[0].isNil()) {
             String format = args[0].toString();
-            int start = 0;
-            int end = format.length();
-            if(format.length() > 0 && format.charAt(0) == '+') {
-                pos_sign = true;
-                start++;
-            } else if(format.length() > 0 && format.charAt(0) == ' ') {
-                pos_sign = true;
-                pos_space = true;
-                start++;
-            }
-            if(format.length() > 0 && format.charAt(format.length()-1) == 'F') {
-                engineering = false;
-                end--;
-            } else if(format.length() > 0 && format.charAt(format.length()-1) == 'E') {
-                engineering = true;
-                end--;
-            }
-            String nums = format.substring(start,end);
-            if(nums.length()>0) {
-                groups = Integer.parseInt(nums);
-            }
+            pos_space = formatHasLeadingSpace(format);
+            //pos_sign true for pos_space in order to make ternary expression work later -- yuck
+            pos_sign = formatHasLeadingPlus(format) || pos_space;
+            engineering = !formatHasFloatingPointNotation(format);
+            groups = formatFractionalDigitGroups(format);
         }
 
         String out = null;
@@ -764,7 +742,6 @@ public class RubyBigDecimal extends RubyNumeric {
                     index += groups;
                 }
                 if(null != after) {
-                    System.out.println("AFTER: " + after);
                     build.append(".");
                     index = 0;
                     sep = "";

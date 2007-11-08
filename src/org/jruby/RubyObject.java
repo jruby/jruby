@@ -153,10 +153,9 @@ public class RubyObject implements Cloneable, IRubyObject {
         public void finalize() {
             if (finalized.compareAndSet(false, true)) {
                 if (finalizers != null) {
-                    IRubyObject idFixnum = getRuntime().newFixnum(id);
                     for (int i = 0; i < finalizers.size(); i++) {
                         ((RubyProc)finalizers.get(i)).call(
-                                new IRubyObject[] {idFixnum});
+                                new IRubyObject[] {RubyObject.this});
                     }
                 }
             }
@@ -521,6 +520,8 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public String asSymbol() {
+        IRubyObject asString = checkStringType();
+        if(!asString.isNil()) return ((RubyString)asString).asSymbol();
         throw getRuntime().newTypeError(inspect().toString() + " is not a symbol");
     }
 
@@ -755,8 +756,9 @@ public class RubyObject implements Cloneable, IRubyObject {
             // Binding provided for scope, use it
             context.preEvalWithBinding(blockOfBinding);
             IRubyObject newSelf = context.getFrameSelf();
+            RubyString source = src.convertToString();
             Node node = 
-                getRuntime().parseEval(src.toString(), file, blockOfBinding.getDynamicScope(), lineNumber);
+                getRuntime().parseEval(source.getByteList(), file, blockOfBinding.getDynamicScope(), lineNumber);
 
             return ASTInterpreter.eval(getRuntime(), context, node, newSelf, blockOfBinding);
         } catch (JumpException.BreakJump bj) {
@@ -781,8 +783,9 @@ public class RubyObject implements Cloneable, IRubyObject {
         ISourcePosition savedPosition = context.getPosition();
 
         // no binding, just eval in "current" frame (caller's frame)
+        RubyString source = src.convertToString();
         try {
-            Node node = getRuntime().parseEval(src.toString(), file, context.getCurrentScope(), 0);
+            Node node = getRuntime().parseEval(source.getByteList(), file, context.getCurrentScope(), 0);
             
             return ASTInterpreter.eval(getRuntime(), context, node, this, Block.NULL_BLOCK);
         } catch (JumpException.BreakJump bj) {
@@ -798,17 +801,17 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_equal
      *
      */
-    @JRubyMethod(name = "==", required = 1, module = true)
+    @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal(IRubyObject obj) {
         return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
     }
     
-    @JRubyMethod(name = "equal?", required = 1, module = true)
+    @JRubyMethod(name = "equal?", required = 1)
     public IRubyObject equal_p(IRubyObject obj) {
         return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "eql?", required = 1, module = true)
+    @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql_p(IRubyObject obj) {
         return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
     }
@@ -816,7 +819,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_equal
      * 
      */
-    @JRubyMethod(name = "===", required = 1, module = true)
+    @JRubyMethod(name = "===", required = 1)
     public IRubyObject op_eqq(IRubyObject other) {
         if(this == other || callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==",other).isTrue()){
             return getRuntime().getTrue();
@@ -848,7 +851,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_init_copy
      * 
      */
-    @JRubyMethod(name = "initialize_copy", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject original) {
 	    if (this == original) return this;
 	    checkFrozen();
@@ -870,7 +873,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @return true if this responds to the given method
      * FIXME: !!! For some reason MRI shows the arity of respond_to? as -1, when it should be -2; that's why this is rest instead of required, optional = 1
      */
-    @JRubyMethod(name = "respond_to?", rest = true, module = true)
+    @JRubyMethod(name = "respond_to?", rest = true)
     public RubyBoolean respond_to_p(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 1, 2);
 
@@ -885,7 +888,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * <i>CRuby function: rb_obj_id</i>
      * FIXME: Should this be renamed to match its ruby name?
      */
-    @JRubyMethod(name = "object_id", name2 = "__id__", module = true)
+    @JRubyMethod(name = {"object_id", "__id__"})
     public synchronized IRubyObject id() {
         return getRuntime().newFixnum(getRuntime().getObjectSpace().idOf(this));
     }
@@ -893,13 +896,13 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_id_obsolete
      * 
      */
-    @JRubyMethod(name = "id", module = true)
+    @JRubyMethod(name = "id")
     public synchronized IRubyObject id_deprecated() {
         getRuntime().getWarnings().warn("Object#id will be deprecated; use Object#object_id");
         return id();
     }
     
-    @JRubyMethod(name = "hash", module = true)
+    @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         return getRuntime().newFixnum(super.hashCode());
     }
@@ -915,12 +918,12 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_type
      *
      */
-    @JRubyMethod(name = "class", module = true)
+    @JRubyMethod(name = "class")
     public RubyClass type() {
         return getMetaClass().getRealClass();
     }
 
-    @JRubyMethod(name = "type", module = true)
+    @JRubyMethod(name = "type")
     public RubyClass type_deprecated() {
         getRuntime().getWarnings().warn("Object#type is deprecated; use Object#class");
         return type();
@@ -929,7 +932,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_clone
      *  should be overriden only by: Proc, Method, UnboundedMethod, Binding
      */
-    @JRubyMethod(name = "clone", frame = true, module = true)
+    @JRubyMethod(name = "clone", frame = true)
     public IRubyObject rbClone() {
         if (isImmediate()) throw getRuntime().newTypeError("can't clone " + getMetaClass().getName());
         
@@ -946,7 +949,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_dup
      *  should be overriden only by: Proc
      */
-    @JRubyMethod(name = "dup", module = true)
+    @JRubyMethod(name = "dup")
     public IRubyObject dup() {
         if (isImmediate()) throw getRuntime().newTypeError("can't dup " + getMetaClass().getName());
 
@@ -965,7 +968,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     protected void copySpecialInstanceVariables(IRubyObject clone) {
     }    
 
-    @JRubyMethod(name = "display", optional = 1, module = true)
+    @JRubyMethod(name = "display", optional = 1)
     public IRubyObject display(IRubyObject[] args) {
         IRubyObject port = args.length == 0
             ? getRuntime().getGlobalVariables().get("$>") : args[0];
@@ -978,7 +981,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_tainted
      *
      */
-    @JRubyMethod(name = "tainted?", module = true)
+    @JRubyMethod(name = "tainted?")
     public RubyBoolean tainted_p() {
         return getRuntime().newBoolean(isTaint());
     }
@@ -986,7 +989,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_taint
      *
      */
-    @JRubyMethod(name = "taint", module = true)
+    @JRubyMethod(name = "taint")
     public IRubyObject taint() {
         getRuntime().secure(4);
         if (!isTaint()) {
@@ -999,7 +1002,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_untaint
      *
      */
-    @JRubyMethod(name = "untaint", module = true)
+    @JRubyMethod(name = "untaint")
     public IRubyObject untaint() {
         getRuntime().secure(3);
         if (isTaint()) {
@@ -1014,12 +1017,14 @@ public class RubyObject implements Cloneable, IRubyObject {
      * rb_obj_freeze
      *
      */
-    @JRubyMethod(name = "freeze", module = true)
+    @JRubyMethod(name = "freeze")
     public IRubyObject freeze() {
         if (getRuntime().getSafeLevel() >= 4 && isTaint()) {
             throw getRuntime().newSecurityError("Insecure: can't freeze object");
         }
-        setFrozen(true);
+        
+        if (!this.isImmediate()) setFrozen(true);
+
         return this;
     }
 
@@ -1027,7 +1032,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     
-    @JRubyMethod(name = "frozen?", module = true)
+    @JRubyMethod(name = "frozen?")
     public RubyBoolean frozen_p() {
         return getRuntime().newBoolean(isFrozen());
     }
@@ -1052,7 +1057,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_inspect
      *
      */
-    @JRubyMethod(name = "inspect", module = true)
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
         Ruby runtime = getRuntime();
         if ((!isImmediate()) &&
@@ -1090,7 +1095,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_is_instance_of
      *
      */
-    @JRubyMethod(name = "instance_of?", required = 1, module = true)
+    @JRubyMethod(name = "instance_of?", required = 1)
     public RubyBoolean instance_of_p(IRubyObject type) {
         return getRuntime().newBoolean(type() == type);
     }
@@ -1099,7 +1104,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_is_kind_of
      *
      */
-    @JRubyMethod(name = "kind_of?", name2 = "is_a?", required = 1, module = true)
+    @JRubyMethod(name = {"kind_of?", "is_a?"}, required = 1)
     public RubyBoolean kind_of_p(IRubyObject type) {
         // TODO: Generalize this type-checking code into IRubyObject helper.
         if (!(type instanceof RubyModule)) {
@@ -1113,7 +1118,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_methods
      *
      */
-    @JRubyMethod(name = "methods", optional = 1, module = true)
+    @JRubyMethod(name = "methods", optional = 1)
     public IRubyObject methods(IRubyObject[] args) {
     	Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
@@ -1124,7 +1129,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getMetaClass().instance_methods(args);
     }
 
-    @JRubyMethod(name = "public_methods", optional = 1, module = true)
+    @JRubyMethod(name = "public_methods", optional = 1)
     public IRubyObject public_methods(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
@@ -1138,7 +1143,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_protected_methods
      *
      */
-    @JRubyMethod(name = "protected_methods", optional = 1, module = true)
+    @JRubyMethod(name = "protected_methods", optional = 1)
     public IRubyObject protected_methods(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
@@ -1152,7 +1157,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_private_methods
      *
      */
-    @JRubyMethod(name = "private_methods", optional = 1, module = true)
+    @JRubyMethod(name = "private_methods", optional = 1)
     public IRubyObject private_methods(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
@@ -1167,7 +1172,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     // TODO: This is almost RubyModule#instance_methods on the metaClass.  Perhaps refactor.
-    @JRubyMethod(name = "singleton_methods", optional = 1, module = true)
+    @JRubyMethod(name = "singleton_methods", optional = 1)
     public RubyArray singleton_methods(IRubyObject[] args) {
         boolean all = true;
         if(Arity.checkArgumentCount(getRuntime(), args,0,1) == 1) {
@@ -1197,7 +1202,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         return result;
     }
 
-    @JRubyMethod(name = "method", required = 1, module = true)
+    @JRubyMethod(name = "method", required = 1)
     public IRubyObject method(IRubyObject symbol) {
         return getMetaClass().newMethod(this, symbol.asSymbol(), true);
     }
@@ -1210,7 +1215,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         return str;
     }
 
-    @JRubyMethod(name = "to_s", module = true)
+    @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
     	return anyToString();
     }
@@ -1221,7 +1226,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getRuntime().newArray(this);
     }
 
-    @JRubyMethod(name = "instance_eval", optional = 3, frame = true, module = true)
+    @JRubyMethod(name = "instance_eval", optional = 3, frame = true)
     public IRubyObject instance_eval(IRubyObject[] args, Block block) {
         RubyModule klazz;
         if (isImmediate()) {
@@ -1233,7 +1238,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         return specificEval(klazz, args, block);
     }
 
-    @JRubyMethod(name = "instance_exec", optional = 3, frame = true, module = true)
+    @JRubyMethod(name = "instance_exec", optional = 3, frame = true)
     public IRubyObject instance_exec(IRubyObject[] args, Block block) {
         if (!block.isGiven()) {
             throw getRuntime().newArgumentError("block not supplied");
@@ -1250,7 +1255,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         return yieldUnder(klazz, args, block);
     }
 
-    @JRubyMethod(name = "extend", required = 1, rest = true, module = true)
+    @JRubyMethod(name = "extend", required = 1, rest = true)
     public IRubyObject extend(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 1, -1);
 
@@ -1266,7 +1271,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "initialize", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize() {
         return getRuntime().getNil();
     }
@@ -1291,7 +1296,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      * @return the result of invoking the method identified by aSymbol.
      */
-    @JRubyMethod(name = "send", name2 = "__send__", required = 1, rest = true, module = true)
+    @JRubyMethod(name = {"send", "__send__"}, required = 1, rest = true)
     public IRubyObject send(IRubyObject[] args, Block block) {
         if (args.length < 1) {
             throw getRuntime().newArgumentError("no method name given");
@@ -1315,12 +1320,12 @@ public class RubyObject implements Cloneable, IRubyObject {
         return method.call(context, this, rubyClass, name, newArgs, block);
     }
     
-    @JRubyMethod(name = "nil?", module = true)
+    @JRubyMethod(name = "nil?")
     public IRubyObject nil_p() {
     	return getRuntime().getFalse();
     }
     
-    @JRubyMethod(name = "=~", required = 1, module = true)
+    @JRubyMethod(name = "=~", required = 1)
     public IRubyObject op_match(IRubyObject arg) {
     	return getRuntime().getFalse();
     }
@@ -1367,7 +1372,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     // INSTANCE VARIABLE RUBY METHODS
     //
     
-    @JRubyMethod(name = "instance_variable_defined?", required = 1, module = true)
+    @JRubyMethod(name = "instance_variable_defined?", required = 1)
     public IRubyObject instance_variable_defined_p(IRubyObject name) {
         if (variableTableFastContains(validateInstanceVariable(name.asSymbol()))) {
             return getRuntime().getTrue();
@@ -1375,7 +1380,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "instance_variable_get", required = 1, module = true)
+    @JRubyMethod(name = "instance_variable_get", required = 1)
     public IRubyObject instance_variable_get(IRubyObject name) {
         IRubyObject value;
         if ((value = variableTableFastFetch(validateInstanceVariable(name.asSymbol()))) != null) {
@@ -1384,13 +1389,13 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "instance_variable_set", required = 2, module = true)
+    @JRubyMethod(name = "instance_variable_set", required = 2)
     public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
         ensureInstanceVariablesSettable();
         return variableTableFastStore(validateInstanceVariable(name.asSymbol()), value);
     }
 
-    @JRubyMethod(name = "remove_instance_variable", required = 1, frame = true, module = true)
+    @JRubyMethod(name = "remove_instance_variable", required = 1, frame = true)
     public IRubyObject remove_instance_variable(IRubyObject name, Block block) {
         ensureInstanceVariablesSettable();
         IRubyObject value;
@@ -1400,7 +1405,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         throw getRuntime().newNameError("instance variable " + name.asSymbol() + " not defined", name.asSymbol());
     }
     
-    @JRubyMethod(name = "instance_variables", module = true)
+    @JRubyMethod(name = "instance_variables")
     public RubyArray instance_variables() {
         Ruby runtime = getRuntime();
         List<String> nameList = getInstanceVariableNameList();

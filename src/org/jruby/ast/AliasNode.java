@@ -45,8 +45,8 @@ public class AliasNode extends Node {
 
     public AliasNode(ISourcePosition position, String newName, String oldName) {
         super(position, NodeType.ALIASNODE);
-        this.oldName = oldName.intern();
-        this.newName = newName.intern();
+        this.oldName = oldName;
+        this.newName = newName;
     }
     
     /**

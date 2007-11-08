@@ -57,9 +57,6 @@ public interface MethodCompiler {
     public VariableCompiler getVariableCompiler();
     
     public InvocationCompiler getInvocationCompiler();
-
-    public void assignLocalVariableBlockArg(int argIndex, int varIndex);
-    public void assignLocalVariableBlockArg(int argIndex, int varIndex, int depth);
     
     /**
      * Retrieve the current "self" and put a reference on top of the stack.
@@ -107,7 +104,6 @@ public interface MethodCompiler {
      * Generate a new "Symbol" value (or fetch the existing one).
      */
     public void createNewSymbol(String name);
-    public void createNewSymbol(int id, String name);
     
     public void createObjectArray(Object[] elementArray, ArrayCallback callback);
 
@@ -455,6 +451,7 @@ public interface MethodCompiler {
     public void checkWhenWithSplat();
     public void createNewEndBlock(ClosureCallback body);
     public void runBeginBlock(StaticScope scope, ClosureCallback body);
-    
+    public void rethrowIfSystemExit();
+
     public MethodCompiler chainToMethod(String name, ASTInspector inspector);
 }

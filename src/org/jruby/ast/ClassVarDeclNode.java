@@ -48,7 +48,7 @@ public class ClassVarDeclNode extends AssignableNode implements INameNode {
     public ClassVarDeclNode(ISourcePosition position, String name, Node valueNode) {
         super(position, NodeType.CLASSVARDECLNODE);
 
-        this.name = name.intern();
+        this.name = name;
         
         setValueNode(valueNode);
     }

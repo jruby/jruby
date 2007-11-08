@@ -81,4 +81,5 @@ public interface IErrno
     int    ECONNREFUSED = 71;
     int    ECONNRESET   = 72;
     int    EADDRINUSE   = 73;
+    int    ECONNABORTED = 74;
 }

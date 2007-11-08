@@ -11,11 +11,12 @@
   <property file="default.build.properties"/>
 
   <path id="build.classpath">
-    <fileset dir="${lib.dir}" includes="*.jar" excludes="jruby*.jar"/>
+    <fileset dir="${build.lib.dir}" includes="*.jar"/>
+    <fileset dir="${lib.dir}" includes="bsf.jar"/>
   </path>
 
   <!-- directory that contains emma.jar and emma_ant.jar: -->
-  <property name="emma.dir" value="${lib.dir}" />
+  <property name="emma.dir" value="${build.lib.dir}" />
 
   <path id="emma.classpath">
     <pathelement location="${emma.dir}/emma.jar" />
@@ -99,6 +100,11 @@
             <include name="**/*.rb"/>
         </fileset>
     </copy>
+    <copy todir="${jruby.classes.dir}/builtin">
+        <fileset dir="${lib.dir}/ruby/site_ruby/1.8/builtin">
+            <include name="**/*.rb"/>
+        </fileset>
+    </copy>
     
     <tstamp>
         <format property="build.date" pattern="yyyy-MM-dd"/>
@@ -118,7 +124,7 @@
   </target>
 
   <target name="compile-jruby" depends="compile.tasks, check-for-optional-packages">
-    <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" deprecation="true">
+    <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
        <classpath refid="build.classpath"/>
        <src path="${src.dir}"/>
        <patternset refid="java.src.pattern"/>
@@ -131,10 +137,20 @@
 
   <target name="generate-method-classes" depends="compile">
     <touch file="${build.dir}/__empty.rb"/>
-    <java classname="org.jruby.Main" fork="true">
+    <!-- individual invokers -->
+    <java classname="org.jruby.Main" fork="true" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
+      <arg value="-rjava"/>
+      <arg value="${build.dir}/__empty.rb"/>
+    </java>
+    <!-- indexed invokers -->
+    <java classname="org.jruby.Main" fork="true" failonerror="true">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.indexed.methods" value="true"/>
       <arg value="-rjava"/>
       <arg value="${build.dir}/__empty.rb"/>
     </java>
@@ -142,17 +158,25 @@
   </target>
 
   <target name="jar-jruby" unless="jar-up-to-date">
-    <antcall target="generate-method-classes" inheritall="true"/>
-    <jar destfile="${lib.dir}/jruby.jar" compress="true">
-      <fileset dir="${jruby.classes.dir}">
-        <exclude name="org/jruby/util/ant/**/*.class"/>
-      </fileset>
-      <manifest>
-        <attribute name="Built-By" value="${user.name}"/>
-        <attribute name="Main-Class" value="org.jruby.Main"/>
-        <attribute name="Class-Path" value="asm-3.0.jar asm-commons-3.0.jar asm-util-3.0.jar asm-analysis-3.0.jar asm-tree-3.0.jar jline-0.9.91.jar bsf.jar backport-util-concurrent.jar"/>
-      </manifest>
-    </jar>
+      <antcall target="generate-method-classes" inheritall="true"/>
+      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-0.7.jar"/>
+      <jarjar destfile="${lib.dir}/jruby.jar">
+        <fileset dir="${jruby.classes.dir}">
+          <exclude name="org/jruby/util/ant/**/*.class"/>
+        </fileset>
+        <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
+        <zipfileset src="${build.lib.dir}/jna.jar"/>
+        <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+        <manifest>
+          <attribute name="Built-By" value="${user.name}"/>
+          <attribute name="Main-Class" value="org.jruby.Main"/>
+        </manifest>
+      </jarjar>
   </target>
 
   <target name="jar-1.4" depends="jar-jruby">
@@ -170,7 +194,7 @@
     <target name="jar-complete" depends="generate-method-classes" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
       <property name="mainclass" value="org.jruby.Main"/>
       <property name="filename" value="jruby-complete.jar"/>
-      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${lib.dir}/jarjar-0.7.jar"/>
+      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-0.7.jar"/>
       <jarjar destfile="${lib.dir}/${filename}">
         <fileset dir="${jruby.classes.dir}">
           <exclude name="org/jruby/util/ant/**/*.class"/>
@@ -178,14 +202,14 @@
         <fileset dir="${basedir}/lib/ruby/1.8">
           <include name="**/*.rb"/>
         </fileset>
-        <zipfileset src="${lib.dir}/asm-3.0.jar"/>
-        <zipfileset src="${lib.dir}/asm-commons-3.0.jar"/>
-        <zipfileset src="${lib.dir}/asm-util-3.0.jar"/>
-        <zipfileset src="${lib.dir}/asm-analysis-3.0.jar"/>
-        <zipfileset src="${lib.dir}/asm-tree-3.0.jar"/>
-        <zipfileset src="${lib.dir}/jline-0.9.91.jar"/>
-      	<zipfileset src="${lib.dir}/backport-util-concurrent.jar"/>
-        <zipfileset src="${lib.dir}/jna.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
+      	<zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
+        <zipfileset src="${build.lib.dir}/jna.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
         <zipfileset dir="${basedir}" prefix="META-INF/jruby.home">
           <include name="bin/*"/>
@@ -202,50 +226,6 @@
     </target>
 
 
-    <target name="jar-light" depends="generate-method-classes" description="Create the 'light' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
-        <property name="mainclass" value="org.jruby.Main"/>
-        <property name="filename" value="jruby-light.jar"/>
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${lib.dir}/jarjar-0.7.jar"/>
-      <jarjar destfile="${lib.dir}/${filename}">
-        <fileset dir="${jruby.classes.dir}">
-          <include name="**/*.class"/>
-        <include name="**/*.properties"/>
-          <exclude name="org/jruby/util/ant/**/*.class"/>
-        </fileset>
-        <fileset dir="${basedir}/lib/ruby/1.8">
-          <include name="**/*.rb"/>
-              <exclude name="**/rdoc/**"/>
-              <exclude name="**/cgi/**"/>
-              <exclude name="**/bigdecimal/**"/>
-              <exclude name="**/drb/**"/>
-              <exclude name="**/io/**"/>
-              <exclude name="**/net/**"/>
-              <exclude name="**/racc/**"/>
-              <exclude name="**/rexml/**"/>
-              <exclude name="**/rinda/**"/>
-              <exclude name="**/runit/**"/>
-              <exclude name="**/shell/**"/>
-              <exclude name="**/soap/**"/>
-              <exclude name="**/test/**"/>
-              <exclude name="**/uri/**"/>
-              <exclude name="**/webrick/**"/>
-              <exclude name="**/xmlrpc/**"/>
-              <exclude name="**/xsd/**"/>
-        </fileset>
-          <zipfileset src="${lib.dir}/asm-3.0.jar"/>
-          <zipfileset src="${lib.dir}/asm-analysis-3.0.jar"/>
-          <zipfileset src="${lib.dir}/asm-commons-3.0.jar"/>
-          <zipfileset src="${lib.dir}/asm-jar-3.0.jar"/>
-          <zipfileset src="${lib.dir}/asm-util-3.0.jar"/>
-          <zipfileset src="${lib.dir}/jline-0.9.91.jar"/>
-      	  <zipfileset src="${lib.dir}/backport-util-concurrent.jar"/>
-        <manifest>
-          <attribute name="Built-By" value="${user.name}"/>
-          <attribute name="Main-Class" value="${mainclass}"/>
-        </manifest>
-      </jarjar>
-    </target>
-
     <target name="jar-console" depends="generate-method-classes" description="Create the jruby graphical console jar">
           <antcall target="jar-light">
               <param name="mainclass" value="org.jruby.demo.IRBConsole"/>
@@ -256,9 +236,6 @@
   <target name="jar" depends="init" description="Create the jruby.jar file">
     <antcall target="jar-jruby" inheritall="true"/>
   </target>
-
-  <target name="jar.standalone" depends="generate-method-classes, jar"
-    description="Create a standalone jruby.jar file using libraries from RUBY_HOME/lib/ruby/1.8"/>
 
   <target name="compile-test" depends="jar" description="Compile the unit tests">
     <javac destdir="${test.classes.dir}" deprecation="true" debug="true" 
@@ -300,6 +277,7 @@
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <arg value="-I"/>
       <arg value="test/externals/rubinius/spec"/>
       <arg value="-S"/>
@@ -319,6 +297,7 @@
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.jit.threshold" value="0"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <arg value="-I"/>
       <arg value="test/externals/rubinius/spec"/>
       <arg value="-S"/>
@@ -386,8 +365,73 @@
           <arg value="http://rubini.us/svn/rubinius/trunk/spec/"/>
           <arg value="rubinius-spec"/>
       </exec>
-    <antcall target="run-spec-compiled"><param name="SPEC" value="${build.dir}/rubinius-spec"/></antcall>
-    <antcall target="run-spec-interpreted"><param name="SPEC" value="${build.dir}/rubinius-spec"/></antcall>
+    <antcall target="run-spec-compiled"><param name="SPEC" value="
+${build.dir}/rubinius-spec/core/array_spec.rb
+${build.dir}/rubinius-spec/core/class_spec.rb
+${build.dir}/rubinius-spec/core/comparable_spec.rb
+${build.dir}/rubinius-spec/core/enumerable_spec.rb
+${build.dir}/rubinius-spec/core/env_spec.rb
+${build.dir}/rubinius-spec/core/false_spec.rb
+${build.dir}/rubinius-spec/core/integer_spec.rb
+${build.dir}/rubinius-spec/core/nil_spec.rb
+${build.dir}/rubinius-spec/core/objectspace_spec.rb
+${build.dir}/rubinius-spec/core/proc_spec.rb
+${build.dir}/rubinius-spec/core/process_spec.rb
+${build.dir}/rubinius-spec/core/regexp_spec.rb
+${build.dir}/rubinius-spec/core/true_spec.rb
+${build.dir}/rubinius-spec/language/array_spec.rb
+${build.dir}/rubinius-spec/language/assignment_spec.rb
+${build.dir}/rubinius-spec/language/case_spec.rb
+${build.dir}/rubinius-spec/language/def_spec.rb
+${build.dir}/rubinius-spec/language/defined_spec.rb
+${build.dir}/rubinius-spec/language/execution_spec.rb
+${build.dir}/rubinius-spec/language/for_spec.rb
+${build.dir}/rubinius-spec/language/hash_spec.rb
+${build.dir}/rubinius-spec/language/if_spec.rb
+${build.dir}/rubinius-spec/language/numbers_spec.rb
+${build.dir}/rubinius-spec/language/redo_spec.rb
+${build.dir}/rubinius-spec/language/return_spec.rb
+${build.dir}/rubinius-spec/language/string_spec.rb
+${build.dir}/rubinius-spec/language/unless_spec.rb
+${build.dir}/rubinius-spec/language/until_spec.rb
+${build.dir}/rubinius-spec/language/while_spec.rb
+${build.dir}/rubinius-spec/language/yield_spec.rb
+${build.dir}/rubinius-spec/library/enumerator_spec.rb
+${build.dir}/rubinius-spec/library/time_spec.rb"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="
+${build.dir}/rubinius-spec/core/array_spec.rb
+${build.dir}/rubinius-spec/core/class_spec.rb
+${build.dir}/rubinius-spec/core/comparable_spec.rb
+${build.dir}/rubinius-spec/core/enumerable_spec.rb
+${build.dir}/rubinius-spec/core/env_spec.rb
+${build.dir}/rubinius-spec/core/false_spec.rb
+${build.dir}/rubinius-spec/core/integer_spec.rb
+${build.dir}/rubinius-spec/core/nil_spec.rb
+${build.dir}/rubinius-spec/core/objectspace_spec.rb
+${build.dir}/rubinius-spec/core/proc_spec.rb
+${build.dir}/rubinius-spec/core/process_spec.rb
+${build.dir}/rubinius-spec/core/regexp_spec.rb
+${build.dir}/rubinius-spec/core/true_spec.rb
+${build.dir}/rubinius-spec/language/array_spec.rb
+${build.dir}/rubinius-spec/language/assignment_spec.rb
+${build.dir}/rubinius-spec/language/case_spec.rb
+${build.dir}/rubinius-spec/language/def_spec.rb
+${build.dir}/rubinius-spec/language/defined_spec.rb
+${build.dir}/rubinius-spec/language/execution_spec.rb
+${build.dir}/rubinius-spec/language/for_spec.rb
+${build.dir}/rubinius-spec/language/hash_spec.rb
+${build.dir}/rubinius-spec/language/if_spec.rb
+${build.dir}/rubinius-spec/language/numbers_spec.rb
+${build.dir}/rubinius-spec/language/redo_spec.rb
+${build.dir}/rubinius-spec/language/return_spec.rb
+${build.dir}/rubinius-spec/language/string_spec.rb
+${build.dir}/rubinius-spec/language/symbol_spec.rb
+${build.dir}/rubinius-spec/language/unless_spec.rb
+${build.dir}/rubinius-spec/language/until_spec.rb
+${build.dir}/rubinius-spec/language/while_spec.rb
+${build.dir}/rubinius-spec/language/yield_spec.rb
+${build.dir}/rubinius-spec/library/enumerator_spec.rb
+${build.dir}/rubinius-spec/library/time_spec.rb"/></antcall>
   </target>
   
   <target name="test-spec-compiled" depends="install-gems">
@@ -399,10 +443,12 @@ test/externals/rubinius/spec/core/integer_spec.rb
 test/externals/rubinius/spec/core/io_spec.rb
 test/externals/rubinius/spec/core/matchdata_spec.rb
 test/externals/rubinius/spec/core/nil_spec.rb
+test/externals/rubinius/spec/core/object_spec.rb
 test/externals/rubinius/spec/core/objectspace_spec.rb
 test/externals/rubinius/spec/core/proc_spec.rb
 test/externals/rubinius/spec/core/range_spec.rb
 test/externals/rubinius/spec/core/regexp_spec.rb
+test/externals/rubinius/spec/core/struct_spec.rb
 test/externals/rubinius/spec/core/symbol_spec.rb
 test/externals/rubinius/spec/core/true_spec.rb
 test/externals/rubinius/spec/language/assignment_spec.rb
@@ -433,10 +479,12 @@ test/externals/rubinius/spec/core/integer_spec.rb
 test/externals/rubinius/spec/core/io_spec.rb
 test/externals/rubinius/spec/core/matchdata_spec.rb
 test/externals/rubinius/spec/core/nil_spec.rb
+test/externals/rubinius/spec/core/object_spec.rb
 test/externals/rubinius/spec/core/objectspace_spec.rb
 test/externals/rubinius/spec/core/proc_spec.rb
 test/externals/rubinius/spec/core/range_spec.rb
 test/externals/rubinius/spec/core/regexp_spec.rb
+test/externals/rubinius/spec/core/struct_spec.rb
 test/externals/rubinius/spec/core/symbol_spec.rb
 test/externals/rubinius/spec/core/true_spec.rb
 test/externals/rubinius/spec/language/assignment_spec.rb
@@ -459,8 +507,8 @@ test/externals/rubinius/spec/parser"/></antcall>
   </target>
   
   <target name="run-junit-interpreted" description="runs junit tests">
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
-    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="256M" showoutput="true" timeout="180000">
+    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
+    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
         <path refid="build.classpath"/>
@@ -474,10 +522,11 @@ test/externals/rubinius/spec/parser"/></antcall>
       <sysproperty key="jruby.base" value="${basedir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.jit.enabled" value="false"/>
+      <sysproperty key="jruby.compile.mode" value="OFF"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
-      
+
       <jvmarg value="-ea"/>
 
       <formatter type="xml"/>
@@ -496,7 +545,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   </target>
   
   <target name="run-junit-reflected-interpreted" description="runs junit tests">
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
+    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
     <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="256M" showoutput="true" timeout="180000">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
@@ -511,8 +560,9 @@ test/externals/rubinius/spec/parser"/></antcall>
       <sysproperty key="jruby.base" value="${basedir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.jit.enabled" value="false"/>
+      <sysproperty key="jruby.compile.mode" value="OFF"/>
       <sysproperty key="jruby.relection" value="true"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
       
@@ -534,8 +584,8 @@ test/externals/rubinius/spec/parser"/></antcall>
   </target>
   
   <target name="run-junit-compiled" description="runs junit tests">
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
-    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="256M" showoutput="true" timeout="180000">
+    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
+    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
         <path refid="build.classpath"/>
@@ -549,11 +599,12 @@ test/externals/rubinius/spec/parser"/></antcall>
       <sysproperty key="jruby.base" value="${basedir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.jit.enabled" value="true"/>
+      <sysproperty key="jruby.compile.mode" value="JIT"/>
       <sysproperty key="jruby.jit.threshold" value="0"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
-      
+
       <jvmarg value="-ea"/>
 
       <formatter type="xml"/>
@@ -577,7 +628,7 @@ test/externals/rubinius/spec/parser"/></antcall>
   </target>
   
   <target name="run-junit-reflected-compiled" description="runs junit tests">
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
+    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
     <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="256M" showoutput="true" timeout="180000">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
@@ -592,9 +643,10 @@ test/externals/rubinius/spec/parser"/></antcall>
       <sysproperty key="jruby.base" value="${basedir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.jit.enabled" value="true"/>
+      <sysproperty key="jruby.compile.mode" value="JIT"/>
       <sysproperty key="jruby.jit.threshold" value="0"/>
       <sysproperty key="jruby.reflection" value="true"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
       
@@ -635,7 +687,7 @@ test/externals/rubinius/spec/parser"/></antcall>
     </javadoc>
   </target>
 
-  <patternset id="dist.bin.files">
+  <patternset id="dist.bindir.files">
     <include name="bin/*jruby*"/>
     <include name="bin/*gem*"/>
     <include name="bin/*jirb*"/>
@@ -660,10 +712,19 @@ test/externals/rubinius/spec/parser"/></antcall>
     <exclude name="lib/ruby/**"/>
   </patternset>
 
+  <patternset id="dist.bin.files">
+    <patternset refid="dist.files"/>
+    <exclude name="lib/emma.jar"/>
+    <exclude name="lib/emma_ant.jar"/>
+    <exclude name="lib/junit.jar"/>
+    <exclude name="lib/jarjar-0.7.jar"/>
+  </patternset>
+
   <patternset id="dist.src.files">
     <patternset refid="dist.files"/>
     <include name="src/**"/>
     <include name="test/**"/>
+    <include name="build_lib/**"/>
     <include name="build.xml"/>
     <include name="build-config.xml"/>
     <include name="nbproject/*"/>
@@ -677,7 +738,7 @@ test/externals/rubinius/spec/parser"/></antcall>
     <mkdir dir="dist"/>
     <copy todir="dist">
       <fileset dir="${basedir}">
-        <patternset refid="dist.bin.files"/>
+        <patternset refid="dist.bindir.files"/>
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
@@ -692,7 +753,7 @@ test/externals/rubinius/spec/parser"/></antcall>
         <include name="lib/**"/>
       </tarfileset>
       <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
-        <patternset refid="dist.files"/>
+        <patternset refid="dist.bin.files"/>
       </tarfileset>
     </tar>
     <zip destfile="jruby-bin-${version.jruby}.zip">
@@ -703,7 +764,7 @@ test/externals/rubinius/spec/parser"/></antcall>
         <include name="lib/**"/>
       </zipfileset>
       <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
-        <patternset refid="dist.files"/>
+        <patternset refid="dist.bin.files"/>
       </zipfileset>
     </zip>
   </target>
@@ -712,7 +773,7 @@ test/externals/rubinius/spec/parser"/></antcall>
     <mkdir dir="dist"/>
     <copy todir="dist">
       <fileset dir="${basedir}">
-        <patternset refid="dist.bin.files"/>
+        <patternset refid="dist.bindir.files"/>
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
@@ -757,6 +818,7 @@ test/externals/rubinius/spec/parser"/></antcall>
 
   <target name="clean" depends="init" description="clean almost everything">
     <delete dir="${build.dir}"/>
+    <delete dir="${dist.dir}"/>
     <delete quiet="false">
         <fileset dir="${lib.dir}" includes="jruby*.jar"/>
     </delete>
@@ -815,5 +877,50 @@ test/externals/rubinius/spec/parser"/></antcall>
       <jvmarg value="${profiler.info.jvmargs.agent}"/>
       <arg value="testapp/script/server"/>
     </java>
+  </target>
+
+  <property name="nailgun.home" value="${basedir}/tool/nailgun"/>
+
+  <target name="need-ng">
+    <condition property="should.build.ng">
+      <and>
+        <os family="unix"/>
+        <not><available file="${nailgun.home}/ng"/></not>
+      </and>
+    </condition>
+  </target>
+
+  <target name="build-ng" depends="need-ng" if="should.build.ng">
+    <exec executable="make" dir="${nailgun.home}"/>
+  </target>
+
+  <target name="jruby-nailgun" depends="generate-method-classes,build-ng"
+    description="Set up JRuby to be run with Nailgun (jruby-ng, jruby-ng-server)">
+    <mkdir dir="${build.dir}/nailmain"/>
+    <javac srcdir="${nailgun.home}/src/java" destdir="${build.dir}/nailmain"
+      classpath="${nailgun.home}/nailgun-0.7.1.jar:${jruby.classes.dir}" debug="true"
+      source="${javac.version}" target="${javac.version}"
+      deprecation="true" encoding="UTF-8" />
+    <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
+      classpath="${build.lib.dir}/jarjar-0.7.jar"/>
+    <jarjar destfile="${nailgun.home}/jruby-nailgun.jar">
+      <fileset dir="${jruby.classes.dir}">
+        <exclude name="org/jruby/util/ant/**/*.class"/>
+      </fileset>
+      <fileset dir="${build.dir}/nailmain"/>
+      <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
+      <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
+      <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
+      <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
+      <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
+      <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
+      <zipfileset src="${build.lib.dir}/jna.jar"/>
+      <zipfileset src="${nailgun.home}/nailgun-0.7.1.jar"/>
+      <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}"/>
+        <attribute name="Main-Class" value="org.jruby.Main"/>
+      </manifest>
+    </jarjar>
   </target>
 </project>

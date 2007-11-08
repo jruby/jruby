@@ -45,4 +45,9 @@ public class ReflectionMethodFactory extends MethodFactory {
         return null;
     }
 
+    @Override
+    public void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class containingClass, MethodDefiningCallback callback) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
 }

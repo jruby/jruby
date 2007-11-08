@@ -97,6 +97,23 @@ public class IOHandlerNio extends IOHandler {
         }
     }
 
+    protected void checkReadable() throws IOException  {
+        checkOpen("closed stream");
+        if (!modes.isReadable()) throw new IOException("not opened for reading");
+    }
+
+    protected void checkWritable() throws IOException  {
+        checkOpen("closed stream");
+        if (!writable || !modes.isWritable()) throw new IOException("not opened for writing");
+    }
+
+    private boolean writable = true;
+
+    public void closeWrite() throws IOException {
+        checkOpen("closed stream");
+        writable = false;
+    }
+
     /* Unbuffered operations */
     
     public void setBlocking(boolean block) throws IOException {
@@ -383,11 +400,14 @@ public class IOHandlerNio extends IOHandler {
     /* buffering independent */
     public void close() throws IOException {
 	/* flush output buffer before close */
+        checkOpen("closed stream");
+        
 	if (outBuffer.position() > 0) {
 	    outBuffer.flip();
 	    flushOutBuffer();
 	}
 
+        isOpen = false;
         channel.close();
     }
     
@@ -404,7 +424,7 @@ public class IOHandlerNio extends IOHandler {
     }
 
     public void seek(long offset, int type) throws IOException, InvalidValueException, PipeException {
-        checkOpen("not open");
+        checkOpen("closed stream");
         if (channel instanceof FileChannel) {
             if (bufferedIO) {
                 flushInBuffer();
@@ -445,7 +465,7 @@ public class IOHandlerNio extends IOHandler {
     }
     
     public void rewind() throws IOException, PipeException {
-        checkOpen("not open");
+        checkOpen("closed stream");
         checkBuffered();
         if (channel instanceof FileChannel) {
             try {

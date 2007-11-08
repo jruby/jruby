@@ -49,7 +49,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
-import org.jruby.RubyLocalJumpError;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyRange;
@@ -127,6 +127,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private static final int VARS_ARRAY_INDEX = 7;
     private static final int NIL_INDEX = 8;
     private static final int EXCEPTION_INDEX = 9;
+    private static final int PREVIOUS_EXCEPTION_INDEX = 10;
     
     private String classname;
     private String sourcename;
@@ -143,6 +144,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     
     Map<String, String> sourcePositions = new HashMap<String, String>();
     Map<String, String> byteLists = new HashMap<String, String>();
+    Map<String, String> symbols = new HashMap<String, String>();
     
     /** Creates a new instance of StandardCompilerContext */
     public StandardASMCompiler(String classname, String sourcename) {
@@ -274,9 +276,19 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         method.newobj(classname);
         method.dup();
         method.invokespecial(classname, "<init>", cg.sig(Void.TYPE));
+        
+        // instance config for the script run
+        method.newobj(cg.p(RubyInstanceConfig.class));
+        method.dup();
+        method.invokespecial(cg.p(RubyInstanceConfig.class), "<init>", "()V");
+        
+        // set argv from main's args
+        method.dup();
+        method.aload(0);
+        method.invokevirtual(cg.p(RubyInstanceConfig.class), "setArgv", cg.sig(void.class, String[].class));
 
         // invoke run with threadcontext and topself
-        method.invokestatic(cg.p(Ruby.class), "getDefaultInstance", cg.sig(Ruby.class));
+        method.invokestatic(cg.p(Ruby.class), "newInstance", cg.sig(Ruby.class, RubyInstanceConfig.class));
         method.dup();
 
         method.invokevirtual(RUBY, "getCurrentContext", cg.sig(ThreadContext.class));
@@ -359,7 +371,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         protected boolean withinProtection = false;
         
         // The current local variable count, to use for temporary locals during processing
-        protected int localVariable = EXCEPTION_INDEX + 1;
+        protected int localVariable = PREVIOUS_EXCEPTION_INDEX + 1;
 
         public abstract void beginMethod(ClosureCallback args, StaticScope scope);
 
@@ -481,32 +493,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         public InvocationCompiler getInvocationCompiler() {
             return invocationCompiler;
-        }
-
-        public void assignLocalVariableBlockArg(int argIndex, int varIndex) {
-            // this is copying values, but it would be more efficient to just use the args in-place
-            method.aload(DYNAMIC_SCOPE_INDEX);
-            method.ldc(new Integer(varIndex));
-            method.aload(ARGS_INDEX);
-            method.ldc(new Integer(argIndex));
-            method.arrayload();
-            method.iconst_0();
-            method.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
-        }
-
-        public void assignLocalVariableBlockArg(int argIndex, int varIndex, int depth) {
-            if (depth == 0) {
-                assignLocalVariableBlockArg(argIndex, varIndex);
-                return;
-            }
-
-            method.aload(DYNAMIC_SCOPE_INDEX);
-            method.ldc(new Integer(varIndex));
-            method.aload(ARGS_INDEX);
-            method.ldc(new Integer(argIndex));
-            method.arrayload();
-            method.ldc(new Integer(depth));
-            method.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
         }
 
         public void assignConstantInCurrent(String name) {
@@ -632,46 +618,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void createNewSymbol(String name) {
+            method.aload(0);
             loadRuntime();
-            method.ldc(name);
-            invokeIRuby("newSymbol", cg.sig(RubySymbol.class, cg.params(String.class)));
-        }
-
-        public void createNewSymbol(int id, String name) {
-            loadRuntime(); 
-            if(id != -1) {
-                method.ldc(id);
-                method.invokestatic(cg.p(RubySymbol.class), "getSymbol", cg.sig(RubySymbol.class, cg.params(Ruby.class, int.class)));
-            } else {
-                String symField = getNewConstant(cg.ci(int.class), "lit_sym_", new Integer(-1));
-
-                // in current method, load the field to see if we've created a Pattern yet
-                method.aload(THIS); 
-                method.getfield(classname, symField, cg.ci(int.class));
-
-                Label alreadyCreated = new Label();
-                method.ldc(-1);
-                method.if_icmpne(alreadyCreated);
-
-                method.ldc(name); 
-                invokeIRuby("newSymbol", cg.sig(RubySymbol.class, cg.params(String.class)));
-                method.dup(); 
-                method.aload(THIS);
-                method.swap(); 
-                method.invokevirtual(cg.p(RubySymbol.class), "getId", cg.sig(int.class, cg.params())); 
-                method.putfield(classname, symField, cg.ci(int.class)); 
-                Label ret = new Label();
-                method.go_to(ret); 
-
-                method.visitLabel(alreadyCreated); 
-
-                method.aload(THIS);
-                method.getfield(classname, symField, cg.ci(int.class)); 
-
-                method.invokestatic(cg.p(RubySymbol.class), "getSymbol", cg.sig(RubySymbol.class, cg.params(Ruby.class, int.class)));
-
-                method.visitLabel(ret);
-            }
+            String methodName = cacheSymbol(name);
+            method.invokevirtual(classname, methodName, 
+                    cg.sig(RubySymbol.class, cg.params(Ruby.class)));
         }
 
         public void createNewArray(boolean lightweight) {
@@ -1614,9 +1565,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             SkinnyMethodAdapter old_method = null;
             SkinnyMethodAdapter var_old_method = null;
             SkinnyMethodAdapter inv_old_method = null;
-            Label beforeMethodBody = new Label();
             Label afterMethodBody = new Label();
             Label catchRetry = new Label();
+            Label catchRaised = new Label();
+            Label catchJumps = new Label();
             Label exitRescue = new Label();
             boolean oldWithinProtection = withinProtection;
             withinProtection = true;
@@ -1629,8 +1581,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 getInvocationCompiler().setMethodAdapter(mv);
 
                 mv.visitCode();
-                
-                mv.label(beforeMethodBody);
 
                 // set up a local IRuby variable
                 mv.aload(THREADCONTEXT_INDEX);
@@ -1638,6 +1588,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.invokevirtual(cg.p(ThreadContext.class), "getRuntime", cg.sig(Ruby.class));
                 mv.dup();
                 mv.astore(RUNTIME_INDEX);
+                
+                // store previous exception for restoration if we rescue something
+                loadRuntime();
+                invokeUtilityMethod("getErrorInfo", cg.sig(IRubyObject.class, Ruby.class));
+                mv.astore(PREVIOUS_EXCEPTION_INDEX);
             
                 // grab nil for local variables
                 mv.invokevirtual(cg.p(Ruby.class), "getNil", cg.sig(IRubyObject.class));
@@ -1667,12 +1622,31 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.label(afterMethodBody);
                 mv.go_to(exitRescue);
                 
-                mv.trycatch(beforeMethodBody, afterMethodBody, catchRetry, cg.p(JumpException.RetryJump.class));
+                mv.trycatch(beforeBody, afterMethodBody, catchRetry, cg.p(JumpException.RetryJump.class));
                 mv.label(catchRetry);
                 mv.pop();
-                mv.go_to(beforeMethodBody);
+                mv.go_to(beforeBody);
+                
+                // any exceptions raised must continue to be raised, skipping $! restoration
+                mv.trycatch(beforeBody, afterMethodBody, catchRaised, cg.p(RaiseException.class));
+                mv.label(catchRaised);
+                mv.athrow();
+                
+                // and remaining jump exceptions should restore $!
+                mv.trycatch(beforeBody, afterMethodBody, catchJumps, cg.p(JumpException.class));
+                mv.label(catchJumps);
+                loadRuntime();
+                mv.aload(PREVIOUS_EXCEPTION_INDEX);
+                invokeUtilityMethod("setErrorInfo", cg.sig(void.class, Ruby.class, IRubyObject.class));
+                mv.athrow();
                 
                 mv.label(exitRescue);
+                
+                // restore the original exception
+                loadRuntime();
+                mv.aload(PREVIOUS_EXCEPTION_INDEX);
+                invokeUtilityMethod("setErrorInfo", cg.sig(void.class, Ruby.class, IRubyObject.class));
+                
                 mv.areturn();
                 mv.visitMaxs(1, 1);
                 mv.visitEnd();
@@ -2339,6 +2313,19 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                         cg.params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, int.class, int.class, int.class, int.class, CallConfiguration.class)));
             }
         }
+
+        public void rethrowIfSystemExit() {
+            loadRuntime();
+            method.ldc("SystemExit");
+            method.invokevirtual(cg.p(Ruby.class), "fastGetClass", cg.sig(RubyClass.class, String.class));
+            method.invokevirtual(cg.p(RubyException.class), "isKindOf", cg.sig(boolean.class, cg.params(RubyModule.class)));
+            method.iconst_0();
+            Label ifEnd = new Label();
+            method.if_icmpeq(ifEnd);
+            loadException();
+            method.athrow();
+            method.label(ifEnd);
+        }
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {
@@ -2700,5 +2687,42 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         return fieldName;
+    }
+    
+    public String cacheSymbol(String symbol) {
+        String methodName = symbols.get(symbol);
+        if (methodName == null) {
+            String fieldName = getNewConstant(cg.ci(RubySymbol.class), "symbol");
+            
+            methodName = "getSymbol" + fieldName;
+            symbols.put(symbol, methodName);
+            
+            ClassVisitor cv = getClassVisitor();
+            
+            SkinnyMethodAdapter symMethod = new SkinnyMethodAdapter(
+                    cv.visitMethod(ACC_PRIVATE | ACC_SYNTHETIC, methodName, 
+                            cg.sig(RubySymbol.class, Ruby.class), null, null));
+            symMethod.start();
+            symMethod.aload(0);
+            symMethod.getfield(classname, fieldName, cg.ci(RubySymbol.class));
+            symMethod.dup();
+            symMethod.astore(2);
+            
+            Label ifNullEnd = new Label();
+            symMethod.ifnull(ifNullEnd);
+            symMethod.aload(2);
+            symMethod.areturn();
+            symMethod.label(ifNullEnd);
+            symMethod.aload(0);
+            symMethod.aload(1);
+            symMethod.ldc(symbol);
+            symMethod.invokevirtual(cg.p(Ruby.class), "fastNewSymbol", cg.sig(RubySymbol.class, String.class));
+            symMethod.dup_x1();
+            symMethod.putfield(classname, fieldName, cg.ci(RubySymbol.class));
+            symMethod.areturn();
+            symMethod.end();
+        }
+        
+        return methodName;
     }
 }

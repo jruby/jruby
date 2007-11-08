@@ -48,6 +48,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -76,7 +77,13 @@ public class RubyFile extends RubyIO {
     private static final int FNM_PATHNAME = 2;
     private static final int FNM_DOTMATCH = 4;
     private static final int FNM_CASEFOLD = 8;
-    
+
+    static final boolean IS_WINDOWS;
+    static {
+        String osname = System.getProperty("os.name");
+        IS_WINDOWS = osname != null && osname.toLowerCase().indexOf("windows") != -1;
+    }
+
     protected String path;
     private FileLock currentLock;
     
@@ -107,7 +114,7 @@ public class RubyFile extends RubyIO {
         });
     }
     
-    private RubyFile(Ruby runtime, String path, InputStream in) {
+    public RubyFile(Ruby runtime, String path, InputStream in) {
         super(runtime, runtime.getFile());
         this.path = path;
         try {
@@ -351,6 +358,13 @@ public class RubyFile extends RubyIO {
         if (args.length == 0) {
             throw getRuntime().newArgumentError(0, 1);
         }
+        else if (args.length < 3) {
+            IRubyObject fd = args[0].convertToTypeWithCheck(getRuntime().getFixnum(), MethodIndex.TO_INT, "to_int");
+            if (!fd.isNil()) {
+                args[0] = fd;
+                return super.initialize(args, block);
+            }
+        }
 
         getRuntime().checkSafeString(args[0]);
         path = args[0].toString();
@@ -396,9 +410,14 @@ public class RubyFile extends RubyIO {
         return RubyFixnum.newFixnum(getRuntime(), result);
     }
 
-    @JRubyMethod(name2 = "atime", name3 = "ctime")
-    public IRubyObject mtime() {
+    @JRubyMethod(name = {"atime", "ctime"})
+    public IRubyObject atime() {
         return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(), this.path).getParentFile().lastModified());
+    }
+
+    @JRubyMethod(name = {"mtime"})
+    public IRubyObject mtime() {
+        return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(), this.path).lastModified());
     }
 
     @JRubyMethod
@@ -461,6 +480,30 @@ public class RubyFile extends RubyIO {
         Arity.checkArgumentCount(recv.getRuntime(), args, 1, 2);
         
         String name = RubyString.stringValue(args[0]).toString();
+
+        // MRI-compatible basename handling for windows drive letter paths
+        if (IS_WINDOWS) {
+            if (name.length() > 1 && name.charAt(1) == ':' && Character.isLetter(name.charAt(0))) {
+                switch (name.length()) {
+                case 2:
+                    return recv.getRuntime().newString("").infectBy(args[0]);
+                case 3:
+                    return recv.getRuntime().newString(name.substring(2)).infectBy(args[0]);
+                default:
+                    switch (name.charAt(2)) {
+                    case '/':
+                    case '\\':
+                        break;
+                    default:
+                        // strip c: away from relative-pathed name
+                        name = name.substring(2);
+                        break;
+                    }
+                    break;
+                }
+            }
+        }
+
         while (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
             name = name.substring(0, name.length() - 1);
         }
@@ -553,17 +596,47 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject dirname(IRubyObject recv, IRubyObject arg) {
         RubyString filename = RubyString.stringValue(arg);
-        String name = filename.toString().replace('\\', '/');
+        String jfilename = filename.toString();
+        String name = jfilename.replace('\\', '/');
+        boolean trimmedSlashes = false;
+
         while (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
+            trimmedSlashes = true;
             name = name.substring(0, name.length() - 1);
         }
-        //TODO deal with drive letters A: and UNC names
-        int index = name.lastIndexOf('/');
-        if (index == -1) return recv.getRuntime().newString(".");
-        if (index == 0) return recv.getRuntime().newString("/");
 
-        return recv.getRuntime().newString(name.substring(0, index)).infectBy(filename);
+        String result;
+        if (IS_WINDOWS && name.length() == 2 &&
+                isWindowsDriveLetter(name.charAt(0)) && name.charAt(1) == ':') {
+            // C:\ is returned unchanged (after slash trimming)
+            if (trimmedSlashes) {
+                result = jfilename.substring(0, 3);
+            } else {
+                result = jfilename.substring(0, 2) + '.';
+            }
+        } else {
+            //TODO deal with UNC names
+            int index = name.lastIndexOf('/');
+            if (index == -1) return recv.getRuntime().newString(".");
+            if (index == 0) return recv.getRuntime().newString("/");
+
+            // Include additional path separator (e.g. C:\myfile.txt becomes C:\, not C:)
+            if (IS_WINDOWS && index == 2 && 
+                    isWindowsDriveLetter(name.charAt(0)) && name.charAt(1) == ':') {
+                index++;
+            }
+            
+            result = jfilename.substring(0, index);
+         }
+
+         return recv.getRuntime().newString(result).infectBy(filename);
+
     }
+
+    private static boolean isWindowsDriveLetter(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    }
+
     
     /**
      * Returns the extension name of the file. An empty string is returned if 
@@ -785,7 +858,7 @@ public class RubyFile extends RubyIO {
      *   [set]:  Matches a single char in a set (re: [...]).
      *
      */
-    @JRubyMethod(name2 = "fnmatch?", required = 2, optional = 1, meta = true)
+    @JRubyMethod(name = {"fnmatch", "fnmatch?"}, required = 2, optional = 1, meta = true)
     public static IRubyObject fnmatch(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int flags;
@@ -847,13 +920,26 @@ public class RubyFile extends RubyIO {
         }
     }
     
-    @JRubyMethod(name2 = "stat", required = 1, meta = true)
+    @JRubyMethod(name = {"lstat", "stat"}, required = 1, meta = true)
     public static IRubyObject lstat(IRubyObject recv, IRubyObject filename) {
         RubyString name = RubyString.stringValue(filename);
         return recv.getRuntime().newRubyFileStat(name.toString());
     }
     
-    @JRubyMethod(name2 = "atime", name3 = "ctime", required = 1, meta = true)
+    @JRubyMethod(name = {"atime", "ctime"}, required = 1, meta = true)
+    public static IRubyObject atime(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        RubyString name = RubyString.stringValue(filename);
+        JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), name.toString());
+
+        if (!file.exists()) {
+            throw runtime.newErrnoENOENTError("No such file or directory - " + name.toString());
+        }
+        
+        return runtime.newTime(file.getParentFile().lastModified());
+    }
+    
+    @JRubyMethod(name = {"mtime"}, required = 1, meta = true)
     public static IRubyObject mtime(IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
         RubyString name = RubyString.stringValue(filename);
@@ -1043,7 +1129,7 @@ public class RubyFile extends RubyIO {
         return runtime.newFixnum(args.length - 2);
     }
     
-    @JRubyMethod(name2 = "delete", rest = true, meta = true)
+    @JRubyMethod(name = {"unlink", "delete"}, rest = true, meta = true)
     public static IRubyObject unlink(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         

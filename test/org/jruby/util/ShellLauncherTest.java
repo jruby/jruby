@@ -14,7 +14,7 @@ public class ShellLauncherTest extends TestCase {
     private ShellLauncher launcher;
     protected void setUp() throws Exception {
         super.setUp();
-        runtime = Ruby.getDefaultInstance();
+        runtime = Ruby.newInstance();
         launcher = new ShellLauncher(runtime);
     }
 

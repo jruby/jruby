@@ -33,6 +33,9 @@ import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 
 import java.nio.channels.ServerSocketChannel;
 
@@ -101,12 +104,31 @@ public class RubyTCPServer extends RubyTCPSocket {
     @JRubyMethod(name = "accept")
     public IRubyObject accept() {
         RubyTCPSocket socket = new RubyTCPSocket(getRuntime(),getRuntime().fastGetClass("TCPSocket"));
+        Selector selector = null;
         try {
-            socket.setChannel(ssc.accept());
+            ssc.configureBlocking(false);
+            selector = Selector.open();
+            SelectionKey key = ssc.register(selector, SelectionKey.OP_ACCEPT);
+            
+            while (true) {
+                int selected = selector.select();
+                if (selected == 0) {
+                    // we were woken up without being selected...poll for thread events and go back to sleep
+                    getRuntime().getCurrentContext().pollThreadEvents();
+                } else {
+                    // otherwise one key has been selected (ours) so we get the channel and hand it off
+                    socket.setChannel(ssc.accept());
+                    return socket;
+                }
+            }
         } catch(IOException e) {
             throw sockerr(this, "problem when accepting");
+        } finally {
+            try {
+                if (selector != null) selector.close();
+            } catch (IOException ioe) {
+            }
         }
-        return socket;
     }
 
     @JRubyMethod(name = "close")

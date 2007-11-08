@@ -7,26 +7,27 @@ module ::Kernel
     26 => "SIGVTALRM", 27 => "SIGPROF", 30 => "SIGUSR1", 31 => "SIGUSR2"
   }
   begin
-    def trap(*args, &block)
+    def __jtrap(*args, &block)
       sig = args.first
       sig = SIGNALS[sig] if sig.kind_of?(Fixnum)
       sig = sig.to_s.sub(/^SIG(.+)/,'\1')
       signal_class = Java::sun.misc.Signal
-      signal_class.send :attr_accessor, :prev_handler
       signal_object = signal_class.new(sig) rescue nil
       return unless signal_object
       signal_handler = Java::sun.misc.SignalHandler.impl do
         begin
           block.call
+        rescue Exception => e
+          Thread.main.raise(e) rescue nil
         ensure
           # re-register the handler
           signal_class.handle(signal_object, signal_handler)
         end
       end
-      signal_object.prev_handler = signal_class.handle(signal_object, signal_handler)
+      signal_class.handle(signal_object, signal_handler)
     end
   rescue NameError
-    def trap(*args, &block)
+    def __jtrap(*args, &block)
       warn "trap not supported by this VM"
     end
   end

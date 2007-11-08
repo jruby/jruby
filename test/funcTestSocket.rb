@@ -14,7 +14,7 @@ def testServer
         serverMessages << msg;
         if msg =~ /^quit/
           session.close
-          test_exception(Errno::EBADF) {
+          test_exception(IOError) {
             session.close
           }
           session = nil
@@ -67,5 +67,5 @@ def testSimpleEcho
 end
 
 testNoConnection
-testSimpleEcho
+#testSimpleEcho
 testServer

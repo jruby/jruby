@@ -34,55 +34,59 @@ import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 
 
+/**
+ * A lexing unit for scanning a heredoc element.
+ * Example:
+ * <pre>
+ * foo(<<EOS, bar)
+ * This is heredoc country!
+ * EOF
+ * 
+ * Where:
+ * EOS = marker
+ * ',bar)\n' = lastLine
+ * </pre>
+ *  
+ */
 public class HeredocTerm extends StrTerm {
-	private final String eos;
-	private final int func;
-	private final String lastLine;
+    // Marker delimiting heredoc boundary
+    private final ByteList marker;
+
+    // Expand variables, Indentation of final marker
+    private final int flags;
+
+    // Portion of line right after beginning marker
+    private final ByteList lastLine;
     
-    public HeredocTerm(String eos, int func, String lastLine) {
-        this.eos = eos;
-        this.func = func;
+    public HeredocTerm(ByteList marker, int func, ByteList lastLine) {
+        this.marker = marker;
+        this.flags = func;
         this.lastLine = lastLine;
     }
     
     public int parseString(RubyYaccLexer lexer, LexerSource src) throws java.io.IOException {
-        boolean indent = (func & RubyYaccLexer.STR_FUNC_INDENT) != 0;
+        boolean indent = (flags & RubyYaccLexer.STR_FUNC_INDENT) != 0;
         ByteList str = new ByteList();
 
-        if (src.peek((char) RubyYaccLexer.EOF)) {
-            throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
-        }
-        if (src.wasBeginOfLine() && src.matchString(eos + '\n', indent)) {
+        if (src.peek(RubyYaccLexer.EOF)) syntaxError(src);
+
+        // Found end marker for this heredoc
+        if (src.wasBeginOfLine() && src.matchMarker(marker, indent)) {
+            // Put back lastLine for any elements past start of heredoc marker
             src.unreadMany(lastLine);
-            lexer.yaccValue = new Token(eos, lexer.getPosition());
+            
+            lexer.yaccValue = new Token(marker, lexer.getPosition());
             return Tokens.tSTRING_END;
         }
 
-        if ((func & RubyYaccLexer.STR_FUNC_EXPAND) == 0) {
-            /*
-             * if (c == '\n') { support.unread(c); }
-             */
-
-            // Something missing here...
-            /*
-             * int lastLineLength = here.getLastLineLength();
-             * 
-             * if (lastLineLength > 0) { // It looks like I needed to append
-             * last line as well...
-             * support.unreadMany(here.getLastLineLength());
-             * str.append(support.readLine()); str.append("\n"); }
-             */
-
+        if ((flags & RubyYaccLexer.STR_FUNC_EXPAND) == 0) {
             do {
                 str.append(src.readLineBytes());
                 str.append('\n');
-
-                if (src.peek('\0')) {
-                    throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
-                }
-            } while (!src.matchString(eos + '\n', indent));
+                if (src.peek(RubyYaccLexer.EOF)) syntaxError(src);
+            } while (!src.matchMarker(marker, indent));
         } else {
-            char c = src.read();
+            int c = src.read();
             ByteList buffer = new ByteList();
             if (c == '#') {
                 switch (c = src.read()) {
@@ -100,24 +104,25 @@ public class HeredocTerm extends StrTerm {
 
             src.unread(c);
 
-            // MRI has extra pointer which makes our code look a little bit more strange in 
+            // MRI has extra pointer which makes our code look a little bit
+            // more strange in
             // comparison
             do {
-                if ((c = new StringTerm(func, '\n', '\0').parseStringIntoBuffer(src, buffer)) == RubyYaccLexer.EOF) {
-                    throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
+                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, buffer)) == RubyYaccLexer.EOF) {
+                    syntaxError(src);
                 }
                 if (c != '\n') {
                     lexer.yaccValue = new StrNode(lexer.getPosition(), buffer);
                     return Tokens.tSTRING_CONTENT;
                 }
                 buffer.append(src.read());
-                if ((c = src.read()) == RubyYaccLexer.EOF) {
-                    throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
-                }
+                
+                if ((c = src.read()) == RubyYaccLexer.EOF) syntaxError(src);
+
                 // We need to pushback so when whole match looks it did not
                 // lose a char during last EOF
                 src.unread(c);
-            } while (!src.matchString(eos + '\n', indent));
+            } while (!src.matchMarker(marker, indent));
             str = buffer;
         }
 
@@ -125,5 +130,10 @@ public class HeredocTerm extends StrTerm {
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
         lexer.yaccValue = new StrNode(lexer.getPosition(), str);
         return Tokens.tSTRING_CONTENT;
+    }
+    
+    private void syntaxError(LexerSource src) {
+        throw new SyntaxException(src.getPosition(), "can't find string \"" + marker
+                + "\" anywhere before EOF");
     }
 }

@@ -42,7 +42,7 @@ public class TestRaiseException extends TestRubyBase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        runtime = Ruby.getDefaultInstance();
+        runtime = Ruby.newInstance();
     }
 
     public void testJavaExceptionTraceIncludesRubys() throws Exception {

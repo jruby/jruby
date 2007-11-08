@@ -101,3 +101,9 @@ test_equal tt.strftime("%Y-%m-%d"),tt.strftime("%F")
 
 test_equal "12:00AM", Time.utc(2007,01,01,0,0).strftime("%I:%M%p")
 test_equal "12:00PM", Time.utc(2007,01,01,12,0).strftime("%I:%M%p")
+
+# Time.utc accepts 8 arguments for compatibility with parsedate (two last arguments are ignored)
+test_no_exception {Time.utc(2007, 10, 10, 11, 55, 23, "-0200", 3)}
+
+# Time.utc accepts negative usec and rolls over
+test_equal 999999,  Time.utc(2007, 10, 10, 11, 55, 23, -1).usec

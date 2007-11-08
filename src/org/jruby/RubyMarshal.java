@@ -124,7 +124,7 @@ public class RubyMarshal {
         }
     }
 
-    @JRubyMethod(name = "load", name2 = "restore", required = 1, optional = 1, frame = true, module = true)
+    @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 1, frame = true, module = true)
     public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         try {
             if (args.length < 1) {

@@ -62,7 +62,7 @@ public class RubyEnumerable {
                 Arity.noArguments(), callback, context));
     }
 
-    @JRubyMethod(name = "to_a", name2 = "entries")
+    @JRubyMethod(name = {"to_a", "entries"})
     public static IRubyObject to_a(IRubyObject self) {
         Ruby runtime = self.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
@@ -174,7 +174,7 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = "detect", name2 = "find", optional = 1, frame = true)
+    @JRubyMethod(name = {"detect", "find"}, optional = 1, frame = true)
     public static IRubyObject detect(IRubyObject self, IRubyObject[] args, final Block block) {
         final Ruby runtime = self.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
@@ -200,7 +200,7 @@ public class RubyEnumerable {
         return ifnone != null ? ifnone.callMethod(context, "call") : runtime.getNil();
     }
 
-    @JRubyMethod(name = "select", name2 = "find_all", frame = true)
+    @JRubyMethod(name = {"select", "find_all"}, frame = true)
     public static IRubyObject select(IRubyObject self, final Block block) {
         final Ruby runtime = self.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
@@ -232,7 +232,7 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = "collect", name2 = "map", frame = true)
+    @JRubyMethod(name = {"collect", "map"}, frame = true)
     public static IRubyObject collect(IRubyObject self, final Block block) {
         final Ruby runtime = self.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
@@ -318,7 +318,7 @@ public class RubyEnumerable {
         return self;
     }
 
-    @JRubyMethod(name = "include?", name2 = "member?", required = 1)
+    @JRubyMethod(name = {"include?", "member?"}, required = 1)
     public static IRubyObject include_p(IRubyObject self, final IRubyObject arg) {
         final Ruby runtime = self.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();

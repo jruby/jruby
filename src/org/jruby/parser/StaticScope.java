@@ -53,7 +53,7 @@ public abstract class StaticScope implements Serializable {
     
     // Next immediate scope.  Variable and constant scoping rules make use of this variable
     // in different ways.
-    private StaticScope enclosingScope;
+    final protected StaticScope enclosingScope;
     
     // Live reference to module
     private transient RubyModule cref = null;
@@ -88,9 +88,7 @@ public abstract class StaticScope implements Serializable {
     public int addVariable(String name) {
         int slot = isDefined(name); 
 
-        if (slot >= 0) {
-            return slot;
-        }
+        if (slot >= 0) return slot;
             
         // This is perhaps innefficient timewise?  Optimal spacewise
         if (variableNames == null) {
@@ -116,9 +114,7 @@ public abstract class StaticScope implements Serializable {
     }
     
     public void setVariables(String[] names) {
-        if (names == null) {
-            return;
-        }
+        if (names == null) return;
         
         variableNames = new String[names.length];
         System.arraycopy(names, 0, variableNames, 0, names.length);
@@ -146,9 +142,7 @@ public abstract class StaticScope implements Serializable {
     public int exists(String name) {
         if (variableNames != null) {
             for (int i = 0; i < variableNames.length; i++) {
-                if (name == variableNames[i] || name.equals(variableNames[i])) {
-                    return i;
-                }   
+                if (name == variableNames[i]) return i;
             }
         }
         
@@ -246,15 +240,11 @@ public abstract class StaticScope implements Serializable {
      */
     public RubyModule determineModule() {
         if (cref == null) {
-            StaticScope scope = getEnclosingScope();
-            
-            assert scope != null : "Scope is always created before determine happens";
-
-            cref = scope.determineModule();
+            cref = getEnclosingScope().determineModule();
             
             assert cref != null : "CRef is always created before determine happens";
             
-            previousCRefScope = scope.previousCRefScope;
+            previousCRefScope = getEnclosingScope().previousCRefScope;
         }
         
         return cref;
