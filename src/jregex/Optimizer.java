@@ -30,6 +30,7 @@
 package jregex;
 
 import java.util.*;
+import jregex.Term.TermType;
 
 public class Optimizer{
    public static final int THRESHOLD=20;
@@ -42,28 +43,31 @@ public class Optimizer{
 //System.out.println("term="+term+", dist="+dist);
       if(term==null) return null;
       Term next=term.next;
-      int type=term.type;
+      TermType type=term.type;
       switch(type){
-         case Term.CHAR:
-         case Term.REG:
-         case Term.REG_I:
+         case CHAR:
+         case REG:
+         case REG_I:
             return new Optimizer(term,dist);
-         case Term.BITSET:
-         case Term.BITSET2:
+         case BITSET:
+         case BITSET2:
             if(term.weight<=THRESHOLD) return new Optimizer(term,dist);
             else return find(term.next,dist+1);
-         case Term.ANY_CHAR:
-         case Term.ANY_CHAR_NE:
+         case ANY_CHAR:
+         case ANY_CHAR_NE:
             return find(next,dist+1);
-         case Term.REPEAT_MIN_INF:
-         case Term.REPEAT_MIN_MAX:
+         case REPEAT_MIN_INF:
+         case REPEAT_MIN_MAX:
             if(term.minCount>0){
                return find(term.target,dist);
             }
             else return null;
-      }
-      if(type>=Term.FIRST_TRANSPARENT && type<=Term.LAST_TRANSPARENT){
-         return find(next,dist);
+         case BOUNDARY: case DIRECTION: case UBOUNDARY: case UDIRECTION:
+         case GROUP_IN: case GROUP_OUT: case VOID: case START: case END:
+         case END_EOL: case LINE_START: case LINE_END: case LAST_MATCH_END:
+         case CNT_SET_0: case CNT_INC: case CNT_GT_EQ: case READ_CNT_LT:
+         case CRSTORE_CRINC: case CR_SET_0: case CR_LT: case CR_GT_EQ:
+             return find(next,dist);
       }
       return null;
    }
@@ -83,12 +87,12 @@ public class Optimizer{
    Term makeBacktrack(Term back){
       int min=back.minCount;
       switch(back.type){
-         case Term.BACKTRACK_0:
+         case BACKTRACK_0:
             min=0;
-         case Term.BACKTRACK_MIN:
+         case BACKTRACK_MIN:
             return new FindBack(atom,distance,min,back);
          
-         case Term.BACKTRACK_REG_MIN:
+         case BACKTRACK_REG_MIN:
             return back;
          
          default:
@@ -101,14 +105,14 @@ public class Optimizer{
 class Find extends Term{
    Find(Term target, int distance, Term theFirst){
       switch(target.type){
-         case Term.CHAR:
-         case Term.BITSET:
-         case Term.BITSET2:
-            type=Term.FIND;
+         case CHAR:
+         case BITSET:
+         case BITSET2:
+            type=TermType.FIND;
             break;
-         case Term.REG:
-         case Term.REG_I:
-            type=Term.FINDREG;
+         case REG:
+         case REG_I:
+            type=TermType.FINDREG;
             break;
          default:
             throw new IllegalArgumentException("wrong target type: "+target.type);
@@ -130,14 +134,14 @@ class FindBack extends Term{
    FindBack(Term target, int distance, int minCount, Term backtrack){
       this.minCount=minCount;
       switch(target.type){
-         case Term.CHAR:
-         case Term.BITSET:
-         case Term.BITSET2:
-            type=Term.BACKTRACK_FIND_MIN;
+         case CHAR:
+         case BITSET:
+         case BITSET2:
+            type=TermType.BACKTRACK_FIND_MIN;
             break;
-         case Term.REG:
-         case Term.REG_I:
-            type=Term.BACKTRACK_FINDREG_MIN;
+         case REG:
+         case REG_I:
+            type=TermType.BACKTRACK_FINDREG_MIN;
             break;
          default:
             throw new IllegalArgumentException("wrong target type: "+target.type);

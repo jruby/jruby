@@ -32,6 +32,8 @@ package jregex;
 import java.util.*;
 import java.io.*;
 
+import jregex.Term.TermType;
+
 /**
  * Matcher instance is an automaton that actually performs matching. It provides the following methods:
  * <li> searching for a matching substrings : matcher.find() or matcher.findAll();
@@ -80,10 +82,10 @@ public class Matcher implements MatchResult{
    public static final int ACCEPT_INCOMPLETE=8;
    
    //see search(ANCHOR_START|...)
-   private static Term startAnchor=new Term(Term.START);
+   private static Term startAnchor=new Term(TermType.START);
    
    //see search(ANCHOR_LASTMATCH|...)
-   private static Term lastMatchAnchor=new Term(Term.LAST_MATCH_END);
+   private static Term lastMatchAnchor=new Term(TermType.LAST_MATCH_END);
    
    private Pattern re;
    private int[] counters;
@@ -956,7 +958,7 @@ new Exception().printStackTrace();
             int memreg,cntreg;
             char c;
             switch(term.type){
-               case Term.FIND:{
+               case FIND:{
                   int jump=find(data,i+term.distance,end,term.target); //don't eat the last match
                   if(jump<0) break main; //return false
                   i+=jump;
@@ -968,7 +970,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue matchHere;
                }
-               case Term.FINDREG:{
+               case FINDREG:{
                   MemReg mr=memregs[term.target.memreg];
                   int sampleOff=mr.in;
                   int sampleLen=mr.out-sampleOff;
@@ -992,11 +994,11 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue matchHere;
                }
-               case Term.VOID:
+               case VOID:
                   term=term.next;
                   continue matchHere;
                
-               case Term.CHAR:
+               case CHAR:
                   //can only be 1-char-wide
                   //  \/
                   if(i>=end || data[i]!=term.c) break;
@@ -1005,7 +1007,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue matchHere;
                
-               case Term.ANY_CHAR:
+               case ANY_CHAR:
                   //can only be 1-char-wide
                   //  \/
                   if(i>=end) break;
@@ -1013,7 +1015,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue matchHere;
                
-               case Term.ANY_CHAR_NE:
+               case ANY_CHAR_NE:
                   //can only be 1-char-wide
                   //  \/
                   if(i>=end || data[i]=='\n') break;
@@ -1021,14 +1023,14 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue matchHere;
                
-               case Term.END:
+               case END:
                   if(i>=end){  //meets
                      term=term.next;
                      continue matchHere;
                   }
                   break; 
                   
-               case Term.END_EOL:  //perl's $
+               case END_EOL:  //perl's $
                   if(i>=end){  //meets
                      term=term.next;
                      continue matchHere;
@@ -1045,7 +1047,7 @@ new Exception().printStackTrace();
                      else break; 
                   }
                   
-               case Term.LINE_END:
+               case LINE_END:
                   if(i>=end){  //meets
                      term=term.next;
                      continue matchHere;
@@ -1066,7 +1068,7 @@ new Exception().printStackTrace();
                   }
                   break; 
                   
-               case Term.START: //Perl's "^"
+               case START: //Perl's "^"
                   if(i==offset){  //meets
                      term=term.next;
                      continue matchHere;
@@ -1093,14 +1095,14 @@ new Exception().printStackTrace();
                   if(term!=startAnchor) break;
                   else break main;
                   
-               case Term.LAST_MATCH_END:
+               case LAST_MATCH_END:
                   if(i==wEnd || wEnd == -1){  //meets
                      term=term.next;
                      continue matchHere;
                   }
                   break main; //return false
                   
-               case Term.LINE_START:
+               case LINE_START:
                   if(i==offset){  //meets
                      term=term.next;
                      continue matchHere;
@@ -1122,7 +1124,7 @@ new Exception().printStackTrace();
                   }
                   break; 
                   
-               case Term.BITSET:{
+               case BITSET:{
                   //can only be 1-char-wide
                   //  \/
                   if(i>=end) break;
@@ -1132,7 +1134,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue matchHere;
                }
-               case Term.BITSET2:{
+               case BITSET2:{
                   //can only be 1-char-wide
                   //  \/
                   if(i>=end) break;
@@ -1143,7 +1145,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue matchHere;
                }
-               case Term.BOUNDARY:{
+               case BOUNDARY:{
                   boolean ch1Meets=false,ch2Meets=false;
                   boolean[] bitset=term.bitset;
                   test1:{
@@ -1165,7 +1167,7 @@ new Exception().printStackTrace();
                   }
                   else break;
                }
-               case Term.UBOUNDARY:{
+               case UBOUNDARY:{
                   boolean ch1Meets=false,ch2Meets=false;
                   boolean[][] bitset2=term.bitset2;
                   test1:{
@@ -1189,7 +1191,7 @@ new Exception().printStackTrace();
                   }
                   else break;
                }
-               case Term.DIRECTION:{
+               case DIRECTION:{
                   boolean ch1Meets=false,ch2Meets=false;
                   boolean[] bitset=term.bitset;
                   boolean inv=term.inverse;
@@ -1216,7 +1218,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue matchHere;
                }
-               case Term.UDIRECTION:{
+               case UDIRECTION:{
                   boolean ch1Meets=false,ch2Meets=false;
                   boolean[][] bitset2=term.bitset2;
                   boolean inv=term.inverse;
@@ -1241,7 +1243,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue matchHere;
                }
-               case Term.REG:{
+               case REG:{
                   MemReg mr=memregs[term.memreg];
                   int sampleOffset=mr.in;
                   int sampleOutside=mr.out;
@@ -1264,7 +1266,7 @@ new Exception().printStackTrace();
                   }
                   break;
                }
-               case Term.REG_I:{
+               case REG_I:{
                   MemReg mr=memregs[term.memreg];
                   int sampleOffset=mr.in;
                   int sampleOutside=mr.out;
@@ -1287,7 +1289,7 @@ new Exception().printStackTrace();
                   }
                   break;
                }
-               case Term.REPEAT_0_INF:{
+               case REPEAT_0_INF:{
                    //System.out.println("REPEAT, i="+i+", term.minCount="+term.minCount+", term.maxCount="+term.maxCount);
                   //i+=(cnt=repeat(data,i,end,term.target));
                   if((cnt=repeat(data,i,end,term.target))<=0){
@@ -1296,7 +1298,7 @@ new Exception().printStackTrace();
                   }
                   i+=cnt;
                   
-                  //branch out the backtracker (that is term.failNext, see Term.make*())
+                  //branch out the backtracker (that is term.failNext, see make*())
                   actual.cnt=cnt;
                   actual.term=term.failNext;
                   actual.index=i;
@@ -1309,13 +1311,13 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.REPEAT_MIN_INF:{
+               case REPEAT_MIN_INF:{
 //System.out.println("REPEAT, i="+i+", term.minCount="+term.minCount+", term.maxCount="+term.maxCount);
                   cnt=repeat(data,i,end,term.target);
                   if(cnt<term.minCount) break;
                   i+=cnt;
                   
-                  //branch out the backtracker (that is term.failNext, see Term.make*())
+                  //branch out the backtracker (that is term.failNext, see make*())
                   actual.cnt=cnt;
                   actual.term=term.failNext;
                   actual.index=i;
@@ -1328,7 +1330,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.REPEAT_MIN_MAX:{
+               case REPEAT_MIN_MAX:{
 //System.out.println("REPEAT, i="+i+", term.minCount="+term.minCount+", term.maxCount="+term.maxCount);
                   int out1=end;
                   int out2=i+term.maxCount;
@@ -1336,7 +1338,7 @@ new Exception().printStackTrace();
                   if(cnt<term.minCount) break;
                   i+=cnt;
                   
-                  //branch out the backtracker (that is term.failNext, see Term.make*())
+                  //branch out the backtracker (that is term.failNext, see make*())
                   actual.cnt=cnt;
                   actual.term=term.failNext;
                   actual.index=i;
@@ -1349,7 +1351,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.REPEAT_REG_MIN_INF:{
+               case REPEAT_REG_MIN_INF:{
                	 MemReg mr=memregs[term.memreg];
                   int sampleOffset=mr.in;
                   int sampleOutside=mr.out;
@@ -1387,7 +1389,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.REPEAT_REG_MIN_MAX:{
+               case REPEAT_REG_MIN_MAX:{
                	   MemReg mr=memregs[term.memreg];
                   int sampleOffset=mr.in;
                   int sampleOutside=mr.out;
@@ -1426,7 +1428,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.BACKTRACK_0:
+               case BACKTRACK_0:
 //System.out.println("<<");
                   cnt=actual.cnt;
                   if(cnt>0){
@@ -1446,7 +1448,7 @@ new Exception().printStackTrace();
                   }
                   else break;
                
-               case Term.BACKTRACK_MIN:
+               case BACKTRACK_MIN:
 //System.out.println("<<");
                   cnt=actual.cnt;
                   if(cnt>term.minCount){
@@ -1466,7 +1468,7 @@ new Exception().printStackTrace();
                   }
                   else break;
                
-               case Term.BACKTRACK_FIND_MIN:{
+               case BACKTRACK_FIND_MIN:{
 //System.out.print("<<<[cnt=");
                   cnt=actual.cnt;
 //System.out.print(cnt+", minCnt=");
@@ -1514,7 +1516,7 @@ new Exception().printStackTrace();
                   else break;
                }
                
-               case Term.BACKTRACK_FINDREG_MIN:{
+               case BACKTRACK_FINDREG_MIN:{
 //System.out.print("<<<[cnt=");
                   cnt=actual.cnt;
 //System.out.print(cnt+", minCnt=");
@@ -1584,7 +1586,7 @@ new Exception().printStackTrace();
                   else break;
                }
                
-               case Term.BACKTRACK_REG_MIN:
+               case BACKTRACK_REG_MIN:
 //System.out.println("<<");
                   cnt=actual.cnt;
                   if(cnt>term.minCount){
@@ -1606,7 +1608,7 @@ new Exception().printStackTrace();
                   }
                   else break;
                
-               case Term.GROUP_IN:{
+               case GROUP_IN:{
                   memreg=term.memreg;
                   //memreg=0 is a regex itself; we don't need to handle it
                   //because regex bounds already are in wOffset and wEnd
@@ -1620,7 +1622,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.GROUP_OUT:
+               case GROUP_OUT:
                   memreg=term.memreg;
                   //see above
                   if(memreg>0){
@@ -1634,7 +1636,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                
-               case Term.PLOOKBEHIND_IN:{
+               case PLOOKBEHIND_IN:{
                   int tmp=i-term.distance;
                   if(tmp<offset) break;
 //System.out.println("term="+term+", next="+term.next);
@@ -1646,8 +1648,8 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.INDEPENDENT_IN:
-               case Term.PLOOKAHEAD_IN:{
+               case INDEPENDENT_IN:
+               case PLOOKAHEAD_IN:{
                	 LAEntry le=lookaheads[term.lookaheadId];
                	 le.index=i;
                   le.actual=actual;
@@ -1655,10 +1657,10 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.LOOKBEHIND_CONDITION_OUT:
-               case Term.LOOKAHEAD_CONDITION_OUT:
-               case Term.PLOOKAHEAD_OUT:
-               case Term.PLOOKBEHIND_OUT:{
+               case LOOKBEHIND_CONDITION_OUT:
+               case LOOKAHEAD_CONDITION_OUT:
+               case PLOOKAHEAD_OUT:
+               case PLOOKBEHIND_OUT:{
                   LAEntry le=lookaheads[term.lookaheadId];
                	   i=le.index;
                   actual=le.actual;
@@ -1666,14 +1668,14 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.INDEPENDENT_OUT:{
+               case INDEPENDENT_OUT:{
                   LAEntry le=lookaheads[term.lookaheadId];
                	   actual=le.actual;
                   top=le.top;
                   term=term.next;
                   continue;
                }
-               case Term.NLOOKBEHIND_IN:{
+               case NLOOKBEHIND_IN:{
                   int tmp=i-term.distance;
                   if(tmp<offset){
                      term=term.failNext;
@@ -1695,7 +1697,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.NLOOKAHEAD_IN:{
+               case NLOOKAHEAD_IN:{
                   LAEntry le=lookaheads[term.lookaheadId];
                   le.actual=actual;
                   le.top=top;
@@ -1712,14 +1714,14 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.NLOOKBEHIND_OUT:
-               case Term.NLOOKAHEAD_OUT:{
+               case NLOOKBEHIND_OUT:
+               case NLOOKAHEAD_OUT:{
                   LAEntry le=lookaheads[term.lookaheadId];
                	 actual=le.actual;
                   top=le.top;
                   break;
                }
-               case Term.LOOKBEHIND_CONDITION_IN:{
+               case LOOKBEHIND_CONDITION_IN:{
                   int tmp=i-term.distance;
                   if(tmp<offset){
                      term=term.failNext;
@@ -1744,7 +1746,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.LOOKAHEAD_CONDITION_IN:{
+               case LOOKAHEAD_CONDITION_IN:{
                   LAEntry le=lookaheads[term.lookaheadId];
                   le.index=i;
                   le.actual=actual;
@@ -1762,7 +1764,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
                }
-               case Term.MEMREG_CONDITION:{
+               case MEMREG_CONDITION:{
                   MemReg mr=memregs[term.memreg];
                   int sampleOffset=mr.in;
                   int sampleOutside=mr.out;
@@ -1774,11 +1776,11 @@ new Exception().printStackTrace();
                   }
                   continue;
                }
-               case Term.BRANCH_STORE_CNT_AUX1:
+               case BRANCH_STORE_CNT_AUX1:
                   actual.regLen=regLen;
-               case Term.BRANCH_STORE_CNT:
+               case BRANCH_STORE_CNT:
                   actual.cnt=cnt;
-               case Term.BRANCH:
+               case BRANCH:
                   actual.term=term.failNext;
                   actual.index=i;
                   actual=(top=actual).on;
@@ -1790,7 +1792,7 @@ new Exception().printStackTrace();
                   term=term.next;
                   continue;
 
-               case Term.SUCCESS:
+               case SUCCESS:
 //System.out.println("success, matchEnd="+matchEnd+", i="+i+", end="+end);
                   if(!matchEnd || i==end){
                      this.wOffset=memregs[0].in=wOffset;
@@ -1800,24 +1802,24 @@ new Exception().printStackTrace();
                   }
                   else break;
 
-               case Term.CNT_SET_0:
+               case CNT_SET_0:
                   cnt=0;
                   term=term.next;
                   continue;
 
-               case Term.CNT_INC:
+               case CNT_INC:
                   cnt++;
                   term=term.next;
                   continue;
                
-               case Term.CNT_GT_EQ:
+               case CNT_GT_EQ:
                   if(cnt>=term.maxCount){
                      term=term.next;
                      continue;
                   }
                   else break;
                
-               case Term.READ_CNT_LT:
+               case READ_CNT_LT:
                   cnt=actual.cnt;
                   if(cnt<term.maxCount){
                      term=term.next;
@@ -1825,27 +1827,27 @@ new Exception().printStackTrace();
                   }
                   else break;
                
-               case Term.CRSTORE_CRINC:{
+               case CRSTORE_CRINC:{
                	 int cntvalue=counters[cntreg=term.cntreg];
                   SearchEntry.saveCntState((top!=null)? top: defaultEntry,cntreg,cntvalue);
                   counters[cntreg]=++cntvalue;
                   term=term.next;
                   continue;
                }
-               case Term.CR_SET_0:
+               case CR_SET_0:
                   counters[term.cntreg]=0;
 
                   term=term.next;
                   continue;
 
-               case Term.CR_LT:
+               case CR_LT:
                   if(counters[term.cntreg]<term.maxCount){
                      term=term.next;
                      continue;
                   }
                   else break;
 
-               case Term.CR_GT_EQ:
+               case CR_GT_EQ:
                   if(counters[term.cntreg]>=term.maxCount){
                      term=term.next;
                      continue;
@@ -1862,7 +1864,7 @@ new Exception().printStackTrace();
                //not sure it's a good way
                //27-04-2002: just as expencted, 
                //the side effect was found (and POSSIBLY fixed); 
-               //see the case Term.START
+               //see the case START
                return true;
             }
             if(top==null){
@@ -1929,7 +1931,7 @@ new Exception().printStackTrace();
    private static final int repeat(char[] data,int off,int out,Term term){
 //System.out.print("off="+off+", out="+out+", term="+term);
       switch(term.type){
-         case Term.CHAR:{
+         case CHAR:{
             char c=term.c;
             int i=off;
             while(i<out){
@@ -1939,10 +1941,10 @@ new Exception().printStackTrace();
 //System.out.println(", returning "+(i-off));
             return i-off;
          }
-         case Term.ANY_CHAR:{
+         case ANY_CHAR:{
             return out-off;
          }
-         case Term.ANY_CHAR_NE:{
+         case ANY_CHAR_NE:{
             int i=off;
             while(i<out){
                if(data[i]=='\n') break;
@@ -1950,7 +1952,7 @@ new Exception().printStackTrace();
             }
             return i-off;
          }
-         case Term.BITSET:{
+         case BITSET:{
             boolean[] arr=term.bitset;
             int i=off;
             char c;
@@ -1964,7 +1966,7 @@ new Exception().printStackTrace();
             }
             return i-off;
          }
-         case Term.BITSET2:{
+         case BITSET2:{
             int i=off;
             boolean[][] bitset2=term.bitset2;
             char c;
@@ -1989,7 +1991,7 @@ new Exception().printStackTrace();
 //System.out.print("off="+off+", out="+out+", term="+term);
       if(off>=out) return -1;
       switch(term.type){
-         case Term.CHAR:{
+         case CHAR:{
             char c=term.c;
             int i=off;
             while(i<out){
@@ -1999,7 +2001,7 @@ new Exception().printStackTrace();
 //System.out.println(", returning "+(i-off));
             return i-off;
          }
-         case Term.BITSET:{
+         case BITSET:{
             boolean[] arr=term.bitset;
             int i=off;
             char c;
@@ -2013,7 +2015,7 @@ new Exception().printStackTrace();
             }
             return i-off;
          }
-         case Term.BITSET2:{
+         case BITSET2:{
             int i=off;
             boolean[][] bitset2=term.bitset2;
             char c;
@@ -2038,13 +2040,13 @@ new Exception().printStackTrace();
 //System.out.print("off="+off+", out="+out+", term="+term);
       if(off>=out) return -1;
       int i=off;
-      if(term.type==Term.REG){
+      if(term.type==TermType.REG){
          while(i<out){
             if(compareRegions(data,i,regOff,regLen,out)) break;
             i++;
          }
       }
-      else if(term.type==Term.REG_I){
+      else if(term.type==TermType.REG_I){
          while(i<out){
             if(compareRegionsI(data,i,regOff,regLen,out)) break;
             i++;
@@ -2057,7 +2059,7 @@ new Exception().printStackTrace();
    private static final int findBack(char[] data,int off,int maxCount,Term term){
  //System.out.print("off="+off+", maxCount="+maxCount+", term="+term);
       switch(term.type){
-         case Term.CHAR:{
+         case CHAR:{
             char c=term.c;
             int i=off;
             int iMin=off-maxCount;
@@ -2068,7 +2070,7 @@ new Exception().printStackTrace();
 //System.out.println(", returning "+(off-i));
             return off-i;
          }
-         case Term.BITSET:{
+         case BITSET:{
             boolean[] arr=term.bitset;
             int i=off;
             char c;
@@ -2083,7 +2085,7 @@ new Exception().printStackTrace();
             }
             return off-i;
          }
-         case Term.BITSET2:{
+         case BITSET2:{
             boolean[][] bitset2=term.bitset2;
             int i=off;
             char c;
@@ -2108,7 +2110,7 @@ new Exception().printStackTrace();
       //assume that the cases when regLen==0 or maxCount==0 are handled by caller
       int i=off;
       int iMin=off-maxCount;
-      if(term.type==Term.REG){
+      if(term.type==TermType.REG){
          /*@since 1.2*/
          char first=data[regOff];
          regOff++;
@@ -2119,7 +2121,7 @@ new Exception().printStackTrace();
             if(i<=iMin) return -1;
          }
       }
-      else if(term.type==Term.REG_I){
+      else if(term.type==TermType.REG_I){
          /*@since 1.2*/
          char c=data[regOff];
          char firstLower=Character.toLowerCase(c);

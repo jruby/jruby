@@ -29,6 +29,8 @@
 
 package jregex;
 
+import jregex.Term.TermType;
+
 class Bitset implements UnicodeConstants{
    private static final Block[][] categoryBits=new Block[CATEGORY_COUNT][BLOCK_COUNT];
    static{
@@ -62,11 +64,11 @@ class Bitset implements UnicodeConstants{
    
    final static void unify(Bitset bs,Term term){
       if(bs.isLarge){
-         term.type=Term.BITSET2;
+         term.type=TermType.BITSET2;
          term.bitset2=Block.toBitset2(bs.blocks);
       }
       else{
-         term.type=Term.BITSET;
+         term.type=TermType.BITSET;
          term.bitset=bs.block0==null? emptyBlock0: bs.block0;
       }
       term.inverse=!bs.positive;

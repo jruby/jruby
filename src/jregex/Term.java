@@ -32,83 +32,38 @@ package jregex;
 import java.util.*;
 
 class Term implements REFlags{
-   //runtime Term types
-   static final int CHAR        = 0;
-   static final int BITSET      = 1;
-   static final int BITSET2     = 2;
-   static final int ANY_CHAR    = 4;
-   static final int ANY_CHAR_NE = 5;
-   
-   static final int REG         = 6;
-   static final int REG_I       = 7;
-   static final int FIND        = 8;
-   static final int FINDREG     = 9;
-   static final int SUCCESS     = 10;
-   
-   /*optimization-transparent types*/
-   static final int BOUNDARY    = 11;
-   static final int DIRECTION   = 12;
-   static final int UBOUNDARY    = 13;
-   static final int UDIRECTION   = 14;
-   
-   static final int GROUP_IN          = 15;
-   static final int GROUP_OUT         = 16;
-   static final int VOID              = 17;
-   
-   static final int START             = 18;
-   static final int END               = 19;
-   static final int END_EOL           = 20;
-   static final int LINE_START        = 21;
-   static final int LINE_END          = 22;
-   static final int LAST_MATCH_END    = 23;
-   
-   static final int CNT_SET_0      = 24;
-   static final int CNT_INC        = 25;
-   static final int CNT_GT_EQ      = 26;
-   static final int READ_CNT_LT    = 27;
+   public enum TermType {
+       //runtime Term types
+       CHAR, BITSET, BITSET2, ANY_CHAR, ANY_CHAR_NE,
+       
+       REG, REG_I, FIND, FINDREG, SUCCESS,
+       
+       /*optimization-transparent types*/
+       BOUNDARY, DIRECTION, UBOUNDARY, UDIRECTION,
+       
+       GROUP_IN, GROUP_OUT, VOID,
+       
+       START, END, END_EOL, LINE_START, LINE_END, LAST_MATCH_END,
+       
+       CNT_SET_0, CNT_INC, CNT_GT_EQ, READ_CNT_LT,
 
-   static final int CRSTORE_CRINC = 28; //store on 'actual' search entry
-   static final int CR_SET_0      = 29;
-   static final int CR_LT         = 30;
-   static final int CR_GT_EQ      = 31;
-   
-   /*optimization-nontransparent types*/
-   static final int BRANCH                 = 32;
-   static final int BRANCH_STORE_CNT       = 33;
-   static final int BRANCH_STORE_CNT_AUX1  = 34;
-   
-   static final int PLOOKAHEAD_IN           = 35;
-   static final int PLOOKAHEAD_OUT          = 36;
-   static final int NLOOKAHEAD_IN           = 37;
-   static final int NLOOKAHEAD_OUT          = 38;
-   static final int PLOOKBEHIND_IN           = 39;
-   static final int PLOOKBEHIND_OUT          = 40;
-   static final int NLOOKBEHIND_IN           = 41;
-   static final int NLOOKBEHIND_OUT          = 42;
-   static final int INDEPENDENT_IN          = 43; //functionally the same as NLOOKAHEAD_IN
-   static final int INDEPENDENT_OUT         = 44;
-   
-   static final int REPEAT_0_INF       = 45;
-   static final int REPEAT_MIN_INF     = 46;
-   static final int REPEAT_MIN_MAX     = 47;
-   static final int REPEAT_REG_MIN_INF = 48;
-   static final int REPEAT_REG_MIN_MAX = 49;
-   
-   static final int BACKTRACK_0           = 50;
-   static final int BACKTRACK_MIN         = 51;
-   static final int BACKTRACK_FIND_MIN    = 52;
-   static final int BACKTRACK_FINDREG_MIN = 53;
-   static final int BACKTRACK_REG_MIN     = 54;
-   
-   static final int MEMREG_CONDITION        = 55;
-   static final int LOOKAHEAD_CONDITION_IN  = 56;
-   static final int LOOKAHEAD_CONDITION_OUT = 57;
-   static final int LOOKBEHIND_CONDITION_IN  = 58;
-   static final int LOOKBEHIND_CONDITION_OUT = 59;
-   
-   //optimization
-   static final int FIRST_TRANSPARENT = BOUNDARY;
-   static final int LAST_TRANSPARENT  = CR_GT_EQ;
+       // CTSTORE_CRINC: store on 'actual' search entry
+       CRSTORE_CRINC, CR_SET_0, CR_LT, CR_GT_EQ,
+       
+       /*optimization-nontransparent types*/
+       BRANCH, BRANCH_STORE_CNT, BRANCH_STORE_CNT_AUX1,
+       
+       // INDEPENDENT_IN: functionally the same as NLOOKAHEAD_IN
+       PLOOKAHEAD_IN, PLOOKAHEAD_OUT, NLOOKAHEAD_IN, NLOOKAHEAD_OUT, PLOOKBEHIND_IN, 
+       PLOOKBEHIND_OUT, NLOOKBEHIND_IN, NLOOKBEHIND_OUT, INDEPENDENT_IN, INDEPENDENT_OUT,
+       
+       REPEAT_0_INF, REPEAT_MIN_INF, REPEAT_MIN_MAX, REPEAT_REG_MIN_INF, REPEAT_REG_MIN_MAX,
+       
+       BACKTRACK_0, BACKTRACK_MIN, BACKTRACK_FIND_MIN, BACKTRACK_FINDREG_MIN, BACKTRACK_REG_MIN,
+       
+       MEMREG_CONDITION, LOOKAHEAD_CONDITION_IN, LOOKAHEAD_CONDITION_OUT, LOOKBEHIND_CONDITION_IN,
+       LOOKBEHIND_CONDITION_OUT
+   }
    
    // compiletime: length of vars[] (see makeTree())
    static final int VARS_LENGTH=4;
@@ -133,7 +88,7 @@ class Term implements REFlags{
    
    // **** TYPES ****
    
-   int type=VOID;
+   TermType type=TermType.VOID;
    boolean inverse;
    
    // used with type=CHAR
@@ -196,7 +151,7 @@ class Term implements REFlags{
       in=out=this;
    }
    
-   Term(int type){
+   Term(TermType type){
       this();
       this.type=type;
    }
@@ -220,7 +175,7 @@ class Term implements REFlags{
       // term=(0-...-0)
 
       // convert closing outer bracket into success term
-      term.out.type=SUCCESS;
+      term.out.type=TermType.SUCCESS;
       // term=(0-...-!!!
       
       //throw out opening bracket
@@ -521,7 +476,7 @@ class Term implements REFlags{
                tmp=new Term();
                i=parseTerm(data,i,end,tmp,flags);
                
-               if(tmp.type==END && i<end){
+               if(tmp.type==TermType.END && i<end){
                    if((flags&IGNORE_SPACES)>0) {
                        i++;
                        while(i<end) {
@@ -927,17 +882,17 @@ class Term implements REFlags{
          case REPEAT_REG_MIN_MAX:
          case GROUP_IN:{
             int cntreg=vars[CNTREG_COUNT]++;
-            Term reset=new Term(CR_SET_0);
+            Term reset=new Term(TermType.CR_SET_0);
                reset.cntreg=cntreg;
-            Term b=new Term(BRANCH);
+            Term b=new Term(TermType.BRANCH);
             
-            Term inc=new Term(CRSTORE_CRINC);
+            Term inc=new Term(TermType.CRSTORE_CRINC);
                inc.cntreg=cntreg;
             
             reset.next=b;
             
             if(n>=0){
-               Term lt=new Term(CR_LT);
+               Term lt=new Term(TermType.CR_LT);
                   lt.cntreg=cntreg;
                   lt.maxCount=n;
                b.next=lt;
@@ -950,7 +905,7 @@ class Term implements REFlags{
             inc.next=b;
             
             if(m>=0){
-               Term gt=new Term(CR_GT_EQ);
+               Term gt=new Term(TermType.CR_GT_EQ);
                   gt.cntreg=cntreg;
                   gt.maxCount=m;
                b.failNext=gt;
@@ -986,16 +941,16 @@ class Term implements REFlags{
          case REPEAT_REG_MIN_MAX:
          case GROUP_IN:{
             int cntreg=vars[CNTREG_COUNT]++;
-            Term reset=new Term(CR_SET_0);
+            Term reset=new Term(TermType.CR_SET_0);
                reset.cntreg=cntreg;
-            Term b=new Term(BRANCH);
-            Term inc=new Term(CRSTORE_CRINC);
+            Term b=new Term(TermType.BRANCH);
+            Term inc=new Term(TermType.CRSTORE_CRINC);
                inc.cntreg=cntreg;
                
             reset.next=b;
             
             if(n>=0){
-               Term lt=new Term(CR_LT);
+               Term lt=new Term(TermType.CR_LT);
                   lt.cntreg=cntreg;
                   lt.maxCount=n;
                b.failNext=lt;
@@ -1008,7 +963,7 @@ class Term implements REFlags{
             inc.next=b;
             
             if(m>=0){
-               Term gt=new Term(CR_GT_EQ);
+               Term gt=new Term(TermType.CR_GT_EQ);
                   gt.cntreg=cntreg;
                   gt.maxCount=m;
                b.next=gt;
@@ -1031,14 +986,14 @@ class Term implements REFlags{
          }
          case REG:
          default:{
-            Term reset=new Term(CNT_SET_0);
-            Term b=new Branch(BRANCH_STORE_CNT);
-            Term inc=new Term(CNT_INC);
+            Term reset=new Term(TermType.CNT_SET_0);
+            Term b=new Branch(TermType.BRANCH_STORE_CNT);
+            Term inc=new Term(TermType.CNT_INC);
             
             reset.next=b;
             
             if(n>=0){
-               Term lt=new Term(READ_CNT_LT);
+               Term lt=new Term(TermType.READ_CNT_LT);
                   lt.maxCount=n;
                b.failNext=lt;
                lt.next=term;
@@ -1052,7 +1007,7 @@ class Term implements REFlags{
             }
             
             if(m>=0){
-               Term gt=new Term(CNT_GT_EQ);
+               Term gt=new Term(TermType.CNT_GT_EQ);
                   gt.maxCount=m;
                b.next=gt;
                
@@ -1085,16 +1040,16 @@ class Term implements REFlags{
             return CharacterClass.parseClass(data,i,out,term,(flags&IGNORE_CASE)>0,(flags&IGNORE_SPACES)>0,(flags&UNICODE)>0,(flags&XML_SCHEMA)>0);
             
          case '.':
-            term.type=(flags&DOTALL)>0? ANY_CHAR: ANY_CHAR_NE;
+            term.type=(flags&DOTALL)>0? TermType.ANY_CHAR: TermType.ANY_CHAR_NE;
             break;
             
          case '$':
             //term.type=mods[MULTILINE_IND]? LINE_END: END; //??
-            term.type=(flags&MULTILINE)>0? LINE_END: END_EOL;
+            term.type=(flags&MULTILINE)>0? TermType.LINE_END: TermType.END_EOL;
             break;
             
          case '^':
-            term.type=(flags&MULTILINE)>0? LINE_START: START;
+            term.type=(flags&MULTILINE)>0? TermType.LINE_START: TermType.START;
             break;
             
          case '\\':
@@ -1228,19 +1183,19 @@ class Term implements REFlags{
                   return i;
                   */
                case 'A':   // text beginning
-                  term.type=START;
+                  term.type=TermType.START;
                   return i;
                   
                case 'Z':   // text end
-                  term.type=END_EOL;
+                  term.type=TermType.END_EOL;
                   return i;
                   
                case 'z':   // text end
-                  term.type=END;
+                  term.type=TermType.END;
                   return i;
                   
                case 'G':   // end of last match
-                  term.type=LAST_MATCH_END;
+                  term.type=TermType.LAST_MATCH_END;
                   return i;
                   
                case 'P':   // \\P{..}
@@ -1256,7 +1211,7 @@ class Term implements REFlags{
                         n=(n*10)+c-'0';
                         i++;
                      }
-                     term.type=(flags&IGNORE_CASE)>0? REG_I: REG;
+                     term.type=(flags&IGNORE_CASE)>0? TermType.REG_I: TermType.REG;
                      term.memreg=n;
                      return i;
                   }
@@ -1270,13 +1225,13 @@ class Term implements REFlags{
                   }
                   */
             }
-            term.type=CHAR;
+            term.type=TermType.CHAR;
             term.c=c;
             break;
             
          default:
             if((flags&IGNORE_CASE)==0){
-               term.type=CHAR;
+               term.type=TermType.CHAR;
                term.c=c;
             }
             else{
@@ -1896,10 +1851,10 @@ class Pretokenizer{
 
 class Branch extends Term{
    Branch(){
-      type=BRANCH;
+      type=TermType.BRANCH;
    }
 
-   Branch(int type){
+   Branch(TermType type){
       switch(type){
          case BRANCH:
          case BRANCH_STORE_CNT:
@@ -1914,7 +1869,7 @@ class Branch extends Term{
 
 class BackReference extends Term{
    BackReference(int no,boolean icase){
-      super(icase? REG_I: REG);
+      super(icase? TermType.REG_I: TermType.REG);
       memreg=no;
    }
 }
@@ -1925,7 +1880,7 @@ class Group extends Term{
    }
    
    Group(int memreg){
-      type=GROUP_IN;
+      type=TermType.GROUP_IN;
       this.memreg=memreg;
       
       //used in append()
@@ -1934,7 +1889,7 @@ class Group extends Term{
       prev=null;
       
       out=new Term();
-      out.type=GROUP_OUT;
+      out.type=TermType.GROUP_OUT;
       out.memreg=memreg;
    }
 }
@@ -1953,8 +1908,8 @@ class ConditionalExpr extends Group{
       * The shortcoming is that we strongly rely upon 
       * the internal structure of Lookahead.
       */
-      la.in.type=LOOKAHEAD_CONDITION_IN;
-      la.out.type=LOOKAHEAD_CONDITION_OUT;
+      la.in.type=TermType.LOOKAHEAD_CONDITION_IN;
+      la.out.type=TermType.LOOKAHEAD_CONDITION_OUT;
       if(la.isPositive){
          node=la.in;
          linkAsBranch=true;
@@ -1989,8 +1944,8 @@ class ConditionalExpr extends Group{
       * The shortcoming is that we strongly rely upon 
       * the internal structure of Lookahead.
       */
-      lb.in.type=LOOKBEHIND_CONDITION_IN;
-      lb.out.type=LOOKBEHIND_CONDITION_OUT;
+      lb.in.type=TermType.LOOKBEHIND_CONDITION_IN;
+      lb.out.type=TermType.LOOKBEHIND_CONDITION_OUT;
       if(lb.isPositive){
          node=lb.in;
          linkAsBranch=true;
@@ -2016,7 +1971,7 @@ class ConditionalExpr extends Group{
    ConditionalExpr(int memreg){
       super(0);
 //System.out.println("ConditionalExpr("+memreg+")");
-      Term condition=new Term(MEMREG_CONDITION);
+      Term condition=new Term(TermType.MEMREG_CONDITION);
       condition.memreg=memreg;
       condition.out=condition;
       condition.out1=null;
@@ -2054,11 +2009,12 @@ class ConditionalExpr extends Group{
 
 class IndependentGroup extends Term{
    IndependentGroup(int id){
-      super(0);
+       // Enebo: When term type an int this was 0, but so was CHAR so....I made it CHAR
+      super(TermType.CHAR);
       in=this;
       out=new Term();
-      type=INDEPENDENT_IN;
-      out.type=INDEPENDENT_OUT;
+      type=TermType.INDEPENDENT_IN;
+      out.type=TermType.INDEPENDENT_OUT;
       lookaheadId=out.lookaheadId=id;
    }
 }
@@ -2071,12 +2027,12 @@ class Lookahead extends Term{
       in=this;
       out=new Term();
       if(isPositive){
-         type=PLOOKAHEAD_IN;
-         out.type=PLOOKAHEAD_OUT;
+         type=TermType.PLOOKAHEAD_IN;
+         out.type=TermType.PLOOKAHEAD_OUT;
       }
       else{
-         type=NLOOKAHEAD_IN;
-         out.type=NLOOKAHEAD_OUT;
+         type=TermType.NLOOKAHEAD_IN;
+         out.type=TermType.NLOOKAHEAD_OUT;
          branchOut=this; 
       }
       lookaheadId=id;
@@ -2094,12 +2050,12 @@ class Lookbehind extends Term{
       in=this;
       out=new Term();
       if(isPositive){
-         type=PLOOKBEHIND_IN;
-         out.type=PLOOKBEHIND_OUT;
+         type=TermType.PLOOKBEHIND_IN;
+         out.type=TermType.PLOOKBEHIND_OUT;
       }
       else{
-         type=NLOOKBEHIND_IN;
-         out.type=NLOOKBEHIND_OUT;
+         type=TermType.NLOOKBEHIND_IN;
+         out.type=TermType.NLOOKBEHIND_OUT;
          branchOut=this; 
       }
       lookaheadId=id;
@@ -2117,7 +2073,7 @@ class Lookbehind extends Term{
    }
    
    private static int length(Term t) throws PatternSyntaxException{
-      int type=t.type;
+      TermType type=t.type;
       switch(type){
          case CHAR:
          case BITSET:
@@ -2125,13 +2081,13 @@ class Lookbehind extends Term{
          case ANY_CHAR:
          case ANY_CHAR_NE:
             return 1;
-         case BOUNDARY:
-         case DIRECTION:
-         case UBOUNDARY:
-         case UDIRECTION:
-            return 0;
+         case BOUNDARY: case DIRECTION: case UBOUNDARY: case UDIRECTION:
+         case GROUP_IN: case GROUP_OUT: case VOID: case START: case END:
+         case END_EOL: case LINE_START: case LINE_END: case LAST_MATCH_END:
+         case CNT_SET_0: case CNT_INC: case CNT_GT_EQ: case READ_CNT_LT:
+         case CRSTORE_CRINC: case CR_SET_0: case CR_LT: case CR_GT_EQ:
+             return 0;
          default:
-            if(type>=FIRST_TRANSPARENT && type<=LAST_TRANSPARENT) return 0;
             throw new PatternSyntaxException("variable length element within a lookbehind assertion");
       }
    }
@@ -2164,17 +2120,17 @@ class Iterator extends Term{
             target=term;
             Term back=new Term();
             if(min<=0 && max<0){
-               type=REPEAT_0_INF;
-               back.type=BACKTRACK_0;
+               type=TermType.REPEAT_0_INF;
+               back.type=TermType.BACKTRACK_0;
             }
             else if(min>0 && max<0){
-               type=REPEAT_MIN_INF;
-               back.type=BACKTRACK_MIN;
+               type=TermType.REPEAT_MIN_INF;
+               back.type=TermType.BACKTRACK_MIN;
                minCount=back.minCount=min;
             }
             else{
-               type=REPEAT_MIN_MAX;
-               back.type=BACKTRACK_MIN;
+               type=TermType.REPEAT_MIN_MAX;
+               back.type=TermType.BACKTRACK_MIN;
                minCount=back.minCount=min;
                maxCount=max;
             }
@@ -2192,13 +2148,13 @@ class Iterator extends Term{
             memreg=term.memreg;
             Term back=new Term();
             if(max<0){
-               type=REPEAT_REG_MIN_INF;
-               back.type=BACKTRACK_REG_MIN;
+               type=TermType.REPEAT_REG_MIN_INF;
+               back.type=TermType.BACKTRACK_REG_MIN;
                minCount=back.minCount=min;
             }
             else{
-               type=REPEAT_REG_MIN_MAX;
-               back.type=BACKTRACK_REG_MIN;
+               type=TermType.REPEAT_REG_MIN_MAX;
+               back.type=TermType.BACKTRACK_REG_MIN;
                minCount=back.minCount=min;
                maxCount=max;
             }

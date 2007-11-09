@@ -293,17 +293,17 @@ class CharacterClass extends Term implements UnicodeConstants{
    
    static void makeWordBoundary(Term term,boolean inverse,boolean unicode){
       makeWordChar(term,inverse,unicode);
-      term.type=unicode? UBOUNDARY: BOUNDARY;
+      term.type=unicode? TermType.UBOUNDARY: TermType.BOUNDARY;
    }
    
    static void makeWordStart(Term term,boolean unicode){
       makeWordChar(term,false,unicode);
-      term.type=unicode? UDIRECTION: DIRECTION;
+      term.type=unicode? TermType.UDIRECTION: TermType.DIRECTION;
    }
    
    static void makeWordEnd(Term term,boolean unicode){
       makeWordChar(term,true,unicode);
-      term.type=unicode? UDIRECTION: DIRECTION;
+      term.type=unicode? TermType.UDIRECTION: TermType.DIRECTION;
    }
    
    final static void parseGroup(char[] data,int i,int out,Term term,boolean icase,boolean skipspaces,
