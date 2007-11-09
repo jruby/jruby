@@ -8,11 +8,12 @@ public class JRubyClassLoader extends URLClassLoader {
         super(new URL[0], parent);
     }
 
+    // Change visibility so others can see it
     public void addURL(URL url) {
         super.addURL(url);
     }
     
-    public Class defineClass(String name, byte[] bytes) {
+    public Class<?> defineClass(String name, byte[] bytes) {
        return super.defineClass(name, bytes, 0, bytes.length);
     }
 }

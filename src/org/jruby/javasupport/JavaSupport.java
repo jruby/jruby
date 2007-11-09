@@ -45,7 +45,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.util.WeakIdentityHashMap;
-import org.jruby.util.JRubyClassLoader;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -54,8 +53,6 @@ public class JavaSupport {
     private final Ruby runtime;
 
     private final Map exceptionHandlers = new HashMap();
-
-    private final JRubyClassLoader javaClassLoader;
 
     private final Map instanceCache = Collections.synchronizedMap(new WeakIdentityHashMap(100));
     
@@ -87,7 +84,6 @@ public class JavaSupport {
     
     public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
-        this.javaClassLoader = ruby.getJRubyClassLoader();
     }
 
     final synchronized void setConcreteProxyCallback(Callback concreteProxyCallback) {
@@ -110,7 +106,7 @@ public class JavaSupport {
             Class result = primitiveClass(className);
             if(result == null) {
                 return (Ruby.isSecurityRestricted()) ? Class.forName(className) :
-                   Class.forName(className, true, javaClassLoader);
+                   Class.forName(className, true, runtime.getJRubyClassLoader());
             }
             return result;
         } catch (ClassNotFoundException cnfExcptn) {
@@ -126,11 +122,6 @@ public class JavaSupport {
         javaClassCache.put(clazz.javaClass(), clazz);
     }
     
-    public void addToClasspath(URL url) {
-        //        javaClassLoader = URLClassLoader.newInstance(new URL[] { url }, javaClassLoader);
-        javaClassLoader.addURL(url);
-    }
-
     public void defineExceptionHandler(String exceptionClass, RubyProc handler) {
         exceptionHandlers.put(exceptionClass, handler);
     }
@@ -179,10 +170,6 @@ public class JavaSupport {
         return null;
     }
 
-    public ClassLoader getJavaClassLoader() {
-        return javaClassLoader;
-    }
-    
     public JavaObject getJavaObjectFromCache(Object object) {
     	WeakReference ref = (WeakReference)instanceCache.get(object);
     	if (ref == null) {

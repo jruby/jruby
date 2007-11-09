@@ -39,8 +39,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import com.sun.jna.Native;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -49,8 +47,8 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -58,32 +56,34 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 import java.util.WeakHashMap;
+
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.RubiniusRunner;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.YARVCompiledRunner;
 import org.jruby.common.RubyWarnings;
-import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ASTCompiler;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.compiler.yarv.StandardYARVCompiler;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.JavaBasedPOSIX;
+import org.jruby.ext.LateLoadingLibrary;
+import org.jruby.ext.POSIX;
+import org.jruby.ext.POSIXFunctionMapper;
+import org.jruby.ext.socket.RubySocket;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.libraries.RbConfigLibrary;
-import org.jruby.ext.socket.RubySocket;
-import org.jruby.ext.JavaBasedPOSIX;
-import org.jruby.ext.LateLoadingLibrary;
-import org.jruby.ext.POSIX;
-import org.jruby.ext.POSIXFunctionMapper;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
+import org.jruby.regexp.RegexpFactory;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
@@ -105,7 +105,8 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.MethodCache;
 import org.jruby.util.NormalizedFile;
-import org.jruby.regexp.RegexpFactory;
+
+import com.sun.jna.Native;
 
 /**
  * The jruby runtime.
@@ -1551,8 +1552,11 @@ public final class Ruby {
     }
 
     public JRubyClassLoader getJRubyClassLoader() {
-        if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null)
+        // FIXME: Get rid of laziness and handle restricted access elsewhere
+        if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null) {
             jrubyClassLoader = new JRubyClassLoader(Thread.currentThread().getContextClassLoader());
+        }
+        
         return jrubyClassLoader;
     }
 

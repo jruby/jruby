@@ -494,7 +494,7 @@ e.printStackTrace();
     private LoadServiceResource findFileInClasspath(String name) {
         // Look in classpath next (we do not use File as a test since UNC names will match)
         // Note: Jar resources must NEVER begin with an '/'. (previous code said "always begin with a /")
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader classLoader = runtime.getJRubyClassLoader();
 
         for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
             String entry = pathIter.next().toString();
@@ -552,7 +552,7 @@ e.printStackTrace();
                 if(library instanceof JarredScript) {
                     // It's _really_ expensive to check that the class actually exists in the Jar, so
                     // we don't do that now.
-                    runtime.getJavaSupport().addToClasspath(((JarredScript)library).getResource().getURL());
+                    runtime.getJRubyClassLoader().addURL(((JarredScript)library).getResource().getURL());
                 }
 
                 Class theClass = runtime.getJavaSupport().loadJavaClass(className);

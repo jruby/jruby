@@ -63,7 +63,7 @@ public class JarredScript implements Library {
         URL jarFile = resource.getURL();
 
         // Make Java class files in the jar reachable from Ruby
-        runtime.getJavaSupport().addToClasspath(jarFile);
+        runtime.getJRubyClassLoader().addURL(jarFile);
 
         try {
             JarInputStream in = new JarInputStream(new BufferedInputStream(jarFile.openStream()));

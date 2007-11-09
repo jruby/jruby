@@ -156,15 +156,10 @@ public abstract class CallbackFactory {
     }
 
     public static CallbackFactory createFactory(Ruby runtime, Class type) {
-        if(reflection) {
-            return new ReflectionCallbackFactory(type);
-        } else if(dumping) {
-            return new DumpingInvocationCallbackFactory(runtime, type, runtime.getJRubyClassLoader());
-        } else {
-            return new InvocationCallbackFactory(runtime, type, runtime.getJRubyClassLoader());
-        }
+        return createFactory(runtime, type, runtime.getJRubyClassLoader());
     }
 
+    // used by compiler
     public static CallbackFactory createFactory(Ruby runtime, Class type, ClassLoader classLoader) {
         if(reflection) {
             return new ReflectionCallbackFactory(type);
