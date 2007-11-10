@@ -40,35 +40,32 @@ import org.jruby.runtime.callback.Callback;
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public class MethodBlock extends Block{
+public class MethodBlock extends BlockBody {
     
-    private RubyMethod method;
-    private Callback callback;
+    private final RubyMethod method;
+    private final Callback callback;
     
     private final Arity arity;
-    
-    public boolean isLambda = false;
 
-    public static MethodBlock createMethodBlock(ThreadContext context, DynamicScope dynamicScope, Callback callback, RubyMethod method, IRubyObject self) {
-        return new MethodBlock(self,
+    public static Block createMethodBlock(ThreadContext context, DynamicScope dynamicScope, Callback callback, RubyMethod method, IRubyObject self) {
+        Binding binding = new Binding(self,
                                context.getCurrentFrame().duplicate(),
                          context.getCurrentFrame().getVisibility(),
                          context.getRubyClass(),
-                         dynamicScope,
-                         callback,
-                         method);
+                         dynamicScope);
+        BlockBody body = new MethodBlock(callback, method);
+        
+        return new Block(body, binding);
     }
 
-    public MethodBlock(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
-        DynamicScope dynamicScope, Callback callback, RubyMethod method) {
-        super(self, frame, visibility, klass, dynamicScope);
+    public MethodBlock(Callback callback, RubyMethod method) {
         this.callback = callback;
         this.method = method;
         this.arity = Arity.createArity((int) method.arity().getLongValue());
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }
     
     protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
@@ -79,8 +76,8 @@ public class MethodBlock extends Block{
         context.postYield(binding);
     }
     
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding) {
-        return yield(context, value, null, null, false, binding);
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+        return yield(context, value, null, null, false, binding, type);
     }
 
     /**
@@ -94,7 +91,7 @@ public class MethodBlock extends Block{
      * @return
      */
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean aValue, Binding binding) {
+            RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         if (klass == null) {
             self = binding.getSelf();
             binding.getFrame().setSelf(self);
@@ -106,7 +103,7 @@ public class MethodBlock extends Block{
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    return callback.execute(value, new IRubyObject[] { method, self }, NULL_BLOCK);
+                    return callback.execute(value, new IRubyObject[] { method, self }, Block.NULL_BLOCK);
                 } catch (JumpException.RedoJump rj) {
                     context.pollThreadEvents();
                     // do nothing, allow loop to redo
@@ -130,10 +127,10 @@ public class MethodBlock extends Block{
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
         // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        Block newBlock = new MethodBlock(binding.getSelf(), binding.getFrame().duplicate(), binding.getVisibility(), binding.getKlass(), 
-                binding.getDynamicScope().cloneScope(), callback, method);
+        binding = new Binding(binding.getSelf(), binding.getFrame().duplicate(), binding.getVisibility(), binding.getKlass(), 
+                binding.getDynamicScope().cloneScope());
 
-        return newBlock;
+        return new Block(this, binding);
     }
 
     /**

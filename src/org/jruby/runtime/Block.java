@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public abstract class Block {
+public class Block {
     // FIXME: Maybe not best place, but move it to a good home
     public static final int ZERO_ARGS = 0;
     public static final int MULTIPLE_ASSIGNMENT = 1;
@@ -61,6 +61,8 @@ public abstract class Block {
     
     private final Binding binding;
     
+    private final BlockBody body;
+    
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
@@ -70,83 +72,74 @@ public abstract class Block {
         }
         
         public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-                RubyModule klass, boolean aValue, Binding binding) {
+                RubyModule klass, boolean aValue) {
             throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
         }
-        
-        public Block cloneBlock(Binding binding) {
-            return this;
-        }
 
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding) {
+        public IRubyObject call(ThreadContext context, IRubyObject[] args) {
             throw context.getRuntime().newLocalJumpError("noreason", context.getRuntime().newArrayNoCopy(args), "yield called out of block");
         }
 
-        @Override
-        public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding) {
+        public IRubyObject yield(ThreadContext context, IRubyObject value) {
             throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
         }
-
-        @Override
-        public Arity arity() {
-            return Arity.NO_ARGUMENTS;
+        
+        public Block cloneBlock() {
+            return this;
+        }
+        
+        public BlockBody getBody() {
+            return BlockBody.NULL_BODY;
         }
     };
     
     protected Block() {
-        this(null, null, null, null, null);
+        this(null, null);
     }
     
-    public Block(IRubyObject self, Frame frame,
-            Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
-        this.binding = new Binding(self, frame, visibility, klass, dynamicScope);
-    }
-
-    public final IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return call(context, args, binding);
+    public Block(BlockBody body, Binding binding) {
+        //this.binding = new Binding(self, frame, visibility, klass, dynamicScope);
+        this.body = body;
+        this.binding = binding;
     }
 
-    public abstract IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding);
-    
-    public final IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return yield(context, value, binding);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        return body.call(context, args, binding, type);
     }
     
-    public abstract IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding);
+    public IRubyObject yield(ThreadContext context, IRubyObject value) {
+        return body.yield(context, value, binding, type);
+    }
     
-    public final IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue) {
-        return yield(context, value, self, klass, aValue, binding);
+        return body.yield(context, value, self, klass, aValue, binding, type);
     }
-    
-    public abstract IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean aValue, Binding binding);
     
     protected int arrayLength(IRubyObject node) {
         return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
     }
     
-    public final Block cloneBlock() {
+    public Block cloneBlock() {
         // We clone dynamic scope because this will be a new instance of a block.  Any previously
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
         // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        Block newBlock = cloneBlock(binding);
+        Block newBlock = body.cloneBlock(binding);
         
         newBlock.type = type;
 
         return newBlock;
     }
 
-    public abstract Block cloneBlock(Binding binding);
-
     /**
      * What is the arity of this block?
      * 
      * @return the arity
      */
-    public abstract Arity arity();
+    public Arity arity() {
+        return body.arity();
+    }
 
     /**
      * Retrieve the proc object associated with this block
@@ -177,6 +170,10 @@ public abstract class Block {
     
     public Binding getBinding() {
         return binding;
+    }
+    
+    public BlockBody getBody() {
+        return body;
     }
     
     /**

@@ -38,32 +38,41 @@ import org.jruby.runtime.builtin.IRubyObject;
  * rather than with an ICallable. For lightweight block logic within
  * Java code.
  */
-public class CompiledBlock extends Block {
-    protected CompiledBlockCallback callback;
-    protected boolean hasMultipleArgsHead;
-    protected int argumentType;
-    protected boolean light;
-    protected Arity arity;
-
-    public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
-            CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        this(self,
-             context.getCurrentFrame(),
+public class CompiledBlock extends BlockBody {
+    protected final CompiledBlockCallback callback;
+    protected final boolean hasMultipleArgsHead;
+    protected final int argumentType;
+    protected final boolean light;
+    protected final Arity arity;
+    
+    public static Block newCompiledClosure(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
+        DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType, boolean light) {
+        Binding binding = new Binding(self, frame, visibility, klass, dynamicScope);
+        BlockBody body = new CompiledBlock(arity, callback, hasMultipleArgsHead, argumentType, light);
+        
+        return new Block(body, binding);
+    }
+    
+    public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
+            CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType, boolean light) {
+        return newCompiledClosure(
+                self,
+                context.getCurrentFrame(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
-                dynamicScope, arity, callback, hasMultipleArgsHead, argumentType);
+                dynamicScope,
+                arity,
+                callback,
+                hasMultipleArgsHead,
+                argumentType,
+                light);
     }
 
-    protected CompiledBlock(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
-        DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(self, frame, visibility, klass, dynamicScope);
+    protected CompiledBlock(Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType, boolean light) {
         this.arity = arity;
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
         this.argumentType = argumentType;
-    }
-    
-    public void setLight(boolean light) {
         this.light = light;
     }
     
@@ -71,7 +80,7 @@ public class CompiledBlock extends Block {
         return light;
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         switch (type) {
         case NORMAL: {
             assert false : "can this happen?";
@@ -95,15 +104,15 @@ public class CompiledBlock extends Block {
             break;
         }
 
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding);
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding) {
-        return yield(context, value, null, null, false, binding);
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+        return yield(context, value, null, null, false, binding, type);
     }
     
-    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding) {
+    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         if (klass == null) {
             self = binding.getSelf();
             binding.getFrame().setSelf(self);
@@ -130,7 +139,7 @@ public class CompiledBlock extends Block {
             }
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-            return type == Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+            return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
         } finally {
             binding.getFrame().setVisibility(oldVis);
             post(context, binding);
@@ -196,18 +205,13 @@ public class CompiledBlock extends Block {
     }
 
     public Block cloneBlock(Binding binding) {
-        Block newBlock = new CompiledBlock(
-                binding.getSelf(),
+        binding = new Binding(binding.getSelf(),
                 binding.getFrame().duplicate(),
                 binding.getVisibility(),
                 binding.getKlass(),
-                light ? binding.getDynamicScope() : binding.getDynamicScope().cloneScope(),
-                arity,
-                callback,
-                hasMultipleArgsHead,
-                argumentType);
+                light ? binding.getDynamicScope() : binding.getDynamicScope().cloneScope());
         
-        return newBlock;
+        return new Block(this, binding);
     }
 
     @Override

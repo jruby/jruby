@@ -156,7 +156,7 @@ public abstract class CallAdapter {
                     // JRUBY-530, Kernel#loop case:
                     if (bj.isBreakInKernelLoop()) {
                         // consume and rethrow or just keep rethrowing?
-                        if (block == bj.getTarget()) bj.setBreakInKernelLoop(false);
+                        if (block.getBody() == bj.getTarget()) bj.setBreakInKernelLoop(false);
 
                         throw bj;
                     }

@@ -52,21 +52,21 @@ import org.jruby.util.ByteList;
  *
  */
 public class RuntimeHelpers {
-    public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, 
+    public static Block createBlock(ThreadContext context, IRubyObject self, int arity, 
             String[] staticScopeNames, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeType, boolean light) {
         StaticScope staticScope = 
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
         
-        CompiledBlock block = new CompiledBlock(
+        Block block = CompiledBlock.newCompiledClosure(
                     context,
                     self,
                     Arity.createArity(arity),
                     new DynamicScope(staticScope, context.getCurrentScope()),
                     callback,
                     hasMultipleArgsHead,
-                    argsNodeType);
-        block.setLight(light);
+                    argsNodeType,
+                    light);
         
         return block;
     }
@@ -78,8 +78,8 @@ public class RuntimeHelpers {
         
         context.preScopedBody(new DynamicScope(staticScope, context.getCurrentScope()));
         
-        Block block = new CompiledBlock(context, self, Arity.createArity(0), 
-                context.getCurrentScope(), callback, false, Block.ZERO_ARGS);
+        Block block = CompiledBlock.newCompiledClosure(context, self, Arity.createArity(0), 
+                context.getCurrentScope(), callback, false, Block.ZERO_ARGS, false);
         
         block.yield(context, null);
         
@@ -88,10 +88,10 @@ public class RuntimeHelpers {
         return context.getRuntime().getNil();
     }
     
-    public static CompiledSharedScopeBlock createSharedScopeBlock(ThreadContext context, IRubyObject self, int arity, 
+    public static Block createSharedScopeBlock(ThreadContext context, IRubyObject self, int arity, 
             CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeType) {
         
-        return new CompiledSharedScopeBlock(context, self, Arity.createArity(arity), 
+        return CompiledSharedScopeBlock.newCompiledSharedScopeClosure(context, self, Arity.createArity(arity), 
                 context.getCurrentScope(), callback, hasMultipleArgsHead, argsNodeType);
     }
     
@@ -576,7 +576,7 @@ public class RuntimeHelpers {
     
     public static IRubyObject breakJumpInWhile(JumpException.BreakJump bj, Block aBlock) {
         // JRUBY-530, while case
-        if (bj.getTarget() == aBlock) {
+        if (bj.getTarget() == aBlock.getBody()) {
             bj.setTarget(null);
             
             throw bj;
@@ -788,7 +788,7 @@ public class RuntimeHelpers {
         context.postScopedBody();
     }
     
-    public static void registerEndBlock(CompiledSharedScopeBlock block, Ruby runtime) {
+    public static void registerEndBlock(Block block, Ruby runtime) {
         runtime.pushExitBlock(runtime.newProc(Block.Type.LAMBDA, block));
     }
     

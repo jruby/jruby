@@ -978,7 +978,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // if there's a sub-closure or there's scope-aware methods, it can't be "light"
             method.ldc(!(inspector.hasClosure() || inspector.hasScopeAwareMethods()));
 
-            invokeUtilityMethod("createBlock", cg.sig(CompiledBlock.class,
+            invokeUtilityMethod("createBlock", cg.sig(Block.class,
                     cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, String[].class, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE, boolean.class)));
         }
 
@@ -1069,7 +1069,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.ldc(Boolean.valueOf(hasMultipleArgsHead));
             method.ldc(Block.asArgumentType(argsNodeId));
 
-            invokeUtilityMethod("createSharedScopeBlock", cg.sig(CompiledSharedScopeBlock.class,
+            invokeUtilityMethod("createSharedScopeBlock", cg.sig(Block.class,
                     cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE)));
         }
 
@@ -1115,11 +1115,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.ldc(false);
             method.ldc(Block.ZERO_ARGS);
 
-            invokeUtilityMethod("createSharedScopeBlock", cg.sig(CompiledSharedScopeBlock.class,
+            invokeUtilityMethod("createSharedScopeBlock", cg.sig(Block.class,
                     cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE)));
             
             loadRuntime();
-            invokeUtilityMethod("registerEndBlock", cg.sig(void.class, CompiledSharedScopeBlock.class, Ruby.class));
+            invokeUtilityMethod("registerEndBlock", cg.sig(void.class, Block.class, Ruby.class));
             loadNil();
         }
 

@@ -53,6 +53,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -743,16 +744,23 @@ public class RubyKernel {
     @JRubyMethod(name = "catch", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject rbCatch(IRubyObject recv, IRubyObject tag, Block block) {
         ThreadContext context = recv.getRuntime().getCurrentContext();
+        CatchTarget target = new CatchTarget(tag.asSymbol());
         try {
-            context.pushCatch(tag.asSymbol());
+            context.pushCatch(target);
             return block.yield(context, tag);
         } catch (JumpException.ThrowJump tj) {
-            if (tj.getTarget().equals(tag.asSymbol())) return (IRubyObject) tj.getValue();
+            if (tj.getTarget() == target) return (IRubyObject) tj.getValue();
             
             throw tj;
         } finally {
             context.popCatch();
         }
+    }
+    
+    public static class CatchTarget implements JumpTarget {
+        private final String tag;
+        public CatchTarget(String tag) { this.tag = tag; }
+        public String getTag() { return tag; }
     }
 
     @JRubyMethod(name = "throw", required = 1, frame = true, optional = 1, module = true, visibility = Visibility.PRIVATE)
@@ -761,19 +769,19 @@ public class RubyKernel {
 
         String tag = args[0].asSymbol();
         ThreadContext context = runtime.getCurrentContext();
-        String[] catches = context.getActiveCatches();
+        CatchTarget[] catches = context.getActiveCatches();
 
         String message = "uncaught throw `" + tag + "'";
 
-        //Ordering of array traversal not important, just intuitive
+        // Ordering of array traversal not important, just intuitive
         for (int i = catches.length - 1 ; i >= 0 ; i--) {
-            if (tag.equals(catches[i])) {
+            if (tag.equals(catches[i].getTag())) {
                 //Catch active, throw for catch to handle
-                throw new JumpException.ThrowJump(tag, args.length > 1 ? args[1] : runtime.getNil());
+                throw new JumpException.ThrowJump(catches[i], args.length > 1 ? args[1] : runtime.getNil());
             }
         }
 
-        //No catch active for this throw
+        // No catch active for this throw
         throw runtime.newNameError(message, tag);
     }
 
@@ -896,7 +904,7 @@ public class RubyKernel {
                 // used inside loop's block, not loop's block itself.  Set the 
                 // appropriate flag on the JumpException if this is the case
                 // (the FCALLNODE case in EvaluationState will deal with it)
-                if (bj.getTarget() != null && bj.getTarget() != block) {
+                if (bj.getTarget() != null && bj.getTarget() != block.getBody()) {
                     bj.setBreakInKernelLoop(true);
                 }
                  

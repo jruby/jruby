@@ -49,50 +49,41 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public class InterpretedBlock extends Block {
+public class InterpretedBlock extends BlockBody {
     /**
      * AST Node representing the parameter (VARiable) list to the block.
      */
-    private IterNode iterNode;
+    private final IterNode iterNode;
     
-    /**
-     * The Proc that this block is associated with.  When we reference blocks via variable
-     * reference they are converted to Proc objects.  We store a reference of the associated
-     * Proc object for easy conversion.  
-     */
-    private RubyProc proc = null;
-    
-    protected Arity arity;
+    protected final Arity arity;
 
-    public static InterpretedBlock createBlock(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
+    public static Block newInterpretedClosure(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
         Frame f = context.getCurrentFrame();
         f.setPosition(context.getPosition());
-        return new InterpretedBlock(iterNode,
+        return newInterpretedClosure(iterNode,
                          self,
+                         iterNode == null ? null : Arity.procArityOf(iterNode.getVarNode()),
                          f,
                          f.getVisibility(),
                          context.getRubyClass(),
                          dynamicScope);
     }
     
-    protected InterpretedBlock() {
-        this(null, null, null, null, null, null);
+    public static Block newInterpretedClosure(IterNode iterNode, IRubyObject self, Arity arity, Frame frame,
+            Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
+        return new Block(new InterpretedBlock(iterNode, arity), new Binding(self, frame, visibility, klass, dynamicScope));
     }
 
-    public InterpretedBlock(IterNode iterNode, IRubyObject self, Frame frame,
-        Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
-        this(iterNode, self,iterNode == null ? null : Arity.procArityOf(iterNode.getVarNode()),
-                frame, visibility, klass, dynamicScope);
+    public InterpretedBlock(IterNode iterNode) {
+        this(iterNode, iterNode == null ? null : Arity.procArityOf(iterNode.getVarNode()));
     }
     
-    public InterpretedBlock(IterNode iterNode, IRubyObject self, Arity arity, Frame frame,
-            Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
-        super(self, frame, visibility, klass, dynamicScope);
+    public InterpretedBlock(IterNode iterNode, Arity arity) {
         this.iterNode = iterNode;
         this.arity = arity;
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         switch (type) {
         case NORMAL: {
             assert false : "can this happen?";
@@ -123,7 +114,7 @@ public class InterpretedBlock extends Block {
             break;
         }
 
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding);
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }
     
     protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
@@ -134,8 +125,8 @@ public class InterpretedBlock extends Block {
         context.postYield(binding);
     }
     
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding) {
-        return yield(context, value, null, null, false, binding);
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+        return yield(context, value, null, null, false, binding, type);
     }
 
     /**
@@ -149,7 +140,7 @@ public class InterpretedBlock extends Block {
      * @return
      */
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean aValue, Binding binding) {
+            RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         if (klass == null) {
             self = binding.getSelf();
             binding.getFrame().setSelf(self);
@@ -170,7 +161,7 @@ public class InterpretedBlock extends Block {
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    return ASTInterpreter.eval(context.getRuntime(), context, iterNode.getBodyNode(), self, NULL_BLOCK);
+                    return ASTInterpreter.eval(context.getRuntime(), context, iterNode.getBodyNode(), self, Block.NULL_BLOCK);
                 } catch (JumpException.RedoJump rj) {
                     context.pollThreadEvents();
                     // do nothing, allow loop to redo
@@ -183,7 +174,7 @@ public class InterpretedBlock extends Block {
             }
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-            return type == Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+            return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
         } finally {
             binding.getFrame().setVisibility(oldVis);
             post(context, binding);
@@ -211,7 +202,7 @@ public class InterpretedBlock extends Block {
             default:
                 runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
             }
-            AssignmentVisitor.assign(runtime, context, self, varNode, value, InterpretedBlock.NULL_BLOCK, false);
+            AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
         }
     }
 
@@ -229,7 +220,7 @@ public class InterpretedBlock extends Block {
             if (value == null) {
                 runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
             }
-            AssignmentVisitor.assign(runtime, context, self, varNode, value, InterpretedBlock.NULL_BLOCK, false);
+            AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
         }
     }
     
@@ -242,12 +233,9 @@ public class InterpretedBlock extends Block {
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
         // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        InterpretedBlock newBlock = new InterpretedBlock(iterNode, binding.getSelf(), binding.getFrame().duplicate(), binding.getVisibility(), binding.getKlass(), 
+        binding = new Binding(binding.getSelf(), binding.getFrame().duplicate(), binding.getVisibility(), binding.getKlass(), 
                 binding.getDynamicScope().cloneScope());
-        
-        newBlock.type = type;
-
-        return newBlock;
+        return new Block(this, binding);
     }
 
     public IterNode getIterNode() {
@@ -261,24 +249,6 @@ public class InterpretedBlock extends Block {
      */
     public Arity arity() {
         return arity;
-    }
-
-    /**
-     * Retrieve the proc object associated with this block
-     * 
-     * @return the proc or null if this has no proc associated with it
-     */
-    public RubyProc getProcObject() {
-    	return proc;
-    }
-    
-    /**
-     * Set the proc object associated with this block
-     * 
-     * @param procObject
-     */
-    public void setProcObject(RubyProc procObject) {
-    	this.proc = procObject;
     }
     
     /**

@@ -39,18 +39,20 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Java code.
  */
 public class CompiledSharedScopeBlock extends CompiledBlock {
-    public CompiledSharedScopeBlock(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
+    public static Block newCompiledSharedScopeClosure(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
             CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        this(self,
+        Binding binding = new Binding(self,
              context.getCurrentFrame().duplicate(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
-                dynamicScope, arity, callback, hasMultipleArgsHead, argumentType);
+                dynamicScope);
+        BlockBody body = new CompiledSharedScopeBlock(arity, callback, hasMultipleArgsHead, argumentType);
+        
+        return new Block(body, binding);
     }
 
-    private CompiledSharedScopeBlock(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
-        DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(self, frame, visibility, klass, dynamicScope, arity, callback, hasMultipleArgsHead, argumentType);
+    private CompiledSharedScopeBlock(Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+        super(arity, callback, hasMultipleArgsHead, argumentType, true);
     }
     
     @Override
@@ -59,7 +61,7 @@ public class CompiledSharedScopeBlock extends CompiledBlock {
     }
     
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding) {
+    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         if (klass == null) {
             self = binding.getSelf();
             binding.getFrame().setSelf(self);
@@ -134,6 +136,6 @@ public class CompiledSharedScopeBlock extends CompiledBlock {
     }
     
     public Block cloneBlock(Binding binding) {
-        return this;
+        return new Block(this, binding);
     }
 }

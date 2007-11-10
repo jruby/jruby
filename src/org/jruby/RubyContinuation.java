@@ -29,6 +29,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -49,9 +50,9 @@ public class RubyContinuation {
         recv.getRuntime().getWarnings().warn("Continuation.call: Continuations are not implemented in JRuby and will not work");
 
         if (args.length == 1) {
-            throw new JumpException.BreakJump(recv.dataGetStruct(), args[0]);
+            throw new JumpException.BreakJump((JumpTarget)recv.dataGetStruct(), args[0]);
         } else {
-            throw new JumpException.BreakJump(recv.dataGetStruct(), recv.getRuntime().newArray(args));
+            throw new JumpException.BreakJump((JumpTarget)recv.dataGetStruct(), recv.getRuntime().newArray(args));
         }
     }
 }// RubyContinuation

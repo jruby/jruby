@@ -206,7 +206,7 @@ public class Generator {
         public void run() {
             if(enm != null) {
                 ThreadContext context = gen.getRuntime().getCurrentContext();
-                enm.callMethod(context, "each", new CallBlock(enm,enm.getMetaClass().getRealClass(),Arity.noArguments(),ibc,context));
+                enm.callMethod(context, "each", CallBlock.newCallClosure(enm,enm.getMetaClass().getRealClass(),Arity.noArguments(),ibc,context));
             } else {
                 proc.call(new IRubyObject[]{gen});
             }

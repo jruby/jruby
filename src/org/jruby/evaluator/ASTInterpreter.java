@@ -1054,7 +1054,7 @@ public class ASTInterpreter {
     private static IRubyObject forNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         ForNode iVisited = (ForNode) node;
         
-        Block block = SharedScopeBlock.createSharedScopeBlock(context, iVisited, 
+        Block block = SharedScopeBlock.newInterpretedSharedScopeClosure(context, iVisited, 
                 context.getCurrentScope(), self);
    
         try {
@@ -1350,7 +1350,7 @@ public class ASTInterpreter {
     private static IRubyObject postExeNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         PostExeNode iVisited = (PostExeNode) node;
         
-        Block block = SharedScopeBlock.createSharedScopeBlock(context, iVisited, context.getCurrentScope(), self);
+        Block block = SharedScopeBlock.newInterpretedSharedScopeClosure(context, iVisited, context.getCurrentScope(), self);
         
         runtime.pushExitBlock(runtime.newProc(Block.Type.LAMBDA, block));
         
@@ -1366,7 +1366,7 @@ public class ASTInterpreter {
 
         // FIXME: I use a for block to implement END node because we need a proc which captures
         // its enclosing scope.   ForBlock now represents these node and should be renamed.
-        Block block = InterpretedBlock.createBlock(context, iVisited, context.getCurrentScope(), self);
+        Block block = InterpretedBlock.newInterpretedClosure(context, iVisited, context.getCurrentScope(), self);
         
         block.yield(context, null);
         
@@ -1621,7 +1621,7 @@ public class ASTInterpreter {
                     break loop;
                 } catch (JumpException.BreakJump bj) {
                     // JRUBY-530 until case
-                    if (bj.getTarget() == aBlock) {
+                    if (bj.getTarget() == aBlock.getBody()) {
                          bj.setTarget(null);
 
                          throw bj;
@@ -1688,7 +1688,7 @@ public class ASTInterpreter {
                     break loop;
                 } catch (JumpException.BreakJump bj) {
                     // JRUBY-530, while case
-                    if (bj.getTarget() == aBlock) {
+                    if (bj.getTarget() == aBlock.getBody()) {
                         bj.setTarget(null);
 
                         throw bj;
@@ -1795,7 +1795,7 @@ public class ASTInterpreter {
             
             // Create block for this iter node
             // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
-            return InterpretedBlock.createBlock(context, iterNode, 
+            return InterpretedBlock.newInterpretedClosure(context, iterNode, 
                     new DynamicScope(scope, context.getCurrentScope()), self);
         } else if (blockNode instanceof BlockPassNode) {
             BlockPassNode blockPassNode = (BlockPassNode) blockNode;

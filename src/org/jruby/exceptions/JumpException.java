@@ -31,6 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
+import org.jruby.internal.runtime.JumpTarget;
+
 /**
  * This class should be used for performance reasons if the
  * Exception don't need a stack trace.
@@ -41,35 +43,35 @@ public class JumpException extends RuntimeException {
     private static final long serialVersionUID = -228162532535826617L;
     
     public static class FlowControlException extends JumpException {
-        protected Object target;
+        protected JumpTarget target;
         private Object value;
         // FIXME: Remove inKernelLoop from this and come up with something more general
         // Hack to detect a break in Kernel#loop
         private boolean inKernelLoop = false;
 
         public FlowControlException() {}
-        public FlowControlException(Object target, Object value) {
+        public FlowControlException(JumpTarget target, Object value) {
             this.target = target;
             this.value = value;
         }
-        public Object getTarget() { return target; }
-        public void setTarget(Object target) { this.target = target; }
+        public JumpTarget getTarget() { return target; }
+        public void setTarget(JumpTarget target) { this.target = target; }
         public Object getValue() { return value; }
         public void setValue(Object value) { this.value = value; }
         public void setBreakInKernelLoop(boolean inKernelLoop) { this.inKernelLoop = inKernelLoop; }
         public boolean isBreakInKernelLoop() { return inKernelLoop; }
     }
     
-    public static class BreakJump extends FlowControlException { public BreakJump(Object t, Object v) { super(t, v); }}
+    public static class BreakJump extends FlowControlException { public BreakJump(JumpTarget t, Object v) { super(t, v); }}
     public static class NextJump extends FlowControlException { public NextJump(Object v) { super(null, v); }}
     public static class RetryJump extends FlowControlException {}
     public static final RetryJump RETRY_JUMP = new RetryJump();
-    public static class ThrowJump extends FlowControlException { public ThrowJump(Object t, Object v) { super(t, v); }}
+    public static class ThrowJump extends FlowControlException { public ThrowJump(JumpTarget t, Object v) { super(t, v); }}
     public static class RedoJump extends FlowControlException {}
     public static final RedoJump REDO_JUMP = new RedoJump();
     public static class SpecialJump extends FlowControlException {}
     public static final SpecialJump SPECIAL_JUMP = new SpecialJump(); 
-    public static class ReturnJump extends FlowControlException { public ReturnJump(Object t, Object v) { super(t, v); }}
+    public static class ReturnJump extends FlowControlException { public ReturnJump(JumpTarget t, Object v) { super(t, v); }}
     
     /**
      * Constructor for flow-control-only JumpExceptions.

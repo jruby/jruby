@@ -40,6 +40,7 @@ import java.util.Collection;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyKernel.CatchTarget;
 import org.jruby.RubyModule;
 import org.jruby.RubyThread;
 import org.jruby.ast.CommentNode;
@@ -93,7 +94,7 @@ public final class ThreadContext {
     private DynamicScope[] scopeStack = new DynamicScope[INITIAL_SIZE];
     private int scopeIndex = -1;
     
-    private String[] catchStack = new String[INITIAL_SIZE];
+    private CatchTarget[] catchStack = new CatchTarget[INITIAL_SIZE];
     private int catchIndex = -1;
     
     private ISourcePosition sourcePosition = new ISourcePosition() {
@@ -266,15 +267,15 @@ public final class ThreadContext {
     private void expandCatchIfNecessary() {
         if (catchIndex + 1 == catchStack.length) {
             int newSize = catchStack.length * 2;
-            String[] newCatchStack = new String[newSize];
+            CatchTarget[] newCatchStack = new CatchTarget[newSize];
             
             System.arraycopy(catchStack, 0, newCatchStack, 0, catchStack.length);
             catchStack = newCatchStack;
         }
     }
     
-    public void pushCatch(String catchSymbol) {
-        catchStack[++catchIndex] = catchSymbol;
+    public void pushCatch(CatchTarget catchTarget) {
+        catchStack[++catchIndex] = catchTarget;
         expandCatchIfNecessary();
     }
     
@@ -282,10 +283,10 @@ public final class ThreadContext {
         catchIndex--;
     }
     
-    public String[] getActiveCatches() {
-        if (catchIndex < 0) return new String[0];
+    public CatchTarget[] getActiveCatches() {
+        if (catchIndex < 0) return new CatchTarget[0];
         
-        String[] activeCatches = new String[catchIndex + 1];
+        CatchTarget[] activeCatches = new CatchTarget[catchIndex + 1];
         System.arraycopy(catchStack, 0, activeCatches, 0, catchIndex + 1);
         return activeCatches;
     }
@@ -364,7 +365,7 @@ public final class ThreadContext {
         return getCurrentFrame().getSelf();
     }
     
-    public Object getFrameJumpTarget() {
+    public JumpTarget getFrameJumpTarget() {
         return getCurrentFrame().getJumpTarget();
     }
     

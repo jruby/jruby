@@ -58,7 +58,7 @@ public class RubyEnumerable {
 
     public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self,
             BlockCallback callback) {
-        return self.callMethod(context, "each", new CallBlock(self, runtime.getEnumerable(), 
+        return self.callMethod(context, "each", CallBlock.newCallClosure(self, runtime.getEnumerable(), 
                 Arity.noArguments(), callback, context));
     }
 
@@ -312,7 +312,7 @@ public class RubyEnumerable {
     @JRubyMethod(name = "each_with_index", frame = true)
     public static IRubyObject each_with_index(IRubyObject self, Block block) {
         ThreadContext context = self.getRuntime().getCurrentContext();
-        self.callMethod(context, "each", new CallBlock(self, self.getRuntime().getEnumerable(), 
+        self.callMethod(context, "each", CallBlock.newCallClosure(self, self.getRuntime().getEnumerable(), 
                 Arity.noArguments(), new EachWithIndex(context, block), context));
         
         return self;

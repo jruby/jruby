@@ -234,7 +234,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
             // dup return jump, get target, compare to this method object
             mv.dup();
-            mv.invokevirtual(cg.p(JumpException.FlowControlException.class), "getTarget", cg.sig(Object.class));
+            mv.invokevirtual(cg.p(JumpException.FlowControlException.class), "getTarget", cg.sig(JumpTarget.class));
             mv.aload(0);
             Label rethrow = new Label();
             mv.if_acmpne(rethrow);
@@ -668,7 +668,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     
                     // dup return jump, get target, compare to this method object
                     mv.dup();
-                    mv.invokevirtual(cg.p(JumpException.FlowControlException.class), "getTarget", cg.sig(Object.class));
+                    mv.invokevirtual(cg.p(JumpException.FlowControlException.class), "getTarget", cg.sig(JumpTarget.class));
                     mv.aload(0);
                     Label rethrow = new Label();
                     mv.if_acmpne(rethrow);

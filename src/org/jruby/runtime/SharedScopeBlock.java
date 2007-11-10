@@ -39,28 +39,30 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  */
 public class SharedScopeBlock extends InterpretedBlock {
-    protected SharedScopeBlock(IterNode iterNode, IRubyObject self, Frame frame,
-            Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
-        super(iterNode, self, frame, visibility, klass, dynamicScope);
+    protected SharedScopeBlock(IterNode iterNode) {
+        super(iterNode);
     }
     
-    public static Block createSharedScopeBlock(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
-        return new SharedScopeBlock(iterNode, self,
+    public static Block newInterpretedSharedScopeClosure(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
+        Binding binding = new Binding(self,
                                     context.getCurrentFrame().duplicate(),
                 context.getCurrentFrame().getVisibility(),
                 context.getRubyClass(),
                 dynamicScope);
+        BlockBody body = new SharedScopeBlock(iterNode);
+        
+        return new Block(body, binding);
     }
     
     protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
         context.preForBlock(binding, klass);
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf, Binding binding) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf, Binding binding, Block.Type type) {
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }
     
     public Block cloneBlock(Binding binding) {
-        return this;
+        return new Block(this, binding);
     }
 }

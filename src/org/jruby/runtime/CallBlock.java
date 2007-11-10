@@ -36,18 +36,24 @@ import org.jruby.runtime.builtin.IRubyObject;
  * rather than with an ICallable. For lightweight block logic within
  * Java code.
  */
-public class CallBlock extends Block {
+public class CallBlock extends BlockBody {
     private Arity arity;
     private BlockCallback callback;
     private RubyModule imClass;
     private ThreadContext context;
-
-    public CallBlock(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
-        super(self,
+    
+    public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
+        Binding binding = new Binding(self,
                 context.getCurrentFrame().duplicate(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
                 context.getCurrentScope());
+        BlockBody body = new CallBlock(imClass, arity, callback, context);
+        
+        return new Block(body, binding);
+    }
+
+    private CallBlock(RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
         this.arity = arity;
         this.callback = callback;
         this.imClass = imClass;
@@ -63,12 +69,12 @@ public class CallBlock extends Block {
         context.postYield(binding);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
     
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding) {
-        return yield(context, value, null, null, false, binding);
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+        return yield(context, value, null, null, false, binding, type);
     }
 
     /**
@@ -82,7 +88,7 @@ public class CallBlock extends Block {
      * @return
      */
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean aValue, Binding binding) {
+            RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         if (klass == null) {
             self = binding.getSelf();
             // FIXME: We never set this back!
@@ -96,7 +102,7 @@ public class CallBlock extends Block {
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    return callback.call(context, args, NULL_BLOCK);
+                    return callback.call(context, args, Block.NULL_BLOCK);
                 } catch (JumpException.RedoJump rj) {
                     context.pollThreadEvents();
                     // do nothing, allow loop to redo
@@ -116,7 +122,11 @@ public class CallBlock extends Block {
     }
 
     public Block cloneBlock(Binding binding) {
-        return new CallBlock(binding.getSelf(),imClass,arity,callback,context);
+        binding = new Binding(binding.getSelf(), context.getCurrentFrame().duplicate(),
+                Visibility.PUBLIC,
+                context.getRubyClass(),
+                context.getCurrentScope());
+        return new Block(this, binding);
     }
 
     public Arity arity() {
