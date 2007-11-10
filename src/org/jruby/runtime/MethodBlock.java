@@ -42,35 +42,11 @@ import org.jruby.runtime.callback.Callback;
  *  Internal live representation of a block ({...} or do ... end).
  */
 public class MethodBlock extends Block{
-
-    /**
-     * 'self' at point when the block is defined
-     */
-    private IRubyObject self;
     
     private RubyMethod method;
     private Callback callback;
     
     private final Arity arity;
-    
-    /**
-     * frame of method which defined this block
-     */
-    protected final Frame frame;
-    private Visibility visibility;
-    private final RubyModule klass;
-    
-    /**
-     * A reference to all variable values (and names) that are in-scope for this block.
-     */
-    private final DynamicScope dynamicScope;
-    
-    /**
-     * The Proc that this block is associated with.  When we reference blocks via variable
-     * reference they are converted to Proc objects.  We store a reference of the associated
-     * Proc object for easy conversion.  
-     */
-    private RubyProc proc = null;
     
     public boolean isLambda = false;
 
@@ -86,12 +62,7 @@ public class MethodBlock extends Block{
 
     public MethodBlock(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
         DynamicScope dynamicScope, Callback callback, RubyMethod method) {
-
-        this.self = self;
-        this.frame = frame;
-        this.visibility = visibility;
-        this.klass = klass;
-        this.dynamicScope = dynamicScope;
+        super(self, frame, visibility, klass, dynamicScope);
         this.callback = callback;
         this.method = method;
         this.arity = Arity.createArity((int) method.arity().getLongValue());
@@ -126,8 +97,8 @@ public class MethodBlock extends Block{
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue, Binding binding) {
         if (klass == null) {
-            self = this.self;
-            frame.setSelf(self);
+            self = binding.getSelf();
+            binding.getFrame().setSelf(self);
         }
         
         pre(context, klass);
@@ -160,10 +131,8 @@ public class MethodBlock extends Block{
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
         // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        Block newBlock = new MethodBlock(self, frame.duplicate(), visibility, klass, 
-                dynamicScope.cloneScope(), callback, method);
-        
-        newBlock.type = type;
+        Block newBlock = new MethodBlock(binding.getSelf(), binding.getFrame().duplicate(), binding.getVisibility(), binding.getKlass(), 
+                binding.getDynamicScope().cloneScope(), callback, method);
 
         return newBlock;
     }
@@ -175,71 +144,5 @@ public class MethodBlock extends Block{
      */
     public Arity arity() {
         return arity;
-    }
-
-    public Visibility getVisibility() {
-        return visibility;
-    }
-
-    public void setVisibility(Visibility visibility) {
-        this.visibility = visibility;
-    }
-    
-    public void setSelf(IRubyObject self) {
-        this.self = self;
-    }
-
-    /**
-     * Retrieve the proc object associated with this block
-     * 
-     * @return the proc or null if this has no proc associated with it
-     */
-    public RubyProc getProcObject() {
-    	return proc;
-    }
-    
-    /**
-     * Set the proc object associated with this block
-     * 
-     * @param procObject
-     */
-    public void setProcObject(RubyProc procObject) {
-    	this.proc = procObject;
-    }
-
-    /**
-     * Gets the dynamicVariables that are local to this block.   Parent dynamic scopes are also
-     * accessible via the current dynamic scope.
-     * 
-     * @return Returns all relevent variable scoping information
-     */
-    public DynamicScope getDynamicScope() {
-        return dynamicScope;
-    }
-
-    /**
-     * Gets the frame.
-     * 
-     * @return Returns a RubyFrame
-     */
-    public Frame getFrame() {
-        return frame;
-    }
-
-    /**
-     * Gets the klass.
-     * @return Returns a RubyModule
-     */
-    public RubyModule getKlass() {
-        return klass;
-    }
-    
-    /**
-     * Is the current block a real yield'able block instead a null one
-     * 
-     * @return true if this is a valid block or false otherwise
-     */
-    public boolean isGiven() {
-        return true;
     }
 }

@@ -39,7 +39,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CallBlock extends Block {
     private Arity arity;
     private BlockCallback callback;
-    private IRubyObject self;
     private RubyModule imClass;
     private ThreadContext context;
 
@@ -51,7 +50,6 @@ public class CallBlock extends Block {
                 context.getCurrentScope());
         this.arity = arity;
         this.callback = callback;
-        this.self = self;
         this.imClass = imClass;
         this.context = context;
     }
@@ -117,7 +115,7 @@ public class CallBlock extends Block {
     }
 
     public Block cloneBlock(Binding binding) {
-        return new CallBlock(self,imClass,arity,callback,context);
+        return new CallBlock(binding.getSelf(),imClass,arity,callback,context);
     }
 
     public Arity arity() {
