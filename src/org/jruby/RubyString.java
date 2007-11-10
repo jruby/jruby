@@ -1711,7 +1711,7 @@ public class RubyString extends RubyObject {
 
         return runtime.getNil();
     }
-
+    
     /** rb_str_gsub
      *
      */
@@ -2087,8 +2087,9 @@ public class RubyString extends RubyObject {
             return args[1];
         }
         if (args[0] instanceof RubyRegexp) {
-            sub_bang(args, null);
-            return args[1];
+            RubyString repl = stringValue(args[1]);
+            subpatSet((RubyRegexp) args[0], 0, repl);
+            return repl;
         }
         if (args[0] instanceof RubyString) {
             RubyString orig = stringValue(args[0]);
