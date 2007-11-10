@@ -486,7 +486,7 @@ externals/ruby_test/test/core/Range/instance/tc_equal
 externals/ruby_test/test/core/Range/instance/tc_threequals
 externals/ruby_test/test/core/String/class/tc_new
 #externals/ruby_test/test/core/String/instance/tc_aref
-#externals/ruby_test/test/core/String/instance/tc_aset
+externals/ruby_test/test/core/String/instance/tc_aset
 externals/ruby_test/test/core/String/instance/tc_capitalize
 externals/ruby_test/test/core/String/instance/tc_casecmp
 externals/ruby_test/test/core/String/instance/tc_center
