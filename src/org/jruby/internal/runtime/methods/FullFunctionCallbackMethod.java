@@ -50,7 +50,7 @@ public class FullFunctionCallbackMethod extends DynamicMethod implements JumpTar
     private Callback callback;
 
     public FullFunctionCallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
-        super(implementationClass, visibility, CallConfiguration.JAVA_FULL);
+        super(implementationClass, visibility, CallConfiguration.FRAME_ONLY);
         this.callback = callback;
     }
 

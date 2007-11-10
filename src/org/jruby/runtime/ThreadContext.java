@@ -671,7 +671,7 @@ public final class ThreadContext {
         popRubyClass();
     }
     
-    public void preRubyMethodFull(RubyModule clazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block, 
+    public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block, 
             StaticScope staticScope, JumpTarget jumpTarget) {
         RubyModule implementationClass = getCurrentScope().getStaticScope().getModule();
         // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
@@ -683,22 +683,37 @@ public final class ThreadContext {
         pushRubyClass(implementationClass);
     }
     
-    public void postRubyMethodFull() {
+    public void postMethodFrameAndScope() {
         popRubyClass();
         popScope();
         popFrame();
     }
     
-    public void preJavaMethodFull(RubyModule klazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block,
+    public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block,
             JumpTarget jumpTarget) {
-        pushRubyClass(klazz);
-        pushCallFrame(klazz, name, self, block, jumpTarget);
+        pushRubyClass(clazz);
+        pushCallFrame(clazz, name, self, block, jumpTarget);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     
-    public void postJavaMethodFull() {
+    public void postMethodFrameOnly() {
         popFrame();
         popRubyClass();
+    }
+    
+    public void preMethodScopeOnly(RubyModule clazz, StaticScope staticScope) {
+        RubyModule implementationClass = getCurrentScope().getStaticScope().getModule();
+        // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
+        if (implementationClass == null) {
+            implementationClass = clazz;
+        }
+        pushScope(new DynamicScope(staticScope));
+        pushRubyClass(implementationClass);
+    }
+    
+    public void postMethodScopeOnly() {
+        popRubyClass();
+        popScope();
     }
     
     public void preInitCoreClasses() {

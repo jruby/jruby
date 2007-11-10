@@ -60,9 +60,9 @@ public class ReflectionMethodFactory extends MethodFactory {
         ic.setArgumentTypes(method.getParameterTypes());
         ic.setSingleton(Modifier.isStatic(method.getModifiers()));
         if (fast) {
-            ic.setCallConfig(CallConfiguration.JAVA_FAST);
+            ic.setCallConfig(CallConfiguration.NO_FRAME_NO_SCOPE);
         } else {
-            ic.setCallConfig(CallConfiguration.JAVA_FULL);
+            ic.setCallConfig(CallConfiguration.FRAME_ONLY);
         }
         return ic;
     }

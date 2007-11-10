@@ -1005,7 +1005,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                                 JavaMethod javaMethod = (JavaMethod)dynamicMethod;
                                         
                                 // singleton methods require doing a static invocation, etc...disabling again for now
-                                if (javaMethod.isSingleton() || javaMethod.getCallConfig() != CallConfiguration.JAVA_FAST) continue;
+                                if (javaMethod.isSingleton() || javaMethod.getCallConfig() != CallConfiguration.NO_FRAME_NO_SCOPE) continue;
                                 
                                 // skipping non-public methods for now, to avoid visibility checks in STI
                                 if (dynamicMethod.getVisibility() != Visibility.PUBLIC) continue;

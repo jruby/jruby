@@ -394,9 +394,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             ic.setArgumentTypes(method.getParameterTypes());
             ic.setSingleton(Modifier.isStatic(method.getModifiers()));
             if (fast) {
-                ic.setCallConfig(CallConfiguration.JAVA_FAST);
+                ic.setCallConfig(CallConfiguration.NO_FRAME_NO_SCOPE);
             } else {
-                ic.setCallConfig(CallConfiguration.JAVA_FULL);
+                ic.setCallConfig(CallConfiguration.FRAME_ONLY);
             }
             return ic;
         } catch(Exception e) {
@@ -495,9 +495,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 ic.setArgumentTypes(method.getParameterTypes());
                 ic.setSingleton(Modifier.isStatic(method.getModifiers()));
                 if (fast) {
-                    ic.setCallConfig(CallConfiguration.JAVA_FAST);
+                    ic.setCallConfig(CallConfiguration.NO_FRAME_NO_SCOPE);
                 } else {
-                    ic.setCallConfig(CallConfiguration.JAVA_FULL);
+                    ic.setCallConfig(CallConfiguration.FRAME_ONLY);
                 }
 
                 callback.define(implementationClass, method, ic);

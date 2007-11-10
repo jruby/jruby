@@ -108,7 +108,8 @@ public class RubyInstanceConfig {
     private boolean rubinius = false;
     private boolean yarvCompile = false;
     private KCode kcode = KCode.NONE;
-
+    
+    public static final boolean FRAMELESS_COMPILE_ENABLED = Boolean.getBoolean("jruby.compile.frameless");
     
     public int characterIndex = 0;
     

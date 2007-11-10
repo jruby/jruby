@@ -48,7 +48,7 @@ public class SimpleCallbackMethod extends DynamicMethod {
     private Callback callback;
 
     public SimpleCallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
-        super(implementationClass, visibility, CallConfiguration.JAVA_FAST);
+        super(implementationClass, visibility, CallConfiguration.NO_FRAME_NO_SCOPE);
         this.callback = callback;
     }
 

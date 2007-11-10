@@ -44,12 +44,12 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
     protected final int methodIndex;
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility) {
-        super(implementationClass, visibility, CallConfiguration.JAVA_FULL);
+        super(implementationClass, visibility, CallConfiguration.FRAME_ONLY);
         methodIndex = -1;
     }
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility, int methodIndex) {
-        super(implementationClass, visibility, CallConfiguration.JAVA_FULL);
+        super(implementationClass, visibility, CallConfiguration.FRAME_ONLY);
         this.methodIndex = methodIndex;
     }
 

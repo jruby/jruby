@@ -55,7 +55,7 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
     private Arity arity;
 
     public YARVMethod(RubyModule implementationClass, YARVMachine.InstructionSequence iseq, StaticScope staticScope, Visibility visibility) {
-        super(implementationClass, visibility, CallConfiguration.RUBY_FULL);
+        super(implementationClass, visibility, CallConfiguration.FRAME_AND_SCOPE);
         this.staticScope = staticScope;
         this.iseq = iseq;
 

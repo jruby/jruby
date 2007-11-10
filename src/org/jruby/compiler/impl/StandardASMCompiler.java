@@ -2316,10 +2316,20 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.ldc(scope.getOptionalArgs());
             method.ldc(scope.getRestArg());
             
-            if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
-                method.getstatic(cg.p(CallConfiguration.class), "RUBY_FULL", cg.ci(CallConfiguration.class));
+            // if method has frame aware methods or frameless compilation is NOT enabled
+            if (inspector.hasFrameAwareMethods() || !RubyInstanceConfig.FRAMELESS_COMPILE_ENABLED) {
+                if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                    method.getstatic(cg.p(CallConfiguration.class), CallConfiguration.FRAME_AND_SCOPE.name(), cg.ci(CallConfiguration.class));
+                } else {
+                    method.getstatic(cg.p(CallConfiguration.class), CallConfiguration.FRAME_ONLY.name(), cg.ci(CallConfiguration.class));
+                }
             } else {
-                method.getstatic(cg.p(CallConfiguration.class), "JAVA_FULL", cg.ci(CallConfiguration.class));
+                if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                    // TODO: call config with scope but no frame
+                    method.getstatic(cg.p(CallConfiguration.class), CallConfiguration.SCOPE_ONLY.name(), cg.ci(CallConfiguration.class));
+                } else {
+                    method.getstatic(cg.p(CallConfiguration.class), CallConfiguration.NO_FRAME_NO_SCOPE.name(), cg.ci(CallConfiguration.class));
+                }
             }
             
             if (receiver != null) {

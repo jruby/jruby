@@ -79,7 +79,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
             ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
-        super(implementationClass, visibility, CallConfiguration.RUBY_FULL);
+        super(implementationClass, visibility, CallConfiguration.FRAME_AND_SCOPE);
         this.body = body;
         this.staticScope = staticScope;
         this.argsNode = argsNode;
@@ -202,7 +202,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                         } else {
                             methodCompiler = compiler.startMethod("__file__", null, staticScope, inspector);
                             methodCompiler.loadNil();
-                            jitCallConfig = CallConfiguration.JAVA_FAST;
+                            jitCallConfig = CallConfiguration.NO_FRAME_NO_SCOPE;
                         }
                     }
                     methodCompiler.endMethod();
@@ -214,9 +214,9 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                         // if we're not doing any of the operations that still need a scope, use the scopeless config
                         if (!(inspector.hasClosure() || inspector.hasScopeAwareMethods())) {
                             // switch to a slightly faster call config
-                            jitCallConfig = CallConfiguration.JAVA_FULL;
+                            jitCallConfig = CallConfiguration.FRAME_ONLY;
                         } else {
-                            jitCallConfig = CallConfiguration.RUBY_FULL;
+                            jitCallConfig = CallConfiguration.FRAME_AND_SCOPE;
                         }
                     }
                     
