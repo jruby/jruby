@@ -105,6 +105,7 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.MethodCache;
 import org.jruby.util.NormalizedFile;
+import org.jruby.runtime.Binding;
 
 import com.sun.jna.Native;
 
@@ -2066,8 +2067,8 @@ public final class Ruby {
         return RubyBinding.newBinding(this);
     }
 
-    public RubyBinding newBinding(Block block) {
-        return RubyBinding.newBinding(this, block);
+    public RubyBinding newBinding(Binding binding) {
+        return RubyBinding.newBinding(this, binding);
     }
 
     public RubyString newString() {

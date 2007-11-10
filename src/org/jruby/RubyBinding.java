@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
@@ -44,12 +45,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public class RubyBinding extends RubyObject {
-    private Block block;
+    private Binding binding;
 
-    public RubyBinding(Ruby runtime, RubyClass rubyClass, Block block) {
+    public RubyBinding(Ruby runtime, RubyClass rubyClass, Binding binding) {
         super(runtime, rubyClass);
         
-        this.block = block;
+        this.binding = binding;
     }
     
     private static ObjectAllocator BINDING_ALLOCATOR = new ObjectAllocator() {
@@ -69,14 +70,14 @@ public class RubyBinding extends RubyObject {
         return bindingClass;
     }
 
-    public Block getBlock() {
-        return block;
+    public Binding getBinding() {
+        return binding;
     }
 
     // Proc class
     
-    public static RubyBinding newBinding(Ruby runtime, Block block) {
-        return new RubyBinding(runtime, runtime.getBinding(), block);
+    public static RubyBinding newBinding(Ruby runtime, Binding binding) {
+        return new RubyBinding(runtime, runtime.getBinding(), binding);
     }
 
     public static RubyBinding newBinding(Ruby runtime) {
@@ -84,9 +85,9 @@ public class RubyBinding extends RubyObject {
         
         // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
         Frame frame = context.getCurrentFrame();
-        Block bindingBlock = Block.createBinding(frame, context.getCurrentScope());
+        Binding binding = Binding.createBinding(frame, context.getCurrentScope());
         
-        return new RubyBinding(runtime, runtime.getBinding(), bindingBlock);
+        return new RubyBinding(runtime, runtime.getBinding(), binding);
     }
 
     /**
@@ -115,8 +116,8 @@ public class RubyBinding extends RubyObject {
         // Set jump target to whatever the previousTarget thinks is good.
         currentFrame.setJumpTarget(previousFrame.getJumpTarget() != null ? previousFrame.getJumpTarget() : previousFrame);
         
-        Block bindingBlock = Block.createBinding(previousFrame, context.getCurrentScope());
+        Binding binding = Binding.createBinding(previousFrame, context.getCurrentScope());
         
-        return new RubyBinding(runtime, runtime.getBinding(), bindingBlock);
+        return new RubyBinding(runtime, runtime.getBinding(), binding);
     }
 }

@@ -765,48 +765,48 @@ public final class ThreadContext {
         setWithinTrace(false);
     }
     
-    public void preForBlock(Block block, RubyModule klass) {
-        pushFrame(block.getFrame());
-        getCurrentFrame().setVisibility(block.getVisibility());
-        pushScope(block.getDynamicScope());
-        pushRubyClass((klass != null) ? klass : block.getKlass());
+    public void preForBlock(Binding binding, RubyModule klass) {
+        pushFrame(binding.getFrame());
+        getCurrentFrame().setVisibility(binding.getVisibility());
+        pushScope(binding.getDynamicScope());
+        pushRubyClass((klass != null) ? klass : binding.getKlass());
     }
     
-    public void preYieldSpecificBlock(Block block, RubyModule klass) {
-        pushFrame(block.getFrame());
-        getCurrentFrame().setVisibility(block.getVisibility());
-        pushScope(block.getDynamicScope().cloneScope());
-        pushRubyClass((klass != null) ? klass : block.getKlass());
+    public void preYieldSpecificBlock(Binding binding, RubyModule klass) {
+        pushFrame(binding.getFrame());
+        getCurrentFrame().setVisibility(binding.getVisibility());
+        pushScope(binding.getDynamicScope().cloneScope());
+        pushRubyClass((klass != null) ? klass : binding.getKlass());
     }
     
-    public void preYieldLightBlock(Block block, RubyModule klass) {
-        pushFrame(block.getFrame());
-        getCurrentFrame().setVisibility(block.getVisibility());
-        pushScope(block.getDynamicScope());
-        pushRubyClass((klass != null) ? klass : block.getKlass());
+    public void preYieldLightBlock(Binding binding, RubyModule klass) {
+        pushFrame(binding.getFrame());
+        getCurrentFrame().setVisibility(binding.getVisibility());
+        pushScope(binding.getDynamicScope());
+        pushRubyClass((klass != null) ? klass : binding.getKlass());
     }
     
-    public void preEvalWithBinding(Block block) {
-        Frame frame = block.getFrame();
+    public void preEvalWithBinding(Binding binding) {
+        Frame frame = binding.getFrame();
         frame.setIsBindingFrame(true);
         pushFrame(frame);
-        getCurrentFrame().setVisibility(block.getVisibility());
-        pushRubyClass(block.getKlass());
+        getCurrentFrame().setVisibility(binding.getVisibility());
+        pushRubyClass(binding.getKlass());
     }
     
-    public void postEvalWithBinding(Block block) {
-        block.getFrame().setIsBindingFrame(false);
+    public void postEvalWithBinding(Binding binding) {
+        binding.getFrame().setIsBindingFrame(false);
         popFrameReal();
         popRubyClass();
     }
     
-    public void postYield(Block block) {
+    public void postYield(Binding binding) {
         popScope();
         popFrameReal();
         popRubyClass();
     }
     
-    public void postYieldLight(Block block) {
+    public void postYieldLight(Binding binding) {
         popScope();
         popFrameReal();
         popRubyClass();

@@ -50,7 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public class Block {
+public class Block extends Binding {
     // FIXME: Maybe not best place, but move it to a good home
     public static final int ZERO_ARGS = 0;
     public static final int MULTIPLE_ASSIGNMENT = 1;
@@ -78,26 +78,9 @@ public class Block {
     };
 
     /**
-     * 'self' at point when the block is defined
-     */
-    protected IRubyObject self;
-
-    /**
      * AST Node representing the parameter (VARiable) list to the block.
      */
     private IterNode iterNode;
-    
-    /**
-     * frame of method which defined this block
-     */
-    protected Frame frame;
-    protected Visibility visibility;
-    protected RubyModule klass;
-    
-    /**
-     * A reference to all variable values (and names) that are in-scope for this block.
-     */
-    protected DynamicScope dynamicScope;
     
     /**
      * The Proc that this block is associated with.  When we reference blocks via variable
@@ -133,13 +116,9 @@ public class Block {
     
     public Block(IterNode iterNode, IRubyObject self, Arity arity, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
+        super(self, frame, visibility, klass, dynamicScope);
         this.iterNode = iterNode;
-        this.self = self;
         this.arity = arity;
-        this.frame = frame;
-        this.visibility = visibility;
-        this.klass = klass;
-        this.dynamicScope = dynamicScope;
     }
     
     public static Block createBinding(Frame frame, DynamicScope dynamicScope) {
@@ -350,18 +329,6 @@ public class Block {
         return arity;
     }
 
-    public Visibility getVisibility() {
-        return visibility;
-    }
-
-    public void setVisibility(Visibility visibility) {
-        this.visibility = visibility;
-    }
-    
-    public void setSelf(IRubyObject self) {
-        this.self = self;
-    }
-
     /**
      * Retrieve the proc object associated with this block
      * 
@@ -378,33 +345,6 @@ public class Block {
      */
     public void setProcObject(RubyProc procObject) {
     	this.proc = procObject;
-    }
-
-    /**
-     * Gets the dynamicVariables that are local to this block.   Parent dynamic scopes are also
-     * accessible via the current dynamic scope.
-     * 
-     * @return Returns all relevent variable scoping information
-     */
-    public DynamicScope getDynamicScope() {
-        return dynamicScope;
-    }
-
-    /**
-     * Gets the frame.
-     * 
-     * @return Returns a RubyFrame
-     */
-    public Frame getFrame() {
-        return frame;
-    }
-
-    /**
-     * Gets the klass.
-     * @return Returns a RubyModule
-     */
-    public RubyModule getKlass() {
-        return klass;
     }
     
     /**

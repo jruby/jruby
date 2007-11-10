@@ -696,7 +696,7 @@ public class RubyKernel {
             if (!args[1].isNil()) {
                 scope = args[1];
 
-                org.jruby.lexer.yacc.ISourcePosition pos = ((scope instanceof RubyBinding) ? (RubyBinding)scope : (RubyBinding)((RubyProc)scope).binding()).getBlock().getFrame().getPosition();
+                org.jruby.lexer.yacc.ISourcePosition pos = ((scope instanceof RubyBinding) ? (RubyBinding)scope : (RubyBinding)((RubyProc)scope).binding()).getBinding().getFrame().getPosition();
                 file = pos.getFile();
                 line = pos.getEndLine();
             }

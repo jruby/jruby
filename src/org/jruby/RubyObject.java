@@ -64,6 +64,7 @@ import java.util.Map;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.Node;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 
@@ -748,25 +749,25 @@ public class RubyObject implements Cloneable, IRubyObject {
             }
         }
 
-        Block blockOfBinding = ((RubyBinding)scope).getBlock();
+        Binding binding = ((RubyBinding)scope).getBinding();
         // FIXME:  This determine module is in a strange location and should somehow be in block
-        blockOfBinding.getDynamicScope().getStaticScope().determineModule();
+        binding.getDynamicScope().getStaticScope().determineModule();
 
         try {
             // Binding provided for scope, use it
-            context.preEvalWithBinding(blockOfBinding);
+            context.preEvalWithBinding(binding);
             IRubyObject newSelf = context.getFrameSelf();
             RubyString source = src.convertToString();
             Node node = 
-                getRuntime().parseEval(source.getByteList(), file, blockOfBinding.getDynamicScope(), lineNumber);
+                getRuntime().parseEval(source.getByteList(), file, binding.getDynamicScope(), lineNumber);
 
-            return ASTInterpreter.eval(getRuntime(), context, node, newSelf, blockOfBinding);
+            return ASTInterpreter.eval(getRuntime(), context, node, newSelf, binding.getFrame().getBlock());
         } catch (JumpException.BreakJump bj) {
             throw getRuntime().newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
         } catch (JumpException.RedoJump rj) {
             throw getRuntime().newLocalJumpError("redo", (IRubyObject)rj.getValue(), "unexpected redo");
         } finally {
-            context.postEvalWithBinding(blockOfBinding);
+            context.postEvalWithBinding(binding);
 
             // restore position
             context.setPosition(savedPosition);
