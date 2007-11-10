@@ -37,6 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.InterpretedBlock;
 
 /**
  * Represents a block.  
@@ -47,6 +49,7 @@ public class IterNode extends Node {
     
     // What static scoping relationship exists when it comes into being.
     private StaticScope scope;
+    private InterpretedBlock blockBody;
 
     public IterNode(ISourcePosition position, Node varNode, StaticScope scope, Node bodyNode) {
         this(position, varNode, scope, bodyNode, NodeType.ITERNODE);
@@ -58,6 +61,7 @@ public class IterNode extends Node {
         this.varNode = varNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
+        this.blockBody = new InterpretedBlock(this, Arity.procArityOf(varNode));
     }
 
     /**
@@ -86,6 +90,10 @@ public class IterNode extends Node {
      */
     public Node getVarNode() {
         return varNode;
+    }
+    
+    public InterpretedBlock getBlockBody() {
+        return blockBody;
     }
     
     public List<Node> childNodes() {

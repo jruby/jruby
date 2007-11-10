@@ -68,6 +68,17 @@ public class InterpretedBlock extends BlockBody {
                          context.getRubyClass(),
                          dynamicScope);
     }
+
+    public static Block newInterpretedClosure(ThreadContext context, InterpretedBlock body, DynamicScope dynamicScope, IRubyObject self) {
+        Frame f = context.getCurrentFrame();
+        f.setPosition(context.getPosition());
+        Binding binding = new Binding(self,
+                         f,
+                         f.getVisibility(),
+                         context.getRubyClass(),
+                         dynamicScope);
+        return new Block(body, binding);
+    }
     
     public static Block newInterpretedClosure(IterNode iterNode, IRubyObject self, Arity arity, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
