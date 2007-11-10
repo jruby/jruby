@@ -92,7 +92,7 @@ public class InterpretedBlock extends Block {
         this.arity = arity;
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding) {
         switch (type) {
         case NORMAL: {
             assert false : "can this happen?";
@@ -123,7 +123,7 @@ public class InterpretedBlock extends Block {
             break;
         }
 
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding);
     }
     
     protected void pre(ThreadContext context, RubyModule klass) {
@@ -134,8 +134,8 @@ public class InterpretedBlock extends Block {
         context.postYield(this);
     }
     
-    public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return yield(context, value, null, null, false);
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding) {
+        return yield(context, value, null, null, false, binding);
     }
 
     /**
@@ -149,7 +149,7 @@ public class InterpretedBlock extends Block {
      * @return
      */
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean aValue) {
+            RubyModule klass, boolean aValue, Binding binding) {
         if (klass == null) {
             self = binding.getSelf();
             binding.getFrame().setSelf(self);
@@ -237,7 +237,7 @@ public class InterpretedBlock extends Block {
         return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
     }
 
-    public Block cloneBlock() {
+    public Block cloneBlock(Binding binding) {
         // We clone dynamic scope because this will be a new instance of a block.  Any previously
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.

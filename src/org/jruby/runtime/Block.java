@@ -59,7 +59,7 @@ public abstract class Block extends Binding {
     
     public Type type = Type.NORMAL;
     
-    protected final Binding binding;
+    private final Binding binding;
     
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
@@ -70,21 +70,21 @@ public abstract class Block extends Binding {
         }
         
         public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-                RubyModule klass, boolean aValue) {
+                RubyModule klass, boolean aValue, Binding binding) {
             throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
         }
         
-        public Block cloneBlock() {
+        public Block cloneBlock(Binding binding) {
             return this;
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding) {
             throw context.getRuntime().newLocalJumpError("noreason", context.getRuntime().newArrayNoCopy(args), "yield called out of block");
         }
 
         @Override
-        public IRubyObject yield(ThreadContext context, IRubyObject value) {
+        public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding) {
             throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
         }
 
@@ -104,28 +104,43 @@ public abstract class Block extends Binding {
         this.binding = this;
     }
 
-    public abstract IRubyObject call(ThreadContext context, IRubyObject[] args);
-    
-    public abstract IRubyObject yield(ThreadContext context, IRubyObject value);
+    public final IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        return call(context, args, binding);
+    }
 
-    /**
-     * Yield to this block, usually passed to the current call.
-     * 
-     * @param context represents the current thread-specific data
-     * @param value The value to yield, either a single value or an array of values
-     * @param self The current self
-     * @param klass
-     * @param aValue Should value be arrayified or not?
-     * @return
-     */
+    public abstract IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding);
+    
+    public final IRubyObject yield(ThreadContext context, IRubyObject value) {
+        return yield(context, value, binding);
+    }
+    
+    public abstract IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding);
+    
+    public final IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
+            RubyModule klass, boolean aValue) {
+        return yield(context, value, self, klass, aValue, binding);
+    }
+    
     public abstract IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean aValue);
+            RubyModule klass, boolean aValue, Binding binding);
     
     protected int arrayLength(IRubyObject node) {
         return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
     }
+    
+    public final Block cloneBlock() {
+        // We clone dynamic scope because this will be a new instance of a block.  Any previously
+        // captured instances of this block may still be around and we do not want to start
+        // overwriting those values when we create a new one.
+        // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
+        Block newBlock = cloneBlock(binding);
+        
+        newBlock.type = type;
 
-    public abstract Block cloneBlock();
+        return newBlock;
+    }
+
+    public abstract Block cloneBlock(Binding binding);
 
     /**
      * What is the arity of this block?

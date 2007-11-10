@@ -31,7 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.RubyArray;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
@@ -98,8 +97,8 @@ public class MethodBlock extends Block{
         this.arity = Arity.createArity((int) method.arity().getLongValue());
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding) {
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding);
     }
     
     protected void pre(ThreadContext context, RubyModule klass) {
@@ -110,8 +109,8 @@ public class MethodBlock extends Block{
         context.postYield(this);
     }
     
-    public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return yield(context, value, null, null, false);
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding) {
+        return yield(context, value, null, null, false, binding);
     }
 
     /**
@@ -125,7 +124,7 @@ public class MethodBlock extends Block{
      * @return
      */
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean aValue) {
+            RubyModule klass, boolean aValue, Binding binding) {
         if (klass == null) {
             self = this.self;
             frame.setSelf(self);
@@ -156,7 +155,7 @@ public class MethodBlock extends Block{
         }
     }
 
-    public Block cloneBlock() {
+    public Block cloneBlock(Binding binding) {
         // We clone dynamic scope because this will be a new instance of a block.  Any previously
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.

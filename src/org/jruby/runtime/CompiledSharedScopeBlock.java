@@ -58,12 +58,8 @@ public class CompiledSharedScopeBlock extends CompiledBlock {
         context.preForBlock(this, klass);
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
-    }
-    
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
+    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding) {
         if (klass == null) {
             self = binding.getSelf();
             binding.getFrame().setSelf(self);
@@ -137,7 +133,7 @@ public class CompiledSharedScopeBlock extends CompiledBlock {
         }
     }
     
-    public Block cloneBlock() {
+    public Block cloneBlock(Binding binding) {
         return this;
     }
 }

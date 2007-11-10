@@ -71,7 +71,7 @@ public class CompiledBlock extends Block {
         return light;
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding) {
         switch (type) {
         case NORMAL: {
             assert false : "can this happen?";
@@ -95,15 +95,15 @@ public class CompiledBlock extends Block {
             break;
         }
 
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding);
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return yield(context, value, null, null, false);
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding) {
+        return yield(context, value, null, null, false, binding);
     }
     
-    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
+    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding) {
         if (klass == null) {
             self = binding.getSelf();
             binding.getFrame().setSelf(self);
@@ -195,7 +195,7 @@ public class CompiledBlock extends Block {
         }
     }
 
-    public Block cloneBlock() {
+    public Block cloneBlock(Binding binding) {
         Block newBlock = new CompiledBlock(
                 binding.getSelf(),
                 binding.getFrame().duplicate(),
@@ -206,8 +206,6 @@ public class CompiledBlock extends Block {
                 callback,
                 hasMultipleArgsHead,
                 argumentType);
-        
-        newBlock.type = type;
         
         return newBlock;
     }

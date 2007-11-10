@@ -64,12 +64,12 @@ public class CallBlock extends Block {
         context.postYield(this);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
     
-    public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return yield(context, value, null, null, false);
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding) {
+        return yield(context, value, null, null, false, binding);
     }
 
     /**
@@ -83,7 +83,7 @@ public class CallBlock extends Block {
      * @return
      */
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean aValue) {
+            RubyModule klass, boolean aValue, Binding binding) {
         if (klass == null) {
             self = binding.getSelf();
             // FIXME: We never set this back!
@@ -116,7 +116,7 @@ public class CallBlock extends Block {
         }
     }
 
-    public Block cloneBlock() {
+    public Block cloneBlock(Binding binding) {
         return new CallBlock(self,imClass,arity,callback,context);
     }
 

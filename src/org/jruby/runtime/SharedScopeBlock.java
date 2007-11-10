@@ -56,11 +56,11 @@ public class SharedScopeBlock extends InterpretedBlock {
         context.preForBlock(this, klass);
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf, Binding binding) {
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding);
     }
     
-    public Block cloneBlock() {
+    public Block cloneBlock(Binding binding) {
         return this;
     }
 }
