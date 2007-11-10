@@ -474,7 +474,7 @@ public class RubyHash extends RubyObject implements Map {
         throw getRuntime().newRuntimeError("rehash occurred during iteration");
     }
 
-    public static abstract class Callback { // a class to prevent invokeinterface
+    private static abstract class Callback { // a class to prevent invokeinterface
         public abstract int call(RubyHash hash, RubyHashEntry entry);
     }
 
