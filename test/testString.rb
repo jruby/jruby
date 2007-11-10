@@ -65,6 +65,10 @@ s[0,0]="foo"
 
 test_equal("foo", s)
 
+s = "0"
+s[1, 1] = "1"
+test_equal("01", s)
+
 # regexp, integer asets from rubicon
 
 s="BarFoo"
