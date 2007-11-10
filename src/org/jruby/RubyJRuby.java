@@ -44,6 +44,7 @@ import org.jruby.ast.Node;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
+import org.jruby.runtime.InterpretedBlock;
 import org.objectweb.asm.ClassReader;
 
 /**
@@ -92,8 +93,11 @@ public class RubyJRuby {
     @JRubyMethod(name = {"parse", "ast_for"}, optional = 3, frame = true, module = true)
     public static IRubyObject parse(IRubyObject recv, IRubyObject[] args, Block block) {
         if(block.isGiven()) {
+            if(block instanceof org.jruby.runtime.CompiledBlock) {
+                throw new RuntimeException("Cannot compile an already compiled block. Use -J-Djruby.jit.enabled=false to avoid this problem.");
+            }
             Arity.checkArgumentCount(recv.getRuntime(),args,0,0);
-            return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), block.getIterNode().getBodyNode()), Block.NULL_BLOCK);
+            return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), ((InterpretedBlock)block).getIterNode().getBodyNode()), Block.NULL_BLOCK);
         } else {
             Arity.checkArgumentCount(recv.getRuntime(),args,1,3);
             String filename = "-";
@@ -120,7 +124,7 @@ public class RubyJRuby {
             if(block instanceof org.jruby.runtime.CompiledBlock) {
                 throw new RuntimeException("Cannot compile an already compiled block. Use -J-Djruby.jit.enabled=false to avoid this problem.");
             }
-            Node bnode = block.getIterNode().getBodyNode();
+            Node bnode = ((InterpretedBlock)block).getIterNode().getBodyNode();
             node = new org.jruby.ast.RootNode(bnode.getPosition(), block.getDynamicScope(), bnode);
             filename = "__block_" + node.getPosition().getFile();
         } else {

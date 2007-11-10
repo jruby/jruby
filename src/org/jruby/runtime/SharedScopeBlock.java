@@ -38,7 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * stuff.  Also because of this we do not need to clone the block since it state does not change.
  * 
  */
-public class SharedScopeBlock extends Block {
+public class SharedScopeBlock extends InterpretedBlock {
     protected SharedScopeBlock(IterNode iterNode, IRubyObject self, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
         super(iterNode, self, frame, visibility, klass, dynamicScope);

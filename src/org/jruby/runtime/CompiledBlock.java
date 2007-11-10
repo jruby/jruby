@@ -29,7 +29,6 @@ package org.jruby.runtime;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -40,10 +39,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Java code.
  */
 public class CompiledBlock extends Block {
-    private CompiledBlockCallback callback;
-    private boolean hasMultipleArgsHead;
-    private int argumentType;
-    private boolean light;
+    protected CompiledBlockCallback callback;
+    protected boolean hasMultipleArgsHead;
+    protected int argumentType;
+    protected boolean light;
+    protected Arity arity;
 
     public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
             CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
@@ -54,9 +54,10 @@ public class CompiledBlock extends Block {
                 dynamicScope, arity, callback, hasMultipleArgsHead, argumentType);
     }
 
-    private CompiledBlock(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
+    protected CompiledBlock(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
         DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(null, self, arity, frame, visibility, klass, dynamicScope);
+        super(self, frame, visibility, klass, dynamicScope);
+        this.arity = arity;
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
         this.argumentType = argumentType;
@@ -96,18 +97,23 @@ public class CompiledBlock extends Block {
 
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
     }
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject value) {
+        return yield(context, value, null, null, false);
+    }
     
     public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
         if (klass == null) {
-            self = this.self;
-            frame.setSelf(self);
+            self = binding.getSelf();
+            binding.getFrame().setSelf(self);
         }
 
         // handle as though it's just an array coming in...i.e. it should be multiassigned or just 
         // assigned as is to var 0.
         // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], 
         // since single vars will want that anyway
-        Visibility oldVis = frame.getVisibility();
+        Visibility oldVis = binding.getFrame().getVisibility();
         try {
             IRubyObject[] realArgs = aValue ? 
                     setupBlockArgs(context, args, self) : setupBlockArg(context, args, self); 
@@ -126,7 +132,7 @@ public class CompiledBlock extends Block {
             // A 'next' is like a local return from the block, ending this call or yield.
             return type == Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
         } finally {
-            frame.setVisibility(oldVis);
+            binding.getFrame().setVisibility(oldVis);
             post(context);
         }
     }
@@ -191,11 +197,11 @@ public class CompiledBlock extends Block {
 
     public Block cloneBlock() {
         Block newBlock = new CompiledBlock(
-                self,
-                frame.duplicate(),
-                visibility,
-                klass,
-                light ? dynamicScope : dynamicScope.cloneScope(),
+                binding.getSelf(),
+                binding.getFrame().duplicate(),
+                binding.getVisibility(),
+                binding.getKlass(),
+                light ? binding.getDynamicScope() : binding.getDynamicScope().cloneScope(),
                 arity,
                 callback,
                 hasMultipleArgsHead,
@@ -204,5 +210,10 @@ public class CompiledBlock extends Block {
         newBlock.type = type;
         
         return newBlock;
+    }
+
+    @Override
+    public Arity arity() {
+        return arity;
     }
 }

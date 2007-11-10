@@ -32,25 +32,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
-import org.jruby.ast.IterNode;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
-import org.jruby.ast.util.ArgsUtil;
-import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.exceptions.JumpException;
-import org.jruby.parser.BlockStaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public class Block extends Binding {
+public abstract class Block extends Binding {
     // FIXME: Maybe not best place, but move it to a good home
     public static final int ZERO_ARGS = 0;
     public static final int MULTIPLE_ASSIGNMENT = 1;
@@ -58,6 +49,17 @@ public class Block extends Binding {
     public static final int SINGLE_RESTARG = 3;
     
     public enum Type { NORMAL, PROC, LAMBDA }
+    
+    /**
+     * The Proc that this block is associated with.  When we reference blocks via variable
+     * reference they are converted to Proc objects.  We store a reference of the associated
+     * Proc object for easy conversion.  
+     */
+    private RubyProc proc = null;
+    
+    public Type type = Type.NORMAL;
+    
+    protected final Binding binding;
     
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
@@ -75,134 +77,36 @@ public class Block extends Binding {
         public Block cloneBlock() {
             return this;
         }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+            throw context.getRuntime().newLocalJumpError("noreason", context.getRuntime().newArrayNoCopy(args), "yield called out of block");
+        }
+
+        @Override
+        public IRubyObject yield(ThreadContext context, IRubyObject value) {
+            throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
+        }
+
+        @Override
+        public Arity arity() {
+            return Arity.NO_ARGUMENTS;
+        }
     };
-
-    /**
-     * AST Node representing the parameter (VARiable) list to the block.
-     */
-    private IterNode iterNode;
-    
-    /**
-     * The Proc that this block is associated with.  When we reference blocks via variable
-     * reference they are converted to Proc objects.  We store a reference of the associated
-     * Proc object for easy conversion.  
-     */
-    private RubyProc proc = null;
-    
-    public Type type = Type.NORMAL;
-    
-    protected Arity arity;
-
-    public static Block createBlock(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
-        Frame f = context.getCurrentFrame();
-        f.setPosition(context.getPosition());
-        return new Block(iterNode,
-                         self,
-                         f,
-                         f.getVisibility(),
-                         context.getRubyClass(),
-                         dynamicScope);
-    }
     
     protected Block() {
-        this(null, null, null, null, null, null);
-    }
-
-    public Block(IterNode iterNode, IRubyObject self, Frame frame,
-        Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
-        this(iterNode, self,iterNode == null ? null : Arity.procArityOf(iterNode.getVarNode()),
-                frame, visibility, klass, dynamicScope);
+        this(null, null, null, null, null);
     }
     
-    public Block(IterNode iterNode, IRubyObject self, Arity arity, Frame frame,
+    public Block(IRubyObject self, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
         super(self, frame, visibility, klass, dynamicScope);
-        this.iterNode = iterNode;
-        this.arity = arity;
-    }
-    
-    public static Block createBinding(Frame frame, DynamicScope dynamicScope) {
-        ThreadContext context = frame.getSelf().getRuntime().getCurrentContext();
-        
-        // We create one extra dynamicScope on a binding so that when we 'eval "b=1", binding' the
-        // 'b' will get put into this new dynamic scope.  The original scope does not see the new
-        // 'b' and successive evals with this binding will.  I take it having the ability to have 
-        // succesive binding evals be able to share same scope makes sense from a programmers 
-        // perspective.   One crappy outcome of this design is it requires Dynamic and Static 
-        // scopes to be mutable for this one case.
-        
-        // Note: In Ruby 1.9 all of this logic can go away since they will require explicit
-        // bindings for evals.
-        
-        // We only define one special dynamic scope per 'logical' binding.  So all bindings for
-        // the same scope should share the same dynamic scope.  This allows multiple evals with
-        // different different bindings in the same scope to see the same stuff.
-        DynamicScope extraScope = dynamicScope.getBindingScope();
-        
-        // No binding scope so we should create one
-        if (extraScope == null) {
-            // If the next scope out has the same binding scope as this scope it means
-            // we are evaling within an eval and in that case we should be sharing the same
-            // binding scope.
-            DynamicScope parent = dynamicScope.getNextCapturedScope(); 
-            if (parent != null && parent.getBindingScope() == dynamicScope) {
-                extraScope = dynamicScope;
-            } else {
-                extraScope = new DynamicScope(new BlockStaticScope(dynamicScope.getStaticScope()), dynamicScope);
-                dynamicScope.setBindingScope(extraScope);
-            }
-        } 
-        
-        // FIXME: Ruby also saves wrapper, which we do not
-        return new Block(null, frame.getSelf(), frame.duplicate(), frame.getVisibility(), 
-                context.getBindingRubyClass(), extraScope);
+        this.binding = this;
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        switch (type) {
-        case NORMAL: {
-            assert false : "can this happen?";
-            if (args.length == 1 && args[0] instanceof RubyArray && iterNode != null) {
-                Node vNode = iterNode.getVarNode();
-
-                if (vNode.nodeId == NodeType.MULTIPLEASGNNODE) {
-                    args = ((RubyArray) args[0]).toJavaArray();
-                }
-            }
-            break;
-        }
-        case PROC: {
-            if (args.length == 1 && args[0] instanceof RubyArray && iterNode != null) {
-                Node vNode = iterNode.getVarNode();
-
-                if (vNode.nodeId == NodeType.MULTIPLEASGNNODE) {
-                    // if we only have *arg, we leave it wrapped in the array
-                    if (((MultipleAsgnNode)vNode).getArgsNode() == null) {
-                        args = ((RubyArray) args[0]).toJavaArray();
-                    }
-                }
-            }
-            break;
-        }
-        case LAMBDA:
-            arity().checkArity(context.getRuntime(), args);
-            break;
-        }
-
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
-    }
+    public abstract IRubyObject call(ThreadContext context, IRubyObject[] args);
     
-    protected void pre(ThreadContext context, RubyModule klass) {
-        context.preYieldSpecificBlock(this, klass);
-    }
-    
-    protected void post(ThreadContext context) {
-        context.postYield(this);
-    }
-    
-    public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return yield(context, value, null, null, false);
-    }
+    public abstract IRubyObject yield(ThreadContext context, IRubyObject value);
 
     /**
      * Yield to this block, usually passed to the current call.
@@ -214,120 +118,21 @@ public class Block extends Binding {
      * @param aValue Should value be arrayified or not?
      * @return
      */
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean aValue) {
-        if (klass == null) {
-            self = this.self;
-            frame.setSelf(self);
-        }
-        
-        Visibility oldVis = frame.getVisibility();
-        pre(context, klass);
-
-        try {
-            if (iterNode.getVarNode() != null) {
-                if (aValue) {
-                    setupBlockArgs(context, iterNode.getVarNode(), value, self);
-                } else {
-                    setupBlockArg(context, iterNode.getVarNode(), value, self);
-                }
-            }
-            
-            // This while loop is for restarting the block call in case a 'redo' fires.
-            while (true) {
-                try {
-                    return ASTInterpreter.eval(context.getRuntime(), context, iterNode.getBodyNode(), self, NULL_BLOCK);
-                } catch (JumpException.RedoJump rj) {
-                    context.pollThreadEvents();
-                    // do nothing, allow loop to redo
-                } catch (JumpException.BreakJump bj) {
-                    if (bj.getTarget() == null) {
-                        bj.setTarget(this);                            
-                    }                        
-                    throw bj;
-                }
-            }
-        } catch (JumpException.NextJump nj) {
-            // A 'next' is like a local return from the block, ending this call or yield.
-            return type == Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
-        } finally {
-            frame.setVisibility(oldVis);
-            post(context);
-        }
-    }
-
-    private void setupBlockArgs(ThreadContext context, Node varNode, IRubyObject value, IRubyObject self) {
-        Ruby runtime = self.getRuntime();
-        
-        switch (varNode.nodeId) {
-        case ZEROARGNODE:
-            break;
-        case MULTIPLEASGNNODE:
-            value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode, (RubyArray)value, false);
-            break;
-        default:
-            int length = arrayLength(value);
-            switch (length) {
-            case 0:
-                value = runtime.getNil();
-                break;
-            case 1:
-                value = ((RubyArray)value).eltInternal(0);
-                break;
-            default:
-                runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
-            }
-            AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
-        }
-    }
-
-    private void setupBlockArg(ThreadContext context, Node varNode, IRubyObject value, IRubyObject self) {
-        Ruby runtime = self.getRuntime();
-        
-        switch (varNode.nodeId) {
-        case ZEROARGNODE:
-            return;
-        case MULTIPLEASGNNODE:
-            value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode,
-                    ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null), false);
-            break;
-        default:
-            if (value == null) {
-                runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
-            }
-            AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
-        }
-    }
+    public abstract IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
+            RubyModule klass, boolean aValue);
     
     protected int arrayLength(IRubyObject node) {
         return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
     }
 
-    public Block cloneBlock() {
-        // We clone dynamic scope because this will be a new instance of a block.  Any previously
-        // captured instances of this block may still be around and we do not want to start
-        // overwriting those values when we create a new one.
-        // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        Block newBlock = new Block(iterNode, self, frame.duplicate(), visibility, klass, 
-                dynamicScope.cloneScope());
-        
-        newBlock.type = type;
-
-        return newBlock;
-    }
-
-    public IterNode getIterNode() {
-        return iterNode;
-    }
+    public abstract Block cloneBlock();
 
     /**
      * What is the arity of this block?
      * 
      * @return the arity
      */
-    public Arity arity() {
-        return arity;
-    }
+    public abstract Arity arity();
 
     /**
      * Retrieve the proc object associated with this block

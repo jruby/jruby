@@ -38,11 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * rather than with an ICallable. For lightweight block logic within
  * Java code.
  */
-public class CompiledSharedScopeBlock extends SharedScopeBlock {
-    private CompiledBlockCallback callback;
-    private boolean hasMultipleArgsHead;
-    private int argumentType;
-
+public class CompiledSharedScopeBlock extends CompiledBlock {
     public CompiledSharedScopeBlock(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
             CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         this(self,
@@ -54,24 +50,30 @@ public class CompiledSharedScopeBlock extends SharedScopeBlock {
 
     private CompiledSharedScopeBlock(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
         DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(null, self, frame, visibility, klass, dynamicScope);
-        this.arity = arity;
-        this.callback = callback;
-        this.hasMultipleArgsHead = hasMultipleArgsHead;
-        this.argumentType = argumentType;
+        super(self, frame, visibility, klass, dynamicScope, arity, callback, hasMultipleArgsHead, argumentType);
     }
     
+    @Override
+    protected void pre(ThreadContext context, RubyModule klass) {
+        context.preForBlock(this, klass);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
+    }
+    
+    @Override
     public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
         if (klass == null) {
-            self = this.self;
-            frame.setSelf(self);
+            self = binding.getSelf();
+            binding.getFrame().setSelf(self);
         }
 
         // handle as though it's just an array coming in...i.e. it should be multiassigned or just 
         // assigned as is to var 0.
         // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], 
         // since single vars will want that anyway
-        Visibility oldVis = frame.getVisibility();
+        Visibility oldVis = binding.getFrame().getVisibility();
         try {
             IRubyObject[] realArgs = aValue ? 
                     setupBlockArgs(context, args, self) : setupBlockArg(context, args, self); 
@@ -90,7 +92,7 @@ public class CompiledSharedScopeBlock extends SharedScopeBlock {
             // A 'next' is like a local return from the block, ending this call or yield.
             return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
         } finally {
-            frame.setVisibility(oldVis);
+            binding.getFrame().setVisibility(oldVis);
             post(context);
         }
     }
@@ -125,8 +127,8 @@ public class CompiledSharedScopeBlock extends SharedScopeBlock {
         case MULTIPLE_ASSIGNMENT:
             return new IRubyObject[] {ArgsUtil.convertToRubyArray(context.getRuntime(), value, hasMultipleArgsHead)};
         default:
-        // FIXME: the test below would be enabled if we could avoid processing block args for the cases where we don't have any args
-        // since we can't do that just yet, it's disabled
+            // FIXME: the test below would be enabled if we could avoid processing block args for the cases where we don't have any args
+            // since we can't do that just yet, it's disabled
             if (value == null) {
                 context.getRuntime().getWarnings().warn("multiple values for a block parameter (0 for 1)");
                 return new IRubyObject[] {context.getRuntime().getNil()};
@@ -134,13 +136,8 @@ public class CompiledSharedScopeBlock extends SharedScopeBlock {
             return new IRubyObject[] {value};
         }
     }
-
+    
     public Block cloneBlock() {
-        Block newBlock = new CompiledSharedScopeBlock(self, frame.duplicate(), visibility, klass, 
-                dynamicScope, arity, callback, hasMultipleArgsHead, argumentType);
-        
-        newBlock.type = type;
-        
-        return newBlock;
+        return this;
     }
 }

@@ -157,6 +157,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.regexp.PatternSyntaxException;
+import org.jruby.runtime.InterpretedBlock;
 
 public class ASTInterpreter {
     public static IRubyObject eval(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
@@ -1365,7 +1366,7 @@ public class ASTInterpreter {
 
         // FIXME: I use a for block to implement END node because we need a proc which captures
         // its enclosing scope.   ForBlock now represents these node and should be renamed.
-        Block block = Block.createBlock(context, iVisited, context.getCurrentScope(), self);
+        Block block = InterpretedBlock.createBlock(context, iVisited, context.getCurrentScope(), self);
         
         block.yield(context, null);
         
@@ -1794,7 +1795,7 @@ public class ASTInterpreter {
             
             // Create block for this iter node
             // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
-            return Block.createBlock(context, iterNode, 
+            return InterpretedBlock.createBlock(context, iterNode, 
                     new DynamicScope(scope, context.getCurrentScope()), self);
         } else if (blockNode instanceof BlockPassNode) {
             BlockPassNode blockPassNode = (BlockPassNode) blockNode;

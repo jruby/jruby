@@ -44,8 +44,7 @@ public class CallBlock extends Block {
     private ThreadContext context;
 
     public CallBlock(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
-        super(null,
-                self,
+        super(self,
                 context.getCurrentFrame().duplicate(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
@@ -55,6 +54,14 @@ public class CallBlock extends Block {
         this.self = self;
         this.imClass = imClass;
         this.context = context;
+    }
+    
+    protected void pre(ThreadContext context, RubyModule klass) {
+        context.preYieldSpecificBlock(this, klass);
+    }
+    
+    protected void post(ThreadContext context) {
+        context.postYield(this);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
@@ -78,8 +85,9 @@ public class CallBlock extends Block {
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue) {
         if (klass == null) {
-            self = this.self;
-            frame.setSelf(self);
+            self = binding.getSelf();
+            // FIXME: We never set this back!
+            binding.getFrame().setSelf(self);
         }
         
         pre(context, klass);

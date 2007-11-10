@@ -43,19 +43,19 @@ public class Binding {
     /**
      * 'self' at point when the block is defined
      */
-    public IRubyObject self;
+    private IRubyObject self;
     
     /**
      * frame of method which defined this block
      */
-    public Frame frame;
-    public Visibility visibility;
-    public RubyModule klass;
+    private Frame frame;
+    private Visibility visibility;
+    private RubyModule klass;
     
     /**
      * A reference to all variable values (and names) that are in-scope for this block.
      */
-    public DynamicScope dynamicScope;
+    private DynamicScope dynamicScope;
     
     public Binding(IRubyObject self, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
@@ -120,6 +120,10 @@ public class Binding {
 
     public void setVisibility(Visibility visibility) {
         this.visibility = visibility;
+    }
+    
+    public IRubyObject getSelf() {
+        return self;
     }
     
     public void setSelf(IRubyObject self) {
