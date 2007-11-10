@@ -1054,13 +1054,13 @@ public class RubyModule extends RubyObject {
             // a normal block passed to define_method changes to do arity checking; make it a lambda
             proc.getBlock().type = Block.Type.LAMBDA;
             
-            proc.getBlock().getFrame().setKlazz(this);
-            proc.getBlock().getFrame().setName(name);
+            proc.getBlock().getBinding().getFrame().setKlazz(this);
+            proc.getBlock().getBinding().getFrame().setName(name);
             
             // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
-            proc.getBlock().getDynamicScope().getStaticScope().setArgumentScope(true);
+            proc.getBlock().getBinding().getDynamicScope().getStaticScope().setArgumentScope(true);
             // just using required is broken...but no more broken than before zsuper refactoring
-            proc.getBlock().getDynamicScope().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
+            proc.getBlock().getBinding().getDynamicScope().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
 
             newMethod = new ProcMethod(this, proc, visibility);
         } else if (args.length == 2) {
@@ -1069,13 +1069,13 @@ public class RubyModule extends RubyObject {
                 RubyProc proc = (RubyProc)args[1];
                 body = proc;
                 
-                proc.getBlock().getFrame().setKlazz(this);
-                proc.getBlock().getFrame().setName(name);
+                proc.getBlock().getBinding().getFrame().setKlazz(this);
+                proc.getBlock().getBinding().getFrame().setName(name);
 
                 // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
-                proc.getBlock().getDynamicScope().getStaticScope().setArgumentScope(true);
+                proc.getBlock().getBinding().getDynamicScope().getStaticScope().setArgumentScope(true);
                 // just using required is broken...but no more broken than before zsuper refactoring
-                proc.getBlock().getDynamicScope().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
+                proc.getBlock().getBinding().getDynamicScope().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
 
                 newMethod = new ProcMethod(this, proc, visibility);
             } else if (args[1].isKindOf(getRuntime().getMethod())) {
@@ -1358,7 +1358,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject initialize(Block block) {
         if (block.isGiven()) {
             // class and module bodies default to public, so make the block's visibility public. JRUBY-1185.
-            block.setVisibility(Visibility.PUBLIC);
+            block.getBinding().setVisibility(Visibility.PUBLIC);
             block.yield(getRuntime().getCurrentContext(), null, this, this, false);
         }
 

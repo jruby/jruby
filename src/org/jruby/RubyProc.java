@@ -164,7 +164,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
 
     @JRubyMethod(name = "binding")
     public IRubyObject binding() {
-        return getRuntime().newBinding(block);
+        return getRuntime().newBinding(block.getBinding());
     }
 
     public IRubyObject call(IRubyObject[] args) {
@@ -185,10 +185,10 @@ public class RubyProc extends RubyObject implements JumpTarget {
         
         try {
             Block newBlock = block.cloneBlock();
-            if (self != null) newBlock.setSelf(self);
+            if (self != null) newBlock.getBinding().setSelf(self);
             
             // lambdas want returns
-            if (newBlock.type == Block.Type.LAMBDA) newBlock.getFrame().setJumpTarget(this);
+            if (newBlock.type == Block.Type.LAMBDA) newBlock.getBinding().getFrame().setJumpTarget(this);
             
             return newBlock.call(context, args);
         } catch (JumpException.BreakJump bj) {

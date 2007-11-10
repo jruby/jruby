@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public abstract class Block extends Binding {
+public abstract class Block {
     // FIXME: Maybe not best place, but move it to a good home
     public static final int ZERO_ARGS = 0;
     public static final int MULTIPLE_ASSIGNMENT = 1;
@@ -100,8 +100,7 @@ public abstract class Block extends Binding {
     
     public Block(IRubyObject self, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
-        super(self, frame, visibility, klass, dynamicScope);
-        this.binding = this;
+        this.binding = new Binding(self, frame, visibility, klass, dynamicScope);
     }
 
     public final IRubyObject call(ThreadContext context, IRubyObject[] args) {
@@ -174,6 +173,10 @@ public abstract class Block extends Binding {
      */
     public boolean isGiven() {
         return true;
+    }
+    
+    public Binding getBinding() {
+        return binding;
     }
     
     /**

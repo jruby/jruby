@@ -694,9 +694,9 @@ public class RubyObject implements Cloneable, IRubyObject {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                 ThreadContext context = getRuntime().getCurrentContext();
 
-                Visibility savedVisibility = block.getVisibility();
+                Visibility savedVisibility = block.getBinding().getVisibility();
 
-                block.setVisibility(Visibility.PUBLIC);
+                block.getBinding().setVisibility(Visibility.PUBLIC);
                 try {
                     IRubyObject valueInYield;
                     boolean aValue;
@@ -710,8 +710,8 @@ public class RubyObject implements Cloneable, IRubyObject {
                     
                     // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
                     block = block.cloneBlock();
-                    block.setSelf(RubyObject.this);
-                    block.getFrame().setSelf(RubyObject.this);
+                    block.getBinding().setSelf(RubyObject.this);
+                    block.getBinding().getFrame().setSelf(RubyObject.this);
                     // end hack
                     
                     return block.yield(context, valueInYield, RubyObject.this, context.getRubyClass(), aValue);
@@ -719,7 +719,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 } catch (JumpException.BreakJump bj) {
                         return (IRubyObject) bj.getValue();
                 } finally {
-                    block.setVisibility(savedVisibility);
+                    block.getBinding().setVisibility(savedVisibility);
                 }
             }
 

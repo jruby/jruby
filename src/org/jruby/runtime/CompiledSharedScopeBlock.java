@@ -54,8 +54,8 @@ public class CompiledSharedScopeBlock extends CompiledBlock {
     }
     
     @Override
-    protected void pre(ThreadContext context, RubyModule klass) {
-        context.preForBlock(this, klass);
+    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
+        context.preForBlock(binding, klass);
     }
     
     @Override
@@ -73,7 +73,7 @@ public class CompiledSharedScopeBlock extends CompiledBlock {
         try {
             IRubyObject[] realArgs = aValue ? 
                     setupBlockArgs(context, args, self) : setupBlockArg(context, args, self); 
-            pre(context, klass);
+            pre(context, klass, binding);
             
             // NOTE: Redo jump handling is within compiled closure, wrapping the body
             try {
@@ -89,7 +89,7 @@ public class CompiledSharedScopeBlock extends CompiledBlock {
             return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
         } finally {
             binding.getFrame().setVisibility(oldVis);
-            post(context);
+            post(context, binding);
         }
     }
 

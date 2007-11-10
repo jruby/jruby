@@ -126,12 +126,12 @@ public class InterpretedBlock extends Block {
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding);
     }
     
-    protected void pre(ThreadContext context, RubyModule klass) {
-        context.preYieldSpecificBlock(this, klass);
+    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
+        context.preYieldSpecificBlock(binding, klass);
     }
     
-    protected void post(ThreadContext context) {
-        context.postYield(this);
+    protected void post(ThreadContext context, Binding binding) {
+        context.postYield(binding);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding) {
@@ -156,7 +156,7 @@ public class InterpretedBlock extends Block {
         }
         
         Visibility oldVis = binding.getFrame().getVisibility();
-        pre(context, klass);
+        pre(context, klass, binding);
 
         try {
             if (iterNode.getVarNode() != null) {
@@ -186,7 +186,7 @@ public class InterpretedBlock extends Block {
             return type == Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
         } finally {
             binding.getFrame().setVisibility(oldVis);
-            post(context);
+            post(context, binding);
         }
     }
 

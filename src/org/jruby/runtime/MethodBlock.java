@@ -33,7 +33,6 @@ package org.jruby.runtime;
 
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -72,12 +71,12 @@ public class MethodBlock extends Block{
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding);
     }
     
-    protected void pre(ThreadContext context, RubyModule klass) {
-        context.preYieldSpecificBlock(this, klass);
+    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
+        context.preYieldSpecificBlock(binding, klass);
     }
     
-    protected void post(ThreadContext context) {
-        context.postYield(this);
+    protected void post(ThreadContext context, Binding binding) {
+        context.postYield(binding);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding) {
@@ -101,7 +100,7 @@ public class MethodBlock extends Block{
             binding.getFrame().setSelf(self);
         }
         
-        pre(context, klass);
+        pre(context, klass, binding);
 
         try {
             // This while loop is for restarting the block call in case a 'redo' fires.
@@ -122,7 +121,7 @@ public class MethodBlock extends Block{
             // A 'next' is like a local return from the block, ending this call or yield.
             return (IRubyObject)nj.getValue();
         } finally {
-            post(context);
+            post(context, binding);
         }
     }
 

@@ -54,12 +54,13 @@ public class CallBlock extends Block {
         this.context = context;
     }
     
-    protected void pre(ThreadContext context, RubyModule klass) {
-        context.preYieldSpecificBlock(this, klass);
+    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
+        // FIXME: This could be a "light" block
+        context.preYieldSpecificBlock(binding, klass);
     }
     
-    protected void post(ThreadContext context) {
-        context.postYield(this);
+    protected void post(ThreadContext context, Binding binding) {
+        context.postYield(binding);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding) {
@@ -88,7 +89,7 @@ public class CallBlock extends Block {
             binding.getFrame().setSelf(self);
         }
         
-        pre(context, klass);
+        pre(context, klass, binding);
 
         try {
             IRubyObject[] args = new IRubyObject[] {value};
@@ -110,7 +111,7 @@ public class CallBlock extends Block {
             // A 'next' is like a local return from the block, ending this call or yield.
             return (IRubyObject)nj.getValue();
         } finally {
-            post(context);
+            post(context, binding);
         }
     }
 

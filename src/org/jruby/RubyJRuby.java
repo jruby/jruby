@@ -125,7 +125,7 @@ public class RubyJRuby {
                 throw new RuntimeException("Cannot compile an already compiled block. Use -J-Djruby.jit.enabled=false to avoid this problem.");
             }
             Node bnode = ((InterpretedBlock)block).getIterNode().getBodyNode();
-            node = new org.jruby.ast.RootNode(bnode.getPosition(), block.getDynamicScope(), bnode);
+            node = new org.jruby.ast.RootNode(bnode.getPosition(), block.getBinding().getDynamicScope(), bnode);
             filename = "__block_" + node.getPosition().getFile();
         } else {
             Arity.checkArgumentCount(recv.getRuntime(),args,1,3);

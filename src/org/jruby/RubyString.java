@@ -1657,7 +1657,7 @@ public class RubyString extends RubyObject {
             context.getCurrentFrame().setBackRef(md);
             if (iter) {
                 // FIXME: I don't like this setting into the frame directly, but it's necessary since blocks dupe the frame
-                block.getFrame().setBackRef(md);
+                block.getBinding().getFrame().setBackRef(md);
                 int len = value.realSize;
                 byte[]b = value.bytes;
                 repl = objAsString(block.yield(context, substr(runtime, str, mat.start(0), mat.length(0), utf8)));
@@ -1780,7 +1780,7 @@ public class RubyString extends RubyObject {
                 md = matchdata(runtime, str, mat, utf8);
                 context.getPreviousFrame().setBackRef(md);
                 // FIXME: I don't like this setting into the frame directly, but it's necessary since blocks dupe the
-                block.getFrame().setBackRef(md);
+                block.getBinding().getFrame().setBackRef(md);
                 val = objAsString(block.yield(context, substr(runtime, str, mat.start(0), mat.length(0), utf8)));
                 modifyCheck(sb, slen);
                 if (bang) frozenCheck();

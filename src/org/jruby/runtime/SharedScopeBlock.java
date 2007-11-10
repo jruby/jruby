@@ -52,8 +52,8 @@ public class SharedScopeBlock extends InterpretedBlock {
                 dynamicScope);
     }
     
-    protected void pre(ThreadContext context, RubyModule klass) {
-        context.preForBlock(this, klass);
+    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
+        context.preForBlock(binding, klass);
     }
     
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf, Binding binding) {

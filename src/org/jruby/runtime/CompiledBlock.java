@@ -117,7 +117,7 @@ public class CompiledBlock extends Block {
         try {
             IRubyObject[] realArgs = aValue ? 
                     setupBlockArgs(context, args, self) : setupBlockArg(context, args, self); 
-            pre(context, klass);
+            pre(context, klass, binding);
             
             // NOTE: Redo jump handling is within compiled closure, wrapping the body
             try {
@@ -133,23 +133,23 @@ public class CompiledBlock extends Block {
             return type == Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
         } finally {
             binding.getFrame().setVisibility(oldVis);
-            post(context);
+            post(context, binding);
         }
     }
     
-    protected void pre(ThreadContext context, RubyModule klass) {
+    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
         if (light) {
-            context.preYieldLightBlock(this, klass);
+            context.preYieldLightBlock(binding, klass);
         } else {
-            context.preYieldSpecificBlock(this, klass);
+            context.preYieldSpecificBlock(binding, klass);
         }
     }
     
-    protected void post(ThreadContext context) {
+    protected void post(ThreadContext context, Binding binding) {
         if (light) {
-            context.postYieldLight(this);
+            context.postYieldLight(binding);
         } else {
-            context.postYield(this);
+            context.postYield(binding);
         }
     }
 
