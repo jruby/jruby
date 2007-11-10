@@ -42,19 +42,18 @@ public class CompiledBlock extends BlockBody {
     protected final CompiledBlockCallback callback;
     protected final boolean hasMultipleArgsHead;
     protected final int argumentType;
-    protected final boolean light;
     protected final Arity arity;
     
     public static Block newCompiledClosure(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
-        DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType, boolean light) {
+        DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         Binding binding = new Binding(self, frame, visibility, klass, dynamicScope);
-        BlockBody body = new CompiledBlock(arity, callback, hasMultipleArgsHead, argumentType, light);
+        BlockBody body = new CompiledBlock(arity, callback, hasMultipleArgsHead, argumentType);
         
         return new Block(body, binding);
     }
     
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
-            CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType, boolean light) {
+            CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         return newCompiledClosure(
                 self,
                 context.getCurrentFrame(),
@@ -64,20 +63,14 @@ public class CompiledBlock extends BlockBody {
                 arity,
                 callback,
                 hasMultipleArgsHead,
-                argumentType,
-                light);
+                argumentType);
     }
 
-    protected CompiledBlock(Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType, boolean light) {
+    protected CompiledBlock(Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         this.arity = arity;
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
         this.argumentType = argumentType;
-        this.light = light;
-    }
-    
-    public boolean getLight() {
-        return light;
     }
     
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
@@ -123,20 +116,17 @@ public class CompiledBlock extends BlockBody {
         // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], 
         // since single vars will want that anyway
         Visibility oldVis = binding.getFrame().getVisibility();
+        IRubyObject[] realArgs = aValue ? 
+                setupBlockArgs(context, args, self) : setupBlockArg(context, args, self); 
+        pre(context, klass, binding);
+        
         try {
-            IRubyObject[] realArgs = aValue ? 
-                    setupBlockArgs(context, args, self) : setupBlockArg(context, args, self); 
-            pre(context, klass, binding);
-            
-            // NOTE: Redo jump handling is within compiled closure, wrapping the body
-            try {
-                return callback.call(context, self, realArgs);
-            } catch (JumpException.BreakJump bj) {
-                if (bj.getTarget() == null) {
-                    bj.setTarget(this);
-                }
-                throw bj;
+            return callback.call(context, self, realArgs);
+        } catch (JumpException.BreakJump bj) {
+            if (bj.getTarget() == null) {
+                bj.setTarget(this);
             }
+            throw bj;
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
             return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
@@ -147,19 +137,11 @@ public class CompiledBlock extends BlockBody {
     }
     
     protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
-        if (light) {
-            context.preYieldLightBlock(binding, klass);
-        } else {
-            context.preYieldSpecificBlock(binding, klass);
-        }
+        context.preYieldSpecificBlock(binding, klass);
     }
     
     protected void post(ThreadContext context, Binding binding) {
-        if (light) {
-            context.postYieldLight(binding);
-        } else {
-            context.postYield(binding);
-        }
+        context.postYield(binding);
     }
 
     private IRubyObject[] setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
@@ -194,8 +176,6 @@ public class CompiledBlock extends BlockBody {
         case SINGLE_RESTARG:
             return new IRubyObject[] {ArgsUtil.convertToRubyArray(context.getRuntime(), value, hasMultipleArgsHead)};
         default:
-        // FIXME: the test below would be enabled if we could avoid processing block args for the cases where we don't have any args
-        // since we can't do that just yet, it's disabled
             if (value == null) {
                 context.getRuntime().getWarnings().warn("multiple values for a block parameter (0 for 1)");
                 return new IRubyObject[] {context.getRuntime().getNil()};
@@ -209,7 +189,7 @@ public class CompiledBlock extends BlockBody {
                 binding.getFrame().duplicate(),
                 binding.getVisibility(),
                 binding.getKlass(),
-                light ? binding.getDynamicScope() : binding.getDynamicScope().cloneScope());
+                binding.getDynamicScope().cloneScope());
         
         return new Block(this, binding);
     }

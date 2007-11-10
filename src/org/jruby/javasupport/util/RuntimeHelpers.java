@@ -37,6 +37,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
+import org.jruby.runtime.CompiledBlockLight;
 import org.jruby.runtime.CompiledSharedScopeBlock;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodFactory;
@@ -58,17 +59,25 @@ public class RuntimeHelpers {
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
         
-        Block block = CompiledBlock.newCompiledClosure(
+        if (light) {
+            return CompiledBlockLight.newCompiledClosureLight(
                     context,
                     self,
                     Arity.createArity(arity),
                     new DynamicScope(staticScope, context.getCurrentScope()),
                     callback,
                     hasMultipleArgsHead,
-                    argsNodeType,
-                    light);
-        
-        return block;
+                    argsNodeType);
+        } else {
+            return CompiledBlock.newCompiledClosure(
+                    context,
+                    self,
+                    Arity.createArity(arity),
+                    new DynamicScope(staticScope, context.getCurrentScope()),
+                    callback,
+                    hasMultipleArgsHead,
+                    argsNodeType);
+        }
     }
     
     public static IRubyObject runBeginBlock(ThreadContext context, IRubyObject self, String[] staticScopeNames, CompiledBlockCallback callback) {
@@ -79,7 +88,7 @@ public class RuntimeHelpers {
         context.preScopedBody(new DynamicScope(staticScope, context.getCurrentScope()));
         
         Block block = CompiledBlock.newCompiledClosure(context, self, Arity.createArity(0), 
-                context.getCurrentScope(), callback, false, Block.ZERO_ARGS, false);
+                context.getCurrentScope(), callback, false, Block.ZERO_ARGS);
         
         block.yield(context, null);
         
