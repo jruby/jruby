@@ -1447,7 +1447,7 @@ public final class Ruby {
         }
         if (profile.allowClass("NativeException")) NativeException.createClass(this, runtimeError);
         if (profile.allowClass("SystemCallError")) {
-            systemCallError = defineClass("SystemCallError", standardError, standardError.getAllocator());
+            systemCallError = RubySystemCallError.createSystemCallErrorClass(this, standardError);
         }
         if (profile.allowModule("Errno")) errnoModule = defineModule("Errno");
 
