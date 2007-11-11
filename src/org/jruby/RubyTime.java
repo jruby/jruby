@@ -634,8 +634,8 @@ public class RubyTime extends RubyObject {
     
     private static final String[] months = {"jan", "feb", "mar", "apr", "may", "jun",
                                             "jul", "aug", "sep", "oct", "nov", "dec"};
-    private static final long[] time_min = {1, 0, 0, 0, Long.MIN_VALUE};
-    private static final long[] time_max = {31, 23, 59, 60, Long.MAX_VALUE};
+    private static final int[] time_min = {1, 0, 0, 0, Integer.MIN_VALUE};
+    private static final int[] time_max = {31, 23, 59, 60, Integer.MAX_VALUE};
 
     private static final int ARG_SIZE = 7;
     private static RubyTime createTime(IRubyObject recv, IRubyObject[] args, boolean gmt) {
@@ -699,10 +699,11 @@ public class RubyTime extends RubyObject {
                 if(!(args[i+2] instanceof RubyNumeric)) {
                     args[i+2] = args[i+2].callMethod(tc,"to_i");
                 }
-                int_args[i] = (int)RubyNumeric.num2long(args[i + 2]);
-                if (time_min[i] > int_args[i] || int_args[i] > time_max[i]) {
+                long value = RubyNumeric.num2long(args[i + 2]);
+                if (time_min[i] > value || value > time_max[i]) {
                     throw runtime.newArgumentError("Argument out of range.");
                 }
+                int_args[i] = (int) value;
             }
         }
         

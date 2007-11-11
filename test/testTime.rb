@@ -102,6 +102,10 @@ test_equal tt.strftime("%Y-%m-%d"),tt.strftime("%F")
 test_equal "12:00AM", Time.utc(2007,01,01,0,0).strftime("%I:%M%p")
 test_equal "12:00PM", Time.utc(2007,01,01,12,0).strftime("%I:%M%p")
 
+# MRI only accepts usec arguments that fit in signed int
+test_exception {Time.utc(2001,2,3,4,5,6,0x80000000)}
+test_exception {Time.utc(2001,2,3,4,5,6,-0x80000001)}
+
 # Time.utc accepts 8 arguments for compatibility with parsedate (two last arguments are ignored)
 test_no_exception {Time.utc(2007, 10, 10, 11, 55, 23, "-0200", 3)}
 
