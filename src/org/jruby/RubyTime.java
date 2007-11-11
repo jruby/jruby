@@ -706,8 +706,12 @@ public class RubyTime extends RubyObject {
             }
         }
         
-        if (year < 100) year += 2000;
-        
+        if (0 <= year && year < 39) {
+            year += 2000;
+        } else if (69 <= year && year < 139) {
+            year += 1900;
+        }
+
         Calendar cal;
         if (gmt) {
             cal = Calendar.getInstance(TimeZone.getTimeZone(RubyTime.UTC)); 
@@ -717,29 +721,25 @@ public class RubyTime extends RubyObject {
         cal.set(year, month, int_args[0], int_args[1], int_args[2], int_args[3]);
         cal.set(Calendar.MILLISECOND, 0);
 
+        RubyTime time = new RubyTime(runtime, (RubyClass) recv, cal);
         // Ignores usec if 8 args (for compatibility with parsedate) or if not supplied.
-        if (args.length == 8 || args[6].isNil()) {
-            RubyTime time = new RubyTime(runtime, (RubyClass) recv, cal);
-            time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-            return time;
+        if (args.length != 8 && !args[6].isNil()) {
+            int usec = int_args[4] % 1000;
+            int msec = int_args[4] / 1000;
+            if (int_args[4] < 0) {
+                msec -= 1;
+                usec += 1000;
+            }
+            cal.add(Calendar.MILLISECOND, msec);
+            time.setUSec(usec);
         }
 
-        int usec = int_args[4] % 1000;
-        int msec = int_args[4] / 1000;
-        if (int_args[4] < 0) {
-            msec -= 1;
-            usec += 1000;
-        }
-        cal.add(Calendar.MILLISECOND, msec);
-
-        if (cal.getTimeInMillis() / 1000 < -0x80000000) {
+        // Restrict to time_t for compatibility
+        long seconds = cal.getTimeInMillis() / 1000;
+        if (seconds > Integer.MAX_VALUE || seconds < Integer.MIN_VALUE) {
             throw runtime.newArgumentError("time out of range");
         }
-
-        RubyTime time = new RubyTime(runtime, (RubyClass) recv, cal);
-        time.setUSec(usec);
         time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-
         return time;
     }
 }

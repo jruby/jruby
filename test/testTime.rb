@@ -107,3 +107,15 @@ test_no_exception {Time.utc(2007, 10, 10, 11, 55, 23, "-0200", 3)}
 
 # Time.utc accepts negative usec and rolls over
 test_equal 999999,  Time.utc(2007, 10, 10, 11, 55, 23, -1).usec
+
+# Follow MRI year conversion logic
+test_exception {Time.utc(-1)}
+test_equal 2000, Time.utc(0).year
+test_exception {Time.utc(39)}
+test_exception {Time.utc(68)}
+test_equal 1969, Time.utc(69).year
+test_equal 2038, Time.utc(38).year
+test_equal 2038, Time.utc(138).year
+test_exception {Time.utc(39)}
+test_exception {Time.utc(1901)}
+test_equal 1902, Time.utc(1902).year
