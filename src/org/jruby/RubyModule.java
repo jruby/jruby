@@ -49,6 +49,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
@@ -477,6 +478,11 @@ public class RubyModule extends RubyObject {
     private static MethodFactory.MethodDefiningCallback methodDefiningCallback = new MethodFactory.MethodDefiningCallback() {
         public void define(RubyModule module, Method method, DynamicMethod dynamicMethod) {
             JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
+            if (jrubyMethod.frame()) {
+                for (String name : jrubyMethod.name()) {
+                    ASTInspector.FRAME_AWARE_METHODS.add(name);
+                }
+            }
             if(module.getRuntime().getInstanceConfig().isRite() == jrubyMethod.rite()) {
                 RubyModule metaClass = module.metaClass;
 

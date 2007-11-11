@@ -42,6 +42,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -486,6 +487,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             for (int i = 0; i < annotatedMethods.size(); i++) {
                 Method method = annotatedMethods.get(i);
                 JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
+                
+                if (jrubyMethod.frame()) {
+                    for (String name : jrubyMethod.name()) {
+                        ASTInspector.FRAME_AWARE_METHODS.add(name);
+                    }
+                }
+                
                 int index = indexMap.get(method);
                 JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class, int.class}).newInstance(new Object[]{implementationClass, jrubyMethod.visibility(), index});
 

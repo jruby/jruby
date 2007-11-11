@@ -96,7 +96,7 @@ public class ASTInspector {
     private boolean hasOptArgs;
     private boolean hasRestArg;
     
-    private static Set<String> FRAME_AWARE_METHODS = new HashSet<String>();
+    public static Set<String> FRAME_AWARE_METHODS = new HashSet<String>();
     private static Set<String> SCOPE_AWARE_METHODS = new HashSet<String>();
     
     static {
