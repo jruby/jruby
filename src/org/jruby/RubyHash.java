@@ -1370,7 +1370,7 @@ public class RubyHash extends RubyObject implements Map {
             return entry != null;
         }
 
-        public final RubyHashEntry nextEntry() {
+        protected final RubyHashEntry nextEntry() {
             if (entry == null) throw new NoSuchElementException();
             RubyHashEntry e = current = entry;
             if ((entry = checkIter(iterTable, entry.next)) == null) seekNextValidEntry();
