@@ -10,7 +10,8 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- *
+ * 
+ * Copyright (C) 2006 The JRuby Community <www.jruby.org>
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -59,15 +60,13 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.util.CheckClassAdapter;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
 public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public final static CodegenUtils cg = CodegenUtils.cg;
     private final static String COMPILED_SUPER_CLASS = CompiledMethod.class.getName().replace('.','/');
     private final static String COMPILED_CALL_SIG = cg.sig(IRubyObject.class,
             cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
-    private final static String COMPILED_SUPER_SIG = cg.sig(Void.TYPE, cg.params(RubyModule.class, Arity.class, Visibility.class, StaticScope.class, Object.class));
+    private final static String COMPILED_SUPER_SIG = 
+            cg.sig(Void.TYPE, RubyModule.class, Arity.class, Visibility.class, StaticScope.class, Object.class, CallConfiguration.class);
     private final static String JAVA_SUPER_SIG = cg.sig(Void.TYPE, cg.params(RubyModule.class, Visibility.class));
     private final static String JAVA_INDEXED_SUPER_SIG = cg.sig(Void.TYPE, cg.params(RubyModule.class, Visibility.class, int.class));
 
@@ -152,6 +151,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.visitVarInsn(ALOAD, 3);
         mv.visitVarInsn(ALOAD, 4);
         mv.visitVarInsn(ALOAD, 5);
+        mv.visitVarInsn(ALOAD, 6);
         mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", COMPILED_SUPER_SIG);
         Label line = new Label();
         mv.visitLineNumber(0, line);
@@ -588,15 +588,19 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private DynamicMethod getCompleteMethod(RubyModule implementationClass, String method, Arity arity, Visibility visibility, StaticScope scope, String sup, Object scriptObject) {
+    private DynamicMethod getCompleteMethod(
+            RubyModule implementationClass, String method, Arity arity, 
+            Visibility visibility, StaticScope scope, String sup, 
+            Object scriptObject, CallConfiguration callConfig) {
+        
         Class scriptClass = scriptObject.getClass();
         String typePath = p(scriptClass);
         String mname = scriptClass.getName() + "Invoker" + method + arity;
         String mnamePath = typePath + "Invoker" + method + arity;
-        Class c = tryClass(implementationClass.getRuntime(), mname);
+        Class generatedClass = tryClass(implementationClass.getRuntime(), mname);
         
         try {
-            if (c == null) {
+            if (generatedClass == null) {
                 ClassWriter cw = createCompiledCtor(mnamePath,sup);
                 SkinnyMethodAdapter mv = null;
                 
@@ -606,28 +610,30 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 mv.visitLineNumber(0, line);
                 
                 // invoke pre method stuff
-                mv.aload(0); // load method to get callconfig
-                mv.getfield(cg.p(CompiledMethod.class), "callConfig", cg.ci(CallConfiguration.class));
-                mv.aload(THREADCONTEXT_INDEX); // tc
-                mv.aload(RECEIVER_INDEX); // self
-                
-                // determine the appropriate class, for super calls to work right
-                mv.aload(0);
-                mv.invokevirtual(cg.p(CompiledMethod.class), "getImplementationClass", cg.sig(RubyModule.class));
-                
-                mv.aload(0);
-                mv.getfield(cg.p(CompiledMethod.class), "arity", cg.ci(Arity.class)); // arity
-                mv.aload(NAME_INDEX); // name
-                mv.aload(ARGS_INDEX); // args
-                mv.aload(BLOCK_INDEX); // block
-                mv.aload(0);
-                mv.getfield(cg.p(CompiledMethod.class), "staticScope", cg.ci(StaticScope.class));
-                // static scope
-                mv.aload(0); // jump target
-                mv.invokevirtual(cg.p(CallConfiguration.class), "pre", 
-                        cg.sig(void.class, 
-                        cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, Arity.class, String.class, IRubyObject[].class, Block.class, 
-                        StaticScope.class, JumpTarget.class)));
+                if (callConfig != CallConfiguration.NO_FRAME_NO_SCOPE) {
+                    mv.aload(0); // load method to get callconfig
+                    mv.getfield(cg.p(CompiledMethod.class), "callConfig", cg.ci(CallConfiguration.class));
+                    mv.aload(THREADCONTEXT_INDEX); // tc
+                    mv.aload(RECEIVER_INDEX); // self
+
+                    // determine the appropriate class, for super calls to work right
+                    mv.aload(0);
+                    mv.invokevirtual(cg.p(CompiledMethod.class), "getImplementationClass", cg.sig(RubyModule.class));
+
+                    mv.aload(0);
+                    mv.getfield(cg.p(CompiledMethod.class), "arity", cg.ci(Arity.class)); // arity
+                    mv.aload(NAME_INDEX); // name
+                    mv.aload(ARGS_INDEX); // args
+                    mv.aload(BLOCK_INDEX); // block
+                    mv.aload(0);
+                    mv.getfield(cg.p(CompiledMethod.class), "staticScope", cg.ci(StaticScope.class));
+                    // static scope
+                    mv.aload(0); // jump target
+                    mv.invokevirtual(cg.p(CallConfiguration.class), "pre", 
+                            cg.sig(void.class, 
+                            cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, Arity.class, String.class, IRubyObject[].class, Block.class, 
+                            StaticScope.class, JumpTarget.class)));
+                }
                 
                 // store null for result var
                 mv.aconst_null();
@@ -662,10 +668,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 //call post method stuff (non-finally)
                 mv.label(normalExit);
-                mv.aload(0); // load method to get callconfig
-                mv.getfield(cg.p(DynamicMethod.class), "callConfig", cg.ci(CallConfiguration.class));
-                mv.aload(1);
-                mv.invokevirtual(cg.p(CallConfiguration.class), "post", cg.sig(void.class, cg.params(ThreadContext.class)));
+                if (callConfig != CallConfiguration.NO_FRAME_NO_SCOPE) {
+                    mv.aload(0); // load method to get callconfig
+                    mv.getfield(cg.p(DynamicMethod.class), "callConfig", cg.ci(CallConfiguration.class));
+                    mv.aload(1);
+                    mv.invokevirtual(cg.p(CallConfiguration.class), "post", cg.sig(void.class, cg.params(ThreadContext.class)));
+                }
                 // reload and return result
                 mv.aload(8);
                 mv.visitInsn(ARETURN);
@@ -723,26 +731,32 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.label(tryFinally);
 
                     //call post method stuff (exception raised)
-                    mv.aload(0); // load method to get callconfig
-                    mv.getfield(cg.p(DynamicMethod.class), "callConfig", cg.ci(CallConfiguration.class));
-                    mv.aload(1);
-                    mv.invokevirtual(cg.p(CallConfiguration.class), "post", cg.sig(void.class, cg.params(ThreadContext.class)));
+                    if (callConfig != CallConfiguration.NO_FRAME_NO_SCOPE) {
+                        mv.aload(0); // load method to get callconfig
+                        mv.getfield(cg.p(DynamicMethod.class), "callConfig", cg.ci(CallConfiguration.class));
+                        mv.aload(1);
+                        mv.invokevirtual(cg.p(CallConfiguration.class), "post", cg.sig(void.class, cg.params(ThreadContext.class)));
+                    }
 
                     // rethrow exception
                     mv.athrow(); // rethrow it
                 }
                 
-                c = endCall(implementationClass.getRuntime(), cw,mv,mname);
+                generatedClass = endCall(implementationClass.getRuntime(), cw,mv,mname);
             }
             
-            return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class, StaticScope.class, Object.class}).newInstance(new Object[]{implementationClass,arity,visibility,scope,scriptObject});
+            return (DynamicMethod)generatedClass
+                    .getConstructor(RubyModule.class, Arity.class, Visibility.class, StaticScope.class, Object.class, CallConfiguration.class)
+                    .newInstance(implementationClass, arity, visibility, scope, scriptObject, callConfig);
         } catch(Exception e) {
             e.printStackTrace();
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
 
-    public DynamicMethod getCompiledMethod(RubyModule implementationClass, String method, Arity arity, Visibility visibility, StaticScope scope, Object scriptObject) {
-        return getCompleteMethod(implementationClass,method,arity,visibility,scope, COMPILED_SUPER_CLASS, scriptObject);
+    public DynamicMethod getCompiledMethod(
+            RubyModule implementationClass, String method, Arity arity, 
+            Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
+        return getCompleteMethod(implementationClass,method,arity,visibility,scope, COMPILED_SUPER_CLASS, scriptObject, callConfig);
     }
 }

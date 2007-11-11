@@ -39,11 +39,12 @@ import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Visibility;
 
 public class ReflectionMethodFactory extends MethodFactory {
-    public DynamicMethod getCompiledMethod(RubyModule implementationClass, String methodName, 
-            Arity arity, Visibility visibility, StaticScope scope, Object scriptObject) {
+    public DynamicMethod getCompiledMethod(RubyModule implementationClass,
+            String methodName, Arity arity, Visibility visibility, 
+            StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
         for (Method method : scriptObject.getClass().getMethods()) {
             if (method.getName().equals(methodName)) {
-                return new ReflectedCompiledMethod(implementationClass, arity, visibility, scope, scriptObject, method);
+                return new ReflectedCompiledMethod(implementationClass, arity, visibility, scope, scriptObject, method, callConfig);
             }
         }
         

@@ -41,8 +41,8 @@ public abstract class CompiledMethod extends DynamicMethod implements JumpTarget
     protected StaticScope staticScope;
     protected Object $scriptObject;
     
-    public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, Object scriptObject) {
-    	super(implementationClass, visibility, CallConfiguration.FRAME_AND_SCOPE);
+    public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, Object scriptObject, CallConfiguration callConfig) {
+    	super(implementationClass, visibility, callConfig);
         this.arity = arity;
         this.staticScope = staticScope;
         this.$scriptObject = scriptObject;

@@ -30,18 +30,21 @@ package org.jruby.runtime;
 import java.lang.reflect.Method;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ReflectionMethodFactory;
 import org.jruby.internal.runtime.methods.InvocationMethodFactory;
 import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
 import org.jruby.parser.StaticScope;
-import org.jruby.util.JRubyClassLoader;
 
 public abstract class MethodFactory {
     public interface MethodDefiningCallback {
         public void define(RubyModule targetMetaClass, Method method, DynamicMethod dynamicMethod);
     }
-    public abstract DynamicMethod getCompiledMethod(RubyModule implementationClass, String method, Arity arity, Visibility visibility, StaticScope scope, Object scriptObject);
+    public abstract DynamicMethod getCompiledMethod(
+            RubyModule implementationClass, String method, 
+            Arity arity, Visibility visibility, StaticScope scope, 
+            Object scriptObject, CallConfiguration callConfig);
     public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method);
     public abstract void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class containingClass, MethodDefiningCallback callback);
 

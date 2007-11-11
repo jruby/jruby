@@ -133,13 +133,11 @@ public class RuntimeHelpers {
         
         if (name == "initialize" || visibility == Visibility.MODULE_FUNCTION) {
             method = factory.getCompiledMethod(containingClass, javaName, 
-                    Arity.createArity(arity), Visibility.PRIVATE, scope, scriptObject);
+                    Arity.createArity(arity), Visibility.PRIVATE, scope, scriptObject, callConfig);
         } else {
             method = factory.getCompiledMethod(containingClass, javaName, 
-                    Arity.createArity(arity), visibility, scope, scriptObject);
+                    Arity.createArity(arity), visibility, scope, scriptObject, callConfig);
         }
-        
-        method.setCallConfig(callConfig);
         
         containingClass.addMethod(name, method);
         
@@ -191,9 +189,7 @@ public class RuntimeHelpers {
         DynamicMethod method;
         
         method = factory.getCompiledMethod(rubyClass, javaName, 
-                Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject);
-        
-        method.setCallConfig(callConfig);
+                Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject, callConfig);
         
         rubyClass.addMethod(name, method);
         receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
