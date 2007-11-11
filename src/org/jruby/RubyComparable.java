@@ -78,7 +78,7 @@ public class RubyComparable {
 
         final Ruby runtime = val.getRuntime();
         final ThreadContext tc = runtime.getCurrentContext();
-        final RubyFixnum zero = RubyFixnum.one(runtime);
+        final RubyFixnum zero = RubyFixnum.zero(runtime);
         if (val.callMethod(tc, MethodIndex.OP_GT, ">", zero).isTrue()) {
             return 1;
         }
