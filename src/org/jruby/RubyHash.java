@@ -474,66 +474,6 @@ public class RubyHash extends RubyObject implements Map {
         throw getRuntime().newRuntimeError("rehash occurred during iteration");
     }
 
-    private static abstract class Callback { // a class to prevent invokeinterface
-        public abstract int call(RubyHash hash, RubyHashEntry entry);
-    }
-
-    private final int hashForEachEntry(final RubyHashEntry entry, final Callback callback) {
-        if (entry.key == NEVER) return ST_CONTINUE;
-        RubyHashEntry[]ltable = table;
-
-        int status = callback.call(this, entry);
-
-        if (ltable != table) rehashOccured();
-
-        switch (status) {
-        case ST_DELETE:
-            internalDelete(entry.key);
-        case ST_CONTINUE:
-            break;
-        case ST_STOP:
-            return ST_STOP;
-        }
-        return ST_CHECK;
-    }
-
-    private final boolean internalForEach(final Callback callback) {
-        RubyHashEntry entry, last, tmp;
-        int length = table.length;
-        for (int i = 0; i < length; i++) {
-            last = null;
-            for (entry = table[i]; entry != null;) {
-                switch (hashForEachEntry(entry, callback)) {
-                case ST_CHECK:
-                    tmp = null;
-                    if (i < length) for (tmp = table[i]; tmp != null && tmp != entry; tmp = tmp.next);
-                    if (tmp == null) return true;
-                case ST_CONTINUE:
-                    last = entry;
-                    entry = entry.next;
-                    break;
-                case ST_STOP:
-                    return false;
-                case ST_DELETE:
-                    tmp = entry;
-                    if (last == null) table[i] = entry.next; else last.next = entry.next;
-                    entry = entry.next;
-                    size--;
-                }
-            }
-        }
-        return false;
-    }
-
-    public final void forEach(final Callback callback) {
-        try{
-            preIter();
-            if (internalForEach(callback)) rehashOccured();
-        }finally{
-            postIter();
-        }
-    }
-
     private final void preIter() {
         iterLevel++;
     }
