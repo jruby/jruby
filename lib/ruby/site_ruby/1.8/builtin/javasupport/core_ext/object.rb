@@ -82,10 +82,10 @@ class Object
   private :java_import
 
   def handle_different_imports(*args, &block)
-    if args.first.is_a?(String)
-      other_import(*args, &block)
-    else
+    if args.first.respond_to?(:java_class)
       java_import(*args, &block)
+    else
+      other_import(*args, &block)
     end
   end
   
