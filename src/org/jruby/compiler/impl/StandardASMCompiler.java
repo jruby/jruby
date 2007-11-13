@@ -2413,6 +2413,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.end();
         }
 
+        @Override
         public void loadBlock() {
             loadThreadContext();
             invokeThreadContext("getFrameBlock", cg.sig(Block.class));
