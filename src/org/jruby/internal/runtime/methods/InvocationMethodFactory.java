@@ -537,7 +537,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         checkArity(jrubyMethod,method);
         
-        invokeCallConfigPre(method);
+        boolean fast = !(jrubyMethod.frame() || jrubyMethod.scope());
+        if (!fast) {
+            invokeCallConfigPre(method);
+        }
 
         boolean getsBlock = signature.length > 0 && signature[signature.length - 1] == Block.class;
 
@@ -570,7 +573,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         method.label(normalExit);
         
-        invokeCallConfigPost(method);
+        if (!fast) {
+            invokeCallConfigPost(method);
+        }
         
         method.visitInsn(ARETURN);
         
@@ -581,7 +586,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         // finally handling for abnormal exit
         method.label(tryFinally);
         {
-            invokeCallConfigPost(method);
+            if (!fast) {
+                invokeCallConfigPost(method);
+            }
 
             // rethrow exception
             method.athrow(); // rethrow it
