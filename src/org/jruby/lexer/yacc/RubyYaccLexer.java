@@ -570,7 +570,7 @@ public class RubyYaccLexer {
      * Not normally used, but is left in here since it can be useful in debugging
      * grammar and lexing problems.
      *
-     */
+     *
     private void printToken(int token) {
         //System.out.print("LOC: " + support.getPosition() + " ~ ");
         
@@ -686,7 +686,7 @@ public class RubyYaccLexer {
         printToken(token);
         
         return token;
-    }
+    }*/
 
     /**
      *  Returns the next token. Also sets yyVal is needed.
@@ -716,7 +716,7 @@ public class RubyYaccLexer {
             case '\004':		/* ^D */
             case '\032':		/* ^Z */
             case EOF:			/* end of script. */
-                return 0;
+                return EOF;
            
                 /* white spaces */
             case ' ': case '\t': case '\f': case '\r':
@@ -725,7 +725,7 @@ public class RubyYaccLexer {
                 spaceSeen = true;
                 continue;
             case '#':		/* it's a comment */
-                if (readComment(c) == EOF) return 0;
+                if (readComment(c) == EOF) return EOF;
                     
                 /* fall through */
             case '\n':
@@ -884,7 +884,7 @@ public class RubyYaccLexer {
             case '_':
                 if (src.wasBeginOfLine() && src.matchMarker(END_MARKER, false)) {
                 	parserSupport.getResult().setEndOffset(src.getOffset());
-                    return 0;
+                    return EOF;
                 }
                 return identifier(c, commandState);
             default:
