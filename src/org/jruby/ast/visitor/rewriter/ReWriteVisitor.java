@@ -790,6 +790,14 @@ public class ReWriteVisitor implements NodeVisitor {
 	}
 
 	public Instruction visitFixnumNode(FixnumNode iVisited) {
+        ISourcePosition pos = iVisited.getPosition();
+        if (pos != null && config.getSource() != null && config.getSource().length() > pos.getEndOffset()) {
+            String raw = config.getSource().substring(pos.getStartOffset(), pos.getEndOffset());
+            if (raw != null) {
+                print(raw);
+                return null;
+            }
+        }
 		print(iVisited.getValue());
 		return null;
 	}
