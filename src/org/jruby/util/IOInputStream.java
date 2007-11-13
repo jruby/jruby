@@ -32,7 +32,7 @@ import java.io.IOException;
 
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
-import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -48,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class IOInputStream extends InputStream {
     private IRubyObject io;
     private final IRubyObject numOne;
-    private CallAdapter readAdapter = new CallAdapter.DefaultCallAdapter("read", CallType.FUNCTIONAL);
+    private CallSite readAdapter = new CallSite.InlineCachingCallSite("read", CallType.FUNCTIONAL);
 
     /**
      * Creates a new InputStream with the object provided.

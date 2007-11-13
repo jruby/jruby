@@ -36,7 +36,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 
 /**
@@ -45,17 +45,17 @@ import org.jruby.runtime.CallType;
 public class OpAsgnNode extends Node {
     private final Node receiverNode;
     private final Node valueNode;
-    public final CallAdapter variableCallAdapter;
-    public final CallAdapter operatorCallAdapter;
-    public final CallAdapter variableAsgnCallAdapter;
+    public final CallSite variableCallAdapter;
+    public final CallSite operatorCallAdapter;
+    public final CallSite variableAsgnCallAdapter;
 
     public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String operatorName) {
         super(position, NodeType.OPASGNNODE);
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
-        this.variableCallAdapter = new CallAdapter.DefaultCallAdapter(variableName, CallType.NORMAL);
-        this.operatorCallAdapter = new CallAdapter.DefaultCallAdapter(operatorName, CallType.NORMAL);
-        this.variableAsgnCallAdapter = new CallAdapter.DefaultCallAdapter((variableName + "=").intern(), CallType.NORMAL);
+        this.variableCallAdapter = new CallSite.InlineCachingCallSite(variableName, CallType.NORMAL);
+        this.operatorCallAdapter = new CallSite.InlineCachingCallSite(operatorName, CallType.NORMAL);
+        this.variableAsgnCallAdapter = new CallSite.InlineCachingCallSite((variableName + "=").intern(), CallType.NORMAL);
     }
 
     /**

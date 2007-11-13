@@ -10,7 +10,7 @@ import org.jruby.MetaClass;
 import org.jruby.RubySymbol;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.LocalStaticScope;
-import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -84,7 +84,7 @@ public class YARVMachine {
 
         public int index;
         public int methodIndex = -1;
-        public CallAdapter callAdapter;
+        public CallSite callAdapter;
 
         public Instruction(int bytecode) {
             this.bytecode = bytecode;
@@ -692,7 +692,7 @@ public class YARVMachine {
         }
         
         if (instruction.callAdapter == null) {
-            instruction.callAdapter = new CallAdapter.DefaultCallAdapter(name.intern(), callType);
+            instruction.callAdapter = new CallSite.InlineCachingCallSite(name.intern(), callType);
         }
         
         if (TAILCALL_OPT && (bytecodes[ip+1].bytecode == YARVInstructions.LEAVE || 

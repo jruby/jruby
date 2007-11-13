@@ -30,7 +30,7 @@ package org.jruby.util;
 import java.io.OutputStream;
 import java.io.IOException;
 import org.jruby.RubyString;
-import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -47,8 +47,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class IOOutputStream extends OutputStream {
     private IRubyObject io;
-    private CallAdapter writeAdapter;
-    private CallAdapter closeAdapter = new CallAdapter.DefaultCallAdapter("close", CallType.FUNCTIONAL);
+    private CallSite writeAdapter;
+    private CallSite closeAdapter = new CallSite.InlineCachingCallSite("close", CallType.FUNCTIONAL);
 
     /**
      * Creates a new OutputStream with the object provided.
@@ -57,9 +57,9 @@ public class IOOutputStream extends OutputStream {
      */
     public IOOutputStream(final IRubyObject io) {
         if(io.respondsTo("write")) {
-            writeAdapter = new CallAdapter.DefaultCallAdapter("write", CallType.FUNCTIONAL);
+            writeAdapter = new CallSite.InlineCachingCallSite("write", CallType.FUNCTIONAL);
         } else if (io.respondsTo("<<")) {
-            writeAdapter = new CallAdapter.DefaultCallAdapter("<<", CallType.FUNCTIONAL);
+            writeAdapter = new CallSite.InlineCachingCallSite("<<", CallType.FUNCTIONAL);
         } else {
             throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"write\".");
         }

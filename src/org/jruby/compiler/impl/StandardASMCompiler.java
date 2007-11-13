@@ -81,7 +81,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.regexp.RegexpPattern;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
@@ -2670,19 +2670,19 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
     
     public String cacheCallAdapter(String name, CallType callType) {
-        String fieldName = getNewConstant(cg.ci(CallAdapter.class), cg.cleanJavaIdentifier(name));
+        String fieldName = getNewConstant(cg.ci(CallSite.class), cg.cleanJavaIdentifier(name));
         
         // retrieve call adapter
         initMethod.aload(THIS);
         initMethod.ldc(name);
         if (callType.equals(CallType.NORMAL)) {
-            initMethod.invokestatic(cg.p(MethodIndex.class), "getCallAdapter", cg.sig(CallAdapter.class, cg.params(String.class)));
+            initMethod.invokestatic(cg.p(MethodIndex.class), "getCallAdapter", cg.sig(CallSite.class, cg.params(String.class)));
         } else if (callType.equals(CallType.FUNCTIONAL)) {
-            initMethod.invokestatic(cg.p(MethodIndex.class), "getFunctionAdapter", cg.sig(CallAdapter.class, cg.params(String.class)));
+            initMethod.invokestatic(cg.p(MethodIndex.class), "getFunctionAdapter", cg.sig(CallSite.class, cg.params(String.class)));
         } else if (callType.equals(CallType.VARIABLE)) {
-            initMethod.invokestatic(cg.p(MethodIndex.class), "getVariableAdapter", cg.sig(CallAdapter.class, cg.params(String.class)));
+            initMethod.invokestatic(cg.p(MethodIndex.class), "getVariableAdapter", cg.sig(CallSite.class, cg.params(String.class)));
         }
-        initMethod.putfield(classname, fieldName, cg.ci(CallAdapter.class));
+        initMethod.putfield(classname, fieldName, cg.ci(CallSite.class));
         
         return fieldName;
     }

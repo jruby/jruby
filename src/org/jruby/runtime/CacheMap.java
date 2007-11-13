@@ -52,7 +52,10 @@ import org.jruby.RubyModule;
  * call this is responsible for synchronization.
  */
 public class CacheMap {
-    private final Map<DynamicMethod, Set<CallAdapter>> mappings = new WeakHashMap<DynamicMethod, Set<CallAdapter>>();
+    public interface CacheSite {
+        public void removeCachedMethod();
+    }
+    private final Map<DynamicMethod, Set<CacheSite>> mappings = new WeakHashMap<DynamicMethod, Set<CacheSite>>();
     
     /**
      * Add another class to the list of classes which are caching the method.
@@ -60,11 +63,11 @@ public class CacheMap {
      * @param method which is cached
      * @param module which is caching method
      */
-    public synchronized void add(DynamicMethod method, CallAdapter site) {
-        Set<CallAdapter> siteList = mappings.get(method);
+    public synchronized void add(DynamicMethod method, CacheSite site) {
+        Set<CacheSite> siteList = mappings.get(method);
         
         if (siteList == null) {
-            siteList = new WeakHashSet<CallAdapter>();
+            siteList = new WeakHashSet<CacheSite>();
             mappings.put(method, siteList);
         }
 
@@ -80,14 +83,14 @@ public class CacheMap {
      * @param method to remove all caches of
      */
     public synchronized void remove(String name, DynamicMethod method) {
-        Set<CallAdapter> siteList = mappings.remove(method);
+        Set<CacheSite> siteList = mappings.remove(method);
         
         // Removed method has never been used so it has not been cached
         if (siteList == null) {
             return;
         }
-        for(Iterator<CallAdapter> iter = siteList.iterator(); iter.hasNext();) {
-            CallAdapter site = iter.next();
+        for(Iterator<CacheSite> iter = siteList.iterator(); iter.hasNext();) {
+            CacheSite site = iter.next();
             if (site != null) {
                 site.removeCachedMethod();
             }
@@ -105,9 +108,9 @@ public class CacheMap {
                 if (current == includedModule) continue;
                 DynamicMethod method = (DynamicMethod)current.getMethods().get(methodName);
                 if (method != null) {
-                    Set<CallAdapter> adapters = mappings.remove(method);
+                    Set<CacheSite> adapters = mappings.remove(method);
                     if (adapters != null) {
-                        for(CallAdapter adapter : adapters) {
+                        for(CacheSite adapter : adapters) {
                             adapter.removeCachedMethod();
                         }
                     }

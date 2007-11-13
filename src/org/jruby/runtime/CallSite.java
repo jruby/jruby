@@ -38,12 +38,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  */
-public abstract class CallAdapter {
+public abstract class CallSite {
     public final int methodID;
     public final String methodName;
     protected final CallType callType;
     
-    public CallAdapter(int methodID, String methodName, CallType callType) {
+    public CallSite(int methodID, String methodName, CallType callType) {
         this.methodID = methodID;
         this.methodName = methodName;
         this.callType = callType;
@@ -62,14 +62,11 @@ public abstract class CallAdapter {
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
 
-    public abstract void removeCachedMethod();
-
-
-    public static class DefaultCallAdapter extends CallAdapter {
+    public static class InlineCachingCallSite extends CallSite implements CacheMap.CacheSite {
         DynamicMethod cachedMethod;
         RubyClass cachedType;
         
-        public DefaultCallAdapter(String methodName, CallType callType) {
+        public InlineCachingCallSite(String methodName, CallType callType) {
             super(MethodIndex.getIndex(methodName), methodName, callType);
         }
         

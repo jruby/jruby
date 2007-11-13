@@ -37,7 +37,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 
 /**
@@ -45,12 +45,12 @@ import org.jruby.runtime.CallType;
  *
  */
 public class VCallNode extends Node implements INameNode {
-    public final CallAdapter callAdapter;
+    public final CallSite callAdapter;
 
     public VCallNode(ISourcePosition position, String name) {
         super(position, NodeType.VCALLNODE);
 
-        this.callAdapter = new CallAdapter.DefaultCallAdapter(name, CallType.VARIABLE);
+        this.callAdapter = new CallSite.InlineCachingCallSite(name, CallType.VARIABLE);
     }
     
     /**

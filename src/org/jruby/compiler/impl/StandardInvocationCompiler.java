@@ -15,7 +15,7 @@ import org.jruby.compiler.ClosureCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -178,7 +178,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // load call adapter
         // FIXME: These swaps suck, but OpAsgn breaks if it can't dup receiver in the middle of making this call :(
         method.aload(THIS);
-        method.getfield(classname, fieldname, cg.ci(CallAdapter.class));
+        method.getfield(classname, fieldname, cg.ci(CallSite.class));
         method.swap();
 
         methodCompiler.loadThreadContext(); // [adapter, tc]
@@ -211,7 +211,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
 
-        method.invokevirtual(cg.p(CallAdapter.class), "call", signature);
+        method.invokevirtual(cg.p(CallSite.class), "call", signature);
     }
 
     private void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign) {

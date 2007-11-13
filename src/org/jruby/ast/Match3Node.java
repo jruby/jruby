@@ -36,13 +36,13 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 
 public class Match3Node extends Node {
     private final Node receiverNode;
     private final Node valueNode;
-    public static final CallAdapter callAdapter = new CallAdapter.DefaultCallAdapter("=~", CallType.FUNCTIONAL);
+    public static final CallSite callAdapter = new CallSite.InlineCachingCallSite("=~", CallType.FUNCTIONAL);
 
     public Match3Node(ISourcePosition position, Node receiverNode, Node valueNode) {
         super(position, NodeType.MATCH3NODE);

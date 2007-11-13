@@ -36,7 +36,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 
 /** Represents an operator assignment to an element.
@@ -52,14 +52,14 @@ public class OpElementAsgnNode extends Node {
     private final Node receiverNode;
     private final Node argsNode;
     private final Node valueNode;
-    public CallAdapter callAdapter;
+    public CallSite callAdapter;
 
     public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
         super(position, NodeType.OPELEMENTASGNNODE);
         this.receiverNode = receiverNode;
         this.argsNode = argsNode;
         this.valueNode = valueNode;
-        callAdapter = new CallAdapter.DefaultCallAdapter(operatorName, CallType.NORMAL);
+        callAdapter = new CallSite.InlineCachingCallSite(operatorName, CallType.NORMAL);
     }
     
     /**

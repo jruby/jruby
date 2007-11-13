@@ -36,7 +36,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 
 /**
@@ -46,7 +46,7 @@ import org.jruby.runtime.CallType;
  * @see IterNode
  */
 public class ForNode extends IterNode {
-    public static final CallAdapter callAdapter = new CallAdapter.DefaultCallAdapter("each", CallType.NORMAL);
+    public static final CallSite callAdapter = new CallSite.InlineCachingCallSite("each", CallType.NORMAL);
 
     private Node iterNode;
 

@@ -38,7 +38,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.CallAdapter;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 
 /**
@@ -48,7 +48,7 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
     private final Node receiverNode;
     private Node argsNode;
     private Node iterNode;
-    public final CallAdapter callAdapter;
+    public final CallSite callAdapter;
 
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
         this(position, receiverNode, name, argsNode, null);
@@ -60,7 +60,7 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
         this.receiverNode = receiverNode;
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        this.callAdapter = new CallAdapter.DefaultCallAdapter(name, CallType.NORMAL);
+        this.callAdapter = new CallSite.InlineCachingCallSite(name, CallType.NORMAL);
     }
     
     /**
