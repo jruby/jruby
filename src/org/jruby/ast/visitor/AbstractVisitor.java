@@ -98,6 +98,7 @@ import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
+import org.jruby.ast.PreExeNode;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
@@ -394,6 +395,10 @@ public abstract class AbstractVisitor implements NodeVisitor {
     }
 
     public Instruction visitPostExeNode(PostExeNode iVisited) {
+        return visitNode(iVisited);
+    }
+    
+    public Instruction visitPreExeNode(PreExeNode iVisited) {
         return visitNode(iVisited);
     }
 
