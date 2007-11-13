@@ -24,10 +24,7 @@ public class RubyStringScanner extends RubyObject {
 
     public static RubyClass createScannerClass(final Ruby runtime) {
         RubyClass scannerClass = runtime.defineClass("StringScanner", runtime.getObject(), STRINGSCANNER_ALLOCATOR);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyStringScanner.class);
-
         scannerClass.defineAnnotatedMethods(RubyStringScanner.class);
-
         return scannerClass;
     }
 
@@ -112,6 +109,18 @@ public class RubyStringScanner extends RubyObject {
     public IRubyObject exist_p(IRubyObject rx) {
         if (!(rx instanceof RubyRegexp)) throw getRuntime().newTypeError(rx, getRuntime().getRegexp());
         return positiveFixnumOrNil(scanner.exists(((RubyRegexp)rx).getPattern()));
+    }
+
+    @JRubyMethod(name = "getbyte")
+    public IRubyObject getbyte() {
+        getRuntime().getWarnings().warn("StringScanner#getbyte is obsolete; use #get_byte instead");
+        return get_byte();
+    }
+    
+    @JRubyMethod(name = "get_byte")
+    public IRubyObject get_byte() {
+        // FIXME: should we be distinguishing between chars and bytes?
+        return getch();
     }
 
     @JRubyMethod(name = "getch")
