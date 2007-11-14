@@ -1,3 +1,5 @@
 # Tests for behavior that has changed in Ruby 1.9, used to confirm JRuby 1.9
 # compat mode is working.
+test_loading_builtin_libraries_1_9
 test_kernel_1_9_features
+externals/mri/ruby/test_fiber

@@ -14,7 +14,8 @@ externals/mri/ruby/test_dir
 externals/mri/ruby/test_env
 externals/mri/ruby/test_eval
 externals/mri/ruby/test_exception
-externals/mri/ruby/test_fiber
+# moved to Ruby 1.9 tests
+#externals/mri/ruby/test_fiber
 #externals/mri/ruby/test_file
 externals/mri/ruby/test_float
 externals/mri/ruby/test_gc

@@ -25,7 +25,6 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
       require 'bigdecimal.rb'
       require 'io/wait.so'
       require 'etc.so'
-      require 'fiber.so'
     }
   end
 end
