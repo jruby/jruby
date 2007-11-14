@@ -44,6 +44,7 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
 
 public class RubyInstanceConfig {
+    
     public enum CompileMode {
         JIT, FORCE, OFF;
         
@@ -82,7 +83,7 @@ public class RubyInstanceConfig {
     private final boolean jitLoggingVerbose;
     private final int jitThreshold;
     private final boolean samplingEnabled;
-    private final boolean rite;
+    private CompatVersion compatVersion;
 
     private final String defaultRegexpEngine;
     private final JRubyClassLoader defaultJRubyClassLoader;
@@ -125,7 +126,7 @@ public class RubyInstanceConfig {
 
     private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
 
-    {
+    public RubyInstanceConfig() {
         if (Ruby.isSecurityRestricted())
             currentDirectory = "/";
         else {
@@ -136,7 +137,15 @@ public class RubyInstanceConfig {
         }
 
         samplingEnabled = System.getProperty("jruby.sampling.enabled") != null && Boolean.getBoolean("jruby.sampling.enabled");
-        rite = System.getProperty("jruby.rite") != null && Boolean.getBoolean("jruby.rite");
+        String compatString = System.getProperty("jruby.compat.version", "RUBY1_8");
+        if (compatString.equalsIgnoreCase("RUBY1_8")) {
+            compatVersion = CompatVersion.RUBY1_8;
+        } else if (compatString.equalsIgnoreCase("RUBY1_9")) {
+            compatVersion = CompatVersion.RUBY1_9;
+        } else {
+            System.err.println("Compatibility version `" + compatString + "' invalid; use RUBY1_8 or RUBY1_9. Using RUBY1_8.");
+            compatVersion = CompatVersion.RUBY1_8;
+        }
         
         if (Ruby.isSecurityRestricted()) {
             compileMode = CompileMode.OFF;
@@ -232,8 +241,8 @@ public class RubyInstanceConfig {
         return input;
     }
 
-    public boolean isRite() {
-        return rite;
+    public CompatVersion getCompatVersion() {
+        return compatVersion;
     }
 
     public void setOutput(PrintStream newOutput) {
@@ -430,6 +439,13 @@ public class RubyInstanceConfig {
                             characterIndex = argument.length();
                             runBinScript();
                             break;
+                        } else if (argument.equals("--compat")) {
+                            characterIndex = argument.length();
+                            compatVersion = CompatVersion.getVersionFromString(grabValue("--compat must be RUBY1_8 or RUBY1_9"));
+                            if (compatVersion == null) {
+                                compatVersion = CompatVersion.RUBY1_8;
+                            }
+                            break FOR;
                         } else {
                             if (argument.equals("--")) {
                                 // ruby interpreter compatibilty 

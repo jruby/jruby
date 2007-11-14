@@ -13,6 +13,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.jruby.CompatVersion;
 import org.jruby.runtime.Visibility;
 
 /**
@@ -61,7 +62,7 @@ public @interface JRubyMethod {
     /**
      * Whether this method is specific to Ruby 1.9
      */
-    boolean rite() default false;
+    CompatVersion compat() default CompatVersion.BOTH;
     /**
      * The visibility of this method.
      */

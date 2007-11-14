@@ -483,7 +483,8 @@ public class RubyModule extends RubyObject {
                     ASTInspector.FRAME_AWARE_METHODS.add(name);
                 }
             }
-            if(module.getRuntime().getInstanceConfig().isRite() == jrubyMethod.rite()) {
+            if(jrubyMethod.compat() == CompatVersion.BOTH ||
+                    module.getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
                 RubyModule metaClass = module.metaClass;
 
                 if (jrubyMethod.meta()) {
@@ -554,7 +555,8 @@ public class RubyModule extends RubyObject {
 
         if (jrubyMethod == null) return false;
 
-        if(getRuntime().getInstanceConfig().isRite() == jrubyMethod.rite()) {
+            if(jrubyMethod.compat() == CompatVersion.BOTH ||
+                    getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
             DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, method);
             methodDefiningCallback.define(this, method, dynamicMethod);
             

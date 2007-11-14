@@ -1,0 +1,3 @@
+# Tests for behavior that has changed in Ruby 1.9, used to confirm JRuby 1.9
+# compat mode is working.
+test_kernel_1_9_features

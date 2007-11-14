@@ -884,9 +884,19 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
     
-    @JRubyMethod(name = {"proc", "lambda"}, frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"proc", "lambda"}, frame = true, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyProc proc(IRubyObject recv, Block block) {
         return recv.getRuntime().newProc(Block.Type.LAMBDA, block);
+    }
+    
+    @JRubyMethod(name = {"lambda"}, frame = true, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyProc lambda(IRubyObject recv, Block block) {
+        return recv.getRuntime().newProc(Block.Type.LAMBDA, block);
+    }
+    
+    @JRubyMethod(name = {"proc"}, frame = true, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyProc proc_1_9(IRubyObject recv, Block block) {
+        return recv.getRuntime().newProc(Block.Type.PROC, block);
     }
 
     @JRubyMethod(name = "loop", frame = true, module = true, visibility = Visibility.PRIVATE)
