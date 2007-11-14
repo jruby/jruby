@@ -61,7 +61,6 @@ import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.ShellLauncher;
 import org.jruby.util.IOHandler.InvalidValueException;
 
 /**
@@ -140,7 +139,6 @@ public class RubyFile extends RubyIO {
         RubyClass fileClass = runtime.defineClass("File", runtime.getIO(), FILE_ALLOCATOR);
         runtime.setFile(fileClass);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFile.class);   
-        RubyClass fileMetaClass = fileClass.getMetaClass();
         RubyString separator = runtime.newString("/");
         
         fileClass.kindOf = new RubyModule.KindOf() {
@@ -1037,16 +1035,12 @@ public class RubyFile extends RubyIO {
     
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject symlink(IRubyObject recv, IRubyObject from, IRubyObject to) {
-        Ruby runtime = recv.getRuntime();
-        
-        try {
-            int result = new ShellLauncher(runtime).runAndWait(new IRubyObject[] {
-                runtime.newString("ln"), runtime.newString("-s"), from, to
-            });
-            return runtime.newFixnum(result);
-        } catch (Exception e) {
-            throw runtime.newNotImplementedError("symlinks");
+        if (Ruby.getPosix().symlink(from.toString(),to.toString()) == -1) {
+            // FIXME: When we get JNA3 we need to properly write this to errno.
+            recv.getRuntime().newSystemCallError("bad symlink");
         }
+        
+        return recv.getRuntime().newFixnum(0);
     }
 
     @JRubyMethod(name = "symlink?", required = 1, meta = true)

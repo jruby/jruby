@@ -13,7 +13,9 @@ import java.io.File;
 import java.io.IOException;
 
 import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Chmod;
+import org.jruby.util.ShellLauncher;
 
 /**
  *
@@ -81,6 +83,17 @@ public class JavaBasedPOSIX implements POSIX {
 
     public int getuid() {
         throw getRuntime().newNotImplementedError("getuid unsupported on this platform");
+    }
+
+    public int symlink(String oldpath, String newpath) {
+        try {
+            return new ShellLauncher(runtime).runAndWait(new IRubyObject[] {
+                    getRuntime().newString("ln"), getRuntime().newString("-s"), 
+                    getRuntime().newString(oldpath), getRuntime().newString(newpath)
+            });
+        } catch (Exception e) { // We tried and failed for some reason. Indicate error.
+            return -1;
+        }
     }
 
 }
