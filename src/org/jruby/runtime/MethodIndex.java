@@ -41,9 +41,9 @@ import java.util.Map;
 public class MethodIndex {
     public static final List<String> NAMES = new ArrayList<String>();
     private static final Map<String, Integer> NUMBERS = new HashMap<String, Integer>();
-    private static final Map<Integer, CallSite> CALL_ADAPTERS = new HashMap<Integer, CallSite>();
-    private static final Map<Integer, CallSite> FUNCTION_ADAPTERS = new HashMap<Integer, CallSite>();
-    private static final Map<Integer, CallSite> VARIABLE_ADAPTERS = new HashMap<Integer, CallSite>();
+    private static final Map<Integer, CallSite> CALL_SITES = new HashMap<Integer, CallSite>();
+    private static final Map<Integer, CallSite> FUNCTIONAL_CALL_SITES = new HashMap<Integer, CallSite>();
+    private static final Map<Integer, CallSite> VARIABLE_CALL_SITES = new HashMap<Integer, CallSite>();
     
     // ensure zero is devoted to no method name
     public static final int NO_INDEX = getIndex("");
@@ -87,15 +87,15 @@ public class MethodIndex {
         return index;
     }
     
-    public synchronized static CallSite getCallAdapter(String name) {
+    public synchronized static CallSite getCallSite(String name) {
         return new CallSite.InlineCachingCallSite(name, CallType.NORMAL);
     }
     
-    public synchronized static CallSite getFunctionAdapter(String name) {
+    public synchronized static CallSite getFunctionalCallSite(String name) {
         return new CallSite.InlineCachingCallSite(name, CallType.FUNCTIONAL);
     }
     
-    public synchronized static CallSite getVariableAdapter(String name) {
+    public synchronized static CallSite getVariableCallSite(String name) {
         return new CallSite.InlineCachingCallSite(name, CallType.VARIABLE);
     }
 }

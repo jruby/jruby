@@ -29,7 +29,6 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyClass;
-import org.jruby.RubyObject;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -62,11 +61,11 @@ public abstract class CallSite {
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
 
-    public static class InlineCachingCallSite extends CallSite implements CacheMap.CacheSite {
+    public static abstract class ArgumentBoxingCallSite extends CallSite {
         DynamicMethod cachedMethod;
         RubyClass cachedType;
         
-        public InlineCachingCallSite(String methodName, CallType callType) {
+        public ArgumentBoxingCallSite(String methodName, CallType callType) {
             super(MethodIndex.getIndex(methodName), methodName, callType);
         }
         
@@ -128,6 +127,14 @@ public abstract class CallSite {
             return call(context, self, args, block);
         }
 
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
+    }
+
+    public static class InlineCachingCallSite extends ArgumentBoxingCallSite implements CacheMap.CacheSite {
+        public InlineCachingCallSite(String methodName, CallType callType) {
+            super(methodName, callType);
+        }
+        
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             while (true) {
                 try {

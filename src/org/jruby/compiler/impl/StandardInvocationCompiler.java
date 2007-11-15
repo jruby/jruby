@@ -167,7 +167,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     public void invokeDynamic(String name, ClosureCallback receiverCallback, ClosureCallback argsCallback, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
         String classname = methodCompiler.getScriptCompiler().getClassname();
         
-        String fieldname = methodCompiler.getScriptCompiler().cacheCallAdapter(name, callType);
+        String fieldname = methodCompiler.getScriptCompiler().cacheCallSite(name, callType);
         
         if (receiverCallback != null) {
             receiverCallback.compile(methodCompiler);
