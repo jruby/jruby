@@ -379,6 +379,7 @@ ${build.dir}/rubinius-spec/core/objectspace_spec.rb
 ${build.dir}/rubinius-spec/core/proc_spec.rb
 ${build.dir}/rubinius-spec/core/process_spec.rb
 ${build.dir}/rubinius-spec/core/regexp_spec.rb
+${build.dir}/rubinius-spec/core/time_spec.rb
 ${build.dir}/rubinius-spec/core/true_spec.rb
 ${build.dir}/rubinius-spec/language/array_spec.rb
 ${build.dir}/rubinius-spec/language/assignment_spec.rb
@@ -412,6 +413,7 @@ ${build.dir}/rubinius-spec/core/objectspace_spec.rb
 ${build.dir}/rubinius-spec/core/proc_spec.rb
 ${build.dir}/rubinius-spec/core/process_spec.rb
 ${build.dir}/rubinius-spec/core/regexp_spec.rb
+${build.dir}/rubinius-spec/core/time_spec.rb
 ${build.dir}/rubinius-spec/core/true_spec.rb
 ${build.dir}/rubinius-spec/language/array_spec.rb
 ${build.dir}/rubinius-spec/language/assignment_spec.rb
@@ -451,6 +453,7 @@ test/externals/rubinius/spec/core/range_spec.rb
 test/externals/rubinius/spec/core/regexp_spec.rb
 test/externals/rubinius/spec/core/struct_spec.rb
 test/externals/rubinius/spec/core/symbol_spec.rb
+test/externals/rubinius/spec/core/time_spec.rb
 test/externals/rubinius/spec/core/true_spec.rb
 test/externals/rubinius/spec/language/assignment_spec.rb
 test/externals/rubinius/spec/language/class_spec.rb
@@ -487,6 +490,7 @@ test/externals/rubinius/spec/core/range_spec.rb
 test/externals/rubinius/spec/core/regexp_spec.rb
 test/externals/rubinius/spec/core/struct_spec.rb
 test/externals/rubinius/spec/core/symbol_spec.rb
+test/externals/rubinius/spec/core/time_spec.rb
 test/externals/rubinius/spec/core/true_spec.rb
 test/externals/rubinius/spec/language/assignment_spec.rb
 test/externals/rubinius/spec/language/class_spec.rb

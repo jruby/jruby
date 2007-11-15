@@ -390,7 +390,7 @@ class TestTime < RubiconTestCase
 
   def test_inspect
     assert_equal("Sat Feb 03 04:05:06 UTC 2001", @utc.inspect)
-    assert_equal("Sat Feb 03 04:05:06 #{@zone} 2001", @loc.inspect)
+    assert_equal("Sat Feb 03 04:05:06 -0800 2001", @loc.inspect)
   end
 
   def test_isdst
@@ -609,7 +609,7 @@ class TestTime < RubiconTestCase
 
   def test_to_s
     assert_equal("Sat Feb 03 04:05:06 UTC 2001", @utc.to_s)
-    assert_equal("Sat Feb 03 04:05:06 #{@zone} 2001", @loc.to_s)
+    assert_equal("Sat Feb 03 04:05:06 -0800 2001", @loc.to_s)
   end
 
   def test_tv_sec

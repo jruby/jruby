@@ -90,8 +90,7 @@ public class RubyTime extends RubyObject {
     private static ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyTime instance = new RubyTime(runtime, klass);
-            GregorianCalendar cal = new GregorianCalendar();
-            cal.setTime(new Date());
+            Calendar cal = Calendar.getInstance(getLocalTimeZone(runtime));
             instance.setJavaCalendar(cal);
             return instance;
         }
@@ -127,7 +126,7 @@ public class RubyTime extends RubyObject {
     }
     
     public static RubyTime newTime(Ruby runtime, long milliseconds) {
-        Calendar cal = Calendar.getInstance(); 
+        Calendar cal = Calendar.getInstance();
         RubyTime time = new RubyTime(runtime, runtime.getTime(), cal);
         
         cal.setTimeInMillis(milliseconds);
@@ -370,7 +369,11 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = {"to_s", "inspect"})
     public IRubyObject to_s() {
         simpleDateFormat.setCalendar(cal);
-        simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss z yyyy");
+        if (cal.getTimeZone().getID().equals(UTC)) {
+            simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss 'UTC' yyyy");
+        } else {
+            simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss Z yyyy");
+        }
         String result = simpleDateFormat.format(cal.getTime());
 
         return getRuntime().newString(result);
@@ -546,7 +549,7 @@ public class RubyTime extends RubyObject {
         Ruby runtime = recv.getRuntime();
         int len = Arity.checkArgumentCount(runtime, args, 1, 2);
 
-        Calendar cal = Calendar.getInstance(); 
+        Calendar cal = Calendar.getInstance(getLocalTimeZone(runtime));
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, cal);
 
         if (args[0] instanceof RubyTime) {
