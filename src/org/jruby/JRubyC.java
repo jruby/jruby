@@ -44,6 +44,8 @@ public class JRubyC {
                     System.out.println("Error -- file not found: " + filename);
                     return;
                 }
+                
+                // destination directory
                 File destfile = new File(System.getProperty("user.dir"));
 
                 int size = (int)srcfile.length();
@@ -66,9 +68,7 @@ public class JRubyC {
                         classPath = classPath.substring(0, lastSlashIndex + 1) + "_" + classPath.substring(lastSlashIndex + 1);
                     }
                 }
-                String classDotted = classPath.replace('/', '.').replace('\\', '.');
                 StandardASMCompiler compiler = new StandardASMCompiler(classPath, filename);
-                System.out.println("Compiling file \"" + filename + "\" as class \"" + classDotted + "\"");
                 ASTCompiler.compileRoot(scriptNode, compiler, inspector);
 
                 compiler.writeClass(destfile);

@@ -40,7 +40,6 @@ import java.util.jar.Manifest;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.LoadServiceResource;
 
 /**
  * Loading of Ruby scripts packaged in Jar files.

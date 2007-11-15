@@ -272,7 +272,6 @@
   </target>
   
   <target name="run-spec">
-    <echo message="Running spec(s) located at: ${SPEC}"/>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
@@ -291,7 +290,6 @@
   </target>
   
   <target name="run-spec-compiled">
-    <echo message="Running spec(s) located at: ${SPEC}"/>
     <java classname="org.jruby.Main" fork="true" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
@@ -349,96 +347,17 @@
     </emma>
   </target>
 
-  <!-- This now has enabled the compiler by default; we may want to run both with and without compilation later -->
-  <target name="test" depends="copy-test-files,instrument,run-junit-compiled,run-junit-interpreted,run-junit-interpreted-1_9,test-spec-compiled,test-spec-interpreted,coverage-report">
+  <target name="test" depends="copy-test-files,instrument,run-junit-compiled,run-junit-interpreted,run-junit-interpreted-1.9,test-spec-compiled,test-spec-interpreted,coverage-report">
   </target>
 
   <target name="test-compiled" depends="copy-test-files,run-junit-compiled"/>
   <target name="test-interpreted" depends="copy-test-files,run-junit-interpreted"/>
-  <target name="test-interpreted-1_9" depends="copy-test-files,run-junit-interpreted-1_9"/>
+  <target name="test-interpreted-1.9" depends="copy-test-files,run-junit-interpreted-1.9"/>
   <target name="test-reflected" depends="copy-test-files,run-junit-reflected-compiled"/>
   
   <target name="test-spec" depends="test-spec-compiled, test-spec-interpreted"/>
   
-  <target name="test-rubinius-trunk-specs" depends="install-gems">
-      <exec executable="svn" dir="${build.dir}">
-          <arg value="export"/>
-          <arg value="http://rubini.us/svn/rubinius/trunk/spec/"/>
-          <arg value="rubinius-spec"/>
-      </exec>
-    <antcall target="run-spec-compiled"><param name="SPEC" value="
-${build.dir}/rubinius-spec/core/array_spec.rb
-${build.dir}/rubinius-spec/core/class_spec.rb
-${build.dir}/rubinius-spec/core/comparable_spec.rb
-${build.dir}/rubinius-spec/core/enumerable_spec.rb
-${build.dir}/rubinius-spec/core/env_spec.rb
-${build.dir}/rubinius-spec/core/false_spec.rb
-${build.dir}/rubinius-spec/core/integer_spec.rb
-${build.dir}/rubinius-spec/core/nil_spec.rb
-${build.dir}/rubinius-spec/core/objectspace_spec.rb
-${build.dir}/rubinius-spec/core/proc_spec.rb
-${build.dir}/rubinius-spec/core/process_spec.rb
-${build.dir}/rubinius-spec/core/regexp_spec.rb
-${build.dir}/rubinius-spec/core/time_spec.rb
-${build.dir}/rubinius-spec/core/true_spec.rb
-${build.dir}/rubinius-spec/language/array_spec.rb
-${build.dir}/rubinius-spec/language/assignment_spec.rb
-${build.dir}/rubinius-spec/language/case_spec.rb
-${build.dir}/rubinius-spec/language/def_spec.rb
-${build.dir}/rubinius-spec/language/defined_spec.rb
-${build.dir}/rubinius-spec/language/execution_spec.rb
-${build.dir}/rubinius-spec/language/for_spec.rb
-${build.dir}/rubinius-spec/language/hash_spec.rb
-${build.dir}/rubinius-spec/language/if_spec.rb
-${build.dir}/rubinius-spec/language/numbers_spec.rb
-${build.dir}/rubinius-spec/language/redo_spec.rb
-${build.dir}/rubinius-spec/language/return_spec.rb
-${build.dir}/rubinius-spec/language/string_spec.rb
-${build.dir}/rubinius-spec/language/unless_spec.rb
-${build.dir}/rubinius-spec/language/until_spec.rb
-${build.dir}/rubinius-spec/language/while_spec.rb
-${build.dir}/rubinius-spec/language/yield_spec.rb
-${build.dir}/rubinius-spec/library/enumerator_spec.rb
-${build.dir}/rubinius-spec/library/time_spec.rb"/></antcall>
-    <antcall target="run-spec"><param name="SPEC" value="
-${build.dir}/rubinius-spec/core/array_spec.rb
-${build.dir}/rubinius-spec/core/class_spec.rb
-${build.dir}/rubinius-spec/core/comparable_spec.rb
-${build.dir}/rubinius-spec/core/enumerable_spec.rb
-${build.dir}/rubinius-spec/core/env_spec.rb
-${build.dir}/rubinius-spec/core/false_spec.rb
-${build.dir}/rubinius-spec/core/integer_spec.rb
-${build.dir}/rubinius-spec/core/nil_spec.rb
-${build.dir}/rubinius-spec/core/objectspace_spec.rb
-${build.dir}/rubinius-spec/core/proc_spec.rb
-${build.dir}/rubinius-spec/core/process_spec.rb
-${build.dir}/rubinius-spec/core/regexp_spec.rb
-${build.dir}/rubinius-spec/core/time_spec.rb
-${build.dir}/rubinius-spec/core/true_spec.rb
-${build.dir}/rubinius-spec/language/array_spec.rb
-${build.dir}/rubinius-spec/language/assignment_spec.rb
-${build.dir}/rubinius-spec/language/case_spec.rb
-${build.dir}/rubinius-spec/language/def_spec.rb
-${build.dir}/rubinius-spec/language/defined_spec.rb
-${build.dir}/rubinius-spec/language/execution_spec.rb
-${build.dir}/rubinius-spec/language/for_spec.rb
-${build.dir}/rubinius-spec/language/hash_spec.rb
-${build.dir}/rubinius-spec/language/if_spec.rb
-${build.dir}/rubinius-spec/language/numbers_spec.rb
-${build.dir}/rubinius-spec/language/redo_spec.rb
-${build.dir}/rubinius-spec/language/return_spec.rb
-${build.dir}/rubinius-spec/language/string_spec.rb
-${build.dir}/rubinius-spec/language/symbol_spec.rb
-${build.dir}/rubinius-spec/language/unless_spec.rb
-${build.dir}/rubinius-spec/language/until_spec.rb
-${build.dir}/rubinius-spec/language/while_spec.rb
-${build.dir}/rubinius-spec/language/yield_spec.rb
-${build.dir}/rubinius-spec/library/enumerator_spec.rb
-${build.dir}/rubinius-spec/library/time_spec.rb"/></antcall>
-  </target>
-  
-  <target name="test-spec-compiled" depends="install-gems">
-    <antcall target="run-spec-compiled"><param name="SPEC" value="
+  <property name="working.rubinius.specs" value="
 test/externals/rubinius/spec/core/enumerable_spec.rb
 test/externals/rubinius/spec/core/false_spec.rb
 test/externals/rubinius/spec/core/hash_spec.rb
@@ -471,154 +390,91 @@ test/externals/rubinius/spec/language/keywords/next_spec.rb
 test/externals/rubinius/spec/language/keywords/redo_spec.rb
 test/externals/rubinius/spec/language/literals
 test/externals/rubinius/spec/library
-test/externals/rubinius/spec/parser"/></antcall>
+test/externals/rubinius/spec/parser"/>
+  
+  <target name="test-spec-compiled" depends="install-gems">
+    <antcall target="run-spec-compiled"><param name="SPEC" value="${working.rubinius.specs}"/></antcall>
   </target>
   
   <target name="test-spec-interpreted" depends="install-gems">
-    <antcall target="run-spec"><param name="SPEC" value="
-test/externals/rubinius/spec/core/enumerable_spec.rb
-test/externals/rubinius/spec/core/false_spec.rb
-test/externals/rubinius/spec/core/hash_spec.rb
-test/externals/rubinius/spec/core/integer_spec.rb
-test/externals/rubinius/spec/core/io_spec.rb
-test/externals/rubinius/spec/core/matchdata_spec.rb
-test/externals/rubinius/spec/core/nil_spec.rb
-test/externals/rubinius/spec/core/object_spec.rb
-test/externals/rubinius/spec/core/objectspace_spec.rb
-test/externals/rubinius/spec/core/proc_spec.rb
-test/externals/rubinius/spec/core/range_spec.rb
-test/externals/rubinius/spec/core/regexp_spec.rb
-test/externals/rubinius/spec/core/struct_spec.rb
-test/externals/rubinius/spec/core/symbol_spec.rb
-test/externals/rubinius/spec/core/time_spec.rb
-test/externals/rubinius/spec/core/true_spec.rb
-test/externals/rubinius/spec/language/assignment_spec.rb
-test/externals/rubinius/spec/language/class_spec.rb
-test/externals/rubinius/spec/language/case_spec.rb
-test/externals/rubinius/spec/language/splat_spec.rb
-test/externals/rubinius/spec/language/variables_spec.rb
-test/externals/rubinius/spec/language/expressions/for_spec.rb
-test/externals/rubinius/spec/language/expressions/if_spec.rb
-test/externals/rubinius/spec/language/expressions/unless_spec.rb
-test/externals/rubinius/spec/language/expressions/until_spec.rb
-test/externals/rubinius/spec/language/expressions/while_spec.rb
-test/externals/rubinius/spec/language/keywords/break_spec.rb
-test/externals/rubinius/spec/language/keywords/defined_spec.rb
-test/externals/rubinius/spec/language/keywords/next_spec.rb
-test/externals/rubinius/spec/language/keywords/redo_spec.rb
-test/externals/rubinius/spec/language/literals
-test/externals/rubinius/spec/library
-test/externals/rubinius/spec/parser"/></antcall>
+    <antcall target="run-spec"><param name="SPEC" value="${working.rubinius.specs}"/></antcall>
   </target>
   
   <target name="run-junit-interpreted" description="runs junit tests">
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
-      <classpath>
-        <pathelement location="${jruby.instrumented.classes.dir}" />
-        <path refid="build.classpath"/>
-        <pathelement path="${java.class.path}"/>
-        <pathelement path="${lib.dir}/jruby.jar"/>
-        <pathelement location="${test.classes.dir}"/>
-        <pathelement path="${test.dir}/requireTest.jar"/>
-        <pathelement location="${test.dir}"/>
-      </classpath>
-      <sysproperty key="java.awt.headless" value="true"/>
-      <sysproperty key="jruby.base" value="${basedir}"/>
-      <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.compile.mode" value="OFF"/>
-      <sysproperty key="jruby.objectspace.enabled" value="true"/>
-      <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
-      <sysproperty key="emma.coverage.out.merge" value="true" />
-
-      <jvmarg value="-ea"/>
-
-      <formatter type="xml"/>
-      <formatter type="brief" usefile="false"/>
-
-      <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}"/>
-      <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}"/>
-      <test name="org.jruby.test.BFTSTestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.RubyTestTestSuite" todir="${test.results.dir}" />
-      <test name="org.jvyamlb.YAMLLoadTest" todir="${test.results.dir}"/>
-      <test name="org.jvyamlb.YAMLDumpTest" todir="${test.results.dir}"/>
-    </junit>
+      <antcall target="run-junit-1.8"/>
   </target>
   
-  <target name="run-junit-interpreted-1_9" description="runs junit tests">
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
-      <classpath>
-        <pathelement location="${jruby.instrumented.classes.dir}" />
-        <path refid="build.classpath"/>
-        <pathelement path="${java.class.path}"/>
-        <pathelement path="${lib.dir}/jruby.jar"/>
-        <pathelement location="${test.classes.dir}"/>
-        <pathelement path="${test.dir}/requireTest.jar"/>
-        <pathelement location="${test.dir}"/>
-      </classpath>
-      <sysproperty key="java.awt.headless" value="true"/>
-      <sysproperty key="jruby.base" value="${basedir}"/>
-      <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.compile.mode" value="OFF"/>
-      <sysproperty key="jruby.objectspace.enabled" value="true"/>
-      <sysproperty key="jruby.compat.version" value="ruby1_9"/>
-      <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
-      <sysproperty key="emma.coverage.out.merge" value="true" />
-
-      <jvmarg value="-ea"/>
-
-      <formatter type="xml"/>
-      <formatter type="brief" usefile="false"/>
-
-      <test name="org.jruby.test.Ruby1_9TestSuite" todir="${test.results.dir}" />
-    </junit>
+  <target name="run-junit-interpreted-1.9" description="runs junit tests">
+      <antcall target="run-junit-1.9"/>
   </target>
   
   <target name="run-junit-reflected-interpreted" description="runs junit tests">
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="256M" showoutput="true" timeout="180000">
-      <classpath>
-        <pathelement location="${jruby.instrumented.classes.dir}" />
-        <path refid="build.classpath"/>
-        <pathelement path="${java.class.path}"/>
-        <pathelement path="${lib.dir}/jruby.jar"/>
-        <pathelement location="${test.classes.dir}"/>
-        <pathelement path="${test.dir}/requireTest.jar"/>
-        <pathelement location="${test.dir}"/>
-      </classpath>
-      <sysproperty key="java.awt.headless" value="true"/>
-      <sysproperty key="jruby.base" value="${basedir}"/>
-      <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.compile.mode" value="OFF"/>
-      <sysproperty key="jruby.objectspace.enabled" value="true"/>
-      <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
-      <sysproperty key="emma.coverage.out.merge" value="true" />
-      
-      <jvmarg value="-ea"/>
-
-      <formatter type="xml"/>
-      <formatter type="brief" usefile="false"/>
-
-      <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}"/>
-      <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}"/>
-      <test name="org.jruby.test.BFTSTestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.RubyTestTestSuite" todir="${test.results.dir}" />
-      <test name="org.jvyamlb.YAMLLoadTest" todir="${test.results.dir}"/>
-      <test name="org.jvyamlb.YAMLDumpTest" todir="${test.results.dir}"/>
-    </junit>
+      <antcall target="run-junit-1.8">
+          <param name="reflection " value="true"/>
+      </antcall>
+  </target>
+  
+  <target name="run-junit-reflected-interpreted-1.9" description="runs junit tests">
+      <antcall target="run-junit-1.9">
+          <param name="reflection " value="true"/>
+      </antcall>
   </target>
   
   <target name="run-junit-compiled" description="runs junit tests">
+      <antcall target="run-junit-1.8">
+          <param name="compile.mode" value="JIT"/>
+          <param name="jit.threshold" value="0"/>
+      </antcall>
+  </target>
+  
+  <target name="run-junit-compiled-1.9" description="runs junit tests">
+      <antcall target="run-junit-1.9">
+          <param name="compile.mode" value="JIT"/>
+          <param name="jit.threshold" value="0"/>
+      </antcall>
+  </target>
+  
+  <target name="run-junit-reflected-compiled" description="runs junit tests">
+      <antcall target="run-junit-1.8">
+          <param name="compile.mode" value="JIT"/>
+          <param name="jit.threshold" value="0"/>
+          <param name="reflection" value="true"/>
+      </antcall>
+  </target>
+  
+  <target name="run-junit-reflected-compiled-1.9" description="runs junit tests">
+      <antcall target="run-junit-1.9">
+          <param name="compile.mode" value="JIT"/>
+          <param name="jit.threshold" value="0"/>
+          <param name="reflection" value="true"/>
+      </antcall>
+  </target>
+  
+  <target name="run-junit-threadpool" depends="run-junit-interpreted-threadpool,run-junit-compiled-threadpool"/>
+  
+  <target name="run-junit-interpreted-threadpool" description="runs junit tests">
+      <antcall target="run-junit-1.8">
+          <param name="thread.pooling" value="true"/>
+      </antcall>
+  </target>
+  
+  <target name="run-junit-compiled-threadpool" description="runs junit tests">
+      <antcall target="run-junit-1.8">
+          <param name="compile.mode" value="JIT"/>
+          <param name="jit.threshold" value="0"/>
+          <param name="thread.pooling" value="true"/>
+      </antcall>
+  </target>
+  
+  <target name="run-junit-1.8" description="runs junit tests for 1.8 functionality">
+    <!-- set up properties that haven't been assigned -->
+    <property name="compile.mode" value="OFF"/>
+    <property name="jit.threshold" value="20"/>
+    <property name="objectspace.enabled" value="true"/>
+    <property name="thread.pooling" value="false"/>
+    <property name="reflection" value="false"/>
+    <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
+    
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
     <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
       <classpath>
@@ -634,9 +490,11 @@ test/externals/rubinius/spec/parser"/></antcall>
       <sysproperty key="jruby.base" value="${basedir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.compile.mode" value="JIT"/>
-      <sysproperty key="jruby.jit.threshold" value="0"/>
-      <sysproperty key="jruby.objectspace.enabled" value="true"/>
+      <sysproperty key="jruby.compile.mode" value="${compile.mode}"/>
+      <sysproperty key="jruby.jit.threshold" value="${jit.threshold}"/>
+      <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
+      <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
+      <sysproperty key="jruby.reflection" value="${reflection}"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
 
@@ -662,9 +520,17 @@ test/externals/rubinius/spec/parser"/></antcall>
     </junitreport>
   </target>
   
-  <target name="run-junit-reflected-compiled" description="runs junit tests">
+  <target name="run-junit-1.9" description="runs junit tests">
+    <!-- set up properties that haven't been assigned -->
+    <property name="compile.mode" value="OFF"/>
+    <property name="jit.threshold" value="20"/>
+    <property name="objectspace.enabled" value="false"/>
+    <property name="thread.pooling" value="false"/>
+    <property name="reflection" value="false"/>
+    <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
+    
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" haltonfailure="true" dir="${basedir}" maxmemory="256M" showoutput="true" timeout="180000">
+    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
       <classpath>
         <pathelement location="${jruby.instrumented.classes.dir}" />
         <path refid="build.classpath"/>
@@ -678,27 +544,21 @@ test/externals/rubinius/spec/parser"/></antcall>
       <sysproperty key="jruby.base" value="${basedir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.compile.mode" value="JIT"/>
-      <sysproperty key="jruby.jit.threshold" value="0"/>
-      <sysproperty key="jruby.reflection" value="true"/>
-      <sysproperty key="jruby.objectspace.enabled" value="true"/>
+      <sysproperty key="jruby.compile.mode" value="${compile.mode}"/>
+      <sysproperty key="jruby.jit.threshold" value="${jit.threshold}"/>
+      <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
+      <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
+      <sysproperty key="jruby.reflection" value="${reflection}"/>
+      <sysproperty key="jruby.compat.version" value="ruby1_9"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
-      
+
       <jvmarg value="-ea"/>
 
       <formatter type="xml"/>
-      <formatter type="brief" usefile="false" />
+      <formatter type="brief" usefile="false"/>
 
-      <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}"/>
-      <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}"/>
-      <test name="org.jruby.test.BFTSTestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.RubyTestTestSuite" todir="${test.results.dir}" />
-      <test name="org.jvyamlb.YAMLLoadTest" todir="${test.results.dir}"/>
-      <test name="org.jvyamlb.YAMLDumpTest" todir="${test.results.dir}"/>
+      <test name="org.jruby.test.Ruby1_9TestSuite" todir="${test.results.dir}" />
     </junit>
 
     <junitreport todir="${test.results.dir}">

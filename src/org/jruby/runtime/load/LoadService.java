@@ -121,9 +121,9 @@ import org.jruby.util.JRubyFile;
 public class LoadService {
     protected static final String JRUBY_BUILTIN_SUFFIX = ".rb";
 
-    protected static final String[] sourceSuffixes = { ".rb" };
+    protected static final String[] sourceSuffixes = { ".class", ".rb" };
     protected static final String[] extensionSuffixes = { ".so", ".jar" };
-    protected static final String[] allSuffixes = { ".rb", ".so", ".jar" };
+    protected static final String[] allSuffixes = { ".class", ".rb", ".so", ".jar" };
     protected static final Pattern sourcePattern = Pattern.compile("\\.(?:rb)$");
     protected static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|dll|jar)$");
 
@@ -376,9 +376,9 @@ e.printStackTrace();
         builtinLibraries.put(name, library);
     }
 
-	public void registerRubyBuiltin(String libraryName) {
-		registerBuiltin(libraryName + JRUBY_BUILTIN_SUFFIX, new BuiltinScript(libraryName));
-	}
+    public void registerRubyBuiltin(String libraryName) {
+        registerBuiltin(libraryName + JRUBY_BUILTIN_SUFFIX, new BuiltinScript(libraryName));
+    }
 
     private Library findLibrary(String file, boolean checkCWD) {
         if (builtinLibraries.containsKey(file)) {
@@ -392,6 +392,8 @@ e.printStackTrace();
 
         if (file.endsWith(".jar")) {
             return new JarredScript(resource);
+        } else if (file.endsWith(".class")) {
+            return new JavaCompiledScript(resource);
         } else {
             return new ExternalScript(resource, file);
         }
