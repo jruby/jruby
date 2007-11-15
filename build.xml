@@ -352,8 +352,10 @@
 
   <target name="test-compiled" depends="copy-test-files,run-junit-compiled"/>
   <target name="test-interpreted" depends="copy-test-files,run-junit-interpreted"/>
-  <target name="test-interpreted-1.9" depends="copy-test-files,run-junit-interpreted-1.9"/>
-  <target name="test-reflected" depends="copy-test-files,run-junit-reflected-compiled"/>
+  <target name="test-interpreted-1.9" depends="copy-test-files,run-junit-interpreted-1.9,run-junit-compiled-1.9"/>
+  <target name="test-reflected" depends="copy-test-files,run-junit-reflected-compiled,run-junit-reflected-interpreted"/>
+  
+  <target name="test-all" depends="copy-test-files,instrument,run-junit-interpreted,run-junit-compiled,run-junit-interpreted-1.9,run-junit-compiled-1.9,run-junit-reflected-interpreted,run-junit-reflected-compiled,test-spec-compiled,test-spec-interpreted,coverage-report"/>
   
   <target name="test-spec" depends="test-spec-compiled, test-spec-interpreted"/>
   
