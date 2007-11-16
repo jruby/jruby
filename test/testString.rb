@@ -639,3 +639,9 @@ class Foo
 end
 
 test_exception(TypeError){String(Foo.new)}
+
+test_no_exception do
+  a = "abc"
+  b = a[2..2]
+  b.each { |c| c + "" }
+end

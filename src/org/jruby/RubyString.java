@@ -3260,7 +3260,7 @@ public class RubyString extends RubyObject {
             if(ptr<p && strBytes[p-1] == newline &&
                (rslen <= 1 || 
                 ByteList.memcmp(rsepValue.bytes, rsepValue.begin, rslen, strBytes, p-rslen, rslen) == 0)) {
-                line = RubyString.newStringShared(getRuntime(), getMetaClass(), this.value.makeShared(s, p-s));
+                line = RubyString.newStringShared(getRuntime(), getMetaClass(), this.value.makeShared(s-ptr, p-s));
                 line.infectBy(this);
                 block.yield(tc, line);
                 modifyCheck(strBytes,len);
@@ -3272,7 +3272,7 @@ public class RubyString extends RubyObject {
             if(p > pend) {
                 p = pend;
             }
-            line = RubyString.newStringShared(getRuntime(), getMetaClass(), this.value.makeShared(s, p-s));
+            line = RubyString.newStringShared(getRuntime(), getMetaClass(), this.value.makeShared(s-ptr, p-s));
             line.infectBy(this);
             block.yield(tc, line);
         }
