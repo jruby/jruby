@@ -1434,8 +1434,7 @@ public class RubyModule extends RubyObject {
     private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility, boolean not) {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
         RubyArray ary = getRuntime().newArray();
-        HashMap<String, Boolean> undefinedMethods = new HashMap<String, Boolean>();
-        Set<String> added = new HashSet<String>();
+        Set<String> seen = new HashSet<String>();
 
         for (RubyModule type = this; type != null; type = type.getSuperClass()) {
             RubyModule realType = type.getNonIncludedClass();
@@ -1444,17 +1443,14 @@ public class RubyModule extends RubyObject {
                 DynamicMethod method = (DynamicMethod) entry.getValue();
                 String methodName = (String) entry.getKey();
 
-                if (method.isUndefined()) {
-                    undefinedMethods.put(methodName, Boolean.TRUE);
-                    continue;
-                }
-                if (method.getImplementationClass() == realType &&
-                    (!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) &&
-                    undefinedMethods.get(methodName) == null) {
+                if (! seen.contains(methodName)) {
+                    seen.add(methodName);
+                    
+                    if (method.getImplementationClass() == realType &&
+                        (!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) &&
+                        ! method.isUndefined()) {
 
-                    if (!added.contains(methodName)) {
                         ary.append(getRuntime().newString(methodName));
-                        added.add(methodName);
                     }
                 }
             }
