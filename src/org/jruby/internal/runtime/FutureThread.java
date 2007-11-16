@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
+import java.util.concurrent.CancellationException;
 import org.jruby.RubyThread;
 
 import java.util.concurrent.ExecutionException;
@@ -42,7 +43,7 @@ import java.util.concurrent.TimeoutException;
  */
 public class FutureThread implements ThreadLike {
     private Future future;
-    private Runnable runnable;
+    private RubyRunnable runnable;
     public RubyThread rubyThread;
     
     private static class DaemonThreadFactory implements ThreadFactory {
@@ -61,26 +62,79 @@ public class FutureThread implements ThreadLike {
         this.runnable = runnable;
     }
     
+    /**
+     * Starting a new thread in terms of a thread pool is just submitting it as
+     * a job to the pool.
+     */
     public void start() {
         future = executor.submit(runnable);
     }
     
+    /**
+     * In order to do a thread interrupt, we need to get the actual thread, stored
+     * in the RubyRunnable instance and tell it to interrupt. Future does not
+     * provide a mechanism for passing an interrupt to the thread running it.
+     * 
+     * If the runnable is not being executed by a thread (not yet, or already
+     * done) do nothing.
+     */
     public void interrupt() {
-        future.cancel(true);
+        if (runnable.getJavaThread() != null) {
+            runnable.getJavaThread().interrupt();
+        }
     }
     
+    /**
+     * If the future has not yet run and or is running and not yet complete.
+     * 
+     * @return 
+     */
     public boolean isAlive() {
         return future != null && !future.isDone();
     }
     
     public void join() throws InterruptedException, ExecutionException {
-        future.get();
+        try {
+            future.get();
+        } catch (CancellationException ce) {
+            // ignore; job was cancelled
+            // FIXME: is this ok?
+        }
     }
     
+    /**
+     * We check for zero millis here because Future appears to wait for zero if
+     * you pass it zero, where Thread behavior is to wait forever.
+     * 
+     * We also catch and swallow CancellationException because it means the Future
+     * was cancelled before it ran, and is therefore as done as it will ever be.
+     * 
+     * @param millis The number of millis to wait; 0 waits forever.
+     * 
+     * @throws java.lang.InterruptedException If the blocking join is interrupted
+     * by another thread.
+     * @throws java.util.concurrent.ExecutionException If an execution error is
+     * raised by the underlying Future.
+     * @throws java.util.concurrent.TimeoutException If the join timed out.
+     */
     public void join(long millis) throws InterruptedException, ExecutionException, TimeoutException {
-        future.get(millis, TimeUnit.MILLISECONDS);
+        if (millis == 0) {
+            join();
+        } else {
+            try {
+                future.get(millis, TimeUnit.MILLISECONDS);
+            } catch (CancellationException ce) {
+                // ignore; job was cancelled
+                // FIXME: Is this ok?
+            }
+        }
     }
     
+    /**
+     * Jobs from the thread pool do not support setting priorities.
+     * 
+     * @return
+     */
     public int getPriority() {
         return 1;
     }

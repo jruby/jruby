@@ -44,6 +44,7 @@ public class RubyRunnable implements Runnable {
     private RubyProc proc;
     private IRubyObject[] arguments;
     private RubyThread rubyThread;
+    private Thread javaThread;
     
     public RubyRunnable(RubyThread rubyThread, IRubyObject[] args, Block currentBlock) {
         this.rubyThread = rubyThread;
@@ -59,7 +60,12 @@ public class RubyRunnable implements Runnable {
         return rubyThread;
     }
     
+    public Thread getJavaThread() {
+        return javaThread;
+    }
+    
     public void run() {
+        javaThread = Thread.currentThread();
         runtime.getThreadService().registerNewThread(rubyThread);
         ThreadContext context = runtime.getCurrentContext();
         

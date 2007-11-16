@@ -362,12 +362,15 @@ public class RubyThread extends RubyObject {
                 threadImpl.interrupt(); // break target thread out of critical
             }
             threadImpl.join(timeoutMillis);
-        } catch (InterruptedException iExcptn) {
-            assert false : iExcptn;
-        } catch (TimeoutException iExcptn) {
-            assert false : iExcptn;
-        } catch (ExecutionException iExcptn) {
-            assert false : iExcptn;
+        } catch (InterruptedException ie) {
+            ie.printStackTrace();
+            assert false : ie;
+        } catch (TimeoutException ie) {
+            ie.printStackTrace();
+            assert false : ie;
+        } catch (ExecutionException ie) {
+            ie.printStackTrace();
+            assert false : ie;
         }
         if (exitingException != null) {
             throw exitingException;
