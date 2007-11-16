@@ -871,7 +871,15 @@ public class ASTInterpreter {
 
     private static IRubyObject dregexpNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         DRegexpNode iVisited = (DRegexpNode) node;
-   
+        
+        RubyRegexp regexp;
+        if (iVisited.getOnce()) {
+            regexp = iVisited.getOnceRegexp();
+            if (regexp != null) {
+                return regexp;
+            }
+        }
+
         RubyString string = runtime.newString(new ByteList());
         for (int i = 0; i < iVisited.size(); i++) {
             Node iterNode = iVisited.get(i);
@@ -893,12 +901,18 @@ public class ASTInterpreter {
         }
         
         try {
-            return RubyRegexp.newRegexp(runtime, string.toString(), iVisited.getOptions(), lang);
+            regexp = RubyRegexp.newRegexp(runtime, string.toString(), iVisited.getOptions(), lang);
         } catch(jregex.PatternSyntaxException e) {
         //                    System.err.println(iVisited.getValue().toString());
         //                    e.printStackTrace();
             throw runtime.newRegexpError(e.getMessage());
         }
+        
+        if (iVisited.getOnce()) {
+            iVisited.setOnceRegexp(regexp);
+        }
+
+        return regexp;
     }
     
     private static IRubyObject dStrNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

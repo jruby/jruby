@@ -1375,6 +1375,22 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void createNewRegexp(ClosureCallback createStringCallback, final int options, final String lang) {
+            boolean onceOnly = (options & ReOptions.RE_OPTION_ONCE) != 0;   // for regular expressions with the /o flag
+            Label alreadyCreated = null;
+            String regexpField = null;
+
+            // only alter the code if the /o flag was present
+            if (onceOnly) {
+                regexpField = getNewConstant(cg.ci(RubyRegexp.class), "lit_reg_");
+    
+                // in current method, load the field to see if we've created a Pattern yet
+                method.aload(THIS);
+                method.getfield(classname, regexpField, cg.ci(RubyRegexp.class));
+    
+                alreadyCreated = new Label();
+                method.ifnonnull(alreadyCreated);
+            }
+
             loadRuntime();
 
             loadRuntime();
@@ -1389,6 +1405,16 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             }
 
             method.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, RegexpPattern.class, String.class)));
+
+            // only alter the code if the /o flag was present
+            if (onceOnly) {
+                method.aload(THIS);
+                method.swap();
+                method.putfield(classname, regexpField, cg.ci(RubyRegexp.class));
+                method.label(alreadyCreated);
+                method.aload(THIS);
+                method.getfield(classname, regexpField, cg.ci(RubyRegexp.class));
+            }
         }
 
         public void pollThreadEvents() {
