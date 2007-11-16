@@ -170,3 +170,7 @@ $KCODE = old_kcode
 
 # JRUBY-1236
 test_equal(0, "\n" =~ /\s/n)
+
+# JRUBY-1552
+test_equal(1, Array('a'..'z').map { |c| c.to_s[/#{c}/o] }.compact.size)
+test_equal(26, Array('a'..'z').map { |c| c.to_s[/#{c}/] }.compact.size)

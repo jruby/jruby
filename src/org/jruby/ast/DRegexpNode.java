@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jruby.RubyRegexp;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
@@ -47,6 +48,7 @@ public class DRegexpNode extends ListNode implements ILiteralNode {
 
     private final int options;
     private final boolean once;
+    private RubyRegexp onceRegexp;
     
     public DRegexpNode(ISourcePosition position) {
         this(position, 0, false);
@@ -90,5 +92,22 @@ public class DRegexpNode extends ListNode implements ILiteralNode {
      */
     public int getOptions() {
         return options;
+    }
+
+    /**
+     * For regular expressions with /o flag
+     * @return
+     */
+    public RubyRegexp getOnceRegexp() {
+        return onceRegexp;
+    }
+    
+    /**
+     * For regular expressions with /o flag, the value in here can be used for subsequent evaluations.
+     * Setting will only succeed if it is a regular expression with /o flag, and the value hasn't been already set.
+     * @param regexp
+     */
+    public void setOnceRegexp(RubyRegexp regexp) {
+        if (once && onceRegexp == null) this.onceRegexp = regexp;
     }
 }
