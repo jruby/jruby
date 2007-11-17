@@ -756,10 +756,10 @@ public class JavaClass extends JavaObject {
             int argCount = argTypes.length;
             if (argCount == 0) {
                 if (name.startsWith("get")) {
-                    addUnassignedAlias(getRubyCasedName(javaPropertyName),assignedNames,callback);
+                    addUnassignedAlias(getRubyCasedName(name).substring(4),assignedNames,callback);
                     addUnassignedAlias(javaPropertyName,assignedNames,callback);
                 } else if (resultType == boolean.class && name.startsWith("is")) {
-                    String rubyName = getRubyCasedName(name.substring(2));
+                    String rubyName = getRubyCasedName(name).substring(3);
                     if (rubyName != null) {
                         addUnassignedAlias(rubyName,assignedNames,callback);
                         addUnassignedAlias(rubyName+'?',assignedNames,callback);
@@ -772,10 +772,10 @@ public class JavaClass extends JavaObject {
             } else if (argCount == 1) {
                 // indexed get
                 if (argTypes[0] == int.class && name.startsWith("get")) {
-                    addUnassignedAlias(getRubyCasedName(name.substring(3)),assignedNames,callback);
+                    addUnassignedAlias(getRubyCasedName(name).substring(4),assignedNames,callback);
                     addUnassignedAlias(javaPropertyName,assignedNames,callback);
                 } else if (resultType == void.class && name.startsWith("set")) {
-                    String rubyName = getRubyCasedName(name.substring(3));
+                    String rubyName = getRubyCasedName(name).substring(4);
                     if (rubyName != null) {
                         addUnassignedAlias(rubyName + '=',assignedNames,callback);
                     }
