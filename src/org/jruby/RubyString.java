@@ -2730,11 +2730,12 @@ public class RubyString extends RubyObject {
 
             if (rsObj == getRuntime().getGlobalVariables().getDefaultSeparator()) {
                 int realSize = value.realSize;
-                if ((buff[len - 1] & 0xFF) == '\n') {
+                int begin = value.begin;
+                if ((buff[begin + len - 1] & 0xFF) == '\n') {
                     realSize--;
-                    if (realSize > 0 && (buff[realSize - 1] & 0xFF) == '\r') realSize--;
+                    if (realSize > 0 && (buff[begin + realSize - 1] & 0xFF) == '\r') realSize--;
                     view(0, realSize);
-                } else if ((buff[len - 1] & 0xFF) == '\r') {
+                } else if ((buff[begin + len - 1] & 0xFF) == '\r') {
                     realSize--;
                     view(0, realSize);
                 } else {
@@ -2751,14 +2752,15 @@ public class RubyString extends RubyObject {
 
         RubyString rs = rsObj.convertToString();
         int len = value.realSize;
+        int begin = value.begin;
         if (len == 0) return getRuntime().getNil();
         byte[]buff = value.bytes;
         int rslen = rs.value.realSize;
 
         if (rslen == 0) {
-            while (len > 0 && (buff[len - 1] & 0xFF) == '\n') {
+            while (len > 0 && (buff[begin + len - 1] & 0xFF) == '\n') {
                 len--;
-                if (len > 0 && (buff[len - 1] & 0xFF) == '\r') len--;
+                if (len > 0 && (buff[begin + len - 1] & 0xFF) == '\r') len--;
             }
             if (len < value.realSize) {
                 view(0, len);
@@ -2773,11 +2775,11 @@ public class RubyString extends RubyObject {
         if (rslen == 1 && newline == '\n') {
             buff = value.bytes;
             int realSize = value.realSize;
-            if ((buff[len - 1] & 0xFF) == '\n') {
+            if ((buff[begin + len - 1] & 0xFF) == '\n') {
                 realSize--;
-                if (realSize > 0 && (buff[realSize - 1] & 0xFF) == '\r') realSize--;
+                if (realSize > 0 && (buff[begin + realSize - 1] & 0xFF) == '\r') realSize--;
                 view(0, realSize);
-            } else if ((buff[len - 1] & 0xFF) == '\r') {
+            } else if ((buff[begin + len - 1] & 0xFF) == '\r') {
                 realSize--;
                 view(0, realSize);
             } else {
@@ -2787,7 +2789,7 @@ public class RubyString extends RubyObject {
             return this;                
         }
 
-        if ((buff[len - 1] & 0xFF) == newline && rslen <= 1 || value.endsWith(rs.value)) {
+        if ((buff[begin + len - 1] & 0xFF) == newline && rslen <= 1 || value.endsWith(rs.value)) {
             view(0, value.realSize - rslen);
             return this;            
         }

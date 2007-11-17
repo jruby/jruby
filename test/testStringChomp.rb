@@ -102,3 +102,10 @@ test_ok(("LFCR" + LF + CR).chomp(LF + CR) == "LFCR") # HAL9000
 
 test_ok("No line ending".chomp("llo") == "No line ending")  
 
+# JRUBY-1532
+test_ok(%w[ aa|b|c| d|e|f| g|h|i| ] == "aa|b|c|\nd|e|f|\ng|h|i|".map { |line| line.chomp })
+test_ok(%w[ aa|b|c| d|e|f| g|h|i| ] == "aa|b|c|\nd|e|f|\ng|h|i|".map { |line| line.chomp "" })
+test_ok(%w[ aa|b|c| d|e|f| g|h|i| ] == "aa|b|c|\nd|e|f|\ng|h|i|".map { |line| line.chomp "\n" })
+test_ok([ "aa|b|c|\n", "d|e|f|\n", "g|h|i|" ] == "aa|b|c|\nd|e|f|\ng|h|i|".map { |line| line.chomp "xxx" })
+test_ok(%w[ aa|b|c| d|e|f| g|h|i| ] == "aa|b|c|xxx\nd|e|f|xxx\ng|h|i|".map { |line| line.chomp "xxx\n" })
+
