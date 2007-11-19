@@ -155,9 +155,7 @@
                 </delete>
                 <jarjar destfile="${project.build.directory}/${project.build.finalName}.jar">
                   <fileset dir="${project.build.outputDirectory}">
-                    <include name="**/*.class"/>
-                    <include name="**/*.properties"/>
-                    <include name="**/*.rb"/>
+                    <include name="**/*"/>
                     <exclude name="org/jruby/util/ant/**/*.class"/>
                   </fileset>
                   <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
