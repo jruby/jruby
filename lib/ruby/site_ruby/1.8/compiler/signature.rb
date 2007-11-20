@@ -1,6 +1,6 @@
-include Java
-
 module Compiler
+  include Java
+
   module JavaTypes
     import java.lang.Object
     import java.lang.Byte
