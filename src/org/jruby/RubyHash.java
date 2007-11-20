@@ -238,9 +238,9 @@ public class RubyHash extends RubyObject implements Map {
             IRubyObject oldValue = this.value;
             if (value instanceof IRubyObject) {
                 this.value = (IRubyObject)value;
-        } else {
+            } else {
                 throw new UnsupportedOperationException("directEntrySet() doesn't support setValue for non IRubyObject instance entries, convert them manually or use entrySet() instead");
-                }
+            }
             return oldValue;
         }
         public boolean equals(Object other){
