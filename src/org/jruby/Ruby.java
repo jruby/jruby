@@ -138,6 +138,9 @@ public final class Ruby {
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
     private final boolean objectSpaceEnabled;
+    
+    private static ThreadLocal<Ruby> currentRuntime = new ThreadLocal<Ruby>();
+    public static final boolean RUNTIME_THREADLOCAL = Boolean.getBoolean("jruby.runtime.threadlocal");
 
     private long globalState = 1;
 
@@ -330,7 +333,18 @@ public final class Ruby {
     public static Ruby newInstance(RubyInstanceConfig config) {
         Ruby ruby = new Ruby(config);
         ruby.init();
+        if (RUNTIME_THREADLOCAL) {
+            setCurrentInstance(ruby);
+        }
         return ruby;
+    }
+    
+    public static Ruby getCurrentInstance() {
+        return currentRuntime.get();
+    }
+    
+    public static void setCurrentInstance(Ruby runtime) {
+        currentRuntime.set(runtime);
     }
 
     /**

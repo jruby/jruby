@@ -108,16 +108,6 @@ public final class IncludedModuleWrapper extends RubyClass {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
-    @Deprecated
-    public Map getInstanceVariables() {
-        return delegate.getInstanceVariables();
-    }
-
-    @Deprecated
-    public void setInstanceVariables(Map newMethods) {
-        throw new UnsupportedOperationException("An included class is only a wrapper for a module");
-    }
-
     public String getName() {
 		return delegate.getName();
     }

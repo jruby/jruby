@@ -501,37 +501,4 @@ public interface IRubyObject {
      * @return a list of all variable names (ivar/cvar/constant/internal)
      */
     List<String> getVariableNameList();
-
-    /**
-     * @return all variables (ivar/cvar/constant/internal) as a HashMap.
-     *         This is a snapshot, not the store itself.  Provided mostly
-     *         to ease transition to new variables mechanism. May be 
-     *         deprecated in the near future -- call the appropriate 
-     *         getXxxList method for future compatiblity.
-     */
-    @Deprecated // born deprecated
-    Map getVariableMap();
-
-    //
-    // DEPRECATED METHODS
-    //
-    
-    @Deprecated
-    Map getInstanceVariables();
-    
-    @Deprecated
-    Map getInstanceVariablesSnapshot();
-    
-    @Deprecated
-    Iterator instanceVariableNames();
-   
-    @Deprecated
-    Map safeGetInstanceVariables();
-    
-    @Deprecated
-    boolean safeHasInstanceVariables();
-        
-    @Deprecated
-    void setInstanceVariables(Map instanceVariables);
-    
 }

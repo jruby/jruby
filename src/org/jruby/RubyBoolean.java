@@ -59,7 +59,11 @@ public class RubyBoolean extends RubyObject {
     }
     
     public Ruby getRuntime() {
-        return runtime;
+        if (Ruby.RUNTIME_THREADLOCAL) {
+            return Ruby.getCurrentInstance();
+        } else {
+            return runtime;
+        }
     }
     
     public boolean isImmediate() {

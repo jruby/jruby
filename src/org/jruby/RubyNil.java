@@ -52,7 +52,11 @@ public class RubyNil extends RubyObject {
     }
     
     public Ruby getRuntime() {
-        return runtime;
+        if (Ruby.RUNTIME_THREADLOCAL) {
+            return Ruby.getCurrentInstance();
+        } else {
+            return runtime;
+        }
     }
     
     public static ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
@@ -92,11 +96,6 @@ public class RubyNil extends RubyObject {
 
     public RubyClass getSingletonClass() {
         return metaClass;
-    }
-
-    @Deprecated
-    public boolean safeHasInstanceVariables() {
-        return false;
     }
     
     // Methods of the Nil Class (nil_*):

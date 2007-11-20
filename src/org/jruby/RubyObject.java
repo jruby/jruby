@@ -39,6 +39,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
@@ -72,14 +78,15 @@ import org.jruby.runtime.MethodIndex;
  *
  * @author  jpetersen
  */
-public class RubyObject implements Cloneable, IRubyObject {
+public class RubyObject implements Cloneable, IRubyObject, Serializable {
     
     private RubyObject(){};
     // An instance that never equals any other instance
     public static final IRubyObject NEVER = new RubyObject();
     
     // The class of this object
-    protected RubyClass metaClass;
+    protected transient RubyClass metaClass;
+    protected String metaClassName;
 
     /**
      * The variableTable contains variables for an object, defined as:
@@ -128,7 +135,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         return (flags & flag) != 0;
     }
     
-    private Finalizer finalizer;
+    private transient Finalizer finalizer;
     
     public class Finalizer implements Finalizable {
         private long id;
@@ -176,6 +183,9 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         this.metaClass = metaClass;
+        if (Ruby.RUNTIME_THREADLOCAL && metaClass != null) {
+            metaClassName = metaClass.classId;
+        }
 
         if (useObjectSpace) {
             assert runtime.isObjectSpaceEnabled();
@@ -279,7 +289,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @return Value of property ruby.
      */
     public Ruby getRuntime() {
-        return metaClass.getRuntime();
+        return getMetaClass().getRuntime();
     }
 
     /**
@@ -287,11 +297,18 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public final RubyClass getMetaClass() {
+        if (Ruby.RUNTIME_THREADLOCAL && metaClass == null && metaClassName != null) {
+            // this should only happen when we're persisting objects, so go after getCurrentInstance directly
+            metaClass = Ruby.getCurrentInstance().getClass(metaClassName);
+        }
         return metaClass;
     }
 
     public void setMetaClass(RubyClass metaClass) {
         this.metaClass = metaClass;
+        if (Ruby.RUNTIME_THREADLOCAL && metaClass != null) {
+            metaClassName = metaClass.classId;
+        }
     }
 
     /**
@@ -1935,51 +1952,28 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
         return map;
     }
-    
-    //
-    // DEPRECATED METHODS
-    //
 
-    @Deprecated
-    public Map getInstanceVariables() {
-        getRuntime().getWarnings().warn("internal: deprecated getInstanceVariables() called");
-        return variableTableGetMap();
+    // NOTE: Serialization is primarily supported for testing purposes, and there is no general
+    // guarantee that serialization will work correctly. Specifically, instance variables pointing
+    // at symbols, threads, modules, classes, and other unserializable types are not detected.
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+        // write out ivar count followed by name/value pairs
+        List<String> names = getInstanceVariableNameList();
+        out.writeInt(names.size());
+        for (String name : names) {
+            out.writeObject(name);
+            out.writeObject(getInstanceVariable(name));
+        }
     }
 
-    @Deprecated
-    public Map getInstanceVariablesSnapshot() {
-        getRuntime().getWarnings().warn("internal: deprecated getInstanceVariablesSnapshot() called");
-        return variableTableGetMap();
-    }
-
-    @Deprecated
-    public Iterator instanceVariableNames() {
-        getRuntime().getWarnings().warn("internal: deprecated instanceVariableNames() called");
-        return variableTableGetMap().keySet().iterator();
-    }
-
-    @Deprecated
-    public Map safeGetInstanceVariables() {
-        getRuntime().getWarnings().warn("internal: deprecated safeGetInstanceVariables() called");
-        return variableTableGetMap();
-    }
-
-    @Deprecated
-    public boolean safeHasInstanceVariables() {
-        getRuntime().getWarnings().warn("internal: deprecated safeHasInstanceVariables() called");
-        return variableTable != null && variableTableSize > 0;
-    }
-    
-    @Deprecated // allowed message customization for cvar/constant errors; built in to cvar/constant logic now
-    public IRubyObject setInstanceVariable(String name, IRubyObject value,
-            String taintError, String freezeError) { 
-        // probably no one using this now, it was mainly internal
-        throw new UnsupportedOperationException("deprecated");
-    }
-
-    @Deprecated
-    public void setInstanceVariables(Map instanceVariables) {
-        throw new UnsupportedOperationException("deprecated - use syncVariables()");
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        // rest in ivar count followed by name/value pairs
+        int ivarCount = in.readInt();
+        for (int i = 0; i < ivarCount; i++) {
+            setInstanceVariable((String)in.readObject(), (IRubyObject)in.readObject());
+        }
     }
 
 }

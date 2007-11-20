@@ -347,7 +347,15 @@
     </emma>
   </target>
 
-  <target name="test" depends="copy-test-files,instrument,run-junit-compiled,run-junit-interpreted,run-junit-interpreted-1.9,test-spec-compiled,test-spec-interpreted,coverage-report">
+  <target name="test" depends="
+    copy-test-files,
+    instrument,
+    run-junit-compiled,
+    run-junit-interpreted,
+    run-junit-interpreted-1.9,
+    test-spec-compiled,
+    test-spec-interpreted,
+    coverage-report">
   </target>
 
   <target name="test-compiled" depends="copy-test-files,run-junit-compiled"/>
@@ -356,7 +364,22 @@
   <target name="test-reflected" depends="copy-test-files,run-junit-reflected-compiled,run-junit-reflected-interpreted"/>
   <target name="test-threadpool" depends="copy-test-files,run-junit-compiled-threadpool,run-junit-interpreted-threadpool"/>
   
-  <target name="test-all" depends="copy-test-files,instrument,run-junit-interpreted,run-junit-compiled,run-junit-interpreted-1.9,run-junit-compiled-1.9,run-junit-reflected-interpreted,run-junit-reflected-compiled,run-junit-compiled-threadpool,run-junit-interpreted-threadpool,test-spec-compiled,test-spec-interpreted,coverage-report"/>
+  <target name="test-all" depends="
+      copy-test-files,
+      instrument,
+      run-junit-interpreted,
+      run-junit-compiled,
+      run-junit-interpreted-1.9,
+      run-junit-compiled-1.9,
+      run-junit-reflected-interpreted,
+      run-junit-reflected-compiled,
+      run-junit-compiled-threadpool,
+      run-junit-interpreted-threadpool,
+      run-junit-object-persistence,
+      test-spec-compiled,
+      test-spec-interpreted,
+      coverage-report
+  "/>
   
   <target name="test-spec" depends="test-spec-compiled, test-spec-interpreted"/>
   
@@ -469,6 +492,16 @@ test/externals/rubinius/spec/parser"/>
       </antcall>
   </target>
   
+  <path id="test.class.path">
+    <pathelement location="${jruby.instrumented.classes.dir}" />
+    <path refid="build.classpath"/>
+    <pathelement path="${java.class.path}"/>
+    <pathelement path="${lib.dir}/jruby.jar"/>
+    <pathelement location="${test.classes.dir}"/>
+    <pathelement path="${test.dir}/requireTest.jar"/>
+    <pathelement location="${test.dir}"/>
+  </path>
+  
   <target name="run-junit-1.8" description="runs junit tests for 1.8 functionality">
     <!-- set up properties that haven't been assigned -->
     <property name="compile.mode" value="OFF"/>
@@ -480,15 +513,8 @@ test/externals/rubinius/spec/parser"/>
     
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
     <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
-      <classpath>
-        <pathelement location="${jruby.instrumented.classes.dir}" />
-        <path refid="build.classpath"/>
-        <pathelement path="${java.class.path}"/>
-        <pathelement path="${lib.dir}/jruby.jar"/>
-        <pathelement location="${test.classes.dir}"/>
-        <pathelement path="${test.dir}/requireTest.jar"/>
-        <pathelement location="${test.dir}"/>
-      </classpath>
+      <classpath refid="test.class.path"/>
+      
       <sysproperty key="java.awt.headless" value="true"/>
       <sysproperty key="jruby.base" value="${basedir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
@@ -534,15 +560,8 @@ test/externals/rubinius/spec/parser"/>
     
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
     <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
-      <classpath>
-        <pathelement location="${jruby.instrumented.classes.dir}" />
-        <path refid="build.classpath"/>
-        <pathelement path="${java.class.path}"/>
-        <pathelement path="${lib.dir}/jruby.jar"/>
-        <pathelement location="${test.classes.dir}"/>
-        <pathelement path="${test.dir}/requireTest.jar"/>
-        <pathelement location="${test.dir}"/>
-      </classpath>
+      <classpath refid="test.class.path"/>
+      
       <sysproperty key="java.awt.headless" value="true"/>
       <sysproperty key="jruby.base" value="${basedir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
@@ -562,6 +581,41 @@ test/externals/rubinius/spec/parser"/>
       <formatter type="brief" usefile="false"/>
 
       <test name="org.jruby.test.Ruby1_9TestSuite" todir="${test.results.dir}" />
+    </junit>
+
+    <junitreport todir="${test.results.dir}">
+      <fileset dir="${test.results.dir}" includes="TEST-*.xml"/>
+      <report format="frames" todir="${html.test.results.dir}"/>
+    </junitreport>
+  </target>
+  
+  <target name="run-junit-object-persistence" description="runs junit tests for object persistence support">
+    <!-- set up properties that haven't been assigned -->
+    <property name="compile.mode" value="OFF"/>
+    <property name="jit.threshold" value="20"/>
+    <property name="objectspace.enabled" value="false"/>
+    <property name="thread.pooling" value="false"/>
+    <property name="reflection" value="false"/>
+    <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
+    
+    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
+    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
+      <classpath refid="test.class.path"/>
+      
+      <sysproperty key="java.awt.headless" value="true"/>
+      <sysproperty key="jruby.base" value="${basedir}"/>
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      <sysproperty key="jruby.lib" value="${lib.dir}"/>
+      <sysproperty key="jruby.runtime.threadlocal" value="true"/>
+      <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
+      <sysproperty key="emma.coverage.out.merge" value="true" />
+
+      <jvmarg value="-ea"/>
+
+      <formatter type="xml"/>
+      <formatter type="brief" usefile="false"/>
+
+      <test name="org.jruby.test.ObjectPersistenceTestSuite" todir="${test.results.dir}" />
     </junit>
 
     <junitreport todir="${test.results.dir}">
