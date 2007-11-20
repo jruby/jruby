@@ -109,4 +109,8 @@ class TestBytecode < Test::Unit::TestCase
   def test_table_switch
     assert_equal([:visit_table_switch_insn, :a, :b, :c, :d], (tableswitch :a, :b, :c, :d))
   end
+  
+  def test_label
+    assert_equal([:visit_label, :a], (label :a))
+  end
 end

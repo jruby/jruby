@@ -61,6 +61,10 @@ module Compiler
       method_visitor.visit_try_catch_block(from, to, target, type) 
     end
     
+    def label(lbl)
+      method_visitor.visit_label(lbl)
+    end
+    
     def aprintln
       dup
       getstatic Signature.p(System), "out", Signature.ci(PrintStream)
