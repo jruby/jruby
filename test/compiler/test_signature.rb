@@ -17,8 +17,9 @@ class TestSignature < Test::Unit::TestCase
 
   Signature = Compiler::Signature
   
-  def test_classname(path)
-    assert_equal("java.util.ArrayList", "java/util/ArrayList")
+  def test_classname
+    assert_equal("java.util.ArrayList", Signature.classname("java/util/ArrayList"))
+    assert_equal("java.util.ArrayList", Signature.c("java/util/ArrayList"))
   end
   
   def test_path
