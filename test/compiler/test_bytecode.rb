@@ -6,6 +6,8 @@ class TestBytecode < Test::Unit::TestCase
   
   import "jruby.objectweb.asm.Opcodes"
   import java.lang.System
+  import java.lang.Integer
+  import java.lang.Void
   
   class DummyMethod
     def method_missing(sym, *args)
@@ -28,10 +30,21 @@ class TestBytecode < Test::Unit::TestCase
   end
   
   def test_method_insns
-    assert_equal([:visit_method_insn, Opcodes::INVOKESTATIC, :a, :b, :c], (invokestatic :a, :b, :c))
-    assert_equal([:visit_method_insn, Opcodes::INVOKEVIRTUAL, :a, :b, :c], (invokevirtual :a, :b, :c))
-    assert_equal([:visit_method_insn, Opcodes::INVOKEINTERFACE, :a, :b, :c], (invokeinterface :a, :b, :c))
-    assert_equal([:visit_method_insn, Opcodes::INVOKESPECIAL, :a, :b, :c], (invokespecial :a, :b, :c))
+    assert_equal(
+      [:visit_method_insn, Opcodes::INVOKESTATIC, "java/lang/Integer", "b", "(Ljava/lang/System;)Ljava/lang/Integer;"],
+      (invokestatic Integer, :b, [Integer, System]))
+    assert_equal(
+      [:visit_method_insn, Opcodes::INVOKESTATIC, "java/lang/Integer", "b", "()Ljava/lang/Integer;"],
+      (invokestatic Integer, :b, Integer))
+    assert_equal(
+      [:visit_method_insn, Opcodes::INVOKEVIRTUAL, "java/lang/Integer", "b", "(Ljava/lang/System;)Ljava/lang/Integer;"],
+      (invokevirtual Integer, :b, [Integer, System]))
+    assert_equal(
+      [:visit_method_insn, Opcodes::INVOKEINTERFACE, "java/lang/Integer", "b", "(Ljava/lang/System;)Ljava/lang/Integer;"],
+      (invokeinterface Integer, :b, [Integer, System]))
+    assert_equal(
+      [:visit_method_insn, Opcodes::INVOKESPECIAL, "java/lang/Integer", "b", "(Ljava/lang/System;)Ljava/lang/Integer;"],
+      (invokespecial Integer, :b, [Integer, System]))
   end
   
   def test_return
@@ -76,10 +89,10 @@ class TestBytecode < Test::Unit::TestCase
   end
   
   def test_field_insns
-    assert_equal([:visit_field_insn, Opcodes::GETFIELD, :a, :b, :c], (getfield :a, :b, :c))
-    assert_equal([:visit_field_insn, Opcodes::PUTFIELD, :a, :b, :c], (putfield :a, :b, :c))
-    assert_equal([:visit_field_insn, Opcodes::GETSTATIC, :a, :b, :c], (getstatic :a, :b, :c))
-    assert_equal([:visit_field_insn, Opcodes::PUTSTATIC, :a, :b, :c], (putstatic :a, :b, :c))
+    assert_equal([:visit_field_insn, Opcodes::GETFIELD, "java/lang/Integer", "b", "Ljava/lang/System;"], (getfield Integer, :b, System))
+    assert_equal([:visit_field_insn, Opcodes::PUTFIELD, "java/lang/Integer", "b", "Ljava/lang/System;"], (putfield Integer, :b, System))
+    assert_equal([:visit_field_insn, Opcodes::GETSTATIC, "java/lang/Integer", "b", "Ljava/lang/System;"], (getstatic Integer, :b, System))
+    assert_equal([:visit_field_insn, Opcodes::PUTSTATIC, "java/lang/Integer", "b", "Ljava/lang/System;"], (putstatic Integer, :b, System))
   end
   
   def test_trycatch

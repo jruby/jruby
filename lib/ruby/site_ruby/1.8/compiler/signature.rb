@@ -17,15 +17,14 @@ module Compiler
     def classname(path)
       path.gsub('/', '.')
     end
-    alias c classname
-    module_function :classname, :c
+    module_function :classname
     
     def path(cls)
+      return cls if String === cls
       cls = cls.java_class if Class === cls
       cls.name.gsub('.', '/')
     end
-    alias p path
-    module_function :path, :p
+    module_function :path
     
     def class_id(cls)
       cls = cls.java_class if Class === cls
@@ -87,9 +86,10 @@ module Compiler
     alias ci class_id
     module_function :class_id, :ci
     
-    def signature(return_class, *arg_classes)
+    def signature(*sig_classes)
+      return_class = sig_classes.shift
       sig_string = "("
-      arg_classes.each {|arg_class| sig_string << class_id(arg_class)}
+      sig_classes.each {|arg_class| sig_string << class_id(arg_class)}
       sig_string << ")#{class_id(return_class)}"
     end
     alias sig signature
