@@ -246,7 +246,7 @@ public class RubyHash extends RubyObject implements Map {
         public boolean equals(Object other){
             if(!(other instanceof RubyHashEntry)) return false;
             RubyHashEntry otherEntry = (RubyHashEntry)other;
-            if(key == otherEntry.key && key != NEVER && key.eql(otherEntry.key)){
+            if(key == otherEntry.key && key != NEVER && callEql(key, otherEntry.key)){
                 if(value == otherEntry.value || value.equals(otherEntry.value)) return true;
             }
             return false;
@@ -254,6 +254,10 @@ public class RubyHash extends RubyObject implements Map {
         public int hashCode(){
             return key.hashCode() ^ value.hashCode();
         }
+    }
+    
+    private static boolean callEql(IRubyObject first, IRubyObject second) {
+        return first.callMethod(first.getRuntime().getCurrentContext(), MethodIndex.EQL_P, "eql?", second).isTrue();
     }
 
     private static int JavaSoftHashValue(int h) {
@@ -352,7 +356,7 @@ public class RubyHash extends RubyObject implements Map {
         if (checkForExisting) {
             for (RubyHashEntry entry = table[i]; entry != null; entry = entry.next) {
                 IRubyObject k;
-                if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) {
+                if (entry.hash == hash && ((k = entry.key) == key || callEql(key, k))) {
                     entry.value = value;
                     return;
                 }
@@ -373,7 +377,7 @@ public class RubyHash extends RubyObject implements Map {
         final int hash = hashValue(key.hashCode());
         for (RubyHashEntry entry = table[bucketIndex(hash, table.length)]; entry != null; entry = entry.next) {
             IRubyObject k;
-            if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) return entry;
+            if (entry.hash == hash && ((k = entry.key) == key || callEql(key, k))) return entry;
         }
         return NO_ENTRY;
     }
@@ -424,7 +428,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final EntryMatchType MATCH_KEY = new EntryMatchType() {
         public boolean matches(final RubyHashEntry entry, final Object obj) {
             final IRubyObject key = entry.key;
-            return obj == key || ((IRubyObject)obj).eql(key);
+            return obj == key || callEql(((IRubyObject)obj), key);
         }
     };
 
@@ -1492,7 +1496,7 @@ public class RubyHash extends RubyObject implements Map {
         public boolean equals(Object other){
             if(!(other instanceof RubyHashEntry)) return false;
             RubyHashEntry otherEntry = (RubyHashEntry)other;
-            if(entry.key != NEVER && entry.key == otherEntry.key && entry.key.eql(otherEntry.key)){
+            if(entry.key != NEVER && entry.key == otherEntry.key && callEql(entry.key, otherEntry.key)){
                 if(entry.value == otherEntry.value || entry.value.equals(otherEntry.value)) return true;
             }
             return false;

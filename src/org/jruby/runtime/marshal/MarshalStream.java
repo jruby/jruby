@@ -217,7 +217,7 @@ public class MarshalStream extends FilterOutputStream {
             RubyBignum.marshalTo((RubyBignum)value, this);
             break;
         case ClassIndex.CLASS:
-            if (value.isSingleton()) throw runtime.newTypeError("singleton class can't be dumped");
+            if (((RubyClass)value).isSingleton()) throw runtime.newTypeError("singleton class can't be dumped");
             write('c');
             RubyClass.marshalTo((RubyClass)value, this);
             break;

@@ -231,10 +231,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
     public boolean isClass() {
         return false;
     }
-    
-    public boolean isSingleton() {
-        return false;
-    }    
 
     /*
      *  Is object immediate (def: Fixnum, Symbol, true, false, nil?).
@@ -251,13 +247,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
         setMetaClass(klass);
 
         klass.setAttached(this);
-
-        if (isSingleton()) { // could be pulled down to RubyClass in future
-            klass.setMetaClass(klass);
-            klass.setSuperClass(((RubyClass)this).getSuperClass().getRealClass().getMetaClass());
-        } else {
-            klass.setMetaClass(superClass.getRealClass().getMetaClass());
-        }
+        klass.setMetaClass(superClass.getRealClass().getMetaClass());
 
         return klass;
     }
@@ -476,17 +466,11 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg) {
         return callMethod(context, getMetaClass(), name, new IRubyObject[] { arg }, CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
-    public IRubyObject callMethod(ThreadContext context, String name, Block block) {
-        return callMethod(context, getMetaClass(), name, IRubyObject.NULL_ARRAY, null, block);
-    }
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args) {
         return callMethod(context, getMetaClass(), name, args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block) {
         return callMethod(context, getMetaClass(), name, args, CallType.FUNCTIONAL, block);
-    }
-    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType) {
-        return callMethod(context, getMetaClass(), name, args, callType, Block.NULL_BLOCK);
     }
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType, Block block) {
         return callMethod(context, getMetaClass(), name, args, callType, block);
@@ -499,9 +483,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
     }
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args) {
         return callMethod(context,getMetaClass(),methodIndex,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
-    }
-    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args, CallType callType) {
-        return callMethod(context,getMetaClass(),methodIndex,name,args,callType, Block.NULL_BLOCK);
     }
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name, IRubyObject[] args, CallType callType) {
         return callMethod(context, rubyclass, methodIndex, name, args, callType, Block.NULL_BLOCK);
@@ -849,16 +830,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
     protected static IRubyObject equalInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
         if (that == other) return that.getRuntime().getTrue();
         return that.callMethod(context, MethodIndex.EQUALEQUAL, "==", other);
-    }
-
-    /** rb_eql
-     *  this method is not defind for Ruby objects directly.
-     *  notably overriden by RubyFixnum, RubyString, RubySymbol - these do a short-circuit calls.
-     *  see: rb_any_cmp() in hash.c
-     *  do not confuse this method with eql_p methods (which it calls by default), eql is mainly used for hash key comparison 
-     */
-    public boolean eql(IRubyObject other) {
-        return callMethod(getRuntime().getCurrentContext(), MethodIndex.EQL_P, "eql?", other).isTrue();
     }
 
     protected static boolean eqlInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){

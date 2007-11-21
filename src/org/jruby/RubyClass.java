@@ -197,6 +197,24 @@ public class RubyClass extends RubyModule {
         return clazz;
     }
 
+    /** rb_make_metaclass
+     *
+     */
+    public RubyClass makeMetaClass(RubyClass superClass) {
+        if (isSingleton()) { // could be pulled down to RubyClass in future
+            MetaClass klass = new MetaClass(getRuntime(), superClass); // rb_class_boot
+            setMetaClass(klass);
+
+            klass.setAttached(this);
+            klass.setMetaClass(klass);
+            klass.setSuperClass(getSuperClass().getRealClass().getMetaClass());
+            
+            return klass;
+        } else {
+            return super.makeMetaClass(superClass);
+        }
+    }
+
     /** rb_class_new_instance
     *
     */
@@ -335,7 +353,7 @@ public class RubyClass extends RubyModule {
         if (!(superClass instanceof RubyClass)) {
             throw superClass.getRuntime().newTypeError("superclass must be a Class (" + superClass.getMetaClass() + " given)"); 
         }
-        if (superClass.isSingleton()) {
+        if (((RubyClass)superClass).isSingleton()) {
             throw superClass.getRuntime().newTypeError("can't make subclass of virtual class");
         }        
     }

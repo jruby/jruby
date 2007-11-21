@@ -725,7 +725,7 @@ public class ASTInterpreter {
             if (result instanceof RubyModule) {
                 return ((RubyModule) result).fastGetConstantFrom(iVisited.getName());
             } else {
-                return result.callMethod(context, iVisited.getName(), aBlock);
+                return result.callMethod(context, iVisited.getName(), IRubyObject.NULL_ARRAY, aBlock);
             }
         }
     }

@@ -76,16 +76,13 @@ public interface IRubyObject {
     public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block);
 
     public IRubyObject callMethod(ThreadContext context, String name);
-    public IRubyObject callMethod(ThreadContext context, String name, Block block);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block);
-    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType, Block block);
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name);
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg);
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args);
-    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args, CallType callType);
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name, IRubyObject[] args, CallType callType, Block block);
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block);
     
@@ -328,11 +325,6 @@ public interface IRubyObject {
      * If is_a? semantics is required, use <code>(someObject instanceof RubyClass/MetaClass)</code> instead.
      */
     boolean isClass();
-
-    /**
-     * @return true if an object is a Ruby singleton class  
-     */
-    boolean isSingleton();
     
     /**
      * Our version of Data_Wrap_Struct.
@@ -360,9 +352,7 @@ public interface IRubyObject {
     IRubyObject id();
     
     
-    public IRubyObject op_equal(IRubyObject other); 
-
-    public boolean eql(IRubyObject other);
+    public IRubyObject op_equal(IRubyObject other);
 
     public void addFinalizer(RubyProc finalizer);
 
