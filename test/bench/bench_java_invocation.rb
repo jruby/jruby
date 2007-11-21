@@ -75,3 +75,16 @@ puts "Measure Fixnum#to_s, String being constructed"
     }
   }
 }
+
+
+puts "Measure Integer.valueOf, overloaded call with a primitive"
+5.times {
+  puts Benchmark.measure {
+    integer = java.lang.Integer
+    x = 1
+    1000000.times {
+      integer.valueOf(x)
+    }
+  }
+}
+    
