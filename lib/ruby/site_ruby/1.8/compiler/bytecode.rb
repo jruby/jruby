@@ -22,7 +22,8 @@ module Compiler
         # variable instructions
         eval "def #{const_down}(var); method_visitor.visit_var_insn(Opcodes::#{const_name}, var); end"
       when "LDC"
-        # constant loading
+        # constant loading is tricky because overloaded invocation is pretty bad in JRuby
+        def ldc_int(value); method_visitor.visit_ldc_insn(java.lang.Integer.new(value)); end
         eval "def #{const_down}(value); method_visitor.visit_ldc_insn(value); end"
       when "INVOKESTATIC", "INVOKEVIRTUAL", "INVOKEINTERFACE", "INVOKESPECIAL"
         # method instructions
@@ -38,7 +39,7 @@ module Compiler
         eval "def #{const_down}; method_visitor.visit_insn(Opcodes::#{const_name}); end"
       when "NEW", "ANEWARRAY", "NEWARRAY", "INSTANCEOF", "CHECKCAST"
         # type instructions
-        eval("def #{const_down}(type); method_visitor.visit_type_insn(Opcodes::#{const_name}, type); end")
+        eval("def #{const_down}(type); method_visitor.visit_type_insn(Opcodes::#{const_name}, path(type)); end")
       when "GETFIELD", "PUTFIELD", "GETSTATIC", "PUTSTATIC"
         # field instructions
         eval("def #{const_down}(type, name, field_sig); method_visitor.visit_field_insn(Opcodes::#{const_name}, path(type), name.to_s, ci(*field_sig)); end")

@@ -18,7 +18,7 @@ module Compiler
       
       interface_paths = []
       interfaces.each {|interface| interface_paths << path(interface)}
-      @class_writer.visit(1, 1, class_name, nil, path(superclass), interface_paths.to_java(:string))
+      @class_writer.visit(V1_4, ACC_PUBLIC | ACC_SUPER, class_name, nil, path(superclass), interface_paths.to_java(:string))
       @class_writer.visit_source(file_name, nil)
     end
     
@@ -26,6 +26,10 @@ module Compiler
       cb = ClassBuilder.new(class_name, file_name, superclass, *interfaces)
       cb.instance_eval &block
       cb
+    end
+    
+    def field(name, type)
+      @class_writer.visitField(ACC_PUBLIC, name.to_s, ci(type), nil, nil)
     end
     
     def write(filename)
@@ -45,6 +49,25 @@ module Compiler
     
     def static_method(name, *signature, &block)
       MethodBuilder.build(self, ACC_PUBLIC | ACC_STATIC, name.to_s, signature, &block)
+    end
+    
+    # name for signature generation using the class being generated
+    def name
+      @class_name
+    end
+    
+    # never generating an array
+    def array?
+      false
+    end
+    
+    # never generating a primitive
+    def primitive?
+      false
+    end
+    
+    def this
+      self
     end
     
     def new_method(modifiers, name, signature)
@@ -71,6 +94,10 @@ module Compiler
       mb.start
       mb.instance_eval &block
       mb.stop
+    end
+    
+    def this
+      @class_builder
     end
   end
 end
