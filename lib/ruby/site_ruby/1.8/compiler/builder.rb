@@ -25,16 +25,15 @@ module Compiler
     def self.build(class_name, file_name, superclass = java.lang.Object, *interfaces, &block)
       cb = ClassBuilder.new(class_name, file_name, superclass, *interfaces)
       cb.instance_eval &block
-      cb
+      cb.generate
+    end
+    
+    def generate
+      String.from_java_bytes(@class_writer.to_byte_array)
     end
     
     def field(name, type)
       @class_writer.visitField(ACC_PUBLIC, name.to_s, ci(type), nil, nil)
-    end
-    
-    def write(filename)
-      bytes = @class_writer.to_byte_array
-      File.open(filename, "w") {|file| file.write(String.from_java_bytes(bytes))}
     end
     
     def constructor(*signature, &block)

@@ -12,7 +12,7 @@ class TestBuilder < Test::Unit::TestCase
   include Compiler::Signature
   
   def test_class_builder
-    cb = Compiler::ClassBuilder.build("MyClass", "MyClass.java") do
+    class_bytes = Compiler::ClassBuilder.build("MyClass", "MyClass.java") do
       field :list, ArrayList
       
       constructor(String, ArrayList) do
@@ -66,6 +66,6 @@ class TestBuilder < Test::Unit::TestCase
       end
     end
     
-    cb.write("MyClass.class")
+    File.open("MyClass.class", "w") {|file| file.write(class_bytes)}
   end
 end
