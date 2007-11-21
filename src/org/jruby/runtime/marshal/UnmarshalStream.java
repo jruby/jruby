@@ -46,6 +46,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
@@ -281,13 +282,6 @@ public class UnmarshalStream extends BufferedInputStream {
         return result;
     }
     
-    /**
-     * @deprecated superseded by {@link #defaultVariablesUnmarshal(IRubyObject)}
-     */
-    public void defaultInstanceVarsUnmarshal(IRubyObject object) throws IOException {
-        defaultVariablesUnmarshal(object);
-    }
-    
     public void defaultVariablesUnmarshal(IRubyObject object) throws IOException {
         int count = unmarshalInt();
 
@@ -308,7 +302,8 @@ public class UnmarshalStream extends BufferedInputStream {
     	
     	RubyClass type = (RubyClass)runtime.getClassFromPath(className.asSymbol());
     	
-    	IRubyObject result = unmarshalObject();
+        // All "C" marshalled objects descend from core classes, which are all RubyObject
+    	RubyObject result = (RubyObject)unmarshalObject();
     	
     	result.setMetaClass(type);
     	

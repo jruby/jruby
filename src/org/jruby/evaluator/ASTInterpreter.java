@@ -35,6 +35,7 @@ import org.jruby.Ruby;
 import org.jruby.MetaClass;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
+import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
@@ -43,6 +44,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -157,6 +159,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.regexp.PatternSyntaxException;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.InterpretedBlock;
 
 public class ASTInterpreter {
@@ -166,6 +169,88 @@ public class ASTInterpreter {
             return evalInternal(runtime, context, node, self, block);
         } catch (StackOverflowError sfe) {
             throw runtime.newSystemStackError("stack level too deep");
+        }
+    }
+
+    
+    /**
+     * Evaluate the given string under the specified binding object. If the binding is not a Proc or Binding object
+     * (RubyProc or RubyBinding) throw an appropriate type error.
+     * @param context TODO
+     * @param evalString The string containing the text to be evaluated
+     * @param binding The binding object under which to perform the evaluation
+     * @param file The filename to use when reporting errors during the evaluation
+     * @param lineNumber is the line number to pretend we are starting from
+     * @return An IRubyObject result from the evaluation
+     */
+    public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject src, IRubyObject scope, 
+            String file, int lineNumber) {
+        // both of these are ensured by the (very few) callers
+        assert !scope.isNil();
+        assert file != null;
+
+        Ruby runtime = src.getRuntime();
+        ISourcePosition savedPosition = context.getPosition();
+
+        if (!(scope instanceof RubyBinding)) {
+            if (scope instanceof RubyProc) {
+                scope = ((RubyProc) scope).binding();
+            } else {
+                // bomb out, it's not a binding or a proc
+                throw runtime.newTypeError("wrong argument type " + scope.getMetaClass() + " (expected Proc/Binding)");
+            }
+        }
+
+        Binding binding = ((RubyBinding)scope).getBinding();
+        // FIXME:  This determine module is in a strange location and should somehow be in block
+        binding.getDynamicScope().getStaticScope().determineModule();
+
+        try {
+            // Binding provided for scope, use it
+            context.preEvalWithBinding(binding);
+            IRubyObject newSelf = context.getFrameSelf();
+            RubyString source = src.convertToString();
+            Node node = 
+                runtime.parseEval(source.getByteList(), file, binding.getDynamicScope(), lineNumber);
+
+            return eval(runtime, context, node, newSelf, binding.getFrame().getBlock());
+        } catch (JumpException.BreakJump bj) {
+            throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
+        } catch (JumpException.RedoJump rj) {
+            throw runtime.newLocalJumpError("redo", (IRubyObject)rj.getValue(), "unexpected redo");
+        } finally {
+            context.postEvalWithBinding(binding);
+
+            // restore position
+            context.setPosition(savedPosition);
+        }
+    }
+
+    /**
+     * Evaluate the given string.
+     * @param context TODO
+     * @param evalString The string containing the text to be evaluated
+     * @param file The filename to use when reporting errors during the evaluation
+     * @return An IRubyObject result from the evaluation
+     */
+    public static IRubyObject evalSimple(ThreadContext context, IRubyObject self, IRubyObject src, String file) {
+        // this is ensured by the callers
+        assert file != null;
+
+        Ruby runtime = src.getRuntime();
+        ISourcePosition savedPosition = context.getPosition();
+
+        // no binding, just eval in "current" frame (caller's frame)
+        RubyString source = src.convertToString();
+        try {
+            Node node = runtime.parseEval(source.getByteList(), file, context.getCurrentScope(), 0);
+            
+            return ASTInterpreter.eval(runtime, context, node, self, Block.NULL_BLOCK);
+        } catch (JumpException.BreakJump bj) {
+            throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
+        } finally {
+            // restore position
+            context.setPosition(savedPosition);
         }
     }
 

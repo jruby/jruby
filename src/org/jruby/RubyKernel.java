@@ -50,6 +50,7 @@ import java.util.Iterator;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
@@ -718,7 +719,7 @@ public class RubyKernel {
             scope = RubyBinding.newBindingForEval(recv.getRuntime());
         }
         
-        return recv.evalWithBinding(context, src, scope, file, line);
+        return ASTInterpreter.evalWithBinding(context, src, scope, file, line);
     }
 
     @JRubyMethod(name = "callcc", frame = true, module = true, visibility = Visibility.PRIVATE)

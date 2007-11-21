@@ -34,9 +34,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -53,8 +51,6 @@ import org.jruby.runtime.ThreadContext;
 
 /** Object is the parent class of all classes in Ruby. Its methods are
  * therefore available to all objects unless explicitly overridden.
- *
- * @author  jpetersen
  */
 public interface IRubyObject {
     /**
@@ -149,12 +145,6 @@ public interface IRubyObject {
     RubyClass getMetaClass();
     
     /**
-     *
-     * @param metaClass
-     */
-    void setMetaClass(RubyClass metaClass);
-    
-    /**
      * RubyMethod getSingletonClass.
      * @return RubyClass
      */
@@ -184,27 +174,6 @@ public interface IRubyObject {
      * @return Class
      */
     Class getJavaClass();
-    
-    /**
-     * Evaluate the given string under the specified binding object. If the binding is not a Proc or Binding object
-     * (RubyProc or RubyBinding) throw an appropriate type error.
-     * @param context TODO
-     * @param evalString The string containing the text to be evaluated
-     * @param binding The binding object under which to perform the evaluation
-     * @param file The filename to use when reporting errors during the evaluation
-     * @param lineNumber is the line number to pretend we are starting from
-     * @return An IRubyObject result from the evaluation
-     */
-    IRubyObject evalWithBinding(ThreadContext context, IRubyObject evalString, IRubyObject binding, String file, int lineNumber);
-    
-    /**
-     * Evaluate the given string.
-     * @param context TODO
-     * @param evalString The string containing the text to be evaluated
-     * @param file The filename to use when reporting errors during the evaluation
-     * @return An IRubyObject result from the evaluation
-     */
-    IRubyObject evalSimple(ThreadContext context, IRubyObject evalString, String file);
     
     /**
      * Convert the object into a symbol name if possible.

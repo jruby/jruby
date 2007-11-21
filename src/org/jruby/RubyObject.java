@@ -677,8 +677,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
                 // FIXME: lineNumber is not supported
                 //IRubyObject lineNumber = args[3];
 
-                return args[0].evalSimple(source.getRuntime().getCurrentContext(),
-                                  source, filename.convertToString().toString());
+                return ASTInterpreter.evalSimple(source.getRuntime().getCurrentContext(),
+                                  args[0], source, filename.convertToString().toString());
             }
 
             public Arity getArity() {
@@ -725,74 +725,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
                 return Arity.optional();
             }
         }, args, block);
-    }
-
-    /* (non-Javadoc)
-     * @see org.jruby.runtime.builtin.IRubyObject#evalWithBinding(org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.builtin.IRubyObject, java.lang.String)
-     */
-    public IRubyObject evalWithBinding(ThreadContext context, IRubyObject src, IRubyObject scope, 
-            String file, int lineNumber) {
-        // both of these are ensured by the (very few) callers
-        assert !scope.isNil();
-        assert file != null;
-
-        ISourcePosition savedPosition = context.getPosition();
-
-        if (!(scope instanceof RubyBinding)) {
-            if (scope instanceof RubyProc) {
-                scope = ((RubyProc) scope).binding();
-            } else {
-                // bomb out, it's not a binding or a proc
-                throw getRuntime().newTypeError("wrong argument type " + scope.getMetaClass() + " (expected Proc/Binding)");
-            }
-        }
-
-        Binding binding = ((RubyBinding)scope).getBinding();
-        // FIXME:  This determine module is in a strange location and should somehow be in block
-        binding.getDynamicScope().getStaticScope().determineModule();
-
-        try {
-            // Binding provided for scope, use it
-            context.preEvalWithBinding(binding);
-            IRubyObject newSelf = context.getFrameSelf();
-            RubyString source = src.convertToString();
-            Node node = 
-                getRuntime().parseEval(source.getByteList(), file, binding.getDynamicScope(), lineNumber);
-
-            return ASTInterpreter.eval(getRuntime(), context, node, newSelf, binding.getFrame().getBlock());
-        } catch (JumpException.BreakJump bj) {
-            throw getRuntime().newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
-        } catch (JumpException.RedoJump rj) {
-            throw getRuntime().newLocalJumpError("redo", (IRubyObject)rj.getValue(), "unexpected redo");
-        } finally {
-            context.postEvalWithBinding(binding);
-
-            // restore position
-            context.setPosition(savedPosition);
-        }
-    }
-
-    /* (non-Javadoc)
-     * @see org.jruby.runtime.builtin.IRubyObject#evalSimple(org.jruby.runtime.builtin.IRubyObject, java.lang.String)
-     */
-    public IRubyObject evalSimple(ThreadContext context, IRubyObject src, String file) {
-        // this is ensured by the callers
-        assert file != null;
-
-        ISourcePosition savedPosition = context.getPosition();
-
-        // no binding, just eval in "current" frame (caller's frame)
-        RubyString source = src.convertToString();
-        try {
-            Node node = getRuntime().parseEval(source.getByteList(), file, context.getCurrentScope(), 0);
-            
-            return ASTInterpreter.eval(getRuntime(), context, node, this, Block.NULL_BLOCK);
-        } catch (JumpException.BreakJump bj) {
-            throw getRuntime().newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
-        } finally {
-            // restore position
-            context.setPosition(savedPosition);
-        }
     }
 
     // Methods of the Object class (rb_obj_*):
@@ -925,7 +857,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
     public IRubyObject rbClone() {
         if (isImmediate()) throw getRuntime().newTypeError("can't clone " + getMetaClass().getName());
         
-        IRubyObject clone = getMetaClass().getRealClass().allocate();
+        // We're cloning ourselves, so we know the result should be a RubyObject
+        RubyObject clone = (RubyObject)getMetaClass().getRealClass().allocate();
         clone.setMetaClass(getSingletonClassClone());
         if (isTaint()) clone.setTaint(true);
 
