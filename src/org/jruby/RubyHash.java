@@ -59,9 +59,40 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
+// Design overview:
+//
+// RubyHash is implemented as hash table with a singly-linked list of
+// RubyHash.RubyHashEntry objects for each bucket.  RubyHashEntry objects
+// are also kept in a doubly-linked list which reflects their insertion
+// order and is used for iteration.  For simplicity, this latter list is
+// circular; a dummy RubyHashEntry, RubyHash.head, is used to mark the
+// ends of the list.
+//
+// When an entry is removed from the table, it is also removed from the
+// doubly-linked list.  However, while the reference to the previous
+// RubyHashEntry is cleared (to mark the entry as dead), the reference
+// to the next RubyHashEntry is preserved so that iterators are not
+// invalidated: any iterator with a reference to a dead entry can climb
+// back up into the list of live entries by chasing next references until
+// it finds a live entry (or head).
+//
+// Ordinarily, this scheme would require O(N) time to clear a hash (since
+// each RubyHashEntry would need to be visited and unlinked from the
+// iteration list), but RubyHash also maintains a generation count.  Every
+// time the hash is cleared, the doubly-linked list is simply discarded and
+// the generation count incremented.  Iterators check to see whether the
+// generation count has changed; if it has, they reset themselves back to
+// the new start of the list.
+//
+// This design means that iterators are never invalidated by changes to the
+// hashtable, and they do not need to modify the structure during their
+// lifecycle.  This means that no synchronization at all is required among
+// concurrent readers, although all concurrent users must externally
+// synchronize with writers to avoid data races.
+//
+
 /** Implementation of the Hash class.
  *
- * @author  jpetersen
  */
 public class RubyHash extends RubyObject implements Map {
 
