@@ -77,8 +77,12 @@ public class BlockStaticScope extends StaticScope {
     protected AssignableNode assign(ISourcePosition position, String name, Node value, 
             StaticScope topScope, int depth) {
         int slot = exists(name);
+
         
         if (slot >= 0) {
+            // mark as captured if from containing scope
+            if (depth > 0) capture(slot);
+        
             return new DAsgnNode(position, name, ((depth << 16) | slot), value);
         }
 
@@ -94,8 +98,11 @@ public class BlockStaticScope extends StaticScope {
 
     public Node declare(ISourcePosition position, String name, int depth) {
         int slot = exists(name);
-
+        
         if (slot >= 0) {
+            // mark as captured if from containing scope
+            if (depth > 0) capture(slot);
+            
             return new DVarNode(position, ((depth << 16) | slot), name);
         }
         

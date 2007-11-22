@@ -20,8 +20,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author headius
  */
 public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
-    private int scopeIndex; // the index of the DynamicScope in the local Java scope to use for depth > 0 variable accesses
-    private int varsIndex; // the index of the IRubyObject[] in the local Java scope to use for depth 0 variable accesses
+    protected int scopeIndex; // the index of the DynamicScope in the local Java scope to use for depth > 0 variable accesses
+    protected int varsIndex; // the index of the IRubyObject[] in the local Java scope to use for depth 0 variable accesses
 
     public HeapBasedVariableCompiler(
             StandardASMCompiler.AbstractMethodCompiler methodCompiler,

@@ -320,7 +320,6 @@ public class ASTInspector {
         case ITERNODE:
             hasClosure = true;
             hasFrameAwareMethods = true;
-            hasScopeAwareMethods = true;
             break;
         case LOCALVARNODE:
             break;

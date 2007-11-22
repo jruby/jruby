@@ -75,6 +75,9 @@ public class LocalStaticScope extends StaticScope {
         if (slot >= 0) {
             //System.out.println("LASGN1: " + name + ", l: " + depth + ", i: " + slot);
 
+            // mark as captured if from containing scope
+            if (depth > 0) capture(slot);
+
             return new LocalAsgnNode(position, name, ((depth << 16) | slot), value);
         } else if (topScope == this) {
             slot = addVariable(name);
@@ -92,6 +95,9 @@ public class LocalStaticScope extends StaticScope {
         int slot = exists(name);
         
         if (slot >= 0) {
+            // mark as captured if from containing scope
+            if (depth > 0) capture(slot);
+            
             //System.out.println("LVAR: " + name + ", l: " + depth + ", i: " + slot);
             return new LocalVarNode(position, ((depth << 16) | slot), name);
         }

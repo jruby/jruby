@@ -2391,8 +2391,16 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             getClassVisitor().visitField(ACC_PRIVATE, closureFieldName, cg.ci(CompiledBlockCallback.class), null, null);
             
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
-            if (inspector == null || inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+            if (inspector == null) {
                 variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
+            } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                // enable "boxed" variable compilation when only a closure present
+                // this breaks using a proc as a binding
+                if (Boolean.getBoolean("jruby.compile.boxed") && !inspector.hasScopeAwareMethods()) {
+                    variableCompiler = new BoxedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
+                } else {
+                    variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
+                }
             } else {
                 variableCompiler = new StackBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, ARGS_INDEX, CLOSURE_INDEX);
             }
@@ -2518,8 +2526,16 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             this.friendlyName = friendlyName;
 
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, friendlyName, METHOD_SIGNATURE, null, null));
-            if (inspector == null || inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+            if (inspector == null) {
                 variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
+            } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                // enable "boxed" variable compilation when only a closure present
+                // this breaks using a proc as a binding
+                if (Boolean.getBoolean("jruby.compile.boxed") && !inspector.hasScopeAwareMethods()) {
+                    variableCompiler = new BoxedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
+                } else {
+                    variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
+                }
             } else {
                 variableCompiler = new StackBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, ARGS_INDEX, CLOSURE_INDEX);
             }
