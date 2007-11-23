@@ -81,7 +81,7 @@ public class RubyFloat extends RubyNumeric {
         // Double.MAX_EXPONENT since Java 1.6            
         floatc.defineConstant("MAX_EXP", RubyFixnum.newFixnum(runtime, 1024));
         floatc.defineConstant("MIN_10_EXP", RubyFixnum.newFixnum(runtime, -307));
-        floatc.defineConstant("MAX_10_EXP", RubyFixnum.newFixnum(runtime, -308));
+        floatc.defineConstant("MAX_10_EXP", RubyFixnum.newFixnum(runtime, 308));
         floatc.defineConstant("MIN", RubyFloat.newFloat(runtime, Double.MIN_VALUE));
         floatc.defineConstant("MAX", RubyFloat.newFloat(runtime, Double.MAX_VALUE));
         floatc.defineConstant("EPSILON", RubyFloat.newFloat(runtime, 2.2204460492503131e-16));
