@@ -197,7 +197,16 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "coerce", required = 1)
     public IRubyObject coerce(IRubyObject other) {
-        if (other instanceof RubyNumeric) {
+        if (other instanceof RubyString) {
+            double otherDouble = 0.0;
+            try {
+                otherDouble = Double.parseDouble(other.toString());
+            } catch (Exception e) {
+                throw getRuntime().newArgumentError("invalid value for Float(): \"" + other.toString() + "\"");
+            }
+            return getRuntime().newArray(
+                    newFloat(getRuntime(), otherDouble), this);
+        } else if (other instanceof RubyNumeric) {
             return getRuntime().newArray(
                     newFloat(getRuntime(), ((RubyNumeric) other).getDoubleValue()), this);
         }
