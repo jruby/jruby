@@ -442,10 +442,18 @@ public class RubyArray extends RubyObject implements List {
     	return this;
     }
 
+    /** rb_ary_initialize_copy
+     * 
+     */
+    @JRubyMethod(name = {"initialize_copy"}, required = 1, visibility=Visibility.PRIVATE)
+    public IRubyObject initialize_copy(IRubyObject orig) {
+        return this.replace(orig);
+    }
+    
     /** rb_ary_replace
      *
      */
-    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1)
+    @JRubyMethod(name = {"replace"}, required = 1)
     public IRubyObject replace(IRubyObject orig) {
         modifyCheck();
 
