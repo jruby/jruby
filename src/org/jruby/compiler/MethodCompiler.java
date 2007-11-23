@@ -1,11 +1,29 @@
 /*
- * MethodCompiler.java
+ ***** BEGIN LICENSE BLOCK *****
+ * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Common Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/cpl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
  * 
- * Created on Jul 10, 2007, 6:18:19 PM
- * 
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the CPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the CPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 
 package org.jruby.compiler;
 
@@ -205,7 +223,7 @@ public interface MethodCompiler {
      * @param arity The arity of the block's argument list
      * @param body The callback which will generate the closure's body
      */
-    public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
+    public void createNewClosure(StaticScope scope, int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
     
     /**
      * Create a new closure (block) for a for loop with the given call arity and
@@ -215,7 +233,7 @@ public interface MethodCompiler {
      * @param arity The arity of the block's argument list
      * @param body The callback which will generate the closure's body
      */
-    public void createNewForLoop(int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId);
+    public void createNewForLoop(int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId);
     
     /**
      * Define a new method with the given name, arity, local variable count, and body callback.
@@ -227,7 +245,7 @@ public interface MethodCompiler {
      * @param localVarCount The number of local variables within the method
      * @param body The callback which will generate the method's body.
      */
-    public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args, ClosureCallback receiver, ASTInspector inspector);
+    public void defineNewMethod(String name, StaticScope scope, CompilerCallback body, CompilerCallback args, CompilerCallback receiver, ASTInspector inspector);
     
     /**
      * Define an alias for a new name to an existing oldName'd method.
@@ -340,7 +358,7 @@ public interface MethodCompiler {
      * Each call to callback will have a value from the input array on the stack; once the items are exhausted,
      * the code in nilCallback will be invoked *with no value on the stack*.
      */
-    public void forEachInValueArray(int count, int start, Object source, ArrayCallback callback, ArrayCallback nilCallback, ClosureCallback argsCallback);
+    public void forEachInValueArray(int count, int start, Object source, ArrayCallback callback, ArrayCallback nilCallback, CompilerCallback argsCallback);
     
     /**
      * Ensures that the present value is an IRubyObject[] by wrapping it with one if it is not.
@@ -352,9 +370,9 @@ public interface MethodCompiler {
      */
     public void ensureMultipleAssignableRubyArray(boolean masgnHasHead);
     
-    public void issueBreakEvent(ClosureCallback value);
+    public void issueBreakEvent(CompilerCallback value);
     
-    public void issueNextEvent(ClosureCallback value);
+    public void issueNextEvent(CompilerCallback value);
     
     public void issueRedoEvent();
     
@@ -371,11 +389,11 @@ public interface MethodCompiler {
     public void match3();
 
     public void createNewRegexp(ByteList value, int options, String lang);
-    public void createNewRegexp(ClosureCallback createStringCallback, int options, String lang);
+    public void createNewRegexp(CompilerCallback createStringCallback, int options, String lang);
     
     public void pollThreadEvents();
 
-    public void branchIfModule(ClosureCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback);
+    public void branchIfModule(CompilerCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback);
 
     /**
      * Push the current back reference
@@ -436,11 +454,11 @@ public interface MethodCompiler {
     public void toJavaString();
     public void aliasGlobal(String newName, String oldName);
     public void undefMethod(String name);
-    public void defineClass(String name, StaticScope staticScope, ClosureCallback superCallback, ClosureCallback pathCallback, ClosureCallback bodyCallback, ClosureCallback receiverCallback);
-    public void defineModule(String name, StaticScope staticScope, ClosureCallback pathCallback, ClosureCallback bodyCallback);
+    public void defineClass(String name, StaticScope staticScope, CompilerCallback superCallback, CompilerCallback pathCallback, CompilerCallback bodyCallback, CompilerCallback receiverCallback);
+    public void defineModule(String name, StaticScope staticScope, CompilerCallback pathCallback, CompilerCallback bodyCallback);
     public void unwrapPassedBlock();
     public void performBackref(char type);
-    public void callZSuper(ClosureCallback closure);
+    public void callZSuper(CompilerCallback closure);
     public void appendToObjectArray();
     public void checkIsExceptionHandled();
     public void rethrowException();
@@ -449,8 +467,8 @@ public interface MethodCompiler {
     public void loadException();
     public void setPosition(ISourcePosition position);
     public void checkWhenWithSplat();
-    public void createNewEndBlock(ClosureCallback body);
-    public void runBeginBlock(StaticScope scope, ClosureCallback body);
+    public void createNewEndBlock(CompilerCallback body);
+    public void runBeginBlock(StaticScope scope, CompilerCallback body);
     public void rethrowIfSystemExit();
 
     public MethodCompiler chainToMethod(String name, ASTInspector inspector);

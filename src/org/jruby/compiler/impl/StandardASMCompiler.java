@@ -62,7 +62,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.BranchCallback;
-import org.jruby.compiler.ClosureCallback;
+import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.MethodCompiler;
 import org.jruby.compiler.NotCompilableException;
@@ -351,7 +351,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         clinitMethod.end();
     }
     
-    public MethodCompiler startMethod(String friendlyName, ClosureCallback args, StaticScope scope, ASTInspector inspector) {
+    public MethodCompiler startMethod(String friendlyName, CompilerCallback args, StaticScope scope, ASTInspector inspector) {
         ASMMethodCompiler methodCompiler = new ASMMethodCompiler(friendlyName, inspector);
         
         methodCompiler.beginMethod(args, scope);
@@ -373,7 +373,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         // The current local variable count, to use for temporary locals during processing
         protected int localVariable = PREVIOUS_EXCEPTION_INDEX + 1;
 
-        public abstract void beginMethod(ClosureCallback args, StaticScope scope);
+        public abstract void beginMethod(CompilerCallback args, StaticScope scope);
 
         public abstract void endMethod();
         
@@ -928,8 +928,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void createNewClosure(
                 StaticScope scope,
                 int arity,
-                ClosureCallback body,
-                ClosureCallback args,
+                CompilerCallback body,
+                CompilerCallback args,
                 boolean hasMultipleArgsHead,
                 NodeType argsNodeId,
                 ASTInspector inspector) {
@@ -982,7 +982,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, String[].class, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE, boolean.class)));
         }
 
-        public void runBeginBlock(StaticScope scope, ClosureCallback body) {
+        public void runBeginBlock(StaticScope scope, CompilerCallback body) {
             String closureMethodName = "closure" + ++innerIndex;
             String closureFieldName = "_" + closureMethodName;
             
@@ -1027,7 +1027,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     cg.params(ThreadContext.class, IRubyObject.class, String[].class, CompiledBlockCallback.class)));
         }
 
-        public void createNewForLoop(int arity, ClosureCallback body, ClosureCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId) {
+        public void createNewForLoop(int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId) {
             String closureMethodName = "closure" + ++innerIndex;
             String closureFieldName = "_" + closureMethodName;
             
@@ -1073,7 +1073,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE)));
         }
 
-        public void createNewEndBlock(ClosureCallback body) {
+        public void createNewEndBlock(CompilerCallback body) {
             String closureMethodName = "END_closure" + ++innerIndex;
             String closureFieldName = "_" + closureMethodName;
             
@@ -1244,7 +1244,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeUtilityMethod("ensureMultipleAssignableRubyArray", cg.sig(RubyArray.class, cg.params(Ruby.class, IRubyObject.class, boolean.class)));
         }
 
-        public void forEachInValueArray(int start, int count, Object source, ArrayCallback callback, ArrayCallback nilCallback, ClosureCallback argsCallback) {
+        public void forEachInValueArray(int start, int count, Object source, ArrayCallback callback, ArrayCallback nilCallback, CompilerCallback argsCallback) {
             // FIXME: This could probably be made more efficient
             for (; start < count; start++) {
                 Label noMoreArrayElements = new Label();
@@ -1374,7 +1374,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.getfield(classname, regexpField, cg.ci(RubyRegexp.class));
         }
 
-        public void createNewRegexp(ClosureCallback createStringCallback, final int options, final String lang) {
+        public void createNewRegexp(CompilerCallback createStringCallback, final int options, final String lang) {
             boolean onceOnly = (options & ReOptions.RE_OPTION_ONCE) != 0;   // for regular expressions with the /o flag
             Label alreadyCreated = null;
             String regexpField = null;
@@ -1480,7 +1480,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             });
         }
 
-        public void branchIfModule(ClosureCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback) {
+        public void branchIfModule(CompilerCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback) {
             receiverCallback.compile(this);
             isInstanceOf(RubyModule.class, moduleCallback, notModuleCallback);
         }
@@ -2058,15 +2058,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void defineClass(
                 final String name, 
                 final StaticScope staticScope, 
-                final ClosureCallback superCallback, 
-                final ClosureCallback pathCallback, 
-                final ClosureCallback bodyCallback, 
-                final ClosureCallback receiverCallback) {
+                final CompilerCallback superCallback, 
+                final CompilerCallback pathCallback, 
+                final CompilerCallback bodyCallback, 
+                final CompilerCallback receiverCallback) {
             String methodName = "rubyclass__" + cg.cleanJavaIdentifier(name) + "__" + ++methodIndex;
 
             final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null);
             
-            ClosureCallback bodyPrep = new ClosureCallback() {
+            CompilerCallback bodyPrep = new CompilerCallback() {
                 public void compile(MethodCompiler context) {
                     if (receiverCallback == null) {
                         if (superCallback != null) {
@@ -2152,12 +2152,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
         }
 
-        public void defineModule(final String name, final StaticScope staticScope, final ClosureCallback pathCallback, final ClosureCallback bodyCallback) {
+        public void defineModule(final String name, final StaticScope staticScope, final CompilerCallback pathCallback, final CompilerCallback bodyCallback) {
             String methodName = "rubyclass__" + cg.cleanJavaIdentifier(name) + "__" + ++methodIndex;
 
             final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null);
 
-            ClosureCallback bodyPrep = new ClosureCallback() {
+            CompilerCallback bodyPrep = new CompilerCallback() {
                 public void compile(MethodCompiler context) {
                     methodCompiler.loadThreadContext();
 
@@ -2249,7 +2249,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             }
         }
         
-        public void callZSuper(ClosureCallback closure) {
+        public void callZSuper(CompilerCallback closure) {
             loadRuntime();
             loadThreadContext();
             if (closure != null) {
@@ -2307,7 +2307,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeUtilityMethod("retryJump", cg.sig(IRubyObject.class));
         }
 
-        public void defineNewMethod(String name, StaticScope scope, ClosureCallback body, ClosureCallback args, ClosureCallback receiver, ASTInspector inspector) {
+        public void defineNewMethod(String name, StaticScope scope, CompilerCallback body, CompilerCallback args, CompilerCallback receiver, ASTInspector inspector) {
             // TODO: build arg list based on number of args, optionals, etc
             ++methodIndex;
             String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;
@@ -2407,7 +2407,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }
 
-        public void beginMethod(ClosureCallback args, StaticScope scope) {
+        public void beginMethod(CompilerCallback args, StaticScope scope) {
             method.start();
 
             // set up a local IRuby variable
@@ -2429,7 +2429,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.label(scopeStart);
         }
 
-        public void beginClass(ClosureCallback bodyPrep, StaticScope scope) {
+        public void beginClass(CompilerCallback bodyPrep, StaticScope scope) {
             throw new NotCompilableException("ERROR: closure compiler should not be used for class bodies");
         }
 
@@ -2486,7 +2486,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeUtilityMethod("processBlockArgument", cg.sig(void.class, cg.params(Ruby.class, ThreadContext.class, Block.class, int.class)));
         }
         
-        public void issueBreakEvent(ClosureCallback value) {
+        public void issueBreakEvent(CompilerCallback value) {
             if (withinProtection || currentLoopLabels == null) {
                 value.compile(this);
                 invokeUtilityMethod("breakJump", cg.sig(IRubyObject.class, IRubyObject.class));
@@ -2496,7 +2496,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             }
         }
 
-        public void issueNextEvent(ClosureCallback value) {
+        public void issueNextEvent(CompilerCallback value) {
             if (withinProtection || currentLoopLabels == null) {
                 value.compile(this);
                 invokeUtilityMethod("nextJump", cg.sig(IRubyObject.class, IRubyObject.class));
@@ -2560,7 +2560,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.astore(VARS_ARRAY_INDEX);
         }
 
-        public void beginMethod(ClosureCallback args, StaticScope scope) {
+        public void beginMethod(CompilerCallback args, StaticScope scope) {
             method.start();
 
             // set up a local IRuby variable
@@ -2583,7 +2583,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             scopeStart = start;
         }
 
-        public void beginClass(ClosureCallback bodyPrep, StaticScope scope) {
+        public void beginClass(CompilerCallback bodyPrep, StaticScope scope) {
             method.start();
 
             // set up a local IRuby variable
@@ -2626,7 +2626,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             }
         }
 
-        public void issueBreakEvent(ClosureCallback value) {
+        public void issueBreakEvent(CompilerCallback value) {
             if (withinProtection) {
                 value.compile(this);
                 invokeUtilityMethod("breakJump", cg.sig(IRubyObject.class, IRubyObject.class));
@@ -2642,7 +2642,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             }
         }
 
-        public void issueNextEvent(ClosureCallback value) {
+        public void issueNextEvent(CompilerCallback value) {
             if (withinProtection) {
                 value.compile(this);
                 invokeUtilityMethod("nextJump", cg.sig(IRubyObject.class, IRubyObject.class));

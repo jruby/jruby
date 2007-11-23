@@ -63,5 +63,5 @@ public interface ScriptCompiler {
      * @return An Object that represents the method within this compiler. Used in calls to
      * endMethod once compilation for this method is completed.
      */
-    public MethodCompiler startMethod(String friendlyName, ClosureCallback argsHandler, StaticScope scope, ASTInspector inspector);
+    public MethodCompiler startMethod(String friendlyName, CompilerCallback argsHandler, StaticScope scope, ASTInspector inspector);
 }

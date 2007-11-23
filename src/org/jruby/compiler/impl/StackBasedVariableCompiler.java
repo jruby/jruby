@@ -28,7 +28,7 @@
 
 package org.jruby.compiler.impl;
 
-import org.jruby.compiler.ClosureCallback;
+import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -46,7 +46,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         this.scopeIndex = scopeIndex;
     }
 
-    public void beginMethod(ClosureCallback argsCallback, StaticScope scope) {
+    public void beginMethod(CompilerCallback argsCallback, StaticScope scope) {
         // fill in all vars with nil so compiler is happy about future accesses
         methodCompiler.loadNil();
         for (int i = 0; i < scope.getNumberOfVariables(); i++) {
@@ -59,11 +59,11 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         }
     }
 
-    public void beginClass(ClosureCallback bodyPrep, StaticScope scope) {
+    public void beginClass(CompilerCallback bodyPrep, StaticScope scope) {
         throw new NotCompilableException("ERROR: stack-based variables should not be compiling class bodies");
     }
 
-    public void beginClosure(ClosureCallback argsCallback, StaticScope scope) {
+    public void beginClosure(CompilerCallback argsCallback, StaticScope scope) {
         // store the local vars in a local variable
         methodCompiler.loadThreadContext();
         methodCompiler.invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));

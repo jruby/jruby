@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.compiler;
 
 import java.util.Iterator;
@@ -100,7 +101,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsPushNode;
-import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.CaseNode;
 import org.jruby.ast.ClassNode;
@@ -611,7 +611,7 @@ public class ASTCompiler {
 
         final BreakNode breakNode = (BreakNode) node;
 
-        ClosureCallback valueCallback = new ClosureCallback() {
+        CompilerCallback valueCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (breakNode.getValueNode() != null) {
@@ -630,14 +630,14 @@ public class ASTCompiler {
 
         final CallNode callNode = (CallNode) node;
 
-        ClosureCallback receiverCallback = new ClosureCallback() {
+        CompilerCallback receiverCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         ASTCompiler.compile(callNode.getReceiverNode(), context);
                     }
                 };
 
-        ClosureCallback argsCallback = new ClosureCallback() {
+        CompilerCallback argsCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         compileArguments(callNode.getArgsNode(), context);
@@ -652,7 +652,7 @@ public class ASTCompiler {
                 context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, null, false);
             }
         } else {
-            ClosureCallback closureArg = getBlock(callNode.getIterNode());
+            CompilerCallback closureArg = getBlock(callNode.getIterNode());
 
             if (callNode.getArgsNode() != null) {
                 context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, closureArg, false);
@@ -826,7 +826,7 @@ public class ASTCompiler {
 
         final Node cpathNode = classNode.getCPath();
 
-        ClosureCallback superCallback = new ClosureCallback() {
+        CompilerCallback superCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         ASTCompiler.compile(superNode, context);
@@ -836,7 +836,7 @@ public class ASTCompiler {
             superCallback = null;
         }
 
-        ClosureCallback bodyCallback = new ClosureCallback() {
+        CompilerCallback bodyCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (classNode.getBodyNode() != null) {
@@ -847,7 +847,7 @@ public class ASTCompiler {
                     }
                 };
 
-        ClosureCallback pathCallback = new ClosureCallback() {
+        CompilerCallback pathCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (cpathNode instanceof Colon2Node) {
@@ -873,14 +873,14 @@ public class ASTCompiler {
 
         final SClassNode sclassNode = (SClassNode) node;
 
-        ClosureCallback receiverCallback = new ClosureCallback() {
+        CompilerCallback receiverCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         ASTCompiler.compile(sclassNode.getReceiverNode(), context);
                     }
                 };
 
-        ClosureCallback bodyCallback = new ClosureCallback() {
+        CompilerCallback bodyCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (sclassNode.getBodyNode() != null) {
@@ -990,7 +990,7 @@ public class ASTCompiler {
             context.loadObject();
             context.retrieveConstantFromModule(name);
         } else {
-            final ClosureCallback receiverCallback = new ClosureCallback() {
+            final CompilerCallback receiverCallback = new CompilerCallback() {
 
                         public void compile(MethodCompiler context) {
                             ASTCompiler.compile(iVisited.getLeftNode(), context);
@@ -1552,7 +1552,7 @@ public class ASTCompiler {
         final DefnNode defnNode = (DefnNode) node;
         final ArgsNode argsNode = defnNode.getArgsNode();
 
-        ClosureCallback body = new ClosureCallback() {
+        CompilerCallback body = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (defnNode.getBodyNode() != null) {
@@ -1563,7 +1563,7 @@ public class ASTCompiler {
                     }
                 };
 
-        ClosureCallback args = new ClosureCallback() {
+        CompilerCallback args = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         compileArgs(argsNode, context);
@@ -1584,14 +1584,14 @@ public class ASTCompiler {
         final DefsNode defsNode = (DefsNode) node;
         final ArgsNode argsNode = defsNode.getArgsNode();
 
-        ClosureCallback receiver = new ClosureCallback() {
+        CompilerCallback receiver = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         ASTCompiler.compile(defsNode.getReceiverNode(), context);
                     }
                 };
 
-        ClosureCallback body = new ClosureCallback() {
+        CompilerCallback body = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (defsNode.getBodyNode() != null) {
@@ -1602,7 +1602,7 @@ public class ASTCompiler {
                     }
                 };
 
-        ClosureCallback args = new ClosureCallback() {
+        CompilerCallback args = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         compileArgs(argsNode, context);
@@ -1627,8 +1627,8 @@ public class ASTCompiler {
         ArrayCallback requiredAssignment = null;
         ArrayCallback optionalGiven = null;
         ArrayCallback optionalNotGiven = null;
-        ClosureCallback restAssignment = null;
-        ClosureCallback blockAssignment = null;
+        CompilerCallback restAssignment = null;
+        CompilerCallback blockAssignment = null;
 
         if (required > 0) {
             requiredAssignment = new ArrayCallback() {
@@ -1660,7 +1660,7 @@ public class ASTCompiler {
         }
 
         if (rest > -1) {
-            restAssignment = new ClosureCallback() {
+            restAssignment = new CompilerCallback() {
 
                         public void compile(MethodCompiler context) {
                             context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg());
@@ -1669,7 +1669,7 @@ public class ASTCompiler {
         }
 
         if (argsNode.getBlockArgNode() != null) {
-            blockAssignment = new ClosureCallback() {
+            blockAssignment = new CompilerCallback() {
 
                         public void compile(MethodCompiler context) {
                             context.getVariableCompiler().assignLocalVariable(argsNode.getBlockArgNode().getCount());
@@ -1707,7 +1707,7 @@ public class ASTCompiler {
 
         final DRegexpNode dregexpNode = (DRegexpNode) node;
 
-        ClosureCallback createStringCallback = new ClosureCallback() {
+        CompilerCallback createStringCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         ArrayCallback dstrCallback = new ArrayCallback() {
@@ -1786,7 +1786,7 @@ public class ASTCompiler {
                     }
                 };
 
-        ClosureCallback argsCallback = new ClosureCallback() {
+        CompilerCallback argsCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         context.createNewString(dstrCallback, dxstrNode.size());
@@ -1851,7 +1851,7 @@ public class ASTCompiler {
 
         final FCallNode fcallNode = (FCallNode) node;
 
-        ClosureCallback argsCallback = new ClosureCallback() {
+        CompilerCallback argsCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         compileArguments(fcallNode.getArgsNode(), context);
@@ -1866,7 +1866,7 @@ public class ASTCompiler {
                 context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, null, false);
             }
         } else {
-            ClosureCallback closureArg = getBlock(fcallNode.getIterNode());
+            CompilerCallback closureArg = getBlock(fcallNode.getIterNode());
 
             if (fcallNode.getArgsNode() != null) {
                 context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, false);
@@ -1876,7 +1876,7 @@ public class ASTCompiler {
         }
     }
 
-    private static ClosureCallback getBlock(Node node) {
+    private static CompilerCallback getBlock(Node node) {
         if (node == null) {
             return null;
         }
@@ -1885,7 +1885,7 @@ public class ASTCompiler {
             case ITERNODE:
                 final IterNode iterNode = (IterNode) node;
 
-                return new ClosureCallback() {
+                return new CompilerCallback() {
 
                             public void compile(MethodCompiler context) {
                                 ASTCompiler.compile(iterNode, context);
@@ -1894,7 +1894,7 @@ public class ASTCompiler {
             case BLOCKPASSNODE:
                 final BlockPassNode blockPassNode = (BlockPassNode) node;
 
-                return new ClosureCallback() {
+                return new CompilerCallback() {
 
                             public void compile(MethodCompiler context) {
                                 ASTCompiler.compile(blockPassNode.getBodyNode(), context);
@@ -2032,14 +2032,14 @@ public class ASTCompiler {
 
         final ForNode forNode = (ForNode) node;
 
-        ClosureCallback receiverCallback = new ClosureCallback() {
+        CompilerCallback receiverCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         ASTCompiler.compile(forNode.getIterNode(), context);
                     }
                 };
 
-        final ClosureCallback closureArg = new ClosureCallback() {
+        final CompilerCallback closureArg = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         compileForIter(forNode, context);
@@ -2055,7 +2055,7 @@ public class ASTCompiler {
         final ForNode forNode = (ForNode) node;
 
         // create the closure class and instantiate it
-        final ClosureCallback closureBody = new ClosureCallback() {
+        final CompilerCallback closureBody = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (forNode.getBodyNode() != null) {
@@ -2067,7 +2067,7 @@ public class ASTCompiler {
                 };
 
         // create the closure class and instantiate it
-        final ClosureCallback closureArgs = new ClosureCallback() {
+        final CompilerCallback closureArgs = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (forNode.getVarNode() != null) {
@@ -2244,7 +2244,7 @@ public class ASTCompiler {
         final IterNode iterNode = (IterNode) node;
 
         // create the closure class and instantiate it
-        final ClosureCallback closureBody = new ClosureCallback() {
+        final CompilerCallback closureBody = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (iterNode.getBodyNode() != null) {
@@ -2256,7 +2256,7 @@ public class ASTCompiler {
                 };
 
         // create the closure class and instantiate it
-        final ClosureCallback closureArgs = new ClosureCallback() {
+        final CompilerCallback closureArgs = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (iterNode.getVarNode() != null) {
@@ -2362,7 +2362,7 @@ public class ASTCompiler {
 
         final Node cpathNode = moduleNode.getCPath();
 
-        ClosureCallback bodyCallback = new ClosureCallback() {
+        CompilerCallback bodyCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (moduleNode.getBodyNode() != null) {
@@ -2372,7 +2372,7 @@ public class ASTCompiler {
                     }
                 };
 
-        ClosureCallback pathCallback = new ClosureCallback() {
+        CompilerCallback pathCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (cpathNode instanceof Colon2Node) {
@@ -2438,7 +2438,7 @@ public class ASTCompiler {
                     }
                 };
 
-        ClosureCallback argsCallback = new ClosureCallback() {
+        CompilerCallback argsCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         Node argsNode = multipleAsgnNode.getArgsNode();
@@ -2482,7 +2482,7 @@ public class ASTCompiler {
 
         final NextNode nextNode = (NextNode) node;
 
-        ClosureCallback valueCallback = new ClosureCallback() {
+        CompilerCallback valueCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (nextNode.getValueNode() != null) {
@@ -2584,7 +2584,7 @@ public class ASTCompiler {
 
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
-        final ClosureCallback receiverCallback = new ClosureCallback() {
+        final CompilerCallback receiverCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         ASTCompiler.compile(opAsgnNode.getReceiverNode(), context); // [recv]
@@ -2620,7 +2620,7 @@ public class ASTCompiler {
                     }
                 };
 
-        ClosureCallback receiver2Callback = new ClosureCallback() {
+        CompilerCallback receiver2Callback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         context.getInvocationCompiler().invokeDynamic(opAsgnNode.getVariableName(), receiverCallback, null, CallType.FUNCTIONAL, null, false);
@@ -2639,7 +2639,7 @@ public class ASTCompiler {
             context.performBooleanBranch(assignBranch, doneBranch);
         } else {
             // eval new value, call operator on old value, and assign
-            ClosureCallback argsCallback = new ClosureCallback() {
+            CompilerCallback argsCallback = new CompilerCallback() {
 
                         public void compile(MethodCompiler context) {
                             context.createObjectArray(new Node[]{opAsgnNode.getValueNode()}, justEvalValue);
@@ -2661,7 +2661,7 @@ public class ASTCompiler {
         compile(opElementAsgnNode.getReceiverNode(), context);
         compileArguments(opElementAsgnNode.getArgsNode(), context);
 
-        ClosureCallback valueArgsCallback = new ClosureCallback() {
+        CompilerCallback valueArgsCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         ASTCompiler.compile(opElementAsgnNode.getValueNode(), context);
@@ -2694,7 +2694,7 @@ public class ASTCompiler {
         final PostExeNode postExeNode = (PostExeNode) node;
 
         // create the closure class and instantiate it
-        final ClosureCallback closureBody = new ClosureCallback() {
+        final CompilerCallback closureBody = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (postExeNode.getBodyNode() != null) {
@@ -2713,7 +2713,7 @@ public class ASTCompiler {
         final PreExeNode preExeNode = (PreExeNode) node;
 
         // create the closure class and instantiate it
-        final ClosureCallback closureBody = new ClosureCallback() {
+        final CompilerCallback closureBody = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         if (preExeNode.getBodyNode() != null) {
@@ -2926,7 +2926,7 @@ public class ASTCompiler {
 
         final SuperNode superNode = (SuperNode) node;
 
-        ClosureCallback argsCallback = new ClosureCallback() {
+        CompilerCallback argsCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         compileArguments(superNode.getArgsNode(), context);
@@ -2942,7 +2942,7 @@ public class ASTCompiler {
                 context.getInvocationCompiler().invokeSuper(null, null);
             }
         } else {
-            ClosureCallback closureArg = getBlock(superNode.getIterNode());
+            CompilerCallback closureArg = getBlock(superNode.getIterNode());
 
             if (superNode.getArgsNode() != null) {
                 context.getInvocationCompiler().invokeSuper(argsCallback, closureArg);
@@ -3069,7 +3069,7 @@ public class ASTCompiler {
 
         final XStrNode xstrNode = (XStrNode) node;
 
-        ClosureCallback argsCallback = new ClosureCallback() {
+        CompilerCallback argsCallback = new CompilerCallback() {
 
                     public void compile(MethodCompiler context) {
                         context.createNewString(xstrNode.getValue());
@@ -3102,7 +3102,7 @@ public class ASTCompiler {
 
         ZSuperNode zsuperNode = (ZSuperNode) node;
 
-        ClosureCallback closure = getBlock(zsuperNode.getIterNode());
+        CompilerCallback closure = getBlock(zsuperNode.getIterNode());
 
         context.callZSuper(closure);
     }

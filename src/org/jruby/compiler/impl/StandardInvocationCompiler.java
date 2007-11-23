@@ -1,17 +1,34 @@
 /*
- * StandardInvocationCompiler.java
+ ***** BEGIN LICENSE BLOCK *****
+ * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Common Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/cpl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
  * 
- * Created on Jul 14, 2007, 12:31:00 AM
- * 
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the CPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the CPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 
 package org.jruby.compiler.impl;
 
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.compiler.ClosureCallback;
+import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
@@ -65,7 +82,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.pop(); // [val]
     }
         
-    public void opElementAsgn(ClosureCallback valueCallback, String operator) {
+    public void opElementAsgn(CompilerCallback valueCallback, String operator) {
         // FIXME: op element asgn is not yet using CallAdapter. Boo hoo.
         
         // receiver and args are already on the stack
@@ -130,7 +147,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         }
     }
 
-    public void invokeSuper(ClosureCallback argsCallback, ClosureCallback closureArg) {
+    public void invokeSuper(CompilerCallback argsCallback, CompilerCallback closureArg) {
         methodCompiler.loadThreadContext();
         methodCompiler.invokeUtilityMethod("checkSuperDisabled", cg.sig(void.class, ThreadContext.class));
         
@@ -164,7 +181,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.invokeinterface(cg.p(IRubyObject.class), "callSuper", cg.sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, Block.class));
     }
 
-    public void invokeDynamic(String name, ClosureCallback receiverCallback, ClosureCallback argsCallback, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
+    public void invokeDynamic(String name, CompilerCallback receiverCallback, CompilerCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
         String classname = methodCompiler.getScriptCompiler().getClassname();
         
         String fieldname = methodCompiler.getScriptCompiler().cacheCallSite(name, callType);
@@ -214,7 +231,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.invokevirtual(cg.p(CallSite.class), "call", signature);
     }
 
-    private void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign) {
+    private void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
         String callSig = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class));
         String callSigIndexed = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class));
 

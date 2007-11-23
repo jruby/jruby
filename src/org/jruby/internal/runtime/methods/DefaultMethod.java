@@ -41,7 +41,7 @@ import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTInspector;
-import org.jruby.compiler.ClosureCallback;
+import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.MethodCompiler;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
@@ -176,7 +176,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), filename);
                     compiler.startScript(staticScope);
         
-                    ClosureCallback args = new ClosureCallback() {
+                    CompilerCallback args = new CompilerCallback() {
                         public void compile(MethodCompiler context) {
                             ASTCompiler.compileArgs(argsNode, context);
                         }

@@ -25,40 +25,12 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-
 package org.jruby.compiler;
-
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
-
-import org.jruby.compiler.impl.SkinnyMethodAdapter;
 
 /**
  *
  * @author headius
  */
-public interface VariableCompiler {
-    public SkinnyMethodAdapter getMethodAdapter();
-    public void setMethodAdapter(SkinnyMethodAdapter sma);
-    public void beginMethod(CompilerCallback argsCallback, StaticScope scope);
-    public void beginClass(CompilerCallback bodyPrep, StaticScope scope);
-    public void beginClosure(CompilerCallback argsCallback, StaticScope scope);
-    public void assignLocalVariable(int index);
-    public void retrieveLocalVariable(int index);
-    public void assignLastLine();
-    public void retrieveLastLine();
-    public void retrieveBackRef();
-    public void assignLocalVariable(int index, int depth);
-    public void retrieveLocalVariable(int index, int depth);
-    public void checkMethodArity(int requiredArgs, int optArgs, int restArg);
-    public void assignMethodArguments(
-            Object requiredArgs,
-            int requiredArgsCount,
-            Object optArgs,
-            int optArgsCount,
-            ArrayCallback requiredAssignment,
-            ArrayCallback optGivenAssignment,
-            ArrayCallback optNotGivenAssignment,
-            CompilerCallback restAssignment,
-            CompilerCallback blockAssignment);
+public interface CompilerCallback {
+    public void compile(MethodCompiler context);
 }
