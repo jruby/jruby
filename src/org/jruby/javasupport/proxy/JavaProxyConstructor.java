@@ -43,6 +43,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -176,7 +177,8 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
                 if (v < 0 || v == (newArgs.length)) {
                     return JavaUtil.convertRubyToJava(self.callMethod(runtime.getCurrentContext(), name, newArgs, CallType.FUNCTIONAL, Block.NULL_BLOCK), m.getReturnType());
                 } else {
-                    return JavaUtil.convertRubyToJava(self.callMethod(runtime.getCurrentContext(),self.getMetaClass().getSuperClass(), name, newArgs, CallType.SUPER, Block.NULL_BLOCK), m.getReturnType());
+                    RubyClass superClass = self.getMetaClass().getSuperClass();
+                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, CallType.SUPER, Block.NULL_BLOCK), m.getReturnType());
                 }
             }
         };

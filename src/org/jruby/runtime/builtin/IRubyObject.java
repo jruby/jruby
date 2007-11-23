@@ -79,8 +79,6 @@ public interface IRubyObject {
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name);
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg);
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args);
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name, IRubyObject[] args, CallType callType, Block block);
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block);
     
     /**
      * RubyMethod isNil.

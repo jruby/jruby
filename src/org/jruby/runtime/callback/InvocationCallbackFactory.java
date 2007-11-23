@@ -241,7 +241,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     private MethodVisitor startDispatcher(ClassWriter cw) {
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "callMethod", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, Integer.TYPE, String.class,
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "callMethod", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, RubyClass.class, Integer.TYPE, String.class,
                 IRubyObject[].class, CallType.class, Block.class)), null, null);
         ;
         mv.visitCode();

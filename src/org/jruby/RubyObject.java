@@ -40,16 +40,13 @@
 package org.jruby;
 
 import java.io.IOException;
-import java.io.ObjectInput;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -68,9 +65,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.Node;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.Binding;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 
@@ -457,58 +452,32 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
         
         assert superClass != null : "Superclass should always be something for " + klazz.getBaseName();
 
-        return callMethod(context, superClass, context.getFrameName(), args, CallType.SUPER, block);
+        return RuntimeHelpers.invokeAs(context, superClass, this, context.getFrameName(), args, CallType.SUPER, block);
     }    
 
     public IRubyObject callMethod(ThreadContext context, String name) {
-        return callMethod(context, getMetaClass(), name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
+        return RuntimeHelpers.invoke(context, this, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
     }
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg) {
-        return callMethod(context, getMetaClass(), name, new IRubyObject[] { arg }, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+        return RuntimeHelpers.invoke(context, this, name, new IRubyObject[] { arg }, CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args) {
-        return callMethod(context, getMetaClass(), name, args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+        return RuntimeHelpers.invoke(context, this, name, args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block) {
-        return callMethod(context, getMetaClass(), name, args, CallType.FUNCTIONAL, block);
+        return RuntimeHelpers.invoke(context, this, name, args, CallType.FUNCTIONAL, block);
     }
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType, Block block) {
-        return callMethod(context, getMetaClass(), name, args, callType, block);
+        return RuntimeHelpers.invoke(context, this, name, args, callType, block);
     }
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name) {
-        return callMethod(context, getMetaClass(), methodIndex, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
+        return RuntimeHelpers.invoke(context, this, methodIndex, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
     }
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) {
-        return callMethod(context,getMetaClass(),methodIndex,name,new IRubyObject[]{arg},CallType.FUNCTIONAL, Block.NULL_BLOCK);
+        return RuntimeHelpers.invoke(context, this, methodIndex,name,new IRubyObject[]{arg},CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args) {
-        return callMethod(context,getMetaClass(),methodIndex,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
-    }
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name, IRubyObject[] args, CallType callType) {
-        return callMethod(context, rubyclass, methodIndex, name, args, callType, Block.NULL_BLOCK);
-    }
-    
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block) {
-        if (context.getRuntime().hasEventHooks()) return callMethod(context, rubyclass, name, args, callType, block);
-        
-        return rubyclass.dispatcher.callMethod(context, this, rubyclass, methodIndex, name, args, callType, block);
-    }
-    
-    /**
-     *
-     */
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name,
-            IRubyObject[] args, CallType callType, Block block) {
-        assert args != null;
-        DynamicMethod method = null;
-        method = rubyclass.searchMethod(name);
-        
-
-        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-            return RuntimeHelpers.callMethodMissing(context, this, method, name, args, context.getFrameSelf(), callType, block);
-        }
-
-        return method.call(context, this, rubyclass, name, args, block);
+        return RuntimeHelpers.invoke(context, this, methodIndex,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
 
     public void callInit(IRubyObject[] args, Block block) {

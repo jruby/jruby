@@ -1,6 +1,8 @@
 package org.jruby.runtime;
 
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class Dispatcher {
@@ -9,10 +11,10 @@ public abstract class Dispatcher {
             switchTable = new byte[0];
         }
         
-        public IRubyObject callMethod(ThreadContext context, IRubyObject self, RubyModule rubyclass, int methodIndex, String name,
+        public IRubyObject callMethod(ThreadContext context, IRubyObject self, RubyClass rubyclass, int methodIndex, String name,
                 IRubyObject[] args, CallType callType, Block block) {
             try {
-                return self.callMethod(context, rubyclass, name, args, callType, block);
+                return RuntimeHelpers.invokeAs(context, rubyclass, self, name, args, callType, block);
             } catch (StackOverflowError soe) {
                 throw context.getRuntime().newSystemStackError("stack level too deep");
             }
@@ -23,7 +25,7 @@ public abstract class Dispatcher {
     
     protected byte[] switchTable;
     
-    public abstract IRubyObject callMethod(ThreadContext context, IRubyObject self, RubyModule rubyclass, int methodIndex, String name,
+    public abstract IRubyObject callMethod(ThreadContext context, IRubyObject self, RubyClass rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block);
     
     public void clearIndex(int index) {

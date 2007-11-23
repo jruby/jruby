@@ -37,11 +37,15 @@ import java.util.Collections;
 import java.util.Set;
 import org.jruby.anno.JRubyMethod;
 
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -213,6 +217,26 @@ public class RubyClass extends RubyModule {
         } else {
             return super.makeMetaClass(superClass);
         }
+    }
+    
+    public IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block) {
+        if (context.getRuntime().hasEventHooks()) return invoke(context, self, name, args, callType, block);
+        
+        return dispatcher.callMethod(context, self, this, methodIndex, name, args, callType, block);
+    }
+    
+    public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
+            IRubyObject[] args, CallType callType, Block block) {
+        assert args != null;
+        DynamicMethod method = null;
+        method = searchMethod(name);
+        
+
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, name, args, context.getFrameSelf(), callType, block);
+        }
+
+        return method.call(context, self, this, name, args, block);
     }
 
     /** rb_class_new_instance

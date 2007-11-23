@@ -258,10 +258,10 @@ public class RuntimeHelpers {
      * NOTE: THIS IS NOT THE SAME AS THE SWITCHVALUE VERSIONS.
      */
     public static IRubyObject compilerCallMethodWithIndex(ThreadContext context, IRubyObject receiver, int methodIndex, String name, IRubyObject[] args, IRubyObject caller, CallType callType, Block block) {
-        RubyModule module = receiver.getMetaClass();
+        RubyClass clazz = receiver.getMetaClass();
         
-        if (module.index != 0) {
-            return receiver.callMethod(context, module, methodIndex, name, args, callType, block);
+        if (clazz.index != 0) {
+            return clazz.invoke(context, receiver, methodIndex, name, args, callType, block);
         }
         
         return compilerCallMethod(context, receiver, name, args, caller, callType, block);
@@ -316,6 +316,18 @@ public class RuntimeHelpers {
         newArgs[0] = context.getRuntime().newSymbol(name);
 
         return receiver.callMethod(context, "method_missing", newArgs, block);
+    }
+    
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block) {
+        return self.getMetaClass().invoke(context, self, methodIndex, name, args, callType, block);
+    }
+    
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
+        return self.getMetaClass().invoke(context, self, name, args, callType, block);
+    }
+    
+    public static IRubyObject invokeAs(ThreadContext context, RubyClass asClass, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
+        return asClass.invoke(context, self, name, args, callType, block);
     }
 
     public static RubyArray ensureRubyArray(IRubyObject value) {

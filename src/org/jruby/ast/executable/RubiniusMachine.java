@@ -43,6 +43,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.internal.runtime.methods.RubiniusMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -271,9 +272,9 @@ public class RubiniusMachine {
                     argu[i] = stack[stackTop--];
                 }
                 if((call_flags & 0x01) == 0x01) { //Functional
-                    stack[++stackTop] = recv.callMethod(context, recv.getMetaClass(), ixi, name, argu, CallType.FUNCTIONAL, Block.NULL_BLOCK); 
+                    stack[++stackTop] = RuntimeHelpers.invoke(context, recv, ixi, name, argu, CallType.FUNCTIONAL, Block.NULL_BLOCK); 
                 } else {
-                    stack[++stackTop] = recv.callMethod(context, recv.getMetaClass(), ixi, name, argu, CallType.NORMAL, Block.NULL_BLOCK); 
+                    stack[++stackTop] = RuntimeHelpers.invoke(context, recv, ixi, name, argu, CallType.NORMAL, Block.NULL_BLOCK); 
                 }
                 break;
             }
