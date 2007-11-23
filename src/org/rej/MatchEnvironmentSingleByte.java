@@ -58,6 +58,9 @@ class MatchEnvironmentSingleByte {
     private int failureStackPointer;
     private int failureStackEnd;
     
+    private final int[] UNSET_VALUES;
+    private final boolean[] FALSE_VALUES;
+
     private boolean bestRegistersSet = false;
     private int failureCountNums = 0;
 
@@ -101,6 +104,11 @@ class MatchEnvironmentSingleByte {
         registerMatchedSomething = new boolean[registerCount];
         bestRegisterStart = new int[registerCount];
         bestRegisterEnd = new int[registerCount];
+
+        UNSET_VALUES = new int[registerCount];
+        Arrays.fill(UNSET_VALUES, REG_UNSET_VALUE);
+        FALSE_VALUES = new boolean[registerCount];
+        Arrays.fill(FALSE_VALUES, false);
 
         if(registers != null) {
             registers.initRegisters(registerCount);
@@ -151,10 +159,10 @@ class MatchEnvironmentSingleByte {
            ( or ( and ) or ) has been seen for. Also set all registers to
            inactive and mark them as not having matched anything or ever
            failed. */
-        Arrays.fill(registerStart, REG_UNSET_VALUE);
-        Arrays.fill(registerEnd, REG_UNSET_VALUE);
-        Arrays.fill(bestRegisterStart, REG_UNSET_VALUE);
-        Arrays.fill(bestRegisterEnd, REG_UNSET_VALUE);
+        System.arraycopy(UNSET_VALUES, 0, registerStart, 0, registerCount);
+        System.arraycopy(UNSET_VALUES, 0, registerEnd, 0, registerCount);
+        System.arraycopy(UNSET_VALUES, 0, bestRegisterStart, 0, registerCount);
+        System.arraycopy(UNSET_VALUES, 0, bestRegisterEnd, 0, registerCount);
     }
 
     private final void popFailureCount() {
@@ -304,10 +312,10 @@ class MatchEnvironmentSingleByte {
             thisRegister = lastUsedRegister;
 
             if(registerCount - (lastUsedRegister+1) > 0) {
-                Arrays.fill(registerStart, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
-                Arrays.fill(registerEnd, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
-                Arrays.fill(registerActive, lastUsedRegister+1, registerCount, false);
-                Arrays.fill(registerMatchedSomething, lastUsedRegister+1, registerCount, false);
+                System.arraycopy(UNSET_VALUES, 0, registerStart, lastUsedRegister+1, registerCount - (lastUsedRegister+1));
+                System.arraycopy(UNSET_VALUES, 0, registerEnd, lastUsedRegister+1, registerCount - (lastUsedRegister+1));
+                System.arraycopy(FALSE_VALUES, 0, registerActive, lastUsedRegister+1, registerCount - (lastUsedRegister+1));
+                System.arraycopy(FALSE_VALUES, 0, registerMatchedSomething, lastUsedRegister+1, registerCount - (lastUsedRegister+1));
             }
 
             if(thisRegister > 0) {
@@ -330,10 +338,10 @@ class MatchEnvironmentSingleByte {
             thisRegister = lastUsedRegister;
 
             if(registerCount - (lastUsedRegister+1) > 0) {
-                Arrays.fill(registerStart, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
-                Arrays.fill(registerEnd, lastUsedRegister+1, registerCount, REG_UNSET_VALUE);
-                Arrays.fill(registerActive, lastUsedRegister+1, registerCount, false);
-                Arrays.fill(registerMatchedSomething, lastUsedRegister+1, registerCount, false);
+                System.arraycopy(UNSET_VALUES, 0, registerStart, lastUsedRegister+1, registerCount - (lastUsedRegister+1));
+                System.arraycopy(UNSET_VALUES, 0, registerEnd, lastUsedRegister+1, registerCount - (lastUsedRegister+1));
+                System.arraycopy(FALSE_VALUES, 0, registerActive, lastUsedRegister+1, registerCount - (lastUsedRegister+1));
+                System.arraycopy(FALSE_VALUES, 0, registerMatchedSomething, lastUsedRegister+1, registerCount - (lastUsedRegister+1));
             }
 
             if(thisRegister > 0) {
