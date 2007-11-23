@@ -40,6 +40,7 @@ public abstract class AbstractBench {
             if(time < best) {
                 best = time;
             }
+            System.err.print(".");
         }
         System.err.println(":  " + best + "ms");
     }
