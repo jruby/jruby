@@ -84,6 +84,7 @@ import org.jruby.libraries.RbConfigLibrary;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.regexp.RegexpFactory;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
@@ -105,7 +106,6 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.MethodCache;
 import org.jruby.util.NormalizedFile;
-import org.jruby.runtime.Binding;
 
 import com.sun.jna.Native;
 
@@ -2159,6 +2159,11 @@ public final class Ruby {
 
     public RaiseException newErrnoENOENTError() {
         return newRaiseException(fastGetModule("Errno").fastGetClass("ENOENT"), "File not found");
+    }
+
+    public RaiseException newErrnoEACCESError(String message) {
+        return newRaiseException(
+                fastGetModule("Errno").fastGetClass("EACCES"), message);
     }
 
     public RaiseException newErrnoEISDirError() {

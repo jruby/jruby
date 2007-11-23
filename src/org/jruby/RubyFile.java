@@ -43,8 +43,8 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import org.jruby.anno.JRubyMethod;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -253,7 +253,14 @@ public class RubyFile extends RubyIO {
         } catch (DirectoryAsFileException e) {
             throw getRuntime().newErrnoEISDirError();
         } catch (FileNotFoundException e) {
-        	throw getRuntime().newErrnoENOENTError();
+            // FNFException can be thrown in both cases, when the file
+            // is not found, or when permission is denied.
+            if (new File(newPath).exists()) {
+                throw getRuntime().newErrnoEACCESError(
+                        "Permission denied - " + newPath);
+            }
+            throw getRuntime().newErrnoENOENTError(
+                    "File not found - " + newPath);
         } catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
 		}
