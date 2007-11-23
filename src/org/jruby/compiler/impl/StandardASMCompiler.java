@@ -662,7 +662,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         private void buildObjectArray(String type, Object[] sourceArray, ArrayCallback callback) {
             if (sourceArray.length == 0) {
                 method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
-            } else if (sourceArray.length < RuntimeHelpers.MAX_SPECIFIC_ARITY_OBJECT_ARRAY) {
+            } else if (sourceArray.length <= RuntimeHelpers.MAX_SPECIFIC_ARITY_OBJECT_ARRAY) {
                 // if we have a specific-arity helper to construct an array for us, use that
                 for (int i = 0; i < sourceArray.length; i++) {
                     callback.nextValue(this, sourceArray, i);
@@ -693,7 +693,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void createNewHash(Object elements, ArrayCallback callback, int keyCount) {
             loadRuntime();
             
-            if (keyCount < RuntimeHelpers.MAX_SPECIFIC_ARITY_HASH) {
+            if (keyCount <= RuntimeHelpers.MAX_SPECIFIC_ARITY_HASH) {
                 // we have a specific-arity method we can use to construct, so use that
                 for (int i = 0; i < keyCount; i++) {
                     callback.nextValue(this, elements, i);
@@ -701,20 +701,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 
                 invokeUtilityMethod("constructHash", cg.sig(RubyHash.class, cg.params(Ruby.class, IRubyObject.class, keyCount * 2)));
             } else {
-                // create a new hashmap the brute-force way
-                method.newobj(cg.p(HashMap.class));
-                method.dup();
-                method.invokespecial(cg.p(HashMap.class), "<init>", cg.sig(Void.TYPE));
+                method.invokestatic(cg.p(RubyHash.class), "newHash", cg.sig(RubyHash.class, cg.params(Ruby.class)));
 
                 for (int i = 0; i < keyCount; i++) {
                     method.dup();
                     callback.nextValue(this, elements, i);
-                    method.invokevirtual(cg.p(HashMap.class), "put", cg.sig(Object.class, cg.params(Object.class, Object.class)));
-                    method.pop();
+                    method.invokevirtual(cg.p(RubyHash.class), "fastASet", cg.sig(void.class, cg.params(IRubyObject.class, IRubyObject.class)));
                 }
-
-                loadNil();
-                method.invokestatic(cg.p(RubyHash.class), "newHash", cg.sig(RubyHash.class, cg.params(Ruby.class, Map.class, IRubyObject.class)));
             }
         }
 

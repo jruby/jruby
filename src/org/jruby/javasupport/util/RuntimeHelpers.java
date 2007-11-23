@@ -720,22 +720,22 @@ public class RuntimeHelpers {
     
     public static RubyHash constructHash(Ruby runtime, IRubyObject key1, IRubyObject value1) {
         RubyHash hash = RubyHash.newHash(runtime);
-        hash.put(key1, value1);
+        hash.fastASet(key1, value1);
         return hash;
     }
     
     public static RubyHash constructHash(Ruby runtime, IRubyObject key1, IRubyObject value1, IRubyObject key2, IRubyObject value2) {
         RubyHash hash = RubyHash.newHash(runtime);
-        hash.put(key1, value1);
-        hash.put(key2, value2);
+        hash.fastASet(key1, value1);
+        hash.fastASet(key2, value2);
         return hash;
     }
     
     public static RubyHash constructHash(Ruby runtime, IRubyObject key1, IRubyObject value1, IRubyObject key2, IRubyObject value2, IRubyObject key3, IRubyObject value3) {
         RubyHash hash = RubyHash.newHash(runtime);
-        hash.put(key1, value1);
-        hash.put(key2, value2);
-        hash.put(key3, value3);
+        hash.fastASet(key1, value1);
+        hash.fastASet(key2, value2);
+        hash.fastASet(key3, value3);
         return hash;
     }
     
