@@ -1081,7 +1081,7 @@ public class RubyFile extends RubyIO {
             throw runtime.newErrnoEINVALError("invalid argument: " + filename);
         }
         
-        IRubyObject[] args = new IRubyObject[] { filename, runtime.newString("w+") };
+        IRubyObject[] args = new IRubyObject[] { filename, runtime.newString("r+") };
         RubyFile file = (RubyFile) open(recv, args, false, null);
         file.truncate(newLength);
         file.close();
