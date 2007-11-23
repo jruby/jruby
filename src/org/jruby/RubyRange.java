@@ -266,7 +266,7 @@ public class RubyRange extends RubyObject {
     @JRubyMethod(name = "initialize", required = 2, optional = 1, frame = true)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         if (args.length == 3) {
-            init(args[0], args[1], (RubyBoolean) args[2]);
+            init(args[0], args[1], args[2].isTrue() ? getRuntime().getTrue() : getRuntime().getFalse());
         } else if (args.length == 2) {
             init(args[0], args[1], getRuntime().getFalse());
         } else {
@@ -441,16 +441,33 @@ public class RubyRange extends RubyObject {
         
         IRubyObject currentObject = begin;
         int compareMethod = isExclusive ? MethodIndex.OP_LT : MethodIndex.OP_LE;
-        int stepSize = (int) (args.length == 0 ? 1 : args[0].convertToInteger().getLongValue());
-        
-        if (stepSize <= 0) {
+        // int stepSize = (int) (args.length == 0 ? 1 : args[0].convertToInteger().getLongValue());
+        double stepSize = 1.0;
+        if (args.length != 0) {
+            stepSize = Double.parseDouble(args[0].toString());
+        }
+        if (stepSize == 0) {
+            throw getRuntime().newArgumentError("step can't be 0");
+        }
+        else if (stepSize < 0) {
             throw getRuntime().newArgumentError("step can't be negative");
         }
 
         ThreadContext context = getRuntime().getCurrentContext();
-        if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
-            RubyFixnum stepNum = getRuntime().newFixnum(stepSize);
-            while (currentObject.callMethod(context, compareMethod, (String)MethodIndex.NAMES.get(compareMethod), end).isTrue()) {
+        
+        if (begin instanceof RubyFloat && end instanceof RubyFloat) {
+            RubyFloat stepNum = getRuntime().newFloat(stepSize);
+            while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES.get(compareMethod), end).isTrue()) {
+                block.yield(context, currentObject);
+                currentObject = currentObject.callMethod(context, MethodIndex.OP_PLUS, "+", stepNum);
+            }
+        } else if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
+            stepSize = Math.floor(stepSize);
+            if (stepSize == 0) {
+                throw getRuntime().newArgumentError("step can't be 0");
+            }
+            RubyFixnum stepNum = getRuntime().newFixnum(Double.valueOf(stepSize).longValue());
+            while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES.get(compareMethod), end).isTrue()) {
                 block.yield(context, currentObject);
                 currentObject = currentObject.callMethod(context, MethodIndex.OP_PLUS, "+", stepNum);
             }
@@ -468,7 +485,7 @@ public class RubyRange extends RubyObject {
               }
           }
         } else {
-            while (currentObject.callMethod(context, compareMethod, (String)MethodIndex.NAMES.get(compareMethod), end).isTrue()) {
+            while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES.get(compareMethod), end).isTrue()) {
                 block.yield(context, currentObject);
                 
                 for (int i = 0; i < stepSize; i++) {
