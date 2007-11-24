@@ -56,10 +56,13 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -686,39 +689,57 @@ public class RubyKernel {
 
     @JRubyMethod(name = "eval", required = 1, optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject eval(IRubyObject recv, IRubyObject[] args, Block block) {
-        if (args == null || args.length == 0) {
-            throw recv.getRuntime().newArgumentError(args.length, 1);
-        }
+        Ruby runtime = recv.getRuntime();
             
+        // string to eval
         RubyString src = args[0].convertToString();
+        runtime.checkSafeString(src);
+        
         IRubyObject scope = null;
         String file = "(eval)";
         int line = 1;
-
-        if (args.length > 1) {
-            if (!args[1].isNil()) {
-                scope = args[1];
-
-                org.jruby.lexer.yacc.ISourcePosition pos = ((scope instanceof RubyBinding) ? (RubyBinding)scope : (RubyBinding)((RubyProc)scope).binding()).getBinding().getFrame().getPosition();
-                file = pos.getFile();
-                line = pos.getEndLine();
-            }
-            
-            if (args.length > 2) {
-                file = args[2].toString();
-            }
-
-            if(args.length > 3) {
-                line = RubyNumeric.fix2int(args[3]) - 1;
-            }
-        }
-
-        recv.getRuntime().checkSafeString(src);
-        ThreadContext context = recv.getRuntime().getCurrentContext();
         
-        if (scope == null) {
-            scope = RubyBinding.newBindingForEval(recv.getRuntime());
+        // determine scope and position
+        if (args.length > 1 && !args[1].isNil()) {
+            scope = args[1];
+
+            Binding binding;
+            if (scope instanceof RubyBinding) {
+                binding = ((RubyBinding)scope).getBinding();
+            } else if (scope instanceof RubyProc) {
+                // Procs currently contain their own binding, not the containing binding (which is probably wrong)
+                // this works around it by grabbing the parent scope and making a new binding from it
+                RubyProc proc = (RubyProc)scope;
+                binding = proc.getBlock().getBinding();
+                binding = Binding.createBinding(binding.getFrame(), binding.getDynamicScope().getNextCapturedScope());
+                scope = RubyBinding.newBinding(runtime, binding);
+            } else {
+                throw runtime.newTypeError("Wrong argument type " + scope.getMetaClass() + "(expected Proc/Binding)");
+            }
+
+            Frame frame = binding.getFrame();
+            ISourcePosition pos = frame.getPosition();
+
+            file = pos.getFile();
+            line = pos.getEndLine();
+        } else {
+            scope = RubyBinding.newBindingForEval(runtime);
         }
+            
+        // if we have additional args, use them for file and line number
+        if (args.length > 2) {
+            file = args[2].convertToString().toString();
+        } else {
+            file = "(eval)";
+        }
+
+        if (args.length > 3) {
+            line = (int)args[3].convertToInteger().getLongValue();
+        } else {
+            line = 1;
+        }
+        
+        ThreadContext context = runtime.getCurrentContext();
         
         return ASTInterpreter.evalWithBinding(context, src, scope, file, line);
     }
