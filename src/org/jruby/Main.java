@@ -149,9 +149,11 @@ public class Main {
             config.getOutput().println("    --              optional -- before rubyfile.rb for compatibility with ruby");
             config.getOutput().println("    -d              set debugging flags (set $DEBUG to true)");
             config.getOutput().println("    -v              print version number, then turn on verbose mode");
-            config.getOutput().println("    -O              run with ObjectSpace disabled (improves performance)");
+            config.getOutput().println("    -O              run with ObjectSpace disabled (default; improves performance)");
+            config.getOutput().println("    +O              run with ObjectSpace enabled (default; reduces performance)");
             config.getOutput().println("    -S cmd          run the specified command in JRuby's bin dir");
-            config.getOutput().println("    -C              pre-compile scripts before running (EXPERIMENTAL)");
+            config.getOutput().println("    -C              disable all compilation");
+            config.getOutput().println("    +C              force compilation of all scripts before they are run (except eval)");
             config.getOutput().println("    -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)");
             config.getOutput().println("    -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)");
             config.getOutput().println("    -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)");
