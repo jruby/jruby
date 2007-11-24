@@ -1459,7 +1459,7 @@ public class ASTInterpreter {
     private static IRubyObject preExeNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         PreExeNode iVisited = (PreExeNode) node;
         
-        DynamicScope scope = new DynamicScope(iVisited.getScope());
+        DynamicScope scope = DynamicScope.newDynamicScope(iVisited.getScope());
         // Each root node has a top-level scope that we need to push
         context.preScopedBody(scope);
 
@@ -1603,7 +1603,7 @@ public class ASTInterpreter {
         // since serialization cannot serialize an eval (which is the only thing
         // which is capable of having a non-empty dynamic scope).
         if (scope == null) {
-            scope = new DynamicScope(iVisited.getStaticScope());
+            scope = DynamicScope.newDynamicScope(iVisited.getStaticScope());
         }
         
         StaticScope staticScope = scope.getStaticScope();
@@ -1895,7 +1895,7 @@ public class ASTInterpreter {
             // Create block for this iter node
             // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
             return InterpretedBlock.newInterpretedClosure(context, iterNode.getBlockBody(), 
-                    new DynamicScope(scope, context.getCurrentScope()), self);
+                    DynamicScope.newDynamicScope(scope, context.getCurrentScope()), self);
         } else if (blockNode instanceof BlockPassNode) {
             BlockPassNode blockPassNode = (BlockPassNode) blockNode;
             IRubyObject proc = evalInternal(runtime,context, blockPassNode.getBodyNode(), self, currentBlock);

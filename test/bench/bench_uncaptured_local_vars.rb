@@ -1,7 +1,9 @@
 require 'benchmark'
 
+TIMES = (ARGV[0] || 5).to_i
+
 puts '10M * 100 local var accesses'
-10.times {
+TIMES.times {
   puts Benchmark.measure {
     a = 1
     # contained closure forces heap-based vars in compatibility mode
@@ -23,7 +25,7 @@ puts '10M * 100 local var accesses'
 }
 
 puts '10M * 100 local var assignments and retrievals'
-10.times {
+TIMES.times {
   puts Benchmark.measure {
     a = 1
     # contained closure forces heap-based vars in compatibility mode

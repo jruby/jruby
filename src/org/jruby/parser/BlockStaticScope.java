@@ -60,8 +60,8 @@ public class BlockStaticScope extends StaticScope {
     /**
      * @see org.jruby.parser.StaticScope#getAllNamesInScope()
      */
-    public String[] getAllNamesInScope(DynamicScope dynamicScope) {
-        String[] variables = enclosingScope.getAllNamesInScope(dynamicScope.getNextCapturedScope());
+    public String[] getAllNamesInScope() {
+        String[] variables = enclosingScope.getAllNamesInScope();
         String[] ourVariables = getVariables();
         
         // we know variables cannot be null since localstaticscope will create a 0 length one.

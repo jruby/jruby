@@ -347,7 +347,7 @@ public class StandardYARVCompiler {
             case ROOTNODE:
                 // getAllNamesInScope now gets all names in scope that have been seen at the current point
                 // of von.  This may or may not work in this case....?
-                locals = ((RootNode)node).getStaticScope().getAllNamesInScope(((RootNode) node).getScope());
+                locals = ((RootNode)node).getStaticScope().getAllNamesInScope();
                 node = ((RootNode)node).getBodyNode();
                 continue compileLoop;
             case DEFNNODE:

@@ -186,7 +186,7 @@ public abstract class StaticScope implements Serializable {
      * 
      * @return a list of all names (sans $~ and $_ which are special names)
      */
-    public abstract String[] getAllNamesInScope(DynamicScope dynamicScope);
+    public abstract String[] getAllNamesInScope();
     
     protected abstract int isDefined(String name, int depth);
     protected abstract AssignableNode assign(ISourcePosition position, String name, Node value, 

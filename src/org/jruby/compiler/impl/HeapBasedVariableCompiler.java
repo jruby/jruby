@@ -129,11 +129,18 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
     public void assignLocalVariable(int index) {
         method.dup();
 
-        method.aload(varsIndex);
-        method.swap();
-        method.ldc(new Integer(index));
-        method.swap();
-        method.arraystore();
+        if (index == 0) {
+            method.aload(scopeIndex);
+            method.swap();
+            method.invokevirtual(cg.p(DynamicScope.class), "setValueZeroDepthZero", cg.sig(Void.TYPE, cg.params(IRubyObject.class)));
+        } else {
+            method.aload(scopeIndex);
+            method.swap();
+            method.ldc(new Integer(index));
+            method.swap();
+            method.ldc(new Integer(0));
+            method.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
+        }
     }
 
     public void assignLocalVariable(int index, int depth) {
@@ -153,9 +160,15 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
     }
 
     public void retrieveLocalVariable(int index) {
-        method.aload(varsIndex);
-        method.ldc(new Integer(index));
-        method.arrayload();
+        if (index == 0) {
+            method.aload(scopeIndex);
+            methodCompiler.loadNil();
+            method.invokevirtual(cg.p(DynamicScope.class), "getValueZeroDepthZeroOrNil", cg.sig(IRubyObject.class, IRubyObject.class));
+        } else {
+            method.aload(varsIndex);
+            method.ldc(new Integer(index));
+            method.arrayload();
+        }
     }
 
     public void retrieveLocalVariable(int index, int depth) {

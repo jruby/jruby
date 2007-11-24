@@ -121,7 +121,7 @@ public final class ThreadContext {
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
         StaticScope topStaticScope = new LocalStaticScope(null);
-        pushScope(new DynamicScope(topStaticScope, null));
+        pushScope(new ManyVarsDynamicScope(topStaticScope, null));
             
         for (int i = 0; i < frameStack.length; i++) {
             frameStack[i] = new Frame();
@@ -619,7 +619,7 @@ public final class ThreadContext {
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
         StaticScope staticScope = new LocalStaticScope(getCurrentScope().getStaticScope(), scopeNames);
         staticScope.setModule(type);
-        pushScope(new DynamicScope(staticScope, null));
+        pushScope(new ManyVarsDynamicScope(staticScope, null));
     }
     
     public void postCompiledClass() {
@@ -629,7 +629,7 @@ public final class ThreadContext {
     }
     
     public void preScopeNode(StaticScope staticScope) {
-        pushScope(new DynamicScope(staticScope, getCurrentScope()));
+        pushScope(DynamicScope.newDynamicScope(staticScope, getCurrentScope()));
     }
 
     public void postScopeNode() {
@@ -640,7 +640,7 @@ public final class ThreadContext {
         pushRubyClass(type);
         pushFrameCopy();
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
-        pushScope(new DynamicScope(staticScope, null));
+        pushScope(DynamicScope.newDynamicScope(staticScope, null));
     }
     
     public void postClassEval() {
@@ -679,7 +679,7 @@ public final class ThreadContext {
             implementationClass = clazz;
         }
         pushCallFrame(clazz, name, self, block, jumpTarget);
-        pushScope(new DynamicScope(staticScope));
+        pushScope(DynamicScope.newDynamicScope(staticScope));
         pushRubyClass(implementationClass);
     }
     
@@ -707,7 +707,7 @@ public final class ThreadContext {
         if (implementationClass == null) {
             implementationClass = clazz;
         }
-        pushScope(new DynamicScope(staticScope));
+        pushScope(DynamicScope.newDynamicScope(staticScope));
         pushRubyClass(implementationClass);
     }
     
@@ -748,7 +748,7 @@ public final class ThreadContext {
         DynamicScope scope = getCurrentScope();
         StaticScope sScope = new BlockStaticScope(scope.getStaticScope());
         sScope.setModule(executeUnderClass);
-        pushScope(new DynamicScope(sScope, scope));
+        pushScope(DynamicScope.newDynamicScope(sScope, scope));
         pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), block, frame.getJumpTarget());
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }

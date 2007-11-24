@@ -42,6 +42,7 @@ import org.jruby.runtime.CompiledSharedScopeBlock;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.OneVarDynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,12 +60,14 @@ public class RuntimeHelpers {
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
         
+        DynamicScope dynamicScope = DynamicScope.newDynamicScope(staticScope, context.getCurrentScope());
+        
         if (light) {
             return CompiledBlockLight.newCompiledClosureLight(
                     context,
                     self,
                     Arity.createArity(arity),
-                    new DynamicScope(staticScope, context.getCurrentScope()),
+                    dynamicScope,
                     callback,
                     hasMultipleArgsHead,
                     argsNodeType);
@@ -73,7 +76,7 @@ public class RuntimeHelpers {
                     context,
                     self,
                     Arity.createArity(arity),
-                    new DynamicScope(staticScope, context.getCurrentScope()),
+                    dynamicScope,
                     callback,
                     hasMultipleArgsHead,
                     argsNodeType);
@@ -85,7 +88,7 @@ public class RuntimeHelpers {
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
         
-        context.preScopedBody(new DynamicScope(staticScope, context.getCurrentScope()));
+        context.preScopedBody(DynamicScope.newDynamicScope(staticScope, context.getCurrentScope()));
         
         Block block = CompiledBlock.newCompiledClosure(context, self, Arity.createArity(0), 
                 context.getCurrentScope(), callback, false, Block.ZERO_ARGS);
@@ -817,7 +820,7 @@ public class RuntimeHelpers {
     public static void preLoad(ThreadContext context, String[] varNames) {
         StaticScope staticScope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), varNames);
         staticScope.setModule(context.getRuntime().getObject());
-        DynamicScope scope = new DynamicScope(staticScope);
+        DynamicScope scope = DynamicScope.newDynamicScope(staticScope);
         
         // Each root node has a top-level scope that we need to push
         context.preScopedBody(scope);

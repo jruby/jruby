@@ -122,7 +122,7 @@ public class ParserConfiguration {
         // of the AST before parsing.  This makes us end up needing to readjust
         // this dynamic scope coming out of parse (and for local static scopes it
         // will always happen because of $~ and $_).
-        return new DynamicScope(new LocalStaticScope(null), existingScope);
+        return DynamicScope.newDynamicScope(new LocalStaticScope(null), existingScope);
     }
     
     /**
