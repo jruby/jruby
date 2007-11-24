@@ -45,12 +45,12 @@ public class SharedScopeBlock extends InterpretedBlock {
     
     public static Block newInterpretedSharedScopeClosure(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
         Binding binding = new Binding(self,
-                                    context.getCurrentFrame().duplicate(),
+                context.getCurrentFrame().duplicate(),
                 context.getCurrentFrame().getVisibility(),
                 context.getRubyClass(),
                 dynamicScope);
         BlockBody body = new SharedScopeBlock(iterNode);
-        
+
         return new Block(body, binding);
     }
     

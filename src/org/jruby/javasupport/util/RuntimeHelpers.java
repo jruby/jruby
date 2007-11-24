@@ -33,6 +33,7 @@ import org.jruby.regexp.PatternSyntaxException;
 import org.jruby.regexp.RegexpFactory;
 import org.jruby.regexp.RegexpPattern;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledBlock;
@@ -60,14 +61,12 @@ public class RuntimeHelpers {
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
         
-        DynamicScope dynamicScope = DynamicScope.newDynamicScope(staticScope, context.getCurrentScope());
-        
         if (light) {
             return CompiledBlockLight.newCompiledClosureLight(
                     context,
                     self,
                     Arity.createArity(arity),
-                    dynamicScope,
+                    staticScope,
                     callback,
                     hasMultipleArgsHead,
                     argsNodeType);
@@ -76,7 +75,7 @@ public class RuntimeHelpers {
                     context,
                     self,
                     Arity.createArity(arity),
-                    dynamicScope,
+                    staticScope,
                     callback,
                     hasMultipleArgsHead,
                     argsNodeType);
@@ -90,8 +89,7 @@ public class RuntimeHelpers {
         
         context.preScopedBody(DynamicScope.newDynamicScope(staticScope, context.getCurrentScope()));
         
-        Block block = CompiledBlock.newCompiledClosure(context, self, Arity.createArity(0), 
-                context.getCurrentScope(), callback, false, Block.ZERO_ARGS);
+        Block block = CompiledBlock.newCompiledClosure(context, self, Arity.createArity(0), staticScope, callback, false, Block.ZERO_ARGS);
         
         block.yield(context, null);
         

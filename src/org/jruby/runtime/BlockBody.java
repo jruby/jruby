@@ -36,6 +36,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.ast.NodeType;
 import org.jruby.internal.runtime.JumpTarget;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -64,6 +65,11 @@ public abstract class BlockBody implements JumpTarget {
         public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
             return null;
         }
+        
+        @Override
+        public StaticScope getStaticScope() {
+            return null;
+        }
 
         @Override
         public Block cloneBlock(Binding binding) {
@@ -89,6 +95,8 @@ public abstract class BlockBody implements JumpTarget {
     protected int arrayLength(IRubyObject node) {
         return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
     }
+    
+    public abstract StaticScope getStaticScope();
 
     public abstract Block cloneBlock(Binding binding);
 

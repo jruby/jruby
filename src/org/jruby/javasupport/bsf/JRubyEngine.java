@@ -103,6 +103,7 @@ public class JRubyEngine extends BSFEngineImpl {
             IRubyObject result = runtime.evalScriptlet(expr.toString());
             return JavaEmbedUtils.rubyToJava(runtime, result, Object.class);
         } catch (Exception excptn) {
+            excptn.printStackTrace();
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
         }
     }
@@ -113,6 +114,7 @@ public class JRubyEngine extends BSFEngineImpl {
             //runtime.setPosition(file, line);
             runtime.evalScriptlet(expr.toString());
         } catch (Exception excptn) {
+            excptn.printStackTrace();
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
         }
     }
@@ -121,6 +123,7 @@ public class JRubyEngine extends BSFEngineImpl {
         try {
         	return JavaEmbedUtils.invokeMethod(runtime, recv, method, args, Object.class);
         } catch (Exception excptn) {
+            excptn.printStackTrace();
             printException(runtime, excptn);
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, excptn.getMessage(), excptn);
         }

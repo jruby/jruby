@@ -98,7 +98,6 @@ public class Block {
     }
     
     public Block(BlockBody body, Binding binding) {
-        //this.binding = new Binding(self, frame, visibility, klass, dynamicScope);
         this.body = body;
         this.binding = binding;
     }

@@ -42,6 +42,7 @@ test_methods
 test_pack
 test_primitive_to_java
 test_process
+test_proc_visibility
 test_parsing
 test_random
 test_rbconfig

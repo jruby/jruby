@@ -1066,9 +1066,9 @@ public class RubyModule extends RubyObject {
             proc.getBlock().getBinding().getFrame().setName(name);
             
             // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
-            proc.getBlock().getBinding().getDynamicScope().getStaticScope().setArgumentScope(true);
+            proc.getBlock().getBody().getStaticScope().setArgumentScope(true);
             // just using required is broken...but no more broken than before zsuper refactoring
-            proc.getBlock().getBinding().getDynamicScope().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
+            proc.getBlock().getBody().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
 
             newMethod = new ProcMethod(this, proc, visibility);
         } else if (args.length == 2) {
@@ -1081,9 +1081,9 @@ public class RubyModule extends RubyObject {
                 proc.getBlock().getBinding().getFrame().setName(name);
 
                 // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
-                proc.getBlock().getBinding().getDynamicScope().getStaticScope().setArgumentScope(true);
+                proc.getBlock().getBody().getStaticScope().setArgumentScope(true);
                 // just using required is broken...but no more broken than before zsuper refactoring
-                proc.getBlock().getBinding().getDynamicScope().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
+                proc.getBlock().getBody().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
 
                 newMethod = new ProcMethod(this, proc, visibility);
             } else if (args[1].isKindOf(getRuntime().getMethod())) {

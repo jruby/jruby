@@ -202,16 +202,18 @@ public class ASTInterpreter {
         }
 
         Binding binding = ((RubyBinding)scope).getBinding();
+        DynamicScope evalScope = binding.getDynamicScope().getEvalScope();
+        
         // FIXME:  This determine module is in a strange location and should somehow be in block
-        binding.getDynamicScope().getStaticScope().determineModule();
+        evalScope.getStaticScope().determineModule();
 
         try {
             // Binding provided for scope, use it
             context.preEvalWithBinding(binding);
-            IRubyObject newSelf = context.getFrameSelf();
+            IRubyObject newSelf = binding.getSelf();
             RubyString source = src.convertToString();
             Node node = 
-                runtime.parseEval(source.getByteList(), file, binding.getDynamicScope(), lineNumber);
+                runtime.parseEval(source.getByteList(), file, evalScope, lineNumber);
 
             return eval(runtime, context, node, newSelf, binding.getFrame().getBlock());
         } catch (JumpException.BreakJump bj) {
@@ -242,8 +244,12 @@ public class ASTInterpreter {
 
         // no binding, just eval in "current" frame (caller's frame)
         RubyString source = src.convertToString();
+        
+        DynamicScope evalScope = context.getCurrentScope().getEvalScope();
+        evalScope.getStaticScope().determineModule();
+        
         try {
-            Node node = runtime.parseEval(source.getByteList(), file, context.getCurrentScope(), 0);
+            Node node = runtime.parseEval(source.getByteList(), file, evalScope, 0);
             
             return ASTInterpreter.eval(runtime, context, node, self, Block.NULL_BLOCK);
         } catch (JumpException.BreakJump bj) {
@@ -1465,7 +1471,7 @@ public class ASTInterpreter {
 
         // FIXME: I use a for block to implement END node because we need a proc which captures
         // its enclosing scope.   ForBlock now represents these node and should be renamed.
-        Block block = InterpretedBlock.newInterpretedClosure(context, iVisited, context.getCurrentScope(), self);
+        Block block = InterpretedBlock.newInterpretedClosure(context, iVisited, self);
         
         block.yield(context, null);
         
@@ -1894,8 +1900,7 @@ public class ASTInterpreter {
             
             // Create block for this iter node
             // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
-            return InterpretedBlock.newInterpretedClosure(context, iterNode.getBlockBody(), 
-                    DynamicScope.newDynamicScope(scope, context.getCurrentScope()), self);
+            return InterpretedBlock.newInterpretedClosure(context, iterNode.getBlockBody(), self);
         } else if (blockNode instanceof BlockPassNode) {
             BlockPassNode blockPassNode = (BlockPassNode) blockNode;
             IRubyObject proc = evalInternal(runtime,context, blockPassNode.getBodyNode(), self, currentBlock);

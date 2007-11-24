@@ -18,11 +18,11 @@ class A
 end
 
 old_self = self
-test_equal(A.new.y, "foo")
-test_equal(x, "foo")
+test_equal("foo", A.new.y)
+test_equal("foo", x)
 
 #### ensure self is back to pre bound eval
-test_equal(self, old_self)
+test_equal(old_self, self)
 
 #### ensure returns within ensures that cross evalstates during an eval are handled properly (whew!)
 def inContext &proc 

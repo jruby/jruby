@@ -46,13 +46,13 @@ public class CompiledSharedScopeBlock extends CompiledBlockLight {
                 Visibility.PUBLIC,
                 context.getRubyClass(),
                 dynamicScope);
-        BlockBody body = new CompiledSharedScopeBlock(arity, callback, hasMultipleArgsHead, argumentType);
+        BlockBody body = new CompiledSharedScopeBlock(arity, dynamicScope, callback, hasMultipleArgsHead, argumentType);
         
         return new Block(body, binding);
     }
 
-    private CompiledSharedScopeBlock(Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(arity, callback, hasMultipleArgsHead, argumentType);
+    private CompiledSharedScopeBlock(Arity arity, DynamicScope containingScope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+        super(arity, containingScope, callback, hasMultipleArgsHead, argumentType);
     }
     
     @Override

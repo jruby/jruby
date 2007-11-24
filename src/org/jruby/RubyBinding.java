@@ -85,7 +85,7 @@ public class RubyBinding extends RubyObject {
         
         // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
         Frame frame = context.getCurrentFrame();
-        Binding binding = Binding.createBinding(frame, context.getCurrentScope());
+        Binding binding = new Binding(frame, context.getBindingRubyClass(), context.getCurrentScope());
         
         return new RubyBinding(runtime, runtime.getBinding(), binding);
     }
@@ -116,7 +116,8 @@ public class RubyBinding extends RubyObject {
         // Set jump target to whatever the previousTarget thinks is good.
         currentFrame.setJumpTarget(previousFrame.getJumpTarget() != null ? previousFrame.getJumpTarget() : previousFrame);
         
-        Binding binding = Binding.createBinding(previousFrame, context.getCurrentScope());
+        Binding binding = new Binding(previousFrame, context.getBindingRubyClass(), context.getCurrentScope());
+        //Binding.createBinding(previousFrame, context.getCurrentScope());
         
         return new RubyBinding(runtime, runtime.getBinding(), binding);
     }

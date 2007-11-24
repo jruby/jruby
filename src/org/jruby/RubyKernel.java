@@ -707,12 +707,8 @@ public class RubyKernel {
             if (scope instanceof RubyBinding) {
                 binding = ((RubyBinding)scope).getBinding();
             } else if (scope instanceof RubyProc) {
-                // Procs currently contain their own binding, not the containing binding (which is probably wrong)
-                // this works around it by grabbing the parent scope and making a new binding from it
                 RubyProc proc = (RubyProc)scope;
                 binding = proc.getBlock().getBinding();
-                binding = Binding.createBinding(binding.getFrame(), binding.getDynamicScope().getNextCapturedScope());
-                scope = RubyBinding.newBinding(runtime, binding);
             } else {
                 throw runtime.newTypeError("Wrong argument type " + scope.getMetaClass() + "(expected Proc/Binding)");
             }

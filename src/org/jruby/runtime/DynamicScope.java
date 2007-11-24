@@ -1,5 +1,6 @@
 package org.jruby.runtime;
 
+import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -14,7 +15,7 @@ public abstract class DynamicScope {
     // eval("a = 1", binding); eval("p a").  All binding instances must get access to this
     // hidden shared scope.  We store it here.  This will be null if no binding has yet
     // been called.
-    protected DynamicScope bindingScope;
+    protected DynamicScope evalScope;
 
     protected DynamicScope(StaticScope staticScope, DynamicScope parent) {
         this(staticScope);
@@ -41,12 +42,36 @@ public abstract class DynamicScope {
         }
     }
     
-    public DynamicScope getBindingScope() {
-        return bindingScope;
-    }
-    
-    public void setBindingScope(DynamicScope bindingScope) {
-        this.bindingScope = bindingScope;
+    public final DynamicScope getEvalScope() {
+        // We create one extra dynamicScope on a binding so that when we 'eval "b=1", binding' the
+        // 'b' will get put into this new dynamic scope.  The original scope does not see the new
+        // 'b' and successive evals with this binding will.  I take it having the ability to have 
+        // succesive binding evals be able to share same scope makes sense from a programmers 
+        // perspective.   One crappy outcome of this design is it requires Dynamic and Static 
+        // scopes to be mutable for this one case.
+        
+        // Note: In Ruby 1.9 all of this logic can go away since they will require explicit
+        // bindings for evals.
+        
+        // We only define one special dynamic scope per 'logical' binding.  So all bindings for
+        // the same scope should share the same dynamic scope.  This allows multiple evals with
+        // different different bindings in the same scope to see the same stuff.
+        
+        // No binding scope so we should create one
+        if (evalScope == null) {
+            // If the next scope out has the same binding scope as this scope it means
+            // we are evaling within an eval and in that case we should be sharing the same
+            // binding scope.
+            DynamicScope parent = getNextCapturedScope(); 
+            if (parent != null && parent.getEvalScope() == this) {
+                evalScope = this;
+            } else {
+                // bindings scopes must always be ManyVars scopes since evals can grow them
+                evalScope = new ManyVarsDynamicScope(new BlockStaticScope(getStaticScope()), this);
+            }
+        }
+        
+        return evalScope;
     }
     
     /**
@@ -55,7 +80,7 @@ public abstract class DynamicScope {
      * @return the scope captured by this scope for implementing closures
      *
      */
-    public DynamicScope getNextCapturedScope() {
+    public final DynamicScope getNextCapturedScope() {
         return parent;
     }
 
@@ -64,7 +89,7 @@ public abstract class DynamicScope {
      * 
      * @return static complement to this scope
      */
-    public StaticScope getStaticScope() {
+    public final StaticScope getStaticScope() {
         return staticScope;
     }
     
@@ -73,7 +98,7 @@ public abstract class DynamicScope {
      * 
      * @return a list of variable names
      */
-    public String[] getAllNamesInScope() {
+    public final String[] getAllNamesInScope() {
         return staticScope.getAllNamesInScope();
     }
     

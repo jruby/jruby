@@ -34,6 +34,7 @@ package org.jruby.runtime;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
@@ -69,11 +70,11 @@ public class MethodBlock extends BlockBody {
     }
     
     protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preYieldSpecificBlock(binding, klass);
+        context.preYieldNoScope(binding, klass);
     }
     
     protected void post(ThreadContext context, Binding binding) {
-        context.postYield(binding);
+        context.postYieldNoScope();
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
@@ -120,6 +121,10 @@ public class MethodBlock extends BlockBody {
         } finally {
             post(context, binding);
         }
+    }
+    
+    public StaticScope getStaticScope() {
+        throw new RuntimeException("MethodBlock does not have a static scope; this should not be called");
     }
 
     public Block cloneBlock(Binding binding) {

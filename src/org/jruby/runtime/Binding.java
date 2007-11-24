@@ -48,14 +48,14 @@ public class Binding {
     /**
      * frame of method which defined this block
      */
-    private Frame frame;
+    private final Frame frame;
     private Visibility visibility;
     private RubyModule klass;
     
     /**
      * A reference to all variable values (and names) that are in-scope for this block.
      */
-    private DynamicScope dynamicScope;
+    private final DynamicScope dynamicScope;
     
     public Binding(IRubyObject self, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
@@ -66,42 +66,12 @@ public class Binding {
         this.dynamicScope = dynamicScope;
     }
     
-    public static Binding createBinding(Frame frame, DynamicScope dynamicScope) {
-        ThreadContext context = frame.getSelf().getRuntime().getCurrentContext();
-        
-        // We create one extra dynamicScope on a binding so that when we 'eval "b=1", binding' the
-        // 'b' will get put into this new dynamic scope.  The original scope does not see the new
-        // 'b' and successive evals with this binding will.  I take it having the ability to have 
-        // succesive binding evals be able to share same scope makes sense from a programmers 
-        // perspective.   One crappy outcome of this design is it requires Dynamic and Static 
-        // scopes to be mutable for this one case.
-        
-        // Note: In Ruby 1.9 all of this logic can go away since they will require explicit
-        // bindings for evals.
-        
-        // We only define one special dynamic scope per 'logical' binding.  So all bindings for
-        // the same scope should share the same dynamic scope.  This allows multiple evals with
-        // different different bindings in the same scope to see the same stuff.
-        DynamicScope extraScope = dynamicScope.getBindingScope();
-        
-        // No binding scope so we should create one
-        if (extraScope == null) {
-            // If the next scope out has the same binding scope as this scope it means
-            // we are evaling within an eval and in that case we should be sharing the same
-            // binding scope.
-            DynamicScope parent = dynamicScope.getNextCapturedScope(); 
-            if (parent != null && parent.getBindingScope() == dynamicScope) {
-                extraScope = dynamicScope;
-            } else {
-                // bindings scopes must always be ManyVars scopes since evals can grow them
-                extraScope = new ManyVarsDynamicScope(new BlockStaticScope(dynamicScope.getStaticScope()), dynamicScope);
-                dynamicScope.setBindingScope(extraScope);
-            }
-        } 
-        
-        // FIXME: Ruby also saves wrapper, which we do not
-        return new Binding(frame.getSelf(), frame.duplicate(), frame.getVisibility(), 
-                context.getBindingRubyClass(), extraScope);
+    public Binding(Frame frame, RubyModule bindingClass, DynamicScope dynamicScope) {
+        this.self = frame.getSelf();
+        this.frame = frame;
+        this.visibility = frame.getVisibility();
+        this.klass = bindingClass;
+        this.dynamicScope = dynamicScope;
     }
 
     public Binding cloneBinding() {

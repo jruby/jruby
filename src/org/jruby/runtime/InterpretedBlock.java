@@ -44,6 +44,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -57,7 +58,7 @@ public class InterpretedBlock extends BlockBody {
     
     protected final Arity arity;
 
-    public static Block newInterpretedClosure(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
+    public static Block newInterpretedClosure(ThreadContext context, IterNode iterNode, IRubyObject self) {
         Frame f = context.getCurrentFrame();
         f.setPosition(context.getPosition());
         return newInterpretedClosure(iterNode,
@@ -66,17 +67,17 @@ public class InterpretedBlock extends BlockBody {
                          f,
                          f.getVisibility(),
                          context.getRubyClass(),
-                         dynamicScope);
+                         context.getCurrentScope());
     }
 
-    public static Block newInterpretedClosure(ThreadContext context, InterpretedBlock body, DynamicScope dynamicScope, IRubyObject self) {
+    public static Block newInterpretedClosure(ThreadContext context, InterpretedBlock body, IRubyObject self) {
         Frame f = context.getCurrentFrame();
         f.setPosition(context.getPosition());
         Binding binding = new Binding(self,
                          f,
                          f.getVisibility(),
                          context.getRubyClass(),
-                         dynamicScope);
+                         context.getCurrentScope());
         return new Block(body, binding);
     }
     
@@ -129,7 +130,7 @@ public class InterpretedBlock extends BlockBody {
     }
     
     protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preYieldSpecificBlock(binding, klass);
+        context.preYieldSpecificBlockNEW(binding, iterNode.getScope(), klass);
     }
     
     protected void post(ThreadContext context, Binding binding) {
@@ -238,6 +239,10 @@ public class InterpretedBlock extends BlockBody {
     protected int arrayLength(IRubyObject node) {
         return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
     }
+    
+    public StaticScope getStaticScope() {
+        return iterNode.getScope();
+    }
 
     public Block cloneBlock(Binding binding) {
         // We clone dynamic scope because this will be a new instance of a block.  Any previously
@@ -245,7 +250,7 @@ public class InterpretedBlock extends BlockBody {
         // overwriting those values when we create a new one.
         // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
         binding = new Binding(binding.getSelf(), binding.getFrame().duplicate(), binding.getVisibility(), binding.getKlass(), 
-                binding.getDynamicScope().cloneScope());
+                binding.getDynamicScope());
         return new Block(this, binding);
     }
 

@@ -29,6 +29,7 @@ package org.jruby.runtime;
 
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -62,11 +63,11 @@ public class CallBlock extends BlockBody {
     
     protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
         // FIXME: This could be a "light" block
-        context.preYieldSpecificBlock(binding, klass);
+        context.preYieldNoScope(binding, klass);
     }
     
     protected void post(ThreadContext context, Binding binding) {
-        context.postYield(binding);
+        context.postYieldNoScope();
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
@@ -119,6 +120,10 @@ public class CallBlock extends BlockBody {
         } finally {
             post(context, binding);
         }
+    }
+    
+    public StaticScope getStaticScope() {
+        throw new RuntimeException("CallBlock does not have a static scope; this should not be called");
     }
 
     public Block cloneBlock(Binding binding) {

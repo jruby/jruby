@@ -166,33 +166,6 @@ public class OneVarDynamicScope extends DynamicScope {
         assert blockArgValues.length == 0 : "OneVarDynamicScope only supports one variable";
         variableValue = blockArgValues[0];
     }
-    
-    public DynamicScope getBindingScope() {
-        return bindingScope;
-    }
-    
-    public void setBindingScope(OneVarDynamicScope bindingScope) {
-        this.bindingScope = bindingScope;
-    }
-    
-    /**
-     * Get next 'captured' scope.
-     * 
-     * @return the scope captured by this scope for implementing closures
-     *
-     */
-    public DynamicScope getNextCapturedScope() {
-        return parent;
-    }
-
-    /**
-     * Get the static scope associated with this DynamicScope.
-     * 
-     * @return static complement to this scope
-     */
-    public StaticScope getStaticScope() {
-        return staticScope;
-    }
 
     @Override
     protected String toString(StringBuffer buf, String indent) {

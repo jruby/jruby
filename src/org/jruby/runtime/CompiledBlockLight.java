@@ -31,6 +31,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -43,34 +44,37 @@ public class CompiledBlockLight extends BlockBody {
     protected final boolean hasMultipleArgsHead;
     protected final int argumentType;
     protected final Arity arity;
+    protected final DynamicScope dummyScope;
     
     public static Block newCompiledClosureLight(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
-        DynamicScope dynamicScope, Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+        DynamicScope dynamicScope, Arity arity, StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         Binding binding = new Binding(self, frame, visibility, klass, dynamicScope);
-        BlockBody body = new CompiledBlockLight(arity, callback, hasMultipleArgsHead, argumentType);
+        BlockBody body = new CompiledBlockLight(arity, DynamicScope.newDynamicScope(scope, dynamicScope), callback, hasMultipleArgsHead, argumentType);
         
         return new Block(body, binding);
     }
     
-    public static Block newCompiledClosureLight(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
-            CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+    public static Block newCompiledClosureLight(ThreadContext context, IRubyObject self, Arity arity,
+            StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         return newCompiledClosureLight(
                 self,
                 context.getCurrentFrame(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
-                dynamicScope,
+                context.getCurrentScope(),
                 arity,
+                scope, 
                 callback,
                 hasMultipleArgsHead,
                 argumentType);
     }
 
-    protected CompiledBlockLight(Arity arity, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+    protected CompiledBlockLight(Arity arity, DynamicScope dummyScope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         this.arity = arity;
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
         this.argumentType = argumentType;
+        this.dummyScope = dummyScope;
     }
     
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
@@ -137,7 +141,7 @@ public class CompiledBlockLight extends BlockBody {
     }
     
     protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preYieldLightBlock(binding, klass);
+        context.preYieldLightBlockNEW(binding, dummyScope, klass);
     }
     
     protected void post(ThreadContext context, Binding binding) {
@@ -182,6 +186,10 @@ public class CompiledBlockLight extends BlockBody {
             }
             return new IRubyObject[] {value};
         }
+    }
+    
+    public StaticScope getStaticScope() {
+        return dummyScope.getStaticScope();
     }
 
     public Block cloneBlock(Binding binding) {
