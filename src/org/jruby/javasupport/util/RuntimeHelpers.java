@@ -317,6 +317,28 @@ public class RuntimeHelpers {
 
         return receiver.callMethod(context, "method_missing", newArgs, block);
     }
+
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name) {
+        return RuntimeHelpers.invoke(context, self, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
+    }
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
+        return RuntimeHelpers.invoke(context, self, name, new IRubyObject[] { arg }, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+    }
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args) {
+        return RuntimeHelpers.invoke(context, self, name, args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+    }
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, Block block) {
+        return RuntimeHelpers.invoke(context, self, name, args, CallType.FUNCTIONAL, block);
+    }
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name) {
+        return RuntimeHelpers.invoke(context, self, methodIndex, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
+    }
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject arg) {
+        return RuntimeHelpers.invoke(context, self, methodIndex,name,new IRubyObject[]{arg},CallType.FUNCTIONAL, Block.NULL_BLOCK);
+    }
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject[] args) {
+        return RuntimeHelpers.invoke(context, self, methodIndex,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
+    }
     
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block) {
         return self.getMetaClass().invoke(context, self, methodIndex, name, args, callType, block);

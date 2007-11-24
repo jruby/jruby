@@ -41,6 +41,7 @@ import java.util.Map;
 import org.jruby.environment.OSEnvironmentReaderExcepton;
 import org.jruby.environment.OSEnvironment;
 import org.jruby.internal.runtime.ValueAccessor;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.MethodIndex;
@@ -70,7 +71,7 @@ public class RubyGlobal {
                 throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
             }
 
-            return super.op_aref(key.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY));
+            return super.op_aref(RuntimeHelpers.invoke(getRuntime().getCurrentContext(), key, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY));
         }
 
         public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
@@ -87,8 +88,8 @@ public class RubyGlobal {
             
             ThreadContext context = getRuntime().getCurrentContext();
             //return super.aset(getRuntime().newString("sadfasdF"), getRuntime().newString("sadfasdF"));
-            return super.op_aset(key.callMethod(context, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY),
-                    value.isNil() ? getRuntime().getNil() : value.callMethod(context, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY));
+            return super.op_aset(RuntimeHelpers.invoke(context, key, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY),
+                    value.isNil() ? getRuntime().getNil() : RuntimeHelpers.invoke(context, value, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY));
         }
         
         public IRubyObject to_s(){

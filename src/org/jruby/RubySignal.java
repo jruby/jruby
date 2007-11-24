@@ -28,6 +28,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CallType;
@@ -48,7 +49,8 @@ public class RubySignal {
 
     @JRubyMethod(name = "trap", required = 1, optional = 1, frame = true, meta = true)
     public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block block) {
-        recv.getRuntime().getLoadService().require("jsignal");
-        return recv.getRuntime().getKernel().callMethod(recv.getRuntime().getCurrentContext(), "__jtrap", args, CallType.FUNCTIONAL, block);
+        Ruby runtime = recv.getRuntime();
+        runtime.getLoadService().require("jsignal");
+        return RuntimeHelpers.invoke(runtime.getCurrentContext(), runtime.getKernel(), "__jtrap", args, CallType.FUNCTIONAL, block);
     }
 }// RubySignal

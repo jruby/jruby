@@ -46,6 +46,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.util.Locale;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.regexp.RegexpMatcher;
 import org.jruby.regexp.RegexpPattern;
 import org.jruby.runtime.Arity;
@@ -664,7 +665,7 @@ public class RubyString extends RubyObject {
             res = regexp.search2(toString(), this);
         } else if (pattern.respondsTo("to_str")) {
             // FIXME: is this cast safe?
-            RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) pattern.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY), 0, null);
+            RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) RuntimeHelpers.invoke(getRuntime().getCurrentContext(), pattern, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY), 0, null);
             res = regexp.search2(toString(), this);
         } else {
             // not regexp and not string, can't convert

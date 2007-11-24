@@ -18,6 +18,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.YARVMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.MethodIndex;
 
 public class YARVMachine {
@@ -522,7 +523,7 @@ public class YARVMachine {
                 //YARV will never emit this, for some reason.
                 IRubyObject value = pop();
                 other = pop();
-                push(pop().callMethod(context,MethodIndex.ASET, "[]=",new IRubyObject[]{other,value}));
+                push(RuntimeHelpers.invoke(context, pop(), MethodIndex.ASET, "[]=",new IRubyObject[]{other,value}));
                 break;
             }
             case YARVInstructions.OPT_LENGTH: 

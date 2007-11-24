@@ -37,6 +37,7 @@ package org.jruby;
 import java.math.BigInteger;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
@@ -602,7 +603,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "to_int")
     public IRubyObject to_int() {
-        return callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_I, "to_i", IRubyObject.NULL_ARRAY);
+        return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, MethodIndex.TO_I, "to_i", IRubyObject.NULL_ARRAY);
     }
 
     /** num_int_p

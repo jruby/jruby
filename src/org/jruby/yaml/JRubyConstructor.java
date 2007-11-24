@@ -55,6 +55,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubyRange;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -412,7 +413,7 @@ public class JRubyConstructor extends ConstructorImpl {
         final Map vars = (Map)(ctor.constructMapping(node));
         for(final Iterator iter = vars.keySet().iterator();iter.hasNext();) {
             final IRubyObject key = (IRubyObject)iter.next();
-            oo.callMethod(oo.getRuntime().getCurrentContext(),MethodIndex.ASET, "[]=", new IRubyObject[]{key,(IRubyObject)vars.get(key)});
+            RuntimeHelpers.invoke(oo.getRuntime().getCurrentContext(), oo, MethodIndex.ASET, "[]=", new IRubyObject[]{key,(IRubyObject)vars.get(key)});
         }
         return oo;
     }
@@ -430,7 +431,7 @@ public class JRubyConstructor extends ConstructorImpl {
         final RubyObject oo = (RubyObject)theCls.getAllocator().allocate(runtime, theCls);
         final List vars = (List)(ctor.constructSequence(node));
         for(final Iterator iter = vars.iterator();iter.hasNext();) {
-            oo.callMethod(oo.getRuntime().getCurrentContext(),MethodIndex.OP_LSHIFT, "<<", new IRubyObject[]{(IRubyObject)iter.next()});;
+            RuntimeHelpers.invoke(oo.getRuntime().getCurrentContext(), oo, MethodIndex.OP_LSHIFT, "<<", new IRubyObject[]{(IRubyObject)iter.next()});;
         }
         return oo;
     }

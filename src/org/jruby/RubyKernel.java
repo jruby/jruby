@@ -55,6 +55,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -789,7 +790,7 @@ public class RubyKernel {
     @JRubyMethod(name = "trap", required = 1, frame = true, optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block block) {
         recv.getRuntime().getLoadService().require("jsignal");
-        return recv.callMethod(recv.getRuntime().getCurrentContext(), "__jtrap", args, CallType.FUNCTIONAL, block);
+        return RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(), recv, "__jtrap", args, CallType.FUNCTIONAL, block);
     }
     
     @JRubyMethod(name = "warn", required = 1, module = true, visibility = Visibility.PRIVATE)

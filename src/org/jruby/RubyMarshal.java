@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import org.jruby.anno.JRubyMethod;
 
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Constants;
@@ -149,7 +150,7 @@ public class RubyMarshal {
             if (in != null && in.respondsTo("read")) {
                 rawInput = inputStream(in);
             } else if (in != null && in.respondsTo("to_str")) {
-                RubyString inString = (RubyString) in.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY);
+                RubyString inString = (RubyString) RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(), in, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY);
                 ByteList bytes = inString.getByteList();
                 rawInput = new ByteArrayInputStream(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             } else {

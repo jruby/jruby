@@ -47,6 +47,7 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -107,11 +108,11 @@ public class AssignmentVisitor {
         CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
 
         if (iVisited.getArgsNode() == null) { // attribute set.
-            receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, callType, Block.NULL_BLOCK);
+            RuntimeHelpers.invoke(context, receiver, iVisited.getName(), new IRubyObject[] {value}, callType, Block.NULL_BLOCK);
         } else { // element set
             RubyArray args = (RubyArray)ASTInterpreter.eval(runtime, context, iVisited.getArgsNode(), self, block);
             args.append(value);
-            receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), callType, Block.NULL_BLOCK);
+            RuntimeHelpers.invoke(context, receiver, iVisited.getName(), args.toJavaArray(), callType, Block.NULL_BLOCK);
         }
     }
 
@@ -121,11 +122,11 @@ public class AssignmentVisitor {
         IRubyObject receiver = ASTInterpreter.eval(runtime, context, iVisited.getReceiverNode(), self, block);
 
         if (iVisited.getArgsNode() == null) { // attribute set.
-            receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL, Block.NULL_BLOCK);
+            RuntimeHelpers.invoke(context, receiver, iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL, Block.NULL_BLOCK);
         } else { // element set
             RubyArray args = (RubyArray)ASTInterpreter.eval(runtime, context, iVisited.getArgsNode(), self, block);
             args.append(value);
-            receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), CallType.NORMAL, Block.NULL_BLOCK);
+            RuntimeHelpers.invoke(context, receiver, iVisited.getName(), args.toJavaArray(), CallType.NORMAL, Block.NULL_BLOCK);
         }
     }
 

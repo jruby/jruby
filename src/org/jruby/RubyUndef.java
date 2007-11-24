@@ -38,11 +38,6 @@ public class RubyUndef implements IRubyObject {
     }
 
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name,
-            IRubyObject[] args) {
-        return null;
-    }
-
-    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name,
             IRubyObject[] args, CallType callType) {
         return null;
     }

@@ -267,7 +267,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
     }
 
     public String toString() {
-        return callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY).toString();
+        return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY).toString();
     }
 
     /** Getter for property ruby.
@@ -467,17 +467,11 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block) {
         return RuntimeHelpers.invoke(context, this, name, args, CallType.FUNCTIONAL, block);
     }
-    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType, Block block) {
-        return RuntimeHelpers.invoke(context, this, name, args, callType, block);
-    }
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name) {
         return RuntimeHelpers.invoke(context, this, methodIndex, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
     }
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) {
         return RuntimeHelpers.invoke(context, this, methodIndex,name,new IRubyObject[]{arg},CallType.FUNCTIONAL, Block.NULL_BLOCK);
-    }
-    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args) {
-        return RuntimeHelpers.invoke(context, this, methodIndex,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
 
     public void callInit(IRubyObject[] args, Block block) {
@@ -572,7 +566,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
     /** rb_obj_as_string
      */
     public RubyString asString() {
-        IRubyObject str = callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
+        IRubyObject str = RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
         
         if (!(str instanceof RubyString)) return (RubyString)anyToString();
         if (isTaint()) str.setTaint(true);
@@ -980,7 +974,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
         }
 
         if (isNil()) return RubyNil.inspect(this);
-        return callMethod(runtime.getCurrentContext(), MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
+        return RuntimeHelpers.invoke(runtime.getCurrentContext(), this, MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
     }
 
     /** rb_obj_is_instance_of

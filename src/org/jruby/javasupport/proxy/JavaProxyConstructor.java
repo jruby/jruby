@@ -175,7 +175,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
                 }
                 
                 if (v < 0 || v == (newArgs.length)) {
-                    return JavaUtil.convertRubyToJava(self.callMethod(runtime.getCurrentContext(), name, newArgs, CallType.FUNCTIONAL, Block.NULL_BLOCK), m.getReturnType());
+                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invoke(runtime.getCurrentContext(), self, name, newArgs, CallType.FUNCTIONAL, Block.NULL_BLOCK), m.getReturnType());
                 } else {
                     RubyClass superClass = self.getMetaClass().getSuperClass();
                     return JavaUtil.convertRubyToJava(RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, CallType.SUPER, Block.NULL_BLOCK), m.getReturnType());
