@@ -1,5 +1,8 @@
 package org.jruby.runtime;
 
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.runtime.scope.NoVarsDynamicScope;
+import org.jruby.runtime.scope.OneVarDynamicScope;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -27,19 +30,18 @@ public abstract class DynamicScope {
     }
     
     public static DynamicScope newDynamicScope(StaticScope staticScope, DynamicScope parent) {
-        if (staticScope.getNumberOfVariables() == 1) {
+        switch (staticScope.getNumberOfVariables()) {
+        case 0:
+            return new NoVarsDynamicScope(staticScope, parent);
+        case 1:
             return new OneVarDynamicScope(staticScope, parent);
-        } else {
+        default:
             return new ManyVarsDynamicScope(staticScope, parent);
         }
     }
     
     public static DynamicScope newDynamicScope(StaticScope staticScope) {
-        if (staticScope.getNumberOfVariables() == 1) {
-            return new OneVarDynamicScope(staticScope);
-        } else {
-            return new ManyVarsDynamicScope(staticScope);
-        }
+        return newDynamicScope(staticScope, null);
     }
     
     public final DynamicScope getEvalScope() {
@@ -109,7 +111,7 @@ public abstract class DynamicScope {
     public abstract void growIfNeeded();
 
     // Helper function to give a good view of current dynamic scope with captured scopes
-    protected abstract String toString(StringBuffer buf, String indent);
+    public abstract String toString(StringBuffer buf, String indent);
     
     public abstract DynamicScope cloneScope();
 
@@ -136,6 +138,11 @@ public abstract class DynamicScope {
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
      */
     public abstract IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil);
+    
+    /**
+     * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
+     */
+    public abstract IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil);
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -156,6 +163,15 @@ public abstract class DynamicScope {
     public abstract void setValueZeroDepthZero(IRubyObject value);
 
     /**
+     * Set value in current dynamic scope or one of its captured scopes.
+     * 
+     * @param offset zero-indexed value that represents where variable lives
+     * @param value to set
+     * @param depth how many captured scopes down this variable should be set
+     */
+    public abstract void setValueOneDepthZero(IRubyObject value);
+
+    /**
      * Set all values which represent 'normal' parameters in a call list to this dynamic
      * scope.  Function calls bind to local scopes by assuming that the indexes or the
      * arg list correspond to that of the local scope (plus 2 since $_ and $~ always take
@@ -167,8 +183,6 @@ public abstract class DynamicScope {
      * @param size is the number of values to assign as ordinary parm values
      */
     public abstract void setArgValues(IRubyObject[] values, int size);
-    
-    public abstract void setBlockArgValues(IRubyObject[] blockArgValues, int size);
 
     /**
      * Copy variable values back for ZSuper call.

@@ -1,5 +1,6 @@
-package org.jruby.runtime;
+package org.jruby.runtime.scope;
 
+import org.jruby.runtime.*;
 import org.jruby.RubyArray;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.parser.BlockStaticScope;
@@ -22,26 +23,26 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 1. Fix all callers
  * 2. Check parent that is passed in and make if new instance is local, then its parent is not local
  */
-public class OneVarDynamicScope extends DynamicScope {
+public class NoVarsDynamicScope extends DynamicScope {
     // Our values holder (name of variables are kept in staticScope)
     private IRubyObject variableValue;
 
-    public OneVarDynamicScope(StaticScope staticScope, DynamicScope parent) {
+    public NoVarsDynamicScope(StaticScope staticScope, DynamicScope parent) {
         super(staticScope, parent);
     }
 
-    public OneVarDynamicScope(StaticScope staticScope) {
+    public NoVarsDynamicScope(StaticScope staticScope) {
         super(staticScope);
     }
     
     public void growIfNeeded() {
-        if (staticScope.getNumberOfVariables() != 1) {
-            throw new RuntimeException("OneVarDynamicScope cannot be grown; use ManyVarsDynamicScope");
+        if (staticScope.getNumberOfVariables() != 0) {
+            throw new RuntimeException("NoVarsDynamicScope cannot be grown; use ManyVarsDynamicScope");
         }
     }
     
     public DynamicScope cloneScope() {
-        return new OneVarDynamicScope(staticScope, parent);
+        return new NoVarsDynamicScope(staticScope, parent);
     }
 
     public IRubyObject[] getValues() {
@@ -62,8 +63,7 @@ public class OneVarDynamicScope extends DynamicScope {
         if (depth > 0) {
             return parent.getValue(offset, depth - 1);
         }
-        assert offset == 0 : "SingleVarDynamicScope only supports scopes with one variable";
-        return variableValue;
+        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
     }
     
     /**
@@ -73,18 +73,15 @@ public class OneVarDynamicScope extends DynamicScope {
         if (depth > 0) {
             return parent.getValueOrNil(offset, depth - 1, nil);
         } else {
-            assert offset == 0 : "SingleVarDynamicScope only supports scopes with one variable";
-            if (variableValue == null) return variableValue = nil;
-            return variableValue;
+            throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
         }
     }
     
-    /**
-     * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
-     */
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
-        if (variableValue == null) return variableValue = nil;
-        return variableValue;
+        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+    }
+    public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
+        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
     }
 
     /**
@@ -100,20 +97,15 @@ public class OneVarDynamicScope extends DynamicScope {
             
             parent.setValue(offset, value, depth - 1);
         } else {
-            assert offset == 0 : "SingleVarDynamicScope only supports one variable";
-            variableValue = value;
+            throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
         }
     }
 
-    /**
-     * Set value in current dynamic scope or one of its captured scopes.
-     * 
-     * @param offset zero-indexed value that represents where variable lives
-     * @param value to set
-     * @param depth how many captured scopes down this variable should be set
-     */
     public void setValueZeroDepthZero(IRubyObject value) {
-        variableValue = value;
+        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+    }
+    public void setValueOneDepthZero(IRubyObject value) {
+        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
     }
 
     /**
@@ -128,8 +120,7 @@ public class OneVarDynamicScope extends DynamicScope {
      * @param size is the number of values to assign as ordinary parm values
      */
     public void setArgValues(IRubyObject[] values, int size) {
-        assert values.length == 1 : "SingleVarDynamicScope only supports one variable";
-        variableValue = values[0];
+        if (size > 0) throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
     }
 
     @Override
@@ -139,49 +130,16 @@ public class OneVarDynamicScope extends DynamicScope {
             return parent.getArgValues();
         }
         int totalArgs = staticScope.getRequiredArgs() + staticScope.getOptionalArgs();
-        assert totalArgs <= 1 : "OneVarDynamicScope only supports one variable";
+        if (totalArgs > 0) throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
         
-        // copy and splat arguments out of the scope to use for zsuper call
-        if (staticScope.getRestArg() < 0) {
-            if (totalArgs == 1) {
-                return new IRubyObject[] {variableValue};
-            } else {
-                return IRubyObject.NULL_ARRAY;
-            }
-        } else {
-            // rest arg must be splatted
-            IRubyObject restArg = getValue(staticScope.getRestArg(), 0);
-            assert restArg != null;
-            
-            // FIXME: not very efficient
-            RubyArray splattedArgs = ASTInterpreter.splatValue(restArg.getRuntime(), restArg);            
-            IRubyObject[] argValues = new IRubyObject[totalArgs + splattedArgs.size()];
-            System.arraycopy(splattedArgs.toJavaArray(), 0, argValues, totalArgs, splattedArgs.size());
-            
-            return argValues;
-        }
-    }
-    
-    public void setBlockArgValues(IRubyObject[] blockArgValues, int size) {
-        assert blockArgValues.length == 0 : "OneVarDynamicScope only supports one variable";
-        variableValue = blockArgValues[0];
+        return IRubyObject.NULL_ARRAY;
     }
 
     @Override
-    protected String toString(StringBuffer buf, String indent) {
+    public String toString(StringBuffer buf, String indent) {
         buf.append(indent).append("Static Type[" + hashCode() + "]: " + 
-                (staticScope instanceof BlockStaticScope ? "block" : "local")+" [");
+                (staticScope instanceof BlockStaticScope ? "block" : "local")+" []");
         
-        String names[] = staticScope.getVariables();
-        buf.append(names[0]).append("=");
-
-        if (variableValue == null) {
-            buf.append("null");
-        } else {
-            buf.append(variableValue);
-        }
-        
-        buf.append("]");
         if (parent != null) {
             buf.append("\n");
             parent.toString(buf, indent + "  ");

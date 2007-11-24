@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import java.util.Collection;
 
 import org.jruby.Ruby;

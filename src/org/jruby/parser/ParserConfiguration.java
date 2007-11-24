@@ -31,6 +31,7 @@
 package org.jruby.parser;
 
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 public class ParserConfiguration {
     private DynamicScope existingScope = null;
@@ -122,7 +123,9 @@ public class ParserConfiguration {
         // of the AST before parsing.  This makes us end up needing to readjust
         // this dynamic scope coming out of parse (and for local static scopes it
         // will always happen because of $~ and $_).
-        return DynamicScope.newDynamicScope(new LocalStaticScope(null), existingScope);
+        // FIXME: Because we end up adjusting this after-the-fact, we can't use
+        // any of the specific-size scopes.
+        return new ManyVarsDynamicScope(new LocalStaticScope(null), existingScope);
     }
     
     /**

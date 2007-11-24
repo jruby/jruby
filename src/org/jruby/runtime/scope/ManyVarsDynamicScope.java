@@ -1,5 +1,6 @@
-package org.jruby.runtime;
+package org.jruby.runtime.scope;
 
+import org.jruby.runtime.*;
 import org.jruby.RubyArray;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.parser.BlockStaticScope;
@@ -92,9 +93,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
         return value;
     }
     
-    /**
-     * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
-     */
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
         lazy();
         assert variableValues != null : "No variables in getValue for off: " + 0 + ", Dep: " + 0;
@@ -104,6 +102,19 @@ public class ManyVarsDynamicScope extends DynamicScope {
         IRubyObject value = variableValues[0];
         if (value == null) {
             variableValues[0] = nil;
+            value = nil;
+        }
+        return value;
+    }
+    public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
+        lazy();
+        assert variableValues != null : "No variables in getValue for off: " + 1 + ", Dep: " + 0;
+        assert 1 < variableValues.length : "Index to big for getValue off: " + 1 + ", Dep: " + 0 + ", O: " + this;
+        // &foo are not getting set from somewhere...I want the following assert to be true though
+        //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
+        IRubyObject value = variableValues[1];
+        if (value == null) {
+            variableValues[1] = nil;
             value = nil;
         }
         return value;
@@ -142,6 +153,12 @@ public class ManyVarsDynamicScope extends DynamicScope {
 
         variableValues[0] = value;
     }
+    public void setValueOneDepthZero(IRubyObject value) {
+        lazy();
+        assert 1 < variableValues.length : "Setting " + 1 + " to " + value + ", O: " + this; 
+
+        variableValues[1] = value;
+    }
 
     /**
      * Set all values which represent 'normal' parameters in a call list to this dynamic
@@ -157,11 +174,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
     public void setArgValues(IRubyObject[] values, int size) {
         lazy();
         System.arraycopy(values, 0, variableValues, 0, size);
-    }
-    
-    public void setBlockArgValues(IRubyObject[] blockArgValues, int size) {
-        lazy();
-        System.arraycopy(blockArgValues, 0, variableValues, 0, size);
     }
 
     /**
@@ -221,7 +233,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
     }
 
     // Helper function to give a good view of current dynamic scope with captured scopes
-    protected String toString(StringBuffer buf, String indent) {
+    public String toString(StringBuffer buf, String indent) {
         lazy();
         buf.append(indent).append("Static Type[" + hashCode() + "]: " + 
                 (staticScope instanceof BlockStaticScope ? "block" : "local")+" [");

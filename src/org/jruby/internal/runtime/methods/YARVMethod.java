@@ -88,7 +88,7 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
             DynamicScope scope = context.getCurrentScope();
             
             // Why not setArgValues
-            scope.setBlockArgValues(args, args.length);
+            scope.setArgValues(args, args.length);
 
             return YARVMachine.INSTANCE.exec(context, self, iseq.body);
         } catch (JumpException.ReturnJump rj) {
