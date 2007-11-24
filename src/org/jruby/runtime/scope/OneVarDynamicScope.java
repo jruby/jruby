@@ -74,12 +74,15 @@ public class OneVarDynamicScope extends DynamicScope {
         if (depth > 0) {
             return parent.getValueOrNil(offset, depth - 1, nil);
         } else {
-            assert offset == 0 : "SingleVarDynamicScope only supports scopes with one variable";
-            if (variableValue == null) return variableValue = nil;
-            return variableValue;
+            return getValueDepthZeroOrNil(offset, nil);
         }
     }
     
+    public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
+        assert offset == 0 : "SingleVarDynamicScope only supports scopes with one variable";
+        if (variableValue == null) return variableValue = nil;
+        return variableValue;
+    }
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
         if (variableValue == null) return variableValue = nil;
         return variableValue;
@@ -106,6 +109,10 @@ public class OneVarDynamicScope extends DynamicScope {
         }
     }
 
+    public void setValueDepthZero(IRubyObject value, int offset) {
+        assert offset == 0 : "SingleVarDynamicScope only supports one variable";
+        variableValue = value;
+    }
     public void setValueZeroDepthZero(IRubyObject value) {
         variableValue = value;
     }

@@ -81,20 +81,23 @@ public class TwoVarDynamicScope extends DynamicScope {
         if (depth > 0) {
             return parent.getValueOrNil(offset, depth - 1, nil);
         } else {
-            assert offset < 2 : "TwoVarDynamicScope only supports scopes with two variables";
-            switch (offset) {
-            case 0:
-                if (variableValueZero == null) return variableValueZero = nil;
-                return variableValueZero;
-            case 1:
-                if (variableValueOne == null) return variableValueOne = nil;
-                return variableValueOne;
-            default:
-                throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
-            }
+            return getValueDepthZeroOrNil(offset, nil);
         }
     }
     
+    public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
+        assert offset < 2 : "TwoVarDynamicScope only supports scopes with two variables";
+        switch (offset) {
+        case 0:
+            if (variableValueZero == null) return variableValueZero = nil;
+            return variableValueZero;
+        case 1:
+            if (variableValueOne == null) return variableValueOne = nil;
+            return variableValueOne;
+        default:
+            throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
+        }
+    }
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
         if (variableValueZero == null) return variableValueZero = nil;
         return variableValueZero;
@@ -129,6 +132,17 @@ public class TwoVarDynamicScope extends DynamicScope {
         }
     }
 
+    public void setValueDepthZero(IRubyObject value, int offset) {
+        assert offset < 2 : "TwoVarDynamicScope only supports scopes with two variables";
+        switch (offset) {
+        case 0:
+            variableValueZero = value;
+        case 1:
+            variableValueOne = value;
+        default:
+            throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
+        }
+    }
     public void setValueZeroDepthZero(IRubyObject value) {
         variableValueZero = value;
     }

@@ -135,12 +135,17 @@ public abstract class DynamicScope {
     public abstract IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil);
     
     /**
-     * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
+     * getValueOrNil for depth 0
+     */
+    public abstract IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil);
+    
+    /**
+     * getValueOrNil for index 0, depth 0
      */
     public abstract IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil);
     
     /**
-     * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
+     * getValueOrNil for index 1, depth 0
      */
     public abstract IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil);
 
@@ -152,6 +157,15 @@ public abstract class DynamicScope {
      * @param depth how many captured scopes down this variable should be set
      */
     public abstract void setValue(int offset, IRubyObject value, int depth);
+
+    /**
+     * setValue for depth zero
+     * 
+     * @param offset zero-indexed value that represents where variable lives
+     * @param value to set
+     * @param depth how many captured scopes down this variable should be set
+     */
+    public abstract void setValueDepthZero(IRubyObject value, int offset);
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.

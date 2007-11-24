@@ -73,10 +73,13 @@ public class NoVarsDynamicScope extends DynamicScope {
         if (depth > 0) {
             return parent.getValueOrNil(offset, depth - 1, nil);
         } else {
-            throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+            return getValueDepthZeroOrNil(offset, nil);
         }
     }
     
+    public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
+        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+    }
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
         throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
     }
@@ -101,6 +104,9 @@ public class NoVarsDynamicScope extends DynamicScope {
         }
     }
 
+    public void setValueDepthZero(IRubyObject value, int offset) {
+        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+    }
     public void setValueZeroDepthZero(IRubyObject value) {
         throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
     }

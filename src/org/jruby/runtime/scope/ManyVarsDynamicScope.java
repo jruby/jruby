@@ -79,10 +79,15 @@ public class ManyVarsDynamicScope extends DynamicScope {
     public IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil) {
         if (depth > 0) {
             return parent.getValueOrNil(offset, depth - 1, nil);
+        } else {
+            return getValueDepthZeroOrNil(offset, nil);
         }
+    }
+    
+    public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
         lazy();
-        assert variableValues != null : "No variables in getValue for off: " + offset + ", Dep: " + depth;
-        assert offset < variableValues.length : "Index to big for getValue off: " + offset + ", Dep: " + depth + ", O: " + this;
+        assert variableValues != null : "No variables in getValue for off: " + offset + ", Dep: " + 0;
+        assert offset < variableValues.length : "Index to big for getValue off: " + offset + ", Dep: " + 0 + ", O: " + this;
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         IRubyObject value = variableValues[offset];
@@ -92,7 +97,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
         }
         return value;
     }
-    
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
         lazy();
         assert variableValues != null : "No variables in getValue for off: " + 0 + ", Dep: " + 0;
@@ -140,13 +144,12 @@ public class ManyVarsDynamicScope extends DynamicScope {
         }
     }
 
-    /**
-     * Set value in current dynamic scope or one of its captured scopes.
-     * 
-     * @param offset zero-indexed value that represents where variable lives
-     * @param value to set
-     * @param depth how many captured scopes down this variable should be set
-     */
+    public void setValueDepthZero(IRubyObject value, int offset) {
+        lazy();
+        assert offset < variableValues.length : "Setting " + offset + " to " + value + ", O: " + this; 
+
+        variableValues[offset] = value;
+    }
     public void setValueZeroDepthZero(IRubyObject value) {
         lazy();
         assert 0 < variableValues.length : "Setting " + 0 + " to " + value + ", O: " + this; 
