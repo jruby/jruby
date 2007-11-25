@@ -60,6 +60,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.JavaNameMangler;
 
 /**
  *
@@ -166,7 +167,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                 callCount++;
 
                 if (callCount >= runtime.getInstanceConfig().getJitThreshold()) {
-                    String cleanName = CodegenUtils.cg.cleanJavaIdentifier(name);
+                    String cleanName = JavaNameMangler.mangleMethodForCleanJavaIdentifier(name);
                     String filename = "__eval__";
                     if (body != null) {
                         filename = body.getPosition().getFile();
