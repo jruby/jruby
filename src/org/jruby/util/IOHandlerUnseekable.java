@@ -151,7 +151,10 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
         }
 
         try {
-            list.append(input, Integer.MAX_VALUE);
+            final int CHUNK = 8192;
+            while (true) { // read until EOF
+                list.append(input, CHUNK);
+            }
         } catch (EOFException e) {
             if (!read) throw e;
         }
