@@ -187,8 +187,8 @@ public class RubyArray extends RubyObject implements List {
     private IRubyObject[] values;
 
     private static final int TMPLOCK_ARR_F = 1 << 9;
-    private static final int SHARED_ARR_F = 1 << 10;
 
+    private volatile boolean isShared = false;
     private int begin = 0;
     private int realLength = 0;
 
@@ -209,7 +209,7 @@ public class RubyArray extends RubyObject implements List {
         this.values = vals;
         this.begin = begin;
         this.realLength = vals.length - begin;
-        flags |= SHARED_ARR_F;
+        this.isShared = true;
     }
     
     /* rb_ary_new2
@@ -330,11 +330,11 @@ public class RubyArray extends RubyObject implements List {
     }
     
     public IRubyObject[] toJavaArrayUnsafe() {
-        return (flags & SHARED_ARR_F) == 0 ? values : toJavaArray();
+        return !isShared ? values : toJavaArray();
     }    
 
     public IRubyObject[] toJavaArrayMaybeUnsafe() {
-        return ((flags & SHARED_ARR_F) == 0 && begin == 0 && values.length == realLength) ? values : toJavaArray();
+        return (!isShared && begin == 0 && values.length == realLength) ? values : toJavaArray();
     }    
 
     /** rb_ary_make_shared
@@ -349,9 +349,9 @@ public class RubyArray extends RubyObject implements List {
      */
     private final RubyArray makeShared(int beg, int len, RubyClass klass, boolean objectSpace) {
         RubyArray sharedArray = new RubyArray(getRuntime(), klass, objectSpace);
-        flags |= SHARED_ARR_F;
+        isShared = true;
         sharedArray.values = values;
-        sharedArray.flags |= SHARED_ARR_F;
+        sharedArray.isShared = true;
         sharedArray.begin = beg;
         sharedArray.realLength = len;
         return sharedArray;
@@ -376,9 +376,9 @@ public class RubyArray extends RubyObject implements List {
      */
     private final void modify() {
         modifyCheck();
-        if ((flags & SHARED_ARR_F) != 0) {
+        if (isShared) {
             IRubyObject[] vals = reserve(realLength);
-            flags &= ~SHARED_ARR_F;
+            isShared = false;
             System.arraycopy(values, begin, vals, 0, realLength);
             begin = 0;            
             values = vals;
@@ -461,8 +461,8 @@ public class RubyArray extends RubyObject implements List {
 
         if (this == orig) return this;
 
-        origArr.flags |= SHARED_ARR_F;
-        flags |= SHARED_ARR_F;        
+        origArr.isShared = true;
+        isShared = true;
         values = origArr.values;
         realLength = origArr.realLength;
         begin = origArr.begin;
@@ -905,7 +905,7 @@ public class RubyArray extends RubyObject implements List {
         
         if (realLength == 0) return getRuntime().getNil();
 
-        if ((flags & SHARED_ARR_F) == 0) {
+        if (!isShared) {
             int index = begin + --realLength;
             IRubyObject obj = values[index];
             values[index] = null;
@@ -926,7 +926,7 @@ public class RubyArray extends RubyObject implements List {
 
         IRubyObject obj = values[begin];
 
-        flags |= SHARED_ARR_F;
+        isShared = true;
 
         begin++;
         realLength--;
@@ -1172,7 +1172,7 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "each", frame = true)
     public IRubyObject each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
-        if ((flags & SHARED_ARR_F) != 0) {
+        if (isShared) {
             for (int i = begin; i < begin + realLength; i++) {
                 block.yield(context, values[i]);
             }
@@ -1292,8 +1292,8 @@ public class RubyArray extends RubyObject implements List {
         if(getMetaClass() != getRuntime().getArray()) {
             RubyArray dup = new RubyArray(getRuntime(), getRuntime().isObjectSpaceEnabled());
 
-            flags |= SHARED_ARR_F;
-            dup.flags |= SHARED_ARR_F;
+            isShared = true;
+            dup.isShared = true;
             dup.values = values;
             dup.realLength = realLength; 
             dup.begin = begin;
@@ -1413,9 +1413,9 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject rb_clear() {
         modifyCheck();
 
-        if((flags & SHARED_ARR_F) != 0){
+        if(isShared) {
             alloc(ARRAY_DEFAULT_SIZE);
-            flags |= SHARED_ARR_F;
+            isShared = true;
         } else if (values.length > ARRAY_DEFAULT_SIZE << 1){
             alloc(ARRAY_DEFAULT_SIZE << 1);
         }
@@ -1621,7 +1621,7 @@ public class RubyArray extends RubyObject implements List {
         RubyArray result = new RubyArray(runtime, realLength);
 
         ThreadContext context = runtime.getCurrentContext();
-        if ((flags & SHARED_ARR_F) != 0) {
+        if (isShared) {
             for (int i = begin; i < begin + realLength; i++) {
                 if (block.yield(context, values[i]).isTrue()) result.append(elt(i - begin));
             }
