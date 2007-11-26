@@ -19,36 +19,43 @@
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
       <version>0.9.91</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
       <version>3.0</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-commons</artifactId>
       <version>3.0</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-util</artifactId>
       <version>3.0</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-analysis</artifactId>
       <version>3.0</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-tree</artifactId>
       <version>3.0</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jna</artifactId>
       <version>jruby-pre</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 

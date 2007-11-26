@@ -16,12 +16,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>backport-util-concurrent</groupId>
-      <artifactId>backport-util-concurrent</artifactId>
-      <version>3.0</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
       <version>0.9.91</version>
@@ -61,6 +55,7 @@
       <groupId>org.jruby.extras</groupId>
       <artifactId>jna</artifactId>
       <version>jruby-pre</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
