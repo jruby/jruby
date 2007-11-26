@@ -129,7 +129,7 @@ class TestArray < Test::Unit::TestCase
   
   def test_ary
     o = Object.new
-    def o.to_ary; end
+    def o.to_ary; []; end
     def o.==(o); true; end
     assert_equal(true, [].==(o))
   end
