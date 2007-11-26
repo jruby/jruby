@@ -86,7 +86,7 @@ public class ZlibInflate {
             append(str);
         }
         ByteList result = new ByteList(collected.realSize);
-        byte[] outp = new byte[1024];
+        byte[] outp = new byte[1024];   
         ByteList buf = collected;
         collected = new ByteList(BASE_SIZE);
         int resultLength = -1;
@@ -103,7 +103,6 @@ public class ZlibInflate {
                 resultLength = flater.inflate(outp);
                 result.append(outp, 0, resultLength);
             }
-            flater = new Inflater(false);
         }
         return RubyString.newString(runtime, result);
     }

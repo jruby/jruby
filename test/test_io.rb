@@ -185,7 +185,15 @@ class TestIO < Test::Unit::TestCase
     assert_equal(nil, f.read(1))
     f.close
   end
-
+  
+  # MRI 1.8.5 and 1.8.6 permit nil buffers with reads.
+  def test_file_read_with_nil_buffer
+     ensure_files @file
+     
+     f = File.open(@file)
+     assert_equal " ", f.read(1, nil) 
+  end
+    
   def test_open
     ensure_files @file
 

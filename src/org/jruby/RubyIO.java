@@ -1187,7 +1187,7 @@ public class RubyIO extends RubyObject {
             if (atEOF && handler.isEOF()) throw new EOFException();
 
             if (argCount == 2) {
-                callerBuffer = args[1].convertToString(); 
+                callerBuffer = !args[1].isNil() ? args[1].convertToString() : getRuntime().newString(); 
             }
 
             ByteList buf;
