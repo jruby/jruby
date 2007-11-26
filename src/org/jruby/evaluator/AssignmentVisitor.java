@@ -181,7 +181,7 @@ public class AssignmentVisitor {
 
     private static void instAsgnNode(IRubyObject self, Node node, IRubyObject value) {
         InstAsgnNode iVisited = (InstAsgnNode)node;
-        self.fastSetInstanceVariable(iVisited.getName(), value);
+        self.getInstanceVariables().fastSetInstanceVariable(iVisited.getName(), value);
     }
 
     private static void localAsgnNode(ThreadContext context, Node node, IRubyObject value) {

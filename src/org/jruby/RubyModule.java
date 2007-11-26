@@ -946,7 +946,7 @@ public class RubyModule extends RubyObject {
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     if (args.length != 0) Arity.raiseArgumentError(runtime, args.length, 0, 0);
 
-                    IRubyObject variable = self.fastGetInstanceVariable(variableName);
+                    IRubyObject variable = self.getInstanceVariables().fastGetInstanceVariable(variableName);
 
                     return variable == null ? runtime.getNil() : variable;
                 }
@@ -965,7 +965,7 @@ public class RubyModule extends RubyObject {
                     // ENEBO: Can anyone get args to be anything but length 1?
                     if (args.length != 1) Arity.raiseArgumentError(runtime, args.length, 1, 1);
 
-                    return self.fastSetInstanceVariable(variableName, args[0]);
+                    return self.getInstanceVariables().fastSetInstanceVariable(variableName, args[0]);
                 }
 
                 public Arity getArity() {

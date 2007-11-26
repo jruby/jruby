@@ -1229,14 +1229,14 @@ public class ASTInterpreter {
         InstAsgnNode iVisited = (InstAsgnNode) node;
    
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
-        self.fastSetInstanceVariable(iVisited.getName(), result);
+        self.getInstanceVariables().fastSetInstanceVariable(iVisited.getName(), result);
    
         return result;
     }
 
     private static IRubyObject instVarNode(Ruby runtime, Node node, IRubyObject self) {
         InstVarNode iVisited = (InstVarNode) node;
-        IRubyObject variable = self.fastGetInstanceVariable(iVisited.getName());
+        IRubyObject variable = self.getInstanceVariables().fastGetInstanceVariable(iVisited.getName());
    
         if (variable != null) return variable;
         
@@ -2060,7 +2060,7 @@ public class ASTInterpreter {
             }
             return null;
         case INSTVARNODE:
-            if (self.fastHasInstanceVariable(((InstVarNode) node).getName())) {
+            if (self.getInstanceVariables().fastHasInstanceVariable(((InstVarNode) node).getName())) {
                 return "instance-variable";
             }
             return null;

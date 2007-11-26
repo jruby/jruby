@@ -788,7 +788,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject getInstanceVariable(Ruby runtime, IRubyObject self, String name) {
-        IRubyObject result = self.getInstanceVariable(name);
+        IRubyObject result = self.getInstanceVariables().getInstanceVariable(name);
         
         if (result != null) return result;
         
@@ -799,7 +799,7 @@ public class RuntimeHelpers {
     
     public static IRubyObject fastGetInstanceVariable(Ruby runtime, IRubyObject self, String internedName) {
         IRubyObject result;
-        if ((result = self.fastGetInstanceVariable(internedName)) != null) return result;
+        if ((result = self.getInstanceVariables().fastGetInstanceVariable(internedName)) != null) return result;
         
         runtime.getWarnings().warning("instance variable " + internedName + " not initialized");
         

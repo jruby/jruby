@@ -227,8 +227,8 @@ public class Generator {
         // Generator#initialize
         GeneratorData d = (GeneratorData)self.dataGetStruct();
         
-        self.setInstanceVariable("@queue",self.getRuntime().newArray());
-        self.setInstanceVariable("@index",self.getRuntime().newFixnum(0));
+        self.getInstanceVariables().setInstanceVariable("@queue",self.getRuntime().newArray());
+        self.getInstanceVariables().setInstanceVariable("@index",self.getRuntime().newFixnum(0));
         
         if(Arity.checkArgumentCount(self.getRuntime(), args,0,1) == 1) {
             d.setEnum(args[0]);
@@ -240,7 +240,7 @@ public class Generator {
 
     public static IRubyObject yield(IRubyObject self, IRubyObject value, Block block) {
         // Generator#yield
-        self.getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"<<",value);
+        self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"<<",value);
         GeneratorData d = (GeneratorData)self.dataGetStruct();
         d.doWait();
         return self;
@@ -260,7 +260,7 @@ public class Generator {
 
     public static IRubyObject index(IRubyObject self) {
         // Generator#index
-        return self.getInstanceVariable("@index");
+        return self.getInstanceVariables().getInstanceVariable("@index");
     }
 
     public static IRubyObject next(IRubyObject self, Block block) {
@@ -270,25 +270,25 @@ public class Generator {
             throw self.getRuntime().newEOFError();
         }
         d.generate();
-        self.setInstanceVariable("@index",self.getInstanceVariable("@index").callMethod(self.getRuntime().getCurrentContext(),MethodIndex.OP_PLUS, "+",self.getRuntime().newFixnum(1)));
-        return self.getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"shift");
+        self.getInstanceVariables().setInstanceVariable("@index",self.getInstanceVariables().getInstanceVariable("@index").callMethod(self.getRuntime().getCurrentContext(),MethodIndex.OP_PLUS, "+",self.getRuntime().newFixnum(1)));
+        return self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"shift");
     }
 
     public static IRubyObject current(IRubyObject self, Block block) {
             // Generator#current
-        if(self.getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),MethodIndex.EMPTY_P, "empty?").isTrue()) {
+        if(self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),MethodIndex.EMPTY_P, "empty?").isTrue()) {
             throw self.getRuntime().newEOFError();
         }
-        return self.getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"first");
+        return self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"first");
     }
 
     public static IRubyObject rewind(IRubyObject self, Block block) {
         // Generator#rewind
-        if(self.getInstanceVariable("@index").callMethod(self.getRuntime().getCurrentContext(),"nonzero?").isTrue()) {
+        if(self.getInstanceVariables().getInstanceVariable("@index").callMethod(self.getRuntime().getCurrentContext(),"nonzero?").isTrue()) {
             GeneratorData d = (GeneratorData)self.dataGetStruct();
 
-            self.setInstanceVariable("@queue",self.getRuntime().newArray());
-            self.setInstanceVariable("@index",self.getRuntime().newFixnum(0));
+            self.getInstanceVariables().setInstanceVariable("@queue",self.getRuntime().newArray());
+            self.getInstanceVariables().setInstanceVariable("@index",self.getRuntime().newFixnum(0));
             
             d.start();
         }

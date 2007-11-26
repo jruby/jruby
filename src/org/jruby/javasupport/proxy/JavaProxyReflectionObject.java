@@ -83,7 +83,7 @@ public class JavaProxyReflectionObject extends RubyObject {
 
     public IRubyObject op_equal(IRubyObject other) {
         if (!(other instanceof JavaProxyReflectionObject)) {
-            other = other.fastGetInstanceVariable("@java_object");
+            other = other.getInstanceVariables().fastGetInstanceVariable("@java_object");
             if (!(other instanceof JavaObject)) {
                 return getRuntime().getFalse();
             }
@@ -107,7 +107,7 @@ public class JavaProxyReflectionObject extends RubyObject {
     
     public IRubyObject same(IRubyObject other) {
         if (!(other instanceof JavaObject)) {
-            other = other.fastGetInstanceVariable("@java_object");
+            other = other.getInstanceVariables().fastGetInstanceVariable("@java_object");
             if (!(other instanceof JavaObject)) {
                 return getRuntime().getFalse();
             }

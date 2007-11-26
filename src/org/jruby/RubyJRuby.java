@@ -29,6 +29,8 @@
 package org.jruby;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.javasupport.Java;
@@ -46,6 +48,7 @@ import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.runtime.InterpretedBlock;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 /**
  * Module which defines JRuby-specific methods for use. 
@@ -174,19 +177,19 @@ public class RubyJRuby {
     public static class JRubyCompiledScript {
         @JRubyMethod(name = "to_s")
         public static IRubyObject compiled_script_to_s(IRubyObject recv) {
-            return recv.fastGetInstanceVariable("@original_script");
+            return recv.getInstanceVariables().fastGetInstanceVariable("@original_script");
         }
 
         @JRubyMethod(name = "inspect")
         public static IRubyObject compiled_script_inspect(IRubyObject recv) {
-            return recv.getRuntime().newString("#<JRuby::CompiledScript " + recv.fastGetInstanceVariable("@name") + ">");
+            return recv.getRuntime().newString("#<JRuby::CompiledScript " + recv.getInstanceVariables().fastGetInstanceVariable("@name") + ">");
         }
 
         @JRubyMethod(name = "inspect_bytecode")
         public static IRubyObject compiled_script_inspect_bytecode(IRubyObject recv) {
-            java.io.StringWriter sw = new java.io.StringWriter();
-            org.objectweb.asm.ClassReader cr = new org.objectweb.asm.ClassReader((byte[])org.jruby.javasupport.JavaUtil.convertRubyToJava(recv.fastGetInstanceVariable("@code"),byte[].class));
-            org.objectweb.asm.util.TraceClassVisitor cv = new org.objectweb.asm.util.TraceClassVisitor(new java.io.PrintWriter(sw));
+            StringWriter sw = new StringWriter();
+            ClassReader cr = new ClassReader((byte[])org.jruby.javasupport.JavaUtil.convertRubyToJava(recv.getInstanceVariables().fastGetInstanceVariable("@code"),byte[].class));
+            TraceClassVisitor cv = new TraceClassVisitor(new PrintWriter(sw));
             cr.accept(cv, ClassReader.SKIP_DEBUG);
             return recv.getRuntime().newString(sw.toString());
         }

@@ -547,14 +547,14 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 if (skipRemainingClasses) continue;
                 // we only collect methods and interfaces for 
                 // user-defined proxy classes.
-                if (!ancestor.fastHasInstanceVariable("@java_proxy_class")) {
+                if (!ancestor.getInstanceVariables().fastHasInstanceVariable("@java_proxy_class")) {
                     skipRemainingClasses = true;
                     continue;
                 }
 
                 // get JavaClass if this is the new proxy class; verify it
                 // matches if this is a superclass proxy.
-                IRubyObject var = ancestor.fastGetInstanceVariable("@java_class");
+                IRubyObject var = ancestor.getInstanceVariables().fastGetInstanceVariable("@java_class");
                 if (var == null) {
                     throw runtime.newTypeError(
                             "no java_class defined for proxy (or ancestor): " + ancestor);
@@ -572,7 +572,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                             " (" + var + ")");
                 }
                 // get any included interfaces
-                var = ancestor.fastGetInstanceVariable("@java_interfaces");
+                var = ancestor.getInstanceVariables().fastGetInstanceVariable("@java_interfaces");
                 if (var != null && !(var instanceof RubyNil)) {
                     if (!(var instanceof RubyArray)) {
                         throw runtime.newTypeError(
@@ -605,7 +605,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 
                 // FIXME: shouldn't need @__java_ovrd_methods, just query locally defined methods.
                 
-                var = ancestor.fastGetInstanceVariable("@__java_ovrd_methods");
+                var = ancestor.getInstanceVariables().fastGetInstanceVariable("@__java_ovrd_methods");
                 if (var == null) {
                     // lock in the overridden methods for the new class, and any as-yet
                     // uninstantiated ancestor class.

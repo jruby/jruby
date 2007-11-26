@@ -84,15 +84,14 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
-import org.jruby.runtime.CompiledSharedScopeBlock;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
@@ -1185,7 +1184,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.ldc(name);
             method.swap();
 
-            invokeIRubyObject("fastSetInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
+            invokeIRubyObject("getInstanceVariables", cg.sig(InstanceVariables.class));
+            method.invokeinterface(cg.p(InstanceVariables.class), "fastSetInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
         }
 
         public void retrieveGlobalVariable(String name) {
@@ -1791,9 +1791,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         public void isInstanceVariableDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch) {
             loadSelf();
+            invokeIRubyObject("getInstanceVariables", cg.sig(InstanceVariables.class));
             method.ldc(name);
             //method.invokeinterface(cg.p(IRubyObject.class), "getInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class)));
-            method.invokeinterface(cg.p(IRubyObject.class), "fastHasInstanceVariable", cg.sig(boolean.class, cg.params(String.class)));
+            method.invokeinterface(cg.p(InstanceVariables.class), "fastHasInstanceVariable", cg.sig(boolean.class, cg.params(String.class)));
             Label trueLabel = new Label();
             Label exitLabel = new Label();
             //method.ifnonnull(trueLabel);
@@ -1972,7 +1973,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         public void getInstanceVariable(String name) {
             method.ldc(name);
-            method.invokeinterface(cg.p(IRubyObject.class), "fastGetInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class)));
+            invokeIRubyObject("getInstanceVariables", cg.sig(InstanceVariables.class));
+            method.invokeinterface(cg.p(InstanceVariables.class), "fastGetInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class)));
         }
         
         public void getFrameName() {

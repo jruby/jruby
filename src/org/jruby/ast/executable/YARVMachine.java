@@ -285,10 +285,10 @@ public class YARVMachine {
                 context.getCurrentScope().setValue((int) bytecodes[ip].l_op0, pop(), 0);
                 break;
             case YARVInstructions.GETINSTANCEVARIABLE:
-                push(self.fastGetInstanceVariable(bytecodes[ip].s_op0));
+                push(self.getInstanceVariables().fastGetInstanceVariable(bytecodes[ip].s_op0));
                 break;
             case YARVInstructions.SETINSTANCEVARIABLE:
-                self.fastSetInstanceVariable(bytecodes[ip].s_op0, pop());
+                self.getInstanceVariables().fastSetInstanceVariable(bytecodes[ip].s_op0, pop());
                 break;
             case YARVInstructions.GETCLASSVARIABLE: {
                 RubyModule rubyClass = context.getRubyClass();

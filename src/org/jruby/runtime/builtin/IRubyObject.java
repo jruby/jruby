@@ -312,21 +312,8 @@ public interface IRubyObject {
     //
     // INSTANCE VARIABLE METHODS
     //
-
-    boolean hasInstanceVariable(String name);
-    boolean fastHasInstanceVariable(String internedName);
     
-    IRubyObject getInstanceVariable(String name);
-    IRubyObject fastGetInstanceVariable(String internedName);
-    
-    IRubyObject setInstanceVariable(String name, IRubyObject value);
-    IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value);
-
-    IRubyObject removeInstanceVariable(String name);
-
-    List<Variable<IRubyObject>> getInstanceVariableList();
-
-    List<String> getInstanceVariableNameList();
+    InstanceVariables getInstanceVariables();
 
     //
     // INTERNAL VARIABLE METHODS

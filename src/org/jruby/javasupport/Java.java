@@ -125,7 +125,7 @@ public class Java {
             }
             final IRubyObject packageName;
             // again, shouldn't happen. TODO: might want to throw exception instead.
-            if ((packageName = pkg.fastGetInstanceVariable("@package_name")) == null) return null;
+            if ((packageName = pkg.getInstanceVariables().fastGetInstanceVariable("@package_name")) == null) return null;
 
             final Ruby runtime = pkg.getRuntime();
             return (RubyClass)get_proxy_class(
@@ -136,7 +136,7 @@ public class Java {
         public RubyModule defineModuleUnder(final RubyModule pkg, final String name) {
             final IRubyObject packageName;
             // again, shouldn't happen. TODO: might want to throw exception instead.
-            if ((packageName = pkg.fastGetInstanceVariable("@package_name")) == null) return null;
+            if ((packageName = pkg.getInstanceVariables().fastGetInstanceVariable("@package_name")) == null) return null;
 
             final Ruby runtime = pkg.getRuntime();
             return (RubyModule)get_interface_module(
@@ -148,13 +148,13 @@ public class Java {
     // JavaProxy
     public static IRubyObject new_instance_for(IRubyObject recv, IRubyObject java_object) {
         IRubyObject new_instance = ((RubyClass)recv).allocate();
-        new_instance.fastSetInstanceVariable("@java_object",java_object);
+        new_instance.getInstanceVariables().fastSetInstanceVariable("@java_object",java_object);
         return new_instance;
     }
 
     // If the proxy class itself is passed as a parameter this will be called by Java#ruby_to_java    
     public static IRubyObject to_java_object(IRubyObject recv) {
-        return recv.fastGetInstanceVariable("@java_class");
+        return recv.getInstanceVariables().fastGetInstanceVariable("@java_class");
     }
 
     // JavaUtilities
@@ -168,7 +168,7 @@ public class Java {
         // hacky workaround in case any users call this directly.
         // most will have called JavaUtilities.extend_proxy instead.
         recv.getRuntime().getWarnings().warn("JavaUtilities.add_proxy_extender is deprecated - use JavaUtilities.extend_proxy instead");
-        final IRubyObject javaClassVar = extender.fastGetInstanceVariable("@java_class");
+        final IRubyObject javaClassVar = extender.getInstanceVariables().fastGetInstanceVariable("@java_class");
         if (!(javaClassVar instanceof JavaClass)) {
             throw recv.getRuntime().newArgumentError("extender does not have a valid @java_class");
         }
@@ -738,7 +738,7 @@ public class Java {
      */
     public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
     	if(object.respondsTo("to_java_object")) {
-            IRubyObject result = object.fastGetInstanceVariable("@java_object");
+            IRubyObject result = object.getInstanceVariables().fastGetInstanceVariable("@java_object");
             if(result == null) {
                 result = object.callMethod(recv.getRuntime().getCurrentContext(), "to_java_object");
             }

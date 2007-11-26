@@ -8,6 +8,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.Variable;
 
 public class RubyUndef implements IRubyObject {
@@ -168,16 +169,6 @@ public class RubyUndef implements IRubyObject {
         return null;
     }
 
-    @Deprecated
-    public Map getInstanceVariables() {
-        return null;
-    }
-
-    @Deprecated
-    public Map getInstanceVariablesSnapshot() {
-        return null;
-    }
-
     public Class getJavaClass() {
         return null;
     }
@@ -266,25 +257,7 @@ public class RubyUndef implements IRubyObject {
         return false;
     }
 
-    @Deprecated
-    public Map safeGetInstanceVariables() {
-        return null;
-    }
-
-    @Deprecated
-    public boolean safeHasInstanceVariables() {
-        return false;
-    }
-
     public void setFrozen(boolean b) {
-    }
-
-    public IRubyObject setInstanceVariable(String string, IRubyObject rubyObject) {
-        return null;
-    }
-
-    @Deprecated
-    public void setInstanceVariables(Map instanceVariables) {
     }
 
     public void setMetaClass(RubyClass metaClass) {
@@ -347,31 +320,7 @@ public class RubyUndef implements IRubyObject {
         return null;
     }
     
-    public IRubyObject fastGetInstanceVariable(String name) {
-        return null;
-    }
-    
-    public boolean hasInstanceVariable(String name) {
-        return false;
-    }
-    
-    public boolean fastHasInstanceVariable(String name) {
-        return false;
-    }
-    
-    public IRubyObject fastSetInstanceVariable(String name, IRubyObject value) {
-        return null;
-    }
-    
-    public IRubyObject removeInstanceVariable(String name) {
-        return null;
-    }
-    
-    public List<Variable<IRubyObject>> getInstanceVariableList() {
-        return null;
-    }
-
-    public List<String> getInstanceVariableNameList() {
+    public InstanceVariables getInstanceVariables() {
         return null;
     }
     

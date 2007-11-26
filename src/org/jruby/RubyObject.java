@@ -68,6 +68,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.TypeConverter;
 
@@ -75,7 +76,7 @@ import org.jruby.util.TypeConverter;
  *
  * @author  jpetersen
  */
-public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObjectType {
+public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObjectType, InstanceVariables {
     
     private RubyObject(){};
     // An instance that never equals any other instance
@@ -1260,6 +1261,10 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     // INSTANCE VARIABLE API METHODS
     //
     
+    public InstanceVariables getInstanceVariables() {
+        return this;
+    }
+    
     public boolean hasInstanceVariable(String name) {
         assert IdUtil.isInstanceVariable(name);
         return variableTableContains(name);
@@ -1782,7 +1787,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         out.writeInt(names.size());
         for (String name : names) {
             out.writeObject(name);
-            out.writeObject(getInstanceVariable(name));
+            out.writeObject(getInstanceVariables().getInstanceVariable(name));
         }
     }
 

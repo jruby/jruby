@@ -234,7 +234,7 @@ public class JavaClass extends JavaObject {
                 javaField = new JavaField(getRuntime(),field);
             }
             return Java.java_to_ruby(self,
-                    javaField.value(self.fastGetInstanceVariable("@java_object")),
+                    javaField.value(self.getInstanceVariables().fastGetInstanceVariable("@java_object")),
                     Block.NULL_BLOCK);
         }
         public Arity getArity() {
@@ -256,7 +256,7 @@ public class JavaClass extends JavaObject {
                 javaField = new JavaField(getRuntime(),field);
             }
             return Java.java_to_ruby(self,
-                    javaField.set_value(self.fastGetInstanceVariable("@java_object"),
+                    javaField.set_value(self.getInstanceVariables().fastGetInstanceVariable("@java_object"),
                             Java.ruby_to_java(self,args[0],Block.NULL_BLOCK)),
                     Block.NULL_BLOCK);
         }
@@ -416,7 +416,7 @@ public class JavaClass extends JavaObject {
                 args = newArgs;
             }
             IRubyObject[] convertedArgs = new IRubyObject[len+1];
-            convertedArgs[0] = self.fastGetInstanceVariable("@java_object");
+            convertedArgs[0] = self.getInstanceVariables().fastGetInstanceVariable("@java_object");
             int i = len;
             if (block.isGiven()) {
                 convertedArgs[len] = args[len - 1];
