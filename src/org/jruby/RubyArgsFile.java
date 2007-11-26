@@ -170,8 +170,8 @@ public class RubyArgsFile extends RubyObject {
     public RubyArray readlines(IRubyObject[] args) {
         IRubyObject[] separatorArgument;
         if (args.length > 0) {
-            if (!args[0].isKindOf(getRuntime().getNilClass()) &&
-                !args[0].isKindOf(getRuntime().getString())) {
+            if (!getRuntime().getNilClass().isInstance(args[0]) &&
+                !getRuntime().getString().isInstance(args[0])) {
                 throw getRuntime().newTypeError(args[0], 
                         getRuntime().getString());
             } 

@@ -305,7 +305,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            if (!value.isNil() && ! value.isKindOf(runtime.getException())) {
+            if (!value.isNil() && ! runtime.getException().isInstance(value)) {
                 throw runtime.newTypeError("assigning non-exception to $!");
             }
             

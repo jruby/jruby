@@ -499,7 +499,7 @@ public class RuntimeHelpers {
     public static String getLocalJumpTypeOrRethrow(RaiseException re) {
         RubyException exception = re.getException();
         Ruby runtime = exception.getRuntime();
-        if (exception.isKindOf(runtime.fastGetClass("LocalJumpError"))) {
+        if (runtime.fastGetClass("LocalJumpError").isInstance(exception)) {
             RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
 
             IRubyObject reason = jumpError.reason();
@@ -642,7 +642,7 @@ public class RuntimeHelpers {
     
     public static IRubyObject isExceptionHandled(RubyException currentException, IRubyObject[] exceptions, Ruby runtime, ThreadContext context, IRubyObject self) {
         for (int i = 0; i < exceptions.length; i++) {
-            if (!exceptions[i].isKindOf(runtime.getModule())) {
+            if (!runtime.getModule().isInstance(exceptions[i])) {
                 throw runtime.newTypeError("class or module required for rescue clause");
             }
             IRubyObject result = exceptions[i].callMethod(context, "===", currentException);

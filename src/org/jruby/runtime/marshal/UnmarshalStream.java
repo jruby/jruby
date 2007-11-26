@@ -158,7 +158,7 @@ public class UnmarshalStream extends BufferedInputStream {
                 try {
                     tp = runtime.getClassFromPath(moduleName.asSymbol());
                 } catch (RaiseException e) {
-                    if (e.getException().isKindOf(runtime.fastGetModule("NameError"))) {
+                    if (runtime.fastGetModule("NameError").isInstance(e.getException())) {
                         throw runtime.newArgumentError("undefined class/module " + moduleName.asSymbol());
                     } 
                     throw e;
@@ -268,7 +268,7 @@ public class UnmarshalStream extends BufferedInputStream {
         try {
             type = getClassFromPath(runtime, className.toString());
         } catch (RaiseException e) {
-            if (e.getException().isKindOf(runtime.fastGetModule("NameError"))) {
+            if (runtime.fastGetModule("NameError").isInstance(e.getException())) {
                 throw runtime.newArgumentError("undefined class/module " + className.asSymbol());
             } 
                 
@@ -338,7 +338,7 @@ public class UnmarshalStream extends BufferedInputStream {
         try {
             classInstance = runtime.getClassFromPath(className);
         } catch (RaiseException e) {
-            if (e.getException().isKindOf(runtime.getModule("NameError"))) {
+            if (runtime.getModule("NameError").isInstance(e.getException())) {
                 throw runtime.newArgumentError("undefined class/module " + className);
             } 
             throw e;

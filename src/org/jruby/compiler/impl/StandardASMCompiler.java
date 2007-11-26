@@ -1940,10 +1940,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void selfIsKindOf(Object gotoToken) {
-            loadSelf();
-            method.swap();
             method.invokevirtual(cg.p(RubyClass.class), "getRealClass", cg.sig(RubyClass.class));
-            method.invokeinterface(cg.p(IRubyObject.class), "isKindOf", cg.sig(boolean.class, cg.params(RubyModule.class)));
+            loadSelf();
+            method.invokevirtual(cg.p(RubyModule.class), "isInstance", cg.sig(boolean.class, cg.params(IRubyObject.class)));
             method.ifne((Label)gotoToken); // EQ != 0 (i.e. true)
         }
         
@@ -2365,7 +2364,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadRuntime();
             method.ldc("SystemExit");
             method.invokevirtual(cg.p(Ruby.class), "fastGetClass", cg.sig(RubyClass.class, String.class));
-            method.invokevirtual(cg.p(RubyException.class), "isKindOf", cg.sig(boolean.class, cg.params(RubyModule.class)));
+            method.swap();
+            method.invokevirtual(cg.p(RubyModule.class), "isInstance", cg.sig(boolean.class, cg.params(IRubyObject.class)));
             method.iconst_0();
             Label ifEnd = new Label();
             method.if_icmpeq(ifEnd);

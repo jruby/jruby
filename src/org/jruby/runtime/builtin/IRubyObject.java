@@ -46,7 +46,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 
 /** Object is the parent class of all classes in Ruby. Its methods are
@@ -57,17 +56,6 @@ public interface IRubyObject {
      *
      */
     public static final IRubyObject[] NULL_ARRAY = new IRubyObject[0];
-    
-    /**
-     * Return the ClassIndex value for the native type this object was
-     * constructed from. Particularly useful for determining marshalling
-     * format. All instances of subclasses of Hash, for example
-     * are of Java type RubyHash, and so should utilize RubyHash marshalling
-     * logic in addition to user-defined class marshalling logic.
-     *
-     * @return the ClassIndex of the native type this object was constructed from
-     */
-    int getNativeTypeIndex();
     
     public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block);
 
@@ -103,6 +91,13 @@ public interface IRubyObject {
     void setTaint(boolean b);
     
     /**
+     * Infect this object using the taint of another object
+     * @param obj
+     * @return
+     */
+    IRubyObject infectBy(IRubyObject obj);
+    
+    /**
      * RubyMethod isFrozen.
      * @return boolean
      */
@@ -119,20 +114,6 @@ public interface IRubyObject {
      * @return
      */
     boolean isImmediate();
-    
-    /**
-     * RubyMethod isKindOf.
-     * @param rubyClass
-     * @return boolean
-     */
-    boolean isKindOf(RubyModule rubyClass);
-    
-    /**
-     * Infect this object using the taint of another object
-     * @param obj
-     * @return
-     */
-    IRubyObject infectBy(IRubyObject obj);
     
     /**
      * RubyMethod getRubyClass.

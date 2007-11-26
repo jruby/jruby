@@ -76,7 +76,7 @@ public abstract class DynamicMethod {
                 defined = defined.getMetaClass();
             }
 
-            if (!caller.isKindOf(defined)) return false;
+            if (!defined.isInstance(caller)) return false;
         }
         
         return true;

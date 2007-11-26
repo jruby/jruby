@@ -372,7 +372,7 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newArgumentError("wrong number of arguments");
     	}
     	
-        if (args[0].isKindOf(getRuntime().getIO())) {
+        if (getRuntime().getIO().isInstance(args[0])) {
             RubyIO ios = (RubyIO) args[0];
 
             int keepFileno = handler.getFileno();
@@ -413,12 +413,12 @@ public class RubyIO extends RubyObject {
 
             // Update fileno list with our new handler
             registerIOHandler(handler);
-        } else if (args[0].isKindOf(getRuntime().getString())) {
+        } else if (getRuntime().getString().isInstance(args[0])) {
             String path = ((RubyString) args[0]).toString();
             IOModes newModes = null;
 
             if (args.length > 1) {
-                if (!args[1].isKindOf(getRuntime().getString())) {
+                if (!getRuntime().getString().isInstance(args[1])) {
                     throw getRuntime().newTypeError(args[1], getRuntime().getString());
                 }
                     
@@ -774,7 +774,7 @@ public class RubyIO extends RubyObject {
     public IRubyObject putc(IRubyObject object) {
         int c;
         
-        if (object.isKindOf(getRuntime().getString())) {
+        if (getRuntime().getString().isInstance(object)) {
             String value = ((RubyString) object).toString();
             
             if (value.length() > 0) {
@@ -782,7 +782,7 @@ public class RubyIO extends RubyObject {
             } else {
                 throw getRuntime().newTypeError("Cannot convert String to Integer");
             }
-        } else if (object.isKindOf(getRuntime().getFixnum())){
+        } else if (getRuntime().getFixnum().isInstance(object)){
             c = RubyNumeric.fix2int(object);
         } else { // What case will this work for?
             c = RubyNumeric.fix2int(object.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_I, "to_i"));
@@ -1308,8 +1308,8 @@ public class RubyIO extends RubyObject {
     public RubyArray readlines(IRubyObject[] args) {
         ByteList separator;
         if (args.length > 0) {
-            if (!args[0].isKindOf(getRuntime().getNilClass()) &&
-                !args[0].isKindOf(getRuntime().getString())) {
+            if (!getRuntime().getNilClass().isInstance(args[0]) &&
+                !getRuntime().getString().isInstance(args[0])) {
                 throw getRuntime().newTypeError(args[0], 
                         getRuntime().getString());
             } 

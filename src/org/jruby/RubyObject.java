@@ -68,12 +68,13 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.marshal.CoreObjectType;
 
 /**
  *
  * @author  jpetersen
  */
-public class RubyObject implements Cloneable, IRubyObject, Serializable {
+public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObjectType {
     
     private RubyObject(){};
     // An instance that never equals any other instance
@@ -369,10 +370,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
         }
     }
 
-    public boolean isKindOf(RubyModule type) {
-        return type.kindOf.isKindOf(this, type);
-    }
-
     /** rb_singleton_class
      *  Note: this method is specialized for RubyFixnum, RubySymbol, RubyNil and RubyBoolean
      */    
@@ -543,9 +540,9 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
      * 
      */
     public final IRubyObject convertToType(RubyClass target, int convertMethodIndex, String convertMethod) {
-        if (isKindOf(target)) return this;
+        if (target.isInstance(this)) return this;
         IRubyObject val = convertToType(target, convertMethodIndex, convertMethod, true);
-        if (!val.isKindOf(target)) throw getRuntime().newTypeError(getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        if (!target.isInstance(val)) throw getRuntime().newTypeError(getMetaClass() + "#" + convertMethod + " should return " + target.getName());
         return val;
     }
 
@@ -556,10 +553,10 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
      * 
      */
     public final IRubyObject convertToTypeWithCheck(RubyClass target, int convertMethodIndex, String convertMethod) {  
-        if (isKindOf(target)) return this;
+        if (target.isInstance(this)) return this;
         IRubyObject val = convertToType(target, convertMethodIndex, convertMethod, false);
         if (val.isNil()) return val;
-        if (!val.isKindOf(target)) throw getRuntime().newTypeError(getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        if (!target.isInstance(val)) throw getRuntime().newTypeError(getMetaClass() + "#" + convertMethod + " should return " + target.getName());
         return val;
     }
 
@@ -997,7 +994,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable {
             throw getRuntime().newTypeError(type, getRuntime().getModule());
         }
 
-        return getRuntime().newBoolean(isKindOf((RubyModule)type));
+        return getRuntime().newBoolean(((RubyModule)type).isInstance(this));
     }
 
     /** rb_obj_methods

@@ -33,7 +33,6 @@ import junit.framework.TestCase;
 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TestRubyObject extends TestCase {
@@ -90,7 +89,7 @@ public class TestRubyObject extends TestCase {
     }
 
     public void test_kind_of() {
-        assertTrue(rubyObject.isKindOf(runtime.getObject()));
+        assertTrue(runtime.getObject().isInstance(rubyObject));
         // assertTrue(rubyObject.kind_of(ruby.getClasses().getStringClass()).isFalse());
     }
 }

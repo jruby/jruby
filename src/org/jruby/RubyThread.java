@@ -584,7 +584,7 @@ public class RubyThread extends RubyObject {
             exception = args[0].callMethod(context, "exception", args[1]);
         }
         
-        if (!exception.isKindOf(runtime.getException())) {
+        if (!runtime.getException().isInstance(exception)) {
             return runtime.newTypeError("exception object expected").getException();
         }
         
@@ -692,7 +692,7 @@ public class RubyThread extends RubyObject {
 
         RubyException rubyException = exception.getException();
         Ruby runtime = rubyException.getRuntime();
-        if (rubyException.isKindOf(runtime.fastGetClass("SystemExit"))) {
+        if (runtime.fastGetClass("SystemExit").isInstance(rubyException)) {
             threadService.getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
         } else if (abortOnException(runtime)) {
             // FIXME: printError explodes on some nullpointer

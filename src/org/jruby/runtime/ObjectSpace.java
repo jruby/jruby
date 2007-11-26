@@ -117,7 +117,7 @@ public class ObjectSpace {
         WeakReferenceListNode current = top;
         while (current != null) {
             IRubyObject obj = (IRubyObject)current.get();
-            if (obj != null && obj.isKindOf(rubyClass)) {
+            if (obj != null && rubyClass.isInstance(obj)) {
                 objList.add(current);
             }
 

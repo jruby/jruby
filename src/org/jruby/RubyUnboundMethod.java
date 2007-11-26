@@ -96,13 +96,13 @@ public class RubyUnboundMethod extends RubyMethod {
     public RubyMethod bind(IRubyObject aReceiver, Block block) {
         RubyClass receiverClass = aReceiver.getMetaClass();
         
-        if (!aReceiver.isKindOf(originModule)) {
+        if (!originModule.isInstance(aReceiver)) {
             if (originModule instanceof MetaClass) {
                 throw getRuntime().newTypeError("singleton method called for a different object");
             } else if (receiverClass instanceof MetaClass && receiverClass.getMethods().containsKey(originName)) {
                 throw getRuntime().newTypeError("method `" + originName + "' overridden");
             } else if (
-                !(originModule.isModule() ? aReceiver.isKindOf(originModule) : aReceiver.getType() == originModule)) {
+                !(originModule.isModule() ? originModule.isInstance(aReceiver) : aReceiver.getType() == originModule)) {
                 // FIX replace type() == ... with isInstanceOf(...)
                 throw getRuntime().newTypeError("bind argument must be an instance of " + originModule.getName());
             }

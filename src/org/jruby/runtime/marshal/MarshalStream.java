@@ -135,29 +135,33 @@ public class MarshalStream extends FilterOutputStream {
 
     private List<Variable<IRubyObject>> getVariables(IRubyObject value) throws IOException {
         List<Variable<IRubyObject>> variables = null;
-        if (value.getNativeTypeIndex() != ClassIndex.OBJECT) {
-            if (!value.isImmediate() && value.hasVariables() && value.getNativeTypeIndex() != ClassIndex.CLASS) {
-                // object has instance vars and isn't a class, get a snapshot to be marshalled
-                // and output the ivar header here
+        if (value instanceof CoreObjectType) {
+            int nativeTypeIndex = ((CoreObjectType)value).getNativeTypeIndex();
+            
+            if (nativeTypeIndex != ClassIndex.OBJECT) {
+                if (!value.isImmediate() && value.hasVariables() && nativeTypeIndex != ClassIndex.CLASS) {
+                    // object has instance vars and isn't a class, get a snapshot to be marshalled
+                    // and output the ivar header here
 
-                variables = value.getVariableList();
+                    variables = value.getVariableList();
 
-                // write `I' instance var signet if class is NOT a direct subclass of Object
-                write(TYPE_IVAR);
-            }
-            RubyClass type = value.getMetaClass();
-            switch(value.getNativeTypeIndex()) {
-            case ClassIndex.STRING:
-            case ClassIndex.REGEXP:
-            case ClassIndex.ARRAY:
-            case ClassIndex.HASH:
-                type = dumpExtended(type);
-                break;
-            }
+                    // write `I' instance var signet if class is NOT a direct subclass of Object
+                    write(TYPE_IVAR);
+                }
+                RubyClass type = value.getMetaClass();
+                switch(nativeTypeIndex) {
+                case ClassIndex.STRING:
+                case ClassIndex.REGEXP:
+                case ClassIndex.ARRAY:
+                case ClassIndex.HASH:
+                    type = dumpExtended(type);
+                    break;
+                }
 
-            if (value.getNativeTypeIndex() != value.getMetaClass().index && value.getNativeTypeIndex() != ClassIndex.STRUCT) {
-                // object is a custom class that extended one of the native types other than Object
-                writeUserClass(value, type);
+                if (nativeTypeIndex != value.getMetaClass().index && nativeTypeIndex != ClassIndex.STRUCT) {
+                    // object is a custom class that extended one of the native types other than Object
+                    writeUserClass(value, type);
+                }
             }
         }
         return variables;
@@ -191,85 +195,89 @@ public class MarshalStream extends FilterOutputStream {
         // switch on the object's *native type*. This allows use-defined
         // classes that have extended core native types to piggyback on their
         // marshalling logic.
-        switch (value.getNativeTypeIndex()) {
-        case ClassIndex.ARRAY:
-            write('[');
-            RubyArray.marshalTo((RubyArray)value, this);
-            break;
-        case ClassIndex.FALSE:
-            write('F');
-            break;
-        case ClassIndex.FIXNUM: {
-            RubyFixnum fixnum = (RubyFixnum)value;
-            
-            if (fixnum.getLongValue() <= RubyFixnum.MAX_MARSHAL_FIXNUM && fixnum.getLongValue() >= RubyFixnum.MIN_MARSHAL_FIXNUM) {
-                write('i');
-                writeInt((int) fixnum.getLongValue());
-                break;
-            }
-            // FIXME: inefficient; constructing a bignum just for dumping?
-            value = RubyBignum.newBignum(value.getRuntime(), fixnum.getLongValue());
-            
-            // fall through
-        }
-        case ClassIndex.BIGNUM:
-            write('l');
-            RubyBignum.marshalTo((RubyBignum)value, this);
-            break;
-        case ClassIndex.CLASS:
-            if (((RubyClass)value).isSingleton()) throw runtime.newTypeError("singleton class can't be dumped");
-            write('c');
-            RubyClass.marshalTo((RubyClass)value, this);
-            break;
-        case ClassIndex.FLOAT:
-            write('f');
-            RubyFloat.marshalTo((RubyFloat)value, this);
-            break;
-        case ClassIndex.HASH: {
-            RubyHash hash = (RubyHash)value;
+        if (value instanceof CoreObjectType) {
+            int nativeTypeIndex = ((CoreObjectType)value).getNativeTypeIndex();
 
-            if(hash.getIfNone().isNil()){
-                write('{');
-            }else if (hash.hasDefaultProc()) {
-                throw hash.getRuntime().newTypeError("can't dump hash with default proc");
-            } else {
-                write('}');
-            }
+            switch (nativeTypeIndex) {
+            case ClassIndex.ARRAY:
+                write('[');
+                RubyArray.marshalTo((RubyArray)value, this);
+                return;
+            case ClassIndex.FALSE:
+                write('F');
+                return;
+            case ClassIndex.FIXNUM: {
+                RubyFixnum fixnum = (RubyFixnum)value;
 
-            RubyHash.marshalTo(hash, this);
-            break;
-        }
-        case ClassIndex.MODULE:
-            write('m');
-            RubyModule.marshalTo((RubyModule)value, this);
-            break;
-        case ClassIndex.NIL:
-            write('0');
-            break;
-        case ClassIndex.OBJECT:
-            dumpDefaultObjectHeader(value.getMetaClass());
-            value.getMetaClass().getRealClass().marshal(value, this);
-            break;
-        case ClassIndex.REGEXP:
-            write('/');
-            RubyRegexp.marshalTo((RubyRegexp)value, this);
-            break;
-        case ClassIndex.STRING:
-            write('"');
-            writeString(value.convertToString().getByteList());
-            break;
-        case ClassIndex.STRUCT:
-            //            write('S');
-            RubyStruct.marshalTo((RubyStruct)value, this);
-            break;
-        case ClassIndex.SYMBOL:
-            write(':');
-            writeString(value.toString());
-            break;
-        case ClassIndex.TRUE:
-            write('T');
-            break;
-        default:
+                if (fixnum.getLongValue() <= RubyFixnum.MAX_MARSHAL_FIXNUM && fixnum.getLongValue() >= RubyFixnum.MIN_MARSHAL_FIXNUM) {
+                    write('i');
+                    writeInt((int) fixnum.getLongValue());
+                    return;
+                }
+                // FIXME: inefficient; constructing a bignum just for dumping?
+                value = RubyBignum.newBignum(value.getRuntime(), fixnum.getLongValue());
+
+                // fall through
+            }
+            case ClassIndex.BIGNUM:
+                write('l');
+                RubyBignum.marshalTo((RubyBignum)value, this);
+                return;
+            case ClassIndex.CLASS:
+                if (((RubyClass)value).isSingleton()) throw runtime.newTypeError("singleton class can't be dumped");
+                write('c');
+                RubyClass.marshalTo((RubyClass)value, this);
+                return;
+            case ClassIndex.FLOAT:
+                write('f');
+                RubyFloat.marshalTo((RubyFloat)value, this);
+                return;
+            case ClassIndex.HASH: {
+                RubyHash hash = (RubyHash)value;
+
+                if(hash.getIfNone().isNil()){
+                    write('{');
+                }else if (hash.hasDefaultProc()) {
+                    throw hash.getRuntime().newTypeError("can't dump hash with default proc");
+                } else {
+                    write('}');
+                }
+
+                RubyHash.marshalTo(hash, this);
+                return;
+            }
+            case ClassIndex.MODULE:
+                write('m');
+                RubyModule.marshalTo((RubyModule)value, this);
+                return;
+            case ClassIndex.NIL:
+                write('0');
+                return;
+            case ClassIndex.OBJECT:
+                dumpDefaultObjectHeader(value.getMetaClass());
+                value.getMetaClass().getRealClass().marshal(value, this);
+                return;
+            case ClassIndex.REGEXP:
+                write('/');
+                RubyRegexp.marshalTo((RubyRegexp)value, this);
+                return;
+            case ClassIndex.STRING:
+                write('"');
+                writeString(value.convertToString().getByteList());
+                return;
+            case ClassIndex.STRUCT:
+                //            write('S');
+                RubyStruct.marshalTo((RubyStruct)value, this);
+                return;
+            case ClassIndex.SYMBOL:
+                write(':');
+                writeString(value.toString());
+                return;
+            case ClassIndex.TRUE:
+                write('T');
+                return;
+            }
+        } else {
             dumpDefaultObjectHeader(value.getMetaClass());
             value.getMetaClass().getRealClass().marshal(value, this);
         }

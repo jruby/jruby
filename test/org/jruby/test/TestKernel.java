@@ -87,7 +87,7 @@ public class TestKernel extends TestRubyBase {
             fail("Expected a SystemExit to be thrown by calling exit.");
         } catch (RaiseException re) {
         	RubyException raisedException = re.getException();
-        	if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
+        	if (runtime.getClass("SystemExit").isInstance(raisedException)) {
 	            IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
 	            assertEquals(expectedStatus, status);
         	} else {

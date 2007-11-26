@@ -1538,7 +1538,7 @@ public class ASTInterpreter {
                 // get fixed at the same time we address bug #1296484.
                 runtime.getGlobalVariables().set("$!", raisedException);
 
-                if (raisedException.isKindOf(runtime.fastGetClass("SystemExit"))) {
+                if (runtime.fastGetClass("SystemExit").isInstance(raisedException)) {
                     throw raiseJump;
                 }
 
@@ -1771,7 +1771,7 @@ public class ASTInterpreter {
                     evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
                     break loop;
                 } catch (RaiseException re) {
-                    if (re.getException().isKindOf(runtime.fastGetClass("LocalJumpError"))) {
+                    if (runtime.fastGetClass("LocalJumpError").isInstance(re.getException())) {
                         RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
                         
                         IRubyObject reason = jumpError.reason();
@@ -1951,7 +1951,7 @@ public class ASTInterpreter {
                     Visibility visibility = method.getVisibility();
 
                     if (visibility != Visibility.PRIVATE && 
-                            (visibility != Visibility.PROTECTED || self.isKindOf(metaClass.getRealClass()))) {
+                            (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self))) {
                         if (metaClass.isMethodBound(iVisited.getName(), false)) {
                             return getArgumentDefinition(runtime,context, iVisited.getArgsNode(), "assignment", self, aBlock);
                         }
@@ -1981,7 +1981,7 @@ public class ASTInterpreter {
                     Visibility visibility = method.getVisibility();
 
                     if (visibility != Visibility.PRIVATE && 
-                            (visibility != Visibility.PROTECTED || self.isKindOf(metaClass.getRealClass()))) {
+                            (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self))) {
                         if (metaClass.isMethodBound(iVisited.getName(), false)) {
                             return getArgumentDefinition(runtime, context, iVisited.getArgsNode(), "method", self, aBlock);
                         }

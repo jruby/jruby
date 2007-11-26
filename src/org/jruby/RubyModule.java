@@ -142,6 +142,10 @@ public class RubyModule extends RubyObject {
             return obj.getMetaClass().hasModuleInHierarchy(type);
         }
     }
+    
+    public boolean isInstance(IRubyObject object) {
+        return kindOf.isKindOf(object, this);
+    }
 
     public KindOf kindOf = KindOf.DEFAULT_KIND_OF;
 
@@ -1072,7 +1076,7 @@ public class RubyModule extends RubyObject {
 
             newMethod = new ProcMethod(this, proc, visibility);
         } else if (args.length == 2) {
-            if (args[1].isKindOf(getRuntime().getProc())) {
+            if (getRuntime().getProc().isInstance(args[1])) {
                 // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
                 RubyProc proc = (RubyProc)args[1];
                 body = proc;
@@ -1086,7 +1090,7 @@ public class RubyModule extends RubyObject {
                 proc.getBlock().getBody().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
 
                 newMethod = new ProcMethod(this, proc, visibility);
-            } else if (args[1].isKindOf(getRuntime().getMethod())) {
+            } else if (getRuntime().getMethod().isInstance(args[1])) {
                 RubyMethod method = (RubyMethod)args[1];
                 body = method;
 
@@ -1258,7 +1262,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "===", required = 1)
     public RubyBoolean op_eqq(IRubyObject obj) {
-        return getRuntime().newBoolean(obj.isKindOf(this));
+        return getRuntime().newBoolean(isInstance(obj));
     }
 
     @JRubyMethod(name = "==", required = 1)
