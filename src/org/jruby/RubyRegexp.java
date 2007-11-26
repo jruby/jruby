@@ -58,6 +58,7 @@ import org.jruby.regexp.RegexpPattern;
 import org.jruby.regexp.PatternSyntaxException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
+import org.jruby.util.TypeConverter;
 
 /**
  *
@@ -778,7 +779,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
         
         if (args.length == 1) {
-            IRubyObject arg = args[0].convertToTypeWithCheck(runtime.getRegexp(), 0, "to_regexp");
+            IRubyObject arg = TypeConverter.convertToTypeWithCheck(args[0], runtime.getRegexp(), 0, "to_regexp");
             if (!arg.isNil()) {
                 return arg;
             }
@@ -790,7 +791,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         	if (i > 0) {
         		buffer.append("|");
             }
-        	IRubyObject arg = args[i].convertToTypeWithCheck(runtime.getRegexp(), 0, "to_regexp");
+        	IRubyObject arg = TypeConverter.convertToTypeWithCheck(args[i], runtime.getRegexp(), 0, "to_regexp");
             if (arg.isNil()) {
                 arg = quote(recv, args[i].convertToString());
             }

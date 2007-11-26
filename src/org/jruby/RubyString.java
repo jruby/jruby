@@ -436,7 +436,7 @@ public class RubyString extends RubyObject {
     /** rb_to_id
      *
      */
-    public String asSymbol() {
+    public String asInternedString() {
         // TODO: callers that don't need interned string should be modified
         // to call toString, there are just a handful of places this happens.
 

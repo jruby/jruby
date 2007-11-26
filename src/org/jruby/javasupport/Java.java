@@ -130,7 +130,7 @@ public class Java {
             final Ruby runtime = pkg.getRuntime();
             return (RubyClass)get_proxy_class(
                     runtime.getJavaSupport().getJavaUtilitiesModule(),
-                    JavaClass.forName(runtime, packageName.asSymbol() + name));
+                    JavaClass.forName(runtime, packageName.asInternedString() + name));
         }
         
         public RubyModule defineModuleUnder(final RubyModule pkg, final String name) {
@@ -141,7 +141,7 @@ public class Java {
             final Ruby runtime = pkg.getRuntime();
             return (RubyModule)get_interface_module(
                     runtime.getJavaSupport().getJavaUtilitiesModule(),
-                    JavaClass.forName(runtime, packageName.asSymbol() + name));
+                    JavaClass.forName(runtime, packageName.asInternedString() + name));
         }
     };
         
@@ -420,7 +420,7 @@ public class Java {
     private static final Pattern CAMEL_CASE_PACKAGE_SPLITTER = Pattern.compile("([a-z][0-9]*)([A-Z])");
 
     public static IRubyObject get_package_module(IRubyObject recv, IRubyObject symObject) {
-        String sym = symObject.asSymbol();
+        String sym = symObject.asInternedString();
         RubyModule javaModule = recv.getRuntime().getJavaSupport().getJavaModule();
         IRubyObject value;
         if ((value = javaModule.fastGetConstantAt(sym)) != null) {
@@ -438,7 +438,7 @@ public class Java {
     
     public static IRubyObject get_package_module_dot_format(IRubyObject recv, IRubyObject dottedName) {
         Ruby runtime = recv.getRuntime();
-        RubyModule module = getJavaPackageModule(runtime, dottedName.asSymbol());
+        RubyModule module = getJavaPackageModule(runtime, dottedName.asInternedString());
         return module == null ? runtime.getNil() : module;
     }
     

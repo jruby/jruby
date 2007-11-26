@@ -161,6 +161,7 @@ import org.jruby.util.ByteList;
 import org.jruby.regexp.PatternSyntaxException;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.InterpretedBlock;
+import org.jruby.util.TypeConverter;
 
 public class ASTInterpreter {
     public static IRubyObject eval(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
@@ -560,7 +561,7 @@ public class ASTInterpreter {
         if (value instanceof RubyArray) return value;
 
         if (value.respondsTo("to_ary")) {
-            return value.convertToType(runtime.getArray(), MethodIndex.TO_A, "to_ary", false);
+            return TypeConverter.convertToType(value, runtime.getArray(), MethodIndex.TO_A, "to_ary", false);
         }
 
         return runtime.newArray(value);
@@ -1777,11 +1778,11 @@ public class ASTInterpreter {
                         IRubyObject reason = jumpError.reason();
                         
                         // admittedly inefficient
-                        if (reason.asSymbol().equals("break")) {
+                        if (reason.asInternedString().equals("break")) {
                             return jumpError.exit_value();
-                        } else if (reason.asSymbol().equals("next")) {
+                        } else if (reason.asInternedString().equals("next")) {
                             break loop;
-                        } else if (reason.asSymbol().equals("redo")) {
+                        } else if (reason.asInternedString().equals("redo")) {
                             continue;
                         }
                     }

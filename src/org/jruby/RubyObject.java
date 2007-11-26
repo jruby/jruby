@@ -69,6 +69,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.marshal.CoreObjectType;
+import org.jruby.util.TypeConverter;
 
 /**
  *
@@ -478,22 +479,22 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     /** rb_to_id
      *
      */
-    public String asSymbol() {
+    public String asInternedString() {
         IRubyObject asString = checkStringType();
-        if(!asString.isNil()) return ((RubyString)asString).asSymbol();
+        if(!asString.isNil()) return ((RubyString)asString).asInternedString();
         throw getRuntime().newTypeError(inspect().toString() + " is not a symbol");
     }
 
     public RubyArray convertToArray() {
-        return (RubyArray) convertToType(getRuntime().getArray(), MethodIndex.TO_ARY, "to_ary");
+        return (RubyArray) TypeConverter.convertToType(this, getRuntime().getArray(), MethodIndex.TO_ARY, "to_ary");
     }
 
     public RubyHash convertToHash() {
-        return (RubyHash)convertToType(getRuntime().getHash(), MethodIndex.TO_HASH, "to_hash");
+        return (RubyHash)TypeConverter.convertToType(this, getRuntime().getHash(), MethodIndex.TO_HASH, "to_hash");
     }
     
     public RubyFloat convertToFloat() {
-        return (RubyFloat) convertToType(getRuntime().getFloat(), MethodIndex.TO_F, "to_f");
+        return (RubyFloat) TypeConverter.convertToType(this, getRuntime().getFloat(), MethodIndex.TO_F, "to_f");
     }
 
     public RubyInteger convertToInteger() {
@@ -501,63 +502,17 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     }
 
     public RubyInteger convertToInteger(int convertMethodIndex, String convertMethod) {
-        IRubyObject val = convertToType(getRuntime().getInteger(), convertMethodIndex, convertMethod, true);
+        IRubyObject val = TypeConverter.convertToType(this, getRuntime().getInteger(), convertMethodIndex, convertMethod, true);
         if (!(val instanceof RubyInteger)) throw getRuntime().newTypeError(getMetaClass().getName() + "#" + convertMethod + " should return Integer");
         return (RubyInteger)val;
     }
 
     public RubyString convertToString() {
-        return (RubyString) convertToType(getRuntime().getString(), MethodIndex.TO_STR, "to_str");
-    }
-
-    /** convert_type
-     * 
-     */
-    public final IRubyObject convertToType(RubyClass target, int convertMethodIndex, String convertMethod, boolean raise) {
-        if (!respondsTo(convertMethod)) {
-            if (raise) {
-                String type;
-                if (isNil()) {
-                    type = "nil";
-                } else if (this instanceof RubyBoolean) {
-                    type = isTrue() ? "true" : "false";
-                } else {
-                    type = target.getName();
-                }
-                throw getRuntime().newTypeError("can't convert " + getMetaClass().getName() + " into " + type);
-            } else {
-                return getRuntime().getNil();
-            }
-        }
-        return callMethod(getRuntime().getCurrentContext(), convertMethodIndex, convertMethod);
+        return (RubyString) TypeConverter.convertToType(this, getRuntime().getString(), MethodIndex.TO_STR, "to_str");
     }
     
     public final IRubyObject convertToType(RubyClass target, int convertMethodIndex) {
-        return convertToType(target, convertMethodIndex, (String)MethodIndex.NAMES.get(convertMethodIndex));
-    }
-
-    /** rb_convert_type
-     * 
-     */
-    public final IRubyObject convertToType(RubyClass target, int convertMethodIndex, String convertMethod) {
-        if (target.isInstance(this)) return this;
-        IRubyObject val = convertToType(target, convertMethodIndex, convertMethod, true);
-        if (!target.isInstance(val)) throw getRuntime().newTypeError(getMetaClass() + "#" + convertMethod + " should return " + target.getName());
-        return val;
-    }
-
-    /*
-     * @see org.jruby.runtime.builtin.IRubyObject#convertToTypeWithCheck(java.lang.String, java.lang.String)
-     */
-    /** rb_check_convert_type
-     * 
-     */
-    public final IRubyObject convertToTypeWithCheck(RubyClass target, int convertMethodIndex, String convertMethod) {  
-        if (target.isInstance(this)) return this;
-        IRubyObject val = convertToType(target, convertMethodIndex, convertMethod, false);
-        if (val.isNil()) return val;
-        if (!target.isInstance(val)) throw getRuntime().newTypeError(getMetaClass() + "#" + convertMethod + " should return " + target.getName());
-        return val;
+        return TypeConverter.convertToType(this, target, convertMethodIndex, (String)MethodIndex.NAMES.get(convertMethodIndex));
     }
 
     /** rb_obj_as_string
@@ -574,7 +529,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      */
     public IRubyObject checkStringType() {
-        IRubyObject str = convertToTypeWithCheck(getRuntime().getString(), MethodIndex.TO_STR, "to_str");
+        IRubyObject str = TypeConverter.convertToTypeWithCheck(this, getRuntime().getString(), MethodIndex.TO_STR, "to_str");
         if(!str.isNil() && !(str instanceof RubyString)) {
             str = getRuntime().newString("");
         }
@@ -585,7 +540,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     *
     */    
     public IRubyObject checkArrayType() {
-        return convertToTypeWithCheck(getRuntime().getArray(), MethodIndex.TO_ARY, "to_ary");
+        return TypeConverter.convertToTypeWithCheck(this, getRuntime().getArray(), MethodIndex.TO_ARY, "to_ary");
     }
 
     /** specific_eval
@@ -758,7 +713,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     public RubyBoolean respond_to_p(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 1, 2);
 
-        String name = args[0].asSymbol();
+        String name = args[0].asInternedString();
         boolean includePrivate = args.length > 1 ? args[1].isTrue() : false;
 
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate));
@@ -1086,7 +1041,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
     @JRubyMethod(name = "method", required = 1)
     public IRubyObject method(IRubyObject symbol) {
-        return getMetaClass().newMethod(this, symbol.asSymbol(), true);
+        return getMetaClass().newMethod(this, symbol.asInternedString(), true);
     }
 
     public IRubyObject anyToString() {
@@ -1183,7 +1138,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         if (args.length < 1) {
             throw getRuntime().newArgumentError("no method name given");
         }
-        String name = args[0].asSymbol();
+        String name = args[0].asInternedString();
 
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
@@ -1256,7 +1211,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     
     @JRubyMethod(name = "instance_variable_defined?", required = 1)
     public IRubyObject instance_variable_defined_p(IRubyObject name) {
-        if (variableTableFastContains(validateInstanceVariable(name.asSymbol()))) {
+        if (variableTableFastContains(validateInstanceVariable(name.asInternedString()))) {
             return getRuntime().getTrue();
         }
         return getRuntime().getFalse();
@@ -1265,7 +1220,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @JRubyMethod(name = "instance_variable_get", required = 1)
     public IRubyObject instance_variable_get(IRubyObject name) {
         IRubyObject value;
-        if ((value = variableTableFastFetch(validateInstanceVariable(name.asSymbol()))) != null) {
+        if ((value = variableTableFastFetch(validateInstanceVariable(name.asInternedString()))) != null) {
             return value;
         }
         return getRuntime().getNil();
@@ -1274,17 +1229,17 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @JRubyMethod(name = "instance_variable_set", required = 2)
     public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
         ensureInstanceVariablesSettable();
-        return variableTableFastStore(validateInstanceVariable(name.asSymbol()), value);
+        return variableTableFastStore(validateInstanceVariable(name.asInternedString()), value);
     }
 
     @JRubyMethod(name = "remove_instance_variable", required = 1, frame = true)
     public IRubyObject remove_instance_variable(IRubyObject name, Block block) {
         ensureInstanceVariablesSettable();
         IRubyObject value;
-        if ((value = variableTableRemove(validateInstanceVariable(name.asSymbol()))) != null) {
+        if ((value = variableTableRemove(validateInstanceVariable(name.asInternedString()))) != null) {
             return value;
         }
-        throw getRuntime().newNameError("instance variable " + name.asSymbol() + " not defined", name.asSymbol());
+        throw getRuntime().newNameError("instance variable " + name.asInternedString() + " not defined", name.asInternedString());
     }
     
     @JRubyMethod(name = "instance_variables")

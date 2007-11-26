@@ -42,7 +42,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
-import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.runtime.Block;
@@ -157,7 +156,7 @@ public interface IRubyObject {
      *
      * @return String the symbol name
      */
-    String asSymbol();
+    String asInternedString();
     
     /** rb_obj_as_string
      * @return
@@ -194,35 +193,6 @@ public interface IRubyObject {
      * @return
      */
     RubyString convertToString();
-    
-    /**
-     * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
-     *
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethod is the method to be called to try and convert to targeType
-     * @param raiseOnError will throw an Error if conversion does not work
-     * @return the converted value
-     */
-    IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, String convertMethod, boolean raiseOnError);
-
-    /**
-     * Converts this object to type 'targetType' using 'convertMethod' method and raises TypeError exception on failure (MRI: rb_convert_type).
-     *
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethod is the method to be called to try and convert to targeType
-     * @return the converted value
-     */    
-    IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, String convertMethod);    
-
-    /**
-     * Higher level conversion utility similar to convertToType but it can throw an
-     * additional TypeError during conversion (MRI: rb_check_convert_type).
-     *
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethod is the method to be called to try and convert to targeType
-     * @return the converted value
-     */
-    IRubyObject convertToTypeWithCheck(RubyClass targetType, int convertMethodIndex, String convertMethod);
     
     /**
      *

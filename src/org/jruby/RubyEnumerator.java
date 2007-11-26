@@ -113,7 +113,7 @@ public class RubyEnumerator extends RubyObject {
      */
     @JRubyMethod(name = "each", frame = true)
     public IRubyObject each(Block block) {
-        return object.callMethod(getRuntime().getCurrentContext(), method.asSymbol(), methodArgs, block);
+        return object.callMethod(getRuntime().getCurrentContext(), method.asInternedString(), methodArgs, block);
     }
 
     @JRubyMethod(name = "enum_with_index")

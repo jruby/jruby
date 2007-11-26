@@ -62,6 +62,7 @@ import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.IOHandler.InvalidValueException;
+import org.jruby.util.TypeConverter;
 
 /**
  * Ruby File class equivalent in java.
@@ -364,7 +365,7 @@ public class RubyFile extends RubyIO {
             throw getRuntime().newArgumentError(0, 1);
         }
         else if (args.length < 3) {
-            IRubyObject fd = args[0].convertToTypeWithCheck(getRuntime().getFixnum(), MethodIndex.TO_INT, "to_int");
+            IRubyObject fd = TypeConverter.convertToTypeWithCheck(args[0], getRuntime().getFixnum(), MethodIndex.TO_INT, "to_int");
             if (!fd.isNil()) {
                 args[0] = fd;
                 return super.initialize(args, block);

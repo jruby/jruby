@@ -95,7 +95,7 @@ public class RubySymbol extends RubyObject {
      * 
      * @return a String representation of the symbol 
      */
-    public String asSymbol() {
+    public String asInternedString() {
         return symbol;
     }
     

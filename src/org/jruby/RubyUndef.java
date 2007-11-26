@@ -23,7 +23,7 @@ public class RubyUndef implements IRubyObject {
         return null;
     }
 
-    public String asSymbol() {
+    public String asInternedString() {
         return null;
     }
 
@@ -120,14 +120,6 @@ public class RubyUndef implements IRubyObject {
     }
 
     public RubyString convertToString() {
-        return null;
-    }
-
-    public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex,
-            String convertMethod, boolean raiseOnError) {
-        return null;
-    }
-    public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, String convertMethod) {
         return null;
     }
 

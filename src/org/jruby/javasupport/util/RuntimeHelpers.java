@@ -48,6 +48,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.TypeConverter;
 
 /**
  * Helper methods which are called by the compiler.  Note: These will show no consumers, but
@@ -504,7 +505,7 @@ public class RuntimeHelpers {
 
             IRubyObject reason = jumpError.reason();
 
-            return reason.asSymbol();
+            return reason.asInternedString();
         }
 
         throw re;
@@ -539,7 +540,7 @@ public class RuntimeHelpers {
 
         // If not already a proc then we should try and make it one.
         if (!(proc instanceof RubyProc)) {
-            proc = proc.convertToType(runtime.getProc(), 0, "to_proc", false);
+            proc = TypeConverter.convertToType(proc, runtime.getProc(), 0, "to_proc", false);
 
             if (!(proc instanceof RubyProc)) {
                 throw runtime.newTypeError("wrong argument type "

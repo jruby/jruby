@@ -156,10 +156,10 @@ public class UnmarshalStream extends BufferedInputStream {
                 RubySymbol moduleName = (RubySymbol) unmarshalObject();
                 RubyModule tp = null;
                 try {
-                    tp = runtime.getClassFromPath(moduleName.asSymbol());
+                    tp = runtime.getClassFromPath(moduleName.asInternedString());
                 } catch (RaiseException e) {
                     if (runtime.fastGetModule("NameError").isInstance(e.getException())) {
-                        throw runtime.newArgumentError("undefined class/module " + moduleName.asSymbol());
+                        throw runtime.newArgumentError("undefined class/module " + moduleName.asInternedString());
                     } 
                     throw e;
                 }
@@ -269,7 +269,7 @@ public class UnmarshalStream extends BufferedInputStream {
             type = getClassFromPath(runtime, className.toString());
         } catch (RaiseException e) {
             if (runtime.fastGetModule("NameError").isInstance(e.getException())) {
-                throw runtime.newArgumentError("undefined class/module " + className.asSymbol());
+                throw runtime.newArgumentError("undefined class/module " + className.asInternedString());
             } 
                 
             throw e;
@@ -288,7 +288,7 @@ public class UnmarshalStream extends BufferedInputStream {
         List<Variable<IRubyObject>> attrs = new ArrayList<Variable<IRubyObject>>(count);
         
         for (int i = count; --i >= 0; ) {            
-            String name = unmarshalObject().asSymbol();
+            String name = unmarshalObject().asInternedString();
             IRubyObject value = unmarshalObject();
             attrs.add(new VariableEntry<IRubyObject>(name, value));
         }
@@ -300,7 +300,7 @@ public class UnmarshalStream extends BufferedInputStream {
     private IRubyObject uclassUnmarshall() throws IOException {
     	RubySymbol className = (RubySymbol)unmarshalObject();
     	
-    	RubyClass type = (RubyClass)runtime.getClassFromPath(className.asSymbol());
+    	RubyClass type = (RubyClass)runtime.getClassFromPath(className.asInternedString());
     	
         // All "C" marshalled objects descend from core classes, which are all RubyObject
     	RubyObject result = (RubyObject)unmarshalObject();
@@ -311,7 +311,7 @@ public class UnmarshalStream extends BufferedInputStream {
     }
 
     private IRubyObject userUnmarshal() throws IOException {
-        String className = unmarshalObject().asSymbol();
+        String className = unmarshalObject().asInternedString();
         ByteList marshaled = unmarshalString();
         RubyModule classInstance = findClass(className);
         if (!classInstance.respondsTo("_load")) {
@@ -324,7 +324,7 @@ public class UnmarshalStream extends BufferedInputStream {
     }
 
     private IRubyObject userNewUnmarshal() throws IOException {
-        String className = unmarshalObject().asSymbol();
+        String className = unmarshalObject().asInternedString();
         IRubyObject marshaled = unmarshalObject();
         RubyClass classInstance = findClass(className);
         IRubyObject result = classInstance.allocate();

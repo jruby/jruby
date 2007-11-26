@@ -72,6 +72,7 @@ import org.jruby.runtime.load.LoadService;
 import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.Sprintf;
+import org.jruby.util.TypeConverter;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -106,7 +107,7 @@ public class RubyKernel {
     @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject autoload_p(final IRubyObject recv, IRubyObject symbol) {
         RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : recv.getRuntime().getObject();
-        String name = module.getName() + "::" + symbol.asSymbol();
+        String name = module.getName() + "::" + symbol.asInternedString();
         
         IAutoloadMethod autoloadMethod = recv.getRuntime().getLoadService().autoloadFor(name);
         if (autoloadMethod == null) return recv.getRuntime().getNil();
@@ -118,7 +119,7 @@ public class RubyKernel {
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
         Ruby runtime = recv.getRuntime(); 
         final LoadService loadService = runtime.getLoadService();
-        final String baseName = symbol.asSymbol(); // interned, OK for "fast" methods
+        final String baseName = symbol.asInternedString(); // interned, OK for "fast" methods
         final RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : runtime.getObject();
         String nm = module.getName() + "::" + baseName;
         
@@ -153,7 +154,7 @@ public class RubyKernel {
 
         if (args.length == 0 || !(args[0] instanceof RubySymbol)) throw runtime.newArgumentError("no id given");
         
-        String name = args[0].asSymbol();
+        String name = args[0].asInternedString();
         ThreadContext context = runtime.getCurrentContext();
         Visibility lastVis = context.getLastVisibility();
         CallType lastCallType = context.getLastCallType();
@@ -302,7 +303,7 @@ public class RubyKernel {
         }else if(object.isNil()){
             throw recv.getRuntime().newTypeError("can't convert nil into Float");
         } else {
-            RubyFloat rFloat = (RubyFloat)object.convertToType(recv.getRuntime().getFloat(), MethodIndex.TO_F, "to_f");
+            RubyFloat rFloat = (RubyFloat)TypeConverter.convertToType(object, recv.getRuntime().getFloat(), MethodIndex.TO_F, "to_f");
             if (Double.isNaN(rFloat.getDoubleValue())) throw recv.getRuntime().newArgumentError("invalid value for Float()");
             return rFloat;
         }
@@ -321,14 +322,14 @@ public class RubyKernel {
             return RubyNumeric.str2inum(recv.getRuntime(),(RubyString)object,0,true);
         }
         
-        IRubyObject tmp = object.convertToType(recv.getRuntime().getInteger(), MethodIndex.TO_INT, "to_int", false);
+        IRubyObject tmp = TypeConverter.convertToType(object, recv.getRuntime().getInteger(), MethodIndex.TO_INT, "to_int", false);
         if (tmp.isNil()) return object.convertToInteger(MethodIndex.TO_I, "to_i");
         return tmp;
     }
 
     @JRubyMethod(name = "String", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject new_string(IRubyObject recv, IRubyObject object) {
-        return object.convertToType(recv.getRuntime().getString(), MethodIndex.TO_S, "to_s");
+        return TypeConverter.convertToType(object, recv.getRuntime().getString(), MethodIndex.TO_S, "to_s");
     }
 
     @JRubyMethod(name = "p", rest = true, module = true, visibility = Visibility.PRIVATE)
@@ -763,7 +764,7 @@ public class RubyKernel {
     @JRubyMethod(name = "catch", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject rbCatch(IRubyObject recv, IRubyObject tag, Block block) {
         ThreadContext context = recv.getRuntime().getCurrentContext();
-        CatchTarget target = new CatchTarget(tag.asSymbol());
+        CatchTarget target = new CatchTarget(tag.asInternedString());
         try {
             context.pushCatch(target);
             return block.yield(context, tag);
@@ -786,7 +787,7 @@ public class RubyKernel {
     public static IRubyObject rbThrow(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
 
-        String tag = args[0].asSymbol();
+        String tag = args[0].asInternedString();
         ThreadContext context = runtime.getCurrentContext();
         CatchTarget[] catches = context.getActiveCatches();
 
@@ -851,7 +852,7 @@ public class RubyKernel {
             proc = RubyProc.newProc(recv.getRuntime(), block, Block.Type.PROC);
         }
         if (args.length == 2) {
-            proc = (RubyProc)args[1].convertToType(recv.getRuntime().getProc(), 0, "to_proc", true);
+            proc = (RubyProc)TypeConverter.convertToType(args[1], recv.getRuntime().getProc(), 0, "to_proc", true);
         }
         
         recv.getRuntime().getGlobalVariables().setTraceVar(var, proc);

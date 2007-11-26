@@ -35,6 +35,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.util.TypeConverter;
 
 /**
  *
@@ -72,7 +73,7 @@ public final class ArgsUtil {
             return RubyArray.newArrayNoCopyLight(runtime, new IRubyObject[] {value});
         }
         
-        IRubyObject newValue = value.convertToType(runtime.getArray(), MethodIndex.TO_ARY, "to_ary", false);
+        IRubyObject newValue = TypeConverter.convertToType(value, runtime.getArray(), MethodIndex.TO_ARY, "to_ary", false);
 
         if (newValue.isNil()) {
             return RubyArray.newArrayNoCopyLight(runtime, new IRubyObject[] {value});

@@ -40,6 +40,7 @@ import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.TypeConverter;
 
 /**
  * The implementation of Ruby's Enumerable module.
@@ -471,7 +472,7 @@ public class RubyEnumerable {
         final ThreadContext context = runtime.getCurrentContext();
 
         for (int i = 0; i < args.length; i++) {
-            args[i] = args[i].convertToType(runtime.getArray(), MethodIndex.TO_A, "to_a");
+            args[i] = TypeConverter.convertToType(args[i], runtime.getArray(), MethodIndex.TO_A, "to_a");
         }
         
         final int aLen = args.length + 1;

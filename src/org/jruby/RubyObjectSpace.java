@@ -40,6 +40,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.TypeConverter;
 
 public class RubyObjectSpace {
 
@@ -64,7 +65,7 @@ public class RubyObjectSpace {
             if(args[1] instanceof RubyProc) {
                 proc = (RubyProc)args[1];
             } else {
-                proc = (RubyProc)args[1].convertToType(runtime.getProc(), 0, "to_proc", true);
+                proc = (RubyProc)TypeConverter.convertToType(args[1], runtime.getProc(), 0, "to_proc", true);
             }
         } else {
             proc = runtime.newProc(Block.Type.PROC, block);
