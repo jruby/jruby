@@ -72,6 +72,7 @@ import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
 import org.jruby.util.ShellLauncher;
+import org.jruby.util.IOHandler.BadDescriptorException;
 
 /**
  * 
@@ -263,12 +264,12 @@ public class RubyIO extends RubyObject {
 
         try {
             handler = new IOHandlerUnseekable(runtime, descriptor);
-        } catch (IOException e) {
-            throw runtime.newIOError(e.getMessage());
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
         }
         modes = handler.getModes();
         
-        registerIOHandler(handler);
+        registerIOHandler(handler);        
     }
     
     private static ObjectAllocator IO_ALLOCATOR = new ObjectAllocator() {
@@ -527,8 +528,8 @@ public class RubyIO extends RubyObject {
             
             try {
                 handler = new IOHandlerUnseekable(getRuntime(), newFileno, mode);
-            } catch (IOException e) {
-                throw getRuntime().newIOError(e.getMessage());
+            } catch (BadDescriptorException e) {
+                throw getRuntime().newErrnoEBADFError();
             }
             modes = new IOModes(getRuntime(), mode);
             

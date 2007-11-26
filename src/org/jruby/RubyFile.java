@@ -968,21 +968,24 @@ public class RubyFile extends RubyIO {
         Arity.checkArgumentCount(runtime, args, 1, -1);
         ThreadContext tc = runtime.getCurrentContext();
         
-        RubyString pathString = RubyString.stringValue(args[0]);
-        runtime.checkSafeString(pathString);
-        String path = pathString.toString();
-        
-        IOModes modes =
-                args.length >= 2 ? getModes(runtime, args[1]) : new IOModes(runtime, IOModes.RDONLY);
-        RubyFile file = new RubyFile(runtime, (RubyClass) recv);
-        
-        RubyInteger fileMode =
-                args.length >= 3 ? args[2].convertToInteger() : null;
-        
-        file.openInternal(path, modes);
-        
-        if (fileMode != null) {
-            chmod(recv, new IRubyObject[] {fileMode, pathString});
+        RubyFile file;
+
+        if (args[0] instanceof RubyInteger) { // open with file descriptor
+            file = new RubyFile(runtime, (RubyClass) recv);
+            file.initialize(args, Block.NULL_BLOCK);            
+        } else {
+            RubyString pathString = RubyString.stringValue(args[0]);
+            runtime.checkSafeString(pathString);
+            String path = pathString.toString();
+
+            IOModes modes = args.length >= 2 ? getModes(runtime, args[1]) : new IOModes(runtime, IOModes.RDONLY);
+            file = new RubyFile(runtime, (RubyClass) recv);
+
+            RubyInteger fileMode = args.length >= 3 ? args[2].convertToInteger() : null;
+
+            file.openInternal(path, modes);
+
+            if (fileMode != null) chmod(recv, new IRubyObject[] {fileMode, pathString});
         }
         
         if (tryToYield && block.isGiven()) {
