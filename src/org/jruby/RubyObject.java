@@ -69,6 +69,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.InstanceVariables;
+import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.TypeConverter;
 
@@ -76,7 +77,7 @@ import org.jruby.util.TypeConverter;
  *
  * @author  jpetersen
  */
-public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObjectType, InstanceVariables {
+public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObjectType, InstanceVariables, InternalVariables {
     
     private RubyObject(){};
     // An instance that never equals any other instance
@@ -1363,6 +1364,10 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     //
     // INTERNAL VARIABLE METHODS
     //
+    
+    public InternalVariables getInternalVariables() {
+        return this;
+    }
     
     public boolean hasInternalVariable(String name) {
         assert !isRubyVariable(name);

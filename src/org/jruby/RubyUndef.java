@@ -9,6 +9,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
+import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.Variable;
 
 public class RubyUndef implements IRubyObject {
@@ -205,11 +206,6 @@ public class RubyUndef implements IRubyObject {
         return null;
     }
 
-    @Deprecated
-    public Iterator instanceVariableNames() {
-        return null;
-    }
-
     public boolean isFrozen() {
         return false;
     }
@@ -273,30 +269,8 @@ public class RubyUndef implements IRubyObject {
     public int getVariableCount() {
         return 0;
     }
-
-    public boolean hasInternalVariable(String name) {
-        return false;
-    }
-
-    public boolean fastHasInternalVariable(String name) {
-        return false;
-    }
-
-    public IRubyObject getInternalVariable(String name) {
-        return null;
-    }
-
-    public IRubyObject fastGetInternalVariable(String name) {
-        return null;
-    }
-
-    public void setInternalVariable(String name, IRubyObject value) {
-    }
-
-    public void fastSetInternalVariable(String name, IRubyObject value) {
-    }
-
-    public IRubyObject removeInternalVariable(String name) {
+    
+    public InternalVariables getInternalVariables() {
         return null;
     }
     
