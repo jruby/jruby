@@ -16,7 +16,7 @@ public class StringScannerTest extends TestCase {
 	private final static Regex WORD_CHARS = new Regex(new byte[]{'\\','w','+'},0,3,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT);
 	private final static Regex WHITESPACE = new Regex(new byte[]{'\\','s','+'},0,3,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT);
 	
-	private final static String DATE_STRING = "Fri Dec 12 1975 14:39";
+	private final static ByteList DATE_STRING = new ByteList("Fri Dec 12 1975 14:39".getBytes());
 
 	/*
 	 * @see TestCase#setUp()
@@ -33,9 +33,9 @@ public class StringScannerTest extends TestCase {
 	}
 	
 	public void testCreate() throws Exception {
-		StringScanner ss = new StringScanner("Test String");
+		StringScanner ss = new StringScanner(S("Test String"));
 		
-		assertEquals("Test String", ss.getString());
+		assertEquals(S("Test String"), ss.getString());
 		
 		assertEquals(0, ss.getPos());
 		
@@ -52,13 +52,13 @@ public class StringScannerTest extends TestCase {
 	}
 	
 	public void testSetString() throws Exception {
-		StringScanner ss = new StringScanner("Test String");
+		StringScanner ss = new StringScanner(S("Test String"));
 		
 		ss.scan(WORD_CHARS);
 		
-		ss.setString("test string");
+		ss.setString(S("test string"));
 		
-		assertEquals("test string", ss.getString());
+		assertEquals(S("test string"), ss.getString());
 		
 		assertEquals(0, ss.getPos());
 		
@@ -75,20 +75,20 @@ public class StringScannerTest extends TestCase {
 	}
 	
 	public void testEOS() throws Exception {
-		StringScanner ss = new StringScanner("Test String");
+		StringScanner ss = new StringScanner(S("Test String"));
 		
 		assertFalse("New StringScanner with non-empty string returned true for isEndOfString", ss.isEndOfString());
 		
-		ss = new StringScanner("");
+		ss = new StringScanner(S(""));
 		
 		assertTrue("New StringScanner with empty string returned false for isEndOfString", ss.isEndOfString());
 	}
 	
 	
 	public void testGetChar() throws Exception {
-		StringScanner ss = new StringScanner("12");
+		StringScanner ss = new StringScanner(S("12"));
 		
-		char val = ss.getChar();
+		byte val = ss.getChar();
 		
 		assertEquals('1', val);
 		
@@ -97,7 +97,7 @@ public class StringScannerTest extends TestCase {
 		val = ss.getChar();
 		
 		assertEquals('2', val);
-		assertEquals("2", ss.matchedValue());
+		assertEquals(S("2"), ss.matchedValue());
 		
 		assertTrue(ss.isEndOfString());
 		
@@ -107,19 +107,19 @@ public class StringScannerTest extends TestCase {
 	}
 	
 	public void testScan() throws Exception {
-		StringScanner ss = new StringScanner("Test String");
+		StringScanner ss = new StringScanner(S("Test String"));
 
-		CharSequence cs = ss.scan(WORD_CHARS);
-		assertEquals("Test", cs);
+		ByteList cs = ss.scan(WORD_CHARS);
+		assertEquals(S("Test"), cs);
 		assertTrue("matched() should have returned true", ss.matched());
-		assertEquals("Test", ss.matchedValue());
+		assertEquals(S("Test"), ss.matchedValue());
 		
 		cs = ss.scan(WORD_CHARS);
 		assertNull("Non match should return null", cs);
 		
 		cs = ss.scan(WHITESPACE);
 		cs = ss.scan(WORD_CHARS);
-		assertEquals("String", cs);
+		assertEquals(S("String"), cs);
 		
 		assertTrue("isEndOfString should be true", ss.isEndOfString());
 	}
@@ -127,27 +127,27 @@ public class StringScannerTest extends TestCase {
 	public void testScanUntil() throws Exception {
 		StringScanner ss = new StringScanner(DATE_STRING);
 		
-		CharSequence cs = ss.scanUntil(new Regex(new byte[]{'1'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT));
+		ByteList cs = ss.scanUntil(new Regex(new byte[]{'1'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT));
 		
-		assertEquals("Fri Dec 1", cs);
+		assertEquals(S("Fri Dec 1"), cs);
 		
 		assertTrue("matched() must return true after successful scanUntil()", ss.matched());
 		
 		assertEquals(9, ss.getPos());
 		
-		assertEquals("1", ss.matchedValue());
+		assertEquals(S("1"), ss.matchedValue());
 	}
 	
 	public void testCheckUntil() throws Exception {
 		StringScanner ss = new StringScanner(DATE_STRING);
 		
-		CharSequence cs = ss.checkUntil(new Regex(new byte[]{'1'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT));
+		ByteList cs = ss.checkUntil(new Regex(new byte[]{'1'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT));
 		
-		assertEquals("Fri Dec 1", cs);
+		assertEquals(S("Fri Dec 1"), cs);
 		
 		assertEquals(0, ss.getPos());
 		
-		assertEquals("1", ss.matchedValue());
+		assertEquals(S("1"), ss.matchedValue());
 	}
 	
 	public void testSkipUntil() throws Exception {
@@ -155,11 +155,11 @@ public class StringScannerTest extends TestCase {
 		
 		assertEquals(9, ss.skipUntil(new Regex(new byte[]{'1'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT)));
 		
-		assertEquals("1", ss.matchedValue());
+		assertEquals(S("1"), ss.matchedValue());
 	}
 	
 	public void testPos() throws Exception {
-		StringScanner ss = new StringScanner("word 123");
+		StringScanner ss = new StringScanner(S("word 123"));
 		
 		assertEquals(0, ss.getPos());
 		
@@ -173,7 +173,7 @@ public class StringScannerTest extends TestCase {
 	}
 	
 	public void testIsBeginningOfLine() throws Exception {
-		StringScanner ss = new StringScanner("Test\nString\n");
+		StringScanner ss = new StringScanner(S("Test\nString\n"));
 		
 		assertTrue(ss.isBeginningOfLine());
 		
@@ -193,7 +193,7 @@ public class StringScannerTest extends TestCase {
 		
 		assertEquals(0, ss.getPos());
 		
-		assertEquals("Fri", ss.matchedValue());
+		assertEquals(S("Fri"), ss.matchedValue());
 		
 		assertEquals(3, ss.matchedSize());
 		
@@ -203,11 +203,11 @@ public class StringScannerTest extends TestCase {
 	public void testCheck() throws Exception {
 		StringScanner ss = new StringScanner(DATE_STRING);
 		
-		assertEquals("Fri", ss.check(WORD_CHARS));
+		assertEquals(S("Fri"), ss.check(WORD_CHARS));
 		
 		assertEquals(0, ss.getPos());
 		
-		assertEquals("Fri", ss.matchedValue());
+		assertEquals(S("Fri"), ss.matchedValue());
 		
 		assertEquals(3, ss.matchedSize());
 		
@@ -223,7 +223,7 @@ public class StringScannerTest extends TestCase {
 	}
 	
 	public void testExists() throws Exception {
-		StringScanner ss = new StringScanner("test string");
+		StringScanner ss = new StringScanner(S("test string"));
 		
 		assertEquals(3, ss.exists(new Regex(new byte[]{'s'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT)));
 		
@@ -270,11 +270,11 @@ public class StringScannerTest extends TestCase {
 		
 		ss.scan(WORD_CHARS);
 		
-		ss.append(" +1000 GMT");
+		ss.append(S(" +1000 GMT"));
 		
 		assertEquals(3, ss.getPos());
 		
-		assertEquals(DATE_STRING + " +1000 GMT", ss.getString());
+		assertEquals(S("Fri Dec 12 1975 14:39" + " +1000 GMT"), ss.getString());
 	}
 	
 	public void testReset() throws Exception {
@@ -305,11 +305,11 @@ public class StringScannerTest extends TestCase {
 		
 		ss.scan(new Regex(new byte[]{'(','\\','w','+',')',' ','(','\\','w','+',')',' ','(','\\','d','+',')'},0,17,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT));
 		
-		assertEquals("Fri", ss.group(1));
+		assertEquals(S("Fri"), ss.group(1));
 		
-		assertEquals("Dec", ss.group(2));
+		assertEquals(S("Dec"), ss.group(2));
 		
-		assertEquals("12", ss.group(3));
+		assertEquals(S("12"), ss.group(3));
 		
 		assertNull(ss.group(4));
 		
@@ -317,7 +317,7 @@ public class StringScannerTest extends TestCase {
 		
 		assertNull(ss.group(1));
 		
-		char c = ss.getChar();
+		byte c = ss.getChar();
 		assertEquals(c, ss.group(0).charAt(0));
 	}
 	
@@ -332,20 +332,20 @@ public class StringScannerTest extends TestCase {
 		
 		ss.scan(WHITESPACE);
 		
-		assertEquals("Fri", ss.preMatch());
-		assertEquals("Dec 12 1975 14:39", ss.postMatch());
+		assertEquals(S("Fri"), ss.preMatch());
+		assertEquals(S("Dec 12 1975 14:39"), ss.postMatch());
 		
 		ss.getChar();
 		
-		assertEquals("Fri ", ss.preMatch());
-		assertEquals("ec 12 1975 14:39", ss.postMatch());
+		assertEquals(S("Fri "), ss.preMatch());
+		assertEquals(S("ec 12 1975 14:39"), ss.postMatch());
 		
 		ss.reset();
 		
 		ss.scanUntil(new Regex(new byte[]{'1'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT));
 		
-		assertEquals("Fri Dec ", ss.preMatch());
-		assertEquals("2 1975 14:39", ss.postMatch());
+		assertEquals(S("Fri Dec "), ss.preMatch());
+		assertEquals(S("2 1975 14:39"), ss.postMatch());
 	}
 	
 	public void testTerminate() throws Exception {
@@ -361,33 +361,33 @@ public class StringScannerTest extends TestCase {
 	}
 	
 	public void testPeek() throws Exception {
-		StringScanner ss = new StringScanner("test string");
+		StringScanner ss = new StringScanner(S("test string"));
 		
-		assertEquals("test st", ss.peek(7));
+		assertEquals(S("test st"), ss.peek(7));
 		
 		assertEquals(0, ss.getPos());
 		
-		assertEquals("test string", ss.peek(300));
+		assertEquals(S("test string"), ss.peek(300));
 	}
 	
 	public void testRest() throws Exception {
-		StringScanner ss = new StringScanner("test string");
+		StringScanner ss = new StringScanner(S("test string"));
 		
 		ss.scan(WORD_CHARS);
 		
-		assertEquals(" string", ss.rest());
+		assertEquals(S(" string"), ss.rest());
 		
 		ss.terminate();
 		
-		assertEquals("", ss.rest());
+		assertEquals(S(""), ss.rest());
 	}
 	
 	public void testSetPos() throws Exception {
-		StringScanner ss = new StringScanner("test string");
+		StringScanner ss = new StringScanner(S("test string"));
 		
 		ss.setPos(5);
 		
-		assertEquals("string", ss.rest());
+		assertEquals(S("string"), ss.rest());
 		
 		try {
 			ss.setPos(300);
@@ -396,4 +396,8 @@ public class StringScannerTest extends TestCase {
 			
 		}
 	}
+
+    private ByteList S(String s) throws Exception {
+        return new ByteList(s.getBytes(), false);
+    }
 }

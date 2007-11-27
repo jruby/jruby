@@ -5,15 +5,12 @@ import org.joni.Region;
 import org.joni.Regex;
 
 
-/*
- * TODO: this is INCREDIBLY inefficient right now, with Joni. should be rewritten to use matcher and so on
- */
 /**
  * @author kscott
  *
  */
 public class StringScanner {
-	private String string;
+	private ByteList string;
 	private int pos = 0;
 	private int lastPos = -1;
 	private int matchStart = -1;
@@ -24,22 +21,22 @@ public class StringScanner {
 	 * 
 	 */
 	public StringScanner() {
-		this("");
+		this(new ByteList(0));
 	}
 	
-	public StringScanner(CharSequence string) {
-		this.string = string.toString();
+	public StringScanner(ByteList string) {
+		this.string = string;
 	}
 	
 	public boolean isEndOfString() {
-		return pos == string.length();
+		return pos == string.realSize;
 	}
 	
 	public boolean isBeginningOfLine() {
-		return pos == 0 || string.charAt(pos - 1) == '\n';
+		return pos == 0 || string.bytes[string.begin + pos - 1] == '\n';
 	}
 	
-	public CharSequence getString() {
+	public ByteList getString() {
 		return string;
 	}
 	
@@ -50,7 +47,7 @@ public class StringScanner {
 	}
 
 	public void terminate() {
-		pos = string.length();
+		pos = string.realSize;
 		lastPos = -1;
 		resetMatchData();
 	}
@@ -61,21 +58,17 @@ public class StringScanner {
 		resetMatchData();
 	}
 	
-	public void setString(CharSequence string) {
-		this.string = string.toString();
+	public void setString(ByteList string) {
+		this.string = string;
 		reset();
 	}
 	
-	public void append(CharSequence string) {
-		StringBuffer buf = new StringBuffer();
-		// JDK 1.4 Doesn't have a constructor that takes a CharSequence
-		buf.append(this.string);
-		buf.append(string);
-		this.string = buf.toString();
+	public void append(ByteList string) {
+        this.string.append(string);
 	}
 	
-	public CharSequence rest() {
-		return string.subSequence(pos, string.length());
+	public ByteList rest() {
+		return string.makeShared(pos,string.realSize-pos);
 	}
 	
 	public int getPos() {
@@ -83,13 +76,13 @@ public class StringScanner {
 	}
 	
 	public void setPos(int pos) {
-		if (pos > string.length()) {
+		if (pos > string.realSize) {
 			throw new IllegalArgumentException("index out of range.");
 		}
 		this.pos = pos;
 	}
 	
-	public char getChar() {
+	public byte getChar() {
 		if (isEndOfString()) {
 			return 0;
 		} else {
@@ -97,7 +90,7 @@ public class StringScanner {
 			matchStart = pos;
 			matchEnd = pos + 1;
 			lastPos = pos;
-			return string.charAt(pos++);
+			return string.bytes[string.begin + pos++];
 		}
 	}
 	
@@ -105,39 +98,39 @@ public class StringScanner {
 		return matchStart > -1;
 	}
 	
-	public CharSequence group(int n) {
+	public ByteList group(int n) {
 		if(!matched()) {
 			return null;
 		}
 		if(regs == null && matchEnd - matchStart == 1) {
 			// Handle the getChar() is a match case
-			return string.subSequence(matchStart, matchEnd);
+			return string.makeShared(matchStart, matchEnd-matchStart);
 		}
 		if(n >= regs.numRegs) {
 			return null;
 		}
-		return string.subSequence(regs.beg[n]+lastPos,regs.end[n]+lastPos);
+		return string.makeShared(regs.beg[n]+lastPos,regs.end[n] - regs.beg[n]);
 	}
 	
-	public CharSequence preMatch() {
+	public ByteList preMatch() {
 		if (matched()) {
-			return string.subSequence(0, matchStart);
+			return string.makeShared(0, matchStart);
 		} else {
 			return null;
 		}
 	}
 	
-	public CharSequence postMatch() {
+	public ByteList postMatch() {
 		if (matched()) {
-			return string.subSequence(matchEnd, string.length());
+			return string.makeShared(matchEnd, string.realSize - matchEnd);
 		} else {
 			return null;
 		}
 	}
 	
-	public CharSequence matchedValue() {
+	public ByteList matchedValue() {
 		if (matched()) {
-			return string.subSequence(matchStart, matchEnd);
+			return string.makeShared(matchStart, matchEnd - matchStart);
 		} else {
 			return null;
 		}
@@ -165,8 +158,7 @@ public class StringScanner {
             if(regs == null) {
                 regs = new Region();
             }
-            byte[] ccc = ByteList.plain(string);
-            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) == 0) {
+            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) == 0) {
                 matchStart = pos;
                 matchEnd = regs.end[0]+pos;
             } else {
@@ -177,18 +169,17 @@ public class StringScanner {
 		return -1;
 	}
 	
-	public CharSequence scanUntil(Regex pattern) {
+	public ByteList scanUntil(Regex pattern) {
 		if (!isEndOfString()) {
             if(regs == null) {
                 regs = new Region();
             }
-            byte[] ccc = ByteList.plain(string);
-            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) >= 0) {
+            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) >= 0) {
                 lastPos = pos;
                 matchStart = regs.beg[0]+pos;
                 matchEnd = regs.end[0]+pos;
                 pos = matchEnd;
-                return string.subSequence(lastPos, pos);
+                return string.makeShared(lastPos, pos-lastPos);
             } else {
                 lastPos = -1;
                 resetMatchData();
@@ -198,18 +189,17 @@ public class StringScanner {
 		return null;
 	}
 	
-	public CharSequence scan(Regex pattern) {
+	public ByteList scan(Regex pattern) {
 		if (!isEndOfString()) {
             if(regs == null) {
                 regs = new Region();
             }
-            byte[] ccc = ByteList.plain(string);
-            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) == 0) {
+            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) == 0) {
                 lastPos = pos;
                 matchStart = pos;
                 pos = regs.end[0]+lastPos;
                 matchEnd = pos;
-                return string.subSequence(regs.beg[0]+lastPos,regs.end[0]+lastPos);
+                return string.makeShared(regs.beg[0]+lastPos,regs.end[0] - regs.beg[0]);
             } else {
                 lastPos = -1;
                 resetMatchData();
@@ -219,16 +209,15 @@ public class StringScanner {
 		return null;
 	}
 	
-	public CharSequence check(Regex pattern) {
+	public ByteList check(Regex pattern) {
 		if (!isEndOfString()) {
             if(regs == null) {
                 regs = new Region();
             }
-            byte[] ccc = ByteList.plain(string);
-            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) == 0) {
+            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) == 0) {
                 matchStart = pos;
                 matchEnd = regs.end[0]+pos;
-                return string.subSequence(regs.beg[0]+pos,regs.end[0]+pos);
+                return string.makeShared(regs.beg[0]+pos,regs.end[0]-regs.beg[0]);
             } else {
                 resetMatchData();
             }
@@ -237,16 +226,15 @@ public class StringScanner {
 		return null;
 	}
 	
-	public CharSequence checkUntil(Regex pattern) {
+	public ByteList checkUntil(Regex pattern) {
 		if (!isEndOfString()) {
             if(regs == null) {
                 regs = new Region();
             }
-            byte[] ccc = ByteList.plain(string);
-            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) >= 0) {
+            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) >= 0) {
                 matchStart = regs.beg[0]+pos;
                 matchEnd = regs.end[0]+pos;
-                return string.subSequence(pos,matchEnd);
+                return string.makeShared(pos,matchEnd-pos);
             } else {
                 resetMatchData();
             }
@@ -260,8 +248,7 @@ public class StringScanner {
             if(regs == null) {
                 regs = new Region();
             }
-            byte[] ccc = ByteList.plain(string);
-            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) == 0) {
+            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) == 0) {
                 lastPos = pos;
                 matchStart = pos;
                 pos = regs.end[0]+lastPos;
@@ -280,8 +267,7 @@ public class StringScanner {
             if(regs == null) {
                 regs = new Region();
             }
-            byte[] ccc = ByteList.plain(string);
-            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) >= 0) {
+            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) >= 0) {
                 lastPos = pos;
                 pos = regs.end[0]+lastPos;
                 matchStart = regs.beg[0]+lastPos;
@@ -300,8 +286,7 @@ public class StringScanner {
             if(regs == null) {
                 regs = new Region();
             }
-            byte[] ccc = ByteList.plain(string);
-            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) >= 0) {
+            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) >= 0) {
                 matchStart = regs.beg[0]+pos;
                 matchEnd = regs.end[0]+pos;
                 return matchEnd-pos;
@@ -313,11 +298,11 @@ public class StringScanner {
 		return -1;
 	}
 	
-	public CharSequence peek(int length) {
+	public ByteList peek(int length) {
 		int end = pos + length;
-		if (end > string.length()) {
-			end = string.length(); 
+		if (end > string.realSize) {
+			end = string.realSize; 
 		}
-		return string.subSequence(pos, end);
+		return string.makeShared(pos, end-pos);
 	}
 }

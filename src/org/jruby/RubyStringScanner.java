@@ -7,6 +7,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.StringScanner;
+import org.jruby.util.ByteList;
 
 /**
  * @author kscott
@@ -35,7 +36,7 @@ public class RubyStringScanner extends RubyObject {
     @JRubyMethod(name = "initialize", optional = 2, frame = true)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         if (Arity.checkArgumentCount(getRuntime(), args, 0, 2) > 0) {
-            scanner = new StringScanner(args[0].convertToString().getValue());
+            scanner = new StringScanner(args[0].convertToString().getByteList());
         } else {
             scanner = new StringScanner();
         }
@@ -44,7 +45,7 @@ public class RubyStringScanner extends RubyObject {
 
     @JRubyMethod(name = {"contact", "<<"}, required = 1)
     public IRubyObject concat(IRubyObject obj) {
-        scanner.append(obj.convertToString().getValue());
+        scanner.append(obj.convertToString().getByteList());
         return this;
     }
 
@@ -64,11 +65,11 @@ public class RubyStringScanner extends RubyObject {
         }
     }
 
-    private IRubyObject stringOrNil(CharSequence cs) {
+    private IRubyObject stringOrNil(ByteList cs) {
         if (cs == null) {
             return getRuntime().getNil();
         } else {
-            return RubyString.newString(getRuntime(), cs);
+            return RubyString.newStringShared(getRuntime(), cs);
         }
     }
 
@@ -125,11 +126,11 @@ public class RubyStringScanner extends RubyObject {
 
     @JRubyMethod(name = "getch")
     public IRubyObject getch() {
-        char c = scanner.getChar();
+        byte c = scanner.getChar();
         if (c == 0) {
             return getRuntime().getNil();
         } else {
-            return RubyString.newString(getRuntime(), new Character(c).toString());
+            return RubyString.newString(getRuntime(), new ByteList(new byte[]{c}, false));
         }
     }
 
@@ -161,7 +162,7 @@ public class RubyStringScanner extends RubyObject {
 
     @JRubyMethod(name = "peek", required = 1)
     public IRubyObject peek(IRubyObject length) {
-        return RubyString.newString(getRuntime(), scanner.peek(RubyFixnum.fix2int(length)));
+        return RubyString.newStringShared(getRuntime(), scanner.peek(RubyFixnum.fix2int(length)));
     }
 
     @JRubyMethod(name = "pos")
@@ -197,7 +198,7 @@ public class RubyStringScanner extends RubyObject {
 
     @JRubyMethod(name = "rest")
     public RubyString rest() {
-        return RubyString.newString(getRuntime(), scanner.rest());
+        return RubyString.newStringShared(getRuntime(), scanner.rest());
     }
 
     @JRubyMethod(name = "rest?")
@@ -274,13 +275,13 @@ public class RubyStringScanner extends RubyObject {
 
     @JRubyMethod(name = "string")
     public RubyString string() {
-        return RubyString.newString(getRuntime(), scanner.getString());
+        return RubyString.newStringShared(getRuntime(), scanner.getString());
     }
 
     @JRubyMethod(name = "string=", required = 1)
     public IRubyObject set_string(IRubyObject str) {
         if (!(str instanceof RubyString)) throw getRuntime().newTypeError(str, getRuntime().getString());
-        scanner.setString(((RubyString)str).getValue());
+        scanner.setString(((RubyString)str).getByteList());
         return str;
     }
 
