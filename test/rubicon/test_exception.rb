@@ -91,7 +91,7 @@ class TestException < Test::Unit::TestCase
       end
     }
     
-    1 while t.status != "sleep" # wait for it to sleep
+    Thread.pass while t.status != "sleep" # wait for it to sleep
     
     begin
       raise
