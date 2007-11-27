@@ -34,19 +34,28 @@ import java.nio.charset.CharsetEncoder;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import org.joni.encoding.Encoding;
+import org.joni.encoding.specific.ASCIIEncoding;
+import org.joni.encoding.specific.EUCJPEncoding;
+import org.joni.encoding.specific.SJISEncoding;
+import org.joni.encoding.specific.UTF8Encoding;
+
 public class KCode {
-    public static final KCode NIL = new KCode(null, 0);
-    public static final KCode NONE = new KCode("NONE", 0);
-    public static final KCode UTF8 = new KCode("UTF8", 64);
-    public static final KCode SJIS = new KCode("SJIS", 48);
-    public static final KCode EUC = new KCode("EUC", 32);
+    public static final KCode NIL = new KCode(null, 0, ASCIIEncoding.INSTANCE);
+    public static final KCode NONE = new KCode("NONE", 0, ASCIIEncoding.INSTANCE);
+    public static final KCode UTF8 = new KCode("UTF8", 64, UTF8Encoding.INSTANCE);
+    public static final KCode SJIS = new KCode("SJIS", 48, SJISEncoding.INSTANCE);
+    public static final KCode EUC = new KCode("EUC", 32, EUCJPEncoding.INSTANCE);
 
     private String kcode;
+    private Encoding encoding;
+
     private int code;
 
-    private KCode(String kcode, int code) {
+    private KCode(String kcode, int code, Encoding encoding) {
         this.kcode = kcode;
         this.code = code;
+        this.encoding = encoding;
     }
 
     public static KCode create(Ruby runtime, String lang) {
@@ -105,6 +114,17 @@ public class KCode {
 
     public int flags() {
         return 0;
+    }
+
+    public String name() {
+        if(kcode != null) {
+            return kcode.toLowerCase();
+        }
+        return null;
+    }
+
+    public Encoding getEncoding() {
+        return encoding;
     }
 }
 	

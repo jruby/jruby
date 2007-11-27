@@ -174,6 +174,16 @@ public class Block {
     public BlockBody getBody() {
         return body;
     }
+
+    /**
+     * Gets the frame.
+     * 
+     * @return Returns a RubyFrame
+     */
+    public Frame getFrame() {
+        return binding.getFrame();
+    }
+
     
     /**
      * Compiled codes way of examining arguments

@@ -23,7 +23,7 @@ class TC_Hash_Sort_Instance < Test::Unit::TestCase
 
    def test_sort_with_block
       assert_equal([["c",3],["b",2],["a",1]], @hash.sort{ |a,b| b <=> a })
-      #assert_equal([["c",3],["b",2],["a",1]], @hash.sort{ 1 } )
+#      assert_equal([["c",3],["b",2],["a",1]], @hash.sort{ 1 } )
       assert_equal([], {}.sort{ |a,b| b <=> a })
    end
 

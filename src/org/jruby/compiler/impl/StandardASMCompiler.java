@@ -78,7 +78,6 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
-import org.jruby.regexp.RegexpPattern;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -1323,49 +1322,35 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void createNewRegexp(final ByteList value, final int options, final String lang) {
             String regexpField = getNewConstant(cg.ci(RubyRegexp.class), "lit_reg_");
-            String patternField = getNewConstant(cg.ci(RegexpPattern.class), "lit_pat_");
 
             // in current method, load the field to see if we've created a Pattern yet
             method.aload(THIS);
             method.getfield(classname, regexpField, cg.ci(RubyRegexp.class));
 
             Label alreadyCreated = new Label();
-            method.ifnonnull(alreadyCreated);
-
-            loadRuntime();
+            method.ifnonnull(alreadyCreated); //[]
 
             // load string, for Regexp#source and Regexp#inspect
-            String regexpString = null;
-            if ((options & ReOptions.RE_UNICODE) > 0) {
-                regexpString = value.toUtf8String();
-            } else {
-                regexpString = value.toString();
-            }
+            String regexpString = value.toString();
 
-            loadRuntime();
-            method.ldc(regexpString);
-            method.ldc(new Integer(options));
-            invokeUtilityMethod("regexpLiteral", cg.sig(RegexpPattern.class, cg.params(Ruby.class, String.class, Integer.TYPE)));
-            method.dup();
-
-            method.aload(THIS);
-            method.swap();
-            method.putfield(classname, patternField, cg.ci(RegexpPattern.class));
+            loadRuntime(); //[R]
+            method.ldc(regexpString); //[R, rS]
+            method.ldc(new Integer(options)); //[R, rS, opts]
 
             if (null == lang) {
-                method.aconst_null();
+                method.aconst_null(); //[R, rS, opts, null]
             } else {
-                method.ldc(lang);
+                method.ldc(lang); //[R, rS, opts, lang]
             }
 
-            method.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, RegexpPattern.class, String.class)));
+            method.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, String.class, Integer.TYPE, String.class))); //[reg]
 
-            method.aload(THIS);
-            method.swap();
-            method.putfield(classname, regexpField, cg.ci(RubyRegexp.class));
+            method.aload(THIS); //[reg, T]
+            method.swap(); //[T, reg]
+            method.putfield(classname, regexpField, cg.ci(RubyRegexp.class)); //[]
             method.label(alreadyCreated);
-            method.aload(THIS);
-            method.getfield(classname, regexpField, cg.ci(RubyRegexp.class));
+            method.aload(THIS); //[T]
+            method.getfield(classname, regexpField, cg.ci(RubyRegexp.class)); 
         }
 
         public void createNewRegexp(CompilerCallback createStringCallback, final int options, final String lang) {
@@ -1387,10 +1372,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             loadRuntime();
 
-            loadRuntime();
             createStringCallback.compile(this);
             method.ldc(new Integer(options));
-            invokeUtilityMethod("regexpLiteral", cg.sig(RegexpPattern.class, cg.params(Ruby.class, String.class, Integer.TYPE)));
 
             if (null == lang) {
                 method.aconst_null();
@@ -1398,7 +1381,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 method.ldc(lang);
             }
 
-            method.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, RegexpPattern.class, String.class)));
+            method.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, String.class, Integer.TYPE, String.class))); //[reg]
 
             // only alter the code if the /o flag was present
             if (onceOnly) {

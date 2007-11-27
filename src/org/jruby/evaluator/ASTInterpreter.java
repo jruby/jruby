@@ -158,7 +158,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.regexp.PatternSyntaxException;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.util.TypeConverter;
@@ -994,7 +993,7 @@ public class ASTInterpreter {
         
         try {
             regexp = RubyRegexp.newRegexp(runtime, string.toString(), iVisited.getOptions(), lang);
-        } catch(jregex.PatternSyntaxException e) {
+        } catch(Exception e) {
         //                    System.err.println(iVisited.getValue().toString());
         //                    e.printStackTrace();
             throw runtime.newRegexpError(e.getMessage());
@@ -1490,28 +1489,22 @@ public class ASTInterpreter {
 
     private static IRubyObject regexpNode(Ruby runtime, Node node) {
         RegexpNode iVisited = (RegexpNode) node;
-        if(iVisited.literal == null) {
+        RubyRegexp p = iVisited.getPattern();
+        if(p == null) {
+            String lang = null;
             int opts = iVisited.getOptions();
-            String lang = ((opts & 16) == 16) ? "n" : null;
-            if((opts & 48) == 48) { // param s
+            if((opts & 16) != 0) { // param n
+                lang = "n";
+            } else if((opts & 48) != 0) { // param s
                 lang = "s";
-            } else if((opts & 32) == 32) { // param e
-                lang = "e";
-            } else if((opts & 64) != 0) { // param u
+            } else if((opts & 64) != 0) { // param s
                 lang = "u";
             }
-        
-            IRubyObject noCaseGlobal = runtime.getGlobalVariables().get("$=");
-        
-            int extraOptions = noCaseGlobal.isTrue() ? ReOptions.RE_OPTION_IGNORECASE : 0;
-
-            try {
-                iVisited.literal = RubyRegexp.newRegexp(runtime, iVisited.getPattern(runtime, extraOptions), lang);
-            } catch(PatternSyntaxException e) {
-                throw runtime.newRegexpError(e.getMessage());
-            }
+            p = RubyRegexp.newRegexp(runtime, iVisited.getValue(), iVisited.getFlags(), lang);
+            iVisited.setPattern(p);
         }
-        return iVisited.literal;
+
+        return p;
     }
 
     private static IRubyObject rescueNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

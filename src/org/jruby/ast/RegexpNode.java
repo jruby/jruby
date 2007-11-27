@@ -32,11 +32,9 @@
 package org.jruby.ast;
 
 import java.util.List;
-import org.jruby.regexp.RegexpFactory;
-import org.jruby.regexp.RegexpPattern;
-import org.jruby.regexp.PatternSyntaxException;
 
 import org.jruby.Ruby;
+import org.jruby.RubyRegexp;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
@@ -47,12 +45,10 @@ import org.jruby.util.ByteList;
  * Represents a simple regular expression literal.
  */
 public class RegexpNode extends Node implements ILiteralNode {
-    private RegexpPattern pattern;
+    private RubyRegexp pattern;
     private final ByteList value;
     private final int options;
 
-    public org.jruby.RubyRegexp literal;
-    
     public RegexpNode(ISourcePosition position, ByteList value, int options) {
         super(position, NodeType.REGEXPNODE);
 
@@ -80,14 +76,16 @@ public class RegexpNode extends Node implements ILiteralNode {
         return value;
     }
 
-    public RegexpPattern getPattern(Ruby runtime, int extra_options) throws PatternSyntaxException {
-        if (pattern == null) {
-            if((options & 256) == 256 ) {
-                pattern = RegexpFactory.getFactory("java").createPattern(value, (options&~256) | extra_options, 0);
-            } else {
-                pattern = runtime.getRegexpFactory().createPattern(value, options | extra_options, 0);
-            }
-        }
+    public int getFlags() {
+        return options;
+    }
+
+    public void setPattern(RubyRegexp p) {
+        this.pattern = p;
+        this.pattern.setLiteral();
+    }
+
+    public RubyRegexp getPattern() {
         return pattern;
     }
     

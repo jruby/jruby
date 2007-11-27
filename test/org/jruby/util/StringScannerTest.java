@@ -1,9 +1,9 @@
 package org.jruby.util;
 
-
-import jregex.Pattern;
-import org.jruby.regexp.JRegexRegexpPattern;
-import org.jruby.regexp.RegexpPattern;
+import org.joni.Regex;
+import org.joni.Option;
+import org.joni.Syntax;
+import org.joni.encoding.specific.ASCIIEncoding;
 
 import junit.framework.TestCase;
 
@@ -13,8 +13,8 @@ import junit.framework.TestCase;
  */
 public class StringScannerTest extends TestCase {
 	
-	private final static RegexpPattern WORD_CHARS = new JRegexRegexpPattern(null,0,new Pattern("\\w+"));
-	private final static RegexpPattern WHITESPACE = new JRegexRegexpPattern(null,0,new Pattern("\\s+"));
+	private final static Regex WORD_CHARS = new Regex(new byte[]{'\\','w','+'},0,3,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT);
+	private final static Regex WHITESPACE = new Regex(new byte[]{'\\','s','+'},0,3,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT);
 	
 	private final static String DATE_STRING = "Fri Dec 12 1975 14:39";
 
@@ -127,7 +127,7 @@ public class StringScannerTest extends TestCase {
 	public void testScanUntil() throws Exception {
 		StringScanner ss = new StringScanner(DATE_STRING);
 		
-		CharSequence cs = ss.scanUntil(new JRegexRegexpPattern(null,0,new Pattern("1")));
+		CharSequence cs = ss.scanUntil(new Regex(new byte[]{'1'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT));
 		
 		assertEquals("Fri Dec 1", cs);
 		
@@ -141,7 +141,7 @@ public class StringScannerTest extends TestCase {
 	public void testCheckUntil() throws Exception {
 		StringScanner ss = new StringScanner(DATE_STRING);
 		
-		CharSequence cs = ss.checkUntil(new JRegexRegexpPattern(null,0,new Pattern("1")));
+		CharSequence cs = ss.checkUntil(new Regex(new byte[]{'1'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT));
 		
 		assertEquals("Fri Dec 1", cs);
 		
@@ -153,7 +153,7 @@ public class StringScannerTest extends TestCase {
 	public void testSkipUntil() throws Exception {
 		StringScanner ss = new StringScanner(DATE_STRING);
 		
-		assertEquals(9, ss.skipUntil(new JRegexRegexpPattern(null,0,new Pattern("1"))));
+		assertEquals(9, ss.skipUntil(new Regex(new byte[]{'1'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT)));
 		
 		assertEquals("1", ss.matchedValue());
 	}
@@ -225,13 +225,13 @@ public class StringScannerTest extends TestCase {
 	public void testExists() throws Exception {
 		StringScanner ss = new StringScanner("test string");
 		
-		assertEquals(3, ss.exists(new JRegexRegexpPattern(null,0,new Pattern("s"))));
+		assertEquals(3, ss.exists(new Regex(new byte[]{'s'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT)));
 		
 		assertEquals(0, ss.getPos());
 		
 		assertTrue(ss.matched());
 		
-		assertEquals(-1, ss.exists(new JRegexRegexpPattern(null,0,new Pattern("z"))));
+		assertEquals(-1, ss.exists(new Regex(new byte[]{'z'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT)));
 	}
 	
 	public void testUnscan() throws Exception {
@@ -303,7 +303,7 @@ public class StringScannerTest extends TestCase {
 	public void testGrouping() throws Exception {
 		StringScanner ss = new StringScanner(DATE_STRING);
 		
-		ss.scan(new JRegexRegexpPattern(null,0,new Pattern("(\\w+) (\\w+) (\\d+)")));
+		ss.scan(new Regex(new byte[]{'(','\\','w','+',')',' ','(','\\','w','+',')',' ','(','\\','d','+',')'},0,17,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT));
 		
 		assertEquals("Fri", ss.group(1));
 		
@@ -342,7 +342,7 @@ public class StringScannerTest extends TestCase {
 		
 		ss.reset();
 		
-		ss.scanUntil(new JRegexRegexpPattern(null,0,new Pattern("1")));
+		ss.scanUntil(new Regex(new byte[]{'1'},0,1,Option.DEFAULT,ASCIIEncoding.INSTANCE,Syntax.DEFAULT));
 		
 		assertEquals("Fri Dec ", ss.preMatch());
 		assertEquals("2 1975 14:39", ss.postMatch());

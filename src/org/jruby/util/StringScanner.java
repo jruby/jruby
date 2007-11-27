@@ -1,20 +1,24 @@
 package org.jruby.util;
 
-import org.jruby.regexp.RegexpMatcher;
-import org.jruby.regexp.RegexpPattern;
+import org.joni.Option;
+import org.joni.Region;
+import org.joni.Regex;
 
+
+/*
+ * TODO: this is INCREDIBLY inefficient right now, with Joni. should be rewritten to use matcher and so on
+ */
 /**
  * @author kscott
  *
  */
 public class StringScanner {
-	
 	private String string;
-	private RegexpMatcher matcher;
 	private int pos = 0;
 	private int lastPos = -1;
 	private int matchStart = -1;
 	private int matchEnd = -1;
+	private Region regs;
 
 	/**
 	 * 
@@ -40,7 +44,7 @@ public class StringScanner {
 	}
 	
 	private void resetMatchData() {
-		matcher = null;
+		regs = null;
 		matchStart = -1;
 		matchEnd = -1;
 	}
@@ -89,7 +93,7 @@ public class StringScanner {
 		if (isEndOfString()) {
 			return 0;
 		} else {
-			matcher = null;
+			regs = null;
 			matchStart = pos;
 			matchEnd = pos + 1;
 			lastPos = pos;
@@ -102,17 +106,17 @@ public class StringScanner {
 	}
 	
 	public CharSequence group(int n) {
-		if (!matched()) {
+		if(!matched()) {
 			return null;
 		}
-		if (matcher == null && matchEnd - matchStart == 1) {
+		if(regs == null && matchEnd - matchStart == 1) {
 			// Handle the getChar() is a match case
 			return string.subSequence(matchStart, matchEnd);
 		}
-		if (n >= matcher.groupCount()) {
+		if(n >= regs.numRegs) {
 			return null;
 		}
-		return matcher.group(n);
+		return string.subSequence(regs.beg[n]+lastPos,regs.end[n]+lastPos);
 	}
 	
 	public CharSequence preMatch() {
@@ -140,7 +144,7 @@ public class StringScanner {
 	}
 	
 	public int matchedSize() {
-		if (matcher == null) {
+		if (regs == null) {
 			return -1;
 		} else {
 			return matchEnd - matchStart;
@@ -156,136 +160,154 @@ public class StringScanner {
 		}
 	}
 	
-	public int matches(RegexpPattern pattern) {
+	public int matches(Regex pattern) {
 		if (!isEndOfString()) {
-			matcher = pattern.matcher(string.subSequence(pos, string.length()).toString());
-			if (matcher.find() && matcher.start() == 0) {
-				matchStart = pos;
-				matchEnd = matcher.end();
-				return matchEnd;
-			} else {
-				resetMatchData();
-			}
+            if(regs == null) {
+                regs = new Region();
+            }
+            byte[] ccc = ByteList.plain(string);
+            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) == 0) {
+                matchStart = pos;
+                matchEnd = regs.end[0]+pos;
+            } else {
+                resetMatchData();
+            }
 		}
 		
 		return -1;
 	}
 	
-	public CharSequence scanUntil(RegexpPattern pattern) {
+	public CharSequence scanUntil(Regex pattern) {
 		if (!isEndOfString()) {
-			matcher = pattern.matcher(string);
-            matcher.setOffset(pos);
-			if (matcher.find()) {
-				lastPos = pos;
-				matchStart = matcher.start() + pos;
-				matchEnd = matcher.end() + pos;
-				pos = matchEnd;
-				return string.subSequence(lastPos, pos);
-			} else {
-				lastPos = -1;
-				resetMatchData();
-			}
+            if(regs == null) {
+                regs = new Region();
+            }
+            byte[] ccc = ByteList.plain(string);
+            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) >= 0) {
+                lastPos = pos;
+                matchStart = regs.beg[0]+pos;
+                matchEnd = regs.end[0]+pos;
+                pos = matchEnd;
+                return string.subSequence(lastPos, pos);
+            } else {
+                lastPos = -1;
+                resetMatchData();
+            }
 		}
 		
 		return null;
 	}
 	
-	public CharSequence scan(RegexpPattern pattern) {
+	public CharSequence scan(Regex pattern) {
 		if (!isEndOfString()) {
-			matcher = pattern.matcher(string.subSequence(pos, string.length()).toString());
-			if (matcher.find() && matcher.start() == 0) {
-				lastPos = pos;
-				matchStart = pos;
-				pos += matcher.end();
-				matchEnd = pos;
-				return matcher.group(0);
-			} else {
-				lastPos = -1;
-				resetMatchData();
-			}
+            if(regs == null) {
+                regs = new Region();
+            }
+            byte[] ccc = ByteList.plain(string);
+            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) == 0) {
+                lastPos = pos;
+                matchStart = pos;
+                pos = regs.end[0]+lastPos;
+                matchEnd = pos;
+                return string.subSequence(regs.beg[0]+lastPos,regs.end[0]+lastPos);
+            } else {
+                lastPos = -1;
+                resetMatchData();
+            }
 		}
 		
 		return null;
 	}
 	
-	public CharSequence check(RegexpPattern pattern) {
+	public CharSequence check(Regex pattern) {
 		if (!isEndOfString()) {
-			matcher = pattern.matcher(string.subSequence(pos, string.length()).toString());
-			if (matcher.find() && matcher.start() == 0) {
-				matchStart = pos;
-				matchEnd = matchStart + matcher.end();
-				return matcher.group(0);
-			} else {
-				resetMatchData();
-			}
+            if(regs == null) {
+                regs = new Region();
+            }
+            byte[] ccc = ByteList.plain(string);
+            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) == 0) {
+                matchStart = pos;
+                matchEnd = regs.end[0]+pos;
+                return string.subSequence(regs.beg[0]+pos,regs.end[0]+pos);
+            } else {
+                resetMatchData();
+            }
 		}
 		
 		return null;
 	}
 	
-	public CharSequence checkUntil(RegexpPattern pattern) {
+	public CharSequence checkUntil(Regex pattern) {
 		if (!isEndOfString()) {
-			matcher = pattern.matcher(string);
-            matcher.setOffset(pos);
-			if (matcher.find()) {
-				matchStart = matcher.start() + pos;
-				matchEnd = matcher.end() + pos;
-				return string.subSequence(pos, matcher.end() + pos);
-			} else {
-				resetMatchData();
-			}
+            if(regs == null) {
+                regs = new Region();
+            }
+            byte[] ccc = ByteList.plain(string);
+            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) >= 0) {
+                matchStart = regs.beg[0]+pos;
+                matchEnd = regs.end[0]+pos;
+                return string.subSequence(pos,matchEnd);
+            } else {
+                resetMatchData();
+            }
 		}
 		
 		return null;
 	}
 	
-	public int skip(RegexpPattern pattern) {
+	public int skip(Regex pattern) {
 		if (!isEndOfString()) {
-			matcher = pattern.matcher(string.subSequence(pos, string.length()).toString());
-			if (matcher.find() && matcher.start() == 0) {
-				lastPos = pos;
-				matchStart = pos;
-				int end = matcher.end();
-				pos += end;
-				matchEnd = pos;
-				return end;
-			} else {
-				resetMatchData();
-			}
+            if(regs == null) {
+                regs = new Region();
+            }
+            byte[] ccc = ByteList.plain(string);
+            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) == 0) {
+                lastPos = pos;
+                matchStart = pos;
+                pos = regs.end[0]+lastPos;
+                matchEnd = pos;
+                return regs.end[0] + lastPos - lastPos;
+            } else {
+                resetMatchData();
+            }
 		}
 		
 		return -1;
 	}
 	
-	public int skipUntil(RegexpPattern pattern) {
+	public int skipUntil(Regex pattern) {
 		if (!isEndOfString()) {
-			matcher = pattern.matcher(string);
-            matcher.setOffset(pos);
-			if (matcher.find()) {
-				lastPos = pos;
-				pos = matcher.end() + lastPos;
-				matchStart = matcher.start() + lastPos;
-				matchEnd = pos;
-				return pos - lastPos;
-			} else {
-				resetMatchData();
-			}
+            if(regs == null) {
+                regs = new Region();
+            }
+            byte[] ccc = ByteList.plain(string);
+            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) >= 0) {
+                lastPos = pos;
+                pos = regs.end[0]+lastPos;
+                matchStart = regs.beg[0]+lastPos;
+                matchEnd = pos;
+                return pos-lastPos;
+            } else {
+                resetMatchData();
+            }
 		}
 		
 		return -1;
 	}
 	
-	public int exists(RegexpPattern pattern) {
+	public int exists(Regex pattern) {
 		if (!isEndOfString()) {
-			matcher = pattern.matcher(string);
-            matcher.setOffset(pos);
-			if (matcher.find()) {
-				matchStart = matcher.start() + pos;
-				matchEnd = matcher.end() + pos;
-				return matchEnd - pos;
-			} else {
-				resetMatchData();
-			}
+            if(regs == null) {
+                regs = new Region();
+            }
+            byte[] ccc = ByteList.plain(string);
+            if(pattern.matcher(ccc,pos,ccc.length).search(pos,ccc.length,regs, Option.NONE) >= 0) {
+                matchStart = regs.beg[0]+pos;
+                matchEnd = regs.end[0]+pos;
+                return matchEnd-pos;
+            } else {
+                resetMatchData();
+            }
 		}
 		
 		return -1;

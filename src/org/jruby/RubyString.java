@@ -46,9 +46,6 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.util.Locale;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.regexp.RegexpMatcher;
-import org.jruby.regexp.RegexpPattern;
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
@@ -63,6 +60,10 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
+
+import org.joni.encoding.Encoding;
+import org.joni.Regex;
+import org.joni.Region;
 
 /**
  *
@@ -473,7 +474,11 @@ public class RubyString extends RubyObject {
         return new RubyString(runtime, runtime.getString(), str);
     }
     
-    private static RubyString newEmptyString(Ruby runtime, RubyClass metaClass) {
+    public static RubyString newEmptyString(Ruby runtime) {
+        return newEmptyString(runtime, runtime.getString());
+    }
+
+    public static RubyString newEmptyString(Ruby runtime, RubyClass metaClass) {
         RubyString empty = new RubyString(runtime, metaClass, ByteList.EMPTY_BYTELIST);
         empty.flags |= SHARED_BYTELIST_STR_F;
         return empty;
@@ -653,29 +658,36 @@ public class RubyString extends RubyObject {
     /**
      * String#match(pattern)
      *
+     * rb_str_match_m
+     *
      * @param pattern Regexp or String
      */
     @JRubyMethod(name = "match", required = 1)
     public IRubyObject match(IRubyObject pattern) {
-        IRubyObject res = null;
-        if (pattern instanceof RubyRegexp) {
-            res = ((RubyRegexp)pattern).search2(toString(), this);
-        } else if (pattern instanceof RubyString) {
-            RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) pattern, 0, null);
-            res = regexp.search2(toString(), this);
-        } else if (pattern.respondsTo("to_str")) {
-            // FIXME: is this cast safe?
-            RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) RuntimeHelpers.invoke(getRuntime().getCurrentContext(), pattern, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY), 0, null);
-            res = regexp.search2(toString(), this);
+        return get_pat(pattern,false).callMethod(getRuntime().getCurrentContext(),"match",this);
+    }
+
+    private IRubyObject get_pat(IRubyObject pat, boolean quote) {
+        IRubyObject val;
+
+        if(pat instanceof RubyRegexp) {
+            return pat;
+        } else if(pat instanceof RubyString) {
         } else {
-            // not regexp and not string, can't convert
-            throw getRuntime().newTypeError("wrong argument type " + pattern.getMetaClass().getBaseName() + " (expected Regexp)");
+            val = pat.checkStringType();
+            if(val.isNil()) {
+                if(!(pat instanceof RubyRegexp)) {
+                    throw getRuntime().newTypeError("wrong argument type " + pat.getMetaClass().getName() + " (expected Regexp)");
+                }
+            }
+            pat = val;
         }
-        
-        if(res instanceof RubyMatchData) {
-            ((RubyMatchData)res).use();
+
+        if(quote) {
+            pat = RubyRegexp.quote(pat,(KCode)null);
         }
-        return res;
+
+        return RubyRegexp.newRegexp(pat,0,null);
     }
 
     /** rb_str_capitalize
@@ -1630,87 +1642,56 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "sub!", required = 1, optional = 1)
     public IRubyObject sub_bang(IRubyObject[] args, Block block) {
+        IRubyObject match;
+        RubyString repl = null;;
+        RubyRegexp pat;
+        Region regs;
         boolean iter = false;
-        IRubyObject repl;
-        Ruby runtime = getRuntime();
         boolean tainted = false;
-        
-        if (args.length == 1 && block.isGiven()) {
+        int plen;
+
+        if(args.length == 1 && block.isGiven()) {
             iter = true;
-            repl = runtime.getNil();
-        } else if (args.length == 2) {
+        } else if(args.length == 2) {
             repl = args[1].convertToString();
-            tainted = repl.isTaint(); 
+            if(repl.isTaint()) {
+                tainted = true;
+            }
         } else {
-            throw runtime.newArgumentError("wrong number of arguments (" + args.length + "for 2)");
+            throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 2)");
         }
-        
-        RubyRegexp pattern = getPat(args[0], true);
-        boolean utf8 = pattern.getCode() == KCode.UTF8; 
-        
-        RegexpPattern pat = pattern.getPattern();
-        String str = toString(utf8); 
-        RegexpMatcher mat = pat.matcher(str);
-        
-        if (mat.find()) {
-            ThreadContext context = runtime.getCurrentContext();
-            RubyMatchData md = matchdata(runtime, str, mat, utf8);
-            context.getCurrentFrame().setBackRef(md);
-            if (iter) {
-                // FIXME: I don't like this setting into the frame directly, but it's necessary since blocks dupe the frame
-                block.getBinding().getFrame().setBackRef(md);
-                int len = value.realSize;
-                byte[]b = value.bytes;
-                repl = objAsString(block.yield(context, substr(runtime, str, mat.start(0), mat.length(0), utf8)));
-                modifyCheck(b, len);
+
+        pat = (RubyRegexp)get_pat(args[0], true);
+
+        if(pat.search(this, 0, false) >= 0) {
+            match = getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
+            regs = ((RubyMatchData)match).regs;
+            if(iter) {
+                // for modifyCheck
+                byte [] sb = value.bytes; 
+                int slen = value.realSize;
+
+                ((RubyMatchData)match).use();
+                repl = objAsString(block.yield(getRuntime().getCurrentContext(),RubyRegexp.nth_match(0,match)));
+                modifyCheck(sb,slen);
                 frozenCheck();
+                getRuntime().getCurrentContext().getCurrentFrame().setBackRef(match);
             } else {
-                repl = pattern.regsub(repl, this, md);
+                repl = pat.regsub(repl, this, regs);
             }
-
-            if (repl.isTaint()) tainted = true;
-            int startZ = mat.start(0);
-            if(utf8) {
-                try {
-                    startZ = str.substring(0, startZ).getBytes("UTF8").length;
-                } catch (UnsupportedEncodingException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+            modify();
+            if(repl.isTaint()) {
+                tainted = true;
             }
-
-            int plen = mat.end(0) - startZ;
-
-            if (utf8) {
-                try {
-                    plen = mat.group(0).getBytes("UTF8").length;
-                } catch (UnsupportedEncodingException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+            this.value.unsafeReplace(this.value.begin + regs.beg[0], regs.end[0]-regs.beg[0], repl.value.bytes, repl.value.begin, repl.value.realSize);
+            if(tainted) {
+                setTaint(true);
             }
-            ByteList replValue = ((RubyString)repl).value;
             
-            if (replValue.realSize > plen) { // this might be smarter by being real bytes length aware
-                modify(value.realSize + replValue.realSize - plen);
-            } else {
-                modify();
-            }
-            if (replValue.realSize != plen && (value.realSize - startZ - plen) > 0) {
-                int valueOldStart = value.begin + startZ + plen;
-                int valueNewStart = value.begin + startZ + replValue.realSize;
-                int valueLength = value.realSize - startZ - plen;
-                
-                System.arraycopy(value.bytes, valueOldStart, value.bytes, valueNewStart, valueLength);
-            }
-            System.arraycopy(replValue.bytes, replValue.begin, value.bytes, value.begin + startZ, replValue.realSize);
-            value.realSize += replValue.realSize - plen;
-            if (tainted) setTaint(true);
             return this;
-            
         }
 
-        return runtime.getNil();
+        return getRuntime().getNil();
     }
     
     /** rb_str_gsub
@@ -1746,16 +1727,13 @@ public class RubyString extends RubyObject {
         }
         
         RubyRegexp pattern = getPat(args[0], true);
-        boolean utf8 = pattern.getCode() == KCode.UTF8; 
-        
-        RegexpPattern pat = pattern.getPattern();
-        String str = toString(utf8); 
-        RegexpMatcher mat = pat.matcher(str);
+        Region regs = null;
 
-        boolean found = mat.find();
-        
-        if (!found) {
-            if (bang) return runtime.getNil();
+        int begs = pattern.search(this, 0, false);
+        if(begs < 0) {
+            if(bang) {
+                return getRuntime().getNil();	/* no match, no substitution */
+            }
             return strDup();
         }
         
@@ -1775,29 +1753,25 @@ public class RubyString extends RubyObject {
         int offset = 0;
         // tmp lock
         RubyMatchData md = null;
-        while (found) {
+        while (begs>=0) {
+            md = (RubyMatchData)getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
+            regs =  ((RubyMatchData)md).regs;
             
             if (iter) {
-                md = matchdata(runtime, str, mat, utf8);
+                md.use();
                 context.getPreviousFrame().setBackRef(md);
                 // FIXME: I don't like this setting into the frame directly, but it's necessary since blocks dupe the
-                block.getBinding().getFrame().setBackRef(md);
-                val = objAsString(block.yield(context, substr(runtime, str, mat.start(0), mat.length(0), utf8)));
+                block.getFrame().setBackRef(md);
+                val = objAsString(block.yield(context, RubyRegexp.nth_match(0, md)));
                 modifyCheck(sb, slen);
                 if (bang) frozenCheck();
                 // rb_raise(rb_eRuntimeError, "block should not cheat");
             } else {
-                if (md == null) {
-                    md = matchdata(runtime, str, mat, utf8);
-                    context.getPreviousFrame().setBackRef(md);
-                } else {
-                    md.invalidateRegs();
-                }
-                val = pattern.regsub(repl, this, md);
+                val = pattern.regsub((RubyString)repl, this, regs);
             }
             if (val.isTaint()) tainted = true;
             ByteList vbuf = val.value;
-            int beg = mat.start(); 
+            int beg = regs.beg[0]; 
             int len = (bp - buf) + (beg - offset) + vbuf.realSize + 3;
 
             if (blen < len) {
@@ -1808,14 +1782,16 @@ public class RubyString extends RubyObject {
                 bp = buf + len;
             }
             len = beg - offset;
+            
             System.arraycopy(value.bytes, cp, dest.bytes, bp, len);
+
             bp += len;
             System.arraycopy(vbuf.bytes, vbuf.begin, dest.bytes, bp, vbuf.realSize);
             bp += vbuf.realSize;
-            int endZ = mat.end(0);
+            int endZ = regs.end[0];
             offset = endZ;
             
-            if (mat.length(0) == 0) {
+            if (regs.beg[0] == regs.end[0]) {
                 if (value.realSize <= endZ) break;
                 len = 1;
                 System.arraycopy(value.bytes, value.begin + endZ, dest.bytes, bp, len);
@@ -1824,8 +1800,7 @@ public class RubyString extends RubyObject {
             }
             cp = value.begin + offset;
             if (offset > value.realSize) break;
-            mat.setPosition(offset);
-            found = mat.find();
+            begs = pattern.search(this, offset, false);
         }
         
         if (value.realSize > offset) {
@@ -1860,7 +1835,51 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "index", required = 1, optional = 1)
     public IRubyObject index(IRubyObject[] args) {
-        return index(args, false);
+        int pos;
+        boolean offset = false;
+        
+        if(Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
+            pos = RubyNumeric.fix2int(args[1]);
+        } else {
+            pos = 0;
+        }
+        if(pos < 0) {
+            pos += value.length();
+            if(pos < 0) {
+                if(args[0] instanceof RubyRegexp) {
+                    getRuntime().getCurrentContext().getPreviousFrame().setBackRef(getRuntime().getNil());
+                }
+                return getRuntime().getNil();
+            }
+        }
+
+        if (args[0] instanceof RubyRegexp) {
+            RubyRegexp sub = (RubyRegexp)args[0];
+            pos = sub.adjust_startpos(this, pos, false);
+            pos = sub.search(this, pos, false);
+        } else if (args[0] instanceof RubyFixnum) {
+            char c = (char) ((RubyFixnum) args[0]).getLongValue();
+            pos = value.indexOf(c, pos);
+        } else {
+            IRubyObject tmp = args[0].checkStringType();
+
+            if (tmp.isNil()) throw getRuntime().newTypeError("type mismatch: " + args[0].getMetaClass().getName() + " given");
+
+            ByteList sub = ((RubyString) tmp).value;
+
+            if (sub.length() > value.length()) return getRuntime().getNil();
+            // the empty string is always found at the beginning of a string (or at the end when rindex)
+            if (sub.realSize == 0) {
+                if(pos<value.realSize) {
+                    return getRuntime().newFixnum(pos);
+                } else {
+                    return getRuntime().getNil();
+                }
+            }
+            pos = value.indexOf(sub, pos);
+        }
+
+        return pos == -1 ? getRuntime().getNil() : getRuntime().newFixnum(pos);
     }
 
     /** rb_str_rindex_m
@@ -1868,64 +1887,40 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "rindex", required = 1, optional = 1)
     public IRubyObject rindex(IRubyObject[] args) {
-        return index(args, true);
-    }
-
-    /**
-     *	@fixme may be a problem with pos when doing reverse searches
-     */
-    private IRubyObject index(IRubyObject[] args, boolean reverse) {
-        //FIXME may be a problem with pos when doing reverse searches
         int pos;
         boolean offset = false;
         
-        if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
+        if(Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             pos = RubyNumeric.fix2int(args[1]);
-            if (pos > value.length()) {
-                if (reverse) {
-                    pos = value.length();
-                } else {
+            if(pos < 0) {
+                pos += value.length();
+                if(pos < 0) {
+                    if(args[0] instanceof RubyRegexp) {
+                        getRuntime().getCurrentContext().getPreviousFrame().setBackRef(getRuntime().getNil());
+                    }
                     return getRuntime().getNil();
                 }
-            } else {
-                if (pos < 0) {
-                    pos += value.length();
-                    if (pos < 0) return getRuntime().getNil();
-                }                 
             }
-            offset = true;           
-        } else {
-            pos = !reverse ? 0 : value.length();
-        }
-        
-        if (args[0] instanceof RubyRegexp) {
-            // save position we shouldn't look past
-            int doNotLookPastIfReverse = pos;
+            if(pos > this.value.realSize) {
+                pos = this.value.realSize;
+            }
 
-            // RubyRegexp doesn't (yet?) support reverse searches, so we
-            // find all matches and use the last one--very inefficient.
-            // FIXME: - find a better way
-            pos = ((RubyRegexp) args[0]).search(toString(), this, reverse ? 0 : pos);
-            
-            if (reverse) {
-                if (pos == -1) return getRuntime().getNil();
-                
-                int dummy = pos;
-                if (offset) {
-                    pos = doNotLookPastIfReverse;
-                    if (dummy > pos) {
-                        pos = -1;
-                        dummy = -1;
-                    }
-                }
-                while (reverse && dummy > -1 && dummy <= doNotLookPastIfReverse) {
-                    pos = dummy;
-                    dummy = ((RubyRegexp) args[0]).search(toString(), this, pos + 1);
-                }
+        } else {
+            pos = this.value.realSize;
+        }
+
+        if (args[0] instanceof RubyRegexp) {
+            RubyRegexp sub = (RubyRegexp)args[0];
+            if(sub.getByteListSource().realSize > 0) {
+                pos = sub.adjust_startpos(this, pos, true);
+                pos = sub.search(this, pos, true);
+            }
+            if(pos >= 0) {
+                return getRuntime().newFixnum(pos);
             }
         } else if (args[0] instanceof RubyFixnum) {
             char c = (char) ((RubyFixnum) args[0]).getLongValue();
-            pos = reverse ? value.lastIndexOf(c, pos) : value.indexOf(c, pos);
+            pos = value.lastIndexOf(c, pos);
         } else {
             IRubyObject tmp = args[0].checkStringType();
 
@@ -1937,7 +1932,7 @@ public class RubyString extends RubyObject {
             // the empty string is always found at the beginning of a string (or at the end when rindex)
             if (sub.realSize == 0) return getRuntime().newFixnum(pos);
 
-            pos = reverse ? value.lastIndexOf(sub, pos) : value.indexOf(sub, pos);
+            pos = value.lastIndexOf(sub, pos);
         }
 
         return pos == -1 ? getRuntime().getNil() : getRuntime().newFixnum(pos);
@@ -1974,18 +1969,19 @@ public class RubyString extends RubyObject {
     public IRubyObject op_aref(IRubyObject[] args) {
         if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             if (args[0] instanceof RubyRegexp) {
-                IRubyObject match = RubyRegexp.regexpValue(args[0]).match(toString(), this, 0);
-                long idx = args[1].convertToInteger().getLongValue();
-                getRuntime().getCurrentContext().getCurrentFrame().setBackRef(match);
-                return RubyRegexp.nth_match((int) idx, match);
+                if(((RubyRegexp)args[0]).search(this,0,false) >= 0) {
+                    return RubyRegexp.nth_match(RubyNumeric.fix2int(args[1]), getRuntime().getCurrentContext().getCurrentFrame().getBackRef());
+                }
+                return getRuntime().getNil();
             }
             return substr(RubyNumeric.fix2int(args[0]), RubyNumeric.fix2int(args[1]));
         }
 
         if (args[0] instanceof RubyRegexp) {
-            return RubyRegexp.regexpValue(args[0]).search(toString(), this, 0) >= 0 ?
-                RubyRegexp.last_match(getRuntime().getCurrentContext().getCurrentFrame().getBackRef()) :
-                getRuntime().getNil();
+            if(((RubyRegexp)args[0]).search(this,0,false) >= 0) {
+                return RubyRegexp.nth_match(0, getRuntime().getCurrentContext().getCurrentFrame().getBackRef());
+            }
+            return getRuntime().getNil();
         } else if (args[0] instanceof RubyString) {
             return toString().indexOf(stringValue(args[0]).toString()) != -1 ?
                 args[0] : getRuntime().getNil();
@@ -2007,31 +2003,28 @@ public class RubyString extends RubyObject {
      *
      */
     private void subpatSet(RubyRegexp regexp, int nth, IRubyObject repl) {
-        int found = regexp.search(this.toString(), this, 0);
-        if (found == -1) throw getRuntime().newIndexError("regexp not matched");
-
-        RubyMatchData match = (RubyMatchData) getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
-        match.use();
-
-        if (nth >= match.getSize()) {
+        RubyMatchData match;
+        int start, end, len;
+        if(regexp.search(this, 0, false) < 0) {
+            throw getRuntime().newIndexError("regexp not matched");
+        }
+        match = (RubyMatchData)getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
+        if(nth >= match.regs.numRegs) {
             throw getRuntime().newIndexError("index " + nth + " out of regexp");
         }
-        if (nth < 0) {
-            if (-nth >= match.getSize()) {
+        if(nth < 0) {
+            if(-nth >= match.regs.numRegs) {
                 throw getRuntime().newIndexError("index " + nth + " out of regexp");
             }
-            nth += match.getSize();
+            nth += match.regs.numRegs;
         }
-
-        IRubyObject group = match.group(nth);
-        if (getRuntime().getNil().equals(group)) {
+        start = match.regs.beg[nth];
+        if(start == -1) {
             throw getRuntime().newIndexError("regexp group " + nth + " not matched");
         }
-
-        int beg = (int) match.begin(nth);
-        int len = (int) (match.end(nth) - beg);
-
-        replace(beg, len, stringValue(repl));
+        end = match.regs.end[nth];
+        len = end - start;
+        replace(start, len, stringValue(repl));
     }
 
     /** rb_str_aset, rb_str_aset_m
@@ -2286,6 +2279,7 @@ public class RubyString extends RubyObject {
         int beg, end, i = 0;
         int lim = 0;
         boolean limit = false;
+        IRubyObject tmp;
             
         Ruby runtime = getRuntime();        
         if (Arity.checkArgumentCount(runtime, args, 0, 2) == 2) {
@@ -2315,6 +2309,7 @@ public class RubyString extends RubyObject {
         }
             
         RubyArray result = runtime.newArray();
+        beg = 0;
         
         if (awkSplit) { // awk split
             int ptr = value.begin; 
@@ -2395,75 +2390,60 @@ public class RubyString extends RubyObject {
                 }
             }
         } else { // regexp split
-            boolean utf8 = false; 
-            String str;
-            
-            RubyRegexp rr =(RubyRegexp)getPat(spat,true);
-            if (runtime.getKCode() == KCode.UTF8) {
-                // We're in UTF8 mode; try to convert the string to UTF8, but fall back on raw bytes if we can't decode
-                // TODO: all this decoder and charset stuff could be centralized...in KCode perhaps?
-                CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
-                decoder.onMalformedInput(CodingErrorAction.REPORT);
-                decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
+            spat = getPat(spat,true);
 
-                try {
-                    str = decoder.decode(ByteBuffer.wrap(value.unsafeBytes(), value.begin, value.realSize)).toString();
-                    utf8 = true;
-                } catch (CharacterCodingException cce) {
-                    // ignore, just use the unencoded string
-                    str = toString();
-                }
-            } else {
-                utf8 = rr.getCode() == KCode.UTF8; 
-                str = toString(utf8);
-            }
+            int start = beg;
+            int idx;
+            boolean last_null = false;
+            Region regs;
 
-            RegexpPattern pat = rr.getPattern();
-            RegexpMatcher mat = pat.matcher(str);
-            beg = 0;
-            boolean lastNull = false;
-            while (mat.find()) {
-                end = mat.start();
-                if (beg == end && mat.length(0) == 0) {
-                    if (value.realSize == 0) {
+            while((end = ((RubyRegexp)spat).search(this, start, false)) >= 0) {
+                regs = ((RubyMatchData)getRuntime().getCurrentContext().getCurrentFrame().getBackRef()).regs;
+                if(start == end && regs.beg[0] == regs.end[0]) {
+                    if(value.realSize == 0) {
                         result.append(newEmptyString(runtime, getMetaClass()));
                         break;
-                    } else if (lastNull) {
-                        beg = end;
+                    } else if(last_null) {
+                        result.append(substr(beg, ((RubyRegexp)spat).getKCode().getEncoding().length(value.bytes[value.begin+beg])));
+                        beg = start;
                     } else {
-                        lastNull = true;
+                        if(start < value.realSize) {
+                            start += ((RubyRegexp)spat).getKCode().getEncoding().length(value.bytes[value.begin+start]);
+                        } else {
+                            start++;
+                        }
+
+                        last_null = true;
                         continue;
                     }
                 } else {
-                    result.append(substr(runtime, str, beg, end - beg, utf8));
-                    beg = mat.end(0);
+                    result.append(substr(beg,end-beg));
+                    beg = start = regs.end[0];
                 }
-                
-                lastNull = false;
+                last_null = false;
 
-                for (int index = 1; index < mat.groupCount(); index++) {
-                    if (mat.isCaptured(index)) {
-                        int iLength = mat.length(index);
-                        
-                        if (iLength == 0) {
-                            result.append(newEmptyString(runtime, getMetaClass()));
-                        } else {
-                            result.append(substr(runtime, str, mat.start(index), iLength, utf8));
-                        }
+                for(idx=1; idx < regs.numRegs; idx++) {
+                    if(regs.beg[idx] == -1) {
+                        continue;
                     }
+                    if(regs.beg[idx] == regs.end[idx]) {
+                        tmp = newEmptyString(runtime, getMetaClass());
+                    } else {
+                        tmp = substr(regs.beg[idx],regs.end[idx]-regs.beg[idx]);
+                    }
+                    result.append(tmp);
                 }
-                
-                if (limit && lim <= ++i) break;
+                if(limit && lim <= ++i) {
+                    break;
+                }
             }
-
-            if (str.length() > 0 && (limit || str.length() > beg || lim < 0)) {
-                if (str.length() == beg) {
+            if (value.realSize > 0 && (limit || value.realSize > beg || lim < 0)) {
+                if (value.realSize == beg) {
                     result.append(newEmptyString(runtime, getMetaClass()));
                 } else {
-                    result.append(substr(runtime, str, beg, str.length() - beg, utf8));
+                    result.append(substr(beg, value.realSize - beg));
                 }
             }
-            
         } // regexp split
 
         if (!limit && lim == 0) {
@@ -2487,9 +2467,9 @@ public class RubyString extends RubyObject {
         }
         
         RubyString strPattern = (RubyString)pattern;
-        String str = strPattern.toString();
-        if (quote) str = RubyRegexp.escapeSpecialChars(strPattern.toString());
-        return RubyRegexp.newRegexp(getRuntime(), str, 0, null);
+        if (quote) pattern = RubyRegexp.quote(strPattern,(KCode)null);
+
+        return RubyRegexp.newRegexp(pattern, 0, null);
     }
 
     /** rb_str_scan
@@ -2497,59 +2477,79 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "scan", required = 1, frame = true)
     public IRubyObject scan(IRubyObject arg, Block block) {
+        IRubyObject result;
+        int[] start = new int[]{0};
+        IRubyObject match = getRuntime().getNil();
         RubyRegexp pattern = getPat(arg, true);
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
 
-        // Fix for JRUBY-97: Temporary fix pending
-        // decision on UTF8-based string implementation.
-        // Move toString() call outside loop.
-        boolean utf8 = pattern.getCode() == KCode.UTF8;
+        byte[]_p = value.bytes;
+        int len = value.realSize;
         
-        String str = toString(utf8);
-
-        RegexpPattern pat = pattern.getPattern();
-        RegexpMatcher mat = pat.matcher(str);
-        
-        if (!block.isGiven()) {
-            RubyArray result = runtime.newArray();
-            RubyMatchData md = matchdata(runtime, str, mat, utf8); 
-            context.getPreviousFrame().setBackRef(md);
-            while(mat.find()) {
-                int groups = mat.groupCount();
-                if (groups == 1) {
-                    result.append(substr(runtime, str, mat.start(0), mat.length(0), utf8));
-                } else {
-                    RubyArray sub = runtime.newArray(groups);
-                    for (int i=1; i < groups; i++){
-                        sub.append(mat.isCaptured(i) ? substr(runtime, str, mat.start(i), mat.length(i), utf8) : runtime.getNil());
-                    }
-                    result.append(sub);
-                }
-                md.invalidateRegs();
+        if(!block.isGiven()) {
+            RubyArray ary = runtime.newArray();
+            while(!(result = scan_once(pattern, start)).isNil()) {
+                match = context.getCurrentFrame().getBackRef();
+                ary.append(result);
             }
-            return result;
-        } 
-            
-        while(mat.find()) {
-            int groups = mat.groupCount();
-
-            context.getPreviousFrame().setBackRef(matchdata(runtime, str, mat, utf8));
-            
-            if (groups == 1) {
-                block.yield(context, substr(runtime, str, mat.start(0), mat.length(0), utf8));
-            } else {
-                RubyArray sub = runtime.newArray(groups);
-                for (int i=1; i < groups; i++){
-                    sub.append(mat.isCaptured(i) ? substr(runtime, str, mat.start(i), mat.length(i), utf8) : runtime.getNil());                        
-                }
-                block.yield(context, sub);
-            }
+            context.getPreviousFrame().setBackRef(match);
+            return ary;
         }
-        
-        context.getPreviousFrame().setBackRef(matchdata(runtime, str, mat, utf8));
+
+        while(!(result = scan_once(pattern, start)).isNil()) {
+            match = context.getCurrentFrame().getBackRef();
+            context.getPreviousFrame().setBackRef(match);
+            if(match instanceof RubyMatchData) {
+                ((RubyMatchData)match).use();
+            }
+            block.yield(context,result);
+            modifyCheck(_p,len);
+            context.getPreviousFrame().setBackRef(match);
+        }
+        context.getPreviousFrame().setBackRef(match);
 
         return this;
+    }
+
+    /**
+     * rb_enc_check
+     */
+    private Encoding encodingCheck(RubyRegexp pattern) {
+        // For 1.9 compatibility, should check encoding compat between string and pattern
+        return pattern.getKCode().getEncoding();
+    }
+
+    private IRubyObject scan_once(RubyRegexp pat, int[] start) {
+        Encoding enc = encodingCheck(pat);
+        Region regs;
+        int i;
+
+        if(pat.search(this, start[0], false) >= 0) {
+            RubyMatchData match = (RubyMatchData)getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
+            regs = match.regs;
+            if(regs.beg[0] == regs.end[0]) {
+                /*
+                 * Always consume at least one character of the input string
+                 */
+                if(value.realSize > regs.end[0]) {
+                    start[0] = regs.end[0] + enc.length(value.bytes[value.begin+regs.end[0]]);
+                } else {
+                    start[0] = regs.end[0] + 1;
+                }
+            } else {
+                start[0] = regs.end[0];
+            }
+            if(regs.numRegs == 1) {
+                return RubyRegexp.nth_match(0,match);
+            }
+            RubyArray ary = getRuntime().newArray(regs.numRegs);
+            for(i=1;i<regs.numRegs;i++) {
+                ary.append(RubyRegexp.nth_match(i,match));
+            }
+            return ary;
+        }
+        return getRuntime().getNil();
     }
     
     private final RubyString substr(Ruby runtime, String str, int beg, int len, boolean utf8) {
@@ -2570,11 +2570,7 @@ public class RubyString extends RubyObject {
         }   
         return str;
     }
-    
-    private final RubyMatchData matchdata(Ruby runtime, String str, RegexpMatcher mat, boolean utf8) { 
-        return mat.createOrReplace(null, str, this, utf8);
-    }
-    
+        
     private static final ByteList SPACE_BYTELIST = new ByteList(ByteList.plain(" "));
 
     
