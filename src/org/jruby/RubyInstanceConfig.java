@@ -104,7 +104,8 @@ public class RubyInstanceConfig {
     private boolean showVersion = false;
     private boolean endOfArguments = false;
     private boolean shouldRunInterpreter = true;
-    private boolean shouldPrintUsage = true;
+    private boolean shouldPrintUsage = false;
+    private boolean shouldPrintProperties=false;
     private boolean yarv = false;
     private boolean rubinius = false;
     private boolean yarvCompile = false;
@@ -183,6 +184,56 @@ public class RubyInstanceConfig {
 
         defaultRegexpEngine = System.getProperty("jruby.regexp","jregex");
         defaultJRubyClassLoader = Ruby.defaultJRubyClassLoader;
+    }
+    
+    public String getBasicUsageHelp() {
+        StringBuffer sb = new StringBuffer();
+        sb
+                .append("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]").append("\n")
+                .append("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]").append("\n")
+                .append("    -b              benchmark mode, times the script execution").append("\n")
+                .append("    -Jjava option   pass an option on to the JVM (e.g. -J-Xmx512m)").append("\n")
+                .append("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)").append("\n")
+                .append("    --              optional -- before rubyfile.rb for compatibility with ruby").append("\n")
+                .append("    -d              set debugging flags (set $DEBUG to true)").append("\n")
+                .append("    -v              print version number, then turn on verbose mode").append("\n")
+                .append("    -O              run with ObjectSpace disabled (default; improves performance)").append("\n")
+                .append("    +O              run with ObjectSpace enabled (default; reduces performance)").append("\n")
+                .append("    -S cmd          run the specified command in JRuby's bin dir").append("\n")
+                .append("    -C              disable all compilation").append("\n")
+                .append("    +C              force compilation of all scripts before they are run (except eval)").append("\n")
+                .append("    -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)").append("\n")
+                .append("    -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)").append("\n")
+                .append("    -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)").append("\n")
+                .append("    --command word  Execute ruby-related shell command (i.e., irb, gem)").append("\n")
+                .append("    --properties    List all configuration properties (specify with -J-Dproperty=value)").append("\n");
+        
+        return sb.toString();
+    }
+    
+    public String getPropertyHelp() {
+        StringBuffer sb = new StringBuffer();
+        sb
+                .append("These properties can be used to alter runtime behavior for perf or compatibility.").append("\n")
+                .append("Specify them by passing -J-D<property>=<value>").append("\n")
+                .append("    jruby.objectspace.enabled=true|false").append("\n")
+                .append("       Enable or disable ObjectSpace.each_object (default is disabled)").append("\n")
+                .append("    jruby.compile.mode=JIT|FORCE|OFF").append("\n")
+                .append("       Set compilation mode. JIT is default; FORCE compiles all, OFF disables").append("\n")
+                .append("    jruby.compile.boxed=true|false").append("\n")
+                .append("       Use boxed variables; this can speed up some methods. Default is false").append("\n")
+                .append("    jruby.compile.frameless=true|false").append("\n")
+                .append("       (EXPERIMENTAL) Turn on frameless compilation where possible").append("\n")
+                .append("    jruby.jit.threshold=<invocation count>").append("\n")
+                .append("       Set the JIT threshold to the specified method invocation count. Default is 20").append("\n")
+                .append("    jruby.jit.logging=true|false").append("\n")
+                .append("       Enable JIT logging (reports successful compilation). Default is false").append("\n")
+                .append("    jruby.jit.logging.verbose=true|false").append("\n")
+                .append("       Enable verbose JIT logging (reports failed compilation). Default is false").append("\n")
+                .append("    jruby.launch.inproc=true|false").append("\n")
+                .append("       Set in-process launching of e.g. system('ruby ...'). Default is true.").append("\n");
+        
+        return sb.toString();
     }
     
     public void processArguments(String[] arguments) {
@@ -446,6 +497,10 @@ public class RubyInstanceConfig {
                                 compatVersion = CompatVersion.RUBY1_8;
                             }
                             break FOR;
+                        } else if (argument.equals("--properties")) {
+                            shouldPrintProperties = true;
+                            shouldRunInterpreter = false;
+                            break;
                         } else {
                             if (argument.equals("--")) {
                                 // ruby interpreter compatibilty 
@@ -510,6 +565,10 @@ public class RubyInstanceConfig {
     
     public boolean shouldPrintUsage() {
         return shouldPrintUsage;
+    }
+    
+    public boolean shouldPrintProperties() {
+        return shouldPrintProperties;
     }
     
     private boolean isSourceFromStdin() {

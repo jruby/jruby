@@ -102,6 +102,9 @@ public class Main {
             if (config.shouldPrintUsage()) {
                 printUsage();
             }
+            if (config.shouldPrintProperties()) {
+                printProperties();
+            }
             return 0;
         }
 
@@ -141,25 +144,13 @@ public class Main {
 
     public void printUsage() {
         if (!hasPrintedUsage) {
-            config.getOutput().println("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]");
-            config.getOutput().println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
-            config.getOutput().println("    -b              benchmark mode, times the script execution");
-            config.getOutput().println("    -Jjava option   pass an option on to the JVM (e.g. -J-Xmx512m)");
-            config.getOutput().println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
-            config.getOutput().println("    --              optional -- before rubyfile.rb for compatibility with ruby");
-            config.getOutput().println("    -d              set debugging flags (set $DEBUG to true)");
-            config.getOutput().println("    -v              print version number, then turn on verbose mode");
-            config.getOutput().println("    -O              run with ObjectSpace disabled (default; improves performance)");
-            config.getOutput().println("    +O              run with ObjectSpace enabled (default; reduces performance)");
-            config.getOutput().println("    -S cmd          run the specified command in JRuby's bin dir");
-            config.getOutput().println("    -C              disable all compilation");
-            config.getOutput().println("    +C              force compilation of all scripts before they are run (except eval)");
-            config.getOutput().println("    -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)");
-            config.getOutput().println("    -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)");
-            config.getOutput().println("    -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)");
-            config.getOutput().println("    --command word  Execute ruby-related shell command (i.e., irb, gem)");
+            config.getOutput().print(config.getBasicUsageHelp());
             hasPrintedUsage = true;
         }
+    }
+    
+    public void printProperties() {
+        config.getOutput().print(config.getPropertyHelp());
     }
 
     private int runInterpreter() {
