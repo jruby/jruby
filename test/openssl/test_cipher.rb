@@ -68,6 +68,62 @@ class OpenSSL::TestCipher < Test::Unit::TestCase
     assert_raises(ArgumentError){ @c1.update("") }
   end
 
+  def test_disable_padding(padding=0)
+    # assume a padding size of 8
+    # encrypt the data with padding
+    @c1.encrypt
+    @c1.key = @key
+    @c1.iv = @iv
+    encrypted_data = @c1.update(@data) + @c1.final
+    assert_equal(8, encrypted_data.size)
+    # decrypt with padding disabled
+    @c1.decrypt
+    @c1.padding = padding
+    decrypted_data = @c1.update(encrypted_data) + @c1.final
+    # check that the result contains the padding
+    assert_equal(8, decrypted_data.size)
+    assert_equal(@data, decrypted_data[0...@data.size])
+  end
+
+  if PLATFORM =~ /java/
+    # JRuby extension - using Java padding types
+    
+    def test_disable_padding_javastyle
+      test_disable_padding('NoPadding')
+    end
+  
+    def test_iso10126_padding
+      @c1.encrypt
+      @c1.key = @key
+      @c1.iv = @iv
+      @c1.padding = 'ISO10126Padding'
+      encrypted_data = @c1.update(@data) + @c1.final
+      # decrypt with padding disabled to see the padding
+      @c1.decrypt
+      @c1.padding = 0
+      decrypted_data = @c1.update(encrypted_data) + @c1.final
+      assert_equal(@data, decrypted_data[0...@data.size])
+      # last byte should be the amount of padding
+      assert_equal(4, decrypted_data[-1])
+    end
+
+    def test_iso10126_padding_boundry
+      @data = 'HELODATA' # 8 bytes, same as padding size
+      @c1.encrypt
+      @c1.key = @key
+      @c1.iv = @iv
+      @c1.padding = 'ISO10126Padding'
+      encrypted_data = @c1.update(@data) + @c1.final
+      # decrypt with padding disabled to see the padding
+      @c1.decrypt
+      @c1.padding = 0
+      decrypted_data = @c1.update(encrypted_data) + @c1.final
+      assert_equal(@data, decrypted_data[0...@data.size])
+      # padding should be one whole block
+      assert_equal(8, decrypted_data[-1])
+    end
+  end
+
   if OpenSSL::OPENSSL_VERSION_NUMBER > 0x00907000
     def test_ciphers
       OpenSSL::Cipher.ciphers.each{|name|
