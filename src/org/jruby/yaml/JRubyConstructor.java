@@ -101,6 +101,10 @@ public class JRubyConstructor extends ConstructorImpl {
         this.runtime = receiver.getRuntime();
     }
 
+    public boolean shouldRecreateNode(final Node node) {
+        return node.getTag().indexOf("tag:ruby.yaml.org,2002:object:") != -1; // We should recreate Ruby objects
+    }
+
     public Object constructRubyScalar(final Node node) {
         ByteList sc = (ByteList)super.constructScalar(node);
         if(sc.length() > 0 && sc.charAt(0) == ':' && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) {

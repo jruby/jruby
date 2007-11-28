@@ -259,3 +259,17 @@ test_no_exception do
 end
 
 roundtrip :"1"
+
+
+# Fix for JRUBY-1471
+class YamlTest
+  def initialize
+    @test = Hash.new
+    @test["hello"] = "foo"
+  end
+end
+
+list = [YamlTest.new, YamlTest.new, YamlTest.new]
+test_equal 3, list.map{ |ll| ll.object_id }.uniq.length
+list2 = YAML.load(YAML.dump(list))
+test_equal 3, list2.map{ |ll| ll.object_id }.uniq.length

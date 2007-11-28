@@ -115,6 +115,10 @@ public class BaseConstructorImpl implements Constructor {
     public Iterator iterator() {
         return eachDocument();
     }
+
+    public boolean shouldRecreateNode(final Node node) {
+        return false;
+    }
     
     public Object constructDocument(final Node node) {
         final Object data = constructObject(node);
@@ -137,7 +141,7 @@ public class BaseConstructorImpl implements Constructor {
     }
 
     public Object constructObject(final Node node) {
-        if(constructedObjects.containsKey(node)) {
+        if(constructedObjects.containsKey(node) && !shouldRecreateNode(node)) {
             return constructedObjects.get(node);
         }
         if(recursiveObjects.containsKey(node)) {
