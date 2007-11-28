@@ -31,6 +31,12 @@ package org.jruby.javasupport;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyInteger;
+import org.jruby.RubyModule;
+import org.jruby.RubyObjectAdapter;
+import org.jruby.RubyRuntimeAdapter;
+import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -40,47 +46,97 @@ import org.jruby.runtime.builtin.IRubyObject;
  * used between BSF and JSR 223.  People who are embedding JRuby 'raw' should use these
  * as well.  If at a later date, we discover a flaw or change how we do things, this
  * utility class should provide some insulation.
- * 
  */
 public class JavaEmbedUtils {
-	/**
-	 * Get an instance of a JRuby runtime.  Provide any loadpaths you want used at startup.
-	 * 
-	 * @param loadPaths to specify where to look for Ruby modules. 
-	 * @return an instance
-	 */
-	public static Ruby initialize(List loadPaths) {
+    /**
+     * Get an instance of a JRuby runtime.  Provide any loadpaths you want used at startup.
+     * 
+     * @param loadPaths to specify where to look for Ruby modules. 
+     * @return an instance
+     */
+    public static Ruby initialize(List loadPaths) {
         Ruby runtime = Ruby.getDefaultInstance();
         runtime.getLoadService().init(loadPaths);
         runtime.getLoadService().require("java");
-        
-        return runtime;
-	}
 
-	/**
-	 * Dispose of the runtime you initialized.
-	 * 
-	 * @param runtime to be disposed of
-	 */
-	public static void terminate(Ruby runtime) {
+        return runtime;
+    }
+
+    public static RubyObjectAdapter newObjectAdapter() {
+        return new RubyObjectAdapter() {
+            public boolean isKindOf(IRubyObject value, RubyModule rubyModule) {
+                return value.isKindOf(rubyModule);
+            }
+
+            public IRubyObject setInstanceVariable(IRubyObject obj, String variableName, IRubyObject value) {
+                return obj.setInstanceVariable(variableName, value);
+            }
+
+            public IRubyObject[] convertToJavaArray(IRubyObject array) {
+                return ((RubyArray) array).toJavaArray();
+            }
+
+            public RubyInteger convertToRubyInteger(IRubyObject obj) {
+                return obj.convertToInteger();
+            }
+
+            public IRubyObject getInstanceVariable(IRubyObject obj, String variableName) {
+                return obj.getInstanceVariable(variableName);
+            }
+
+            public RubyString convertToRubyString(IRubyObject obj) {
+                return obj.convertToString();
+            }
+
+            public IRubyObject callMethod(IRubyObject receiver, String methodName) {
+                return receiver.callMethod(receiver.getRuntime().getCurrentContext(), methodName);
+            }
+
+            public IRubyObject callMethod(IRubyObject receiver, String methodName, IRubyObject singleArg) {
+                return receiver.callMethod(receiver.getRuntime().getCurrentContext(), methodName, singleArg);
+            }
+
+            public IRubyObject callMethod(IRubyObject receiver, String methodName, IRubyObject[] args) {
+                return receiver.callMethod(receiver.getRuntime().getCurrentContext(), methodName, args);
+            }
+
+            public IRubyObject callMethod(IRubyObject receiver, String methodName, IRubyObject[] args, Block block) {
+                return receiver.callMethod(receiver.getRuntime().getCurrentContext(), methodName, args, block);
+            }
+        };
+    }
+
+    public static RubyRuntimeAdapter newRuntimeAdapter() {
+        return new RubyRuntimeAdapter() {
+            public IRubyObject eval(Ruby runtime, String script) {
+                return runtime.evalScript(script);
+            }
+        };
+    }
+
+    /**
+     * Dispose of the runtime you initialized.
+     * 
+     * @param runtime to be disposed of
+     */
+    public static void terminate(Ruby runtime) {
         runtime.tearDown();
         runtime.getThreadService().disposeCurrentThread();
-	}
-	
-	/**
-	 * Convenience function for embedders
-	 * 
-	 * @param runtime environment where the invoke will occur
-	 * @param receiver is the instance that will receive the method call
-	 * @param method is method to be called
-	 * @param args are the arguments to the method
-	 * @param returnType is the type we want it to conform to
-	 * @return the result of the invocation.
-	 */
-	public static Object invokeMethod(Ruby runtime, Object receiver, String method, Object[] args,
-			Class returnType) {
-        IRubyObject rubyReceiver = receiver != null ? 
-        		JavaUtil.convertJavaToRuby(runtime, receiver) : runtime.getTopSelf();
+    }
+
+    /**
+     * Convenience function for embedders
+     * 
+     * @param runtime environment where the invoke will occur
+     * @param receiver is the instance that will receive the method call
+     * @param method is method to be called
+     * @param args are the arguments to the method
+     * @param returnType is the type we want it to conform to
+     * @return the result of the invocation.
+     */
+    public static Object invokeMethod(Ruby runtime, Object receiver, String method, Object[] args,
+            Class returnType) {
+        IRubyObject rubyReceiver = receiver != null ? JavaUtil.convertJavaToRuby(runtime, receiver) : runtime.getTopSelf();
 
         IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
 
@@ -98,19 +154,19 @@ public class JavaEmbedUtils {
         IRubyObject result = rubyReceiver.callMethod(context, method, rubyArgs);
 
         return rubyToJava(runtime, result, returnType);
-	}
-	
-	/**
-	 * Convert a Ruby object to a Java object.
-	 * 
-	 */
-	public static Object rubyToJava(Ruby runtime, IRubyObject value, Class type) {
+    }
+
+    /**
+     * Convert a Ruby object to a Java object.
+     * 
+     */
+    public static Object rubyToJava(Ruby runtime, IRubyObject value, Class type) {
         return JavaUtil.convertArgument(Java.ruby_to_java(runtime.getObject(), value, Block.NULL_BLOCK), type);
     }
 
-	/**
-	 *  Convert a java object to a Ruby object.
-	 */
+    /**
+     *  Convert a java object to a Ruby object.
+     */
     public static IRubyObject javaToRuby(Ruby runtime, Object value) {
         if (value instanceof IRubyObject) {
             return (IRubyObject) value;
@@ -120,29 +176,36 @@ public class JavaEmbedUtils {
             return runtime.getModule("JavaUtilities").callMethod(runtime.getCurrentContext(), "wrap", result);
         }
         return result;
-    }   
+    }
 
     public static IRubyObject javaToRuby(Ruby runtime, boolean value) {
         return javaToRuby(runtime, value ? Boolean.TRUE : Boolean.FALSE);
     }
+
     public static IRubyObject javaToRuby(Ruby runtime, byte value) {
         return javaToRuby(runtime, new Byte(value));
     }
+
     public static IRubyObject javaToRuby(Ruby runtime, char value) {
         return javaToRuby(runtime, new Character(value));
     }
+
     public static IRubyObject javaToRuby(Ruby runtime, double value) {
         return javaToRuby(runtime, new Double(value));
     }
+
     public static IRubyObject javaToRuby(Ruby runtime, float value) {
         return javaToRuby(runtime, new Float(value));
     }
+
     public static IRubyObject javaToRuby(Ruby runtime, int value) {
         return javaToRuby(runtime, new Integer(value));
     }
+
     public static IRubyObject javaToRuby(Ruby runtime, long value) {
         return javaToRuby(runtime, new Long(value));
     }
+
     public static IRubyObject javaToRuby(Ruby runtime, short value) {
         return javaToRuby(runtime, new Short(value));
     }
