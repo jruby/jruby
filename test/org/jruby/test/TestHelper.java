@@ -202,6 +202,7 @@ public class TestHelper {
                 }
             }
         }
+        @Override
         public Class loadClass(String name) throws ClassNotFoundException {
             if (name.equals("org.jruby.test.TestHelper"))
                 return findModClass(name);

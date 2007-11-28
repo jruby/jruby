@@ -32,28 +32,26 @@ package org.jruby.javasupport.test;
 import org.jruby.Ruby;
 import org.jruby.test.TestRubyBase;
  
-public class TestNativeException extends TestRubyBase { 
-	public TestNativeException(String name) { 
-		super(name); 
-	} 
-	
-	public void setUp() { 
-		runtime = Ruby.newInstance();
-	} 
-	
-	public void tearDown() { 
-		super.tearDown(); 
-	} 
-	
-	public void testCauseIsProxied() throws Exception { 
-		String result = eval(
-			"require 'java'\n" +
-			"include_class('java.io.File') { 'JFile' }\n" +
-			"begin\n" +
-			"  JFile.new(nil)\n" +
-			"rescue Exception => e\n" +
-			"end\n" +
-			"p e.cause.respond_to?(:print_stack_trace)"); 
-		assertEquals("Bug: [ JRUBY-106 ]", "true", result); 
-	} 
+public class TestNativeException extends TestRubyBase {
+
+    public TestNativeException(String name) {
+        super(name);
+    }
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        runtime = Ruby.newInstance();
+    }
+
+    public void testCauseIsProxied() throws Exception {
+        String result = eval("require 'java'\n" +
+                "include_class('java.io.File') { 'JFile' }\n" +
+                "begin\n" +
+                "  JFile.new(nil)\n" +
+                "rescue Exception => e\n" +
+                "end\n" +
+                "p e.cause.respond_to?(:print_stack_trace)");
+        assertEquals("Bug: [ JRUBY-106 ]", "true", result);
+    }
 }

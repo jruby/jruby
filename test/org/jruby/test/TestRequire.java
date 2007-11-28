@@ -40,13 +40,12 @@ public class TestRequire extends TestRubyBase {
     public TestRequire(String name) {
         super(name);
     }
-    public void setUp() {
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
         runtime = Ruby.newInstance();
         runtime.getLoadService().init(new ArrayList());
-    }
-
-    public void tearDown() {
-        super.tearDown();
     }
 
     public void testRubyRequire() throws Exception {

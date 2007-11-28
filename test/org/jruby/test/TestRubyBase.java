@@ -77,8 +77,11 @@ public class TestRubyBase extends TestCase {
         return sb.toString();
     }
 
-    public void tearDown() {
-        if (out != null)
+    @Override
+    protected void tearDown() throws Exception {
+        if (out != null) {
             out.close();
+        }
+        super.tearDown();
     }
 }

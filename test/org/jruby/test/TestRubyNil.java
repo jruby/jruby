@@ -38,7 +38,6 @@ import junit.framework.TestCase;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyNil;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
 * @author chadfowler
@@ -51,7 +50,9 @@ public class TestRubyNil extends TestCase {
         super(name);
     } 
     
-    public void setUp() {
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
         runtime = Ruby.newInstance();
         rubyNil = (RubyNil)runtime.getNil();
     }

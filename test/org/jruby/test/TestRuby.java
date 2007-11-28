@@ -59,7 +59,9 @@ public class TestRuby extends TestRubyBase {
         super(name);
     }
 
-    public void setUp() {
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
         runtime = Ruby.newInstance();
     }
     

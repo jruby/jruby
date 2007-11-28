@@ -40,15 +40,13 @@ public class TestRubyArray extends TestRubyBase {
         super(name);
     }
 
-    public void setUp() throws Exception {
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
         if (runtime == null) {
         	runtime = Ruby.newInstance();
         }
         eval("$h = ['foo','bar']");
-    }
-
-    public void tearDown() {
-        super.tearDown();
     }
 
     /**

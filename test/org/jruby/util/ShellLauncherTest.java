@@ -12,6 +12,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ShellLauncherTest extends TestCase {
     private Ruby runtime;
     private ShellLauncher launcher;
+
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         runtime = Ruby.newInstance();

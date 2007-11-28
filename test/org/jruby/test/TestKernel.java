@@ -49,7 +49,9 @@ public class TestKernel extends TestRubyBase {
         super(name);
     }
 
-    public void setUp() {
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
         runtime = Ruby.newInstance();
         runtime.getLoadService().init(new ArrayList());
     }
@@ -95,9 +97,4 @@ public class TestKernel extends TestRubyBase {
         	}
         }
     }
-        
-    public void tearDown() {
-        super.tearDown();
-    }
-
 }
