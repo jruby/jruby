@@ -31,7 +31,12 @@ package org.jruby.javasupport;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyInteger;
+import org.jruby.RubyModule;
 import org.jruby.RubyObjectAdapter;
+import org.jruby.RubyRuntimeAdapter;
+import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -58,7 +63,55 @@ public class JavaEmbedUtils {
     }
 
     public static RubyObjectAdapter newObjectAdapter() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return new RubyObjectAdapter() {
+            public boolean isKindOf(IRubyObject value, RubyModule rubyModule) {
+                return rubyModule.isInstance(value);
+            }
+
+            public IRubyObject setInstanceVariable(IRubyObject obj, String variableName, IRubyObject value) {
+                return obj.getInstanceVariables().setInstanceVariable(variableName, value);
+            }
+
+            public IRubyObject[] convertToJavaArray(IRubyObject array) {
+                return ((RubyArray) array).toJavaArray();
+            }
+
+            public RubyInteger convertToRubyInteger(IRubyObject obj) {
+                return obj.convertToInteger();
+            }
+
+            public IRubyObject getInstanceVariable(IRubyObject obj, String variableName) {
+                return obj.getInstanceVariables().getInstanceVariable(variableName);
+            }
+
+            public RubyString convertToRubyString(IRubyObject obj) {
+                return obj.convertToString();
+            }
+
+            public IRubyObject callMethod(IRubyObject receiver, String methodName) {
+                return receiver.callMethod(receiver.getRuntime().getCurrentContext(), methodName);
+            }
+
+            public IRubyObject callMethod(IRubyObject receiver, String methodName, IRubyObject singleArg) {
+                return receiver.callMethod(receiver.getRuntime().getCurrentContext(), methodName, singleArg);
+            }
+
+            public IRubyObject callMethod(IRubyObject receiver, String methodName, IRubyObject[] args) {
+                return receiver.callMethod(receiver.getRuntime().getCurrentContext(), methodName, args);
+            }
+
+            public IRubyObject callMethod(IRubyObject receiver, String methodName, IRubyObject[] args, Block block) {
+                return receiver.callMethod(receiver.getRuntime().getCurrentContext(), methodName, args, block);
+            }
+        };
+    }
+
+    public static RubyRuntimeAdapter newRuntimeAdapter() {
+        return new RubyRuntimeAdapter() {
+            public IRubyObject eval(Ruby runtime, String script) {
+                return runtime.evalScriptlet(script);
+            }
+        };
     }
 
     /**
