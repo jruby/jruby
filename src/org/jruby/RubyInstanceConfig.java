@@ -205,7 +205,6 @@ public class RubyInstanceConfig {
                 .append("    -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)").append("\n")
                 .append("    -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)").append("\n")
                 .append("    -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)").append("\n")
-                .append("    --command word  Execute ruby-related shell command (i.e., irb, gem)").append("\n")
                 .append("    --properties    List all configuration properties (specify with -J-Dproperty=value)").append("\n");
         
         return sb.toString();
