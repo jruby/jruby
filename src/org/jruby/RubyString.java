@@ -1021,25 +1021,17 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "crypt", required = 1)
     public RubyString crypt(IRubyObject other) {
-        String salt = stringValue(other).getValue().toString();
-        if (salt.length() < 2) {
+        ByteList salt = stringValue(other).getByteList();
+        if (salt.realSize < 2) {
             throw getRuntime().newArgumentError("salt too short(need >=2 bytes)");
         }
 
-        salt = salt.substring(0, 2);
-        return getRuntime().newString(JavaCrypt.crypt(salt, this.toString()));
+        salt = salt.makeShared(0, 2);
+        return RubyString.newStringShared(getRuntime(),getMetaClass(), JavaCrypt.crypt(salt, this.getByteList()));
     }
-
 
     public static class JavaCrypt {
         private static java.util.Random r_gen = new java.util.Random();
-
-        private static final char theBaseSalts[] = {
-            'a','b','c','d','e','f','g','h','i','j','k','l','m',
-            'n','o','p','q','r','s','t','u','v','w','x','y','z',
-            'A','B','C','D','E','F','G','H','I','J','K','L','M',
-            'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-            '0','1','2','3','4','5','6','7','8','9','/','.'};
 
         private static final int ITERATIONS = 16;
 
@@ -1544,20 +1536,17 @@ public class RubyString extends RubyObject {
             return(out);
         }
 
-        public static final String crypt(String salt, String original) {
-            while(salt.length() < 2)
-                salt += getSaltChar();
+        public static final ByteList crypt(ByteList salt, ByteList original) {
+            ByteList buffer = new ByteList(new byte[]{' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},false);
 
-            StringBuffer buffer = new StringBuffer("             ");
+            byte charZero = salt.bytes[salt.begin];
+            byte charOne  = salt.bytes[salt.begin+1];
 
-            char charZero = salt.charAt(0);
-            char charOne  = salt.charAt(1);
+            buffer.set(0,charZero);
+            buffer.set(1,charOne);
 
-            buffer.setCharAt(0, charZero);
-            buffer.setCharAt(1, charOne);
-
-            int Eswap0 = con_salt[(int)charZero];
-            int Eswap1 = con_salt[(int)charOne] << 4;
+            int Eswap0 = con_salt[(int)(charZero&0xFF)];
+            int Eswap1 = con_salt[(int)(charOne&0xFF)] << 4;
 
             byte key[] = new byte[8];
 
@@ -1566,7 +1555,7 @@ public class RubyString extends RubyObject {
             }
 
             for(int i = 0; i < key.length && i < original.length(); i ++) {
-                int iChar = (int)original.charAt(i);
+                int iChar = (int)(original.bytes[original.begin+i]&0xFF);
 
                 key[i] = (byte)(iChar << 1);
             }
@@ -1593,31 +1582,10 @@ public class RubyString extends RubyObject {
                         y++;
                         u = 0x80;
                     }
-                    buffer.setCharAt(i, (char)cov_2char[c]);
+                    buffer.set(i, cov_2char[c]);
                 }
             }
-            return(buffer.toString());
-        }
-
-        private static String getSaltChar() {
-            return JavaCrypt.getSaltChar(1);
-        }
-
-        private static String getSaltChar(int amount) {
-            StringBuffer sb = new StringBuffer();
-            for(int i=amount;i>0;i--) {
-                sb.append(theBaseSalts[(Math.abs(r_gen.nextInt())%64)]);
-            }
-            return sb.toString();
-        }
-
-        public static boolean check(String theClear,String theCrypt) {
-            String theTest = JavaCrypt.crypt(theCrypt.substring(0,2),theClear);
-            return theTest.equals(theCrypt);
-        }
-
-        public static String crypt(String theClear) {
-            return JavaCrypt.crypt(getSaltChar(2),theClear);
+            return buffer;
         }
     }
 
