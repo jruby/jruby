@@ -5,7 +5,7 @@
   <groupId>org.jruby</groupId>
   <artifactId>shared</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.2</version>
+  <version>1.0.3-SNAPSHOT</version>
   <name>JRuby Shared</name>
   <url>http://www.jruby.org/</url>
   <description>A 1.8.5 compatible Ruby interpreter written in 100% pure Java</description>
