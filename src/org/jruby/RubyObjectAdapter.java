@@ -22,7 +22,7 @@ public interface RubyObjectAdapter {
 
     RubyString convertToRubyString(IRubyObject obj);
     
-    // These assume ThreadContext = receiver.getRuntime().getCurrentContext()
+    // These call* assume ThreadContext = receiver.getRuntime().getCurrentContext()
     IRubyObject callMethod(IRubyObject receiver, String methodName);
 
     IRubyObject callMethod(IRubyObject receiver, String methodName, IRubyObject singleArg);
@@ -30,4 +30,8 @@ public interface RubyObjectAdapter {
     IRubyObject callMethod(IRubyObject receiver, String methodName, IRubyObject[] args);
 
     IRubyObject callMethod(IRubyObject receiver, String methodName, IRubyObject[] args, Block block);
+
+    IRubyObject callSuper(IRubyObject receiver, IRubyObject[] args);
+
+    IRubyObject callSuper(IRubyObject receiver, IRubyObject[] args, Block block);
 }

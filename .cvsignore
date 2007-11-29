@@ -1,8 +1,0 @@
-.tmp
-release
-jruby.ipr
-jruby.iws
-build
-*_tmp
-junit*.properties
-build.properties

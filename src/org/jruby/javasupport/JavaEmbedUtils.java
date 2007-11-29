@@ -103,6 +103,14 @@ public class JavaEmbedUtils {
             public IRubyObject callMethod(IRubyObject receiver, String methodName, IRubyObject[] args, Block block) {
                 return receiver.callMethod(receiver.getRuntime().getCurrentContext(), methodName, args, block);
             }
+
+            public IRubyObject callSuper(IRubyObject receiver, IRubyObject[] args) {
+                return receiver.callSuper(receiver.getRuntime().getCurrentContext(), args, Block.NULL_BLOCK);
+            }
+
+            public IRubyObject callSuper(IRubyObject receiver, IRubyObject[] args, Block block) {
+                return receiver.callSuper(receiver.getRuntime().getCurrentContext(), args, block);
+            }
         };
     }
 
