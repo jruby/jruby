@@ -341,7 +341,7 @@ public class RubyThread extends RubyObject {
     }
 
     @JRubyMethod(name = "join", optional = 1)
-    public RubyThread join(IRubyObject[] args) {
+    public IRubyObject join(IRubyObject[] args) {
         long timeoutMillis = 0;
         if (args.length > 0) {
             if (args.length > 1) {
@@ -351,7 +351,13 @@ public class RubyThread extends RubyObject {
             // than or equal to zero returns immediately; returns nil
             timeoutMillis = (long)(1000.0D * args[0].convertToFloat().getValue());
             if (timeoutMillis <= 0) {
-                return this;
+	        // TODO: not sure that we should skip caling join() altogether.
+		// Thread.join() has some implications for Java Memory Model, etc.
+	        if (threadImpl.isAlive()) {
+		   return getRuntime().getNil();
+		} else {   
+                   return this;
+		}
             }
         }
         if (isCurrent()) {
@@ -372,10 +378,16 @@ public class RubyThread extends RubyObject {
             ie.printStackTrace();
             assert false : ie;
         }
+
         if (exitingException != null) {
             throw exitingException;
         }
-        return this;
+
+        if (threadImpl.isAlive()) {
+            return getRuntime().getNil();
+        } else {
+            return this;
+	}
     }
 
     @JRubyMethod(name = "value")

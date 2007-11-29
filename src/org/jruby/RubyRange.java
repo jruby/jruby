@@ -379,7 +379,7 @@ public class RubyRange extends RubyObject {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyRange)) return getRuntime().getFalse();
         RubyRange otherRange = (RubyRange)other;
-        if (begin != otherRange.begin || end != otherRange.end || isExclusive != otherRange.isExclusive) return getRuntime().getFalse();
+        if (!begin.equals(otherRange.begin) || !end.equals(otherRange.end) || isExclusive != otherRange.isExclusive) return getRuntime().getFalse();
         return getRuntime().getTrue();
     }
 
