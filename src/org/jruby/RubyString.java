@@ -2355,7 +2355,7 @@ public class RubyString extends RubyObject {
                 if(p > pend) {
                     p = pend;
                 }
-                if(!(limit && lim<=i) && ByteList.memcmp(rsep.bytes, rsep.begin, rslen, buff, p-rslen, rslen) == 0) {
+                if(!(limit && lim<=i) && p-rslen >= ptr && ByteList.memcmp(rsep.bytes, rsep.begin, rslen, buff, p-rslen, rslen) == 0) {
                     result.append(makeShared(s-ptr, (p - s)-rslen));
                     if(lim < 0) {
                         result.append(newEmptyString(runtime, getMetaClass()));

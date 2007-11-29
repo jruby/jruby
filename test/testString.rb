@@ -385,6 +385,7 @@ test_equal(["", "a", "b", "c"], "/a/b/c".split("/"))
 test_equal(["a", "b", "c"], "abc".split(//))
 test_equal(["/home", "/jruby"], "/home/jruby".split(%r<(?=/)>))
 test_equal(["///home", "///jruby"], "///home///jruby".split(%r<(?=///)>))
+test_equal(["run"], "run".split('_to_'))
 
 ##### sub #####
 
