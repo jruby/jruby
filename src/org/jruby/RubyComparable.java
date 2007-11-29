@@ -112,23 +112,23 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "==", required = 1)
     public static IRubyObject op_equal(IRubyObject recv, IRubyObject other) {
-            if (recv == other) {
-                return recv.getRuntime().getTrue();
-            }
+        if (recv == other) {
+            return recv.getRuntime().getTrue();
+        }
         Ruby runtime = recv.getRuntime();
         IRubyObject result = null;
         try {
             result = recv.callMethod(runtime.getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other);
         } catch (RaiseException e) {
-            return recv.getRuntime().getFalse();
+            return recv.getRuntime().getNil();
         }
             
-            if (result.isNil()) {
-            	return result;
-            }
+        if(!(result instanceof RubyInteger)) {
+            return runtime.getNil();
+        }
             
         return RubyBoolean.newBoolean(runtime, cmpint(result, recv, other) == 0);
-        	}
+    }
     
     /** cmp_gt
      * 
