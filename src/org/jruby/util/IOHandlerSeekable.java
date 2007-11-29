@@ -71,10 +71,15 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
 
         if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();
         
-        if (modes.isCreate()) theFile.createNewFile();
-        
-        if (!theFile.exists()) {
-            if (modes.isReadable() && !modes.isWritable()) throw new FileNotFoundException();
+        if (modes.isCreate()) {
+            if (theFile.exists() && modes.isExclusive()) {
+                throw runtime.newErrnoEEXISTError("File exists - " + path);
+            }
+            theFile.createNewFile();
+        } else {
+            if (!theFile.exists()) {
+                throw new FileNotFoundException();
+            }
         }
 
         // We always open this rw since we can only open it r or rw.
@@ -99,7 +104,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
     
     private String javaMode() {
         // Do not open as 'rw' by default since a file with read-only permissions will fail on 'rw'
-        return modes.isWritable() ? "rw" : "r";
+        return (modes.isWritable() || modes.shouldTruncate()) ? "rw" : "r";
     }
 
     public ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException {

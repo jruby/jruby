@@ -964,7 +964,7 @@ public class RubyFile extends RubyIO {
         return runtime.newTime(file.lastModified());
     }
     
-    @JRubyMethod(required = 1, rest = true, frame = true, meta = true)
+    @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, meta = true)
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         return open(recv, args, true, block);
     }

@@ -74,13 +74,22 @@ public class IOModes implements Cloneable {
     public IOModes(Ruby runtime, long modes) {
     	// TODO: Ruby does not seem to care about invalid numeric mode values
     	// I am not sure if ruby overflows here also...
+        
+        if (isReadOnly(modes) && ((modes & APPEND) != 0)) {
+            // MRI 1.8 behavior: this combination of flags is not allowed
+            throw runtime.newErrnoEINVALError("invalid argument");
+        }
+
         this.modes = (int)modes;
         this.runtime = runtime;
     }
     
+    private static boolean isReadOnly(long modes) {
+        return ((modes & WRONLY) == 0) && ((modes & RDWR) == 0);
+    }
+    
     public boolean isReadable() {
-        return (modes & RDWR) != 0 || modes == RDONLY || (modes & BINARY) != 0  || 
-            (modes & CREAT) != 0;
+        return ((modes & RDWR) != 0) || isReadOnly(modes) || ((modes & BINARY) != 0);
     }
 
     public boolean isBinary() {
@@ -93,6 +102,10 @@ public class IOModes implements Cloneable {
 
     public boolean isWritable() {
     	return (modes & RDWR) != 0 || (modes & WRONLY) != 0;
+    }
+    
+    public boolean isExclusive() {
+        return (modes & EXCL) != 0;
     }
     
     public boolean isAppendable() {
@@ -132,10 +145,12 @@ public class IOModes implements Cloneable {
         case 'a' :
             modes |= APPEND;
             modes |= WRONLY;
+            modes |= CREAT;
             break;
         case 'w' :
             modes |= WRONLY;
             modes |= TRUNC;
+            modes |= CREAT;
             break;
         default :
             throw runtime.newArgumentError("illegal access mode " + modes);
@@ -146,13 +161,7 @@ public class IOModes implements Cloneable {
 
             if (modesString.length() > i) {
                 if (modesString.charAt(i) == '+') {
-                	if ((modes & APPEND) != 0) {
-                		modes = RDWR | APPEND;
-                	} else if ((modes & WRONLY) != 0){
-                		modes = RDWR | TRUNC;
-                	} else {
-                		modes = RDWR;
-                	}
+                    modes |= RDWR;
                 } else {
                     throw runtime.newArgumentError("illegal access mode " + modes);
                 }
