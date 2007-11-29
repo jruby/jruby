@@ -4,7 +4,7 @@
     <configuration>
         <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
             <!-- Do not use Project Properties customizer when editing this file manually. -->
-            <name>JRuby</name>
+            <name>JRuby trunk</name>
             <properties>
                 <property-file>build.properties</property-file>
                 <property-file>default.build.properties</property-file>
