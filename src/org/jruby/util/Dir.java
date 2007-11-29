@@ -80,7 +80,7 @@ public class Dir {
         boolean escape = (flags & FNM_NOESCAPE) == 0;
         boolean pathname = (flags & FNM_PATHNAME) != 0;
         boolean period = (flags & FNM_DOTMATCH) == 0;
-        //boolean nocase = (flags & FNM_CASEFOLD) != 0;
+        boolean nocase = (flags & FNM_CASEFOLD) != 0;
 
         while(pat<len) {
             c = _pat[pat++];
@@ -151,9 +151,17 @@ public class Dir {
                 }
                 if(DOSISH && (pathname && isdirsep(c) && isdirsep(string[s]))) {
                 } else {
-                    if(Character.toLowerCase((char)c) != Character.toLowerCase((char)string[s])) {
-                        return FNM_NOMATCH;
+                    if (nocase) {
+                        if(Character.toLowerCase((char)c) != Character.toLowerCase((char)string[s])) {
+                            return FNM_NOMATCH;
+                        }
+                        
+                    } else {
+                        if(c != (char)string[s]) {
+                            return FNM_NOMATCH;
+                        }
                     }
+                    
                 }
                 s++;
                 break;
