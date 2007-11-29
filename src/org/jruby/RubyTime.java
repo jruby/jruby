@@ -42,6 +42,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Arity;
@@ -65,7 +67,9 @@ public class RubyTime extends RubyObject {
     private long usec;
 
     private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("-", Locale.US);
-
+    private static final Pattern TZ_PATTERN
+            = Pattern.compile("(\\D+?)([\\+-]?)(\\d*)(:\\d+)?(:\\d+)?");
+     
     public static TimeZone getLocalTimeZone(Ruby runtime) {
         // TODO: cache the RubyString "TZ" so it doesn't need to be recreated for each call?
         RubyString tzVar = runtime.newString("TZ");
@@ -74,7 +78,31 @@ public class RubyTime extends RubyObject {
         if (tz == null || ! (tz instanceof RubyString)) {
             return TimeZone.getDefault();
         } else {
-            return TimeZone.getTimeZone(tz.toString());
+            String zone = tz.toString();
+
+            // Value of "TZ" property is of a bit different format,
+            // which confuses the Java's TimeZone.getTimeZone(id) method,
+            // and so, we need to convert it.
+
+            Matcher tzMatcher = TZ_PATTERN.matcher(zone);
+            if (tzMatcher.matches()) {                    
+                String sign = tzMatcher.group(2);
+                String hours = tzMatcher.group(3);
+                String minutes = tzMatcher.group(4);
+
+                // Invert the sign, since TZ format and Java format
+                // use opposite signs, sigh... Also, Java API requires
+                // the sign to be always present, be it "+" or "-".
+                sign = ("-".equals(sign)? "+" : "-");
+
+                // Always use "GMT" since that's required by Java API.
+                zone = "GMT" + sign + hours;
+ 
+                if (minutes != null) {
+                    zone += minutes;
+                }
+            }
+            return TimeZone.getTimeZone(zone);
         }
     }
     
