@@ -1950,7 +1950,7 @@ public class RubyString extends RubyObject {
             }
             return getRuntime().getNil();
         } else if (args[0] instanceof RubyString) {
-            return toString().indexOf(stringValue(args[0]).toString()) != -1 ?
+            return value.indexOf(stringValue(args[0]).value) != -1 ?
                 args[0] : getRuntime().getNil();
         } else if (args[0] instanceof RubyRange) {
             long[] begLen = ((RubyRange) args[0]).begLen(value.length(), 0);
@@ -2054,7 +2054,7 @@ public class RubyString extends RubyObject {
         }
         if (args[0] instanceof RubyString) {
             RubyString orig = stringValue(args[0]);
-            int beg = toString().indexOf(orig.toString());
+            int beg = value.indexOf(orig.value);
             if (beg != -1) {
                 replace(beg, orig.value.length(), stringValue(args[1]));
             }
