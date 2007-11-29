@@ -1302,6 +1302,19 @@ EOY
       assert_equal([{}], o.keys)
     end
 
+    def test_negative_float
+      a = -1.0
+      yml = YAML::dump( a )
+      b = YAML::load( yml )
+      assert_equal a,b
+    end
+
+    def test_negative_integer
+      a = -1
+      yml = YAML::dump( a )
+      b = YAML::load( yml )
+      assert_equal a,b
+    end
 end
 
 #if $0 == __FILE__
