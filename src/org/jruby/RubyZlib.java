@@ -754,22 +754,23 @@ public class RubyZlib {
         }
 
         public IRubyObject internalGets(IRubyObject[] args) throws IOException {
-            String sep = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getValue().toString();
+            ByteList sep = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getByteList();
             if (args.length > 0) {
-                sep = args[0].toString();
+                sep = args[0].convertToString().getByteList();
             }
             return internalSepGets(sep);
         }
 
-        private IRubyObject internalSepGets(String sep) throws IOException {
-            StringBuffer result = new StringBuffer();
-            char ce = (char) io.read();
+        private IRubyObject internalSepGets(ByteList sep) throws IOException {
+            ByteList result = new ByteList();
+            int ce = io.read();
             while (ce != -1 && sep.indexOf(ce) == -1) {
-                result.append((char) ce);
-                ce = (char) io.read();
+                result.append((byte)ce);
+                ce = io.read();
             }
             line++;
-            return getRuntime().newString(result.append(sep).toString());
+            result.append(sep);
+            return RubyString.newString(getRuntime(),result);
         }
 
         @JRubyMethod(name = "gets", optional = 1)
@@ -879,10 +880,10 @@ public class RubyZlib {
 
         @JRubyMethod(name = "each", optional = 1, frame = true)
         public IRubyObject each(IRubyObject[] args, Block block) throws IOException {
-            String sep = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getValue().toString();
+            ByteList sep = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getByteList();
             
             if (args.length > 0 && !args[0].isNil()) {
-                sep = args[0].toString();
+                sep = args[0].convertToString().getByteList();
             }
 
             ThreadContext context = getRuntime().getCurrentContext();
@@ -905,9 +906,9 @@ public class RubyZlib {
             if (args.length != 0 && args[0].isNil()) {
                 array.add(read(new IRubyObject[0]));
             } else {
-                String seperator = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getValue().toString();
+                ByteList seperator = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getByteList();
                 if (args.length > 0) {
-                    seperator = args[0].toString();
+                    seperator = args[0].convertToString().getByteList();
                 }
                 while (!isEof()) {
                     array.add(internalSepGets(seperator));

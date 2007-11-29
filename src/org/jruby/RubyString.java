@@ -3335,18 +3335,6 @@ public class RubyString extends RubyObject {
         view(value);
     }
 
-    public CharSequence getValue() {
-        return toString();
-    }
-
-    public String getUnicodeValue() {
-        try {
-            return new String(value.bytes,value.begin,value.realSize, "UTF8");
-        } catch (Exception e) {
-            throw new RuntimeException("Something's seriously broken with encodings", e);
-        }
-    }
-
     public static byte[] toUTF(String string) {
         try {
             return string.getBytes("UTF8");

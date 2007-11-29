@@ -127,7 +127,6 @@ end
 
 $stdout = $orig_stdout
 $stderr = $orig_stderr
-
 in_io = StringIO.new out_io.string
 test_equal(1, in_io.gets.chomp.to_i)
 test_ok(in_io.gets.chomp =~ /warning: class variable access from toplevel singleton method$/)

@@ -137,7 +137,7 @@ public class RubyKernel {
              * @see org.jruby.runtime.load.IAutoloadMethod#load(Ruby, String)
              */
             public IRubyObject load(Ruby runtime, String name) {
-                boolean required = loadService.require(file.toString());
+                boolean required = loadService.require(file());
                 
                 // File to be loaded by autoload has already been or is being loaded.
                 if (!required) return null;
@@ -296,7 +296,7 @@ public class RubyKernel {
         }else if(object instanceof RubyBignum){
             return RubyFloat.newFloat(object.getRuntime(), RubyBignum.big2dbl((RubyBignum)object));
         }else if(object instanceof RubyString){
-            if(((RubyString)object).getValue().length() == 0){ // rb_cstr_to_dbl case
+            if(((RubyString)object).getByteList().realSize == 0){ // rb_cstr_to_dbl case
                 throw recv.getRuntime().newArgumentError("invalid value for Float(): " + object.inspect());
             }
             return RubyNumeric.str2fnum(recv.getRuntime(),(RubyString)object,true);
@@ -466,7 +466,7 @@ public class RubyKernel {
     public static IRubyObject chop(IRubyObject recv, Block block) {
         RubyString str = getLastlineString(recv.getRuntime());
 
-        if (str.getValue().length() > 0) {
+        if (str.getByteList().realSize > 0) {
             str = (RubyString) str.dup();
             str.chop_bang();
             recv.getRuntime().getCurrentContext().getPreviousFrame().setLastLine(str);
@@ -684,7 +684,7 @@ public class RubyKernel {
     @JRubyMethod(name = "load", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load(IRubyObject recv, IRubyObject arg1, Block block) {
         RubyString file = arg1.convertToString();
-        recv.getRuntime().getLoadService().load(file.toString());
+        recv.getRuntime().getLoadService().load(file.getByteList().toString());
         return recv.getRuntime().getTrue();
     }
 

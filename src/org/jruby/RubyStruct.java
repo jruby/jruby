@@ -191,7 +191,7 @@ public class RubyStruct extends RubyObject {
 
         if (args.length > 0) {
             if (args[0] instanceof RubyString) {
-                name = args[0].toString();
+                name = ((RubyString)args[0]).getByteList().toString();
             } else if (args[0].isNil()) {
                 nilName = true;
             }

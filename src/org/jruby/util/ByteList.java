@@ -156,13 +156,15 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     public ByteList dup(int length) {
         ByteList dup = new ByteList(false);
         dup.bytes = new byte[length];
-        System.arraycopy(bytes, begin, dup.bytes, 0, realSize);
-        dup.realSize = realSize;
+        System.arraycopy(bytes, begin, dup.bytes, 0, length);
+        dup.realSize = length;
         dup.begin = 0;
 
-        dup.validHash = validHash;
-        dup.hash = hash;
-        dup.stringValue = stringValue;
+        if(length == realSize) {
+            dup.validHash = validHash;
+            dup.hash = hash;
+            dup.stringValue = stringValue;
+        }
 
         return dup;        
     }

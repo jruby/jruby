@@ -58,13 +58,13 @@ public class IOReader extends Reader {
 
     public int read(final char[] arr, final int off, final int len) {
         final IRubyObject read = io.callMethod(io.getRuntime().getCurrentContext(),"read", io.getRuntime().newFixnum(len));
-        if(read.isNil() || ((RubyString)read).getValue().length() == 0) {
+        if(read.isNil() || ((RubyString)read).getByteList().realSize == 0) {
             return -1;
         } else {
             final RubyString str = (RubyString)read;
-            final CharSequence val = str.getValue();
-            System.arraycopy(val.toString().toCharArray(),0,arr,off,val.length());
-            return val.length();
+            final ByteList val = str.getByteList();
+            System.arraycopy(ByteList.plain(val.bytes,val.begin,val.realSize),0,arr,off,val.realSize);
+            return val.realSize;
         }
     }
 }// IOReader

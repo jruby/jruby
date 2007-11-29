@@ -197,7 +197,7 @@ public class JRubyConstructor extends ConstructorImpl {
         final Object _str = ((JRubyConstructor)ctor).constructRubyScalar(node);
         if(_str instanceof org.jruby.RubyString) {
             final org.jruby.RubyString str = (org.jruby.RubyString)_str;
-            return (str.getValue().length() == 0 && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) ? str.getRuntime().getNil() : str;
+            return (str.getByteList().realSize == 0 && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) ? str.getRuntime().getNil() : str;
         }
         return _str;
     }

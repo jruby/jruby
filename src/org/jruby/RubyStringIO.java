@@ -238,26 +238,28 @@ public class RubyStringIO extends RubyObject {
     }
 
     public IRubyObject internalGets(IRubyObject[] args) {
-        if (pos < internal.getByteList().length() && !eof) {
-            String sep = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getValue().toString();
+        if (pos < internal.getByteList().realSize && !eof) {
+            ByteList sep = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getByteList();
             if (args.length>0) {
                 if (args[0].isNil()) {
-                    ByteList buf = new ByteList(internal.getByteList(), (int)pos, internal.getByteList().length()-(int)pos);
-                    pos+=buf.length();
+                    ByteList buf = internal.getByteList().makeShared((int)pos, internal.getByteList().realSize-(int)pos);
+                    pos+=buf.realSize;
                     return RubyString.newString(getRuntime(),buf);
                 }
-                sep = args[0].toString();
+                sep = args[0].convertToString().getByteList();
             }
-            String ss = internal.toString();
+            ByteList ss = internal.getByteList();
             int ix = ss.indexOf(sep,(int)pos);
-            String add = sep;
+            ByteList add = sep;
             if (-1 == ix) {
-                ix = internal.getByteList().length();
-                add = "";
+                ix = internal.getByteList().realSize;
+                add = new ByteList(new byte[0], false);
             }
-            ByteList line = new ByteList(internal.getByteList(), (int)pos, ix-(int)pos);
-            line.append(RubyString.stringToBytes(add));
-            pos = ix + add.length();
+            ByteList line = internal.getByteList().makeShared((int)pos, ix-(int)pos);
+            line.unshare();
+            line.append(add);
+            line.invalidate();
+            pos = ix + add.realSize;
             lineno++;
             return RubyString.newString(getRuntime(),line);
         }

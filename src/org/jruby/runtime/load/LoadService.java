@@ -448,7 +448,9 @@ e.printStackTrace();
         
 
         for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
-            String entry = pathIter.next().toString();
+            // TODO this is really ineffient, ant potentially a problem everytime anyone require's something.
+            // we should try to make LoadPath a special array object.
+            String entry = ((IRubyObject)pathIter.next()).toString();
             if (entry.startsWith("jar:")) {
                 JarFile current = (JarFile)jarFiles.get(entry);
                 if(null == current) {
