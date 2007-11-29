@@ -399,6 +399,7 @@ test/externals/rubinius/spec/core/regexp_spec.rb
 test/externals/rubinius/spec/core/struct_spec.rb
 test/externals/rubinius/spec/core/symbol_spec.rb
 test/externals/rubinius/spec/core/time_spec.rb
+test/externals/rubinius/spec/core/thread_spec.rb
 test/externals/rubinius/spec/core/true_spec.rb
 test/externals/rubinius/spec/language/assignment_spec.rb
 test/externals/rubinius/spec/language/class_spec.rb
