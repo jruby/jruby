@@ -253,7 +253,6 @@ public final class Ruby {
 
     // Java support
     private JavaSupport javaSupport;
-    public static final JRubyClassLoader defaultJRubyClassLoader = new JRubyClassLoader(Thread.currentThread().getContextClassLoader());
     private JRubyClassLoader jrubyClassLoader;
 
     private static boolean securityRestricted = false;

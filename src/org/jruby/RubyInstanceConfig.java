@@ -183,7 +183,7 @@ public class RubyInstanceConfig {
         }
 
         defaultRegexpEngine = System.getProperty("jruby.regexp","jregex");
-        defaultJRubyClassLoader = Ruby.defaultJRubyClassLoader;
+        defaultJRubyClassLoader = null;
     }
     
     public String getBasicUsageHelp() {
