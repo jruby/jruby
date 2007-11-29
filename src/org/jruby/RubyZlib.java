@@ -632,7 +632,7 @@ public class RubyZlib {
         }
         
         @JRubyMethod(name = "to_io")
-        public Object to_io() {
+        public IRubyObject to_io() {
             return realIo;
         }
         
