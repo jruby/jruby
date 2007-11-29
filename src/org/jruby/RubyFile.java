@@ -730,8 +730,14 @@ public class RubyFile extends RubyIO {
             padSlashes = countSlashes(cwd);
         }
         
-        JRubyFile path = JRubyFile.create(cwd, relativePath);
-
+        JRubyFile path;
+        
+        if (relativePath.length() == 0) {
+            path = JRubyFile.create(relativePath, cwd);
+        } else {
+            path = JRubyFile.create(cwd, relativePath);
+        }
+        
         return runtime.newString(padSlashes + canonicalize(path.getAbsolutePath()));
     }
     
