@@ -663,7 +663,7 @@ public class RubyZlib {
             return orig_name == null ? getRuntime().getNil() : getRuntime().newString(orig_name);
         }
         
-        public Object to_io() {
+        public IRubyObject to_io() {
             return realIo;
         }
         
