@@ -630,9 +630,8 @@ public class RubyString extends RubyObject {
 
     @JRubyMethod(name = "casecmp", required = 1)
     public IRubyObject casecmp(IRubyObject other) {
-        int compare = toString().compareToIgnoreCase(stringValue(other).toString());
-        
-        return RubyFixnum.newFixnum(getRuntime(), compare == 0 ? 0 : (compare < 0 ? -1 : 1));
+        int compare = value.caseInsensitiveCmp(stringValue(other).value);
+        return RubyFixnum.newFixnum(getRuntime(), compare);
     }
 
     /** rb_str_match

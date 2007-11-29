@@ -136,6 +136,36 @@ test_equal(1, 'B' <=> 'A')
 test_equal(nil, 'A' <=> 3)
 test_equal(nil, 'A' <=> 3.to_f)
 
+##### casecmp #####
+s = 'abc'
+# compare string to self
+test_equal 0, s.casecmp(s)
+
+# another, but equal string
+test_equal 0, 'abc'.casecmp('abc')
+
+# case insensitively equal string
+test_equal 0, 'Abc'.casecmp('aBC')
+test_equal 0, 'ABc'.casecmp('ABC')
+
+# smaller string of same length
+test_equal -1, 'Abc'.casecmp('aCc')
+test_equal -1, 'aBc'.casecmp('BbC')
+test_equal 1, 'Abc'.casecmp('aAc')
+test_equal 1, 'bBc'.casecmp('AbC')
+
+# string of different length
+test_equal 1, 'Abcd'.casecmp('aBc')
+test_equal -1, 'Abc'.casecmp('aBcD')
+
+# with empty strings
+test_equal 0, ''.casecmp('')
+test_equal -1, ''.casecmp('a')
+test_equal 1, 'a'.casecmp('')
+
+# type mismatch
+test_exception(TypeError) { 'a'.casecmp(:a) }
+test_exception(TypeError) { 'foo'.casecmp(nil) }
 
 ##### <</concat ######
 s = "a"
