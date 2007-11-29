@@ -4,7 +4,7 @@
     <configuration>
         <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
             <!-- Do not use Project Properties customizer when editing this file manually. -->
-            <name>JRuby</name>
+            <name>JRuby 1.0 branch</name>
             <properties>
                 <property-file>build.properties</property-file>
                 <property-file>default.build.properties</property-file>
@@ -23,22 +23,45 @@
             </folders>
             <ide-actions>
                 <action name="build">
+                    <script>nbproject/nbjdk.xml</script>
                     <target>jar</target>
                 </action>
                 <action name="clean">
+                    <script>nbproject/nbjdk.xml</script>
                     <target>clean</target>
                 </action>
                 <action name="javadoc">
+                    <script>nbproject/nbjdk.xml</script>
                     <target>create-apidocs</target>
                 </action>
                 <action name="test">
+                    <script>nbproject/nbjdk.xml</script>
                     <target>test</target>
                 </action>
                 <action name="rebuild">
+                    <script>nbproject/nbjdk.xml</script>
                     <target>clean</target>
                     <target>jar</target>
                 </action>
             </ide-actions>
+            <export>
+                <type>folder</type>
+                <location>${jruby.classes.dir}</location>
+                <script>nbproject/nbjdk.xml</script>
+                <build-target>jar</build-target>
+            </export>
+            <export>
+                <type>jar</type>
+                <location>${lib.dir}/jruby.jar</location>
+                <script>nbproject/nbjdk.xml</script>
+                <build-target>jar</build-target>
+            </export>
+            <export>
+                <type>folder</type>
+                <location>${test.classes.dir}</location>
+                <script>nbproject/nbjdk.xml</script>
+                <build-target>jar</build-target>
+            </export>
             <view>
                 <items>
                     <source-folder style="packages">
@@ -66,16 +89,16 @@
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
             <compilation-unit>
                 <package-root>${src.dir}</package-root>
-                <classpath mode="compile">${lib.dir}/bsf.jar:${lib.dir}/junit.jar:${lib.dir}/jline-0.9.91.jar:${lib.dir}/backport-util-concurrent.jar:${lib.dir}/asm-2.2.3.jar:${lib.dir}/asm-commons-2.2.3.jar:</classpath>
+                <classpath mode="compile">lib/bsf.jar:lib/junit.jar:lib/jline-0.9.91.jar:lib/backport-util-concurrent.jar:lib/asm-2.2.3.jar:lib/asm-commons-2.2.3.jar</classpath>
                 <built-to>${jruby.classes.dir}</built-to>
                 <built-to>${lib.dir}/jruby.jar</built-to>
-                <javadoc-built-to>${api.docs.dir}</javadoc-built-to>
+                <javadoc-built-to>docs/api</javadoc-built-to>
                 <source-level>1.4</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>${test.dir}</package-root>
                 <unit-tests/>
-                <classpath mode="compile">${lib.dir}/bsf.jar:${lib.dir}/junit.jar:${jruby.classes.dir}</classpath>
+                <classpath mode="compile">lib/bsf.jar:lib/junit.jar:build/classes/jruby:lib/backport-util-concurrent.jar:lib/asm-2.2.3.jar:lib/asm-commons-2.2.3.jar</classpath>
                 <built-to>${test.classes.dir}</built-to>
                 <source-level>1.4</source-level>
             </compilation-unit>
