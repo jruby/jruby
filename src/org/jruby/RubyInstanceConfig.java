@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jruby.exceptions.MainExitException;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.JRubyClassLoader;
@@ -234,6 +235,28 @@ public class RubyInstanceConfig {
         
         return sb.toString();
     }
+    
+    public String getVersionString() {
+        StringBuffer buf = new StringBuffer("ruby ");
+        switch (compatVersion) {
+        case RUBY1_8:
+            buf.append(Constants.RUBY_VERSION);
+            break;
+        case RUBY1_9:
+            buf.append(Constants.RUBY1_9_VERSION);
+            break;
+        }
+        buf
+                .append(" (")
+                .append(Constants.COMPILE_DATE + " rev " + Constants.REVISION)
+                .append(") [")
+                .append(System.getProperty("os.arch") + "-jruby" + Constants.VERSION)
+                .append("]")
+                .append("\n");
+        
+        return buf.toString();
+    }
+
     
     public void processArguments(String[] arguments) {
         new ArgumentProcessor(arguments).processArguments();

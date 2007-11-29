@@ -133,13 +133,7 @@ public class Main {
     }
 
     private void showVersion() {
-        config.getOutput().print("ruby ");
-        config.getOutput().print(Constants.RUBY_VERSION);
-        config.getOutput().print(" (");
-        config.getOutput().print(Constants.COMPILE_DATE + " rev " + Constants.REVISION);
-        config.getOutput().print(") [");
-        config.getOutput().print(System.getProperty("os.arch") + "-jruby" + Constants.VERSION);
-        config.getOutput().println("]");
+        config.getOutput().print(config.getVersionString());
     }
 
     public void printUsage() {
