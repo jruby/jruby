@@ -309,4 +309,14 @@ class TestFile < Test::Unit::TestCase
     file.close
     File.delete(filename)
   end
+  
+  def test_truncate_doesnt_create_file
+    name = "___foo_bar___"
+    assert(!File.exists?(name))
+
+    assert_raises(Errno::ENOENT) { File.truncate(name, 100) }
+
+    assert(!File.exists?(name))
+  end
 end
+
