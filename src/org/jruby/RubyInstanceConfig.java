@@ -594,7 +594,7 @@ public class RubyInstanceConfig {
                 if (isShowVersion()) {
                     return null;
                 }
-                return System.in;
+                return getInput();
             } else {
                 File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
                 return new FileInputStream(file);

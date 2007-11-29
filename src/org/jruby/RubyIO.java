@@ -954,6 +954,14 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "close_write")
     public IRubyObject close_write() {
+        if (handler instanceof IOHandlerProcess) {
+            IOHandlerProcess processHandler = (IOHandlerProcess) handler;
+            try {
+                processHandler.getOutputStream().close();
+            } catch (IOException e ) {
+                throw getRuntime().newIOError(e.getMessage());
+            }
+        }
         return this;
     }
 

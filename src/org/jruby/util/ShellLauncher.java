@@ -109,6 +109,7 @@ public class ShellLauncher {
                 procName = argArray[0];
             }
             processThread = new Thread(this, "ScriptThreadProcess: " + procName);
+            processThread.setDaemon(true);
             processThread.start();
         }
 
