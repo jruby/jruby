@@ -187,7 +187,7 @@ public class RubyYAML {
 
     @JRubyMethod(name = "load", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load(IRubyObject self, IRubyObject arg) {
-        IRubyObject io = arg;
+        IRubyObject io = check_yaml_port(arg);
         Scanner scn = null;
         try {
             if(io instanceof RubyString) {
@@ -240,7 +240,7 @@ public class RubyYAML {
     @JRubyMethod(name = "load_documents", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load_documents(IRubyObject self, IRubyObject arg, Block block) {
         ThreadContext context = self.getRuntime().getCurrentContext();
-        IRubyObject io = arg;
+        IRubyObject io = check_yaml_port(arg);
         Scanner scn = null;
         try {
             if(io instanceof RubyString) {
@@ -303,6 +303,23 @@ public class RubyYAML {
     @JRubyMethod(name = "quick_emit_node", rest = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject quick_emit(IRubyObject self, IRubyObject[] args) {
         return self.getRuntime().getNil();
+    }
+
+    // prepares IO port type for load (ported from ext/syck/rubyext.c)
+    private static IRubyObject check_yaml_port(IRubyObject port) {
+        if (port instanceof RubyString) {
+            // OK
+        }
+        else if (port.respondsTo("read")) {
+            if (port.respondsTo("binmode")) {
+                ThreadContext context = port.getRuntime().getCurrentContext();
+                port.callMethod(context, "binmode");
+            }
+        }
+        else {
+            throw port.getRuntime().newTypeError("instance of IO needed");
+        }
+        return port;
     }
 
     public static class YAMLHashMethods {
