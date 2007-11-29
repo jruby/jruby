@@ -2212,12 +2212,20 @@ public class RubyString extends RubyObject {
         }
 
         int base = 8;
-        String str = toString().trim();
-        int pos = (str.charAt(0) == '-' || str.charAt(0) == '+') ? 1 : 0;
-        if (str.indexOf("0x") == pos || str.indexOf("0X") == pos) {
-            base = 16;
-        } else if (str.indexOf("0b") == pos || str.indexOf("0B") == pos) {
-            base = 2;
+
+        int ix = value.begin;
+
+        while(ix < value.begin+value.realSize && WHITESPACE[value.bytes[ix]+128]) {
+            ix++;
+        }
+
+        int pos = (value.bytes[ix] == '-' || value.bytes[ix] == '+') ? ix+1 : ix;
+        if((pos+1) < value.begin+value.realSize && value.bytes[pos] == '0') {
+            if(value.bytes[pos+1] == 'x' || value.bytes[pos+1] == 'X') {
+                base = 16;
+            } else if(value.bytes[pos+1] == 'b' || value.bytes[pos+1] == 'B') {
+                base = 2;
+            }
         }
         return RubyNumeric.str2inum(getRuntime(), this, base);
     }
