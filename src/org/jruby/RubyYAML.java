@@ -209,7 +209,7 @@ public class RubyYAML {
     }
 
     public static IRubyObject load(IRubyObject self, IRubyObject arg) {
-        IRubyObject io = arg;
+        IRubyObject io = check_yaml_port(arg);
         Scanner scn = null;
         if(io instanceof RubyString) {
             scn = new ScannerImpl(((RubyString)io).getByteList());
@@ -249,7 +249,7 @@ public class RubyYAML {
 
     public static IRubyObject load_documents(IRubyObject self, IRubyObject arg, Block block) {
         ThreadContext context = self.getRuntime().getCurrentContext();
-        IRubyObject io = arg;
+        IRubyObject io = check_yaml_port(arg);
         Scanner scn = null;
         if(io instanceof RubyString) {
             scn = new ScannerImpl(((RubyString)io).getByteList());
@@ -298,6 +298,23 @@ public class RubyYAML {
 
     public static IRubyObject quick_emit(IRubyObject self, IRubyObject[] args) {
         return self.getRuntime().getNil();
+    }
+
+    // prepares IO port type for load (ported from ext/syck/rubyext.c)
+    private static IRubyObject check_yaml_port(IRubyObject port) {
+        if (port instanceof RubyString) {
+            // OK
+        }
+        else if (port.respondsTo("read")) {
+            if (port.respondsTo("binmode")) {
+                ThreadContext context = port.getRuntime().getCurrentContext();
+                port.callMethod(context, "binmode");
+            }
+        }
+        else {
+            throw port.getRuntime().newTypeError("instance of IO needed");
+        }
+        return port;
     }
 
     public static IRubyObject hash_to_yaml_node(IRubyObject self, IRubyObject arg) {

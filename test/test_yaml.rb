@@ -30,6 +30,15 @@ class TestYaml < Test::Unit::TestCase
     assert_nothing_raised { YAML.dump(@obj) }
   end
 
+  def test_yaml_load_with_bad_type_raises_typeerror
+    [[], {}].each do |not_an_IO_object|
+      err = assert_raise(TypeError) do
+        YAML.load(not_an_IO_object)
+      end
+      assert_match("instance of IO needed", err.message)
+    end
+  end
+
 	#
 	# Convert between YAML and the object to verify correct parsing and
 	# emitting
