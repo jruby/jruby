@@ -67,8 +67,13 @@ public class RubyTime extends RubyObject {
     private long usec;
 
     private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("-", Locale.US);
+
+    // There are two different popular TZ formats: legacy (AST+3:00:00, GMT-3), and
+    // newer one (US/Pacific, America/Los_Angeles). This pattern is to detect
+    // the legacy TZ format in order to convert it to the newer format
+    // understood by Java API.
     private static final Pattern TZ_PATTERN
-            = Pattern.compile("(\\D+?)([\\+-]?)(\\d*)(:\\d+)?(:\\d+)?");
+            = Pattern.compile("(\\D+?)([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
      
     public static TimeZone getLocalTimeZone(Ruby runtime) {
         // TODO: cache the RubyString "TZ" so it doesn't need to be recreated for each call?
