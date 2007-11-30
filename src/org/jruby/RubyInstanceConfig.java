@@ -115,6 +115,7 @@ public class RubyInstanceConfig {
     private KCode kcode = KCode.NONE;
     
     public static final boolean FRAMELESS_COMPILE_ENABLED = Boolean.getBoolean("jruby.compile.frameless");
+    public static boolean nativeEnabled = true;
     
     public int characterIndex = 0;
     
@@ -129,6 +130,12 @@ public class RubyInstanceConfig {
     }
 
     private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
+    
+    static {
+        if (System.getProperty("jruby.native.enabled") != null) {
+            nativeEnabled = Boolean.getBoolean("jruby.native.enabled");
+        }
+    }
 
     public RubyInstanceConfig() {
         if (Ruby.isSecurityRestricted())
@@ -233,7 +240,10 @@ public class RubyInstanceConfig {
                 .append("    jruby.jit.logging.verbose=true|false").append("\n")
                 .append("       Enable verbose JIT logging (reports failed compilation). Default is false").append("\n")
                 .append("    jruby.launch.inproc=true|false").append("\n")
-                .append("       Set in-process launching of e.g. system('ruby ...'). Default is true.").append("\n");
+                .append("       Set in-process launching of e.g. system('ruby ...'). Default is true").append("\n")
+                .append("    jruby.native.enabled=true|false").append("\n")
+                .append("       Enable/disable native extensions (like JNA for non-Java APIs; Default is true").append("\n")
+                .append("       (This affects all JRuby instances in a given JVM)").append("\n");
         
         return sb.toString();
     }
@@ -258,7 +268,6 @@ public class RubyInstanceConfig {
         
         return buf.toString();
     }
-
     
     public void processArguments(String[] arguments) {
         new ArgumentProcessor(arguments).processArguments();

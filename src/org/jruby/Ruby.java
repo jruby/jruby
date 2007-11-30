@@ -2444,12 +2444,7 @@ public final class Ruby {
     
     private static POSIX loadPosix() {
         // check for native library support
-        boolean nativeEnabled = true;
-        if (System.getProperty("jruby.native.enabled") != null) {
-            nativeEnabled = Boolean.getBoolean("jruby.native.enabled");
-        }
-
-        if (nativeEnabled) {
+        if (RubyInstanceConfig.nativeEnabled) {
             try {
                 // confirm we have library link permissions for the C library
                 SecurityManager manager = System.getSecurityManager();
