@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'thread'
 
 class TestThread < Test::Unit::TestCase
   def test_running_and_finishing
@@ -41,34 +42,30 @@ class TestThread < Test::Unit::TestCase
     t.join
     assert(! Thread.current.key?(:x))
     Thread.current[:x] = 1
-    assert_equal([:x], Thread.current.keys)
+    assert(Thread.current.key?(:x))
     Thread.current["y"] = 2
     assert(Thread.current.key?("y"))
     assert([:x, :y], Thread.current.keys.sort {|x, y| x.to_s <=> y.to_s})
-    assert_raises(ArgumentError) { Thread.current[Object.new] }
-    assert_raises(ArgumentError) { Thread.current[Object.new] = 1 }
+    assert_raises(TypeError) { Thread.current[Object.new] }
+    assert_raises(TypeError) { Thread.current[Object.new] = 1 }
     assert_raises(ArgumentError) { Thread.current[1] }
     assert_raises(ArgumentError) { Thread.current[1]  = 1}
   end
 
   def test_status
-    v = nil
-    t = Thread.new {
-      v = Thread.current.status
-    }
-    t.join
+    t = Thread.new { Thread.current.status }
+    v = t.value
     assert_equal("run", v)
     assert_equal(false, t.status)
     
     # check that "run", sleep", and "dead" appear in inspected output
-    x = nil
-    t = Thread.new { x = Thread.current.inspect; sleep 4 }
-    Thread.pass until t.status == "sleep"
-    assert(x["run"])
+    q = Queue.new
+    t = Thread.new { q << Thread.current.inspect; sleep }
+    Thread.pass until t.status == "sleep" || !t.alive?
+    assert(q.shift(true)["run"])
     assert(t.inspect["sleep"])
-    
     t.kill
-    Thread.pass while t.alive?
+    t.join rescue nil
     assert(t.inspect["dead"])
   end
 
