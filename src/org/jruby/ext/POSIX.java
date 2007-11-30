@@ -42,5 +42,6 @@ public interface POSIX extends Library {
     public int getppid();
     public int getpid();
     public int getuid();
+    public int kill(int pid, int signal);
     public int symlink(String oldpath,String newpath);
 }

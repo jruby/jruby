@@ -84,6 +84,10 @@ public class JavaBasedPOSIX implements POSIX {
     public int getuid() {
         throw getRuntime().newNotImplementedError("getuid unsupported on this platform");
     }
+    
+    public int kill(int pid, int signal) {
+        throw getRuntime().newNotImplementedError("Process#kill not yet implemented");
+    }
 
     public int symlink(String oldpath, String newpath) {
         try {

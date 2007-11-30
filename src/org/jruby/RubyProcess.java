@@ -40,8 +40,6 @@ import org.jruby.runtime.callback.Callback;
 
 
 /**
- *
- * @author  enebo
  */
 public class RubyProcess {
 
@@ -337,10 +335,64 @@ public class RubyProcess {
     public static IRubyObject egid(IRubyObject recv) {
         return recv.getRuntime().newFixnum(Ruby.getPosix().getegid());
     }
+    
+    private static String[] signals = new String[] {"EXIT", "HUP", "INT", "QUIT", "ILL", "TRAP", 
+        "ABRT", "POLL", "FPE", "KILL", "BUS", "SEGV", "SYS", "PIPE", "ALRM", "TERM", "URG", "STOP",
+        "TSTP", "CONT", "CHLD", "TTIN", "TTOU", "XCPU", "XFSZ", "VTALRM", "PROF", "USR1", "USR2"};
+    
+    private static int parseSignalString(Ruby runtime, String value) {
+        int startIndex = 0;
+        boolean negative = value.startsWith("-");
+        
+        if (negative) startIndex++;
+        
+        boolean signalString = value.startsWith("SIG", startIndex);
+        
+        if (signalString) startIndex += 3;
+       
+        String signalName = value.substring(startIndex);
+        
+        // FIXME: This table will get moved into POSIX library so we can get all actual supported
+        // signals.  This is a quick fix to support basic signals until that happens.
+        for (int i = 0; i < signals.length; i++) {
+            if (signals[i].equals(signalName)) return negative ? -i : i;
+        }
+        
+        throw runtime.newArgumentError("unsupported name `SIG" + signalName + "'");
+    }
 
     @JRubyMethod(name = "kill", rest = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject kill(IRubyObject recv, IRubyObject[] args) {
-        throw recv.getRuntime().newNotImplementedError("Process#kill not yet implemented");
+        if (args.length < 2) {
+            throw recv.getRuntime().newArgumentError("wrong number of arguments -- kill(sig, pid...)");
+        }
+        
+        Ruby runtime = recv.getRuntime();
+        int signal;
+        if (args[0] instanceof RubyFixnum) {
+            signal = (int) ((RubyFixnum) args[0]).getLongValue();
+        } else if (args[0] instanceof RubySymbol) {
+            signal = parseSignalString(runtime, args[0].toString());
+        } else if (args[0] instanceof RubyString) {
+            signal = parseSignalString(runtime, args[0].toString());
+        } else {
+            signal = parseSignalString(runtime, args[0].checkStringType().toString());
+        }
+
+        boolean processGroupKill = signal < 0;
+        
+        if (processGroupKill) signal = -signal;
+        
+        for (int i = 1; i < args.length; i++) {
+            int pid = RubyNumeric.num2int(args[i]);
+
+            // FIXME: It may be possible to killpg on systems which support it.  POSIX library
+            // needs to tell whether a particular method works or not.
+            Ruby.getPosix().kill(processGroupKill ? -pid : pid, signal);            
+        }
+        
+        return runtime.newFixnum(args.length - 1);
+
     }
 
     @JRubyMethod(name = "detach", required = 1, module = true, visibility = Visibility.PRIVATE)
