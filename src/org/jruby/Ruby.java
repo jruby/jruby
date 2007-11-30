@@ -1558,7 +1558,7 @@ public final class Ruby {
     public JRubyClassLoader getJRubyClassLoader() {
         // FIXME: Get rid of laziness and handle restricted access elsewhere
         if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null) {
-            jrubyClassLoader = new JRubyClassLoader(Thread.currentThread().getContextClassLoader());
+            jrubyClassLoader = new JRubyClassLoader(config.getLoader());
         }
         
         return jrubyClassLoader;

@@ -88,6 +88,8 @@ public class RubyInstanceConfig {
 
     private final String defaultRegexpEngine;
     private final JRubyClassLoader defaultJRubyClassLoader;
+
+    private ClassLoader loader = Thread.currentThread().getContextClassLoader();
     
     // from CommandlineParser
     private List<String> loadPaths = new ArrayList<String>();
@@ -372,6 +374,14 @@ public class RubyInstanceConfig {
     
     public JRubyClassLoader getJRubyClassLoader() {
         return defaultJRubyClassLoader;
+    }
+
+    public ClassLoader getLoader() {
+        return loader;
+    }
+
+    public void setLoader(ClassLoader loader) {
+        this.loader = loader;
     }
     
     public String[] getArgv() {
