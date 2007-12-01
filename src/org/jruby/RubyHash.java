@@ -732,8 +732,13 @@ public class RubyHash extends RubyObject implements Map {
             if (entry != NO_ENTRY) {
                 entry.value = value;
             } else {
-                IRubyObject realKey = ((RubyString)key).dup();
-                realKey.setFrozen(true);
+                RubyString realKey = (RubyString)key;
+                
+                if (!realKey.isFrozen()) {
+                    realKey = realKey.strDup(realKey.getMetaClass().getRealClass());;
+                    realKey.setFrozen(true);
+                }
+                
                 internalPut(realKey, value, false);
             }
         }

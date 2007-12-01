@@ -163,7 +163,7 @@ public class RubyString extends RubyObject {
         return strDup(getMetaClass());
     }
 
-    private final RubyString strDup(RubyClass clazz) {
+    final RubyString strDup(RubyClass clazz) {
         flags |= SHARED_BYTELIST_STR_F;
         RubyString dup = new RubyString(getRuntime(), clazz, value);
         dup.flags |= SHARED_BYTELIST_STR_F;
