@@ -77,6 +77,9 @@ public class RubyString extends RubyObject {
     // string has either ByteList or buffer shared  
     private static final int SHARED_STR_F = SHARED_BUFFER_STR_F | SHARED_BYTELIST_STR_F;  
 
+    private static final int TMPLOCK_STR_F = 1 << 11;
+    private static final int TMPLOCK_OR_FROZEN_STR_F = TMPLOCK_STR_F | FROZEN_F;
+    
     private ByteList value;
 
     private static ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
@@ -184,9 +187,10 @@ public class RubyString extends RubyObject {
     }
 
     private final void modifyCheck() {
-        // TODO: tmp lock here!
-        testFrozen("string");
-
+        if ((flags & TMPLOCK_OR_FROZEN_STR_F) != 0) {
+            if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("string" + getMetaClass().getName());           
+            if ((flags & TMPLOCK_STR_F) != 0) throw getRuntime().newTypeError("can't modify string; temporarily locked");
+        }
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw getRuntime().newSecurityError("Insecure: can't modify string");
         }
