@@ -186,3 +186,13 @@ test_equal(0, "\n" =~ /\s/n)
 # JRUBY-1552
 test_equal(1, Array('a'..'z').map { |c| c.to_s[/#{c}/o] }.compact.size)
 test_equal(26, Array('a'..'z').map { |c| c.to_s[/#{c}/] }.compact.size)
+
+test_equal nil, /[^a]/i =~ "a"
+test_equal nil, /[^a]/i =~ "A"
+test_equal nil, /[^A]/i =~ "a"
+test_equal nil, /[^A]/i =~ "A"
+
+test_equal nil, /[^a-c]/i =~ "b"
+test_equal nil, /[^a-c]/i =~ "B"
+test_equal nil, /[^A-C]/i =~ "b"
+test_equal nil, /[^A-C]/i =~ "B"
