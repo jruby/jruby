@@ -302,7 +302,7 @@ public class RubyThread extends RubyObject {
             getRuntime().getWarnings().warn("Do not use Fixnums as Symbols");
             throw getRuntime().newArgumentError(originalKey + " is not a symbol");
         } else {
-            throw getRuntime().newArgumentError(originalKey + " is not a symbol");
+            throw getRuntime().newTypeError(originalKey + " is not a symbol");
         }
     }
 
