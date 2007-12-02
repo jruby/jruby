@@ -34,6 +34,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallBlock;
@@ -82,7 +83,7 @@ public class Generator {
         private RubyProc proc;
 
         private Thread t;
-        private boolean end;
+        private volatile boolean end;
         private IterBlockCallback ibc;
 
         public GeneratorData(IRubyObject gen) {
@@ -102,6 +103,16 @@ public class Generator {
         }
 
         public void start() {
+            if (t != null) {
+                // deal with previously started thread first
+                t.interrupt();
+                try {
+                    t.join();
+                } catch (InterruptedException e) {
+                    // do nothing
+                }
+            }
+
             end = false;
             ibc = new IterBlockCallback();
             t = new Thread(this);
@@ -148,7 +159,7 @@ public class Generator {
                             }
                         }
                     }
-                    if(!end && proc == null) {
+                    if(ibc.haveValue() && proc == null) {
                         gen.callMethod(gen.getRuntime().getCurrentContext(),"yield",ibc.pop());
                     }
                 }
@@ -173,7 +184,13 @@ public class Generator {
 
         private class IterBlockCallback implements BlockCallback {
             private IRubyObject obj;
+            private boolean shouldSkip = false;
             public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
+                if (shouldSkip) {
+                    // the thread was interrupted, this is a signal
+                    // that we should not do any work, and exit the thread.
+                    return gen.getRuntime().getNil();
+                }
                 boolean inter = true;
                 synchronized(mutex) {
                     mutex.notifyAll();
@@ -182,6 +199,8 @@ public class Generator {
                             mutex.wait();
                             inter = false;
                         } catch(InterruptedException e) {
+                            shouldSkip = true;
+                            return gen.getRuntime().getNil();
                         }
                     }
                     if(iargs.length > 1) {
@@ -212,6 +231,9 @@ public class Generator {
                 proc.call(new IRubyObject[]{gen});
             }
             end = true;
+            synchronized(mutex) {
+                mutex.notifyAll();
+            }
         }
     }
 
@@ -233,7 +255,7 @@ public class Generator {
         if(Arity.checkArgumentCount(self.getRuntime(), args,0,1) == 1) {
             d.setEnum(args[0]);
         } else {
-            d.setProc(self.getRuntime().newProc(Block.Type.PROC, Block.NULL_BLOCK));
+            d.setProc(self.getRuntime().newProc(Block.Type.PROC, block));
         }
         return self;
     }
@@ -249,13 +271,18 @@ public class Generator {
     public static IRubyObject end_p(IRubyObject self) {
         // Generator#end_p
         GeneratorData d = (GeneratorData)self.dataGetStruct();
-        return d.isEnd() ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
+        
+        boolean emptyQueue = self.getInstanceVariables().getInstanceVariable("@queue").callMethod(
+                self.getRuntime().getCurrentContext(), MethodIndex.EMPTY_P, "empty?").isTrue();
+        
+        return (d.isEnd() && emptyQueue) ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
     }
 
     public static IRubyObject next_p(IRubyObject self) {
-        // Generator#next_p
-        GeneratorData d = (GeneratorData)self.dataGetStruct();
-        return !d.isEnd() ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
+        // Generator#next_p        
+        return RuntimeHelpers.negate(
+                RuntimeHelpers.invoke(self.getRuntime().getCurrentContext(), self, "end?"),
+                self.getRuntime());
     }
 
     public static IRubyObject index(IRubyObject self) {
@@ -266,18 +293,20 @@ public class Generator {
     public static IRubyObject next(IRubyObject self, Block block) {
         // Generator#next
         GeneratorData d = (GeneratorData)self.dataGetStruct();
-        if(d.isEnd()) {
-            throw self.getRuntime().newEOFError();
+
+        if(RuntimeHelpers.invoke(self.getRuntime().getCurrentContext(), self, "end?").isTrue()) {
+            throw self.getRuntime().newEOFError("no more elements available");
         }
+
         d.generate();
         self.getInstanceVariables().setInstanceVariable("@index",self.getInstanceVariables().getInstanceVariable("@index").callMethod(self.getRuntime().getCurrentContext(),MethodIndex.OP_PLUS, "+",self.getRuntime().newFixnum(1)));
         return self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"shift");
     }
 
     public static IRubyObject current(IRubyObject self, Block block) {
-            // Generator#current
+        // Generator#current
         if(self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),MethodIndex.EMPTY_P, "empty?").isTrue()) {
-            throw self.getRuntime().newEOFError();
+            throw self.getRuntime().newEOFError("no more elements available");
         }
         return self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"first");
     }

@@ -2271,6 +2271,10 @@ public final class Ruby {
         return newRaiseException(fastGetClass("EOFError"), "End of file reached");
     }
 
+    public RaiseException newEOFError(String message) {
+        return newRaiseException(fastGetClass("EOFError"), message);
+    }
+
     public RaiseException newZeroDivisionError() {
         return newRaiseException(fastGetClass("ZeroDivisionError"), "divided by 0");
     }
