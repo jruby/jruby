@@ -187,6 +187,7 @@ public class RubyArray extends RubyObject implements List {
     private IRubyObject[] values;
 
     private static final int TMPLOCK_ARR_F = 1 << 9;
+    private static final int TMPLOCK_OR_FROZEN_ARR_F = TMPLOCK_ARR_F | FROZEN_F;
 
     private volatile boolean isShared = false;
     private int begin = 0;
@@ -361,10 +362,9 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     private final void modifyCheck() {
-        testFrozen("array");
-
-        if ((flags & TMPLOCK_ARR_F) != 0) {
-            throw getRuntime().newTypeError("can't modify array during iteration");
+        if ((flags & TMPLOCK_OR_FROZEN_ARR_F) != 0) {
+            if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("array" + getMetaClass().getName());           
+            if ((flags & TMPLOCK_ARR_F) != 0) throw getRuntime().newTypeError("can't modify array during iteration");
         }
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw getRuntime().newSecurityError("Insecure: can't modify array");
