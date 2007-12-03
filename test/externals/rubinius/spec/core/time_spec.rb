@@ -45,7 +45,7 @@ end
 
 context "Time instance method" do
   specify "asctime should return a canonical string representation of time" do
-    Time.now.asctime.should == Time.now.strftime("%a %b %d %H:%M:%S %Y")
+    Time.now.asctime.should == Time.now.strftime("%a %b %e %H:%M:%S %Y")
   end
   
   specify "ctime is a synonym for Time#acstime " do
