@@ -89,7 +89,7 @@ public class RubyArgsFile extends RubyObject {
         if (filename.equals("-")) {
             currentFile = getRuntime().getGlobalVariables().get("$stdin");
         } else {
-            currentFile = new RubyFile(getRuntime(), filename); 
+            currentFile = RubyFile.open(getRuntime().getFile(), new IRubyObject[] {getRuntime().newString(filename)}, Block.NULL_BLOCK); 
         }
 
         startedProcessing = true;
