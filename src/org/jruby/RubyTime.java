@@ -132,7 +132,6 @@ public class RubyTime extends RubyObject {
     public static RubyClass createTimeClass(Ruby runtime) {
         RubyClass timeClass = runtime.defineClass("Time", runtime.getObject(), TIME_ALLOCATOR);
         runtime.setTime(timeClass);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyTime.class);
         
         timeClass.includeModule(runtime.getComparable());
         

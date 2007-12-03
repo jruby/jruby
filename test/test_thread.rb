@@ -158,4 +158,14 @@ class TestThread < Test::Unit::TestCase
     x = Thread.new {}
     assert_nothing_raised { x.join.to_s }
   end
+  
+  def test_abort_on_exception_does_not_blow_up
+    # CON: I had an issue where annotated methods weren't binding right
+    # where there was both a static and instance method of the same name.
+    # This caused abort_on_exception to fail to bind right; a temporary fix
+    # was put in place by appending _x but it shouldn't stay. This test confirms
+    # the method stays callable.
+    assert_nothing_raised { Thread.abort_on_exception }
+    assert_nothing_raised { Thread.abort_on_exception = Thread.abort_on_exception}
+  end
 end

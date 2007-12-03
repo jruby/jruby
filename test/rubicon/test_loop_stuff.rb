@@ -183,19 +183,23 @@ class TestLoopStuff < Test::Unit::TestCase
     assert(true)
   end
 
-  def testIteratorRetry
-    done = false
-    x = []
-    for i in 1 .. 7			# see how retry works in iterator loop
-      if i == 4 and not done
-        done = true
-        retry
-      end
-      x.push(i)
-    end
-    assert_equal(10, x.size)
-    assert_equal([1, 2, 3, 1, 2, 3, 4, 5, 6, 7], x)
-  end
+  # CON: I've disabled retry in methods and blocks because of JRUBY-1629 and
+  # JRUBY-1522 for now; unfortunately retry is looking like something we can't
+  # reasonably support. 
+
+#  def testIteratorRetry
+#    done = false
+#    x = []
+#    for i in 1 .. 7			# see how retry works in iterator loop
+#      if i == 4 and not done
+#        done = true
+#        retry
+#      end
+#      x.push(i)
+#    end
+#    assert_equal(10, x.size)
+#    assert_equal([1, 2, 3, 1, 2, 3, 4, 5, 6, 7], x)
+#  end
 
 
   class IterTest

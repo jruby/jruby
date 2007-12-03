@@ -167,7 +167,7 @@ public abstract class CallSite {
 
                     return (IRubyObject)bj.getValue();
                 } catch (JumpException.RetryJump rj) {
-                    // do nothing, let loop run again
+                    throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
                 } catch (StackOverflowError soe) {
                     throw context.getRuntime().newSystemStackError("stack level too deep");
                 }

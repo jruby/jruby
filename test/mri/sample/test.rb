@@ -914,17 +914,21 @@ end
 test_ok($x.size == 7)
 test_ok($x == [1, 2, 3, 4, 5, 6, 7])
 
-$done = false
-$x = []
-for i in 1 .. 7			# see how retry works in iterator loop
-  if i == 4 and not $done
-    $done = true
-    retry
-  end
-  $x.push(i)
-end
-test_ok($x.size == 10)
-test_ok($x == [1, 2, 3, 1, 2, 3, 4, 5, 6, 7])
+# CON: I've disabled retry in methods and blocks because of JRUBY-1629 and
+# JRUBY-1522 for now; unfortunately retry is looking like something we can't
+# reasonably support. 
+
+#$done = false
+#$x = []
+#for i in 1 .. 7			# see how retry works in iterator loop
+#  if i == 4 and not $done
+#    $done = true
+#    retry
+#  end
+#  $x.push(i)
+#end
+#test_ok($x.size == 10)
+#test_ok($x == [1, 2, 3, 1, 2, 3, 4, 5, 6, 7])
 
 # append method to built-in class
 class Array
