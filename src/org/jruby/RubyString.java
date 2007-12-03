@@ -1844,7 +1844,7 @@ public class RubyString extends RubyObject {
             if (sub.length() > value.length()) return getRuntime().getNil();
             // the empty string is always found at the beginning of a string (or at the end when rindex)
             if (sub.realSize == 0) {
-                if(pos<value.realSize) {
+                if(pos<=value.realSize) {
                     return getRuntime().newFixnum(pos);
                 } else {
                     return getRuntime().getNil();
