@@ -805,11 +805,6 @@ public class ScannerImpl implements Scanner {
                 }
             }
 
-            final char ch = peek(length);
-            if(f_nzero && ch == ':' && !S4[peek(length+1)]) {
-                forward(length);
-                throw new ScannerException("while scanning a plain scalar","found unexpected ':'","Please check http://pyyaml.org/wiki/YAMLColonInFlowContext for details.");
-            }
             if(length == 0) {
                 break;
             }
