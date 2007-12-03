@@ -801,7 +801,10 @@ public class ScannerImpl implements Scanner {
                 ensure(i+2,false);
                 if(r_check[this.buffer.bytes[this.pointer+i]&0xFF] || (r_check2[this.buffer.bytes[this.pointer+i]&0xFF] && r_check3[this.buffer.bytes[this.pointer+i+1]&0xFF])) {
                     length = i;
-                    break;
+                    final char ch = peek(length);
+                    if(!(f_nzero && ch == ':' && !S4[peek(length+1)])) {
+                        break;
+                    }
                 }
             }
 

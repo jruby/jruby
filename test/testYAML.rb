@@ -273,3 +273,7 @@ list = [YamlTest.new, YamlTest.new, YamlTest.new]
 test_equal 3, list.map{ |ll| ll.object_id }.uniq.length
 list2 = YAML.load(YAML.dump(list))
 test_equal 3, list2.map{ |ll| ll.object_id }.uniq.length
+
+# JRUBY-1659
+YAML.load("{a: 2007-01-01 01:12:34}")
+
