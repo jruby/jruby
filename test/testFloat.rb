@@ -98,3 +98,29 @@ test_equal(NaN.to_s=="NaN",true)
 test_equal(NaN==NaN,false)
 
 test_exception(TypeError) {5.0.dup}
+
+
+# JRUBY-1658
+require 'rational'
+
+test_equal(1.2, 1.0 + Rational(1, 5))
+test_equal(0.1, 1.0 * (10 ** -1))
+test_equal(0.8, 1.0 - Rational(1, 5))
+test_equal(5.0, 1.0 / Rational(1, 5))
+test_equal(4.0, 2.0 ** Rational(2))
+test_equal(1.0, 5.0 % Rational(2))
+test_equal([2,1.0], 5.0.divmod(Rational(2)))
+
+test_equal(-1, 1.0 <=> Rational(2))
+test_equal(1, 1.0 <=> Rational(1, 5))
+test_equal(0, 1.0 <=> Rational(1))
+
+test_equal(true, 1.0 == Rational(1))
+test_equal(false, 0.0 == Rational(1))
+
+test_equal(true, -2.0 > Rational(-3))
+test_equal(true, 2.0 < Rational(3))
+test_equal(true, 2.0 <= Rational(3))
+test_equal(true, 2.0 <= Rational(2))
+test_equal(true, -2.0 >= Rational(-3))
+test_equal(true, -3.0 >= Rational(-3))
