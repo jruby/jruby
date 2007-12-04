@@ -779,9 +779,8 @@ test/externals/rubinius/spec/parser"/>
     <exec executable="${snapshot.install.dir}/jruby-${version.jruby}/bin/jruby"
       dir="${snapshot.install.dir}/jruby-${version.jruby}">
       <arg value="-v"/>
-      <arg value="-rfileutils"/>
       <arg value="-e"/>
-      <arg value="include FileUtils; rm_f('${snapshot.install.dir}/current'); ln_s('${snapshot.install.dir}/jruby-${version.jruby}', '${snapshot.install.dir}/current'); puts 'Successfully installed snapshot'"/>
+      <arg value="system('rm -f ${snapshot.install.dir}/current && ln -s ${snapshot.install.dir}/jruby-${version.jruby} ${snapshot.install.dir}/current'); puts 'Successfully installed snapshot'"/>
     </exec>
   </target>
 
