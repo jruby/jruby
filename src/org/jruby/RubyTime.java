@@ -48,7 +48,6 @@ import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -74,10 +73,12 @@ public class RubyTime extends RubyObject {
     // understood by Java API.
     private static final Pattern TZ_PATTERN
             = Pattern.compile("(\\D+?)([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
+    
+    private static final ByteList TZ_STRING = ByteList.create("TZ");
      
     public static TimeZone getLocalTimeZone(Ruby runtime) {
         // TODO: cache the RubyString "TZ" so it doesn't need to be recreated for each call?
-        RubyString tzVar = runtime.newString("TZ");
+        RubyString tzVar = runtime.newString(TZ_STRING);
         RubyHash h = ((RubyHash)runtime.getObject().fastGetConstant("ENV"));
         IRubyObject tz = h.op_aref(tzVar);
         if (tz == null || ! (tz instanceof RubyString)) {
@@ -579,7 +580,6 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "at", required = 1, optional = 1, meta = true)
     public static IRubyObject at(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
-        int len = Arity.checkArgumentCount(runtime, args, 1, 2);
 
         Calendar cal = Calendar.getInstance(getLocalTimeZone(runtime));
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, cal);
@@ -592,7 +592,7 @@ public class RubyTime extends RubyObject {
             long seconds = RubyNumeric.num2long(args[0]);
             long millisecs = 0;
             long microsecs = 0;
-            if (len > 1) {
+            if (args.length > 1) {
                 long tmp = RubyNumeric.num2long(args[1]);
                 millisecs = tmp / 1000;
                 microsecs = tmp % 1000;
