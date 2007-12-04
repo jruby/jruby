@@ -794,7 +794,7 @@ test/externals/rubinius/spec/parser"/>
   <target name="dist" depends="dist-bin,dist-src"/>
 
   <target name="dist-clean">
-    <delete includeEmptyDirs="true">
+    <delete includeEmptyDirs="true" quiet="true">
       <fileset dir=".">
         <include name="jruby-*.tar.gz"/>
         <include name="jruby-*.zip"/>
