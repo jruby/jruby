@@ -131,6 +131,34 @@ public class RubyTCPServer extends RubyTCPSocket {
         }
     }
 
+    @JRubyMethod(name = "accept_nonblock")
+    public IRubyObject accept_nonblock() {
+        RubyTCPSocket socket = new RubyTCPSocket(getRuntime(),getRuntime().fastGetClass("TCPSocket"));
+        Selector selector = null;
+        try {
+            ssc.configureBlocking(false);
+            selector = Selector.open();
+            SelectionKey key = ssc.register(selector, SelectionKey.OP_ACCEPT);
+            
+            int selected = selector.selectNow();
+            if (selected == 0) {
+                // no connection immediately accepted, let them try again
+                throw getRuntime().newErrnoEAGAINError("Resource temporarily unavailable");
+            } else {
+                // otherwise one key has been selected (ours) so we get the channel and hand it off
+                socket.setChannel(ssc.accept());
+                return socket;
+            }
+        } catch(IOException e) {
+            throw sockerr(this, "problem when accepting");
+        } finally {
+            try {
+                if (selector != null) selector.close();
+            } catch (IOException ioe) {
+            }
+        }
+    }
+
     @JRubyMethod(name = "close")
     public IRubyObject close() {
         try {

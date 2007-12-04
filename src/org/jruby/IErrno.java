@@ -82,4 +82,5 @@ public interface IErrno
     int    ECONNRESET   = 72;
     int    EADDRINUSE   = 73;
     int    ECONNABORTED = 74;
+    int    EPROTO       = 75;
 }

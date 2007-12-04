@@ -1510,6 +1510,7 @@ public final class Ruby {
         createSysErr(IErrno.ECONNRESET, "ECONNRESET");
         createSysErr(IErrno.EADDRINUSE, "EADDRINUSE");
         createSysErr(IErrno.ECONNABORTED, "ECONNABORTED");
+        createSysErr(IErrno.EPROTO, "EPROTO");
     }
 
     /**
@@ -2147,6 +2148,11 @@ public final class Ruby {
     public RaiseException newErrnoEACCESError(String message) {
         return newRaiseException(
                 fastGetModule("Errno").fastGetClass("EACCES"), message);
+    }
+
+    public RaiseException newErrnoEAGAINError(String message) {
+        return newRaiseException(
+                fastGetModule("Errno").fastGetClass("EAGAIN"), message);
     }
 
     public RaiseException newErrnoEISDirError() {
