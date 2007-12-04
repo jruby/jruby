@@ -31,7 +31,6 @@ testLine_code.rb
 testLine_comment.rb
 testLine_line_comment_start.rb
 testLine_mixed_comment.rb
-testLoad.rb
 testLoops.rb
 #testLowerJavaSupport.rb
 testMarshal.rb

@@ -282,7 +282,9 @@ public class LoadService {
             if (file.lastIndexOf(".") != -1) className = file.substring(0, file.lastIndexOf("."));
             className = className.replace('-', '_').replace('.', '_');
             int lastSlashIndex = className.lastIndexOf('/');
-            if (!Character.isJavaIdentifierStart(className.charAt(lastSlashIndex + 1))) {
+            if (lastSlashIndex > -1 &&
+                    lastSlashIndex < className.length() - 1 &&
+                    !Character.isJavaIdentifierStart(className.charAt(lastSlashIndex + 1))) {
                 if (lastSlashIndex == -1) {
                     className = "_" + className;
                 } else {
