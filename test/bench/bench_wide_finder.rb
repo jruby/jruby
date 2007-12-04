@@ -1,6 +1,10 @@
 require 'benchmark'
 
 # Get test data for this benchmark at http://www.tbray.org/tmp/o10k.ap
+if (ARGV.size == 0)
+  puts "Get test data for this benchmark at http://www.tbray.org/tmp/o10k.ap"
+  exit
+end
 file = ARGV[0]
 
 5.times {

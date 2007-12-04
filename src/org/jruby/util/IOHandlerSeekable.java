@@ -106,6 +106,8 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
         // Do not open as 'rw' by default since a file with read-only permissions will fail on 'rw'
         return (modes.isWritable() || modes.shouldTruncate()) ? "rw" : "r";
     }
+    
+    private static final ByteList PARAGRAPH_SEPARATOR = ByteList.create("\n\n");
 
     public ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException {
         checkReadable();
@@ -115,14 +117,14 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
         }
 
         final ByteList separator = (separatorString == PARAGRAPH_DELIMETER) ?
-            ByteList.create("\n\n") : separatorString;
+            PARAGRAPH_SEPARATOR : separatorString;
 
         byte c = (byte)read();
         if (c == -1) {
             return null;
         }
 
-        ByteList buf = new ByteList();
+        ByteList buf = new ByteList(40);
         buf.append(c);
         
         byte first = separator.bytes[separator.begin];
