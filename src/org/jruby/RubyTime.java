@@ -432,9 +432,9 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"usec", "tv_usec"})
     public RubyInteger usec() {
-        return getRuntime().newFixnum(microseconds());
+        return getRuntime().newFixnum(cal.get(Calendar.MILLISECOND) * 1000 + getUSec());
     }
-    
+
     public void setMicroseconds(long mic) {
         long millis = getTimeInMillis() % 1000;
         long withoutMillis = getTimeInMillis() - millis;
@@ -489,9 +489,15 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})
     public RubyInteger gmt_offset() {
-        return getRuntime().newFixnum((int)(cal.get(Calendar.ZONE_OFFSET)/1000));
+        int offset = cal.get(Calendar.ZONE_OFFSET);
+        
+        if (isdst().isTrue()) {
+            offset += cal.get(Calendar.DST_OFFSET);
+        }
+        
+        return getRuntime().newFixnum((int)(offset/1000));
     }
-    
+
     @JRubyMethod(name = {"isdst", "dst?"})
     public RubyBoolean isdst() {
         return getRuntime().newBoolean(cal.getTimeZone().inDaylightTime(cal.getTime()));
