@@ -757,6 +757,40 @@ test/externals/rubinius/spec/parser"/>
     </zip>
   </target>
 
+  <target name="dist-snapshot" depends="jar">
+    <exec executable="${basedir}/bin/jruby" dir="${basedir}">
+      <arg value="tool/snapshot.rb"/>
+      <arg value="${jruby.classes.dir}/jruby.properties"/>
+    </exec>
+    <jar destfile="${lib.dir}/jruby.jar" update="true">
+      <fileset dir="${jruby.classes.dir}">
+        <include name="jruby.properties"/>
+      </fileset>
+    </jar>
+    <property name="jar-up-to-date" value="true"/>
+    <antcall target="dist-bin">
+      <param file="${jruby.classes.dir}/jruby.properties"/>
+    </antcall>
+  </target>
+
+  <target name="dist-snapshot-install-stuff">
+    <unzip dest="${snapshot.install.dir}" src="jruby-bin-${version.jruby}.zip"/>
+    <chmod perm="755" file="${snapshot.install.dir}/jruby-${version.jruby}/bin/jruby"/>
+    <exec executable="${snapshot.install.dir}/jruby-${version.jruby}/bin/jruby"
+      dir="${snapshot.install.dir}/jruby-${version.jruby}">
+      <arg value="-v"/>
+      <arg value="-rfileutils"/>
+      <arg value="-e"/>
+      <arg value="include FileUtils; rm_f('${snapshot.install.dir}/current'); ln_s('${snapshot.install.dir}/jruby-${version.jruby}', '${snapshot.install.dir}/current'); puts 'Successfully installed snapshot'"/>
+    </exec>
+  </target>
+
+  <target name="dist-snapshot-install" depends="dist-snapshot" if="snapshot.install.dir">
+    <antcall target="dist-snapshot-install-stuff">
+      <param file="${jruby.classes.dir}/jruby.properties"/>
+    </antcall>
+  </target>
+
   <target name="dist" depends="dist-bin,dist-src"/>
 
   <target name="dist-clean">
