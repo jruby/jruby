@@ -1178,12 +1178,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void assignInstanceVariable(String name) {
             // FIXME: more efficient with a callback
             loadSelf();
+            invokeIRubyObject("getInstanceVariables", cg.sig(InstanceVariables.class));
             method.swap();
 
             method.ldc(name);
             method.swap();
 
-            invokeIRubyObject("getInstanceVariables", cg.sig(InstanceVariables.class));
             method.invokeinterface(cg.p(InstanceVariables.class), "fastSetInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
         }
 
