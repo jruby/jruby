@@ -1045,20 +1045,24 @@ public class RubyIO extends RubyObject {
         }
 
         for (int i = 0; i < args.length; i++) {
-            String line = null;
+            String line;
+            
             if (args[i].isNil()) {
                 line = "nil";
-            } else if(getRuntime().isInspecting(args[i])) {
+            } else if (getRuntime().isInspecting(args[i])) {
                 line = "[...]";
-            }
-            else if (args[i] instanceof RubyArray) {
+            } else if (args[i] instanceof RubyArray) {
                 inspectPuts((RubyArray) args[i]);
                 continue;
             } else {
                 line = args[i].toString();
             }
-            callMethod(getRuntime().getCurrentContext(), "write", getRuntime().newString(line+
-            		(line.endsWith("\n") ? "" : "\n")));
+            
+            callMethod(context, "write", getRuntime().newString(line));
+            
+            if (!line.endsWith("\n")) {
+                callMethod(context, "write", getRuntime().newString("\n"));
+            }
         }
         return getRuntime().getNil();
     }
@@ -1292,18 +1296,11 @@ public class RubyIO extends RubyObject {
      */
     @JRubyMethod(name = {"each_line", "each"}, optional = 1, frame = true)
     public RubyIO each_line(IRubyObject[] args, Block block) {
-        RubyString rs = null;
-        
-        if (args.length == 0) {
-            rs = getRuntime().getRecordSeparatorVar().get().asString();
-        } else {
-            Arity.checkArgumentCount(getRuntime(), args, 1, 1);
-            IRubyObject arg = args[0];
-            if (!arg.isNil()) rs = arg.convertToString();
-        }
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
         
         ThreadContext context = getRuntime().getCurrentContext(); 
         ByteList separator = getSeparatorForGets(args);
+        
         for (IRubyObject line = internalGets(separator); !line.isNil(); 
         	line = internalGets(separator)) {
             block.yield(context, line);

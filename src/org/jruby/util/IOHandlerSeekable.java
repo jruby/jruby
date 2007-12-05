@@ -123,9 +123,10 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
         if (c == -1) {
             return null;
         }
+        // unread back
+        buffer.position(buffer.position() - 1);
 
         ByteList buf = new ByteList(40);
-        buf.append(c);
         
         byte first = separator.bytes[separator.begin];
 
@@ -163,6 +164,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
                 if (c == -1) {
                     break LineLoop;
                 } else if (c != separator.bytes[separator.begin + i]) {
+                    buf.append(c);
                     continue LineLoop;
                 }
                 buf.append(c);
@@ -393,7 +395,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
             }
         }
         
-        if (buf.position() == 0) throw new java.io.EOFException();
+        if (buf.position() == 0 && number != 0) throw new java.io.EOFException();
         return new ByteList(buf.array(),0,buf.position(),false);
     }
 
