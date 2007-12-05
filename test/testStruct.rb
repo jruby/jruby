@@ -36,6 +36,12 @@ test_exception(ArgumentError) { s.new(1,2,3,4,5,6,7) }
 test_exception(ArgumentError) { Struct.new }
 test_exception(NameError) { Struct.new('foo', 'bar') }
 
+# name should be coerced to string with to_str
+foo = Object.new
+def foo.to_str() 'Foo' end
+s = Struct.new(foo, :x, :y)
+test_equal s, Struct::Foo
+
 # Anonymous Struct
 a = Struct.new(:x, :y)
 a1 = a.new(5, 7)

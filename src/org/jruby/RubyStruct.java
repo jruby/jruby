@@ -190,8 +190,9 @@ public class RubyStruct extends RubyObject {
         Arity.checkArgumentCount(runtime, args, 1, -1);
 
         if (args.length > 0) {
-            if (args[0] instanceof RubyString) {
-                name = ((RubyString)args[0]).getByteList().toString();
+            IRubyObject firstArgAsString = args[0].checkStringType();
+            if (!firstArgAsString.isNil()) {
+                name = ((RubyString)firstArgAsString).getByteList().toString();
             } else if (args[0].isNil()) {
                 nilName = true;
             }
