@@ -33,18 +33,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.UnsupportedEncodingException;
+import org.joni.Region;
 import org.jruby.anno.JRubyMethod;
-
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Block;
-
-import org.jruby.util.ByteList;
-
-import org.joni.Region;
 
 /**
  * @author olabini
@@ -86,12 +81,11 @@ public class RubyMatchData extends RubyObject {
     }
 
     public final boolean used() {
-        return (this.flags & MATCH_BUSY) == MATCH_BUSY;
+        return (this.flags & MATCH_BUSY) != 0;
     }
 
     private RubyArray match_array(int start) {
         RubyArray arr = getRuntime().newArray(regs.numRegs-start);
-        boolean taint = isTaint();
         for(int i=start;i<regs.numRegs;i++) {
             if(regs.beg[i] == -1) {
                 arr.append(getRuntime().getNil());

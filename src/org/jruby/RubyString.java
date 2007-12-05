@@ -1808,51 +1808,55 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "index", required = 1, optional = 1)
     public IRubyObject index(IRubyObject[] args) {
-        int pos;
-        boolean offset = false;
+        int pos = Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2 ? RubyNumeric.num2int(args[1]) : 0;  
+        IRubyObject sub = args[0];
         
-        if(Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
-            pos = RubyNumeric.fix2int(args[1]);
-        } else {
-            pos = 0;
-        }
-        if(pos < 0) {
-            pos += value.length();
-            if(pos < 0) {
-                if(args[0] instanceof RubyRegexp) {
+        if (pos < 0) {
+            pos += value.realSize;
+            if (pos < 0) {
+                if (sub instanceof RubyRegexp) { 
                     getRuntime().getCurrentContext().getPreviousFrame().setBackRef(getRuntime().getNil());
                 }
                 return getRuntime().getNil();
             }
         }
 
-        if (args[0] instanceof RubyRegexp) {
-            RubyRegexp sub = (RubyRegexp)args[0];
-            pos = sub.adjust_startpos(this, pos, false);
-            pos = sub.search(this, pos, false);
-        } else if (args[0] instanceof RubyFixnum) {
-            char c = (char) ((RubyFixnum) args[0]).getLongValue();
-            pos = value.indexOf(c, pos);
-        } else {
-            IRubyObject tmp = args[0].checkStringType();
+        if (sub instanceof RubyRegexp) {
+            RubyRegexp regSub = (RubyRegexp)sub;
+            
+            pos = regSub.adjustStartPos(this, pos, false);
+            pos = regSub.search(this, pos, false);
+        } else if (sub instanceof RubyFixnum) {
+            byte c = (byte)RubyNumeric.fix2int(sub);
+            byte[]bytes = value.bytes;
+            int end = value.begin + value.realSize;
 
-            if (tmp.isNil()) throw getRuntime().newTypeError("type mismatch: " + args[0].getMetaClass().getName() + " given");
-
-            ByteList sub = ((RubyString) tmp).value;
-
-            if (sub.length() > value.length()) return getRuntime().getNil();
-            // the empty string is always found at the beginning of a string (or at the end when rindex)
-            if (sub.realSize == 0) {
-                if(pos<=value.realSize) {
-                    return getRuntime().newFixnum(pos);
-                } else {
-                    return getRuntime().getNil();
-                }
+            pos += value.begin; 
+            for (;pos<end; pos++) { 
+                if (bytes[pos] == c) return RubyFixnum.newFixnum(getRuntime(), pos - value.begin);
             }
-            pos = value.indexOf(sub, pos);
+            return getRuntime().getNil();
+        } else if (sub instanceof RubyString) {
+            pos = strIndex((RubyString)sub, pos);
+        } else {
+            IRubyObject tmp = sub.checkStringType();
+            
+            if (tmp.isNil()) throw getRuntime().newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
+            pos = strIndex((RubyString)tmp, pos);
         }
-
-        return pos == -1 ? getRuntime().getNil() : getRuntime().newFixnum(pos);
+        
+        return pos == -1  ? getRuntime().getNil() : RubyFixnum.newFixnum(getRuntime(), pos);        
+    }
+    
+    private int strIndex(RubyString sub, int offset) {
+        if (offset < 0) {
+            offset += value.realSize;
+            if (offset < 0) return -1;
+        }
+        
+        if (value.realSize - offset < sub.value.realSize) return -1;
+        if (sub.value.realSize == 0) return offset;
+        return value.indexOf(sub.value, offset);
     }
 
     /** rb_str_rindex_m
@@ -1861,56 +1865,71 @@ public class RubyString extends RubyObject {
     @JRubyMethod(name = "rindex", required = 1, optional = 1)
     public IRubyObject rindex(IRubyObject[] args) {
         int pos;
-        boolean offset = false;
+        final IRubyObject sub;
         
-        if(Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
-            pos = RubyNumeric.fix2int(args[1]);
-            if(pos < 0) {
-                pos += value.length();
-                if(pos < 0) {
-                    if(args[0] instanceof RubyRegexp) {
+        if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {  
+            sub = args[0];
+            pos = RubyNumeric.num2int(args[1]);
+
+            if (pos < 0) {
+                pos += value.realSize;
+                if (pos < 0) {
+                    if (sub instanceof RubyRegexp) { 
                         getRuntime().getCurrentContext().getPreviousFrame().setBackRef(getRuntime().getNil());
                     }
                     return getRuntime().getNil();
                 }
-            }
-            if(pos > this.value.realSize) {
-                pos = this.value.realSize;
-            }
-
+            }            
+            if (pos > value.realSize) pos = value.realSize;
         } else {
-            pos = this.value.realSize;
+            sub = args[0];
+            pos = value.realSize;
         }
+        
+        if (sub instanceof RubyRegexp) {
+            RubyRegexp regSub = (RubyRegexp)sub;
+            if(regSub.length() > 0) {
+                pos = regSub.adjustStartPos(this, pos, true);
+                if (pos == value.realSize) pos--;
+                pos = regSub.search(this, pos, true);
+            }
+            if (pos >= 0) return RubyFixnum.newFixnum(getRuntime(), pos);
+        } else if (sub instanceof RubyString) {
+            pos = strRindex((RubyString)sub, pos);
+            if (pos >= 0) return RubyFixnum.newFixnum(getRuntime(), pos);
+        } else if (sub instanceof RubyFixnum) {
+            byte c = (byte)RubyNumeric.fix2int(sub);
 
-        if (args[0] instanceof RubyRegexp) {
-            RubyRegexp sub = (RubyRegexp)args[0];
-            if(sub.getByteListSource().realSize > 0) {
-                pos = sub.adjust_startpos(this, pos, true);
-                pos = sub.search(this, pos, true);
+            byte[]bytes = value.bytes;
+            int pbeg = value.begin;
+            int p = pbeg + pos;
+            
+            if (pos == value.realSize) {
+                if (pos == 0) return getRuntime().getNil();
+                --p;
             }
-            if(pos >= 0) {
-                return getRuntime().newFixnum(pos);
+            while (pbeg <= p) {
+                if (bytes[p] == c) return RubyFixnum.newFixnum(getRuntime(), p - value.begin);
+                p--;
             }
-        } else if (args[0] instanceof RubyFixnum) {
-            char c = (char) ((RubyFixnum) args[0]).getLongValue();
-            pos = value.lastIndexOf(c, pos);
+            return getRuntime().getNil();
         } else {
-            IRubyObject tmp = args[0].checkStringType();
-
-            if (tmp.isNil()) throw getRuntime().newTypeError("type mismatch: " + args[0].getMetaClass().getName() + " given");
-
-            ByteList sub = ((RubyString) tmp).value;
-
-            if (sub.length() > value.length()) return getRuntime().getNil();
-            // the empty string is always found at the beginning of a string (or at the end when rindex)
-            if (sub.realSize == 0) return getRuntime().newFixnum(pos);
-
-            pos = value.lastIndexOf(sub, pos);
+            throw getRuntime().newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
         }
-
-        return pos == -1 ? getRuntime().getNil() : getRuntime().newFixnum(pos);
+        
+        return getRuntime().getNil();
     }
 
+    private int strRindex(RubyString sub, int pos) {
+        int subLength = sub.value.realSize;
+        
+        /* substring longer than string */
+        if (value.realSize < subLength) return -1;
+        if (value.realSize - pos < subLength) pos = value.realSize - subLength;
+
+        return value.lastIndexOf(sub.value, pos);
+    }
+    
     /* rb_str_substr */
     public IRubyObject substr(int beg, int len) {
         int length = value.length();
