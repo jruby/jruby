@@ -307,6 +307,27 @@
       <jvmarg value="-ea"/>
     </java>
   </target>
+  
+  <target name="compile-stdlib">
+    <copy todir="${build.dir}/stdlib">
+        <fileset dir="${basedir}/lib/ruby/1.8">
+          <include name="**/*.rb"/>
+        </fileset>
+    </copy>
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/stdlib">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
+      <jvmarg value="-ea"/>
+      
+      <arg value="-I"/>
+      <arg value="bin/"/>
+      <arg value="-S"/>
+      <arg value="jrubyc"/>
+      <arg line="."/>
+    </java>
+  </target>
 
   <target name="spec" depends="jar,install-gems">
     <antcall target="run-spec">
@@ -355,6 +376,7 @@
     run-junit-interpreted-1.9,
     test-spec-compiled,
     test-spec-interpreted,
+    compile-stdlib,
     coverage-report">
   </target>
 
@@ -378,6 +400,7 @@
       run-junit-object-persistence,
       test-spec-compiled,
       test-spec-interpreted,
+      compile-stdlib,
       coverage-report
   "/>
   
