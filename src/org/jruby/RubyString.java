@@ -444,12 +444,11 @@ public class RubyString extends RubyObject {
     /** rb_to_id
      *
      */
-    public String asInternedString() {
-        // TODO: callers that don't need interned string should be modified
-        // to call toString, there are just a handful of places this happens.
-
-        // this must be interned here - call #toString for non-interned value
-        return toString().intern();
+    public String asJavaString() {
+        // TODO: This used to intern; but it didn't appear to change anything
+        // turning that off, and it's unclear if it was needed. Plus, we intern
+        // 
+        return toString();
     }
 
     /** Create a new String which uses the same Ruby runtime and the same

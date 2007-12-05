@@ -985,7 +985,7 @@ public class RubyModule extends RubyObject {
         }
 
         for (int i = 0; i < methods.length; i++) {
-            exportMethod(methods[i].asInternedString(), visibility);
+            exportMethod(methods[i].asJavaString(), visibility);
         }
     }
 
@@ -1052,7 +1052,7 @@ public class RubyModule extends RubyObject {
         }
 
         IRubyObject body;
-        String name = args[0].asInternedString();
+        String name = args[0].asJavaString();
         DynamicMethod newMethod = null;
         ThreadContext tc = getRuntime().getCurrentContext();
         Visibility visibility = tc.getCurrentVisibility();
@@ -1385,7 +1385,7 @@ public class RubyModule extends RubyObject {
         Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         boolean writeable = args.length > 1 ? args[1].isTrue() : false;
 
-        addAccessor(args[0].asInternedString(), true, writeable);
+        addAccessor(args[0].asJavaString(), true, writeable);
 
         return getRuntime().getNil();
     }
@@ -1396,7 +1396,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr_reader", required = 1, rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject attr_reader(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAccessor(args[i].asInternedString(), true, false);
+            addAccessor(args[i].asJavaString(), true, false);
         }
 
         return getRuntime().getNil();
@@ -1408,7 +1408,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr_writer", required = 1, rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject attr_writer(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAccessor(args[i].asInternedString(), false, true);
+            addAccessor(args[i].asJavaString(), false, true);
         }
 
         return getRuntime().getNil();
@@ -1420,7 +1420,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr_accessor", required = 1, rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject attr_accessor(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAccessor(args[i].asInternedString(), true, true);
+            addAccessor(args[i].asJavaString(), true, true);
         }
 
         return getRuntime().getNil();
@@ -1479,7 +1479,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "instance_method", required = 1)
     public IRubyObject instance_method(IRubyObject symbol) {
-        return newMethod(null, symbol.asInternedString(), false);
+        return newMethod(null, symbol.asJavaString(), false);
     }
 
     /** rb_class_protected_instance_methods
@@ -1607,7 +1607,7 @@ public class RubyModule extends RubyObject {
             setMethodVisibility(args, Visibility.PRIVATE);
 
             for (int i = 0; i < args.length; i++) {
-                String name = args[i].asInternedString();
+                String name = args[i].asJavaString();
                 DynamicMethod method = searchMethod(name);
                 assert !method.isUndefined() : "undefined method '" + name + "'";
                 getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), method, Visibility.PUBLIC));
@@ -1634,26 +1634,26 @@ public class RubyModule extends RubyObject {
     
     @JRubyMethod(name = "method_defined?", required = 1)
     public RubyBoolean method_defined_p(IRubyObject symbol) {
-        return isMethodBound(symbol.asInternedString(), true) ? getRuntime().getTrue() : getRuntime().getFalse();
+        return isMethodBound(symbol.asJavaString(), true) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     @JRubyMethod(name = "public_method_defined?", required = 1)
     public IRubyObject public_method_defined(IRubyObject symbol) {
-	    DynamicMethod method = searchMethod(symbol.asInternedString());
+	    DynamicMethod method = searchMethod(symbol.asJavaString());
 	    
 		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == Visibility.PUBLIC);
     }
 
     @JRubyMethod(name = "protected_method_defined?", required = 1)
     public IRubyObject protected_method_defined(IRubyObject symbol) {
-	    DynamicMethod method = searchMethod(symbol.asInternedString());
+	    DynamicMethod method = searchMethod(symbol.asJavaString());
 	    
 		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == Visibility.PROTECTED);
     }
 	
     @JRubyMethod(name = "private_method_defined?", required = 1)
     public IRubyObject private_method_defined(IRubyObject symbol) {
-	    DynamicMethod method = searchMethod(symbol.asInternedString());
+	    DynamicMethod method = searchMethod(symbol.asJavaString());
 	    
 		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == Visibility.PRIVATE);
     }
@@ -1672,7 +1672,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "alias_method", required = 2, visibility = Visibility.PRIVATE)
     public RubyModule alias_method(IRubyObject newId, IRubyObject oldId) {
-        defineAlias(newId.asInternedString(), oldId.asInternedString());
+        defineAlias(newId.asJavaString(), oldId.asJavaString());
         callMethod(getRuntime().getCurrentContext(), "method_added", newId);
         return this;
     }
@@ -1680,7 +1680,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "undef_method", required = 1, rest = true, visibility = Visibility.PRIVATE)
     public RubyModule undef_method(IRubyObject[] args) {
         for (int i=0; i<args.length; i++) {
-            undef(args[i].asInternedString());
+            undef(args[i].asJavaString());
         }
         return this;
     }
@@ -1693,7 +1693,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "remove_method", required = 1, rest = true, visibility = Visibility.PRIVATE)
     public RubyModule remove_method(IRubyObject[] args) {
         for(int i=0;i<args.length;i++) {
-            removeMethod(args[i].asInternedString());
+            removeMethod(args[i].asJavaString());
         }
         return this;
     }
@@ -1786,7 +1786,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "class_variable_defined?", required = 1)
     public IRubyObject class_variable_defined_p(IRubyObject var) {
-        String internedName = validateClassVariable(var.asInternedString());
+        String internedName = validateClassVariable(var.asJavaString());
         RubyModule module = this;
         do {
             if (module.fastHasClassVariable(internedName)) {
@@ -1802,7 +1802,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "class_variable_get", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject class_variable_get(IRubyObject var) {
-        return fastGetClassVar(validateClassVariable(var.asInternedString()));
+        return fastGetClassVar(validateClassVariable(var.asJavaString()).intern());
     }
 
     /** rb_mod_cvar_set
@@ -1810,7 +1810,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "class_variable_set", required = 2, visibility = Visibility.PRIVATE)
     public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
-        return fastSetClassVar(validateClassVariable(var.asInternedString()), value);
+        return fastSetClassVar(validateClassVariable(var.asJavaString()).intern(), value);
     }
 
     /** rb_mod_remove_cvar
@@ -1818,18 +1818,18 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "remove_class_variable", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject remove_class_variable(IRubyObject name) {
-        String internedName = validateClassVariable(name.asInternedString());
+        String javaName = validateClassVariable(name.asJavaString());
         IRubyObject value;
 
-        if ((value = deleteClassVariable(internedName)) != null) {
+        if ((value = deleteClassVariable(javaName)) != null) {
             return value;
         }
 
-        if (fastIsClassVarDefined(internedName)) {
-            throw cannotRemoveError(internedName);
+        if (fastIsClassVarDefined(javaName)) {
+            throw cannotRemoveError(javaName);
         }
 
-        throw getRuntime().newNameError("class variable " + internedName + " not defined for " + getName(), internedName);
+        throw getRuntime().newNameError("class variable " + javaName + " not defined for " + getName(), javaName);
     }
 
     /** rb_mod_class_variables
@@ -1866,7 +1866,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "const_defined?", required = 1)
     public RubyBoolean const_defined_p(IRubyObject symbol) {
         // Note: includes part of fix for JRUBY-1339
-        return getRuntime().newBoolean(fastIsConstantDefined(validateConstant(symbol.asInternedString())));
+        return getRuntime().newBoolean(fastIsConstantDefined(validateConstant(symbol.asJavaString()).intern()));
     }
 
     /** rb_mod_const_get
@@ -1874,7 +1874,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_get", required = 1)
     public IRubyObject const_get(IRubyObject symbol) {
-        return fastGetConstant(validateConstant(symbol.asInternedString()));
+        return fastGetConstant(validateConstant(symbol.asJavaString()).intern());
     }
 
     /** rb_mod_const_set
@@ -1882,12 +1882,12 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
-        return fastSetConstant(validateConstant(symbol.asInternedString()), value);
+        return fastSetConstant(validateConstant(symbol.asJavaString()).intern(), value);
     }
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject remove_const(IRubyObject name) {
-        String id = validateConstant(name.asInternedString());
+        String id = validateConstant(name.asJavaString());
         IRubyObject value;
         if ((value = deleteConstant(id)) != null) {
             if (value != getRuntime().getUndef()) {
@@ -1925,10 +1925,10 @@ public class RubyModule extends RubyObject {
     public IRubyObject const_missing(IRubyObject name, Block block) {
         /* Uninitialized constant */
         if (this != getRuntime().getObject()) {
-            throw getRuntime().newNameError("uninitialized constant " + getName() + "::" + name.asInternedString(), "" + getName() + "::" + name.asInternedString());
+            throw getRuntime().newNameError("uninitialized constant " + getName() + "::" + name.asJavaString(), "" + getName() + "::" + name.asJavaString());
         }
 
-        throw getRuntime().newNameError("uninitialized constant " + name.asInternedString(), name.asInternedString());
+        throw getRuntime().newNameError("uninitialized constant " + name.asJavaString(), name.asJavaString());
     }
 
     /** rb_mod_constants
@@ -1994,6 +1994,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fastSetClassVar(final String internedName, final IRubyObject value) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
         RubyModule module = this;
         do {
             if (module.fastHasClassVariable(internedName)) {
@@ -2025,6 +2026,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fastGetClassVar(String internedName) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
         assert IdUtil.isClassVariable(internedName);
         IRubyObject value;
         RubyModule module = this;
@@ -2054,6 +2056,7 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean fastIsClassVarDefined(String internedName) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
         RubyModule module = this;
         do {
             if (module.fastHasClassVariable(internedName)) return true;
@@ -2068,7 +2071,7 @@ public class RubyModule extends RubyObject {
      * FIXME: any good reason to have two identical methods? (same as remove_class_variable)
      */
     public IRubyObject removeCvar(IRubyObject name) { // Wrong Parameter ?
-        String internedName = validateClassVariable(name.asInternedString());
+        String internedName = validateClassVariable(name.asJavaString());
         IRubyObject value;
 
         if ((value = deleteClassVariable(internedName)) != null) {
@@ -2097,6 +2100,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fastGetConstantAt(String internedName) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
         IRubyObject value;
         if ((value = fastFetchConstant(internedName)) != getRuntime().getUndef()) {
             return value;
@@ -2148,6 +2152,7 @@ public class RubyModule extends RubyObject {
     }
     
     public IRubyObject fastGetConstant(String internedName) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
         IRubyObject undef = getRuntime().getUndef();
         boolean retryForModule = false;
@@ -2189,6 +2194,7 @@ public class RubyModule extends RubyObject {
     }
     
     public IRubyObject fastGetConstantFrom(String internedName) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
         RubyClass objectClass = getRuntime().getObject();
         IRubyObject undef = getRuntime().getUndef();
@@ -2253,6 +2259,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fastSetConstant(String internedName, IRubyObject value) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
         IRubyObject oldValue;
         if ((oldValue = fastFetchConstant(internedName)) != null) {
             if (oldValue == getRuntime().getUndef()) {
@@ -2320,6 +2327,7 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean fastIsConstantDefined(String internedName) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
         boolean isObject = this == getRuntime().getObject();
         Object undef = getRuntime().getUndef();

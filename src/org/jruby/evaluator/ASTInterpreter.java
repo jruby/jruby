@@ -1771,11 +1771,11 @@ public class ASTInterpreter {
                         IRubyObject reason = jumpError.reason();
                         
                         // admittedly inefficient
-                        if (reason.asInternedString().equals("break")) {
+                        if (reason.asJavaString().equals("break")) {
                             return jumpError.exit_value();
-                        } else if (reason.asInternedString().equals("next")) {
+                        } else if (reason.asJavaString().equals("next")) {
                             break loop;
-                        } else if (reason.asInternedString().equals("redo")) {
+                        } else if (reason.asJavaString().equals("redo")) {
                             continue;
                         }
                     }

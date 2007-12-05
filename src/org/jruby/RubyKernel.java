@@ -107,7 +107,7 @@ public class RubyKernel {
     @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject autoload_p(final IRubyObject recv, IRubyObject symbol) {
         RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : recv.getRuntime().getObject();
-        String name = module.getName() + "::" + symbol.asInternedString();
+        String name = module.getName() + "::" + symbol.asJavaString();
         
         IAutoloadMethod autoloadMethod = recv.getRuntime().getLoadService().autoloadFor(name);
         if (autoloadMethod == null) return recv.getRuntime().getNil();
@@ -119,7 +119,7 @@ public class RubyKernel {
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
         Ruby runtime = recv.getRuntime(); 
         final LoadService loadService = runtime.getLoadService();
-        final String baseName = symbol.asInternedString(); // interned, OK for "fast" methods
+        final String baseName = symbol.asJavaString().intern(); // interned, OK for "fast" methods
         final RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : runtime.getObject();
         String nm = module.getName() + "::" + baseName;
         
@@ -154,7 +154,7 @@ public class RubyKernel {
 
         if (args.length == 0 || !(args[0] instanceof RubySymbol)) throw runtime.newArgumentError("no id given");
         
-        String name = args[0].asInternedString();
+        String name = args[0].asJavaString();
         ThreadContext context = runtime.getCurrentContext();
         Visibility lastVis = context.getLastVisibility();
         CallType lastCallType = context.getLastCallType();
@@ -764,7 +764,7 @@ public class RubyKernel {
     @JRubyMethod(name = "catch", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject rbCatch(IRubyObject recv, IRubyObject tag, Block block) {
         ThreadContext context = recv.getRuntime().getCurrentContext();
-        CatchTarget target = new CatchTarget(tag.asInternedString());
+        CatchTarget target = new CatchTarget(tag.asJavaString());
         try {
             context.pushCatch(target);
             return block.yield(context, tag);
@@ -787,7 +787,7 @@ public class RubyKernel {
     public static IRubyObject rbThrow(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
 
-        String tag = args[0].asInternedString();
+        String tag = args[0].asJavaString();
         ThreadContext context = runtime.getCurrentContext();
         CatchTarget[] catches = context.getActiveCatches();
 

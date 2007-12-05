@@ -1018,12 +1018,12 @@ public class JavaClass extends JavaObject {
     }
 
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
-        return forName(recv.getRuntime(), name.asInternedString());
+        return forName(recv.getRuntime(), name.asJavaString());
     }
     
     private static final Callback __jsend_method = new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                String name = args[0].asInternedString();
+                String name = args[0].asJavaString();
                 
                 DynamicMethod method = self.getMetaClass().searchMethod(name);
                 int v = method.getArity().getValue();
@@ -1149,13 +1149,13 @@ public class JavaClass extends JavaObject {
     }
 
 	public JavaMethod java_method(IRubyObject[] args) throws ClassNotFoundException {
-        String methodName = args[0].asInternedString();
+        String methodName = args[0].asJavaString();
         Class[] argumentTypes = buildArgumentTypes(args);
         return JavaMethod.create(getRuntime(), javaClass(), methodName, argumentTypes);
     }
 
     public JavaMethod declared_method(IRubyObject[] args) throws ClassNotFoundException {
-        String methodName = args[0].asInternedString();
+        String methodName = args[0].asJavaString();
         Class[] argumentTypes = buildArgumentTypes(args);
         return JavaMethod.createDeclared(getRuntime(), javaClass(), methodName, argumentTypes);
     }
@@ -1245,7 +1245,7 @@ public class JavaClass extends JavaObject {
     private Class[] buildClassArgs(IRubyObject[] args) {
         Class[] parameterTypes = new Class[args.length];
         for (int i = 0; i < args.length; i++) {
-            String name = args[i].asInternedString();
+            String name = args[i].asJavaString();
             parameterTypes[i] = getRuntime().getJavaSupport().loadJavaClass(name);
         }
         return parameterTypes;
@@ -1301,7 +1301,7 @@ public class JavaClass extends JavaObject {
 	}
 
 	public JavaField field(IRubyObject name) {
-		String stringName = name.asInternedString();
+		String stringName = name.asJavaString();
         try {
             Field field = javaClass().getField(stringName);
 			return new JavaField(getRuntime(),field);
@@ -1311,7 +1311,7 @@ public class JavaClass extends JavaObject {
     }
 
 	public JavaField declared_field(IRubyObject name) {
-		String stringName = name.asInternedString();
+		String stringName = name.asJavaString();
         try {
             Field field = javaClass().getDeclaredField(stringName);
 			return new JavaField(getRuntime(),field);

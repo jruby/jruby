@@ -156,7 +156,7 @@ public interface IRubyObject {
      *
      * @return String the symbol name
      */
-    String asInternedString();
+    String asJavaString();
     
     /** rb_obj_as_string
      * @return

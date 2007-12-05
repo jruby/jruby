@@ -481,9 +481,9 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     /** rb_to_id
      *
      */
-    public String asInternedString() {
+    public String asJavaString() {
         IRubyObject asString = checkStringType();
-        if(!asString.isNil()) return ((RubyString)asString).asInternedString();
+        if(!asString.isNil()) return ((RubyString)asString).asJavaString();
         throw getRuntime().newTypeError(inspect().toString() + " is not a symbol");
     }
 
@@ -715,7 +715,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     public RubyBoolean respond_to_p(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 1, 2);
 
-        String name = args[0].asInternedString();
+        String name = args[0].asJavaString();
         boolean includePrivate = args.length > 1 ? args[1].isTrue() : false;
 
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate));
@@ -1043,7 +1043,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
     @JRubyMethod(name = "method", required = 1)
     public IRubyObject method(IRubyObject symbol) {
-        return getMetaClass().newMethod(this, symbol.asInternedString(), true);
+        return getMetaClass().newMethod(this, symbol.asJavaString(), true);
     }
 
     public IRubyObject anyToString() {
@@ -1140,7 +1140,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         if (args.length < 1) {
             throw getRuntime().newArgumentError("no method name given");
         }
-        String name = args[0].asInternedString();
+        String name = args[0].asJavaString();
 
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
@@ -1213,7 +1213,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     
     @JRubyMethod(name = "instance_variable_defined?", required = 1)
     public IRubyObject instance_variable_defined_p(IRubyObject name) {
-        if (variableTableFastContains(validateInstanceVariable(name.asInternedString()))) {
+        if (variableTableFastContains(validateInstanceVariable(name.asJavaString()).intern())) {
             return getRuntime().getTrue();
         }
         return getRuntime().getFalse();
@@ -1222,7 +1222,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @JRubyMethod(name = "instance_variable_get", required = 1)
     public IRubyObject instance_variable_get(IRubyObject name) {
         IRubyObject value;
-        if ((value = variableTableFastFetch(validateInstanceVariable(name.asInternedString()))) != null) {
+        if ((value = variableTableFastFetch(validateInstanceVariable(name.asJavaString()).intern())) != null) {
             return value;
         }
         return getRuntime().getNil();
@@ -1231,17 +1231,17 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @JRubyMethod(name = "instance_variable_set", required = 2)
     public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
         ensureInstanceVariablesSettable();
-        return variableTableFastStore(validateInstanceVariable(name.asInternedString()), value);
+        return variableTableFastStore(validateInstanceVariable(name.asJavaString()).intern(), value);
     }
 
     @JRubyMethod(name = "remove_instance_variable", required = 1, frame = true)
     public IRubyObject remove_instance_variable(IRubyObject name, Block block) {
         ensureInstanceVariablesSettable();
         IRubyObject value;
-        if ((value = variableTableRemove(validateInstanceVariable(name.asInternedString()))) != null) {
+        if ((value = variableTableRemove(validateInstanceVariable(name.asJavaString()).intern())) != null) {
             return value;
         }
-        throw getRuntime().newNameError("instance variable " + name.asInternedString() + " not defined", name.asInternedString());
+        throw getRuntime().newNameError("instance variable " + name.asJavaString() + " not defined", name.asJavaString());
     }
     
     @JRubyMethod(name = "instance_variables")
@@ -1501,6 +1501,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         final VariableTableEntry next;
         
         VariableTableEntry(int hash, String name, IRubyObject value, VariableTableEntry next) {
+            assert name == name.intern() : name + " is not interned";
             this.hash = hash;
             this.name = name;
             this.value = value;
@@ -1526,6 +1527,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     }
 
     protected boolean variableTableFastContains(String internedName) {
+        assert internedName == internedName.intern() : internedName + " not interned";
         VariableTableEntry[] table;
         if ((table = variableTable) != null) {
             for (VariableTableEntry e = table[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
@@ -1553,6 +1555,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     }
 
     protected IRubyObject variableTableFastFetch(String internedName) {
+        assert internedName == internedName.intern() : internedName + " not interned";
         VariableTableEntry[] table;
         IRubyObject readValue;
         if ((table = variableTable) != null) {

@@ -486,7 +486,7 @@ public class RuntimeHelpers {
 
             IRubyObject reason = jumpError.reason();
 
-            return reason.asInternedString();
+            return reason.asJavaString();
         }
 
         throw re;

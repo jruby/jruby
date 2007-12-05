@@ -25,7 +25,7 @@ public class RubyUndef implements IRubyObject {
         return null;
     }
 
-    public String asInternedString() {
+    public String asJavaString() {
         return null;
     }
 

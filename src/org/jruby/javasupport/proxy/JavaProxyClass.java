@@ -637,7 +637,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                                     "invalid method name defined for proxy (or ancestor): " +
                                     ancestor + ": " + methodName);
                         }
-                        names.add(methodName.asInternedString());
+                        names.add(methodName.asJavaString());
                     }
                 }
             } else if (!EXCLUDE_MODULES.contains(ancestor.getName())) {
