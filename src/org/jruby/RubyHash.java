@@ -206,7 +206,7 @@ public class RubyHash extends RubyObject implements Map {
     // TODO should this be deprecated ? (to be efficient, internals should deal with RubyHash directly)
     public RubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
         super(runtime, runtime.getHash());
-        this.ifNone = runtime.getNil();
+        this.ifNone = defaultValue;
         alloc();
 
         for (Iterator iter = valueMap.entrySet().iterator();iter.hasNext();) {
