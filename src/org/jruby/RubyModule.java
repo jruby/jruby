@@ -175,9 +175,6 @@ public class RubyModule extends RubyObject {
     protected transient int constantTableThreshold = 
         (int)(CONSTANT_TABLE_DEFAULT_CAPACITY * CONSTANT_TABLE_LOAD_FACTOR);
 
-    // All methods and all CACHED methods for the module.  The cached methods will be removed
-    // when appropriate (e.g. when method is removed by source class or a new method is added
-    // with same name by one of its subclasses).
     private final Map methods = new ConcurrentHashMap(12, 2.0f, 1);
     
     // ClassProviders return Java class/module (in #defineOrGetClassUnder and
@@ -677,10 +674,6 @@ public class RubyModule extends RubyObject {
             getRuntime().getMethodCache().removeMethod(name);
             putMethod(name, method);
         }
-    }
-
-    public void removeCachedMethod(String name) {
-        getMethods().remove(name);
     }
 
     public void removeMethod(String name) {
