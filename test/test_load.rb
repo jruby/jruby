@@ -35,4 +35,10 @@ class TestLoad < Test::Unit::TestCase
     assert_raises(LoadError) { require 'NonExistantRequriedFile'}
     assert_raises(LoadError) { require 'NonExistantRequriedFile'}
   end
+
+  def test_require_jar_should_make_its_scripts_accessible
+    require 'test/jar_with_ruby_files'
+    require 'hello_from_jar'
+    assert "hi", $hello
+  end
 end
