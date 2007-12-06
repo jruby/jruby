@@ -1,5 +1,6 @@
 package org.jruby.util;
 
+import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Region;
 import org.joni.Regex;
@@ -155,10 +156,9 @@ public class StringScanner {
 	
 	public int matches(Regex pattern) {
 		if (!isEndOfString()) {
-            if(regs == null) {
-                regs = new Region();
-            }
-            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) == 0) {
+		    Matcher matcher = pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize);
+            if(matcher.search(string.begin+pos,string.begin+string.realSize, Option.NONE) == 0) {
+                regs = matcher.getEagerRegion();
                 matchStart = pos;
                 matchEnd = regs.end[0]+pos;
             } else {
@@ -171,10 +171,10 @@ public class StringScanner {
 	
 	public ByteList scanUntil(Regex pattern) {
 		if (!isEndOfString()) {
-            if(regs == null) {
-                regs = new Region();
-            }
-            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) >= 0) {
+		    Matcher matcher = pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize);
+		    
+            if(matcher.search(string.begin+pos,string.begin+string.realSize, Option.NONE) >= 0) {
+                regs = matcher.getEagerRegion();
                 lastPos = pos;
                 matchStart = regs.beg[0]+pos;
                 matchEnd = regs.end[0]+pos;
@@ -191,10 +191,9 @@ public class StringScanner {
 	
 	public ByteList scan(Regex pattern) {
 		if (!isEndOfString()) {
-            if(regs == null) {
-                regs = new Region();
-            }
-            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) == 0) {
+		    Matcher matcher = pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize);
+            if(matcher.search(string.begin+pos,string.begin+string.realSize, Option.NONE) == 0) {
+                regs = matcher.getEagerRegion();
                 lastPos = pos;
                 matchStart = pos;
                 pos = regs.end[0]+lastPos;
@@ -211,10 +210,9 @@ public class StringScanner {
 	
 	public ByteList check(Regex pattern) {
 		if (!isEndOfString()) {
-            if(regs == null) {
-                regs = new Region();
-            }
-            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) == 0) {
+		    Matcher matcher = pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize);
+            if(matcher.search(string.begin+pos,string.begin+string.realSize, Option.NONE) == 0) {
+                regs = matcher.getEagerRegion();
                 matchStart = pos;
                 matchEnd = regs.end[0]+pos;
                 return string.makeShared(regs.beg[0]+pos,regs.end[0]-regs.beg[0]);
@@ -228,10 +226,9 @@ public class StringScanner {
 	
 	public ByteList checkUntil(Regex pattern) {
 		if (!isEndOfString()) {
-            if(regs == null) {
-                regs = new Region();
-            }
-            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) >= 0) {
+		    Matcher matcher = pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize);
+            if(matcher.search(string.begin+pos,string.begin+string.realSize, Option.NONE) >= 0) {
+                regs = matcher.getEagerRegion();
                 matchStart = regs.beg[0]+pos;
                 matchEnd = regs.end[0]+pos;
                 return string.makeShared(pos,matchEnd-pos);
@@ -245,10 +242,9 @@ public class StringScanner {
 	
 	public int skip(Regex pattern) {
 		if (!isEndOfString()) {
-            if(regs == null) {
-                regs = new Region();
-            }
-            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) == 0) {
+		    Matcher matcher = pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize);
+            if(matcher.search(string.begin+pos,string.begin+string.realSize, Option.NONE) == 0) {
+                regs = matcher.getEagerRegion();
                 lastPos = pos;
                 matchStart = pos;
                 pos = regs.end[0]+lastPos;
@@ -264,10 +260,9 @@ public class StringScanner {
 	
 	public int skipUntil(Regex pattern) {
 		if (!isEndOfString()) {
-            if(regs == null) {
-                regs = new Region();
-            }
-            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) >= 0) {
+            Matcher matcher = pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize);
+            if(matcher.search(string.begin+pos,string.begin+string.realSize, Option.NONE) >= 0) {
+                regs = matcher.getEagerRegion();
                 lastPos = pos;
                 pos = regs.end[0]+lastPos;
                 matchStart = regs.beg[0]+lastPos;
@@ -283,10 +278,9 @@ public class StringScanner {
 	
 	public int exists(Regex pattern) {
 		if (!isEndOfString()) {
-            if(regs == null) {
-                regs = new Region();
-            }
-            if(pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize).search(string.begin+pos,string.begin+string.realSize,regs, Option.NONE) >= 0) {
+		    Matcher matcher = pattern.matcher(string.bytes,string.begin+pos,string.begin+string.realSize);
+            if(matcher.search(string.begin+pos,string.begin+string.realSize, Option.NONE) >= 0) {
+                regs = matcher.getEagerRegion();
                 matchStart = regs.beg[0]+pos;
                 matchEnd = regs.end[0]+pos;
                 return matchEnd-pos;

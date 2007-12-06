@@ -456,10 +456,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         
         Matcher matcher = re.matcher(value.bytes, value.begin, value.begin + value.realSize);
         
-        Region region = new Region();
         int result = matcher.search(value.begin + pos, 
                                     value.begin + pos + range,
-                                    region, Option.NONE);
+                                    Option.NONE);
+        
+        Region region = matcher.getEagerRegion();
         
         if(result == -2) {
             rb_reg_raise(value.bytes, value.begin, value.realSize, "Stack overflow in regexp matcher", re.getOptions());        
