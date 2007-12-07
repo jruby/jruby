@@ -464,6 +464,7 @@ e.printStackTrace();
             if (entry.startsWith("jar:") || (entry.startsWith("file:") && entry.indexOf("!/") != -1)) {
                 JarFile current = (JarFile)jarFiles.get(entry);
                 String after = entry.startsWith("file:") ? entry.substring(entry.indexOf("!/") + 2) + "/" : "";
+                String before = entry.startsWith("file:") ? entry.substring(0, entry.indexOf("!/")) : entry;
 
                 if(null == current) {
                     try {
@@ -478,11 +479,16 @@ e.printStackTrace();
                         throw runtime.newIOErrorFromException(e);
                     }
                 }
-
-                if (current.getJarEntry(after + name) != null) {
+                String canonicalEntry = after+name;
+                if(after.length()>0) {
+                    try {
+                        canonicalEntry = new File(after+name).getCanonicalPath().substring(new File(".").getCanonicalPath().length()+1);
+                    } catch(Exception e) {}
+                }
+                if (current.getJarEntry(canonicalEntry) != null) {
                     try {
                         if(entry.startsWith("file:")) {
-                            return new LoadServiceResource(new URL("jar:" + entry + "/" + name), entry + "/" + name);
+                            return new LoadServiceResource(new URL("jar:" + before + "!/" + canonicalEntry), entry + "/" + name);
                         } else {
                             return new LoadServiceResource(new URL("jar:file:" + entry.substring(4) + "!/" + name), entry + name);
                         }
