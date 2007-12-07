@@ -78,8 +78,9 @@ public class RubyTCPSocket extends RubyIPSocket {
             port = RubyNumeric.str2inum(getRuntime(), (RubyString)port, 0, true);
         }
         int porti = RubyNumeric.fix2int(port);
+        String hostname = arg1.isNil() ? "localhost" : arg1.convertToString().toString();
         try {
-            InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(arg1.convertToString().toString()),porti);
+            InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(hostname),porti);
             SocketChannel channel = SocketChannel.open(addr);
             channel.finishConnect();
             setChannel(channel);

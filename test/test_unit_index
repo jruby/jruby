@@ -99,6 +99,7 @@ test_process
 test_parsing
 test_random
 test_rbconfig
+test_socket
 test_string_java_bytes
 test_string_printf
 test_symbol
