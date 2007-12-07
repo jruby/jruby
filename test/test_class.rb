@@ -30,7 +30,7 @@ class TestClass < Test::Unit::TestCase
     assert_equal(1 , attrTest.attribute1)
   end
 
-  def test_attr_methods_have_zero_arity
+  def test_attr_methods_have_optional_arity
     assert_nothing_raised do
       Module.new do
         attr_reader
