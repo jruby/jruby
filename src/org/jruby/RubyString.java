@@ -39,11 +39,6 @@
 package org.jruby;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CodingErrorAction;
 import java.util.Locale;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
@@ -62,7 +57,6 @@ import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
 
 import org.joni.encoding.Encoding;
-import org.joni.Regex;
 import org.joni.Region;
 
 /**
@@ -1036,8 +1030,6 @@ public class RubyString extends RubyObject {
     }
 
     public static class JavaCrypt {
-        private static java.util.Random r_gen = new java.util.Random();
-
         private static final int ITERATIONS = 16;
 
         private static final int con_salt[] = {
@@ -1621,7 +1613,6 @@ public class RubyString extends RubyObject {
         Region regs;
         boolean iter = false;
         boolean tainted = false;
-        int plen;
 
         if(args.length == 1 && block.isGiven()) {
             iter = true;
@@ -2552,25 +2543,6 @@ public class RubyString extends RubyObject {
         return getRuntime().getNil();
     }
     
-    private final RubyString substr(Ruby runtime, String str, int beg, int len, boolean utf8) {
-        if (utf8) {
-            if (len == 0) return newEmptyString(runtime, getMetaClass());
-            return new RubyString(runtime, getMetaClass(), new ByteList(toUTF(str.substring(beg, beg + len)), false));
-        } else {
-            return makeShared(beg, len);
-        }
-    }
-    
-    private final String toString(boolean utf8) {
-        String str = toString();
-        if (utf8) {
-            try {
-                str = new String(ByteList.plain(str), "UTF8");
-            } catch(Exception e){}
-        }   
-        return str;
-    }
-        
     private static final ByteList SPACE_BYTELIST = new ByteList(ByteList.plain(" "));
 
     
