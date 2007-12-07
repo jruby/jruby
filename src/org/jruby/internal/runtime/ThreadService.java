@@ -133,11 +133,13 @@ public class ThreadService {
     	return rubyThreadGroup;
     }
 
-    public synchronized void registerNewThread(RubyThread thread) {
-        localContext.set(new WeakReference(ThreadContext.newContext(runtime)));
+    public synchronized ThreadContext registerNewThread(RubyThread thread) {
+        ThreadContext context = ThreadContext.newContext(runtime);
+        localContext.set(new WeakReference(context));
         getCurrentContext().setThread(thread);
         // This requires register to be called from within the registree thread
         rubyThreadList.add(Thread.currentThread());
+        return context;
     }
     
     public synchronized void unregisterThread(RubyThread thread) {

@@ -155,10 +155,11 @@ public class RubyThread extends RubyObject {
         final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv);
         
         rubyThread.threadImpl = new NativeThread(rubyThread, t);
-        runtime.getThreadService().registerNewThread(rubyThread);
+        ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
         
-        runtime.getCurrentContext().preAdoptThread();
+        context.preAdoptThread();
 
+        // FIXME: this block doesn't make much sense and should be removed?
         // adoptThread does not call init, since init expects a block to be passed in
         if (USE_POOLING) {
             rubyThread.threadImpl = new FutureThread(rubyThread, new RubyRunnable(rubyThread, IRubyObject.NULL_ARRAY, block));

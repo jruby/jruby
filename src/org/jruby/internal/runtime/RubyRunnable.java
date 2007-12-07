@@ -69,9 +69,7 @@ public class RubyRunnable implements Runnable {
             Ruby.setCurrentInstance(runtime);
         }
         javaThread = Thread.currentThread();
-        runtime.getThreadService().registerNewThread(rubyThread);
-        ThreadContext context = runtime.getCurrentContext();
-        
+        ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
         context.preRunThread(currentFrame);
         
         // Call the thread's code

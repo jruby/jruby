@@ -63,11 +63,9 @@ public class RubyNativeThread extends Thread {
     }
     
     public void run() {
-        runtime.getThreadService().registerNewThread(rubyThread);
-        ThreadContext context = runtime.getCurrentContext();
-        
+        ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
         context.preRunThread(currentFrame);
-        
+
         // Call the thread's code
         try {
             IRubyObject result = proc.call(arguments);
