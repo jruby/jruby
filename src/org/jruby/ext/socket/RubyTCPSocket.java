@@ -82,7 +82,7 @@ public class RubyTCPSocket extends RubyIPSocket {
     public IRubyObject initialize(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 2, 4);
         
-        String remoteHost = args[0].convertToString().toString();
+        String remoteHost = args[0].isNil()? "localhost" : args[0].convertToString().toString();
         int remotePort = getPortFrom(args[1]);
         String localHost = args.length >= 3 ? args[2].convertToString().toString() : null;
         int localPort = args.length == 4 ? getPortFrom(args[3]) : 0;
