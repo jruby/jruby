@@ -453,11 +453,15 @@ e.printStackTrace();
             // TODO this is really ineffient, ant potentially a problem everytime anyone require's something.
             // we should try to make LoadPath a special array object.
             String entry = ((IRubyObject)pathIter.next()).toString();
-            if (entry.startsWith("jar:")) {
+            if (entry.startsWith("jar:") || (entry.startsWith("file:") && entry.indexOf("!/") != -1)) {
                 JarFile current = (JarFile)jarFiles.get(entry);
                 if(null == current) {
                     try {
-                        current = new JarFile(entry.substring(4));
+                        if(entry.startsWith("jar:")) {
+                            current = new JarFile(entry.substring(4));
+                        } else {
+                            current = new JarFile(entry);
+                        }
                         jarFiles.put(entry,current);
                     } catch (FileNotFoundException ignored) {
                     } catch (IOException e) {
@@ -467,7 +471,11 @@ e.printStackTrace();
 
                 if (current.getJarEntry(name) != null) {
                     try {
-                        return new LoadServiceResource(new URL("jar:file:" + entry.substring(4) + "!/" + name), entry + name);
+                        if(entry.startsWith("file:")) {
+                            return new LoadServiceResource(new URL("jar:" + entry + "/" + name), entry + name);
+                        } else {
+                            return new LoadServiceResource(new URL("jar:file:" + entry.substring(4) + "!/" + name), entry + name);
+                        }
                     } catch (MalformedURLException e) {
                         throw runtime.newIOErrorFromException(e);
                     }
