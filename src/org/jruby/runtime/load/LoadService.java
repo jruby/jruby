@@ -430,6 +430,14 @@ e.printStackTrace();
             } catch (MalformedURLException e) {
                 throw runtime.newIOErrorFromException(e);
             }
+        } else if(name.startsWith("file:") && name.indexOf("!/") != -1) {
+            try {
+                JarFile file = new JarFile(name.substring(5, name.indexOf("!/")));
+                String filename = name.substring(name.indexOf("!/") + 2);
+                if(file.getJarEntry(filename) != null) {
+                    return new LoadServiceResource(new URL("jar:" + name), name);
+                }
+            } catch(Exception e) {}
         }
 
         if (checkCWD) {
@@ -455,12 +463,14 @@ e.printStackTrace();
             String entry = ((IRubyObject)pathIter.next()).toString();
             if (entry.startsWith("jar:") || (entry.startsWith("file:") && entry.indexOf("!/") != -1)) {
                 JarFile current = (JarFile)jarFiles.get(entry);
+                String after = entry.startsWith("file:") ? entry.substring(entry.indexOf("!/") + 2) + "/" : "";
+
                 if(null == current) {
                     try {
                         if(entry.startsWith("jar:")) {
                             current = new JarFile(entry.substring(4));
                         } else {
-                            current = new JarFile(entry);
+                            current = new JarFile(entry.substring(5,entry.indexOf("!/")));
                         }
                         jarFiles.put(entry,current);
                     } catch (FileNotFoundException ignored) {
@@ -469,10 +479,10 @@ e.printStackTrace();
                     }
                 }
 
-                if (current.getJarEntry(name) != null) {
+                if (current.getJarEntry(after + name) != null) {
                     try {
                         if(entry.startsWith("file:")) {
-                            return new LoadServiceResource(new URL("jar:" + entry + "/" + name), entry + name);
+                            return new LoadServiceResource(new URL("jar:" + entry + "/" + name), entry + "/" + name);
                         } else {
                             return new LoadServiceResource(new URL("jar:file:" + entry.substring(4) + "!/" + name), entry + name);
                         }
@@ -481,7 +491,6 @@ e.printStackTrace();
                     }
                 }
             } 
-
             try {
                 JRubyFile current = JRubyFile.create(JRubyFile.create(runtime.getCurrentDirectory(),entry).getAbsolutePath(), name);
                 if (current.isFile()) {
