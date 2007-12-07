@@ -201,7 +201,7 @@ public class RubyStruct extends RubyObject {
         RubyArray member = runtime.newArray();
 
         for (int i = (name == null && !nilName) ? 0 : 1; i < args.length; i++) {
-            member.append(runtime.fastNewSymbol(args[i].asJavaString()));
+            member.append(runtime.newSymbol(args[i].asJavaString()));
         }
 
         RubyClass newStruct;

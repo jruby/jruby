@@ -2102,6 +2102,8 @@ public final class Ruby {
      * @return the symbol for name
      */
     public RubySymbol fastNewSymbol(String internedName) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
+
         return symbolTable.fastGetSymbol(internedName);
     }
 

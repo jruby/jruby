@@ -922,6 +922,8 @@ public class RubyModule extends RubyObject {
 
     // FIXME: create AttrReaderMethod, AttrWriterMethod, for faster attr access
     private void addAccessor(String internedName, boolean readable, boolean writeable) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
+
         final Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
 
@@ -1046,7 +1048,7 @@ public class RubyModule extends RubyObject {
         }
 
         IRubyObject body;
-        String name = args[0].asJavaString();
+        String name = args[0].asJavaString().intern();
         DynamicMethod newMethod = null;
         ThreadContext tc = getRuntime().getCurrentContext();
         Visibility visibility = tc.getCurrentVisibility();
@@ -1379,7 +1381,7 @@ public class RubyModule extends RubyObject {
         Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         boolean writeable = args.length > 1 ? args[1].isTrue() : false;
 
-        addAccessor(args[0].asJavaString(), true, writeable);
+        addAccessor(args[0].asJavaString().intern(), true, writeable);
 
         return getRuntime().getNil();
     }
@@ -1390,7 +1392,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr_reader", required = 1, rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject attr_reader(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAccessor(args[i].asJavaString(), true, false);
+            addAccessor(args[i].asJavaString().intern(), true, false);
         }
 
         return getRuntime().getNil();
@@ -1402,7 +1404,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr_writer", required = 1, rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject attr_writer(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAccessor(args[i].asJavaString(), false, true);
+            addAccessor(args[i].asJavaString().intern(), false, true);
         }
 
         return getRuntime().getNil();
@@ -1414,7 +1416,10 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr_accessor", required = 1, rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject attr_accessor(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAccessor(args[i].asJavaString(), true, true);
+            // This is almost always already interned, since it will be called with a symbol in most cases
+            // but when created from Java code, we might get an argument that needs to be interned.
+            // addAccessor has as a precondition that the string MUST be interned
+            addAccessor(args[i].asJavaString().intern(), true, true);
         }
 
         return getRuntime().getNil();

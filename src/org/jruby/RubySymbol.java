@@ -61,6 +61,9 @@ public class RubySymbol extends RubyObject {
     private RubySymbol(Ruby runtime, String internedSymbol) {
         super(runtime, runtime.getSymbol(), false);
         // symbol string *must* be interned
+
+        assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";
+
         this.symbol = internedSymbol;
 
         runtime.symbolLastId++;
@@ -394,6 +397,7 @@ public class RubySymbol extends RubyObject {
         }
         
         public RubySymbol fastGetSymbol(String internedName) {
+            assert internedName == internedName.intern() : internedName + " is not interned";
             SymbolEntry[] table;
             for (SymbolEntry e = (table = symbolTable)[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
                 if (internedName == e.name) {
