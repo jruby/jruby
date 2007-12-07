@@ -1389,7 +1389,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr_reader
      *
      */
-    @JRubyMethod(name = "attr_reader", required = 1, rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "attr_reader", rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject attr_reader(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
             addAccessor(args[i].asJavaString().intern(), true, false);
@@ -1401,7 +1401,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr_writer
      *
      */
-    @JRubyMethod(name = "attr_writer", required = 1, rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "attr_writer", rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject attr_writer(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
             addAccessor(args[i].asJavaString().intern(), false, true);
@@ -1413,7 +1413,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr_accessor
      *
      */
-    @JRubyMethod(name = "attr_accessor", required = 1, rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "attr_accessor", rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject attr_accessor(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
             // This is almost always already interned, since it will be called with a symbol in most cases
