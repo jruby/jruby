@@ -47,7 +47,6 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -70,10 +69,10 @@ import org.jruby.compiler.yarv.StandardYARVCompiler;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.JavaBasedPOSIX;
 import org.jruby.ext.LateLoadingLibrary;
-import org.jruby.ext.POSIX;
-import org.jruby.ext.POSIXFunctionMapper;
+import org.jruby.ext.posix.JRubyPOSIXHandler;
+import org.jruby.ext.posix.POSIX;
+import org.jruby.ext.posix.POSIXFactory;
 import org.jruby.ext.socket.RubySocket;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
@@ -106,7 +105,6 @@ import org.jruby.util.KCode;
 import org.jruby.util.MethodCache;
 import org.jruby.util.NormalizedFile;
 
-import com.sun.jna.Native;
 import org.jruby.util.JavaNameMangler;
 
 /**
@@ -120,7 +118,7 @@ public final class Ruby {
     private ThreadService threadService;
     private Hashtable<Object, Object> runtimeInformation;
     
-    private static POSIX posix = loadPosix();
+    private POSIX posix;
 
     private int stackTraces = 0;
 
@@ -206,7 +204,6 @@ public final class Ruby {
     private RubyClass fileClass;
     private RubyClass fileStatClass;
     private RubyModule fileTestModule;
-    private RubyClass statClass;
 
     private RubyClass ioClass;
 
@@ -846,13 +843,6 @@ public final class Ruby {
         this.fileTestModule = fileTestModule;
     }    
 
-    public RubyClass getStat() {
-        return statClass;
-    }
-    void setStat(RubyClass statClass) {
-        this.statClass = statClass;
-    }    
-
     public RubyClass getIO() {
         return ioClass;
     }
@@ -1175,6 +1165,8 @@ public final class Ruby {
     private void init() {
         ThreadContext tc = getCurrentContext();
 
+        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this));
+        
         defineGlobalVERBOSE();
         defineGlobalDEBUG();
 
@@ -2037,8 +2029,8 @@ public final class Ruby {
         return RubyBoolean.newBoolean(this, value);
     }
 
-    public RubyFileStat newRubyFileStat(String file) {
-        return (RubyFileStat)fileStatClass.callMethod(getCurrentContext(),"new",newString(file));
+    public RubyFileStat newFileStat(String filename, boolean lstat) {
+        return RubyFileStat.newFileStat(this, filename, lstat);
     }
 
     public RubyFixnum newFixnum(long value) {
@@ -2171,6 +2163,10 @@ public final class Ruby {
 
     public RaiseException newErrnoEINVALError(String message) {
         return newRaiseException(fastGetModule("Errno").fastGetClass("EINVAL"), message);
+    }
+
+    public RaiseException newErrnoENOTDIRError(String message) {
+        return newRaiseException(fastGetModule("Errno").fastGetClass("ENOTDIR"), message);
     }
 
     public RaiseException newErrnoENOENTError(String message) {
@@ -2454,31 +2450,7 @@ public final class Ruby {
         securityRestricted = restricted;
     }
     
-    private static POSIX loadPosix() {
-        // check for native library support
-        if (RubyInstanceConfig.nativeEnabled) {
-            try {
-                // confirm we have library link permissions for the C library
-                SecurityManager manager = System.getSecurityManager();
-                if (manager != null) {
-                    manager.checkLink("*");
-                }
-                HashMap options = new HashMap();
-                options.put(com.sun.jna.Library.OPTION_FUNCTION_MAPPER, new POSIXFunctionMapper());
-
-                boolean isWindows = System.getProperty("os.name").startsWith("Windows");
-                POSIX posix = (POSIX) Native.loadLibrary(isWindows ? "msvcrt" : "c", POSIX.class, options);
-                if (posix != null) {
-                    return posix;
-                }
-            } catch (Throwable t) {
-            }
-        }
-        // on any error or if native is disabled, fall back on our own stupid POSIX impl
-        return new JavaBasedPOSIX();
-    }
-    
-    public static POSIX getPosix() {
+    public POSIX getPosix() {
         return posix;
     }
     

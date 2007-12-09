@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -41,12 +42,9 @@
 package org.jruby;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Iterator;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.ast.util.ArgsUtil;
@@ -76,16 +74,13 @@ import org.jruby.util.TypeConverter;
 
 /**
  * Note: For CVS history, see KernelModule.java.
- *
- * @author jpetersen
  */
 public class RubyKernel {
-    public final static Class IRUBY_OBJECT = IRubyObject.class;
+    public final static Class<?> IRUBY_OBJECT = IRubyObject.class;
 
     public static RubyModule createKernelModule(Ruby runtime) {
         RubyModule module = runtime.defineModule("Kernel");
         runtime.setKernel(module);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyKernel.class);
         CallbackFactory objectCallbackFactory = runtime.callbackFactory(RubyObject.class);
 
         module.defineAnnotatedMethods(RubyKernel.class);
@@ -572,10 +567,7 @@ public class RubyKernel {
     public static RubyArray global_variables(IRubyObject recv) {
         RubyArray globalVariables = recv.getRuntime().newArray();
 
-        Iterator iter = recv.getRuntime().getGlobalVariables().getNames();
-        while (iter.hasNext()) {
-            String globalVariableName = (String) iter.next();
-
+        for (String globalVariableName : recv.getRuntime().getGlobalVariables().getNames()) {
             globalVariables.append(recv.getRuntime().newString(globalVariableName));
         }
 
@@ -875,7 +867,7 @@ public class RubyKernel {
         }
         
         if (args.length > 1) {
-            ArrayList success = new ArrayList();
+            ArrayList<IRubyObject> success = new ArrayList<IRubyObject>();
             for (int i = 1; i < args.length; i++) {
                 if (recv.getRuntime().getGlobalVariables().untraceVar(var, args[i])) {
                     success.add(args[i]);
@@ -945,146 +937,103 @@ public class RubyKernel {
     
     @JRubyMethod(name = "test", required = 2, optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject test(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
-        if (args.length == 0) {
-            // MRI message if no args given
-            throw runtime.newArgumentError("wrong number of arguments");
-        }
-        IRubyObject cmdArg = args[0];
+        if (args.length == 0) throw recv.getRuntime().newArgumentError("wrong number of arguments");
+
         int cmd;
-        if (cmdArg instanceof RubyFixnum) {
-            cmd = (int)((RubyFixnum)cmdArg).getLongValue();
-        } else if (cmdArg instanceof RubyString &&
-                ((RubyString)cmdArg).getByteList().length() > 0) {
+        if (args[0] instanceof RubyFixnum) {
+            cmd = (int)((RubyFixnum) args[0]).getLongValue();
+        } else if (args[0] instanceof RubyString &&
+                ((RubyString) args[0]).getByteList().length() > 0) {
             // MRI behavior: use first byte of string value if len > 0
-            cmd = ((RubyString)cmdArg).getByteList().charAt(0);
+            cmd = ((RubyString) args[0]).getByteList().charAt(0);
         } else {
-            cmd = (int)cmdArg.convertToInteger().getLongValue();
+            cmd = (int) args[0].convertToInteger().getLongValue();
         }
         
         // MRI behavior: raise ArgumentError for 'unknown command' before
         // checking number of args.
         switch(cmd) {
-        
-        // implemented commands
-        case 'C': // ?C  | Time    | Last change time for file1
-        case 'd': // ?d  | boolean | True if file1 exists and is a directory
-        case 'e': // ?e  | boolean | True if file1 exists
-        case 'f':
-        case 'M':
-        case 's': // ?s  | int/nil | If file1 has nonzero size, return the size,
-                  //     |         | otherwise return nil
-        case 'z': // ?z  | boolean | True if file1 exists and has a zero length
-        case '=': // ?=  | boolean | True if the modification times of file1
-                  //     |         | and file2 are equal
-        case '<': // ?<  | boolean | True if the modification time of file1
-                  //     |         | is prior to that of file2
-        case '>': // ?>  | boolean | True if the modification time of file1
-                  //     |         | is after that of file2
-        case '-': // ?-  | boolean | True if file1 and file2 are identical
+        case 'A': case 'b': case 'c': case 'C': case 'd': case 'e': case 'f': case 'g': case 'G': 
+        case 'k': case 'M': case 'l': case 'o': case 'O': case 'p': case 'r': case 'R': case 's':
+        case 'S': case 'u': case 'w': case 'W': case 'x': case 'X': case 'z': case '=': case '<':
+        case '>': case '-':
             break;
-
-        // unimplemented commands
-
-        // FIXME: obviously, these are mostly unimplemented.  Raising an
-        // ArgumentError 'unimplemented command' for them.
-        
-        case 'A': // ?A  | Time    | Last access time for file1
-        case 'b': // ?b  | boolean | True if file1 is a block device
-        case 'c': // ?c  | boolean | True if file1 is a character device
-        case 'g': // ?g  | boolean | True if file1 has the \CF{setgid} bit
-        case 'G': // ?G  | boolean | True if file1 exists and has a group
-                  //     |         | ownership equal to the caller's group
-        case 'k': // ?k  | boolean | True if file1 exists and has the sticky bit set
-        case 'l': // ?l  | boolean | True if file1 exists and is a symbolic link
-        case 'o': // ?o  | boolean | True if file1 exists and is owned by
-                  //     |         | the caller's effective uid  
-        case 'O': // ?O  | boolean | True if file1 exists and is owned by 
-                  //     |         | the caller's real uid
-        case 'p': // ?p  | boolean | True if file1 exists and is a fifo
-        case 'r': // ?r  | boolean | True if file1 is readable by the effective
-                  //     |         | uid/gid of the caller
-        case 'R': // ?R  | boolean | True if file is readable by the real
-                  //     |         | uid/gid of the caller
-        case 'S': // ?S  | boolean | True if file1 exists and is a socket
-        case 'u': // ?u  | boolean | True if file1 has the setuid bit set
-        case 'w': // ?w  | boolean | True if file1 exists and is writable by
-        case 'W': // ?W  | boolean | True if file1 exists and is writable by
-                  //     |         | the real uid/gid
-        case 'x': // ?x  | boolean | True if file1 exists and is executable by
-                  //     |         | the effective uid/gid
-        case 'X': // ?X  | boolean | True if file1 exists and is executable by
-                  //     |         | the real uid/gid
-            throw runtime.newArgumentError("unimplemented command ?"+(char)cmd);
         default:
-            // matches MRI message
-            throw runtime.newArgumentError("unknown command ?"+(char)cmd);
-            
+            throw recv.getRuntime().newArgumentError("unknown command ?" + (char) cmd);
         }
 
         // MRI behavior: now check arg count
 
         switch(cmd) {
-        case '-':
-        case '=':
-        case '<':
-        case '>':
-            if (args.length != 3) {
-                throw runtime.newArgumentError(args.length,3);
-            }
+        case '-': case '=': case '<': case '>':
+            if (args.length != 3) throw recv.getRuntime().newArgumentError(args.length, 3);
             break;
         default:
-            if (args.length != 2) {
-                throw runtime.newArgumentError(args.length,2);
-            }
+            if (args.length != 2) throw recv.getRuntime().newArgumentError(args.length, 2);
             break;
         }
         
-        String cwd = runtime.getCurrentDirectory();
-        File file1 = org.jruby.util.JRubyFile.create(cwd, args[1].convertToString().toString());
-        File file2 = null;
-        Calendar calendar = null;
-                
         switch (cmd) {
+        case 'A': // ?A  | Time    | Last access time for file1
+            return recv.getRuntime().newFileStat(args[1].convertToString().toString(), false).atime();
+        case 'b': // ?b  | boolean | True if file1 is a block device
+            return RubyFileTest.blockdev_p(recv, args[1]);
+        case 'c': // ?c  | boolean | True if file1 is a character device
+            return RubyFileTest.chardev_p(recv, args[1]);
         case 'C': // ?C  | Time    | Last change time for file1
-            return runtime.newFixnum(file1.lastModified());
+            return recv.getRuntime().newFileStat(args[1].convertToString().toString(), false).ctime();
         case 'd': // ?d  | boolean | True if file1 exists and is a directory
-            return runtime.newBoolean(file1.isDirectory());
+            return RubyFileTest.directory_p(recv, args[1]);
         case 'e': // ?e  | boolean | True if file1 exists
-            return runtime.newBoolean(file1.exists());
+            return RubyFileTest.exist_p(recv, args[1]);
         case 'f': // ?f  | boolean | True if file1 exists and is a regular file
-            return runtime.newBoolean(file1.isFile());
-        
+            return RubyFileTest.file_p(recv, args[1]);
+        case 'g': // ?g  | boolean | True if file1 has the \CF{setgid} bit
+            return RubyFileTest.setgid_p(recv, args[1]);
+        case 'G': // ?G  | boolean | True if file1 exists and has a group ownership equal to the caller's group
+            return RubyFileTest.grpowned_p(recv, args[1]);
+        case 'k': // ?k  | boolean | True if file1 exists and has the sticky bit set
+            return RubyFileTest.sticky_p(recv, args[1]);
         case 'M': // ?M  | Time    | Last modification time for file1
-            calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(file1.lastModified());
-            return RubyTime.newTime(runtime, calendar);
-        case 's': // ?s  | int/nil | If file1 has nonzero size, return the size,
-                  //     |         | otherwise return nil
-            long length = file1.length();
-
-            return length == 0 ? runtime.getNil() : runtime.newFixnum(length);
+            return recv.getRuntime().newFileStat(args[1].convertToString().toString(), false).mtime();
+        case 'l': // ?l  | boolean | True if file1 exists and is a symbolic link
+            return RubyFileTest.symlink_p(recv, args[1]);
+        case 'o': // ?o  | boolean | True if file1 exists and is owned by the caller's effective uid
+            return RubyFileTest.owned_p(recv, args[1]);
+        case 'O': // ?O  | boolean | True if file1 exists and is owned by the caller's real uid 
+            return RubyFileTest.rowned_p(recv, args[1]);
+        case 'p': // ?p  | boolean | True if file1 exists and is a fifo
+            return RubyFileTest.pipe_p(recv, args[1]);
+        case 'r': // ?r  | boolean | True if file1 is readable by the effective uid/gid of the caller
+            return RubyFileTest.readable_p(recv, args[1]);
+        case 'R': // ?R  | boolean | True if file is readable by the real uid/gid of the caller
+            // FIXME: Need to implement an readable_real_p in FileTest
+            return RubyFileTest.readable_p(recv, args[1]);
+        case 's': // ?s  | int/nil | If file1 has nonzero size, return the size, otherwise nil
+            return RubyFileTest.size_p(recv, args[1]);
+        case 'S': // ?S  | boolean | True if file1 exists and is a socket
+            return RubyFileTest.socket_p(recv, args[1]);
+        case 'u': // ?u  | boolean | True if file1 has the setuid bit set
+            return RubyFileTest.setuid_p(recv, args[1]);
+        case 'w': // ?w  | boolean | True if file1 exists and is writable by effective uid/gid
+            return RubyFileTest.writable_p(recv, args[1]);
+        case 'W': // ?W  | boolean | True if file1 exists and is writable by the real uid/gid
+            // FIXME: Need to implement an writable_real_p in FileTest
+            return RubyFileTest.writable_p(recv, args[1]);
+        case 'x': // ?x  | boolean | True if file1 exists and is executable by the effective uid/gid
+            return RubyFileTest.executable_p(recv, args[1]);
+        case 'X': // ?X  | boolean | True if file1 exists and is executable by the real uid/gid
+            return RubyFileTest.executable_real_p(recv, args[1]);
         case 'z': // ?z  | boolean | True if file1 exists and has a zero length
-            return runtime.newBoolean(file1.exists() && file1.length() == 0);
-        case '=': // ?=  | boolean | True if the modification times of file1
-                  //     |         | and file2 are equal
-            file2 = org.jruby.util.JRubyFile.create(cwd, args[2].convertToString().toString());
-            
-            return runtime.newBoolean(file1.lastModified() == file2.lastModified());
-        case '<': // ?<  | boolean | True if the modification time of file1
-                  //     |         | is prior to that of file2
-            file2 = org.jruby.util.JRubyFile.create(cwd, args[2].convertToString().toString());
-            
-            return runtime.newBoolean(file1.lastModified() < file2.lastModified());
-        case '>': // ?>  | boolean | True if the modification time of file1
-                  //     |         | is after that of file2
-            file2 = org.jruby.util.JRubyFile.create(cwd, args[2].convertToString().toString());
-            
-            return runtime.newBoolean(file1.lastModified() > file2.lastModified());
+            return RubyFileTest.zero_p(recv, args[1]);
+        case '=': // ?=  | boolean | True if the modification times of file1 and file2 are equal
+            return recv.getRuntime().newFileStat(args[1].convertToString().toString(), false).mtimeEquals(args[2]);
+        case '<': // ?<  | boolean | True if the modification time of file1 is prior to that of file2
+            return recv.getRuntime().newFileStat(args[1].convertToString().toString(), false).mtimeLessThan(args[2]);
+        case '>': // ?>  | boolean | True if the modification time of file1 is after that of file2
+            return recv.getRuntime().newFileStat(args[1].convertToString().toString(), false).mtimeGreaterThan(args[2]);
         case '-': // ?-  | boolean | True if file1 and file2 are identical
-            file2 = org.jruby.util.JRubyFile.create(cwd, args[2].convertToString().toString());
-
-            return runtime.newBoolean(file1.equals(file2));
+            return RubyFileTest.identical_p(recv, args[1], args[2]);
         default:
             throw new InternalError("unreachable code reached!");
         }

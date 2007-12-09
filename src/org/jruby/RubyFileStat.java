@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -33,32 +34,21 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ext.posix.FileStat;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 
 /**
- * note: renamed from FileStatClass.java
  * Implements File::Stat
  */
 public class RubyFileStat extends RubyObject {
-    private static final int READ = 0222;
-    private static final int WRITE = 0444;
-
-    private RubyFixnum blksize;
-    private RubyBoolean isDirectory;
-    private RubyBoolean isFile;
-    private RubyString ftype;
-    private RubyFixnum mode;
-    private RubyTime mtime;
-    private RubyTime ctime;
-    private RubyBoolean isReadable;
-    private RubyBoolean isWritable;
-    private RubyFixnum size;
-    private RubyBoolean isSymlink;
+    private static final long serialVersionUID = 1L;
+    
+    private JRubyFile file;
+    private FileStat stat;
 
     private static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -70,38 +60,8 @@ public class RubyFileStat extends RubyObject {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         final RubyClass fileStatClass = runtime.getFile().defineClassUnder("Stat",runtime.getObject(), ALLOCATOR);
         runtime.setFileStat(fileStatClass);
-        final CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
 
         fileStatClass.includeModule(runtime.fastGetModule("Comparable"));
-        fileStatClass.defineMethod("<=>", callbackFactory.getFastMethod("not_implemented1", IRubyObject.class));
-        fileStatClass.defineMethod("atime", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("blockdev?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("blocks", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("chardev?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("dev", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("dev_major", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("dev_minor", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("executable?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("executable_real?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("gid", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("grpowned?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("initialize_copy", callbackFactory.getFastMethod("not_implemented1", IRubyObject.class));
-        fileStatClass.defineMethod("inspect", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("nlink", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("owned?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("pipe?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("rdev", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("rdev_major", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("rdev_minor", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("readable_real?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("setgid?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("setuid?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("size?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("socket?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("sticky?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("writable_real?", callbackFactory.getFastMethod("not_implemented"));
-        fileStatClass.defineMethod("zero?", callbackFactory.getFastMethod("not_implemented"));
-        
         fileStatClass.defineAnnotatedMethods(RubyFileStat.class);
 
         return fileStatClass;
@@ -111,120 +71,297 @@ public class RubyFileStat extends RubyObject {
         super(runtime, clazz);
 
     }
+    
+    public static RubyFileStat newFileStat(Ruby runtime, String filename, boolean lstat) {
+        RubyFileStat stat = new RubyFileStat(runtime, runtime.getFileStat());
+        
+        stat.setup(filename, lstat);
+        
+        return stat;
+    }
+    
+    private void setup(String filename, boolean lstat) {
+        if (RubyFile.IS_WINDOWS && filename.length() == 2
+                && filename.charAt(1) == ':' && Character.isLetter(filename.charAt(0))) {
+            filename += "/";
+        }
+            
+        file = JRubyFile.create(getRuntime().getCurrentDirectory(), filename);
+
+        if (lstat) {
+            stat = getRuntime().getPosix().lstat(file.getAbsolutePath());
+        } else {
+            stat = getRuntime().getPosix().stat(file.getAbsolutePath());
+        }
+    }
 
     @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
-        Ruby runtime = getRuntime();
-        String filename = fname.toString();
+        setup(fname.convertToString().toString(), false);
 
-        if (RubyFile.IS_WINDOWS && filename.length() == 2
-            && filename.charAt(1) == ':' && Character.isLetter(filename.charAt(0))) {
-            filename += "/";
-        }
-
-        JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), filename);
-
-        if (!file.exists()) {
-            throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
-        }
-
-        // We cannot determine, so always return 4096 (better than blowing up)
-        blksize = runtime.newFixnum(4096);
-        isDirectory = runtime.newBoolean(file.isDirectory());
-        isFile = runtime.newBoolean(file.isFile());
-        ftype = file.isDirectory()? runtime.newString("directory") : (file.isFile() ? runtime.newString("file") : null);
-
-        // implementation to lowest common denominator...Windows has no file mode, but C ruby returns either 0100444 or 0100666
-        int baseMode = 0100000;
-        if (file.canRead()) {
-            baseMode += READ;
-        }
-        if (file.canWrite()) {
-            baseMode += WRITE;
-        }
-        mode = runtime.newFixnum(baseMode);
-        mtime = runtime.newTime(file.lastModified());
-        ctime = runtime.newTime(file.getParentFile().lastModified());
-        isReadable = runtime.newBoolean(file.canRead());
-        isWritable = runtime.newBoolean(file.canWrite());
-        size = runtime.newFixnum(file.length());
-        // We cannot determine this in Java, so we will always return false (better than blowing up)
-        isSymlink = runtime.getFalse();
         return this;
     }
-
-    public IRubyObject not_implemented() {
-        throw getRuntime().newNotImplementedError("File::Stat#" + getRuntime().getCurrentContext().getFrameName() + " not yet implemented");
-    }
     
-    public IRubyObject not_implemented1(IRubyObject arg) {
-        throw getRuntime().newNotImplementedError("File::Stat#" + getRuntime().getCurrentContext().getFrameName() + " not yet implemented");
+    @JRubyMethod(name = "atime")
+    public IRubyObject atime() {
+        return getRuntime().newTime(stat.atime() * 1000);
     }
     
     @JRubyMethod(name = "blksize")
     public RubyFixnum blksize() {
-        return blksize;
+        return getRuntime().newFixnum(stat.blockSize());
     }
 
-    @JRubyMethod(name = "directory?")
-    public RubyBoolean directory_p() {
-        return isDirectory;
+    @JRubyMethod(name = "blockdev?")
+    public IRubyObject blockdev_p() {
+        return getRuntime().newBoolean(stat.isBlockDev());
     }
 
-    @JRubyMethod(name = "file?")
-    public RubyBoolean file_p() {
-        return isFile;
+    @JRubyMethod(name = "blocks")
+    public IRubyObject blocks() {
+        return getRuntime().newFixnum(stat.blocks());
     }
 
-    @JRubyMethod(name = "ftype")
-    public RubyString ftype() {
-        return ftype;
+    @JRubyMethod(name = "chardev?")
+    public IRubyObject chardev_p() {
+        return getRuntime().newBoolean(stat.isCharDev());
     }
 
-    // Limitation: We have no pure-java way of getting inode.  webrick needs this defined to work.
-    @JRubyMethod(name = "ino")
-    public IRubyObject ino() {
-        return getRuntime().newFixnum(0);
-    }
+    @JRubyMethod(name = "<=>", required = 1)
+    public IRubyObject cmp(IRubyObject other) {
+        if (!(other instanceof RubyFileStat)) getRuntime().getNil();
+        
+        long time1 = stat.mtime();
+        long time2 = ((RubyFileStat) other).stat.mtime();
+        
+        if (time1 == time2) {
+            return getRuntime().newFixnum(0);
+        } else if (time1 < time2) {
+            return getRuntime().newFixnum(-1);
+        } 
 
-    // Limitation: We have no pure-java way of getting uid. RubyZip needs this defined to work.
-    @JRubyMethod(name = "uid")
-    public IRubyObject uid() {
-        return getRuntime().newFixnum(-1);
-    }
-    
-    @JRubyMethod(name = "mode")
-    public IRubyObject mode() {
-        return mode;
-    }
-
-    @JRubyMethod(name = "mtime")
-    public IRubyObject mtime() {
-        return mtime;
+        return getRuntime().newFixnum(1);
     }
 
     @JRubyMethod(name = "ctime")
     public IRubyObject ctime() {
-        return ctime;
+        return getRuntime().newTime(stat.ctime() * 1000);
+    }
+
+    @JRubyMethod(name = "dev")
+    public IRubyObject dev() {
+        return getRuntime().newFixnum(stat.dev());
+    }
+    
+    @JRubyMethod(name = "dev_major")
+    public IRubyObject devMajor() {
+        return getRuntime().newFixnum(stat.major(stat.dev()));
+    }
+
+    @JRubyMethod(name = "dev_minor")
+    public IRubyObject devMinor() {
+        return getRuntime().newFixnum(stat.minor(stat.dev()));
+    }
+
+    @JRubyMethod(name = "directory?")
+    public RubyBoolean directory_p() {
+        return getRuntime().newBoolean(stat.isDirectory());
+    }
+
+    @JRubyMethod(name = "executable?")
+    public IRubyObject executable_p() {
+        return getRuntime().newBoolean(stat.isExecutable());
+    }
+
+    @JRubyMethod(name = "executable_real?")
+    public IRubyObject executableReal_p() {
+        return getRuntime().newBoolean(stat.isExecutableReal());
+    }
+
+    @JRubyMethod(name = "file?")
+    public RubyBoolean file_p() {
+        return getRuntime().newBoolean(stat.isFile());
+    }
+
+    @JRubyMethod(name = "ftype")
+    public RubyString ftype() {
+        return getRuntime().newString(stat.ftype());
+    }
+
+    @JRubyMethod(name = "gid")
+    public IRubyObject gid() {
+        return getRuntime().newFixnum(stat.gid());
+    }
+    
+    @JRubyMethod(name = "grpowned?")
+    public IRubyObject group_owned_p() {
+        return getRuntime().newBoolean(stat.isGroupOwned());
+    }
+    
+    @JRubyMethod(name = "initialize_copy", required = 1)
+    public IRubyObject initialize_copy(IRubyObject original) {
+        if (!(original instanceof RubyFileStat)) {
+            throw getRuntime().newTypeError("wrong argument class");
+        }
+        
+        RubyFileStat originalFileStat = (RubyFileStat) original;
+        
+        file = originalFileStat.file;
+        stat = originalFileStat.stat;
+        
+        return this;
+    }
+    
+    @JRubyMethod(name = "ino")
+    public IRubyObject ino() {
+        return getRuntime().newFixnum(stat.ino());
+    }
+
+    @JRubyMethod(name = "inspect")
+    public IRubyObject inspect() {
+        StringBuilder buf = new StringBuilder("#<");
+        buf.append(getMetaClass().getRealClass().getName());
+        buf.append(" ");
+        // FIXME: Obvious issue that not all platforms can display all attributes.  Ugly hacks.
+        // Using generic posix library makes pushing inspect behavior into specific system impls
+        // rather painful.
+        try { buf.append("dev=0").append(Long.toHexString(stat.dev())).append(", "); } catch (Exception e) {}
+        try { buf.append("ino=").append(stat.ino()).append(", "); } catch (Exception e) {}
+        buf.append("mode=0").append(Integer.toOctalString(stat.mode())).append(", "); 
+        try { buf.append("nlink=").append(stat.nlink()).append(", "); } catch (Exception e) {}
+        try { buf.append("uid=").append(stat.uid()).append(", "); } catch (Exception e) {}
+        try { buf.append("gid=").append(stat.gid()).append(", "); } catch (Exception e) {}
+        try { buf.append("rdev=0").append(Long.toHexString(stat.rdev())).append(", "); } catch (Exception e) {}
+        buf.append("size=").append(stat.st_size()).append(", ");
+        try { buf.append("blksize=").append(stat.blockSize()).append(", "); } catch (Exception e) {}
+        try { buf.append("blocks=").append(stat.blocks()).append(", "); } catch (Exception e) {}
+        
+        buf.append("atime=").append(atime()).append(", ");
+        buf.append("mtime=").append(mtime()).append(", ");
+        buf.append("ctime=").append(ctime()).append(", ");
+        buf.append(">");
+        
+        return getRuntime().newString(buf.toString());
+    }
+
+    @JRubyMethod(name = "uid")
+    public IRubyObject uid() {
+        return getRuntime().newFixnum(stat.uid());
+    }
+    
+    @JRubyMethod(name = "mode")
+    public IRubyObject mode() {
+        return getRuntime().newFixnum(stat.mode());
+    }
+
+    @JRubyMethod(name = "mtime")
+    public IRubyObject mtime() {
+        return getRuntime().newTime(stat.mtime() * 1000);
+    }
+    
+    public IRubyObject mtimeEquals(IRubyObject other) {
+        return getRuntime().newBoolean(stat.mtime() == newFileStat(getRuntime(), other.convertToString().toString(), false).stat.mtime()); 
+    }
+
+    public IRubyObject mtimeGreaterThan(IRubyObject other) {
+        return getRuntime().newBoolean(stat.mtime() > newFileStat(getRuntime(), other.convertToString().toString(), false).stat.mtime()); 
+    }
+
+    public IRubyObject mtimeLessThan(IRubyObject other) {
+        return getRuntime().newBoolean(stat.mtime() < newFileStat(getRuntime(), other.convertToString().toString(), false).stat.mtime()); 
+    }
+
+    @JRubyMethod(name = "nlink")
+    public IRubyObject nlink() {
+        return getRuntime().newFixnum(stat.nlink());
+    }
+
+    @JRubyMethod(name = "owned?")
+    public IRubyObject owned_p() {
+        return getRuntime().newBoolean(stat.isOwned());
+    }
+
+    @JRubyMethod(name = "pipe?")
+    public IRubyObject pipe_p() {
+        return getRuntime().newBoolean(stat.isNamedPipe());
+    }
+
+    @JRubyMethod(name = "rdev")
+    public IRubyObject rdev() {
+        return getRuntime().newFixnum(stat.rdev());
+    }
+    
+    @JRubyMethod(name = "rdev_major")
+    public IRubyObject rdevMajor() {
+        return getRuntime().newFixnum(stat.major(stat.rdev()));
+    }
+
+    @JRubyMethod(name = "rdev_minor")
+    public IRubyObject rdevMinor() {
+        return getRuntime().newFixnum(stat.minor(stat.rdev()));
     }
 
     @JRubyMethod(name = "readable?")
     public IRubyObject readable_p() {
-        return isReadable;
+        return getRuntime().newBoolean(stat.isReadable());
+    }
+
+    @JRubyMethod(name = "readable_real?")
+    public IRubyObject readableReal_p() {
+        return getRuntime().newBoolean(stat.isReadableReal());
+    }
+
+    @JRubyMethod(name = "setgid?")
+    public IRubyObject setgid_p() {
+        return getRuntime().newBoolean(stat.isSetgid());
+    }
+
+    @JRubyMethod(name = "setuid?")
+    public IRubyObject setuid_p() {
+        return getRuntime().newBoolean(stat.isSetuid());
     }
 
     @JRubyMethod(name = "size")
     public IRubyObject size() {
-        return size;
+        return getRuntime().newFixnum(stat.st_size());
+    }
+    
+    @JRubyMethod(name = "size?")
+    public IRubyObject size_p() {
+        long size = stat.st_size();
+        
+        if (size == 0) return getRuntime().getNil();
+        
+        return getRuntime().newFixnum(size);
+    }
+
+    @JRubyMethod(name = "socket?")
+    public IRubyObject socket_p() {
+        return getRuntime().newBoolean(stat.isSocket());
+    }
+    
+    @JRubyMethod(name = "sticky?")
+    public IRubyObject sticky_p() {
+        return getRuntime().newBoolean(stat.isSticky());
     }
 
     @JRubyMethod(name = "symlink?")
     public IRubyObject symlink_p() {
-        return isSymlink;
+        return getRuntime().newBoolean(getRuntime().getPosix().lstat(file.getAbsolutePath()).isSymlink());
     }
 
     @JRubyMethod(name = "writable?")
     public IRubyObject writable_p() {
-    	return isWritable;
+    	return getRuntime().newBoolean(stat.isWritable());
+    }
+    
+    @JRubyMethod(name = "writable_real?")
+    public IRubyObject writableReal_p() {
+        return getRuntime().newBoolean(stat.isWritableReal());
+    }
+    
+    @JRubyMethod(name = "zero?")
+    public IRubyObject zero_p() {
+        return getRuntime().newBoolean(stat.isEmpty());
     }
 }

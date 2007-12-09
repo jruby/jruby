@@ -30,6 +30,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ext.posix.POSIX;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
@@ -208,7 +209,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "getpgrp", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject getpgrp(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(Ruby.getPosix().getpgrp());
+        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getpgrp());
     }
 
     @JRubyMethod(name = "groups=", required = 1, module = true, visibility = Visibility.PRIVATE)
@@ -248,7 +249,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "euid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject euid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(Ruby.getPosix().geteuid());
+        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().geteuid());
     }
 
     @JRubyMethod(name = "uid=", required = 1, module = true, visibility = Visibility.PRIVATE)
@@ -258,7 +259,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "gid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject gid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(Ruby.getPosix().getgid());
+        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getgid());
     }
 
     @JRubyMethod(name = "maxgroups", module = true, visibility = Visibility.PRIVATE)
@@ -273,7 +274,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "uid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject uid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(Ruby.getPosix().getuid());
+        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getuid());
     }
 
     @JRubyMethod(name = "waitpid2", rest = true, module = true, visibility = Visibility.PRIVATE)
@@ -293,7 +294,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "ppid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject ppid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(Ruby.getPosix().getppid());
+        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getppid());
     }
 
     @JRubyMethod(name = "gid=", required = 1, module = true, visibility = Visibility.PRIVATE)
@@ -323,7 +324,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "getpgid", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject getpgid(IRubyObject recv, IRubyObject arg) {
-        return recv.getRuntime().newFixnum(Ruby.getPosix().getpgid());
+        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getpgid());
     }
 
     @JRubyMethod(name = "getrlimit", required = 1, module = true, visibility = Visibility.PRIVATE)
@@ -333,7 +334,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "egid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject egid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(Ruby.getPosix().getegid());
+        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getegid());
     }
     
     private static String[] signals = new String[] {"EXIT", "HUP", "INT", "QUIT", "ILL", "TRAP", 
@@ -383,12 +384,13 @@ public class RubyProcess {
         
         if (processGroupKill) signal = -signal;
         
+        POSIX posix = runtime.getPosix();
         for (int i = 1; i < args.length; i++) {
             int pid = RubyNumeric.num2int(args[i]);
 
             // FIXME: It may be possible to killpg on systems which support it.  POSIX library
             // needs to tell whether a particular method works or not.
-            Ruby.getPosix().kill(processGroupKill ? -pid : pid, signal);            
+            posix.kill(processGroupKill ? -pid : pid, signal);            
         }
         
         return runtime.newFixnum(args.length - 1);
@@ -413,6 +415,6 @@ public class RubyProcess {
 
     @JRubyMethod(name = "pid", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject pid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(Ruby.getPosix().getpid());
+        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getpid());
     }
 }

@@ -30,11 +30,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.File;
-import java.io.IOException;
 import org.jruby.anno.JRubyMethod;
 
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 
@@ -42,155 +39,189 @@ public class RubyFileTest {
     public static RubyModule createFileTestModule(Ruby runtime) {
         RubyModule fileTestModule = runtime.defineModule("FileTest");
         runtime.setFileTest(fileTestModule);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileTest.class);
         
         fileTestModule.defineAnnotatedMethods(RubyFileTest.class);
         
         return fileTestModule;
     }
-    
-    @JRubyMethod(name = "setgid?", required = 1, module = true)
-    public static RubyBoolean setgid_p(IRubyObject recv, IRubyObject filename) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#setgid? not yet implemented");
-    }
-    
-    @JRubyMethod(name = "grpowned?", required = 1, module = true)
-    public static RubyBoolean grpowned_p(IRubyObject recv, IRubyObject filename) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#grpowned? not yet implemented");
-    }
-    
-    @JRubyMethod(name = "sticky?", required = 1, module = true)
-    public static RubyBoolean sticky_p(IRubyObject recv, IRubyObject filename) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#sticky? not yet implemented");
+
+    @JRubyMethod(name = "blockdev?", required = 1, module = true)
+    public static IRubyObject blockdev_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
+        
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isBlockDev());
     }
     
     @JRubyMethod(name = "chardev?", required = 1, module = true)
-    public static RubyBoolean chardev_p(IRubyObject recv, IRubyObject filename) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#chardev? not yet implemented");
+    public static IRubyObject chardev_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
+        
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isCharDev());
+    }
+
+    @JRubyMethod(name = "directory?", required = 1, module = true)
+    public static IRubyObject directory_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
+        
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isDirectory());
     }
     
-    @JRubyMethod(name = "identical?", required = 2, module = true)
-    public static RubyBoolean identical_p(IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#identical? not yet implemented");
-    }
-    
-    @JRubyMethod(name = "socket?", required = 1, module = true)
-    public static RubyBoolean socket_p(IRubyObject recv, IRubyObject filename) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#socket? not yet implemented");
+    @JRubyMethod(name = "executable?", required = 1, module = true)
+    public static IRubyObject executable_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
+        
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isExecutable());
     }
     
     @JRubyMethod(name = "executable_real?", required = 1, module = true)
-    public static RubyBoolean executable_real_p(IRubyObject recv, IRubyObject filename) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#executable_real? not yet implemented");
-    }
-    
-    @JRubyMethod(name = "blockdev?", required = 1, module = true)
-    public static RubyBoolean blockdev_p(IRubyObject recv, IRubyObject filename) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#blockdev? not yet implemented");
-    }
-    
-    @JRubyMethod(name = "owned?", required = 1, module = true)
-    public static RubyBoolean owned_p(IRubyObject recv, IRubyObject filename) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#owned? not yet implemented");
-    }
-    
-    @JRubyMethod(name = "setuid?", required = 1, module = true)
-    public static RubyBoolean setuid_p(IRubyObject recv, IRubyObject filename) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#setuid? not yet implemented");
-    }
-    
-    @JRubyMethod(name = "pipe?", required = 1, module = true)
-    public static RubyBoolean pipe_p(IRubyObject recv, IRubyObject filename) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#pipe? not yet implemented");
-    }
-    
-    @JRubyMethod(name = "size?", required = 1, module = true)
-    public static RubyBoolean size_p(IRubyObject recv, IRubyObject filename) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#size? not yet implemented");
-    }
-    
-    @JRubyMethod(name = "directory?", required = 1, module = true)
-    public static RubyBoolean directory_p(IRubyObject recv, IRubyObject filename) {
-        return recv.getRuntime().newBoolean(newFile(filename).isDirectory());
+    public static IRubyObject executable_real_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
+        
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isExecutableReal());
     }
     
     @JRubyMethod(name = {"exist?", "exists?"}, required = 1, module = true)
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {
-        return recv.getRuntime().newBoolean(newFile(filename).exists());
+        return recv.getRuntime().newBoolean(file(filename).exists());
     }
 
-    // We do both readable and readable_real through the same method because
-    // in our java process effective and real userid will always be the same.
+    @JRubyMethod(name = "file?", required = 1, module = true)
+    public static RubyBoolean file_p(IRubyObject recv, IRubyObject filename) {
+        JRubyFile file = file(filename);
+        
+        return filename.getRuntime().newBoolean(file.exists() && file.isFile());
+    }
+
+    @JRubyMethod(name = "grpowned?", required = 1, module = true)
+    public static IRubyObject grpowned_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
+        
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isGroupOwned());
+    }
+    
+    @JRubyMethod(name = "identical?", required = 2, module = true)
+    public static IRubyObject identical_p(IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
+        throw recv.getRuntime().newNotImplementedError("FileTest#identical? not yet implemented");
+    }
+
+    @JRubyMethod(name = "owned?", required = 1, module = true)
+    public static IRubyObject owned_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
+        
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isOwned());
+    }
+    
+    @JRubyMethod(name = "pipe?", required = 1, module = true)
+    public static IRubyObject pipe_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
+        
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isNamedPipe());
+    }
+
+    // We use file test since it is faster than a stat; also euid == uid in Java always
     @JRubyMethod(name = {"readable?", "readable_real?"}, required = 1, module = true)
-    public static RubyBoolean readable_p(IRubyObject recv, IRubyObject filename) {
-        return filename.getRuntime().newBoolean(newFile(filename).canRead());
+    public static IRubyObject readable_p(IRubyObject recv, IRubyObject filename) {
+        JRubyFile file = file(filename);
+
+        return recv.getRuntime().newBoolean(file.exists() && file.canRead());
     }
 
-    @JRubyMethod(name = "executable?", required = 1, module = true)
-    public static IRubyObject executable_p(IRubyObject recv, IRubyObject filename) {
-        recv.getRuntime().getWarnings().warn("executable? does not work on JRuby and will return a dummy value");
-        return exist_p(recv, filename);
+    // Not exposed by filetest, but so similiar in nature that it is stored here
+    public static IRubyObject rowned_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
+        
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isROwned());
+    }
+    
+    @JRubyMethod(name = "setgid?", required = 1, module = true)
+    public static IRubyObject setgid_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
+        
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isSetgid());
+    }
+    
+    @JRubyMethod(name = "setuid?", required = 1, module = true)
+    public static IRubyObject setuid_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
+        
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isSetuid());
     }
     
     @JRubyMethod(name = "size", required = 1, module = true)
     public static IRubyObject size(IRubyObject recv, IRubyObject filename) {
-        JRubyFile file = newFile(filename);
+        JRubyFile file = file(filename);
+
+        if (!file.exists()) noFileError(filename);
         
-        if (!file.exists()) {
-            throw recv.getRuntime().newErrnoENOENTError("No such file: " + filename);
-        }
-        return filename.getRuntime().newFixnum(file.length());
+        return recv.getRuntime().newFixnum(file.length());
     }
     
-    @JRubyMethod(name = "symlink?", required = 1, module = true)
-    public static RubyBoolean symlink_p(IRubyObject recv, IRubyObject _filename) {
+    @JRubyMethod(name = "size?", required = 1, module = true)
+    public static IRubyObject size_p(IRubyObject recv, IRubyObject filename) {
+        JRubyFile file = file(filename);
+
+        if (!file.exists()) return recv.getRuntime().getNil();
+        
+        return recv.getRuntime().newFixnum(file.length());
+    }
+    
+    @JRubyMethod(name = "socket?", required = 1, module = true)
+    public static IRubyObject socket_p(IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
-        RubyString filename = RubyString.stringValue(_filename);
+        JRubyFile file = file(filename);
         
-        JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), filename.toString());
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isSocket());
+    }
+    
+    @JRubyMethod(name = "sticky?", required = 1, module = true)
+    public static IRubyObject sticky_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
         
-        try {
-            // Only way to determine symlink is to compare canonical and absolute files
-            // However symlinks in containing path must not produce false positives, so we check that first
-            File absoluteParent = file.getAbsoluteFile().getParentFile();
-            File canonicalParent = file.getAbsoluteFile().getParentFile().getCanonicalFile();
-            
-            if (canonicalParent.getAbsolutePath().equals(absoluteParent.getAbsolutePath())) {
-                // parent doesn't change when canonicalized, compare absolute and canonical file directly
-                return file.getAbsolutePath().equals(file.getCanonicalPath()) ? runtime.getFalse() : runtime.getTrue();
-            }
-            
-            // directory itself has symlinks (canonical != absolute), so build new path with canonical parent and compare
-            file = JRubyFile.create(runtime.getCurrentDirectory(), canonicalParent.getAbsolutePath() + "/" + file.getName());
-            return file.getAbsolutePath().equals(file.getCanonicalPath()) ? runtime.getFalse() : runtime.getTrue();
-        } catch (IOException ioe) {
-            // problem canonicalizing the file; nothing we can do but return false
-            return runtime.getFalse();
-        }
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isSticky());
+    }
+        
+    @JRubyMethod(name = "symlink?", required = 1, module = true)
+    public static RubyBoolean symlink_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file = file(filename);
+
+        return runtime.newBoolean(file.exists() && runtime.getPosix().lstat(file.getAbsolutePath()).isSymlink());
     }
 
     // We do both writable and writable_real through the same method because
     // in our java process effective and real userid will always be the same.
     @JRubyMethod(name = {"writable?", "writable_real?"}, required = 1, module = true)
     public static RubyBoolean writable_p(IRubyObject recv, IRubyObject filename) {
-        return filename.getRuntime().newBoolean(newFile(filename).canWrite());
+        return filename.getRuntime().newBoolean(file(filename).canWrite());
     }
     
     @JRubyMethod(name = "zero?", required = 1, module = true)
     public static RubyBoolean zero_p(IRubyObject recv, IRubyObject filename) {
-        JRubyFile file = newFile(filename);
+        JRubyFile file = file(filename);
         
         return filename.getRuntime().newBoolean(file.exists() && file.length() == 0L);
     }
 
-    @JRubyMethod(name = "file?", required = 1, module = true)
-    public static RubyBoolean file_p(IRubyObject recv, IRubyObject filename) {
-        JRubyFile file = newFile(filename);
+    private static JRubyFile file(IRubyObject path) {
+        String filename = path.convertToString().toString();
         
-        return filename.getRuntime().newBoolean(file.isFile());
+        return JRubyFile.create(path.getRuntime().getCurrentDirectory(), filename);
     }
     
-    private static JRubyFile newFile(IRubyObject path) {
-        return JRubyFile.create(path.getRuntime().getCurrentDirectory(), path.convertToString().toString());
+    private static void noFileError(IRubyObject filename) {
+        throw filename.getRuntime().newErrnoENOENTError("No such file or directory - " + 
+                filename.convertToString());
     }
 }

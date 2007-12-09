@@ -27,11 +27,11 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ext;
+package org.jruby.ext.posix;
 
 import com.sun.jna.Library;
 
-public interface POSIX extends Library {
+public interface LibC extends Library {
     public int chmod(String filename, int mode);
     public int chown(String filename, int user, int group);
     public int getegid();
@@ -43,5 +43,10 @@ public interface POSIX extends Library {
     public int getpid();
     public int getuid();
     public int kill(int pid, int signal);
+    public int lchmod(String filename, int mode);
+    public int lchown(String filename, int user, int group);
+    public int link(String oldpath,String newpath);
+    public int lstat(String path, FileStat stat);
+    public int stat(String path, FileStat stat);
     public int symlink(String oldpath,String newpath);
 }

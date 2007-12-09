@@ -87,8 +87,8 @@ public class ShellLauncher {
             }
         }
 
-        private Map environmentMap(String[] env) {
-            Map m = new HashMap();
+        private Map<String, String> environmentMap(String[] env) {
+            Map<String, String> m = new HashMap<String, String>();
             for (int i = 0; i < env.length; i++) {
                 String[] kv = env[i].split("=", 2);
                 m.put(kv[0], kv[1]);

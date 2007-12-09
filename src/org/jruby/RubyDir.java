@@ -422,7 +422,7 @@ public class RubyDir extends RubyObject {
         boolean isDirectory = result.isDirectory();
         
         if (mustExist && !isDirectory) {
-            throw runtime.newErrnoENOENTError(path + " is not a directory");
+            throw runtime.newErrnoENOTDIRError(path + " is not a directory");
         } else if (!mustExist && isDirectory) {
             throw runtime.newErrnoEEXISTError("File exists - " + path); 
         }

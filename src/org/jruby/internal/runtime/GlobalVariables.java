@@ -32,12 +32,11 @@
 package org.jruby.internal.runtime;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
-import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -48,7 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class GlobalVariables {
     private Ruby runtime;
-    private Map globalVariables = new ConcurrentHashMap();
+    private Map<String, GlobalVariable> globalVariables = new ConcurrentHashMap<String, GlobalVariable>();
 
     public GlobalVariables(Ruby runtime) {
         this.runtime = runtime;
@@ -158,8 +157,8 @@ public class GlobalVariables {
         }
     }
 
-    public Iterator getNames() {
-        return globalVariables.keySet().iterator();
+    public Set<String> getNames() {
+        return globalVariables.keySet();
     }
 
     private GlobalVariable createIfNotDefined(String name) {

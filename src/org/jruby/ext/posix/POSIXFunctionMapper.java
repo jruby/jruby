@@ -2,7 +2,7 @@
  * POSIXFunctionMapper.java
  */
 
-package org.jruby.ext;
+package org.jruby.ext.posix;
 
 import java.lang.reflect.Method;
 import com.sun.jna.FunctionMapper;
