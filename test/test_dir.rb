@@ -112,8 +112,17 @@ class TestDir < Test::Unit::TestCase
     def test_pathname_realpath_works_with_drive_letters
       require 'pathname'
       assert_nothing_raised do
-        Pathname.new('C:\windows').realpath.to_s
-        Pathname.new('C:\windows\..\windows').realpath.to_s
+        win_dir = nil
+        if FileTest.exist?('C:/windows')
+          win_dir = "windows" 
+        elsif FileTest.exist?('C:/winnt')
+          win_dir = "winnt" 
+        end
+        
+        if (win_dir != nil)
+          Pathname.new("C:\\#{win_dir}").realpath.to_s
+          Pathname.new("C:\\#{win_dir}\\..\\#{win_dir}").realpath.to_s
+        end
       end      
     end
   else
