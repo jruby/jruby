@@ -7,11 +7,11 @@ import com.sun.jna.Native;
 public class POSIXFactory {
     static LibC libc = null;
     
-    public static POSIX getPOSIX(POSIXHandler handler) {
+    public static POSIX getPOSIX(POSIXHandler handler, boolean useNativePOSIX) {
         boolean thirtyTwoBit = "32".equals(System.getProperty("sun.arch.data.model")) == true;
         
         // No 64 bit structures defined yet.
-        if (thirtyTwoBit) {
+        if (useNativePOSIX && thirtyTwoBit) {
             try {
                 String os = System.getProperty("os.name");
                 if (os.startsWith("Mac OS")) {

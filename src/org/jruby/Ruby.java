@@ -1165,7 +1165,7 @@ public final class Ruby {
     private void init() {
         ThreadContext tc = getCurrentContext();
 
-        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this));
+        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), RubyInstanceConfig.nativeEnabled);
         
         defineGlobalVERBOSE();
         defineGlobalDEBUG();

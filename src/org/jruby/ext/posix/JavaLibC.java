@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.jruby.Ruby;
+import org.jruby.ext.posix.POSIX.ERRORS;
 import org.jruby.ext.posix.util.Chmod;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ShellLauncher;
@@ -174,6 +175,9 @@ public class JavaLibC implements LibC {
         
         try {
             File file = new File(path);
+            
+            if (!file.exists()) handler.error(ERRORS.ENOENT, path);
+                
             jstat.setup(file.getCanonicalPath());
         } catch (IOException e) {
             // TODO: Throw error when we have problems stat'ing canonicalizing
