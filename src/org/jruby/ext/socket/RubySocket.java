@@ -32,12 +32,15 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
@@ -66,6 +69,14 @@ public class RubySocket extends RubyBasicSocket {
             return new RubySocket(runtime, klass);
         }
     };
+
+    public static final int NI_DGRAM = 16;
+    public static final int NI_MAXHOST = 1025;
+    public static final int NI_MAXSERV = 32;
+    public static final int NI_NAMEREQD = 4;
+    public static final int NI_NOFQDN = 1;
+    public static final int NI_NUMERICHOST = 2;
+    public static final int NI_NUMERICSERV = 8;
 
     static void createSocket(Ruby runtime) {
         RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.getClass("BasicSocket"), SOCKET_ALLOCATOR);
@@ -112,6 +123,16 @@ public class RubySocket extends RubyBasicSocket {
         // drb needs defined
         rb_mConstants.setConstant("TCP_NODELAY", runtime.newFixnum(1));
         
+        // flags/limits used by Net::SSH
+        rb_mConstants.setConstant("NI_DGRAM", runtime.newFixnum(NI_DGRAM));
+        rb_mConstants.setConstant("NI_MAXHOST", runtime.newFixnum(NI_MAXHOST));
+        rb_mConstants.setConstant("NI_MAXSERV", runtime.newFixnum(NI_MAXSERV));
+        rb_mConstants.setConstant("NI_NAMEREQD", runtime.newFixnum(NI_NAMEREQD));
+        rb_mConstants.setConstant("NI_NOFQDN", runtime.newFixnum(NI_NOFQDN));
+        rb_mConstants.setConstant("NI_NUMERICHOST", runtime.newFixnum(NI_NUMERICHOST));
+        rb_mConstants.setConstant("NI_NUMERICSERV", runtime.newFixnum(NI_NUMERICSERV));
+       
+        
         rb_cSocket.includeModule(rb_mConstants);
 
         rb_cSocket.getMetaClass().defineFastMethod("gethostname", cfact.getFastSingletonMethod("gethostname"));
@@ -126,7 +147,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private static RuntimeException sockerr(IRubyObject recv, String msg) {
-        return new RaiseException(recv.getRuntime(), recv.getRuntime().getClass("SocketError"), null, true);
+        return new RaiseException(recv.getRuntime(), recv.getRuntime().getClass("SocketError"), msg, true);
     }
 
     public static IRubyObject gethostname(IRubyObject recv) {
@@ -234,22 +255,55 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
+    // FIXME: may need to broaden for IPV6 IP address strings
+    private static final Pattern STRING_ADDRESS_PATTERN =
+        Pattern.compile("((.*)\\/)?([\\.0-9]+)(:([0-9]+))?");
+    
+    private static final int HOST_GROUP = 3;
+    private static final int PORT_GROUP = 5;
+    
     public static IRubyObject getnameinfo(IRubyObject recv, IRubyObject[] args) {
-        args = Arity.scanArgs(recv.getRuntime(),args,1,1); // 0 == addr, 1 == flags
-        
-        if (args[0] instanceof RubyArray) {
-            try {
-                List l = ((RubyArray)args[0]).getList();
-                IRubyObject[] ret = new IRubyObject[2];
-                ret[0] = recv.getRuntime().newString(InetAddress.getByName(l.get(2).toString()).getCanonicalHostName());
-                ret[1] = (IRubyObject)l.get(1);
-                
-                return recv.getRuntime().newArrayNoCopy(ret);
-            } catch(UnknownHostException e) {
-                throw sockerr(recv, "getnameinfo: name or service not known");
-            }
-        } 
+        Ruby runtime = recv.getRuntime();
+        int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
+        int flags = argc == 2 ? RubyNumeric.num2int(args[1]) : 0;
+        IRubyObject arg0 = args[0];
 
-        throw sockerr(recv, "getnameinfo: string version not supported yet");
+        String host, port;
+        if (arg0 instanceof RubyArray) {
+            List list = ((RubyArray)arg0).getList();
+            int len = list.size();
+            if (len < 3 || len > 4) {
+                throw runtime.newArgumentError("array size should be 3 or 4, "+len+" given");
+            }
+            // TODO: validate port as numeric
+            host = list.get(2).toString();
+            port = list.get(1).toString();
+        } else if (arg0 instanceof RubyString) {
+            String arg = ((RubyString)arg0).toString();
+            Matcher m = STRING_ADDRESS_PATTERN.matcher(arg);
+            if (!m.matches()) {
+                throw runtime.newArgumentError("invalid address string");
+            }
+            if ((host = m.group(HOST_GROUP)) == null || host.length() == 0 ||
+                    (port = m.group(PORT_GROUP)) == null || port.length() == 0) {
+                throw runtime.newArgumentError("invalid address string");
+            }
+        } else {
+            throw runtime.newArgumentError("invalid args");
+        }
+        
+        InetAddress addr;
+        try {
+            addr = InetAddress.getByName(host);
+        } catch (UnknownHostException e) {
+            throw sockerr(recv, "unknown host: "+ host);
+        }
+        if ((flags & NI_NUMERICHOST) == 0) {
+            host = addr.getCanonicalHostName();
+        } else {
+            host = addr.getHostAddress();
+        }
+        return runtime.newArray(runtime.newString(host), runtime.newString(port));
+
     }
 }// RubySocket
