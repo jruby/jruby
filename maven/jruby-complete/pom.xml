@@ -22,6 +22,12 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>org.joni</groupId>
+      <artifactId>joni</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
       <version>3.0</version>
@@ -102,6 +108,11 @@
                   <groupId>jline</groupId>
                   <artifactId>jline</artifactId>
                   <version>0.9.91</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.joni</groupId>
+                  <artifactId>joni</artifactId>
+                  <version>1.0-SNAPSHOT</version>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.jruby.extras</groupId>
