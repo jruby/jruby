@@ -49,6 +49,12 @@ public class ReflectedJavaMethod extends JavaMethod {
     
     private final boolean needsBlock;
     private final boolean isStatic;
+    private final int required;
+    private final int optional;
+    private final boolean rest;
+    private final int max;
+    
+    private final boolean argsAsIs;
 
     public ReflectedJavaMethod(
             RubyModule implementationClass, Method method, JRubyMethod annotation) {
@@ -60,19 +66,25 @@ public class ReflectedJavaMethod extends JavaMethod {
         Class<?>[] params = method.getParameterTypes();
         this.needsBlock = params.length > 0 && params[params.length - 1] == Block.class;
         this.isStatic = Modifier.isStatic(method.getModifiers());
+        
+        this.required = annotation.required();
+        this.optional = annotation.optional();
+        this.rest = annotation.rest();
+        
+        this.argsAsIs = ! isStatic && optional == 0 && !rest && ! needsBlock;
+        
+        if (rest) {
+            max = -1;
+        } else {
+            max = required + optional;
+        }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
             IRubyObject[] args, Block block) {
-        int max;
-        if (annotation.rest()) {
-            max = -1;
-        } else {
-            max = annotation.required() + annotation.optional();
-        }
         Ruby runtime = context.getRuntime();
-        Arity.checkArgumentCount(runtime, args, annotation.required(), max);
+        Arity.checkArgumentCount(runtime, args, required, max);
         
         callConfig.pre(context, self, getImplementationClass(), arity, name, args, block, null, this);
         
@@ -83,8 +95,6 @@ public class ReflectedJavaMethod extends JavaMethod {
                         method.getDeclaringClass().getName());
             }
             
-            boolean argsAsIs = ! isStatic && annotation.optional() == 0 && !annotation.rest() && ! needsBlock;
-
             if (argsAsIs) {
                 boolean isTrace = runtime.hasEventHooks();
                 ISourcePosition position = null;
@@ -108,7 +118,7 @@ public class ReflectedJavaMethod extends JavaMethod {
                 if (isStatic) {
                     params[offset++] = self;
                 }
-                if (annotation.optional() == 0 && !annotation.rest()) {
+                if (optional == 0 && !rest) {
                     for (int i = 0; i < args.length; i++) {
                         params[offset++] = args[i];
                     }
@@ -171,8 +181,8 @@ public class ReflectedJavaMethod extends JavaMethod {
         if (isStatic) {
             argsLength++;
         }
-        if (annotation.optional() == 0 && !annotation.rest()) {
-            argsLength += annotation.required();
+        if (optional == 0 && !rest) {
+            argsLength += required;
         } else {
             argsLength++;
         }
