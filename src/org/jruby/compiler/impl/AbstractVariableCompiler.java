@@ -224,7 +224,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
 
             // assign rest args
             method.label(readyForArgs);
-            restAssignment.compile(methodCompiler);
+            restAssignment.call(methodCompiler);
             //consume leftover assigned value
             method.pop();
         }
@@ -238,7 +238,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             method.aload(closureIndex);
 
             methodCompiler.invokeUtilityMethod("processBlockArgument", cg.sig(IRubyObject.class, cg.params(Ruby.class, Block.class)));
-            blockAssignment.compile(methodCompiler);
+            blockAssignment.call(methodCompiler);
             method.pop();
         }
     }

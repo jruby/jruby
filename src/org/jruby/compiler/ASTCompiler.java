@@ -132,8 +132,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author headius
  */
 public class ASTCompiler {
-
-    public static void compile(Node node, MethodCompiler context) {
+    private boolean isAtRoot = true;
+    
+    public void compile(Node node, MethodCompiler context) {
         if (node == null) {
             context.loadNil();
             return;
@@ -415,7 +416,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileArguments(Node node, MethodCompiler context) {
+    public void compileArguments(Node node, MethodCompiler context) {
         switch (node.nodeId) {
             case ARGSCATNODE:
                 compileArgsCatArguments(node, context);
@@ -435,7 +436,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileAssignment(Node node, MethodCompiler context) {
+    public void compileAssignment(Node node, MethodCompiler context) {
         switch (node.nodeId) {
             case ATTRASSIGNNODE:
                 compileAttrAssignAssignment(node, context);
@@ -475,7 +476,7 @@ public class ASTCompiler {
         return new YARVNodesCompiler();
     }
 
-    public static void compileAlias(Node node, MethodCompiler context) {
+    public void compileAlias(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final AliasNode alias = (AliasNode) node;
@@ -483,7 +484,7 @@ public class ASTCompiler {
         context.defineAlias(alias.getNewName(), alias.getOldName());
     }
 
-    public static void compileAnd(Node node, MethodCompiler context) {
+    public void compileAnd(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final AndNode andNode = (AndNode) node;
@@ -500,7 +501,7 @@ public class ASTCompiler {
         context.performLogicalAnd(longCallback);
     }
 
-    public static void compileArray(Node node, MethodCompiler context) {
+    public void compileArray(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ArrayNode arrayNode = (ArrayNode) node;
@@ -517,7 +518,7 @@ public class ASTCompiler {
         context.createNewArray(arrayNode.isLightweight());
     }
 
-    public static void compileArgsCat(Node node, MethodCompiler context) {
+    public void compileArgsCat(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
@@ -529,7 +530,7 @@ public class ASTCompiler {
         context.concatArrays();
     }
 
-    public static void compileArgsPush(Node node, MethodCompiler context) {
+    public void compileArgsPush(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ArgsPushNode argsPush = (ArgsPushNode) node;
@@ -539,7 +540,7 @@ public class ASTCompiler {
         context.concatArrays();
     }
 
-    public static void compileAttrAssign(Node node, MethodCompiler context) {
+    public void compileAttrAssign(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         AttrAssignNode attrAssignNode = (AttrAssignNode) node;
@@ -550,7 +551,7 @@ public class ASTCompiler {
         context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName());
     }
 
-    public static void compileAttrAssignAssignment(Node node, MethodCompiler context) {
+    public void compileAttrAssignAssignment(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         AttrAssignNode attrAssignNode = (AttrAssignNode) node;
@@ -568,7 +569,7 @@ public class ASTCompiler {
         context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName());
     }
 
-    public static void compileBackref(Node node, MethodCompiler context) {
+    public void compileBackref(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         BackRefNode iVisited = (BackRefNode) node;
@@ -576,7 +577,7 @@ public class ASTCompiler {
         context.performBackref(iVisited.getType());
     }
 
-    public static void compileBegin(Node node, MethodCompiler context) {
+    public void compileBegin(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         BeginNode beginNode = (BeginNode) node;
@@ -584,12 +585,12 @@ public class ASTCompiler {
         compile(beginNode.getBodyNode(), context);
     }
 
-    public static void compileBignum(Node node, MethodCompiler context) {
+    public void compileBignum(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         context.createNewBignum(((BignumNode) node).getValue());
     }
 
-    public static void compileBlock(Node node, MethodCompiler context) {
+    public void compileBlock(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         BlockNode blockNode = (BlockNode) node;
@@ -606,16 +607,16 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileBreak(Node node, MethodCompiler context) {
+    public void compileBreak(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final BreakNode breakNode = (BreakNode) node;
 
         CompilerCallback valueCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (breakNode.getValueNode() != null) {
-                            ASTCompiler.compile(breakNode.getValueNode(), context);
+                            compile(breakNode.getValueNode(), context);
                         } else {
                             context.loadNil();
                         }
@@ -625,21 +626,21 @@ public class ASTCompiler {
         context.issueBreakEvent(valueCallback);
     }
 
-    public static void compileCall(Node node, MethodCompiler context) {
+    public void compileCall(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final CallNode callNode = (CallNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
-                        ASTCompiler.compile(callNode.getReceiverNode(), context);
+                    public void call(MethodCompiler context) {
+                        compile(callNode.getReceiverNode(), context);
                     }
                 };
 
         CompilerCallback argsCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         compileArguments(callNode.getArgsNode(), context);
                     }
                 };
@@ -662,7 +663,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileCase(Node node, MethodCompiler context) {
+    public void compileCase(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         CaseNode caseNode = (CaseNode) node;
@@ -679,7 +680,7 @@ public class ASTCompiler {
         compileWhen(firstWhenNode, context, hasCase);
     }
 
-    public static void compileWhen(Node node, MethodCompiler context, final boolean hasCase) {
+    public void compileWhen(Node node, MethodCompiler context, final boolean hasCase) {
         if (node == null) {
             // reached the end of the when chain, pop the case (if provided) and we're done
             if (hasCase) {
@@ -731,7 +732,7 @@ public class ASTCompiler {
                             }
 
                             if (currentWhen.getBodyNode() != null) {
-                                ASTCompiler.compile(currentWhen.getBodyNode(), context);
+                                compile(currentWhen.getBodyNode(), context);
                             } else {
                                 context.loadNil();
                             }
@@ -742,7 +743,7 @@ public class ASTCompiler {
 
                         public void branch(MethodCompiler context) {
                             // proceed to the next when
-                            ASTCompiler.compileWhen(currentWhen.getNextCase(), context, hasCase);
+                            compileWhen(currentWhen.getNextCase(), context, hasCase);
                         }
                     };
 
@@ -750,7 +751,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileMultiArgWhen(final WhenNode whenNode, final ArrayNode expressionsNode, final int conditionIndex, MethodCompiler context, final boolean hasCase) {
+    public void compileMultiArgWhen(final WhenNode whenNode, final ArrayNode expressionsNode, final int conditionIndex, MethodCompiler context, final boolean hasCase) {
 
         if (conditionIndex >= expressionsNode.size()) {
             // done with conditions, continue to next when in the chain
@@ -799,7 +800,7 @@ public class ASTCompiler {
                         }
 
                         if (whenNode.getBodyNode() != null) {
-                            ASTCompiler.compile(whenNode.getBodyNode(), context);
+                            compile(whenNode.getBodyNode(), context);
                         } else {
                             context.loadNil();
                         }
@@ -810,14 +811,14 @@ public class ASTCompiler {
 
                     public void branch(MethodCompiler context) {
                         // proceed to the next when
-                        ASTCompiler.compileMultiArgWhen(whenNode, expressionsNode, conditionIndex + 1, context, hasCase);
+                        compileMultiArgWhen(whenNode, expressionsNode, conditionIndex + 1, context, hasCase);
                     }
                 };
 
         context.performBooleanBranch(trueBranch, falseBranch);
     }
 
-    public static void compileClass(Node node, MethodCompiler context) {
+    public void compileClass(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final ClassNode classNode = (ClassNode) node;
@@ -828,8 +829,8 @@ public class ASTCompiler {
 
         CompilerCallback superCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
-                        ASTCompiler.compile(superNode, context);
+                    public void call(MethodCompiler context) {
+                        compile(superNode, context);
                     }
                 };
         if (superNode == null) {
@@ -838,9 +839,9 @@ public class ASTCompiler {
 
         CompilerCallback bodyCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (classNode.getBodyNode() != null) {
-                            ASTCompiler.compile(classNode.getBodyNode(), context);
+                            compile(classNode.getBodyNode(), context);
                         } else {
                             context.loadNil();
                         }
@@ -849,11 +850,11 @@ public class ASTCompiler {
 
         CompilerCallback pathCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (cpathNode instanceof Colon2Node) {
                             Node leftNode = ((Colon2Node) cpathNode).getLeftNode();
                             if (leftNode != null) {
-                                ASTCompiler.compile(leftNode, context);
+                                compile(leftNode, context);
                             } else {
                                 context.loadNil();
                             }
@@ -868,23 +869,23 @@ public class ASTCompiler {
         context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback, null);
     }
 
-    public static void compileSClass(Node node, MethodCompiler context) {
+    public void compileSClass(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final SClassNode sclassNode = (SClassNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
-                        ASTCompiler.compile(sclassNode.getReceiverNode(), context);
+                    public void call(MethodCompiler context) {
+                        compile(sclassNode.getReceiverNode(), context);
                     }
                 };
 
         CompilerCallback bodyCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (sclassNode.getBodyNode() != null) {
-                            ASTCompiler.compile(sclassNode.getBodyNode(), context);
+                            compile(sclassNode.getBodyNode(), context);
                         } else {
                             context.loadNil();
                         }
@@ -894,7 +895,7 @@ public class ASTCompiler {
         context.defineClass("SCLASS", sclassNode.getScope(), null, null, bodyCallback, receiverCallback);
     }
 
-    public static void compileClassVar(Node node, MethodCompiler context) {
+    public void compileClassVar(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ClassVarNode classVarNode = (ClassVarNode) node;
@@ -902,7 +903,7 @@ public class ASTCompiler {
         context.retrieveClassVariable(classVarNode.getName());
     }
 
-    public static void compileClassVarAsgn(Node node, MethodCompiler context) {
+    public void compileClassVarAsgn(Node node, MethodCompiler context) {
         ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
 
         // FIXME: probably more efficient with a callback
@@ -911,7 +912,7 @@ public class ASTCompiler {
         compileClassVarAsgnAssignment(node, context);
     }
 
-    public static void compileClassVarAsgnAssignment(Node node, MethodCompiler context) {
+    public void compileClassVarAsgnAssignment(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
@@ -919,7 +920,7 @@ public class ASTCompiler {
         context.assignClassVariable(classVarAsgnNode.getName());
     }
 
-    public static void compileClassVarDecl(Node node, MethodCompiler context) {
+    public void compileClassVarDecl(Node node, MethodCompiler context) {
         ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
 
         // FIXME: probably more efficient with a callback
@@ -928,7 +929,7 @@ public class ASTCompiler {
         compileClassVarDeclAssignment(node, context);
     }
 
-    public static void compileClassVarDeclAssignment(Node node, MethodCompiler context) {
+    public void compileClassVarDeclAssignment(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
@@ -936,7 +937,7 @@ public class ASTCompiler {
         context.declareClassVariable(classVarDeclNode.getName());
     }
 
-    public static void compileConstDecl(Node node, MethodCompiler context) {
+    public void compileConstDecl(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
@@ -958,7 +959,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileConstDeclAssignment(Node node, MethodCompiler context) {
+    public void compileConstDeclAssignment(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
@@ -972,7 +973,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileConst(Node node, MethodCompiler context) {
+    public void compileConst(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ConstNode constNode = (ConstNode) node;
@@ -980,7 +981,7 @@ public class ASTCompiler {
         context.retrieveConstant(constNode.getName());
     }
 
-    public static void compileColon2(Node node, MethodCompiler context) {
+    public void compileColon2(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         final Colon2Node iVisited = (Colon2Node) node;
         Node leftNode = iVisited.getLeftNode();
@@ -992,15 +993,15 @@ public class ASTCompiler {
         } else {
             final CompilerCallback receiverCallback = new CompilerCallback() {
 
-                        public void compile(MethodCompiler context) {
-                            ASTCompiler.compile(iVisited.getLeftNode(), context);
+                        public void call(MethodCompiler context) {
+                            compile(iVisited.getLeftNode(), context);
                         }
                     };
 
             BranchCallback moduleCallback = new BranchCallback() {
 
                         public void branch(MethodCompiler context) {
-                            receiverCallback.compile(context);
+                            receiverCallback.call(context);
                             context.retrieveConstantFromModule(name);
                         }
                     };
@@ -1016,7 +1017,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileColon3(Node node, MethodCompiler context) {
+    public void compileColon3(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         Colon3Node iVisited = (Colon3Node) node;
@@ -1026,7 +1027,7 @@ public class ASTCompiler {
         context.retrieveConstantFromModule(name);
     }
 
-    public static void compileGetDefinitionBase(final Node node, MethodCompiler context) {
+    public void compileGetDefinitionBase(final Node node, MethodCompiler context) {
         BranchCallback reg = new BranchCallback() {
 
                     public void branch(MethodCompiler context) {
@@ -1043,12 +1044,12 @@ public class ASTCompiler {
         context.protect(reg, out, String.class);
     }
 
-    public static void compileDefined(final Node node, MethodCompiler context) {
+    public void compileDefined(final Node node, MethodCompiler context) {
         compileGetDefinitionBase(((DefinedNode) node).getExpressionNode(), context);
         context.stringOrNil();
     }
 
-    public static void compileGetArgumentDefinition(final Node node, MethodCompiler context, String type) {
+    public void compileGetArgumentDefinition(final Node node, MethodCompiler context, String type) {
         if (node == null) {
             context.pushString(type);
         } else if (node instanceof ArrayNode) {
@@ -1077,7 +1078,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileGetDefinition(final Node node, MethodCompiler context) {
+    public void compileGetDefinition(final Node node, MethodCompiler context) {
         switch (node.nodeId) {
             case CLASSVARASGNNODE:
             case CLASSVARDECLNODE:
@@ -1246,7 +1247,7 @@ public class ASTCompiler {
                                 public void branch(MethodCompiler context) {
                                     if (iVisited instanceof Colon2Node) {
                                         final Node leftNode = ((Colon2Node) iVisited).getLeftNode();
-                                        ASTCompiler.compile(leftNode, context);
+                                        compile(leftNode, context);
                                     } else {
                                         context.loadObject();
                                     }
@@ -1278,13 +1279,13 @@ public class ASTCompiler {
                     final CallNode iVisited = (CallNode) node;
                     Object isnull = context.getNewEnding();
                     Object ending = context.getNewEnding();
-                    ASTCompiler.compileGetDefinition(iVisited.getReceiverNode(), context);
+                    compileGetDefinition(iVisited.getReceiverNode(), context);
                     context.ifNull(isnull);
 
                     context.rescue(new BranchCallback() {
 
                                 public void branch(MethodCompiler context) {
-                                    ASTCompiler.compile(iVisited.getReceiverNode(), context); //[IRubyObject]
+                                    compile(iVisited.getReceiverNode(), context); //[IRubyObject]
                                     context.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
                                     context.metaclass(); //[IRubyObject, RubyClass]
                                     context.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
@@ -1455,13 +1456,13 @@ public class ASTCompiler {
                     final AttrAssignNode iVisited = (AttrAssignNode) node;
                     Object isnull = context.getNewEnding();
                     Object ending = context.getNewEnding();
-                    ASTCompiler.compileGetDefinition(iVisited.getReceiverNode(), context);
+                    compileGetDefinition(iVisited.getReceiverNode(), context);
                     context.ifNull(isnull);
 
                     context.rescue(new BranchCallback() {
 
                                 public void branch(MethodCompiler context) {
-                                    ASTCompiler.compile(iVisited.getReceiverNode(), context); //[IRubyObject]
+                                    compile(iVisited.getReceiverNode(), context); //[IRubyObject]
                                     context.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
                                     context.metaclass(); //[IRubyObject, RubyClass]
                                     context.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
@@ -1512,7 +1513,7 @@ public class ASTCompiler {
                 context.rescue(new BranchCallback() {
 
                             public void branch(MethodCompiler context) {
-                                ASTCompiler.compile(node, context);
+                                compile(node, context);
                                 context.consumeCurrentValue();
                                 context.pushNull();
                             }
@@ -1528,7 +1529,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileDAsgn(Node node, MethodCompiler context) {
+    public void compileDAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         DAsgnNode dasgnNode = (DAsgnNode) node;
@@ -1538,7 +1539,7 @@ public class ASTCompiler {
         compileDAsgnAssignment(dasgnNode, context);
     }
 
-    public static void compileDAsgnAssignment(Node node, MethodCompiler context) {
+    public void compileDAsgnAssignment(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         DAsgnNode dasgnNode = (DAsgnNode) node;
@@ -1546,7 +1547,7 @@ public class ASTCompiler {
         context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
     }
 
-    public static void compileDefn(Node node, MethodCompiler context) {
+    public void compileDefn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final DefnNode defnNode = (DefnNode) node;
@@ -1554,9 +1555,9 @@ public class ASTCompiler {
 
         CompilerCallback body = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (defnNode.getBodyNode() != null) {
-                            ASTCompiler.compile(defnNode.getBodyNode(), context);
+                            compile(defnNode.getBodyNode(), context);
                         } else {
                             context.loadNil();
                         }
@@ -1565,7 +1566,7 @@ public class ASTCompiler {
 
         CompilerCallback args = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         compileArgs(argsNode, context);
                     }
                 };
@@ -1578,7 +1579,7 @@ public class ASTCompiler {
         context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args, null, inspector);
     }
 
-    public static void compileDefs(Node node, MethodCompiler context) {
+    public void compileDefs(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final DefsNode defsNode = (DefsNode) node;
@@ -1586,16 +1587,16 @@ public class ASTCompiler {
 
         CompilerCallback receiver = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
-                        ASTCompiler.compile(defsNode.getReceiverNode(), context);
+                    public void call(MethodCompiler context) {
+                        compile(defsNode.getReceiverNode(), context);
                     }
                 };
 
         CompilerCallback body = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (defsNode.getBodyNode() != null) {
-                            ASTCompiler.compile(defsNode.getBodyNode(), context);
+                            compile(defsNode.getBodyNode(), context);
                         } else {
                             context.loadNil();
                         }
@@ -1604,7 +1605,7 @@ public class ASTCompiler {
 
         CompilerCallback args = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         compileArgs(argsNode, context);
                     }
                 };
@@ -1617,7 +1618,7 @@ public class ASTCompiler {
         context.defineNewMethod(defsNode.getName(), defsNode.getScope(), body, args, receiver, inspector);
     }
 
-    public static void compileArgs(Node node, MethodCompiler context) {
+    public void compileArgs(Node node, MethodCompiler context) {
         final ArgsNode argsNode = (ArgsNode) node;
 
         final int required = argsNode.getRequiredArgsCount();
@@ -1662,7 +1663,7 @@ public class ASTCompiler {
         if (rest > -1) {
             restAssignment = new CompilerCallback() {
 
-                        public void compile(MethodCompiler context) {
+                        public void call(MethodCompiler context) {
                             context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg());
                         }
                     };
@@ -1671,7 +1672,7 @@ public class ASTCompiler {
         if (argsNode.getBlockArgNode() != null) {
             blockAssignment = new CompilerCallback() {
 
-                        public void compile(MethodCompiler context) {
+                        public void call(MethodCompiler context) {
                             context.getVariableCompiler().assignLocalVariable(argsNode.getBlockArgNode().getCount());
                         }
                     };
@@ -1691,7 +1692,7 @@ public class ASTCompiler {
                 blockAssignment);
     }
 
-    public static void compileDot(Node node, MethodCompiler context) {
+    public void compileDot(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         DotNode dotNode = (DotNode) node;
@@ -1702,19 +1703,19 @@ public class ASTCompiler {
         context.createNewRange(dotNode.isExclusive());
     }
 
-    public static void compileDRegexp(Node node, MethodCompiler context) {
+    public void compileDRegexp(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final DRegexpNode dregexpNode = (DRegexpNode) node;
 
         CompilerCallback createStringCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         ArrayCallback dstrCallback = new ArrayCallback() {
 
                                     public void nextValue(MethodCompiler context, Object sourceArray,
                                             int index) {
-                                        ASTCompiler.compile(dregexpNode.get(index), context);
+                                        compile(dregexpNode.get(index), context);
                                     }
                                 };
                         context.createNewString(dstrCallback, dregexpNode.size());
@@ -1725,7 +1726,7 @@ public class ASTCompiler {
         context.createNewRegexp(createStringCallback, dregexpNode.getOptions());
     }
 
-    public static void compileDStr(Node node, MethodCompiler context) {
+    public void compileDStr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final DStrNode dstrNode = (DStrNode) node;
@@ -1740,7 +1741,7 @@ public class ASTCompiler {
         context.createNewString(dstrCallback, dstrNode.size());
     }
 
-    public static void compileDSymbol(Node node, MethodCompiler context) {
+    public void compileDSymbol(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final DSymbolNode dsymbolNode = (DSymbolNode) node;
@@ -1755,7 +1756,7 @@ public class ASTCompiler {
         context.createNewSymbol(dstrCallback, dsymbolNode.size());
     }
 
-    public static void compileDVar(Node node, MethodCompiler context) {
+    public void compileDVar(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         DVarNode dvarNode = (DVarNode) node;
@@ -1763,7 +1764,7 @@ public class ASTCompiler {
         context.getVariableCompiler().retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
     }
 
-    public static void compileDXStr(Node node, MethodCompiler context) {
+    public void compileDXStr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final DXStrNode dxstrNode = (DXStrNode) node;
@@ -1778,7 +1779,7 @@ public class ASTCompiler {
 
         CompilerCallback argsCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         context.createNewString(dstrCallback, dxstrNode.size());
                         context.createObjectArray(1);
                     }
@@ -1787,7 +1788,7 @@ public class ASTCompiler {
         context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
     }
 
-    public static void compileEnsureNode(Node node, MethodCompiler context) {
+    public void compileEnsureNode(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final EnsureNode ensureNode = (EnsureNode) node;
@@ -1819,7 +1820,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileEvStr(Node node, MethodCompiler context) {
+    public void compileEvStr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final EvStrNode evStrNode = (EvStrNode) node;
@@ -1828,7 +1829,7 @@ public class ASTCompiler {
         context.asString();
     }
 
-    public static void compileFalse(Node node, MethodCompiler context) {
+    public void compileFalse(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         context.loadFalse();
@@ -1836,14 +1837,14 @@ public class ASTCompiler {
         context.pollThreadEvents();
     }
 
-    public static void compileFCall(Node node, MethodCompiler context) {
+    public void compileFCall(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final FCallNode fcallNode = (FCallNode) node;
 
         CompilerCallback argsCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         compileArguments(fcallNode.getArgsNode(), context);
                     }
                 };
@@ -1866,7 +1867,7 @@ public class ASTCompiler {
         }
     }
 
-    private static CompilerCallback getBlock(Node node) {
+    private CompilerCallback getBlock(Node node) {
         if (node == null) {
             return null;
         }
@@ -1877,8 +1878,8 @@ public class ASTCompiler {
 
                 return new CompilerCallback() {
 
-                            public void compile(MethodCompiler context) {
-                                ASTCompiler.compile(iterNode, context);
+                            public void call(MethodCompiler context) {
+                                compile(iterNode, context);
                             }
                         };
             case BLOCKPASSNODE:
@@ -1886,8 +1887,8 @@ public class ASTCompiler {
 
                 return new CompilerCallback() {
 
-                            public void compile(MethodCompiler context) {
-                                ASTCompiler.compile(blockPassNode.getBodyNode(), context);
+                            public void call(MethodCompiler context) {
+                                compile(blockPassNode.getBodyNode(), context);
                                 context.unwrapPassedBlock();
                             }
                         };
@@ -1896,7 +1897,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileFixnum(Node node, MethodCompiler context) {
+    public void compileFixnum(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         FixnumNode fixnumNode = (FixnumNode) node;
@@ -1904,7 +1905,7 @@ public class ASTCompiler {
         context.createNewFixnum(fixnumNode.getValue());
     }
 
-    public static void compileFlip(Node node, MethodCompiler context) {
+    public void compileFlip(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final FlipNode flipNode = (FlipNode) node;
@@ -1981,7 +1982,7 @@ public class ASTCompiler {
         }
     }
 
-    private static void becomeTrueOrFalse(MethodCompiler context) {
+    private void becomeTrueOrFalse(MethodCompiler context) {
         context.performBooleanBranch(new BranchCallback() {
 
                     public void branch(MethodCompiler context) {
@@ -1995,7 +1996,7 @@ public class ASTCompiler {
                 });
     }
 
-    private static void flipTrueOrFalse(MethodCompiler context) {
+    private void flipTrueOrFalse(MethodCompiler context) {
         context.performBooleanBranch(new BranchCallback() {
 
                     public void branch(MethodCompiler context) {
@@ -2009,7 +2010,7 @@ public class ASTCompiler {
                 });
     }
 
-    public static void compileFloat(Node node, MethodCompiler context) {
+    public void compileFloat(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         FloatNode floatNode = (FloatNode) node;
@@ -2017,21 +2018,21 @@ public class ASTCompiler {
         context.createNewFloat(floatNode.getValue());
     }
 
-    public static void compileFor(Node node, MethodCompiler context) {
+    public void compileFor(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final ForNode forNode = (ForNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
-                        ASTCompiler.compile(forNode.getIterNode(), context);
+                    public void call(MethodCompiler context) {
+                        compile(forNode.getIterNode(), context);
                     }
                 };
 
         final CompilerCallback closureArg = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         compileForIter(forNode, context);
                     }
                 };
@@ -2039,7 +2040,7 @@ public class ASTCompiler {
         context.getInvocationCompiler().invokeDynamic("each", receiverCallback, null, CallType.NORMAL, closureArg, false);
     }
 
-    public static void compileForIter(Node node, MethodCompiler context) {
+    public void compileForIter(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final ForNode forNode = (ForNode) node;
@@ -2047,9 +2048,9 @@ public class ASTCompiler {
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (forNode.getBodyNode() != null) {
-                            ASTCompiler.compile(forNode.getBodyNode(), context);
+                            compile(forNode.getBodyNode(), context);
                         } else {
                             context.loadNil();
                         }
@@ -2059,7 +2060,7 @@ public class ASTCompiler {
         // create the closure class and instantiate it
         final CompilerCallback closureArgs = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (forNode.getVarNode() != null) {
                             compileAssignment(forNode.getVarNode(), context);
                         }
@@ -2086,7 +2087,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileGlobalAsgn(Node node, MethodCompiler context) {
+    public void compileGlobalAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode) node;
@@ -2109,7 +2110,7 @@ public class ASTCompiler {
         context.assignGlobalVariable(globalAsgnNode.getName());
     }
 
-    public static void compileGlobalAsgnAssignment(Node node, MethodCompiler context) {
+    public void compileGlobalAsgnAssignment(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode) node;
@@ -2130,7 +2131,7 @@ public class ASTCompiler {
         context.assignGlobalVariable(globalAsgnNode.getName());
     }
 
-    public static void compileGlobalVar(Node node, MethodCompiler context) {
+    public void compileGlobalVar(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         GlobalVarNode globalVarNode = (GlobalVarNode) node;
@@ -2149,7 +2150,7 @@ public class ASTCompiler {
         context.retrieveGlobalVariable(globalVarNode.getName());
     }
 
-    public static void compileHash(Node node, MethodCompiler context) {
+    public void compileHash(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         HashNode hashNode = (HashNode) node;
@@ -2173,7 +2174,7 @@ public class ASTCompiler {
         context.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
     }
 
-    public static void compileIf(Node node, MethodCompiler context) {
+    public void compileIf(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final IfNode ifNode = (IfNode) node;
@@ -2205,7 +2206,7 @@ public class ASTCompiler {
         context.performBooleanBranch(trueCallback, falseCallback);
     }
 
-    public static void compileInstAsgn(Node node, MethodCompiler context) {
+    public void compileInstAsgn(Node node, MethodCompiler context) {
         InstAsgnNode instAsgnNode = (InstAsgnNode) node;
 
         compile(instAsgnNode.getValueNode(), context);
@@ -2213,14 +2214,14 @@ public class ASTCompiler {
         compileInstAsgnAssignment(node, context);
     }
 
-    public static void compileInstAsgnAssignment(Node node, MethodCompiler context) {
+    public void compileInstAsgnAssignment(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         InstAsgnNode instAsgnNode = (InstAsgnNode) node;
         context.assignInstanceVariable(instAsgnNode.getName());
     }
 
-    public static void compileInstVar(Node node, MethodCompiler context) {
+    public void compileInstVar(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         InstVarNode instVarNode = (InstVarNode) node;
@@ -2228,7 +2229,7 @@ public class ASTCompiler {
         context.retrieveInstanceVariable(instVarNode.getName());
     }
 
-    public static void compileIter(Node node, MethodCompiler context) {
+    public void compileIter(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final IterNode iterNode = (IterNode) node;
@@ -2236,9 +2237,9 @@ public class ASTCompiler {
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (iterNode.getBodyNode() != null) {
-                            ASTCompiler.compile(iterNode.getBodyNode(), context);
+                            compile(iterNode.getBodyNode(), context);
                         } else {
                             context.loadNil();
                         }
@@ -2248,7 +2249,7 @@ public class ASTCompiler {
         // create the closure class and instantiate it
         final CompilerCallback closureArgs = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (iterNode.getVarNode() != null) {
                             compileAssignment(iterNode.getVarNode(), context);
                         }
@@ -2286,7 +2287,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileLocalAsgn(Node node, MethodCompiler context) {
+    public void compileLocalAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
@@ -2296,7 +2297,7 @@ public class ASTCompiler {
         context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
     }
 
-    public static void compileLocalAsgnAssignment(Node node, MethodCompiler context) {
+    public void compileLocalAsgnAssignment(Node node, MethodCompiler context) {
         // "assignment" means the value is already on the stack
         context.lineNumber(node.getPosition());
 
@@ -2305,7 +2306,7 @@ public class ASTCompiler {
         context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
     }
 
-    public static void compileLocalVar(Node node, MethodCompiler context) {
+    public void compileLocalVar(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         LocalVarNode localVarNode = (LocalVarNode) node;
@@ -2313,7 +2314,7 @@ public class ASTCompiler {
         context.getVariableCompiler().retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
     }
 
-    public static void compileMatch(Node node, MethodCompiler context) {
+    public void compileMatch(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         MatchNode matchNode = (MatchNode) node;
@@ -2323,7 +2324,7 @@ public class ASTCompiler {
         context.match();
     }
 
-    public static void compileMatch2(Node node, MethodCompiler context) {
+    public void compileMatch2(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         Match2Node matchNode = (Match2Node) node;
@@ -2334,7 +2335,7 @@ public class ASTCompiler {
         context.match2();
     }
 
-    public static void compileMatch3(Node node, MethodCompiler context) {
+    public void compileMatch3(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         Match3Node matchNode = (Match3Node) node;
@@ -2345,7 +2346,7 @@ public class ASTCompiler {
         context.match3();
     }
 
-    public static void compileModule(Node node, MethodCompiler context) {
+    public void compileModule(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final ModuleNode moduleNode = (ModuleNode) node;
@@ -2354,9 +2355,9 @@ public class ASTCompiler {
 
         CompilerCallback bodyCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (moduleNode.getBodyNode() != null) {
-                            ASTCompiler.compile(moduleNode.getBodyNode(), context);
+                            compile(moduleNode.getBodyNode(), context);
                         }
                         context.loadNil();
                     }
@@ -2364,11 +2365,11 @@ public class ASTCompiler {
 
         CompilerCallback pathCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (cpathNode instanceof Colon2Node) {
                             Node leftNode = ((Colon2Node) cpathNode).getLeftNode();
                             if (leftNode != null) {
-                                ASTCompiler.compile(leftNode, context);
+                                compile(leftNode, context);
                             } else {
                                 context.loadNil();
                             }
@@ -2383,7 +2384,7 @@ public class ASTCompiler {
         context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback);
     }
 
-    public static void compileMultipleAsgn(Node node, MethodCompiler context) {
+    public void compileMultipleAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
@@ -2394,7 +2395,7 @@ public class ASTCompiler {
         compileMultipleAsgnAssignment(node, context);
     }
 
-    public static void compileMultipleAsgnAssignment(Node node, MethodCompiler context) {
+    public void compileMultipleAsgnAssignment(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
@@ -2430,13 +2431,13 @@ public class ASTCompiler {
 
         CompilerCallback argsCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         Node argsNode = multipleAsgnNode.getArgsNode();
                         if (argsNode instanceof StarNode) {
                         // done processing args
                         } else {
                             // assign to appropriate variable
-                            ASTCompiler.compileAssignment(argsNode, context);
+                            compileAssignment(argsNode, context);
                         }
                     }
                 };
@@ -2456,7 +2457,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileNewline(Node node, MethodCompiler context) {
+    public void compileNewline(Node node, MethodCompiler context) {
         // TODO: add trace call?
         context.lineNumber(node.getPosition());
 
@@ -2467,16 +2468,16 @@ public class ASTCompiler {
         compile(newlineNode.getNextNode(), context);
     }
 
-    public static void compileNext(Node node, MethodCompiler context) {
+    public void compileNext(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final NextNode nextNode = (NextNode) node;
 
         CompilerCallback valueCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (nextNode.getValueNode() != null) {
-                            ASTCompiler.compile(nextNode.getValueNode(), context);
+                            compile(nextNode.getValueNode(), context);
                         } else {
                             context.loadNil();
                         }
@@ -2487,7 +2488,7 @@ public class ASTCompiler {
         context.issueNextEvent(valueCallback);
     }
 
-    public static void compileNthRef(Node node, MethodCompiler context) {
+    public void compileNthRef(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         NthRefNode nthRefNode = (NthRefNode) node;
@@ -2495,7 +2496,7 @@ public class ASTCompiler {
         context.nthRef(nthRefNode.getMatchNumber());
     }
 
-    public static void compileNil(Node node, MethodCompiler context) {
+    public void compileNil(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         context.loadNil();
@@ -2503,7 +2504,7 @@ public class ASTCompiler {
         context.pollThreadEvents();
     }
 
-    public static void compileNot(Node node, MethodCompiler context) {
+    public void compileNot(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         NotNode notNode = (NotNode) node;
@@ -2513,7 +2514,7 @@ public class ASTCompiler {
         context.negateCurrentValue();
     }
 
-    public static void compileOpAsgnAnd(Node node, MethodCompiler context) {
+    public void compileOpAsgnAnd(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final BinaryOperatorNode andNode = (BinaryOperatorNode) node;
@@ -2531,7 +2532,7 @@ public class ASTCompiler {
         context.pollThreadEvents();
     }
 
-    public static void compileOpAsgnOr(Node node, MethodCompiler context) {
+    public void compileOpAsgnOr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final OpAsgnOrNode orNode = (OpAsgnOrNode) node;
@@ -2567,7 +2568,7 @@ public class ASTCompiler {
         context.pollThreadEvents();
     }
 
-    public static void compileOpAsgn(Node node, MethodCompiler context) {
+    public void compileOpAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         // FIXME: This is a little more complicated than it needs to be; do we see now why closures would be nice in Java?
@@ -2576,8 +2577,8 @@ public class ASTCompiler {
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
-                        ASTCompiler.compile(opAsgnNode.getReceiverNode(), context); // [recv]
+                    public void call(MethodCompiler context) {
+                        compile(opAsgnNode.getReceiverNode(), context); // [recv]
                         context.duplicateCurrentValue(); // [recv, recv]
                     }
                 };
@@ -2612,26 +2613,26 @@ public class ASTCompiler {
 
         CompilerCallback receiver2Callback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         context.getInvocationCompiler().invokeDynamic(opAsgnNode.getVariableName(), receiverCallback, null, CallType.FUNCTIONAL, null, false);
                     }
                 };
 
         if (opAsgnNode.getOperatorName() == "||") {
             // if lhs is true, don't eval rhs and assign
-            receiver2Callback.compile(context);
+            receiver2Callback.call(context);
             context.duplicateCurrentValue();
             context.performBooleanBranch(doneBranch, assignBranch);
         } else if (opAsgnNode.getOperatorName() == "&&") {
             // if lhs is true, eval rhs and assign
-            receiver2Callback.compile(context);
+            receiver2Callback.call(context);
             context.duplicateCurrentValue();
             context.performBooleanBranch(assignBranch, doneBranch);
         } else {
             // eval new value, call operator on old value, and assign
             CompilerCallback argsCallback = new CompilerCallback() {
 
-                        public void compile(MethodCompiler context) {
+                        public void call(MethodCompiler context) {
                             context.createObjectArray(new Node[]{opAsgnNode.getValueNode()}, justEvalValue);
                         }
                     };
@@ -2643,7 +2644,7 @@ public class ASTCompiler {
         context.pollThreadEvents();
     }
 
-    public static void compileOpElementAsgn(Node node, MethodCompiler context) {
+    public void compileOpElementAsgn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
@@ -2653,15 +2654,15 @@ public class ASTCompiler {
 
         CompilerCallback valueArgsCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
-                        ASTCompiler.compile(opElementAsgnNode.getValueNode(), context);
+                    public void call(MethodCompiler context) {
+                        compile(opElementAsgnNode.getValueNode(), context);
                     }
                 };
 
         context.getInvocationCompiler().opElementAsgn(valueArgsCallback, opElementAsgnNode.getOperatorName());
     }
 
-    public static void compileOr(Node node, MethodCompiler context) {
+    public void compileOr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final OrNode orNode = (OrNode) node;
@@ -2678,7 +2679,7 @@ public class ASTCompiler {
         context.performLogicalOr(longCallback);
     }
 
-    public static void compilePostExe(Node node, MethodCompiler context) {
+    public void compilePostExe(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final PostExeNode postExeNode = (PostExeNode) node;
@@ -2686,9 +2687,9 @@ public class ASTCompiler {
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (postExeNode.getBodyNode() != null) {
-                            ASTCompiler.compile(postExeNode.getBodyNode(), context);
+                            compile(postExeNode.getBodyNode(), context);
                         } else {
                             context.loadNil();
                         }
@@ -2697,7 +2698,7 @@ public class ASTCompiler {
         context.createNewEndBlock(closureBody);
     }
 
-    public static void compilePreExe(Node node, MethodCompiler context) {
+    public void compilePreExe(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final PreExeNode preExeNode = (PreExeNode) node;
@@ -2705,9 +2706,9 @@ public class ASTCompiler {
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         if (preExeNode.getBodyNode() != null) {
-                            ASTCompiler.compile(preExeNode.getBodyNode(), context);
+                            compile(preExeNode.getBodyNode(), context);
                         } else {
                             context.loadNil();
                         }
@@ -2716,7 +2717,7 @@ public class ASTCompiler {
         context.runBeginBlock(preExeNode.getScope(), closureBody);
     }
 
-    public static void compileRedo(Node node, MethodCompiler context) {
+    public void compileRedo(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         //RedoNode redoNode = (RedoNode)node;
@@ -2724,7 +2725,7 @@ public class ASTCompiler {
         context.issueRedoEvent();
     }
 
-    public static void compileRegexp(Node node, MethodCompiler context) {
+    public void compileRegexp(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         RegexpNode reNode = (RegexpNode) node;
@@ -2732,7 +2733,7 @@ public class ASTCompiler {
         context.createNewRegexp(reNode.getValue(), reNode.getOptions());
     }
 
-    public static void compileRescue(Node node, MethodCompiler context) {
+    public void compileRescue(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final RescueNode rescueNode = (RescueNode) node;
@@ -2769,7 +2770,7 @@ public class ASTCompiler {
         context.rescue(body, RaiseException.class, handler, IRubyObject.class);
     }
 
-    public static void compileRescueBody(Node node, MethodCompiler context) {
+    public void compileRescueBody(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
@@ -2818,7 +2819,7 @@ public class ASTCompiler {
         context.performBooleanBranch(trueBranch, falseBranch);
     }
 
-    public static void compileRetry(Node node, MethodCompiler context) {
+    public void compileRetry(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         context.pollThreadEvents();
@@ -2826,7 +2827,7 @@ public class ASTCompiler {
         context.issueRetryEvent();
     }
 
-    public static void compileReturn(Node node, MethodCompiler context) {
+    public void compileReturn(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ReturnNode returnNode = (ReturnNode) node;
@@ -2840,7 +2841,7 @@ public class ASTCompiler {
         context.performReturn();
     }
 
-    public static void compileRoot(Node node, ScriptCompiler context, ASTInspector inspector) {
+    public void compileRoot(Node node, ScriptCompiler context, ASTInspector inspector) {
         RootNode rootNode = (RootNode) node;
 
         context.startScript(rootNode.getStaticScope());
@@ -2878,12 +2879,12 @@ public class ASTCompiler {
         context.endScript();
     }
 
-    public static void compileSelf(Node node, MethodCompiler context) {
+    public void compileSelf(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         context.retrieveSelf();
     }
 
-    public static void compileSplat(Node node, MethodCompiler context) {
+    public void compileSplat(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         SplatNode splatNode = (SplatNode) node;
@@ -2893,7 +2894,7 @@ public class ASTCompiler {
         context.splatCurrentValue();
     }
 
-    public static void compileStr(Node node, MethodCompiler context) {
+    public void compileStr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         StrNode strNode = (StrNode) node;
@@ -2901,14 +2902,14 @@ public class ASTCompiler {
         context.createNewString(strNode.getValue());
     }
 
-    public static void compileSuper(Node node, MethodCompiler context) {
+    public void compileSuper(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final SuperNode superNode = (SuperNode) node;
 
         CompilerCallback argsCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         compileArguments(superNode.getArgsNode(), context);
                     }
                 };
@@ -2932,7 +2933,7 @@ public class ASTCompiler {
         }
     }
 
-    public static void compileSValue(Node node, MethodCompiler context) {
+    public void compileSValue(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         SValueNode svalueNode = (SValueNode) node;
@@ -2942,12 +2943,12 @@ public class ASTCompiler {
         context.singlifySplattedValue();
     }
 
-    public static void compileSymbol(Node node, MethodCompiler context) {
+    public void compileSymbol(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
         context.createNewSymbol(((SymbolNode) node).getName());
     }    
     
-    public static void compileToAry(Node node, MethodCompiler context) {
+    public void compileToAry(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ToAryNode toAryNode = (ToAryNode) node;
@@ -2957,7 +2958,7 @@ public class ASTCompiler {
         context.aryToAry();
     }
 
-    public static void compileTrue(Node node, MethodCompiler context) {
+    public void compileTrue(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         context.loadTrue();
@@ -2965,13 +2966,13 @@ public class ASTCompiler {
         context.pollThreadEvents();
     }
 
-    public static void compileUndef(Node node, MethodCompiler context) {
+    public void compileUndef(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         context.undefMethod(((UndefNode) node).getName());
     }
 
-    public static void compileUntil(Node node, MethodCompiler context) {
+    public void compileUntil(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final UntilNode untilNode = (UntilNode) node;
@@ -3000,7 +3001,7 @@ public class ASTCompiler {
         context.pollThreadEvents();
     }
 
-    public static void compileVAlias(Node node, MethodCompiler context) {
+    public void compileVAlias(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         VAliasNode valiasNode = (VAliasNode) node;
@@ -3008,7 +3009,7 @@ public class ASTCompiler {
         context.aliasGlobal(valiasNode.getNewName(), valiasNode.getOldName());
     }
 
-    public static void compileVCall(Node node, MethodCompiler context) {
+    public void compileVCall(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         VCallNode vcallNode = (VCallNode) node;
@@ -3016,7 +3017,7 @@ public class ASTCompiler {
         context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
     }
 
-    public static void compileWhile(Node node, MethodCompiler context) {
+    public void compileWhile(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final WhileNode whileNode = (WhileNode) node;
@@ -3044,14 +3045,14 @@ public class ASTCompiler {
         context.pollThreadEvents();
     }
 
-    public static void compileXStr(Node node, MethodCompiler context) {
+    public void compileXStr(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final XStrNode xstrNode = (XStrNode) node;
 
         CompilerCallback argsCallback = new CompilerCallback() {
 
-                    public void compile(MethodCompiler context) {
+                    public void call(MethodCompiler context) {
                         context.createNewString(xstrNode.getValue());
                         context.createObjectArray(1);
                     }
@@ -3059,7 +3060,7 @@ public class ASTCompiler {
         context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
     }
 
-    public static void compileYield(Node node, MethodCompiler context) {
+    public void compileYield(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         YieldNode yieldNode = (YieldNode) node;
@@ -3071,13 +3072,13 @@ public class ASTCompiler {
         context.getInvocationCompiler().yield(yieldNode.getArgsNode() != null, yieldNode.getCheckState());
     }
 
-    public static void compileZArray(Node node, MethodCompiler context) {
+    public void compileZArray(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         context.createEmptyArray();
     }
 
-    public static void compileZSuper(Node node, MethodCompiler context) {
+    public void compileZSuper(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ZSuperNode zsuperNode = (ZSuperNode) node;
@@ -3087,7 +3088,7 @@ public class ASTCompiler {
         context.callZSuper(closure);
     }
 
-    public static void compileArgsCatArguments(Node node, MethodCompiler context) {
+    public void compileArgsCatArguments(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
@@ -3102,7 +3103,7 @@ public class ASTCompiler {
         context.convertToJavaArray();
     }
 
-    public static void compileArgsPushArguments(Node node, MethodCompiler context) {
+    public void compileArgsPushArguments(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ArgsPushNode argsPushNode = (ArgsPushNode) node;
@@ -3112,7 +3113,7 @@ public class ASTCompiler {
         context.convertToJavaArray();
     }
 
-    public static void compileArrayArguments(Node node, MethodCompiler context) {
+    public void compileArrayArguments(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         ArrayNode arrayNode = (ArrayNode) node;
@@ -3129,7 +3130,7 @@ public class ASTCompiler {
     // leave as a normal array
     }
 
-    public static void compileSplatArguments(Node node, MethodCompiler context) {
+    public void compileSplatArguments(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         SplatNode splatNode = (SplatNode) node;

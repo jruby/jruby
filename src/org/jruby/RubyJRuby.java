@@ -155,9 +155,10 @@ public class RubyJRuby {
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(node);
             
-        StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
-        ASTCompiler.compileRoot(node, compiler, inspector);
-        byte[] bts = compiler.getClassByteArray();
+        StandardASMCompiler asmCompiler = new StandardASMCompiler(classname, filename);
+        ASTCompiler compiler = new ASTCompiler();
+        compiler.compileRoot(node, asmCompiler, inspector);
+        byte[] bts = asmCompiler.getClassByteArray();
 
         IRubyObject compiledScript = ((RubyModule)recv).fastGetConstant("CompiledScript").callMethod(recv.getRuntime().getCurrentContext(),"new");
         compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "name=", recv.getRuntime().newString(filename));

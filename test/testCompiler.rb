@@ -23,7 +23,8 @@ def compile_to_class(src)
   inspector = ASTInspector.new
   inspector.inspect(node)
   context = StandardASMCompiler.new(classname, filename)
-  ASTCompiler.compileRoot(node, context, inspector)
+  compiler = ASTCompiler.new
+  compiler.compileRoot(node, context, inspector)
 
   context.loadClass(JRuby.runtime.getJRubyClassLoader)
 end

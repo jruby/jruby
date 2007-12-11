@@ -109,7 +109,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             methodCompiler.method.label(falseResult);
             // START: .. receiver, args, result
             methodCompiler.method.pop(); // receiver, args
-            valueCallback.compile(methodCompiler); // receiver, args, value
+            valueCallback.call(methodCompiler); // receiver, args, value
             methodCompiler.appendToObjectArray(); // receiver, combinedArgs
             invokeDynamic("[]=", true, true, CallType.FUNCTIONAL, null, false); // assignmentResult
             
@@ -123,7 +123,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             // it's true, stuff the element in
             // START: .. receiver, args, result
             methodCompiler.method.pop(); // receiver, args
-            valueCallback.compile(methodCompiler); // receiver, args, value
+            valueCallback.call(methodCompiler); // receiver, args, value
             methodCompiler.appendToObjectArray(); // receiver, combinedArgs
             invokeDynamic("[]=", true, true, CallType.FUNCTIONAL, null, false); // assignmentResult
             methodCompiler.method.go_to(end);
@@ -139,7 +139,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             // remove extra result, operate on it, and reassign with original args
             methodCompiler.method.pop();
             // START: .. receiver, args, result
-            valueCallback.compile(methodCompiler); // receiver, args, result, value
+            valueCallback.call(methodCompiler); // receiver, args, result, value
             methodCompiler.createObjectArray(1);
             invokeDynamic(operator, true, true, CallType.FUNCTIONAL, null, false); // receiver, args, newresult
             methodCompiler.appendToObjectArray(); // receiver, newargs
@@ -164,17 +164,17 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                 methodCompiler.loadBlock();
             } else {
                 // no args, with block
-                closureArg.compile(methodCompiler);
+                closureArg.call(methodCompiler);
             }
         } else {
-            argsCallback.compile(methodCompiler);
+            argsCallback.call(methodCompiler);
             // block
             if (closureArg == null) {
                 // with args, no block
                 methodCompiler.loadBlock();
             } else {
                 // with args, with block
-                closureArg.compile(methodCompiler);
+                closureArg.call(methodCompiler);
             }
         }
         
@@ -187,7 +187,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         String fieldname = methodCompiler.getScriptCompiler().cacheCallSite(name, callType);
         
         if (receiverCallback != null) {
-            receiverCallback.compile(methodCompiler);
+            receiverCallback.call(methodCompiler);
         } else {
             methodCompiler.loadSelf();
         }
@@ -210,18 +210,18 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                 signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class));
             } else {
                 // no args, with block
-                closureArg.compile(methodCompiler);
+                closureArg.call(methodCompiler);
                 signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, Block.class));
             }
         } else {
-            argsCallback.compile(methodCompiler);
+            argsCallback.call(methodCompiler);
             // block
             if (closureArg == null) {
                 // with args, no block
                 signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class));
             } else {
                 // with args, with block
-                closureArg.compile(methodCompiler);
+                closureArg.call(methodCompiler);
                 signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
             }
         }
@@ -280,7 +280,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         if (closureArg == null) {
             method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
         } else {
-            closureArg.compile(methodCompiler);
+            closureArg.call(methodCompiler);
         }
 
         Label tryBegin = new Label();

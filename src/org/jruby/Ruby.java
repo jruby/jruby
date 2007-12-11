@@ -518,9 +518,10 @@ public final class Ruby {
             ASTInspector inspector = new ASTInspector();
             inspector.inspect(node);
 
-            StandardASMCompiler compiler = new StandardASMCompiler(classname, filename);
-            ASTCompiler.compileRoot(node, compiler, inspector);
-            script = (Script)compiler.loadClass(this.getJRubyClassLoader()).newInstance();
+            StandardASMCompiler asmCompiler = new StandardASMCompiler(classname, filename);
+            ASTCompiler compiler = new ASTCompiler();
+            compiler.compileRoot(node, asmCompiler, inspector);
+            script = (Script)asmCompiler.loadClass(this.getJRubyClassLoader()).newInstance();
 
             if (config.isJitLogging()) {
                 System.err.println("compiled: " + node.getPosition().getFile());

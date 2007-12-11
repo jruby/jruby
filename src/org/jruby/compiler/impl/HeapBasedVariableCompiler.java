@@ -69,7 +69,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         method.invokestatic(cg.p(Arrays.class), "fill", cg.sig(Void.TYPE, cg.params(Object[].class, Object.class)));
         
         if (argsCallback != null) {
-            argsCallback.compile(methodCompiler);
+            argsCallback.call(methodCompiler);
         }
     }
 
@@ -83,7 +83,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         method.astore(varsIndex);
         
         // class bodies prepare their own dynamic scope, so let it do that
-        bodyPrep.compile(methodCompiler);
+        bodyPrep.call(methodCompiler);
         
         // store the new local vars in a local variable
         methodCompiler.loadThreadContext();
@@ -121,7 +121,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.aload(argsIndex);
             method.ldc(new Integer(0));
             method.arrayload();
-            argsCallback.compile(methodCompiler);
+            argsCallback.call(methodCompiler);
             method.pop(); // clear remaining value on the stack
         }
     }

@@ -174,12 +174,13 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     } else if (argsNode != null) {
                         filename = argsNode.getPosition().getFile();
                     }
-                    StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), filename);
-                    compiler.startScript(staticScope);
+                    StandardASMCompiler asmCompiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), filename);
+                    asmCompiler.startScript(staticScope);
+                    final ASTCompiler compiler = new ASTCompiler();
         
                     CompilerCallback args = new CompilerCallback() {
-                        public void compile(MethodCompiler context) {
-                            ASTCompiler.compileArgs(argsNode, context);
+                        public void call(MethodCompiler context) {
+                            compiler.compileArgs(argsNode, context);
                         }
                     };
         
@@ -190,25 +191,25 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                     MethodCompiler methodCompiler;
                     if (body != null) {
                         // we have a body, do a full-on method
-                        methodCompiler = compiler.startMethod("__file__", args, staticScope, inspector);
-                        ASTCompiler.compile(body, methodCompiler);
+                        methodCompiler = asmCompiler.startMethod("__file__", args, staticScope, inspector);
+                        compiler.compile(body, methodCompiler);
                     } else {
                         // If we don't have a body, check for required or opt args
                         // if opt args, they could have side effects
                         // if required args, need to raise errors if too few args passed
                         // otherwise, method does nothing, make it a nop
                         if (argsNode != null && (argsNode.getRequiredArgsCount() > 0 || argsNode.getOptionalArgsCount() > 0)) {
-                            methodCompiler = compiler.startMethod("__file__", args, staticScope, inspector);
+                            methodCompiler = asmCompiler.startMethod("__file__", args, staticScope, inspector);
                             methodCompiler.loadNil();
                         } else {
-                            methodCompiler = compiler.startMethod("__file__", null, staticScope, inspector);
+                            methodCompiler = asmCompiler.startMethod("__file__", null, staticScope, inspector);
                             methodCompiler.loadNil();
                             jitCallConfig = CallConfiguration.NO_FRAME_NO_SCOPE;
                         }
                     }
                     methodCompiler.endMethod();
-                    compiler.endScript();
-                    Class sourceClass = compiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
+                    asmCompiler.endScript();
+                    Class sourceClass = asmCompiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
                     
                     // if we haven't already decided on a do-nothing call
                     if (jitCallConfig == null) {

@@ -932,7 +932,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             
             closureCompiler.beginMethod(args, scope);
             
-            body.compile(closureCompiler);
+            body.call(closureCompiler);
             
             closureCompiler.endMethod();
 
@@ -982,7 +982,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             
             closureCompiler.beginMethod(null, scope);
             
-            body.compile(closureCompiler);
+            body.call(closureCompiler);
             
             closureCompiler.endMethod();
 
@@ -1027,7 +1027,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             
             closureCompiler.beginMethod(args, null);
             
-            body.compile(closureCompiler);
+            body.call(closureCompiler);
             
             closureCompiler.endMethod();
 
@@ -1073,7 +1073,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             
             closureCompiler.beginMethod(null, null);
             
-            body.compile(closureCompiler);
+            body.call(closureCompiler);
             
             closureCompiler.endMethod();
 
@@ -1287,7 +1287,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 
                 // assign rest args
                 method.label(readyForArgs);
-                argsCallback.compile(this);
+                argsCallback.call(this);
                 //consume leftover assigned value
                 method.pop();
             }
@@ -1366,7 +1366,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             loadRuntime();
 
-            createStringCallback.compile(this);
+            createStringCallback.call(this);
             method.ldc(new Integer(options));
 
             method.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, String.class, Integer.TYPE))); //[reg]
@@ -1446,7 +1446,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void branchIfModule(CompilerCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback) {
-            receiverCallback.compile(this);
+            receiverCallback.call(this);
             isInstanceOf(RubyModule.class, moduleCallback, notModuleCallback);
         }
 
@@ -2033,11 +2033,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null);
             
             CompilerCallback bodyPrep = new CompilerCallback() {
-                public void compile(MethodCompiler context) {
+                public void call(MethodCompiler context) {
                     if (receiverCallback == null) {
                         if (superCallback != null) {
                             methodCompiler.loadRuntime();
-                            superCallback.compile(methodCompiler);
+                            superCallback.call(methodCompiler);
 
                             methodCompiler.invokeUtilityMethod("prepareSuperClass", cg.sig(RubyClass.class, cg.params(Ruby.class, IRubyObject.class)));
                         } else {
@@ -2046,7 +2046,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
                         methodCompiler.loadThreadContext();
 
-                        pathCallback.compile(methodCompiler);
+                        pathCallback.call(methodCompiler);
 
                         methodCompiler.invokeUtilityMethod("prepareClassNamespace", cg.sig(RubyModule.class, cg.params(ThreadContext.class, IRubyObject.class)));
 
@@ -2060,7 +2060,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     } else {
                         methodCompiler.loadRuntime();
 
-                        receiverCallback.compile(methodCompiler);
+                        receiverCallback.call(methodCompiler);
 
                         methodCompiler.invokeUtilityMethod("getSingletonClass", cg.sig(RubyClass.class, cg.params(Ruby.class, IRubyObject.class)));
                     }
@@ -2090,7 +2090,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             methodCompiler.method.label(start);
 
-            bodyCallback.compile(methodCompiler);
+            bodyCallback.call(methodCompiler);
             methodCompiler.method.label(end);
             // finally with no exception
             methodCompiler.loadThreadContext();
@@ -2124,10 +2124,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null);
 
             CompilerCallback bodyPrep = new CompilerCallback() {
-                public void compile(MethodCompiler context) {
+                public void call(MethodCompiler context) {
                     methodCompiler.loadThreadContext();
 
-                    pathCallback.compile(methodCompiler);
+                    pathCallback.call(methodCompiler);
 
                     methodCompiler.invokeUtilityMethod("prepareClassNamespace", cg.sig(RubyModule.class, cg.params(ThreadContext.class, IRubyObject.class)));
 
@@ -2161,7 +2161,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             methodCompiler.method.label(start);
 
-            bodyCallback.compile(methodCompiler);
+            bodyCallback.call(methodCompiler);
             methodCompiler.method.label(end);
             
             methodCompiler.method.go_to(noException);
@@ -2219,7 +2219,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadRuntime();
             loadThreadContext();
             if (closure != null) {
-                closure.compile(this);
+                closure.call(this);
             } else {
                 method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
             }
@@ -2281,7 +2281,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             MethodCompiler methodCompiler = startMethod(methodName, args, scope, inspector);
 
             // callbacks to fill in method body
-            body.compile(methodCompiler);
+            body.call(methodCompiler);
 
             methodCompiler.endMethod();
 
@@ -2290,7 +2290,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             loadSelf();
             
-            if (receiver != null) receiver.compile(this);
+            if (receiver != null) receiver.call(this);
             
             // script object
             method.aload(THIS);
@@ -2455,20 +2455,20 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         public void issueBreakEvent(CompilerCallback value) {
             if (withinProtection || currentLoopLabels == null) {
-                value.compile(this);
+                value.call(this);
                 invokeUtilityMethod("breakJump", cg.sig(IRubyObject.class, IRubyObject.class));
             } else {
-                value.compile(this);
+                value.call(this);
                 issueLoopBreak();
             }
         }
 
         public void issueNextEvent(CompilerCallback value) {
             if (withinProtection || currentLoopLabels == null) {
-                value.compile(this);
+                value.call(this);
                 invokeUtilityMethod("nextJump", cg.sig(IRubyObject.class, IRubyObject.class));
             } else {
-                value.compile(this);
+                value.call(this);
                 issueLoopNext();
             }
         }
@@ -2595,32 +2595,32 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void issueBreakEvent(CompilerCallback value) {
             if (withinProtection) {
-                value.compile(this);
+                value.call(this);
                 invokeUtilityMethod("breakJump", cg.sig(IRubyObject.class, IRubyObject.class));
             } else if (currentLoopLabels != null) {
-                value.compile(this);
+                value.call(this);
                 issueLoopBreak();
             } else {
                 // in method body with no containing loop, issue jump error
                 // load runtime and value, issue jump error
                 loadRuntime();
-                value.compile(this);
+                value.call(this);
                 invokeUtilityMethod("breakLocalJumpError", cg.sig(IRubyObject.class, Ruby.class, IRubyObject.class));
             }
         }
 
         public void issueNextEvent(CompilerCallback value) {
             if (withinProtection) {
-                value.compile(this);
+                value.call(this);
                 invokeUtilityMethod("nextJump", cg.sig(IRubyObject.class, IRubyObject.class));
             } else if (currentLoopLabels != null) {
-                value.compile(this);
+                value.call(this);
                 issueLoopNext();
             } else {
                 // in method body with no containing loop, issue jump error
                 // load runtime and value, issue jump error
                 loadRuntime();
-                value.compile(this);
+                value.call(this);
                 invokeUtilityMethod("nextLocalJumpError", cg.sig(IRubyObject.class, Ruby.class, IRubyObject.class));
             }
         }

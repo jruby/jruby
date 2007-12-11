@@ -55,7 +55,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         method.pop();
         
         if (argsCallback != null) {
-            argsCallback.compile(methodCompiler);
+            argsCallback.call(methodCompiler);
         }
     }
 
@@ -82,7 +82,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
             method.aload(argsIndex);
             method.ldc(new Integer(0));
             method.arrayload();
-            argsCallback.compile(methodCompiler);
+            argsCallback.call(methodCompiler);
             method.pop(); // clear remaining value on the stack
         }
     }
