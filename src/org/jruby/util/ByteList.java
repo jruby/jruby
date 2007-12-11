@@ -153,14 +153,20 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
         return dup(realSize);
     }
     
+    /**
+     * @param length is the value of how big the buffer is going to be, not the actual length to copy
+     * 
+     * It is used by RubyString.modify(int) to prevent COW pathological situations
+     * (namely to COW with having <code>length - realSize</code> bytes ahead)
+     */
     public ByteList dup(int length) {
         ByteList dup = new ByteList(false);
         dup.bytes = new byte[length];
-        System.arraycopy(bytes, begin, dup.bytes, 0, length);
-        dup.realSize = length;
+        System.arraycopy(bytes, begin, dup.bytes, 0, realSize);
+        dup.realSize = realSize;
         dup.begin = 0;
 
-        if(length == realSize) {
+        if (length == realSize) {
             dup.validHash = validHash;
             dup.hash = hash;
             dup.stringValue = stringValue;

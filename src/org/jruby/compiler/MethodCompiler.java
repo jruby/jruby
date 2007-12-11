@@ -388,8 +388,8 @@ public interface MethodCompiler {
 
     public void match3();
 
-    public void createNewRegexp(ByteList value, int options, String lang);
-    public void createNewRegexp(CompilerCallback createStringCallback, int options, String lang);
+    public void createNewRegexp(ByteList value, int options);
+    public void createNewRegexp(CompilerCallback createStringCallback, int options);
     
     public void pollThreadEvents();
 

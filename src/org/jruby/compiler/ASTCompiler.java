@@ -1722,17 +1722,7 @@ public class ASTCompiler {
                     }
                 };
 
-        int opts = dregexpNode.getOptions();
-        String lang = ((opts & 16) != 0) ? "n" : null;
-        if ((opts & 48) == 48) { // param s
-            lang = "s";
-        } else if ((opts & 32) == 32) { // param e
-            lang = "e";
-        } else if ((opts & 64) != 0) { // param s
-            lang = "u";
-        }
-
-        context.createNewRegexp(createStringCallback, opts, lang);
+        context.createNewRegexp(createStringCallback, dregexpNode.getOptions());
     }
 
     public static void compileDStr(Node node, MethodCompiler context) {
@@ -2739,17 +2729,7 @@ public class ASTCompiler {
 
         RegexpNode reNode = (RegexpNode) node;
 
-        int opts = reNode.getOptions();
-        String lang = ((opts & 16) == 16) ? "n" : null;
-        if ((opts & 48) == 48) { // param s
-            lang = "s";
-        } else if ((opts & 32) == 32) { // param e
-            lang = "e";
-        } else if ((opts & 64) != 0) { // param u
-            lang = "u";
-        }
-
-        context.createNewRegexp(reNode.getValue(), reNode.getOptions(), lang);
+        context.createNewRegexp(reNode.getValue(), reNode.getOptions());
     }
 
     public static void compileRescue(Node node, MethodCompiler context) {

@@ -981,18 +981,8 @@ public class ASTInterpreter {
             }
         }
    
-        int opts = iVisited.getOptions();
-        String lang = ((opts & 16) != 0) ? "n" : null;
-        if((opts & 48) == 48) { // param s
-            lang = "s";
-        } else if((opts & 32) == 32) { // param e
-            lang = "e";
-        } else if((opts & 64) != 0) { // param s
-            lang = "u";
-        }
-        
         try {
-            regexp = RubyRegexp.newRegexp(runtime, string.toString(), iVisited.getOptions(), lang);
+            regexp = RubyRegexp.newRegexp(runtime, string.getByteList(), iVisited.getOptions());
         } catch(Exception e) {
         //                    System.err.println(iVisited.getValue().toString());
         //                    e.printStackTrace();
@@ -1491,16 +1481,7 @@ public class ASTInterpreter {
         RegexpNode iVisited = (RegexpNode) node;
         RubyRegexp p = iVisited.getPattern();
         if(p == null) {
-            String lang = null;
-            int opts = iVisited.getOptions();
-            if((opts & 16) != 0) { // param n
-                lang = "n";
-            } else if((opts & 48) != 0) { // param s
-                lang = "s";
-            } else if((opts & 64) != 0) { // param s
-                lang = "u";
-            }
-            p = RubyRegexp.newRegexp(runtime, iVisited.getValue(), iVisited.getFlags(), lang);
+            p = RubyRegexp.newRegexp(runtime, iVisited.getValue(), iVisited.getOptions());
             iVisited.setPattern(p);
         }
 

@@ -61,10 +61,10 @@ import org.jruby.util.TypeConverter;
 /**
  *
  */
-public class RubyRegexp extends RubyObject implements ReOptions {
+public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     private boolean kcode_default = true;
     private KCode kcode;
-    private Regex re;
+    private Regex pattern;
     private boolean literal;
     private ByteList str;
 
@@ -83,32 +83,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public KCode getKCode() {
         return kcode;
     }
-
-    public RubyRegexp(Ruby runtime, RubyClass klass) {
-        super(runtime, klass);
-    }
-
-    private RubyRegexp(Ruby runtime) {
-        super(runtime, runtime.getRegexp());
-    }
     
-    private static ObjectAllocator REGEXP_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyRegexp instance = new RubyRegexp(runtime, klass);
-            return instance;
-        }
-    };
-
-    private final static class RubyWarnings implements WarnCallback {
-        private Ruby runtime;
-        public RubyWarnings(Ruby runtime)  {
-            this.runtime = runtime;
-        }
-        public void warn(String message) {
-            runtime.getWarnings().warn(message);
-        }
-    }
-
     public static RubyClass createRegexpClass(Ruby runtime) {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
         runtime.setRegexp(regexpClass);
@@ -131,12 +106,45 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return regexpClass;
     }
     
+    private static ObjectAllocator REGEXP_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            RubyRegexp instance = new RubyRegexp(runtime, klass);
+            return instance;
+        }
+    };
+
+    /** used by allocator
+     * 
+     */
+    private RubyRegexp(Ruby runtime, RubyClass klass) {
+        super(runtime, klass);
+    }
+
+    /** default constructor
+     * 
+     */
+    private RubyRegexp(Ruby runtime) {
+        super(runtime, runtime.getRegexp());
+    }
+
+    // used only by the compiler
+    public static RubyRegexp newRegexp(Ruby runtime, String pattern, int options) {
+        return newRegexp(runtime, ByteList.create(pattern), options);
+    }
+
+    public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, int options) {
+        RubyRegexp regexp = new RubyRegexp(runtime);
+        regexp.initialize(pattern, options);
+        return regexp;
+    }    
+    
+    public void warn(String message) {
+        getRuntime().getWarnings().warn(message);
+    }
+
     @JRubyMethod(name = "kcode")
     public IRubyObject kcode() {
-        if(!kcode_default) {
-            return getRuntime().newString(kcode.name());
-        }
-        return getRuntime().getNil();
+        return !kcode_default ? getRuntime().newString(kcode.name()) : getRuntime().getNil();
     }
 
     public int getNativeTypeIndex() {
@@ -144,20 +152,20 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
     
     public Regex getPattern() {
-        return re;
+        return pattern;
     }
 
     private void check() {
-        if(re == null || str == null) throw getRuntime().newTypeError("uninitialized Regexp");
+        if (pattern == null || str == null) throw getRuntime().newTypeError("uninitialized Regexp");
     }
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         check();
-        int hashval = (int)re.getOptions();
+        int hashval = (int)pattern.getOptions();
         int len = this.str.realSize;
         int p = this.str.begin;
-        while(len-->0) {
+        while (len-->0) {
             hashval = hashval * 33 + str.bytes[p++];
         }
         hashval = hashval + (hashval>>5);
@@ -166,17 +174,15 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     @JRubyMethod(name = {"==", "eql?"}, required = 1)
     public IRubyObject op_equal(IRubyObject other) {
-        if(this == other) {
-            return getRuntime().getTrue();
-        }
-        if(!(other instanceof RubyRegexp)) {
-            return getRuntime().getFalse();
-        }
+        if(this == other) return getRuntime().getTrue();
+        if(!(other instanceof RubyRegexp)) return getRuntime().getFalse();
+        RubyRegexp otherRegex = (RubyRegexp)other;
+        
         check();
-        ((RubyRegexp)other).check();
-        if(str.equals(((RubyRegexp)other).str) &&
-           kcode == ((RubyRegexp)other).kcode &&
-           re.getOptions() == ((RubyRegexp)other).re.getOptions()) {
+        otherRegex.check();
+        
+        if(str.equal(otherRegex.str) && kcode == otherRegex.kcode &&
+                                      pattern.getOptions() == otherRegex.pattern.getOptions()) {
             return getRuntime().getTrue();
         }
         return getRuntime().getFalse();
@@ -189,7 +195,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             getRuntime().getCurrentContext().getCurrentFrame().setBackRef(getRuntime().getNil());
             return getRuntime().getNil();
         }
-        int start = search((RubyString)line,0,false);
+        int start = search((RubyString)line, 0, false);
         if(start < 0) {
             return getRuntime().getNil();
         } else {
@@ -201,17 +207,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     @JRubyMethod(name = "===", required = 1)
-    public IRubyObject eqq(IRubyObject target) {
-        int start;
-        IRubyObject str = target;
-        if(!(str instanceof RubyString)) {
-            str = target.checkStringType();
-        }
+    public IRubyObject eqq(IRubyObject str) {
+        if(!(str instanceof RubyString)) str = str.checkStringType();
+
         if(str.isNil()) {
             getRuntime().getCurrentContext().getCurrentFrame().setBackRef(getRuntime().getNil());
             return getRuntime().getFalse();
         }
-        start = search((RubyString)str,0,false);
+        int start = search((RubyString)str, 0, false);
         return (start < 0) ? getRuntime().getFalse() : getRuntime().getTrue();
     }
     
@@ -219,10 +222,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         if(isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw getRuntime().newSecurityError("Insecure: can't modify regexp");
         }
+        
         checkFrozen();
-        if(literal) {
-            throw getRuntime().newSecurityError("can't modify literal regexp");
-        }
+        if (literal) throw getRuntime().newSecurityError("can't modify literal regexp");
 
         kcode_default = false;
         switch(options & ~0xf) {
@@ -245,16 +247,15 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             break;
         }
 
-        int extra = getRuntime().getGlobalVariables().get("$=").isTrue() ? ReOptions.RE_OPTION_IGNORECASE : 0;
-        re = make_regexp(regex, regex.begin, regex.realSize, (options|extra) & 0xf, kcode.getEncoding());
+        pattern = makeRegexp(regex, regex.begin, regex.realSize, options & 0xf, kcode.getEncoding());
         str = regex.makeShared(0, regex.realSize);
     }
 
-    private final Regex make_regexp(ByteList s, int start, int len, int flags, Encoding enc) {
+    private final Regex makeRegexp(ByteList s, int start, int len, int flags, Encoding enc) {
         try {
-            return new Regex(s.bytes,start,start+len,flags,enc,Syntax.DEFAULT,new RubyWarnings(getRuntime()));
+            return new Regex(s.bytes, start, start + len, flags, enc, Syntax.DEFAULT, this);
         } catch(Exception e) {
-            rb_reg_raise(s.bytes,start,len,e.getMessage(),flags);
+            rb_reg_raise(s.bytes, start, len, e.getMessage(), flags);
         }
         return null;
     }
@@ -366,7 +367,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     private int rb_reg_options() {
         check();
-        int options = (int)(re.getOptions() & (RE_OPTION_IGNORECASE|RE_OPTION_MULTILINE|RE_OPTION_EXTENDED));
+        int options = (int)(pattern.getOptions() & (RE_OPTION_IGNORECASE|RE_OPTION_MULTILINE|RE_OPTION_EXTENDED));
         if(!kcode_default) {
             options |= rb_reg_get_kcode();
         }
@@ -388,7 +389,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             }
             ((RubyRegexp)args[0]).check();
             RubyRegexp r = (RubyRegexp)args[0];
-            flags = (int)r.re.getOptions() & 0xF;
+            flags = (int)r.pattern.getOptions() & 0xF;
             if(!r.kcode_default && r.kcode != null && r.kcode != KCode.NIL) {
                 if(r.kcode == KCode.NONE) {
                     flags |= 16;
@@ -438,15 +439,30 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return this;
     }
 
+    @JRubyMethod(name = {"new", "compile"}, required = 1, optional = 2, meta = true)
+    public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
+        RubyClass klass = (RubyClass)recv;
+        
+        RubyRegexp re = (RubyRegexp) klass.allocate();
+        re.callInit(args, Block.NULL_BLOCK);
+        
+        return re;
+    }
+
+    @JRubyMethod(name = "options")
+    public IRubyObject options() {
+        return getRuntime().newFixnum(rb_reg_options());
+    }
+    
     /** rb_reg_search
      */
     public int search(RubyString str, int pos, boolean reverse) {
         Ruby runtime = getRuntime();
+        Frame frame = runtime.getCurrentContext().getCurrentFrame();
+
         ByteList value = str.getByteList();
-        Frame currentFrame = runtime.getCurrentContext().getCurrentFrame();
-        
         if (pos > value.realSize || pos < 0) {
-            currentFrame.setBackRef(runtime.getNil());
+            frame.setBackRef(runtime.getNil());
             return -1;
         }
         
@@ -454,43 +470,49 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         
         int range = reverse ? -pos : value.realSize - pos;
         
-        Matcher matcher = re.matcher(value.bytes, value.begin, value.begin + value.realSize);
+        Matcher matcher = pattern.matcher(value.bytes, value.begin, value.begin + value.realSize);
         
         int result = matcher.search(value.begin + pos, 
                                     value.begin + pos + range,
                                     Option.NONE);
         
-        Region region = matcher.getEagerRegion();
-        
         if(result == -2) {
-            rb_reg_raise(value.bytes, value.begin, value.realSize, "Stack overflow in regexp matcher", re.getOptions());        
+            rb_reg_raise(value.bytes, value.begin, value.realSize, "Stack overflow in regexp matcher", pattern.getOptions());        
         } else if (result < 0) {
-            currentFrame.setBackRef(runtime.getNil());
+            frame.setBackRef(runtime.getNil());
             return result;
         }
         
-        IRubyObject backref = currentFrame.getBackRef();
-        RubyMatchData match;
+        updateBackRef(str, frame, matcher);
+
+        return result;
+    }
+    
+    final RubyMatchData updateBackRef(RubyString str, Frame frame, Matcher matcher) {
+        IRubyObject backref = frame.getBackRef();
+        final RubyMatchData match;
         if (backref.isNil() || ((RubyMatchData)backref).used()) {
-            match = new RubyMatchData(runtime);
+            match = new RubyMatchData(getRuntime());
         } else {
             match = (RubyMatchData)backref;
-            if(runtime.getSafeLevel() >= 3) {
+            if(getRuntime().getSafeLevel() >= 3) {
                 match.setTaint(true);
             } else {
                 match.setTaint(false);
             }
         }
         
-        match.regs = region;
+        match.regs = matcher.getRegion(); // lazy, null when no groups defined
+        match.begin = matcher.getBegin();
+        match.end = matcher.getEnd();
+        
         match.str = (RubyString)str.strDup().freeze();
 
-        currentFrame.setBackRef(match);
+        frame.setBackRef(match);
         
         match.infectBy(this);
         match.infectBy(str);
-
-        return result;
+        return match;
     }
 
     /** rb_reg_match
@@ -527,9 +549,12 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
 
 
-    public RubyString regsub(RubyString str, RubyString src, Region regs) {
+    public RubyString regsub(RubyString str, RubyString src, Matcher matcher) {
+        Region regs = matcher.getRegion();
+        int mbeg = matcher.getBegin();
+        int mend = matcher.getEnd();
+        
         int p,s,e;
-        char c;
         p = s = 0;
         int no = -1;
         ByteList bs = str.getByteList();
@@ -538,22 +563,21 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         RubyString val = null;
         Encoding enc = kcode.getEncoding();
 
+        int beg, end;
         while(s < e) {
             int ss = s;
-            c = bs.charAt(s++);
+            char c = bs.charAt(s++);
             if(enc.length((byte)c) != 1) {
                 s += enc.length((byte)c) - 1;
                 continue;
             }
-            if(c != '\\' || s == e) {
-                continue;
-            }
-            if(val == null) {
-                val = RubyString.newString(getRuntime(),new ByteList(ss-p));
-            }
-            val.cat(bs.bytes,bs.begin+p,ss-p);
+            if (c != '\\' || s == e) continue;
+            if (val == null) val = RubyString.newString(getRuntime(), new ByteList(ss - p));
+
+            val.cat(bs.bytes, bs.begin + p, ss - p);
             c = bs.charAt(s++);
             p = s;
+            
             switch(c) {
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
@@ -563,50 +587,52 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                 no = 0;
                 break;
             case '`':
-                val.cat(srcbs.bytes,srcbs.begin,regs.beg[0]);
+                beg = regs == null ? mbeg : regs.beg[0];
+                val.cat(srcbs.bytes, srcbs.begin, beg);
                 continue;
 
             case '\'':
-                val.cat(srcbs.bytes,srcbs.begin+regs.end[0],src.getByteList().realSize-regs.end[0]);
+                end = regs == null ? mend : regs.end[0];
+                val.cat(srcbs.bytes, srcbs.begin + end, src.getByteList().realSize - end);
                 continue;
 
             case '+':
-                no = regs.numRegs-1;
-                while(regs.beg[no] == -1 && no > 0) {
-                    no--;
-                }
-                if(no == 0) {
+                if (regs == null && mbeg == -1) {
+                    no = 0;
                     continue;
+                } else {
+                    no = regs.numRegs-1;
+                    while(regs.beg[no] == -1 && no > 0) no--;
+                    if (no == 0) continue;
                 }
                 break;
             case '\\':
-                val.cat(bs.bytes,s-1,1);
+                val.cat(bs.bytes, s - 1, 1);
                 continue;
             default:
-                val.cat(bs.bytes,s-2,2);
+                val.cat(bs.bytes, s - 2, 2);
                 continue;
             }
-            if (no >= 0) {
-                if(no >= regs.numRegs) {
-                    continue;
+
+            if (regs != null) {
+                if (no >= 0) {
+                    if (no >= regs.numRegs || regs.beg[no] == -1) continue;
+                    val.cat(srcbs.bytes, srcbs.begin + regs.beg[no], regs.end[no] - regs.beg[no]);
                 }
-                if(regs.beg[no] == -1) {
-                    continue;
-                }
-                val.cat(srcbs.bytes,srcbs.begin+regs.beg[no],regs.end[no]-regs.beg[no]);
+            } else {
+                if (no != 0 || mbeg == -1) continue;
+                val.cat(srcbs.bytes, srcbs.begin + mbeg, mend - mbeg);
             }
         }
 
         if(p < e) {
             if(val == null) {
-                val = RubyString.newString(getRuntime(),bs.makeShared(p, e-p));
+                val = RubyString.newString(getRuntime(), bs.makeShared(p, e-p));
             } else {
-                val.cat(bs.bytes,bs.begin+p,e-p);
+                val.cat(bs.bytes, bs.begin + p, e - p);
             }
         }
-        if(val == null) {
-            return str;
-        }
+        if (val == null) return str;
 
         return val;
     }
@@ -614,13 +640,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     final int adjustStartPos(RubyString str, int pos, boolean reverse) {
         check();
         ByteList value = str.getByteList();
-        return re.adjustStartPosition(value.bytes, value.begin, value.realSize, pos, reverse);
+        return pattern.adjustStartPosition(value.bytes, value.begin, value.realSize, pos, reverse);
     }
 
     @JRubyMethod(name = "casefold?")
     public IRubyObject casefold_p() {
         check();
-        if((re.getOptions() & RE_OPTION_IGNORECASE) != 0) {
+        if ((pattern.getOptions() & RE_OPTION_IGNORECASE) != 0) {
             return getRuntime().getTrue();
         }
         return getRuntime().getFalse();
@@ -649,7 +675,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
         check();
-        return getRuntime().newString(ByteList.create(rb_reg_desc(str.bytes,str.begin,str.realSize,re.getOptions()).toString()));
+        return getRuntime().newString(ByteList.create(rb_reg_desc(str.bytes, str.begin, str.realSize, pattern.getOptions()).toString()));
     }
 
     private final static int EMBEDDABLE = RE_OPTION_MULTILINE|RE_OPTION_IGNORECASE|RE_OPTION_EXTENDED;
@@ -658,7 +684,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public IRubyObject to_s() {
         RubyString ss = getRuntime().newString("(?");
         check();
-        int options = re.getOptions();
+        int options = pattern.getOptions();
         int p = str.begin;
         int l = str.realSize;
         byte[] _str = str.bytes;
@@ -712,7 +738,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                     }
                 }
                 if(err) {
-                    options = (int)re.getOptions();
+                    options = (int)pattern.getOptions();
                     p = str.begin;
                     l = str.realSize;
                 }
@@ -785,42 +811,29 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
     }
 
-    public static RubyRegexp regexpValue(IRubyObject obj) {
-        if(obj instanceof RubyRegexp) {
-            return (RubyRegexp)obj;
-        } else if (obj instanceof RubyString) {
-            return newRegexp(obj.getRuntime(), obj.convertToString().getByteList(), 0, null);
-        } else {
-            throw obj.getRuntime().newArgumentError("can't convert arg to Regexp");
-        }
-    }
-
     /** rb_reg_s_quote
      * 
      */
     @JRubyMethod(name = {"quote", "escape"}, required = 1, optional = 1, meta = true)
     public static RubyString quote(IRubyObject recv, IRubyObject[] args) {
-        IRubyObject str;
         IRubyObject kcode = null;
         if(Arity.checkArgumentCount(recv.getRuntime(), args,1,2) == 2) {
             kcode = args[1];
         }
-        str = args[0];
+        IRubyObject str = args[0];
         KCode code = recv.getRuntime().getKCode();
         if(kcode != null && !kcode.isNil()) {
-            code = KCode.create(recv.getRuntime(),kcode.toString());
+            code = KCode.create(recv.getRuntime(), kcode.toString());
         }
-        return quote(str,code);
+        return quote(str.convertToString(), code);
     }
 
     /** rb_reg_quote
      *
      */
-    public static RubyString quote(IRubyObject _str, KCode kcode) {
-        RubyString str = _str.convertToString();
-        if(null == kcode) {
-            kcode = str.getRuntime().getKCode();
-        }
+    public static RubyString quote(RubyString str, KCode kcode) {
+        if (null == kcode) kcode = str.getRuntime().getKCode();
+
         ByteList bs = str.getByteList();
         int tix = 0;
         int s = bs.begin;
@@ -907,27 +920,26 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public static IRubyObject nth_match(int nth, IRubyObject match) {
-        int start, end;
-        IRubyObject nil = match.getRuntime().getNil();
-        if(match.isNil()) {
-            return nil;
-        }
+        if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
-        if(nth >= m.regs.numRegs) {
-            return nil;
+
+        int start, end;
+        
+        if (m.regs == null) {
+            if (nth >= 1) return match.getRuntime().getNil();
+            if (nth < 0 && ++nth <= 0) return match.getRuntime().getNil();
+            start = m.begin;
+            end = m.end;
+        } else {
+            if (nth >= m.regs.numRegs) return match.getRuntime().getNil();
+            if (nth < 0 && (nth+=m.regs.numRegs) <= 0) return match.getRuntime().getNil();
+            start = m.regs.beg[nth];
+            end = m.regs.end[nth];
         }
-        if(nth < 0) {
-            nth += m.regs.numRegs;
-            if(nth <= 0) {
-                return nil;
-            }
-        }
-        start = m.regs.beg[nth];
-        if(start == -1) {
-            return nil;
-        }
-        end = m.regs.end[nth];
-        RubyString str = m.str.makeShared(start, end-start);
+        
+        if(start == -1) return match.getRuntime().getNil();
+
+        RubyString str = m.str.makeShared(start, end - start);
         str.infectBy(match);
         return str;
     }
@@ -936,7 +948,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public static IRubyObject last_match(IRubyObject match) {
-        return nth_match(0,match);
+        return nth_match(0, match);
     }
 
     /** rb_reg_s_last_match
@@ -944,15 +956,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     @JRubyMethod(name = "last_match", optional = 1, meta = true)
     public static IRubyObject last_match_s(IRubyObject recv, IRubyObject[] args) {
-        if(Arity.checkArgumentCount(recv.getRuntime(), args,0,1) == 1) {
+        if (Arity.checkArgumentCount(recv.getRuntime(), args, 0, 1) == 1) {
             return nth_match(RubyNumeric.fix2int(args[0]), recv.getRuntime().getCurrentContext().getCurrentFrame().getBackRef());
         }
 
         IRubyObject result = recv.getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
 
-        if(result instanceof RubyMatchData) {
-            ((RubyMatchData)result).use();
-        }
+        if (result instanceof RubyMatchData) ((RubyMatchData)result).use();
         return result;
     }
 
@@ -960,15 +970,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public static IRubyObject match_pre(IRubyObject match) {
-        IRubyObject nil = match.getRuntime().getNil();
-        if(match.isNil()) {
-            return nil;
-        }
+        if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
-        if(m.regs.beg[0] == -1) {
-            return nil;
-        }
-        RubyString str = m.str.makeShared(0,m.regs.beg[0]);
+        
+        int beg = m.regs == null ? m.begin : m.regs.beg[0];
+        
+        if(beg == -1) match.getRuntime().getNil(); 
+
+        RubyString str = m.str.makeShared(0, beg);
         str.infectBy(match);
         return str;
     }
@@ -977,15 +986,19 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public static IRubyObject match_post(IRubyObject match) {
-        IRubyObject nil = match.getRuntime().getNil();
-        if(match.isNil()) {
-            return nil;
-        }
+        if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
-        if(m.regs.beg[0] == -1) {
-            return nil;
+
+        int end;
+        if (m.regs == null) {
+            if (m.begin == -1) return match.getRuntime().getNil();
+            end = m.end;
+        } else {
+            if (m.regs.beg[0] == -1) return match.getRuntime().getNil();
+            end = m.regs.end[0];
         }
-        RubyString str = m.str.makeShared(m.regs.end[0], m.str.getByteList().realSize-m.regs.end[0]);
+        
+        RubyString str = m.str.makeShared(end, m.str.getByteList().realSize - end);
         str.infectBy(match);
         return str;
     }
@@ -994,19 +1007,15 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public static IRubyObject match_last(IRubyObject match) {
-        IRubyObject nil = match.getRuntime().getNil();
-        if(match.isNil()) {
-            return nil;
-        }
+        if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
-        if(m.regs.beg[0] == -1) {
-            return nil;
-        }
-        int i=0;
-        for(i=m.regs.numRegs-1; m.regs.beg[i] == -1 && i>0; i--);
-        if(i == 0) {
-            return nil;
-        }
+
+        if (m.regs == null || m.regs.beg[0] == -1) return match.getRuntime().getNil();
+
+        int i;
+        for (i=m.regs.numRegs-1; m.regs.beg[i]==-1 && i>0; i--);
+        if (i == 0) return match.getRuntime().getNil();
+        
         return nth_match(i,match);
     }
 
@@ -1015,14 +1024,15 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     @JRubyMethod(name = "union", rest = true, meta = true)
     public static IRubyObject union(IRubyObject recv, IRubyObject[] args) {
-        if(args.length == 0) {
-            return newRegexp(recv.getRuntime(),"(?!)",0,null);
-        } else if(args.length == 1) {
+        if (args.length == 0) {
+            return newRegexp(recv.getRuntime(), ByteList.create("(?!)"), 0);
+        } else if (args.length == 1) {
             IRubyObject v = TypeConverter.convertToTypeWithCheck(args[0], recv.getRuntime().getRegexp(), 0, "to_regexp");
             if(!v.isNil()) {
                 return v;
             } else {
-                return newRegexp(quote(recv,args),0,null);
+                // newInstance here
+                return newRegexp(recv.getRuntime(), quote(recv,args).getByteList(), 0);
             }
         } else {
             KCode kcode = null;
@@ -1035,12 +1045,12 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                     source.cat(PIPE);
                 }
                 IRubyObject v = TypeConverter.convertToTypeWithCheck(args[i], recv.getRuntime().getRegexp(), 0, "to_regexp");
-                if(!v.isNil()) {
-                    if(!((RubyRegexp)v).kcode_default) {
-                        if(kcode == null) {
+                if (!v.isNil()) {
+                    if (!((RubyRegexp)v).kcode_default) {
+                        if (kcode == null) {
                             kcode_re = v;
                             kcode = ((RubyRegexp)v).kcode;
-                        } else if(((RubyRegexp)v).kcode != kcode) {
+                        } else if (((RubyRegexp)v).kcode != kcode) {
                             IRubyObject str1 = kcode_re.inspect();
                             IRubyObject str2 = v.inspect();
                             throw recv.getRuntime().newArgumentError("mixed kcode " + str1 + " and " + str2);
@@ -1055,15 +1065,15 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
             _args[0] = source;
             _args[1] = recv.getRuntime().getNil();
-            if(kcode == null) {
+            if (kcode == null) {
                 _args[2] = recv.getRuntime().getNil();
-            } else if(kcode == KCode.NONE) {
+            } else if (kcode == KCode.NONE) {
                 _args[2] = recv.getRuntime().newString("n");
-            } else if(kcode == KCode.EUC) {
+            } else if (kcode == KCode.EUC) {
                 _args[2] = recv.getRuntime().newString("e");
-            } else if(kcode == KCode.SJIS) {
+            } else if (kcode == KCode.SJIS) {
                 _args[2] = recv.getRuntime().newString("s");
-            } else if(kcode == KCode.UTF8) {
+            } else if (kcode == KCode.UTF8) {
                 _args[2] = recv.getRuntime().newString("u");
             }
             return recv.callMethod(recv.getRuntime().getCurrentContext(),"new",_args);
@@ -1071,42 +1081,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubyRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), input.unmarshalInt(), null);
+        RubyRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), input.unmarshalInt());
         input.registerLinkTarget(result);
         return result;
     }
 
     public static void marshalTo(RubyRegexp regexp, MarshalStream output) throws java.io.IOException {
         output.writeString(new String(regexp.str.bytes,regexp.str.begin,regexp.str.realSize));
-        output.writeInt(regexp.re.getOptions() & EMBEDDABLE);
-    }
-
-    public static RubyRegexp newRegexp(Ruby runtime, String pattern, int options, String kcode) {
-        return newRegexp(runtime, ByteList.create(pattern), options, kcode);
-    }
-
-    public static RubyRegexp newRegexp(IRubyObject ptr, int options, String kcode) {
-        return newRegexp(ptr.getRuntime(), ptr.convertToString().getByteList(), options, kcode);
-    }
-
-    public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, int options, String kcode) {
-        RubyRegexp rr = new RubyRegexp(runtime);
-        rr.initialize(pattern,options);
-        return rr;
-    }
-
-    @JRubyMethod(name = {"new", "compile"}, required = 1, optional = 2, meta = true)
-    public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyClass klass = (RubyClass)recv;
-        
-        RubyRegexp re = (RubyRegexp) klass.allocate();
-        re.callInit(args, Block.NULL_BLOCK);
-        
-        return re;
-    }
-
-    @JRubyMethod(name = "options")
-    public IRubyObject options() {
-        return getRuntime().newFixnum(rb_reg_options());
+        output.writeInt(regexp.pattern.getOptions() & EMBEDDABLE);
     }
 }

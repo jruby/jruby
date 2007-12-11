@@ -40,7 +40,7 @@ import org.joni.encoding.specific.EUCJPEncoding;
 import org.joni.encoding.specific.SJISEncoding;
 import org.joni.encoding.specific.UTF8Encoding;
 
-public class KCode {
+public final class KCode {
     public static final KCode NIL = new KCode(null, 0, ASCIIEncoding.INSTANCE);
     public static final KCode NONE = new KCode("NONE", 0, ASCIIEncoding.INSTANCE);
     public static final KCode UTF8 = new KCode("UTF8", 64, UTF8Encoding.INSTANCE);
@@ -90,22 +90,6 @@ public class KCode {
     
     public String getKCode() {
         return kcode;
-    }
-    
-    public CharsetDecoder decoder() {
-        if (this == UTF8) {
-            return Charset.forName("UTF-8").newDecoder();
-        } 
-        
-        return Charset.forName("ISO-8859-1").newDecoder();
-    }
-    
-    public CharsetEncoder encoder() {
-        if (this == UTF8) {
-            return Charset.forName("UTF-8").newEncoder();
-        }
-        
-        return Charset.forName("ISO-8859-1").newEncoder();
     }
 
     public int bits() {

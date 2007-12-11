@@ -45,7 +45,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author olabini
  */
 public class RubyMatchData extends RubyObject {
-    Region regs;
+    Region regs;        // captures
+    int begin;          // begin and end are used when not groups defined
+    int end;
     RubyString str;
     
     public static RubyClass createMatchDataClass(Ruby runtime) {
@@ -54,10 +56,10 @@ public class RubyMatchData extends RubyObject {
         runtime.setMatchData(matchDataClass);
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
         matchDataClass.kindOf = new RubyModule.KindOf() {
-                public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                    return obj instanceof RubyMatchData;
-                }
-            };
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof RubyMatchData;
+            }
+        };
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMatchData.class);
 
@@ -76,28 +78,37 @@ public class RubyMatchData extends RubyObject {
     public final static int MATCH_BUSY = USER2_F;
 
     // rb_match_busy
-    public void use() { 
-        this.flags |= MATCH_BUSY; 
+    public final void use() {
+        flags |= MATCH_BUSY; 
     }
 
     public final boolean used() {
-        return (this.flags & MATCH_BUSY) != 0;
+        return (flags & MATCH_BUSY) != 0;
     }
 
     private RubyArray match_array(int start) {
-        RubyArray arr = getRuntime().newArray(regs.numRegs-start);
-        for(int i=start;i<regs.numRegs;i++) {
-            if(regs.beg[i] == -1) {
-                arr.append(getRuntime().getNil());
+        if (regs == null) {
+            if (begin == -1) {
+                return getRuntime().newArray(getRuntime().getNil());
             } else {
-                RubyString ss = str.makeShared(regs.beg[i], regs.end[i] - regs.beg[i]);
-                if(isTaint()) {
-                    ss.setTaint(true); 
-                }
-                arr.append(ss);
+                RubyString ss = str.makeShared(begin, end - begin);
+                if (isTaint()) ss.setTaint(true);
+                return getRuntime().newArray(ss);
             }
+        } else {
+            RubyArray arr = getRuntime().newArray(regs.numRegs - start);
+            for (int i=start; i<regs.numRegs; i++) {
+                if (regs.beg[i] == -1) {
+                    arr.append(getRuntime().getNil());
+                } else {
+                    RubyString ss = str.makeShared(regs.beg[i], regs.end[i] - regs.beg[i]);
+                    if (isTaint()) ss.setTaint(true); 
+                    arr.append(ss);
+                }
+            }
+            return arr;
         }
-        return arr;
+        
     }
 
     public IRubyObject group(long n) {
@@ -157,7 +168,7 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = {"size", "length"})
     public IRubyObject size() {
-        return getRuntime().newFixnum(regs.numRegs);
+        return regs == null ? RubyFixnum.one(getRuntime()) : RubyFixnum.newFixnum(getRuntime(), regs.numRegs);
     }
 
     /** match_begin
@@ -166,14 +177,16 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "begin", required = 1)
     public IRubyObject begin(IRubyObject index) {
         int i = RubyNumeric.num2int(index);
-        
-        if(i < 0 || regs.numRegs <= i) {
-            throw getRuntime().newIndexError("index " + i + " out of matches");
+
+        if (regs == null) {
+            if (i != 0) throw getRuntime().newIndexError("index " + i + " out of matches");
+            if (begin < 0) return getRuntime().getNil();
+            return RubyFixnum.newFixnum(getRuntime(), begin);
+        } else {
+            if (i < 0 || regs.numRegs <= i) throw getRuntime().newIndexError("index " + i + " out of matches");
+            if (regs.beg[i] < 0) return getRuntime().getNil();
+            return RubyFixnum.newFixnum(getRuntime(), regs.beg[i]);
         }
-        if(regs.beg[i] < 0) {
-            return getRuntime().getNil();
-        }
-        return getRuntime().newFixnum(regs.beg[i]);
     }
 
     /** match_end
@@ -182,14 +195,16 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "end", required = 1)
     public IRubyObject end(IRubyObject index) {
         int i = RubyNumeric.num2int(index);
-        
-        if(i < 0 || regs.numRegs <= i) {
-            throw getRuntime().newIndexError("index " + i + " out of matches");
+
+        if (regs == null) {
+            if (i != 0) throw getRuntime().newIndexError("index " + i + " out of matches");
+            if (end < 0) return getRuntime().getNil();
+            return RubyFixnum.newFixnum(getRuntime(), begin);
+        } else {
+            if (i < 0 || regs.numRegs <= i) throw getRuntime().newIndexError("index " + i + " out of matches");
+            if (regs.end[i] < 0) return getRuntime().getNil();
+            return RubyFixnum.newFixnum(getRuntime(), regs.end[i]);
         }
-        if(regs.end[i] < 0) {
-            return getRuntime().getNil();
-        }
-        return getRuntime().newFixnum(regs.end[i]);
     }
 
     /** match_offset
@@ -198,15 +213,17 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "offset", required = 1)
     public IRubyObject offset(IRubyObject index) {
         int i = RubyNumeric.num2int(index);
+        Ruby runtime = getRuntime();
 
-        if(i < 0 || regs.numRegs <= i) {
-            throw getRuntime().newIndexError("index " + i + " out of matches");
+        if (regs == null) {
+            if (i != 0) throw getRuntime().newIndexError("index " + i + " out of matches");
+            if (begin < 0) return runtime.newArray(runtime.getNil(), runtime.getNil());
+            return runtime.newArray(RubyFixnum.newFixnum(runtime, begin),RubyFixnum.newFixnum(runtime, end));            
+        } else {
+            if (i < 0 || regs.numRegs <= i) throw runtime.newIndexError("index " + i + " out of matches");
+            if (regs.beg[i] < 0) return runtime.newArray(runtime.getNil(), runtime.getNil());
+            return runtime.newArray(RubyFixnum.newFixnum(runtime, regs.beg[i]),RubyFixnum.newFixnum(runtime, regs.end[i]));
         }
-
-        if(regs.beg[i] < 0) {
-            return getRuntime().newArray(getRuntime().getNil(),getRuntime().getNil());
-        }
-        return getRuntime().newArray(getRuntime().newFixnum(regs.beg[i]),getRuntime().newFixnum(regs.end[i]));
     }
 
     /** match_pre_match
@@ -214,13 +231,17 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = "pre_match")
     public IRubyObject pre_match() {
-        if(regs.beg[0] == -1) {
-            return getRuntime().getNil();
+        RubyString ss;
+        
+        if (regs == null) {
+            if(begin == -1) return getRuntime().getNil();
+            ss = str.makeShared(0, begin);
+        } else {
+            if(regs.beg[0] == -1) return getRuntime().getNil();
+            ss = str.makeShared(0, regs.beg[0]);
         }
-        RubyString ss = str.makeShared(0, regs.beg[0]);
-        if(isTaint()) {
-            ss.setTaint(true);
-        }
+        
+        if (isTaint()) ss.setTaint(true);
         return ss;
     }
 
@@ -229,13 +250,17 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = "post_match")
     public IRubyObject post_match() {
-        if(regs.beg[0] == -1) {
-            return getRuntime().getNil();
+        RubyString ss;
+        
+        if (regs == null) {
+            if (begin == -1) return getRuntime().getNil();
+            ss = str.makeShared(end, str.getByteList().length() - end);
+        } else {
+            if (regs.beg[0] == -1) return getRuntime().getNil();
+            ss = str.makeShared(regs.end[0], str.getByteList().length() - regs.end[0]);
         }
-        RubyString ss = str.makeShared(regs.end[0], str.getByteList().length() - regs.end[0]);
-        if(isTaint()) {
-            ss.setTaint(true);
-        }
+        
+        if(isTaint()) ss.setTaint(true);
         return ss;
     }
 
@@ -245,12 +270,8 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
         IRubyObject ss = RubyRegexp.last_match(this);
-        if(ss.isNil()) {
-            ss = RubyString.newEmptyString(getRuntime(), getRuntime().getString());
-        }
-        if(isTaint()) {
-            ss.setTaint(true);
-        }
+        if (ss.isNil()) ss = RubyString.newEmptyString(getRuntime());
+        if (isTaint()) ss.setTaint(true);
         return ss;
     }
 

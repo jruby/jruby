@@ -132,7 +132,7 @@ public class RubyGlobal {
         runtime.defineVariable(new LastExitStatusVariable(runtime, "$?"));
 
         runtime.defineVariable(new ErrorInfoGlobalVariable(runtime, "$!", runtime.getNil()));
-        runtime.defineVariable(new GlobalVariable(runtime, "$=", runtime.getFalse()));
+        runtime.defineVariable(new NonEffectiveGlobalVariable(runtime, "$=", runtime.getFalse()));
         runtime.defineVariable(new GlobalVariable(runtime, "$;", runtime.getNil()));
 
         runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"));
@@ -212,6 +212,22 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("ENV_JAVA", new StringOnlyRubyHash(
                 runtime, systemProps, runtime.getNil()));
         
+    }
+
+    private static class NonEffectiveGlobalVariable extends GlobalVariable {
+        public NonEffectiveGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+        }
+
+        public IRubyObject set(IRubyObject value) {
+            runtime.getWarnings().warn("warning: variable " + name + " is no longer effective; ignored");
+            return value;
+        }
+
+        public IRubyObject get() {
+            runtime.getWarnings().warn("warning: variable " + name + " is no longer effective");
+            return runtime.getFalse();
+        }
     }
 
     private static class LastExitStatusVariable extends GlobalVariable {

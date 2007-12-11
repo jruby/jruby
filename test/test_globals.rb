@@ -107,7 +107,7 @@ class TestGlobals < Test::Unit::TestCase
     assert_nil("fOo" =~ /foo/)
     assert("fOo" =~ /foo/i)
     $= = true
-    assert("fOo" =~ /foo/)
+    assert("fOo" =~ /foo/i)
     $= = false
   end
 

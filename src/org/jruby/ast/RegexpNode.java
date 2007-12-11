@@ -76,10 +76,6 @@ public class RegexpNode extends Node implements ILiteralNode {
         return value;
     }
 
-    public int getFlags() {
-        return options;
-    }
-
     public void setPattern(RubyRegexp p) {
         this.pattern = p;
         this.pattern.setLiteral();

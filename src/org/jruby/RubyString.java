@@ -39,13 +39,20 @@
 package org.jruby;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.Locale;
+
+import org.joni.Matcher;
+import org.joni.Option;
+import org.joni.Regex;
+import org.joni.Region;
+import org.joni.encoding.Encoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
-
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -55,9 +62,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
-
-import org.joni.encoding.Encoding;
-import org.joni.Region;
 
 /**
  *
@@ -177,6 +181,16 @@ public class RubyString extends RubyObject {
 
         shared.infectBy(this);
         return shared;
+    }
+    
+    private void tmpLock() {
+        if ((flags & TMPLOCK_STR_F) != 0) throw getRuntime().newRuntimeError("temporal locking already locked string");
+        flags |= TMPLOCK_STR_F;
+    }
+    
+    private void tmpUnlock() {
+        if ((flags & TMPLOCK_STR_F) == 0) throw getRuntime().newRuntimeError("temporal unlocking already unlocked string");
+        flags &= ~TMPLOCK_STR_F;
     }
 
     private final void modifyCheck() {
@@ -651,7 +665,7 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "~")
     public IRubyObject op_match2() {
-        return RubyRegexp.newRegexp(this, 0, null).op_match2();
+        return RubyRegexp.newRegexp(getRuntime(), value, 0).op_match2();
     }
 
     /**
@@ -663,30 +677,7 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "match", required = 1)
     public IRubyObject match(IRubyObject pattern) {
-        return get_pat(pattern,false).callMethod(getRuntime().getCurrentContext(),"match",this);
-    }
-
-    private IRubyObject get_pat(IRubyObject pat, boolean quote) {
-        IRubyObject val;
-
-        if(pat instanceof RubyRegexp) {
-            return pat;
-        } else if(pat instanceof RubyString) {
-        } else {
-            val = pat.checkStringType();
-            if(val.isNil()) {
-                if(!(pat instanceof RubyRegexp)) {
-                    throw getRuntime().newTypeError("wrong argument type " + pat.getMetaClass().getName() + " (expected Regexp)");
-                }
-            }
-            pat = val;
-        }
-
-        if(quote) {
-            pat = RubyRegexp.quote(pat,(KCode)null);
-        }
-
-        return RubyRegexp.newRegexp(pat,0,null);
+        return getPattern(pattern, false).callMethod(getRuntime().getCurrentContext(), "match", this);
     }
 
     /** rb_str_capitalize
@@ -1595,7 +1586,7 @@ public class RubyString extends RubyObject {
     /** rb_str_sub
      *
      */
-    @JRubyMethod(name = "sub", required = 1, optional = 1)
+    @JRubyMethod(name = "sub", required = 1, optional = 1, frame = true)
     public IRubyObject sub(IRubyObject[] args, Block block) {
         RubyString str = strDup();
         str.sub_bang(args, block);
@@ -1605,57 +1596,83 @@ public class RubyString extends RubyObject {
     /** rb_str_sub_bang
      *
      */
-    @JRubyMethod(name = "sub!", required = 1, optional = 1)
+    @JRubyMethod(name = "sub!", required = 1, optional = 1, frame = true)
     public IRubyObject sub_bang(IRubyObject[] args, Block block) {
-        IRubyObject match;
-        RubyString repl = null;;
-        RubyRegexp pat;
-        Region regs;
-        boolean iter = false;
+        
+        RubyString repl = null;
+        final boolean iter;
         boolean tainted = false;
-
+        
         if(args.length == 1 && block.isGiven()) {
             iter = true;
+            tainted = false;
         } else if(args.length == 2) {
             repl = args[1].convertToString();
-            if(repl.isTaint()) {
-                tainted = true;
-            }
+            iter = false;
+            if (repl.isTaint()) tainted = true;
         } else {
             throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 2)");
         }
 
-        pat = (RubyRegexp)get_pat(args[0], true);
+        RubyRegexp rubyRegex = getPattern(args[0], true);
+        Regex regex = rubyRegex.getPattern();
 
-        if(pat.search(this, 0, false) >= 0) {
-            match = getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
-            regs = ((RubyMatchData)match).regs;
-            if(iter) {
-                // for modifyCheck
-                byte [] sb = value.bytes; 
-                int slen = value.realSize;
-
-                ((RubyMatchData)match).use();
-                repl = objAsString(block.yield(getRuntime().getCurrentContext(),RubyRegexp.nth_match(0,match)));
-                modifyCheck(sb,slen);
+        int range = value.begin + value.realSize;
+        Matcher matcher = regex.matcher(value.bytes, value.begin, range);
+        
+        ThreadContext context = getRuntime().getCurrentContext();
+        Frame frame = context.getPreviousFrame();
+        if (matcher.search(value.begin, range, Option.NONE) >= 0) {
+            if (iter) {                
+                byte[]bytes = value.bytes;
+                int size = value.realSize;
+                rubyRegex.updateBackRef(this, frame, matcher).use();
+                if (regex.numberOfCaptures() == 0) {
+                    repl = objAsString(block.yield(context, substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
+                } else {
+                    Region region = matcher.getRegion();
+                    repl = objAsString(block.yield(context, substr(region.beg[0], region.end[0] - region.beg[0])));
+                }
+                modifyCheck(bytes, size);
                 frozenCheck();
-                getRuntime().getCurrentContext().getCurrentFrame().setBackRef(match);
+                rubyRegex.updateBackRef(this, frame, matcher);
             } else {
-                repl = pat.regsub(repl, this, regs);
+                repl = rubyRegex.regsub(repl, this, matcher);
+                rubyRegex.updateBackRef(this, frame, matcher);
             }
-            modify();
-            if(repl.isTaint()) {
-                tainted = true;
-            }
-            this.value.unsafeReplace(this.value.begin + regs.beg[0], regs.end[0]-regs.beg[0], repl.value.bytes, repl.value.begin, repl.value.realSize);
-            if(tainted) {
-                setTaint(true);
-            }
-            
-            return this;
-        }
 
-        return getRuntime().getNil();
+            final int beg, plen;
+            if (regex.numberOfCaptures() == 0) {
+                beg = matcher.getBegin();
+                plen = matcher.getEnd() - beg;
+            } else {
+                Region region = matcher.getRegion();
+                beg = region.beg[0];
+                plen = region.end[0] - beg;
+            }
+
+            ByteList replValue = repl.value;
+            if (replValue.realSize > plen) {
+                modify(value.realSize + replValue.realSize - plen);
+            } else {
+                modify();
+            }
+            if (repl.isTaint()) tainted = true;            
+
+            if (replValue.realSize != plen && (value.realSize - beg - plen) > 0) {
+                int src = value.begin + beg + plen;
+                int dst = value.begin + beg + replValue.realSize;
+                int length = value.realSize - beg - plen;
+                System.arraycopy(value.bytes, src, value.bytes, dst, length);
+            }
+            System.arraycopy(replValue.bytes, replValue.begin, value.bytes, value.begin + beg, replValue.realSize);
+            value.realSize += replValue.realSize - plen;
+            if (tainted) setTaint(true);
+            return this;            
+        } else {
+            frame.setBackRef(getRuntime().getNil());
+            return getRuntime().getNil();
+        }
     }
     
     /** rb_str_gsub
@@ -1674,97 +1691,107 @@ public class RubyString extends RubyObject {
         return gsub(args, block, true);
     }
 
-    private final IRubyObject gsub(IRubyObject[] args, Block block, boolean bang) {
-        boolean iter = false;
+    private final IRubyObject gsub(IRubyObject[] args, Block block, final boolean bang) {
         IRubyObject repl;
-        Ruby runtime = getRuntime();
+        final boolean iter;
         boolean tainted = false;
         
         if (args.length == 1 && block.isGiven()) {
             iter = true;
-            repl = runtime.getNil();
+            repl = null;
         } else if (args.length == 2) {
+            iter = false;
             repl = args[1].convertToString();
-            tainted = repl.isTaint(); 
+            if (repl.isTaint()) tainted = true; 
         } else {
-            throw runtime.newArgumentError("wrong number of arguments (" + args.length + "for 2)");
+            throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + "for 2)");
         }
         
-        RubyRegexp pattern = getPat(args[0], true);
-        Region regs = null;
+        RubyRegexp rubyRegex = getPattern(args[0], true);
+        Regex regex = rubyRegex.getPattern();
 
-        int begs = pattern.search(this, 0, false);
-        if(begs < 0) {
-            if(bang) {
-                return getRuntime().getNil();	/* no match, no substitution */
-            }
-            return strDup();
-        }
+        int begin = value.begin;
+        int range = begin + value.realSize;
+        Matcher matcher = regex.matcher(value.bytes, begin, range);
         
-        int blen = value.realSize + 30;
+        int beg = matcher.search(begin, range, Option.NONE);
+
+        if (beg < 0) return bang ? getRuntime().getNil() : strDup(); /* bang: true, no match, no substitution */
+        
+        int blen = value.realSize + 30; /* len + margin */
         ByteList dest = new ByteList(blen);
         dest.realSize = blen;
         int buf = 0, bp = 0;
         int cp = value.begin;
-
-        // for modifyCheck
-        byte [] sb = value.bytes; 
-        int slen = value.realSize;
         
-        RubyString val; 
-        ThreadContext context = runtime.getCurrentContext();
+        ThreadContext context = getRuntime().getCurrentContext();
+        Frame frame = context.getPreviousFrame();
         
+        tmpLock();
+        
+        int n = 0;
         int offset = 0;
-        // tmp lock
-        RubyMatchData md = null;
-        while (begs>=0) {
-            md = (RubyMatchData)getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
-            regs =  ((RubyMatchData)md).regs;
-            
+        RubyString val;
+
+        while (beg >= 0) {
+            n++;
+            final int begz, endz;
             if (iter) {
-                md.use();
-                context.getPreviousFrame().setBackRef(md);
-                // FIXME: I don't like this setting into the frame directly, but it's necessary since blocks dupe the
-                block.getFrame().setBackRef(md);
-                val = objAsString(block.yield(context, RubyRegexp.nth_match(0, md)));
-                modifyCheck(sb, slen);
+                byte[]bytes = value.bytes;
+                int size = value.realSize;
+                rubyRegex.updateBackRef(this, frame, matcher).use();
+                if (regex.numberOfCaptures() == 0) {
+                    begz = matcher.getBegin();
+                    endz = matcher.getEnd();
+                    val = objAsString(block.yield(context, substr(begz, endz - begz)));
+                } else {
+                    Region region = matcher.getRegion();
+                    begz = region.beg[0];
+                    endz = region.end[0];
+                    val = objAsString(block.yield(context, substr(begz, endz - begz)));
+ 
+                }
+                modifyCheck(bytes, size);
                 if (bang) frozenCheck();
-                // rb_raise(rb_eRuntimeError, "block should not cheat");
             } else {
-                val = pattern.regsub((RubyString)repl, this, regs);
+                val = rubyRegex.regsub((RubyString)repl, this, matcher);
+                if (regex.numberOfCaptures() == 0) {
+                    begz = matcher.getBegin();
+                    endz = matcher.getEnd();
+                } else {
+                    Region region = matcher.getRegion();
+                    begz = region.beg[0];
+                    endz = region.end[0];
+                }
             }
+            
             if (val.isTaint()) tainted = true;
             ByteList vbuf = val.value;
-            int beg = regs.beg[0]; 
             int len = (bp - buf) + (beg - offset) + vbuf.realSize + 3;
-
             if (blen < len) {
                 while (blen < len) blen <<= 1;
                 len = bp - buf;
-                dest.realloc(blen);                
+                dest.realloc(blen);
                 dest.realSize = blen;
                 bp = buf + len;
             }
-            len = beg - offset;
-            
+            len = beg - offset; /* copy pre-match substr */
             System.arraycopy(value.bytes, cp, dest.bytes, bp, len);
-
             bp += len;
             System.arraycopy(vbuf.bytes, vbuf.begin, dest.bytes, bp, vbuf.realSize);
             bp += vbuf.realSize;
-            int endZ = regs.end[0];
-            offset = endZ;
+            offset = endz;
             
-            if (regs.beg[0] == regs.end[0]) {
-                if (value.realSize <= endZ) break;
-                len = 1;
-                System.arraycopy(value.bytes, value.begin + endZ, dest.bytes, bp, len);
+            if (begz == endz) {
+                if (value.realSize <= endz) break;
+                len = regex.getEncoding().length(value.bytes[begin + endz]);
+                System.arraycopy(value.bytes, begin + endz, dest.bytes, bp, len);
                 bp += len;
-                offset = endZ + len;
+                offset = endz + len;
             }
-            cp = value.begin + offset;
+            cp = begin + offset;
             if (offset > value.realSize) break;
-            begs = pattern.search(this, offset, false);
+            beg = matcher.search(cp, range, Option.NONE); 
         }
         
         if (value.realSize > offset) {
@@ -1776,18 +1803,18 @@ public class RubyString extends RubyObject {
             }
             System.arraycopy(value.bytes, cp, dest.bytes, bp, value.realSize - offset);
             bp += value.realSize - offset;
-        }
-        // match unlock
-        // tmp unlock;
+        }        
         
+        rubyRegex.updateBackRef(this, frame, matcher);
+        tmpUnlock(); // MRI doesn't rb_ensure this
+
         dest.realSize = bp - buf;
-        
         if (bang) {
             view(dest);
             if (tainted) setTaint(true);
             return this;
         } else {
-            RubyString destStr = new RubyString(runtime, getMetaClass(), dest);
+            RubyString destStr = new RubyString(getRuntime(), getMetaClass(), dest);
             destStr.infectBy(this);
             if (tainted) destStr.setTaint(true);
             return destStr;
@@ -1987,25 +2014,31 @@ public class RubyString extends RubyObject {
      */
     private void subpatSet(RubyRegexp regexp, int nth, IRubyObject repl) {
         RubyMatchData match;
-        int start, end, len;
-        if(regexp.search(this, 0, false) < 0) {
-            throw getRuntime().newIndexError("regexp not matched");
-        }
+        int start, end, len;        
+        if (regexp.search(this, 0, false) < 0) throw getRuntime().newIndexError("regexp not matched");
+
         match = (RubyMatchData)getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
-        if(nth >= match.regs.numRegs) {
-            throw getRuntime().newIndexError("index " + nth + " out of regexp");
-        }
-        if(nth < 0) {
-            if(-nth >= match.regs.numRegs) {
-                throw getRuntime().newIndexError("index " + nth + " out of regexp");
+
+        if (match.regs == null) {
+            if (nth >= 1) throw getRuntime().newIndexError("index " + nth + " out of regexp");
+            if (nth < 0) {
+                if(-nth >= 1) throw getRuntime().newIndexError("index " + nth + " out of regexp");
+                nth += 1;
             }
-            nth += match.regs.numRegs;
+            start = match.begin;
+            if(start == -1) throw getRuntime().newIndexError("regexp group " + nth + " not matched");
+            end = match.end;
+        } else {
+            if(nth >= match.regs.numRegs) throw getRuntime().newIndexError("index " + nth + " out of regexp");
+            if(nth < 0) {
+                if(-nth >= match.regs.numRegs) throw getRuntime().newIndexError("index " + nth + " out of regexp");
+                nth += match.regs.numRegs;
+            }
+            start = match.regs.beg[nth];
+            if(start == -1) throw getRuntime().newIndexError("regexp group " + nth + " not matched");
+            end = match.regs.end[nth];
         }
-        start = match.regs.beg[nth];
-        if(start == -1) {
-            throw getRuntime().newIndexError("regexp group " + nth + " not matched");
-        }
-        end = match.regs.end[nth];
+        
         len = end - start;
         replace(start, len, stringValue(repl));
     }
@@ -2190,7 +2223,6 @@ public class RubyString extends RubyObject {
 
     }
 
-
     /** rb_str_include
      *
      */
@@ -2267,175 +2299,35 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "split", optional = 2)
     public RubyArray split(IRubyObject[] args) {
-        int beg, end, i = 0;
-        int lim = 0;
+        final int i, lim;
         boolean limit = false;
-        IRubyObject tmp;
             
-        Ruby runtime = getRuntime();        
-        if (Arity.checkArgumentCount(runtime, args, 0, 2) == 2) {
+        if (Arity.checkArgumentCount(getRuntime(), args, 0, 2) == 2) {
             lim = RubyNumeric.fix2int(args[1]);
-            if (lim == 1) { 
-                if (value.realSize == 0) return runtime.newArray();
-                return runtime.newArray(this);
-            } else if (lim > 0) {
-                limit = true;
-            }
-            
+            if (lim == 1) return value.realSize == 0 ? getRuntime().newArray() : getRuntime().newArray(this);
             if (lim > 0) limit = true;
             i = 1;
+        } else {
+            i = 0;
+            lim = 0;
         }
         
         IRubyObject spat = (args.length == 0 || args[0].isNil()) ? null : args[0];
-        boolean awkSplit = false;
-        
-        if (spat == null && (spat = runtime.getGlobalVariables().get("$;")).isNil()) {
-            awkSplit = true;
+
+        final RubyArray result;
+        if (spat == null && (spat = getRuntime().getGlobalVariables().get("$;")).isNil()) {
+            result = awkSplit(limit, lim, i);
         } else {
             if (spat instanceof RubyString && ((RubyString)spat).value.realSize == 1) {
-                if (((RubyString)spat).value.get(0) == ' ') {
-                    awkSplit = true;
+                if (((RubyString)spat).value.bytes[value.begin] == (byte)' ') {
+                    result = awkSplit(limit, lim, i);
+                } else {
+                    result = split(spat, limit, lim, i);
                 }
+            } else {
+                result = split(spat, limit, lim, i);
             }
         }
-            
-        RubyArray result = runtime.newArray();
-        beg = 0;
-        
-        if (awkSplit) { // awk split
-            int ptr = value.begin; 
-            int eptr = ptr + value.realSize;
-            byte[]buff = value.bytes;            
-            boolean skip = true;
-            
-            for (end = beg = 0; ptr < eptr; ptr++) {
-                if (skip) {
-                    if (Character.isWhitespace((char)(buff[ptr] & 0xff))) {
-                        beg++;
-                    } else {
-                        end = beg + 1;
-                        skip = false;
-                        if (limit && lim <= i) break;
-                    }
-                } else {
-                    if (Character.isWhitespace((char)(buff[ptr] & 0xff))) {
-                        result.append(makeShared(beg, end - beg));
-                        skip = true;
-                        beg = end + 1;
-                        if (limit) i++;
-                    } else {
-                        end++;
-                    }
-                }
-            }
-            
-            if (value.realSize > 0 && (limit || value.realSize > beg || lim < 0)) {
-                if (value.length() == beg) {
-                    result.append(newEmptyString(runtime, getMetaClass()));
-                } else {
-                    result.append(makeShared(beg, value.realSize - beg));
-                }
-            }
-        } else if(spat instanceof RubyString) { // string split
-            ByteList rsep = ((RubyString)spat).value;
-            int rslen = rsep.realSize;
-
-            int ptr = value.begin; 
-            int pend = ptr + value.realSize;
-            byte[]buff = value.bytes;            
-            int p = ptr;
-            
-            byte lastVal = rslen == 0 ? 0 : rsep.bytes[rsep.begin+rslen-1];
-
-            int s = p;
-            p+=rslen;
-
-            for(; p < pend; p++) {
-                if(ptr<p && (rslen ==0 || (buff[p-1] == lastVal &&
-                                            (rslen <= 1 || 
-                                             ByteList.memcmp(rsep.bytes, rsep.begin, rslen, buff, p-rslen, rslen) == 0)))) {
-
-                    result.append(makeShared(s-ptr, (p - s) - rslen));
-                    s = p;
-                    if(limit) {
-                        i++;
-                        if(lim<=i) {
-                            p = pend;
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            if(s != pend) {
-                if(p > pend) {
-                    p = pend;
-                }
-                if(!(limit && lim<=i) && p-rslen >= ptr && ByteList.memcmp(rsep.bytes, rsep.begin, rslen, buff, p-rslen, rslen) == 0) {
-                    result.append(makeShared(s-ptr, (p - s)-rslen));
-                    if(lim < 0) {
-                        result.append(newEmptyString(runtime, getMetaClass()));
-                    }
-                } else {
-                    result.append(makeShared(s-ptr, p - s));
-                }
-            }
-        } else { // regexp split
-            spat = getPat(spat,true);
-
-            int start = beg;
-            int idx;
-            boolean last_null = false;
-            Region regs;
-
-            while((end = ((RubyRegexp)spat).search(this, start, false)) >= 0) {
-                regs = ((RubyMatchData)getRuntime().getCurrentContext().getCurrentFrame().getBackRef()).regs;
-                if(start == end && regs.beg[0] == regs.end[0]) {
-                    if(value.realSize == 0) {
-                        result.append(newEmptyString(runtime, getMetaClass()));
-                        break;
-                    } else if(last_null) {
-                        result.append(substr(beg, ((RubyRegexp)spat).getKCode().getEncoding().length(value.bytes[value.begin+beg])));
-                        beg = start;
-                    } else {
-                        if(start < value.realSize) {
-                            start += ((RubyRegexp)spat).getKCode().getEncoding().length(value.bytes[value.begin+start]);
-                        } else {
-                            start++;
-                        }
-
-                        last_null = true;
-                        continue;
-                    }
-                } else {
-                    result.append(substr(beg,end-beg));
-                    beg = start = regs.end[0];
-                }
-                last_null = false;
-
-                for(idx=1; idx < regs.numRegs; idx++) {
-                    if(regs.beg[idx] == -1) {
-                        continue;
-                    }
-                    if(regs.beg[idx] == regs.end[idx]) {
-                        tmp = newEmptyString(runtime, getMetaClass());
-                    } else {
-                        tmp = substr(regs.beg[idx],regs.end[idx]-regs.beg[idx]);
-                    }
-                    result.append(tmp);
-                }
-                if(limit && lim <= ++i) {
-                    break;
-                }
-            }
-            if (value.realSize > 0 && (limit || value.realSize > beg || lim < 0)) {
-                if (value.realSize == beg) {
-                    result.append(newEmptyString(runtime, getMetaClass()));
-                } else {
-                    result.append(substr(beg, value.realSize - beg));
-                }
-            }
-        } // regexp split
 
         if (!limit && lim == 0) {
             while (result.size() > 0 && ((RubyString)result.eltInternal(result.size() - 1)).value.realSize == 0)
@@ -2445,106 +2337,275 @@ public class RubyString extends RubyObject {
         return result;
     }
     
+    private RubyArray split(IRubyObject pat, boolean limit, int lim, int i) {
+        Ruby runtime = getRuntime();
+        
+        final Regex regex = getPattern(pat, true).getPattern();
+        int beg, end, start;
+        
+        int begin = value.begin;
+        start = begin;
+        beg = 0;
+        
+        int range = value.begin + value.realSize;
+        final Matcher matcher = regex.matcher(value.bytes, value.begin, range);
+        
+        boolean lastNull = false;
+        RubyArray result = runtime.newArray();
+        if (regex.numberOfCaptures() == 0) { // shorter path, no captures defined, no region will be returned 
+            while (start < range && (end = matcher.search(start, range, Option.NONE)) >= 0) {
+                if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
+                    if (value.realSize == 0) {
+                        result.append(newEmptyString(runtime, getMetaClass()));
+                        break;
+                    } else if (lastNull) {
+                        result.append(substr(beg, regex.getEncoding().length(value.bytes[begin + beg])));
+                        beg = start - begin;
+                    } else {
+                        start += regex.getEncoding().length(value.bytes[start]);
+                        lastNull = true;
+                        continue;
+                    }
+                } else {
+                    result.append(substr(beg, end - beg));
+                    beg = matcher.getEnd();
+                    start = begin + matcher.getEnd();
+                }
+                lastNull = false;
+                if (limit && lim <= ++i) break;
+            }
+        } else {
+            while (start < range && (end = matcher.search(start, range, Option.NONE)) >= 0) {
+                final Region region = matcher.getRegion();
+                if (start == end + begin && region.beg[0] == region.end[0]) {
+                    if (value.realSize == 0) {                        
+                        result.append(newEmptyString(runtime, getMetaClass()));
+                        break;
+                    } else if (lastNull) {
+                        result.append(substr(beg, regex.getEncoding().length(value.bytes[begin + beg])));
+                        beg = start - begin;
+                    } else {
+                        start += regex.getEncoding().length(value.bytes[start]);
+                        lastNull = true;
+                        continue;
+                    }                    
+                } else {
+                    result.append(substr(beg, end - beg));
+                    beg = start = region.end[0];
+                    start += begin;
+                }
+                lastNull = false;
+                
+                for (int idx=1; idx<region.numRegs; idx++) {
+                    if (region.beg[idx] == -1) continue;
+                    if (region.beg[idx] == region.end[idx]) {
+                        result.append(newEmptyString(runtime, getMetaClass()));
+                    } else {
+                        result.append(substr(region.beg[idx], region.end[idx] - region.beg[idx]));
+                    }
+                }
+                if (limit && lim <= ++i) break;
+            }
+        }
+        
+        // only this case affects backrefs 
+        runtime.getCurrentContext().getCurrentFrame().setBackRef(runtime.getNil());
+        
+        if (value.realSize > 0 && (limit || value.realSize > beg || lim < 0)) {
+            if (value.realSize == beg) {
+                result.append(newEmptyString(runtime, getMetaClass()));
+            } else {
+                result.append(substr(beg, value.realSize - beg));
+            }
+        }
+        
+        return result;
+    }
+    
+    private RubyArray awkSplit(boolean limit, int lim, int i) {
+        RubyArray result = getRuntime().newArray();
+        
+        byte[]bytes = value.bytes;
+        int p = value.begin; 
+        int endp = p + value.realSize;
+                    
+        boolean skip = true;
+        
+        int end, beg = 0;        
+        for (end = beg = 0; p < endp; p++) {
+            if (skip) {
+                if (Character.isWhitespace(bytes[p] & 0xff)) {
+                    beg++;
+                } else {
+                    end = beg + 1;
+                    skip = false;
+                    if (limit && lim <= i) break;
+                }
+            } else {
+                if (Character.isWhitespace(bytes[p] & 0xff)) {
+                    result.append(makeShared(beg, end - beg));
+                    skip = true;
+                    beg = end + 1;
+                    if (limit) i++;
+                } else {
+                    end++;
+                }
+            }
+        }
+        
+        if (value.realSize > 0 && (limit || value.realSize > beg || lim < 0)) {
+            if (value.realSize == beg) {
+                result.append(newEmptyString(getRuntime(), getMetaClass()));
+            } else {
+                result.append(makeShared(beg, value.realSize - beg));
+            }
+        }
+        return result;
+    }
+    
     /** get_pat
      * 
      */
-    private final RubyRegexp getPat(IRubyObject pattern, boolean quote) {
-        if (pattern instanceof RubyRegexp) {
-            return (RubyRegexp)pattern;
-        } else if (!(pattern instanceof RubyString)) {
-            IRubyObject val = pattern.checkStringType();
-            if(val.isNil()) throw getRuntime().newTypeError("wrong argument type " + pattern.getMetaClass() + " (expected Regexp)");
-            pattern = val; 
+    private final RubyRegexp getPattern(IRubyObject obj, boolean quote) {
+        if (obj instanceof RubyRegexp) {
+            return (RubyRegexp)obj;
+        } else if (!(obj instanceof RubyString)) {
+            IRubyObject val = obj.checkStringType();
+            if (val.isNil()) throw getRuntime().newTypeError("wrong argument type " + obj.getMetaClass() + " (expected Regexp)");
+            obj = val; 
         }
         
-        RubyString strPattern = (RubyString)pattern;
-        if (quote) pattern = RubyRegexp.quote(strPattern,(KCode)null);
-
-        return RubyRegexp.newRegexp(pattern, 0, null);
+        return ((RubyString)obj).getCachedPattern(quote);
     }
 
+    /** rb_reg_regcomp
+     * 
+     */
+    private final RubyRegexp getCachedPattern(boolean quote) {
+        HashMap<ByteList, RubyRegexp> cache = patternCache.get();
+        if (cache == null) patternCache.set(cache = new HashMap<ByteList, RubyRegexp>(5));
+        
+        RubyRegexp regexp = cache.get(value);
+        
+        if (regexp == null || regexp.getKCode() != getRuntime().getKCode()) {
+            RubyString str = quote ? RubyRegexp.quote(this, (KCode)null) : this;
+            regexp = RubyRegexp.newRegexp(getRuntime(), str.value, 0);
+            cache.put(value, regexp);
+        }
+        return regexp;
+    }
+    
+    // In future we should store joni Regexes (cross runtime cache)
+    // for 1.9 cache, whole RubyString should be stored so the entry contains encoding information as well 
+    private static final ThreadLocal<HashMap<ByteList, RubyRegexp>> patternCache = new ThreadLocal<HashMap<ByteList,RubyRegexp>>();
+    
     /** rb_str_scan
      *
      */
     @JRubyMethod(name = "scan", required = 1, frame = true)
     public IRubyObject scan(IRubyObject arg, Block block) {
-        IRubyObject result;
-        int[] start = new int[]{0};
-        IRubyObject match = getRuntime().getNil();
-        RubyRegexp pattern = getPat(arg, true);
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-
-        byte[]_p = value.bytes;
-        int len = value.realSize;
+        Frame frame = context.getPreviousFrame();
         
-        if(!block.isGiven()) {
+        
+        final RubyRegexp rubyRegex = getPattern(arg, true);
+        final Regex regex = rubyRegex.getPattern();
+        
+        int range = value.begin + value.realSize;
+        final Matcher matcher = regex.matcher(value.bytes, value.begin, range);
+        matcher.value = 0; // implicit start argument to scanOnce(NG)
+        
+        IRubyObject result;
+        if (!block.isGiven()) {
             RubyArray ary = runtime.newArray();
-            while(!(result = scan_once(pattern, start)).isNil()) {
-                match = context.getCurrentFrame().getBackRef();
-                ary.append(result);
+            
+            if (regex.numberOfCaptures() == 0) {
+                while ((result = scanOnceNG(regex, matcher, range)) != null) ary.append(result);
+            } else {
+                while ((result = scanOnce(regex, matcher, range)) != null) ary.append(result);
             }
-            context.getPreviousFrame().setBackRef(match);
+            rubyRegex.updateBackRef(this, frame, matcher);
             return ary;
-        }
-
-        while(!(result = scan_once(pattern, start)).isNil()) {
-            match = context.getCurrentFrame().getBackRef();
-            context.getPreviousFrame().setBackRef(match);
-            if(match instanceof RubyMatchData) {
-                ((RubyMatchData)match).use();
+        } else {
+            byte[]bytes = value.bytes;
+            int size = value.realSize;
+            
+            if (regex.numberOfCaptures() == 0) {
+                while ((result = scanOnceNG(regex, matcher, range)) != null) {
+                    rubyRegex.updateBackRef(this, frame, matcher).use();
+                    block.yield(context, result);
+                    modifyCheck(bytes, size);
+                }
+            } else {
+                while ((result = scanOnce(regex, matcher, range)) != null) {
+                    rubyRegex.updateBackRef(this, frame, matcher).use();
+                    block.yield(context, result);
+                    modifyCheck(bytes, size);
+                }
             }
-            block.yield(context,result);
-            modifyCheck(_p,len);
-            context.getPreviousFrame().setBackRef(match);
+            rubyRegex.updateBackRef(this, frame, matcher);
+            return this;
         }
-        context.getPreviousFrame().setBackRef(match);
-
-        return this;
     }
 
     /**
      * rb_enc_check
      */
+    @SuppressWarnings("unused")
     private Encoding encodingCheck(RubyRegexp pattern) {
         // For 1.9 compatibility, should check encoding compat between string and pattern
         return pattern.getKCode().getEncoding();
     }
-
-    private IRubyObject scan_once(RubyRegexp pat, int[] start) {
-        Encoding enc = encodingCheck(pat);
-        Region regs;
-        int i;
-
-        if(pat.search(this, start[0], false) >= 0) {
-            RubyMatchData match = (RubyMatchData)getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
-            regs = match.regs;
-            if(regs.beg[0] == regs.end[0]) {
-                /*
-                 * Always consume at least one character of the input string
-                 */
-                if(value.realSize > regs.end[0]) {
-                    start[0] = regs.end[0] + enc.length(value.bytes[value.begin+regs.end[0]]);
+    
+    // no group version
+    private IRubyObject scanOnceNG(Regex regex, Matcher matcher, int range) {    
+        if (matcher.search(matcher.value + value.begin, range, Option.NONE) >= 0) {
+            int end = matcher.getEnd();
+            if (matcher.getBegin() == end) {
+                if (value.realSize > end) {
+                    matcher.value = end + regex.getEncoding().length(value.bytes[value.begin + end]);
                 } else {
-                    start[0] = regs.end[0] + 1;
+                    matcher.value = end + 1;
                 }
             } else {
-                start[0] = regs.end[0];
+                matcher.value = end;
             }
-            if(regs.numRegs == 1) {
-                return RubyRegexp.nth_match(0,match);
-            }
-            RubyArray ary = getRuntime().newArray(regs.numRegs);
-            for(i=1;i<regs.numRegs;i++) {
-                ary.append(RubyRegexp.nth_match(i,match));
-            }
-            return ary;
+            return substr(matcher.getBegin(), end - matcher.getBegin());
         }
-        return getRuntime().getNil();
+        return null;
     }
     
-    private static final ByteList SPACE_BYTELIST = new ByteList(ByteList.plain(" "));
+    // group version
+    private IRubyObject scanOnce(Regex regex, Matcher matcher, int range) {    
+        if (matcher.search(matcher.value + value.begin, range, Option.NONE) >= 0) {
+            Region region = matcher.getRegion();
+            int end = region.end[0];
+            if (matcher.getBegin() == end) {
+                if (value.realSize > end) {
+                    matcher.value = end + regex.getEncoding().length(value.bytes[value.begin + end]);
+                } else {
+                    matcher.value = end + 1;
+                }
+            } else {
+                matcher.value = end;
+            }
+            
+            RubyArray result = getRuntime().newArray(region.numRegs);
+            for (int i=1; i<region.numRegs; i++) {
+                int beg = region.beg[i]; 
+                if (beg == -1) {
+                    result.append(getRuntime().getNil());
+                } else {
+                    result.append(substr(beg, region.end[i] - beg));
+                }
+            }
+            return result;
+        }
+        return null;
+    }    
 
+    private static final ByteList SPACE_BYTELIST = new ByteList(ByteList.plain(" "));
     
     private final IRubyObject justify(IRubyObject[]args, char jflag) {
         Ruby runtime = getRuntime();        
