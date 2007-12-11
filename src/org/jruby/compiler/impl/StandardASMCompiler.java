@@ -2273,10 +2273,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeUtilityMethod("retryJump", cg.sig(IRubyObject.class));
         }
 
-        public void defineNewMethod(String name, StaticScope scope, CompilerCallback body, CompilerCallback args, CompilerCallback receiver, ASTInspector inspector) {
+        public void defineNewMethod(String name, StaticScope scope, 
+                CompilerCallback body, CompilerCallback args, 
+                CompilerCallback receiver, ASTInspector inspector, boolean root) {
             // TODO: build arg list based on number of args, optionals, etc
             ++methodIndex;
-            String methodName = JavaNameMangler.mangleMethodForCleanJavaIdentifier(name) + "__" + methodIndex;
+            String methodName;
+            if (root && Boolean.getBoolean("jruby.compile.toplevel")) {
+                methodName = name;
+            } else {
+                methodName = JavaNameMangler.mangleMethodForCleanJavaIdentifier(name) + "__" + methodIndex;
+            }
 
             MethodCompiler methodCompiler = startMethod(methodName, args, scope, inspector);
 
@@ -2492,7 +2499,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public ASMMethodCompiler(String friendlyName, ASTInspector inspector) {
             this.friendlyName = friendlyName;
 
-            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, friendlyName, METHOD_SIGNATURE, null, null));
+            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, METHOD_SIGNATURE, null, null));
             if (inspector == null) {
                 variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX);
             } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {

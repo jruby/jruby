@@ -840,11 +840,14 @@ public class ASTCompiler {
         CompilerCallback bodyCallback = new CompilerCallback() {
 
                     public void call(MethodCompiler context) {
+                        boolean oldIsAtRoot = isAtRoot;
+                        isAtRoot = false;
                         if (classNode.getBodyNode() != null) {
                             compile(classNode.getBodyNode(), context);
                         } else {
                             context.loadNil();
                         }
+                        isAtRoot = oldIsAtRoot;
                     }
                 };
 
@@ -884,11 +887,14 @@ public class ASTCompiler {
         CompilerCallback bodyCallback = new CompilerCallback() {
 
                     public void call(MethodCompiler context) {
+                        boolean oldIsAtRoot = isAtRoot;
+                        isAtRoot = false;
                         if (sclassNode.getBodyNode() != null) {
                             compile(sclassNode.getBodyNode(), context);
                         } else {
                             context.loadNil();
                         }
+                        isAtRoot = oldIsAtRoot;
                     }
                 };
 
@@ -1576,7 +1582,7 @@ public class ASTCompiler {
         inspector.inspect(defnNode.getArgsNode());
         inspector.inspect(defnNode.getBodyNode());
 
-        context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args, null, inspector);
+        context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args, null, inspector, isAtRoot);
     }
 
     public void compileDefs(Node node, MethodCompiler context) {
@@ -1615,7 +1621,7 @@ public class ASTCompiler {
         inspector.inspect(defsNode.getArgsNode());
         inspector.inspect(defsNode.getBodyNode());
 
-        context.defineNewMethod(defsNode.getName(), defsNode.getScope(), body, args, receiver, inspector);
+        context.defineNewMethod(defsNode.getName(), defsNode.getScope(), body, args, receiver, inspector, false);
     }
 
     public void compileArgs(Node node, MethodCompiler context) {

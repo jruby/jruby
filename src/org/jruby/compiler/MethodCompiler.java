@@ -245,7 +245,9 @@ public interface MethodCompiler {
      * @param localVarCount The number of local variables within the method
      * @param body The callback which will generate the method's body.
      */
-    public void defineNewMethod(String name, StaticScope scope, CompilerCallback body, CompilerCallback args, CompilerCallback receiver, ASTInspector inspector);
+    public void defineNewMethod(String name, StaticScope scope,
+            CompilerCallback body, CompilerCallback args,
+            CompilerCallback receiver, ASTInspector inspector, boolean root);
     
     /**
      * Define an alias for a new name to an existing oldName'd method.
