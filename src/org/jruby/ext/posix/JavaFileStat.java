@@ -61,16 +61,15 @@ public class JavaFileStat implements FileStat {
         
         if (canonicalParent.getAbsolutePath().equals(absoluteParent.getAbsolutePath())) {
             // parent doesn't change when canonicalized, compare absolute and canonical file directly
-            if (!file.getAbsolutePath().equals(file.getCanonicalPath())) {
+            if (!file.getAbsolutePath().equalsIgnoreCase(file.getCanonicalPath())) {
                 st_mode |= S_IFLNK;
                 return st_mode;
             }
         }
         
-        // FIXME: See if we can get rid of JRubyFile use here.
         // directory itself has symlinks (canonical != absolute), so build new path with canonical parent and compare
         file = new File(canonicalParent.getAbsolutePath() + "/" + file.getName());
-        if (!file.getAbsolutePath().equals(file.getCanonicalPath())) {
+        if (!file.getAbsolutePath().equalsIgnoreCase(file.getCanonicalPath())) {
             st_mode |= S_IFLNK;
         }
         
