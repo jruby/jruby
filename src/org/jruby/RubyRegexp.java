@@ -597,9 +597,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
                 continue;
 
             case '+':
-                if (regs == null && mbeg == -1) {
-                    no = 0;
-                    continue;
+                if (regs == null) {
+                    if (mbeg == -1) {
+                        no = 0;
+                        continue;
+                    }
                 } else {
                     no = regs.numRegs-1;
                     while(regs.beg[no] == -1 && no > 0) no--;
