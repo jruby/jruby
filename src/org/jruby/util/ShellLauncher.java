@@ -202,7 +202,7 @@ public class ShellLauncher {
             ScriptThreadProcess ipScript = new ScriptThreadProcess(newargs, getCurrentEnv(), pwd);
             ipScript.start();
             aProcess = ipScript;
-        } else if (shouldRunInShell(shell, args)) {
+        } else if (rawArgs.length == 1 && shouldRunInShell(shell, args)) {
             // execute command with sh -c
             // this does shell expansion of wildcards
             String[] argArray = new String[3];
