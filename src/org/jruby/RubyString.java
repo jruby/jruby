@@ -370,12 +370,16 @@ public class RubyString extends RubyObject {
 
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(IRubyObject other) {
-        RubyString str = RubyString.stringValue(other);
-
-        ByteList newValue = new ByteList(value.length() + str.value.length());
-        newValue.append(value);
-        newValue.append(str.value);
-        return newString(getRuntime(), newValue).infectBy(other).infectBy(this);
+        RubyString str = other.convertToString();
+        
+        ByteList result = new ByteList(value.realSize + str.value.realSize);
+        result.realSize = value.realSize + str.value.realSize;
+        System.arraycopy(value.bytes, value.begin, result.bytes, 0, value.realSize);
+        System.arraycopy(str.value.bytes, str.value.begin, result.bytes, value.realSize, str.value.realSize);
+      
+        RubyString resultStr = newString(getRuntime(), result);
+        if (isTaint() || str.isTaint()) resultStr.setTaint(true);
+        return resultStr;
     }
 
     @JRubyMethod(name = "*", required = 1)
