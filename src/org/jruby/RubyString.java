@@ -2319,7 +2319,8 @@ public class RubyString extends RubyObject {
             result = awkSplit(limit, lim, i);
         } else {
             if (spat instanceof RubyString && ((RubyString)spat).value.realSize == 1) {
-                if (((RubyString)spat).value.bytes[value.begin] == (byte)' ') {
+                RubyString strSpat = (RubyString)spat;
+                if (strSpat.value.bytes[strSpat.value.begin] == (byte)' ') {
                     result = awkSplit(limit, lim, i);
                 } else {
                     result = split(spat, limit, lim, i);
