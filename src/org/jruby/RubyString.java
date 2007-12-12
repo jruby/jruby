@@ -47,6 +47,7 @@ import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
 import org.joni.encoding.Encoding;
+import org.joni.encoding.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -68,6 +69,8 @@ import org.jruby.util.Sprintf;
  * @author  jpetersen
  */
 public class RubyString extends RubyObject {
+    private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
+    
     private static final int TMPLOCK_STR_F = 1 << 11;
     private static final int TMPLOCK_OR_FROZEN_STR_F = TMPLOCK_STR_F | FROZEN_F;
 
@@ -711,16 +714,16 @@ public class RubyString extends RubyObject {
         
         boolean modify = false;
         
-        char c = (char)(buf[s] & 0xff);
-        if (Character.isLetter(c) && Character.isLowerCase(c)) {
-            buf[s] = (byte)Character.toUpperCase(c);
+        int c = buf[s] & 0xff;
+        if (ASCII.isLower(c)) {
+            buf[s] = (byte)ASCIIEncoding.asciiToUpper(c);
             modify = true;
         }
         
         while (++s < send) {
             c = (char)(buf[s] & 0xff);
-            if (Character.isLetter(c) && Character.isUpperCase(c)) {
-                buf[s] = (byte)Character.toLowerCase(c);
+            if (ASCII.isUpper(c)) {
+                buf[s] = (byte)ASCIIEncoding.asciiToLower(c);
                 modify = true;
             }
         }
@@ -797,9 +800,9 @@ public class RubyString extends RubyObject {
 
         boolean modify = false;
         while (s < send) {
-            char c = (char)(buf[s] & 0xff);
-            if (c >= 'a' && c<= 'z') {
-                buf[s] = (byte)(c-32);
+            int c = buf[s] & 0xff;
+            if (ASCII.isLower(c)) {
+                buf[s] = (byte)ASCIIEncoding.asciiToUpper(c);
                 modify = true;
             }
             s++;
@@ -834,9 +837,9 @@ public class RubyString extends RubyObject {
         
         boolean modify = false;
         while (s < send) {
-            char c = (char)(buf[s] & 0xff);
-            if (c >= 'A' && c <= 'Z') {
-                buf[s] = (byte)(c+32);
+            int c = buf[s] & 0xff;
+            if (ASCII.isUpper(c)) {
+                buf[s] = (byte)ASCIIEncoding.asciiToLower(c);
                 modify = true;
             }
             s++;
@@ -871,15 +874,13 @@ public class RubyString extends RubyObject {
         
         boolean modify = false;
         while (s < send) {
-            char c = (char)(buf[s] & 0xff);
-            if (Character.isLetter(c)) {
-                if (Character.isUpperCase(c)) {
-                    buf[s] = (byte)Character.toLowerCase(c);
-                    modify = true;
-                } else {
-                    buf[s] = (byte)Character.toUpperCase(c);
-                    modify = true;
-                }
+            int c = buf[s] & 0xff;
+            if (ASCII.isUpper(c)) {
+                buf[s] = (byte)ASCIIEncoding.asciiToLower(c);
+                modify = true;
+            } else if (ASCII.isLower(c)) {
+                buf[s] = (byte)ASCIIEncoding.asciiToUpper(c);
+                modify = true;
             }
             s++;
         }
@@ -2439,7 +2440,7 @@ public class RubyString extends RubyObject {
         int end, beg = 0;        
         for (end = beg = 0; p < endp; p++) {
             if (skip) {
-                if (Character.isWhitespace(bytes[p] & 0xff)) {
+                if (ASCII.isSpace(bytes[p] & 0xff)) {
                     beg++;
                 } else {
                     end = beg + 1;
@@ -2447,7 +2448,7 @@ public class RubyString extends RubyObject {
                     if (limit && lim <= i) break;
                 }
             } else {
-                if (Character.isWhitespace(bytes[p] & 0xff)) {
+                if (ASCII.isSpace(bytes[p] & 0xff)) {
                     result.append(makeShared(beg, end - beg));
                     skip = true;
                     beg = end + 1;
