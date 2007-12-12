@@ -3401,4 +3401,15 @@ public class RubyString extends RubyObject {
     public ByteList getByteList() {
         return value;
     }
+
+    /** used by ar-jdbc
+     * 
+     */
+    public String getUnicodeValue() {
+        try {
+            return new String(value.bytes,value.begin,value.realSize, "UTF8");
+        } catch (Exception e) {
+            throw new RuntimeException("Something's seriously broken with encodings", e);
+        }
+    }    
 }
