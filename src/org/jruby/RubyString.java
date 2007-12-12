@@ -2268,7 +2268,7 @@ public class RubyString extends RubyObject {
 
         int ix = value.begin;
 
-        while(ix < value.begin+value.realSize && WHITESPACE[value.bytes[ix]+128]) {
+        while(ix < value.begin+value.realSize && ASCII.isSpace(value.bytes[ix] & 0xff)) {
             ix++;
         }
 
@@ -2768,11 +2768,11 @@ public class RubyString extends RubyObject {
             if (rsObj == getRuntime().getGlobalVariables().getDefaultSeparator()) {
                 int realSize = value.realSize;
                 int begin = value.begin;
-                if ((buff[begin + len - 1] & 0xFF) == '\n') {
+                if (buff[begin + len - 1] == (byte)'\n') {
                     realSize--;
-                    if (realSize > 0 && (buff[begin + realSize - 1] & 0xFF) == '\r') realSize--;
+                    if (realSize > 0 && buff[begin + realSize - 1] == (byte)'\r') realSize--;
                     view(0, realSize);
-                } else if ((buff[begin + len - 1] & 0xFF) == '\r') {
+                } else if (buff[begin + len - 1] == (byte)'\r') {
                     realSize--;
                     view(0, realSize);
                 } else {
@@ -2795,9 +2795,9 @@ public class RubyString extends RubyObject {
         int rslen = rs.value.realSize;
 
         if (rslen == 0) {
-            while (len > 0 && (buff[begin + len - 1] & 0xFF) == '\n') {
+            while (len > 0 && buff[begin + len - 1] == (byte)'\n') {
                 len--;
-                if (len > 0 && (buff[begin + len - 1] & 0xFF) == '\r') len--;
+                if (len > 0 && buff[begin + len - 1] == (byte)'\r') len--;
             }
             if (len < value.realSize) {
                 view(0, len);
@@ -2807,16 +2807,16 @@ public class RubyString extends RubyObject {
         }
 
         if (rslen > len) return getRuntime().getNil();
-        int newline = rs.value.bytes[rslen - 1] & 0xFF;
+        byte newline = rs.value.bytes[rslen - 1];
 
-        if (rslen == 1 && newline == '\n') {
+        if (rslen == 1 && newline == (byte)'\n') {
             buff = value.bytes;
             int realSize = value.realSize;
-            if ((buff[begin + len - 1] & 0xFF) == '\n') {
+            if (buff[begin + len - 1] == (byte)'\n') {
                 realSize--;
-                if (realSize > 0 && (buff[begin + realSize - 1] & 0xFF) == '\r') realSize--;
+                if (realSize > 0 && buff[begin + realSize - 1] == (byte)'\r') realSize--;
                 view(0, realSize);
-            } else if ((buff[begin + len - 1] & 0xFF) == '\r') {
+            } else if (buff[begin + len - 1] == (byte)'\r') {
                 realSize--;
                 view(0, realSize);
             } else {
@@ -2826,7 +2826,7 @@ public class RubyString extends RubyObject {
             return this;                
         }
 
-        if ((buff[begin + len - 1] & 0xFF) == newline && rslen <= 1 || value.endsWith(rs.value)) {
+        if (buff[begin + len - 1] == newline && rslen <= 1 || value.endsWith(rs.value)) {
             view(0, value.realSize - rslen);
             return this;            
         }
@@ -2844,16 +2844,6 @@ public class RubyString extends RubyObject {
         return str;
     }
 
-    private final static boolean[] WHITESPACE = new boolean[256];
-    static {
-        WHITESPACE[((byte)' ')+128] = true;
-        WHITESPACE[((byte)'\t')+128] = true;
-        WHITESPACE[((byte)'\n')+128] = true;
-        WHITESPACE[((byte)'\r')+128] = true;
-        WHITESPACE[((byte)'\f')+128] = true;
-    }
-
-
     /** rb_str_lstrip_bang
      */
     @JRubyMethod(name = "lstrip!")
@@ -2861,7 +2851,7 @@ public class RubyString extends RubyObject {
         if (value.realSize == 0) return getRuntime().getNil();
         
         int i=0;
-        while (i < value.realSize && WHITESPACE[value.bytes[value.begin+i]+128]) i++;
+        while (i < value.realSize && ASCII.isSpace(value.bytes[value.begin + i] & 0xff)) i++;
         
         if (i > 0) {
             view(i, value.realSize - i);
@@ -2889,7 +2879,7 @@ public class RubyString extends RubyObject {
         int i=value.realSize - 1;
 
         while (i >= 0 && value.bytes[value.begin+i] == 0) i--;
-        while (i >= 0 && WHITESPACE[value.bytes[value.begin+i]+128]) i--;
+        while (i >= 0 && ASCII.isSpace(value.bytes[value.begin + i] & 0xff)) i--;
 
         if (i < value.realSize - 1) {
             view(0, i + 1);
