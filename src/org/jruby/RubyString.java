@@ -2487,11 +2487,8 @@ public class RubyString extends RubyObject {
      * 
      */
     private final RubyRegexp getCachedPattern(boolean quote) {
-        HashMap<ByteList, RubyRegexp> cache = patternCache.get();
-        if (cache == null) patternCache.set(cache = new HashMap<ByteList, RubyRegexp>(5));
-        
+        final HashMap<ByteList, RubyRegexp> cache = patternCache.get();
         RubyRegexp regexp = cache.get(value);
-        
         if (regexp == null || regexp.getKCode() != getRuntime().getKCode()) {
             RubyString str = quote ? RubyRegexp.quote(this, (KCode)null) : this;
             regexp = RubyRegexp.newRegexp(getRuntime(), str.value, 0);
@@ -2502,7 +2499,11 @@ public class RubyString extends RubyObject {
     
     // In future we should store joni Regexes (cross runtime cache)
     // for 1.9 cache, whole RubyString should be stored so the entry contains encoding information as well 
-    private static final ThreadLocal<HashMap<ByteList, RubyRegexp>> patternCache = new ThreadLocal<HashMap<ByteList,RubyRegexp>>();
+    private static final ThreadLocal<HashMap<ByteList, RubyRegexp>> patternCache = new ThreadLocal<HashMap<ByteList, RubyRegexp>>() {
+        protected HashMap<ByteList, RubyRegexp> initialValue() {
+            return new HashMap<ByteList, RubyRegexp>(5);
+        }
+    };
     
     /** rb_str_scan
      *
