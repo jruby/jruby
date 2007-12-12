@@ -88,6 +88,7 @@ public class RubyMatchData extends RubyObject {
 
     private RubyArray match_array(int start) {
         if (regs == null) {
+            if (start != 0) return getRuntime().newArray();
             if (begin == -1) {
                 return getRuntime().newArray(getRuntime().getNil());
             } else {
@@ -199,7 +200,7 @@ public class RubyMatchData extends RubyObject {
         if (regs == null) {
             if (i != 0) throw getRuntime().newIndexError("index " + i + " out of matches");
             if (end < 0) return getRuntime().getNil();
-            return RubyFixnum.newFixnum(getRuntime(), begin);
+            return RubyFixnum.newFixnum(getRuntime(), end);
         } else {
             if (i < 0 || regs.numRegs <= i) throw getRuntime().newIndexError("index " + i + " out of matches");
             if (regs.end[i] < 0) return getRuntime().getNil();
