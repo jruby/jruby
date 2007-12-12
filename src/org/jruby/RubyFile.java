@@ -446,7 +446,7 @@ public class RubyFile extends RubyIO {
     
     @JRubyMethod
     public IRubyObject mtime() {
-        return getRuntime().newFileStat(path, false).mtime();
+        return getLastModified(getRuntime(), path);
     }
 
     @JRubyMethod
@@ -1039,7 +1039,7 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod(name = "mtime", required = 1, meta = true)
     public static IRubyObject mtime(IRubyObject recv, IRubyObject filename) {
-        return recv.getRuntime().newFileStat(filename.convertToString().toString(), false).mtime();
+        return getLastModified(recv.getRuntime(), filename.convertToString().toString());
     }
     
     @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, meta = true)
@@ -1193,5 +1193,17 @@ public class RubyFile extends RubyIO {
         }
         
         return runtime.newFixnum(args.length);
+    }
+
+    // Fast path since JNA stat is about 10x slower than this
+    private static IRubyObject getLastModified(Ruby runtime, String path) {
+        long lastModified = JRubyFile.create(runtime.getCurrentDirectory(), path).lastModified();
+        
+        // 0 according to API does is non-existent file or IOError
+        if (lastModified == 0L) {
+            throw runtime.newErrnoENOENTError("No such file or directory - " + path);
+        }
+        
+        return runtime.newFixnum(lastModified / 1000);
     }
 }
