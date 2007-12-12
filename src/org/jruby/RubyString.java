@@ -2616,7 +2616,7 @@ public class RubyString extends RubyObject {
     
     private final IRubyObject justify(IRubyObject[]args, char jflag) {
         Ruby runtime = getRuntime();        
-        Arity.scanArgs(runtime, args, 1, 1);
+        Arity.checkArgumentCount(runtime, args, 1, 1);
         
         int width = RubyFixnum.num2int(args[0]);
         
