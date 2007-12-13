@@ -251,6 +251,16 @@ class TestFile < Test::Unit::TestCase
     assert_raises(Errno::ENOENT) { File.mtime("NO_SUCH_FILE_EVER") }
   end
 
+  def test_file_times_types
+    # Note: atime, mtime, ctime are all implemented using modification time
+    assert_instance_of Time, File.mtime("build.xml")
+    assert_instance_of Time, File.atime("build.xml")
+    assert_instance_of Time, File.ctime("build.xml")
+    assert_instance_of Time, File.new("build.xml").mtime
+    assert_instance_of Time, File.new("build.xml").atime
+    assert_instance_of Time, File.new("build.xml").ctime
+  end
+
   def test_more_constants
     # FIXME: Not sure how I feel about pulling in Java here
     if Java::java.lang.System.get_property("file.separator") == '/'

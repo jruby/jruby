@@ -1204,6 +1204,6 @@ public class RubyFile extends RubyIO {
             throw runtime.newErrnoENOENTError("No such file or directory - " + path);
         }
         
-        return runtime.newFixnum(lastModified / 1000);
+        return runtime.newTime(lastModified);
     }
 }
