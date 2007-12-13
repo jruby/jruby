@@ -1664,7 +1664,7 @@ public class RubyString extends RubyObject {
             }
             if (repl.isTaint()) tainted = true;            
 
-            if (replValue.realSize != plen && (value.realSize - beg - plen) > 0) {
+            if (replValue.realSize != plen) {
                 int src = value.begin + beg + plen;
                 int dst = value.begin + beg + replValue.realSize;
                 int length = value.realSize - beg - plen;
