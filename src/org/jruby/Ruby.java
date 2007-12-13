@@ -1003,7 +1003,14 @@ public final class Ruby {
         if (classObj != null) {
             if (!(classObj instanceof RubyClass)) throw newTypeError(name + " is not a class");
             RubyClass klazz = (RubyClass)classObj;
-            if (klazz.getSuperClass().getRealClass() != superClass) throw newNameError(name + " is already defined", name);
+            if (klazz.getSuperClass().getRealClass() != superClass) {
+                throw newNameError(name + " is already defined", name);
+            }
+            // If we define a class in Ruby, but later want to allow it to be defined in Java,
+            // the allocator needs to be updated
+            if (klazz.getAllocator() != allocator) {
+                klazz.setAllocator(allocator);
+            }
             return klazz;
         }
 
@@ -1240,9 +1247,7 @@ public final class Ruby {
         registerBuiltin("thread.so", new LateLoadingLibrary("thread", "org.jruby.libraries.ThreadLibrary", getJRubyClassLoader()));
         registerBuiltin("openssl.so", new Library() {
                 public void load(Ruby runtime) throws IOException {
-                    runtime.getKernel().callMethod(runtime.getCurrentContext(),"require",runtime.newString("rubygems"));
-                    runtime.getTopSelf().callMethod(runtime.getCurrentContext(),"gem",runtime.newString("jruby-openssl"));
-                    runtime.getKernel().callMethod(runtime.getCurrentContext(),"require",runtime.newString("openssl.rb"));
+                    runtime.getLoadService().require("jruby/openssl/stub");
                 }
             });
         registerBuiltin("digest.so", new LateLoadingLibrary("digest", "org.jruby.libraries.DigestLibrary", getJRubyClassLoader()));
