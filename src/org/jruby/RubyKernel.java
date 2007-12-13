@@ -864,10 +864,10 @@ public class RubyKernel {
     
     public static IRubyObject warn(IRubyObject recv, IRubyObject message) {
         Ruby runtime = recv.getRuntime();
-        IRubyObject out = runtime.getObject().getConstant("STDERR");
-        RubyIO io = (RubyIO) out.convertToType(runtime.getClass("IO"), 0, "to_io", true); 
-
-        io.puts(new IRubyObject[] { message });
+        if (!runtime.getVerbose().isNil()) {
+            IRubyObject out = runtime.getGlobalVariables().get("$stderr");
+            out.callMethod(runtime.getCurrentContext(), "puts", new IRubyObject[] { message });
+        }
         return recv.getRuntime().getNil();
     }
 

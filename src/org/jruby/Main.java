@@ -259,9 +259,6 @@ public class Main {
         runtime.setVerbose(runtime.newBoolean(commandline.isVerbose()));
         runtime.setDebug(runtime.newBoolean(commandline.isDebug()));
 
-        defineGlobalVERBOSE(runtime);
-        defineGlobalDEBUG(runtime);
-
         runtime.getObject().setConstant("$VERBOSE",
                 commandline.isVerbose() ? runtime.getTrue() : runtime.getNil());
 
@@ -282,45 +279,6 @@ public class Main {
             String scriptName = (String) iter.next();
             RubyKernel.require(runtime.getTopSelf(), runtime.newString(scriptName), Block.NULL_BLOCK);
         }
-    }
-
-    private void defineGlobalVERBOSE(final Ruby runtime) {
-        // $VERBOSE can be true, false, or nil.  Any non-false-nil value will get stored as true
-        runtime.getGlobalVariables().define("$VERBOSE", new IAccessor() {
-            public IRubyObject getValue() {
-                return runtime.getVerbose();
-            }
-
-            public IRubyObject setValue(IRubyObject newValue) {
-                if (newValue.isNil()) {
-                    runtime.setVerbose(newValue);
-                } else {
-                    runtime.setVerbose(runtime.newBoolean(newValue != runtime.getFalse()));
-                }
-
-                return newValue;
-            }
-        });
-    }
-
-    private void defineGlobalDEBUG(final Ruby runtime) {
-        IAccessor d = new IAccessor() {
-            public IRubyObject getValue() {
-                return runtime.getDebug();
-            }
-
-            public IRubyObject setValue(IRubyObject newValue) {
-                if (newValue.isNil()) {
-                    runtime.setDebug(newValue);
-                } else {
-                    runtime.setDebug(runtime.newBoolean(newValue != runtime.getFalse()));
-                }
-
-                return newValue;
-            }
-            };
-        runtime.getGlobalVariables().define("$DEBUG", d);
-        runtime.getGlobalVariables().define("$-d", d);
     }
 
     private void defineGlobal(Ruby runtime, String name, boolean value) {
