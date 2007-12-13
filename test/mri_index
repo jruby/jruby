@@ -49,3 +49,5 @@ externals/mri/ruby/test_trace
 #externals/mri/ruby/test_variable
 externals/mri/ruby/test_whileuntil
 externals/mri/stringio/test_stringio
+externals/mri/openssl/test_hmac
+externals/mri/openssl/test_digest
