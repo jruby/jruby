@@ -66,3 +66,27 @@ puts Benchmark.measure {
   end
 }
 }
+
+class Object
+  define_method(:bar) { }
+end
+
+puts "Test define_method method, 100k loops calling bar 100 times"
+5.times {
+  puts Benchmark.measure {
+    a = 0
+    while a < 100000
+      bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
+      bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
+      bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
+      bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
+      bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
+      bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
+      bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
+      bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
+      bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
+      bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
+      a += 1
+    end
+  }
+}
