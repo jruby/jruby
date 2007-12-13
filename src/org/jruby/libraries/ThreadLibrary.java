@@ -254,7 +254,7 @@ public class ThreadLibrary implements Library {
         public synchronized IRubyObject pop(IRubyObject[] args) {
             boolean should_block = true;
             if ( Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 1 ) {
-                should_block = args[0].isFalse();
+                should_block = !args[0].isTrue();
             }
             if ( !should_block && entries.size() == 0 ) {
                 throw new RaiseException(getRuntime(), getRuntime().fastGetClass("ThreadError"), "queue empty", false);
