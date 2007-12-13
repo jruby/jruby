@@ -276,9 +276,22 @@ public final class Ruby {
     private Object respondToMethod;
 
     /**
-     * A list of finalizers, weakly referenced, to be executed on tearDown
+     * A list of "external" finalizers (the ones, registered via ObjectSpace),
+     * weakly referenced, to be executed on tearDown.
      */
     private Map<Finalizable, Object> finalizers;
+    
+    /**
+     * A list of JRuby-internal finalizers,  weakly referenced,
+     * to be executed on tearDown.
+     */
+    private Map<Finalizable, Object> internalFinalizers;
+
+    // mutex that controls modifications of user-defined finalizers
+    private final Object finalizersMutex = new Object();
+
+    // mutex that controls modifications of internal finalizers
+    private final Object internalFinalizersMutex = new Object();
     
     private String[] argv;
 
@@ -1948,22 +1961,38 @@ public final class Ruby {
         atExitBlocks.push(proc);
         return proc;
     }
-    
+
+    // use this for JRuby-internal finalizers
+    public void addInternalFinalizer(Finalizable finalizer) {
+        synchronized (internalFinalizersMutex) {
+            if (internalFinalizers == null) {
+                internalFinalizers = new WeakHashMap<Finalizable, Object>();
+            }
+            internalFinalizers.put(finalizer, null);
+        }
+    }
+
+    // this method is for finalizers registered via ObjectSpace
     public void addFinalizer(Finalizable finalizer) {
-        synchronized (this) {
+        synchronized (finalizersMutex) {
             if (finalizers == null) {
                 finalizers = new WeakHashMap<Finalizable, Object>();
             }
-        }
-        
-        synchronized (finalizers) {
             finalizers.put(finalizer, null);
         }
     }
     
+    public void removeInternalFinalizer(Finalizable finalizer) {
+        synchronized (internalFinalizersMutex) {
+            if (internalFinalizers != null) {
+                internalFinalizers.remove(finalizer);
+            }
+        }
+    }
+
     public void removeFinalizer(Finalizable finalizer) {
-        if (finalizers != null) {
-            synchronized (finalizers) {
+        synchronized (finalizersMutex) {
+            if (finalizers != null) {
                 finalizers.remove(finalizer);
             }
         }
@@ -1990,6 +2019,16 @@ public final class Ruby {
                     finalIter.remove();
                 }
             }
+        }
+
+        synchronized (internalFinalizersMutex) {
+            if (internalFinalizers != null) {
+                for (Iterator<Finalizable> finalIter = new ArrayList<Finalizable>(
+                        internalFinalizers.keySet()).iterator(); finalIter.hasNext();) {
+                    finalIter.next().finalize();
+                    finalIter.remove();
+                }
+            } 
         }
     }
 

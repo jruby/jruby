@@ -99,7 +99,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
         fileno = RubyIO.getNewFileno();
         
         // Ensure we clean up after ourselves ... eventually
-        runtime.addFinalizer(this);
+        runtime.addInternalFinalizer(this);
     }
     
     private String javaMode() {
@@ -254,7 +254,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
         flushWrite();
         channel.close();
         file.close();
-        if (!finalizing) getRuntime().removeFinalizer(this);
+        if (!finalizing) getRuntime().removeInternalFinalizer(this);
     }
 
     /**
