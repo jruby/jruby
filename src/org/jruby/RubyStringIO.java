@@ -328,6 +328,9 @@ public class RubyStringIO extends RubyObject {
     @JRubyMethod(name = "pos=", required = 1)
     public IRubyObject set_pos(IRubyObject arg) {
         pos = RubyNumeric.fix2int(arg);
+        if (pos < 0) {
+            throw getRuntime().newErrnoEINVALError("Invalid argument");
+        }
         
         return getRuntime().getNil();
     }
@@ -374,26 +377,49 @@ public class RubyStringIO extends RubyObject {
         return obj;
     }
 
-    private static final ByteList NEWLINE_BL = new ByteList(new byte[]{10},false);
-
     @JRubyMethod(name = "puts", rest = true)
-    public IRubyObject puts(IRubyObject[] obj) {
+    public IRubyObject puts(IRubyObject[] args) {
         checkWritable();
+        
+        // FIXME: the code below is a copy of RubyIO.puts,
+        // and we should avoid copy-paste.
+        ThreadContext context = getRuntime().getCurrentContext();
+        
+        if (args.length == 0) {
+            callMethod(context, "write", getRuntime().newString("\n"));
+            return getRuntime().getNil();
+        }
 
-        if (obj.length == 0) append(RubyString.newString(getRuntime(),NEWLINE_BL));
-
-        for (int i=0,j=obj.length;i<j;i++) {
-            append(obj[i]);
-
-            // Append a newline if there wasn't already one at the end of newest appended object.
-            int lastPossibleNewlineIndex = (int) (pos - NEWLINE_BL.length());
-            if (lastPossibleNewlineIndex == -1 ||
-                !internal.getByteList().subSequence(lastPossibleNewlineIndex, (int) pos).equals(NEWLINE_BL)) {
-                    // If we rewind/seek backwards write newline over existing, otherwise add
-                    internal.getByteList().unsafeReplace((int) pos++, internal.getByteList().length() > pos ? 1 : 0, NEWLINE_BL);
+        for (int i = 0; i < args.length; i++) {
+            String line;
+            
+            if (args[i].isNil()) {
+                line = "nil";
+            } else if (getRuntime().isInspecting(args[i])) {
+                line = "[...]";
+            } else if (args[i] instanceof RubyArray) {
+                inspectPuts((RubyArray) args[i]);
+                continue;
+            } else {
+                line = args[i].toString();
+            }
+            
+            callMethod(context, "write", getRuntime().newString(line));
+            
+            if (!line.endsWith("\n")) {
+                callMethod(context, "write", getRuntime().newString("\n"));
             }
         }
         return getRuntime().getNil();
+    }
+
+    private IRubyObject inspectPuts(RubyArray array) {
+        try {
+            getRuntime().registerInspecting(array);
+            return puts(array.toJavaArray());
+        } finally {
+            getRuntime().unregisterInspecting(array);
+        }
     }
 
     @SuppressWarnings("fallthrough")
@@ -539,6 +565,10 @@ public class RubyStringIO extends RubyObject {
             setupModes(args[1].convertToString().toString());
         }
         
+        if (internal.isFrozen() && (closedRead || append)) {
+            throw getRuntime().newErrnoEACCESError("not opened for writing");
+        }
+        
         return this;
     }
 
@@ -598,7 +628,7 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().getTrue();
     }
     
-    @JRubyMethod(name = "sysread", required = 1, optional = 1)
+    @JRubyMethod(name = "sysread", optional = 2)
     public IRubyObject sysread(IRubyObject[] args) {
         IRubyObject obj = read(args);
         
