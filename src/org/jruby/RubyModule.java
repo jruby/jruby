@@ -984,7 +984,7 @@ public class RubyModule extends RubyObject {
     public RubyClass defineClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator) {
         IRubyObject type = getInstanceVariable(name);
 
-        if (type == null) {
+        if (type == null || (type instanceof RubyUndef)) {
             return getRuntime().defineClassUnder(name, superClazz, allocator, cref);
         }
 
