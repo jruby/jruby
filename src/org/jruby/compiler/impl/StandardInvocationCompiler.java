@@ -110,8 +110,12 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             // START: .. receiver, args, result
             methodCompiler.method.pop(); // receiver, args
             valueCallback.call(methodCompiler); // receiver, args, value
-            methodCompiler.appendToObjectArray(); // receiver, combinedArgs
-            invokeDynamic("[]=", true, true, CallType.FUNCTIONAL, null, false); // assignmentResult
+            // save the value rather than using the result of the []= call
+            methodCompiler.method.dup_x2(); // value, receiver, args, value
+            methodCompiler.appendToObjectArray(); // value, receiver, combinedArgs
+            invokeDynamic("[]=", true, true, CallType.FUNCTIONAL, null, false); // value, assignmentResult
+            // pop result
+            methodCompiler.method.pop();
             
             methodCompiler.method.label(end);
         } else if (operator == "&&") {

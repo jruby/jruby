@@ -1427,7 +1427,9 @@ public class ASTInterpreter {
         IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, expandedArgs, 0, args.length);
         expandedArgs[expandedArgs.length - 1] = firstValue;
-        return RuntimeHelpers.invoke(context, receiver, MethodIndex.ASET, "[]=", expandedArgs);
+        RuntimeHelpers.invoke(context, receiver, MethodIndex.ASET, "[]=", expandedArgs);
+        
+        return firstValue;
     }
 
     private static IRubyObject orNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

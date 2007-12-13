@@ -253,6 +253,13 @@ public class RubyKernel {
         return RubyFile.open(runtime.getFile(), args, block);
     }
 
+    @JRubyMethod(name = "getc", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject getc(IRubyObject recv) {
+        recv.getRuntime().getWarnings().warn("getc is obsolete; use STDIN.getc instead");
+        IRubyObject defin = recv.getRuntime().getGlobalVariables().get("$stdin");
+        return defin.callMethod(recv.getRuntime().getCurrentContext(), "getc");
+    }
+
     @JRubyMethod(name = "gets", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject gets(IRubyObject recv, IRubyObject[] args) {
         return ((RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<")).gets(args);
