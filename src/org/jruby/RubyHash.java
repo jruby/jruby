@@ -854,10 +854,14 @@ public class RubyHash extends RubyObject implements Map {
         internalPut(key, value);
     }
 
+    public IRubyObject aset(IRubyObject key, IRubyObject value) {
+        return op_aset(key, value);
+    }
+    
     /** rb_hash_aset
      * 
      */
-    public IRubyObject aset(IRubyObject key, IRubyObject value) {
+    public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
         modify();
 
         if (!(key instanceof RubyString)) {
