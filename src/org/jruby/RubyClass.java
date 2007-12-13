@@ -53,7 +53,7 @@ public class RubyClass extends RubyModule {
     private final Ruby runtime;
     
     // the default allocator
-    private final ObjectAllocator allocator;
+    private ObjectAllocator allocator;
     
     private ObjectMarshal marshal;
     
@@ -294,6 +294,10 @@ public class RubyClass extends RubyModule {
     
     public ObjectAllocator getAllocator() {
         return allocator;
+    }
+    
+    void setAllocator(ObjectAllocator all) {
+        allocator = all;
     }
 
     /** rb_class_s_new

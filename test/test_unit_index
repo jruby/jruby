@@ -113,6 +113,10 @@ test_yaml
 # this test is last on purpose
 test_loading_builtin_libraries
 
+# OpenSSL tests
+openssl/test_hmac
+openssl/test_digest
+
 # BFTS working tests
 externals/bfts/test_array
 externals/bfts/test_comparable

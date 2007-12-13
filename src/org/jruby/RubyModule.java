@@ -994,7 +994,15 @@ public class RubyModule extends RubyObject {
             throw getRuntime().newNameError(name + " is already defined.", name);
         }
 
-        return (RubyClass) type;
+        RubyClass klazz = (RubyClass) type;
+
+        // If we define a class in Ruby, but later want to allow it to be defined in Java,
+        // the allocator needs to be updated
+        if (klazz.getAllocator() != allocator) {
+            klazz.setAllocator(allocator);
+        }
+    
+        return klazz;
     }
 
     public RubyModule defineModuleUnder(String name) {
