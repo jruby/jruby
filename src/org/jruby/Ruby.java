@@ -1821,7 +1821,7 @@ public final class Ruby {
 
             context.preNodeEval(objectClass, self);
             
-            Node scriptNode = parseFile(in, filename, null);//getCurrentContext().getCurrentScope());
+            Node scriptNode = parseFile(in, filename, null);
             
             getCurrentContext().getCurrentFrame().setPosition(scriptNode.getPosition());
             
