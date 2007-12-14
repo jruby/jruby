@@ -81,17 +81,21 @@ public class ShellLauncherTest extends TestCase {
         fw.write("hello there");
         fw.close();
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        int result = launcher.runAndWait(new IRubyObject[] {
-            RubyString.newString(runtime, "ls"),
-            RubyString.newString(runtime, "-1"),
-            RubyString.newString(runtime, testDir.getName()),
-        }, baos);
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            int result = launcher.runAndWait(new IRubyObject[] {
+                RubyString.newString(runtime, "ls"),
+                RubyString.newString(runtime, "-1"),
+                RubyString.newString(runtime, testDir.getName()),
+            }, baos);
 
-        if (result == 0) {
-            String msg = baos.toString();
-            msg = msg.replaceAll("\n", "");
-            assertEquals("hello.txt", msg);
+            if (result == 0) {
+                String msg = baos.toString();
+                msg = msg.replaceAll("\n", "");
+                assertEquals("hello.txt", msg);
+            }
+        } catch (Exception e) {
+            // skip this one, probably no 'ls' (windows)
         }
     }
 }
