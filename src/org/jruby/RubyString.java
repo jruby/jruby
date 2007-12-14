@@ -600,9 +600,10 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1)
     public RubyString replace(IRubyObject other) {
+        if (this == other) return this;
+
         modifyCheck();
 
-        if (this == other) return this;
          
         RubyString otherStr =  stringValue(other);
 

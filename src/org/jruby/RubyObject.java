@@ -325,7 +325,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     */
    protected void testFrozen(String message) {
        if (isFrozen()) {
-           throw getRuntime().newFrozenError(message + getMetaClass().getName());
+           throw getRuntime().newFrozenError(message + " " + getMetaClass().getName());
        }
    }
 
