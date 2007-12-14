@@ -2617,7 +2617,7 @@ public class RubyString extends RubyObject {
         if (matcher.search(matcher.value + value.begin, range, Option.NONE) >= 0) {
             Region region = matcher.getRegion();
             int end = region.end[0];
-            if (matcher.getBegin() == end) {
+            if (region.beg[0] == end) {
                 if (value.realSize > end) {
                     matcher.value = end + regex.getEncoding().length(value.bytes[value.begin + end]);
                 } else {
