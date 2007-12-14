@@ -176,7 +176,11 @@ public class RubyString extends RubyObject {
     }    
 
     public final RubyString makeShared(int index, int len) {
-        if (len == 0) return newEmptyString(getRuntime(), getMetaClass());
+        if (len == 0) {
+            RubyString s = newEmptyString(getRuntime(), getMetaClass());
+            s.infectBy(this);
+            return s;
+        }
         
         if (!shared_bytelist) shared_buffer = true;
         RubyString shared = new RubyString(getRuntime(), getMetaClass(), value.makeShared(index, len));
@@ -352,6 +356,16 @@ public class RubyString extends RubyObject {
     public IRubyObject op_cmp(IRubyObject other) {
         if (other instanceof RubyString) {
             return getRuntime().newFixnum(op_cmp((RubyString)other));
+        }
+
+        // deal with case when "other" is not a string
+        if (other.respondsTo("to_str") && other.respondsTo("<=>")) {
+            IRubyObject result = other.callMethod(getRuntime().getCurrentContext(),
+                    MethodIndex.OP_SPACESHIP, "<=>", this);
+
+            if (result instanceof RubyNumeric) {
+                return ((RubyNumeric) result).op_uminus();
+            }
         }
 
         return getRuntime().getNil();
@@ -701,8 +715,11 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = "capitalize!")
-    public IRubyObject capitalize_bang() {
-        if (value.realSize == 0) return getRuntime().getNil();
+    public IRubyObject capitalize_bang() {        
+        if (value.realSize == 0) {
+            modifyCheck();
+            return getRuntime().getNil();
+        }
         
         modify();
         
@@ -790,7 +807,10 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "upcase!")
     public IRubyObject upcase_bang() {
-        if (value.realSize == 0)  return getRuntime().getNil();
+        if (value.realSize == 0) {
+            modifyCheck();
+            return getRuntime().getNil();
+        }
 
         modify();
 
@@ -827,7 +847,10 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "downcase!")
     public IRubyObject downcase_bang() {
-        if (value.realSize == 0)  return getRuntime().getNil();
+        if (value.realSize == 0) {
+            modifyCheck();
+            return getRuntime().getNil();
+        }
         
         modify();
         
@@ -864,7 +887,10 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "swapcase!")
     public IRubyObject swapcase_bang() {
-        if (value.realSize == 0)  return getRuntime().getNil();        
+        if (value.realSize == 0) {
+            modifyCheck();
+            return getRuntime().getNil();        
+        }
         
         modify();
         
@@ -2147,7 +2173,10 @@ public class RubyString extends RubyObject {
 
     @JRubyMethod(name = {"succ!", "next!"})
     public IRubyObject succ_bang() {
-        if (value.length() == 0) return this;
+        if (value.length() == 0) {
+            modifyCheck();
+            return this;
+        }
 
         modify();
         
@@ -3002,7 +3031,10 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "squeeze!", rest = true)
     public IRubyObject squeeze_bang(IRubyObject[] args) {
-        if (value.realSize == 0) return getRuntime().getNil();
+        if (value.realSize == 0) {
+            modifyCheck();
+            return getRuntime().getNil();
+        }
 
         final boolean squeeze[] = new boolean[TRANS_SIZE];
 
