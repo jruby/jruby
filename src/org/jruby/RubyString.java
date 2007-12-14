@@ -3197,12 +3197,12 @@ public class RubyString extends RubyObject {
                 if (t.p < t.pend - 1 && buf[t.p] == '-') {
                     t.p++;
                     if (t.p < t.pend) {
-                        if (t.now > buf[t.p]) {
+                        if (t.now > ((int)buf[t.p] & 0xFF)) {
                             t.p++;
                             continue;
                         }
                         t.gen = 1;
-                        t.max = buf[t.p++];
+                        t.max = (int)buf[t.p++] & 0xFF;
                     }
                 }
                 return t.now & 0xff;
