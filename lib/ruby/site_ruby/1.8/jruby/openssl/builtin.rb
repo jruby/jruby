@@ -17,14 +17,6 @@ module OpenSSL
   class HMACError < OpenSSLError; end
   class DigestError < OpenSSLError; end
   
-  class Utils
-    def self.to_hex(str)
-      res = ""
-      str.each_byte {|b| res << sprintf("%02x", b)}
-      res
-    end
-  end
-  
   module Digest
     class Digest
       class << self
@@ -62,7 +54,7 @@ module OpenSSL
       end
       
       def hexdigest
-        Utils.to_hex(digest)
+        digest.unpack("H*")[0]
       end
       alias_method :to_s, :hexdigest
       alias_method :inspect, :hexdigest
@@ -163,7 +155,7 @@ module OpenSSL
     end
     
     def hexdigest
-      Utils.to_hex(digest)
+      digest.unpack("H*")[0]
     end
 
     alias_method :inspect, :hexdigest
