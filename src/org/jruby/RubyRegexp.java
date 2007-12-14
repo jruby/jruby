@@ -507,6 +507,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         match.end = matcher.getEnd();
         
         match.str = (RubyString)str.strDup().freeze();
+        match.pattern = pattern;
 
         frame.setBackRef(match);
         

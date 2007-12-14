@@ -33,13 +33,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.joni.Regex;
 import org.joni.Region;
+import org.joni.exception.JOniException;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * @author olabini
@@ -49,6 +52,7 @@ public class RubyMatchData extends RubyObject {
     int begin;          // begin and end are used when not groups defined
     int end;
     RubyString str;
+    Regex pattern;
     
     public static RubyClass createMatchDataClass(Ruby runtime) {
         // TODO: Is NOT_ALLOCATABLE_ALLOCATOR ok here, since you can't actually instantiate MatchData directly?
@@ -147,21 +151,40 @@ public class RubyMatchData extends RubyObject {
         return match_array(1);
     }
 
+    private int nameToBackrefNumber(RubyString str) {
+        ByteList value = str.getByteList();
+        try {
+            return pattern.nameToBackrefNumber(value.bytes, value.begin, value.begin + value.realSize, regs);
+        } catch (JOniException je) {
+            throw getRuntime().newIndexError(je.getMessage());
+        }
+    }
+
     /** match_aref
      *
      */
     @JRubyMethod(name = "[]", required = 1, optional = 1)
     public IRubyObject op_aref(IRubyObject[] args) {
-        IRubyObject idx;
-        IRubyObject rest = getRuntime().getNil();
-        if(Arity.checkArgumentCount(getRuntime(), args,1,2) == 2) {
-            rest = args[1];
+        final IRubyObject rest = Arity.checkArgumentCount(getRuntime(), args,1,2) == 2 ? args[1] : null;
+        final IRubyObject idx = args[0];
+
+        if (rest == null || rest.isNil()) {
+            if (idx instanceof RubyFixnum) {
+                int num = RubyNumeric.fix2int(idx);
+                if (num >= 0) return RubyRegexp.nth_match(num, this);                
+            } else {
+                RubyString str;
+                if (idx instanceof RubySymbol) {
+                    str = (RubyString)((RubySymbol)idx).id2name();
+                } else if (idx instanceof RubyString) {
+                    str = (RubyString)idx;
+                } else {
+                    return ((RubyArray)to_a()).aref(args);
+                }
+                return RubyRegexp.nth_match(nameToBackrefNumber(str), this);
+            }
         }
-        idx = args[0];
-        if(!rest.isNil() || !(idx instanceof RubyFixnum) || RubyNumeric.fix2int(idx) < 0) {
-            return ((RubyArray)to_a()).aref(args);
-        }
-        return RubyRegexp.nth_match(RubyNumeric.fix2int(idx),this);
+        return ((RubyArray)to_a()).aref(args);
     }
 
     /** match_size
