@@ -1213,7 +1213,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     
     @JRubyMethod(name = "instance_variable_defined?", required = 1)
     public IRubyObject instance_variable_defined_p(IRubyObject name) {
-        if (variableTableFastContains(validateInstanceVariable(name.asJavaString()).intern())) {
+        if (variableTableContains(validateInstanceVariable(name.asJavaString()))) {
             return getRuntime().getTrue();
         }
         return getRuntime().getFalse();
@@ -1222,7 +1222,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @JRubyMethod(name = "instance_variable_get", required = 1)
     public IRubyObject instance_variable_get(IRubyObject name) {
         IRubyObject value;
-        if ((value = variableTableFastFetch(validateInstanceVariable(name.asJavaString()).intern())) != null) {
+        if ((value = variableTableFetch(validateInstanceVariable(name.asJavaString()))) != null) {
             return value;
         }
         return getRuntime().getNil();
@@ -1231,14 +1231,14 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @JRubyMethod(name = "instance_variable_set", required = 2)
     public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
         ensureInstanceVariablesSettable();
-        return variableTableFastStore(validateInstanceVariable(name.asJavaString()).intern(), value);
+        return variableTableStore(validateInstanceVariable(name.asJavaString()), value);
     }
 
     @JRubyMethod(name = "remove_instance_variable", required = 1, frame = true)
     public IRubyObject remove_instance_variable(IRubyObject name, Block block) {
         ensureInstanceVariablesSettable();
         IRubyObject value;
-        if ((value = variableTableRemove(validateInstanceVariable(name.asJavaString()).intern())) != null) {
+        if ((value = variableTableRemove(validateInstanceVariable(name.asJavaString()))) != null) {
             return value;
         }
         throw getRuntime().newNameError("instance variable " + name.asJavaString() + " not defined", name.asJavaString());
