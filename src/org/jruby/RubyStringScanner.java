@@ -80,7 +80,7 @@ public class RubyStringScanner extends RubyObject {
         lastPos = otherScanner.lastPos;
         flags = otherScanner.flags;
 
-        regs = otherScanner.regs; // TODO: clone here
+        regs = otherScanner.regs != null ? otherScanner.regs.clone() : null;
         beg = otherScanner.beg;
         end = otherScanner.end;
 
