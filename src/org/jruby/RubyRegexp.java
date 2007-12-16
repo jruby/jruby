@@ -62,10 +62,8 @@ import org.jruby.util.TypeConverter;
  *
  */
 public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
-    private boolean kcode_default = true;
     private KCode kcode;
     private Regex pattern;
-    private boolean literal;
     private ByteList str;
 
     private final static byte[] PIPE = new byte[]{'|'};
@@ -76,8 +74,31 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     private final static byte[] I_CHAR = new byte[]{'i'};
     private final static byte[] X_CHAR = new byte[]{'x'};
 
+    private static final int REGEXP_LITERAL_F =     1 << 11;
+    private static final int REGEXP_KCODE_DEFAULT = 1 << 12;
+    
     public void setLiteral() {
-        literal = true;
+        flags |= REGEXP_LITERAL_F;
+    }
+    
+    public void clearLiteral() {
+        flags &= ~REGEXP_LITERAL_F;
+    }
+    
+    public boolean isLiteral() {
+        return (flags & REGEXP_LITERAL_F) != 0;
+    }
+
+    public void setKCodeDefault() {
+        flags |= REGEXP_KCODE_DEFAULT;
+    }
+    
+    public void clearKCodeDefault() {
+        flags &= ~REGEXP_KCODE_DEFAULT;
+    }
+    
+    public boolean isKCodeDefault() {
+        return (flags & REGEXP_KCODE_DEFAULT) != 0;
     }
 
     public KCode getKCode() {
@@ -144,7 +165,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
 
     @JRubyMethod(name = "kcode")
     public IRubyObject kcode() {
-        return !kcode_default ? getRuntime().newString(kcode.name()) : getRuntime().getNil();
+        return !isKCodeDefault() ? getRuntime().newString(kcode.name()) : getRuntime().getNil();
     }
 
     public int getNativeTypeIndex() {
@@ -224,13 +245,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         }
         
         checkFrozen();
-        if (literal) throw getRuntime().newSecurityError("can't modify literal regexp");
+        if (isLiteral()) throw getRuntime().newSecurityError("can't modify literal regexp");
 
-        kcode_default = false;
+        clearKCodeDefault();
         switch(options & ~0xf) {
         case 0:
         default:
-            kcode_default = true;
+            setKCodeDefault();
             kcode = getRuntime().getKCode();
             break;
         case 16:
@@ -279,7 +300,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             sb.append("x");
         }
 
-        if(kcode != null && !kcode_default) {
+        if(kcode != null && !isKCodeDefault()) {
             sb.append(kcode.name().charAt(0));
         }
         return sb;
@@ -368,7 +389,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     private int rb_reg_options() {
         check();
         int options = (int)(pattern.getOptions() & (RE_OPTION_IGNORECASE|RE_OPTION_MULTILINE|RE_OPTION_EXTENDED));
-        if(!kcode_default) {
+        if(!isKCodeDefault()) {
             options |= rb_reg_get_kcode();
         }
         return options;
@@ -390,7 +411,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             ((RubyRegexp)args[0]).check();
             RubyRegexp r = (RubyRegexp)args[0];
             flags = (int)r.pattern.getOptions() & 0xF;
-            if(!r.kcode_default && r.kcode != null && r.kcode != KCode.NIL) {
+            if(!r.isKCodeDefault() && r.kcode != null && r.kcode != KCode.NIL) {
                 if(r.kcode == KCode.NONE) {
                     flags |= 16;
                 } else if(r.kcode == KCode.EUC) {
@@ -1049,7 +1070,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
                 }
                 IRubyObject v = TypeConverter.convertToTypeWithCheck(args[i], recv.getRuntime().getRegexp(), 0, "to_regexp");
                 if (!v.isNil()) {
-                    if (!((RubyRegexp)v).kcode_default) {
+                    if (!((RubyRegexp)v).isKCodeDefault()) {
                         if (kcode == null) {
                             kcode_re = v;
                             kcode = ((RubyRegexp)v).kcode;
