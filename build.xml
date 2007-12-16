@@ -172,6 +172,7 @@
         <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
@@ -212,6 +213,7 @@
       	<zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
         <zipfileset dir="${basedir}" prefix="META-INF/jruby.home">
           <include name="bin/*"/>
@@ -927,6 +929,7 @@ test/externals/rubinius/spec/parser"/>
       <zipfileset src="${build.lib.dir}/jline-0.9.91.jar"/>
       <zipfileset src="${build.lib.dir}/joni.jar"/>
       <zipfileset src="${build.lib.dir}/jna.jar"/>
+      <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
       <zipfileset src="${nailgun.home}/nailgun-0.7.1.jar"/>
       <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
       <manifest>

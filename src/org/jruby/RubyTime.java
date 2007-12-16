@@ -36,10 +36,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
@@ -56,16 +53,24 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyDateFormat;
 import org.jruby.util.ByteList;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+
 /** The Time class.
  * 
  * @author chadfowler, jpetersen
  */
 public class RubyTime extends RubyObject {
     public static final String UTC = "UTC";
-	private Calendar cal;
+	private DateTime dt;
     private long usec;
+    private final static DateTimeFormatter ONE_DAY_CTIME_FORMATTER = DateTimeFormat.forPattern("EEE MMM  d HH:mm:ss yyyy");
+    private final static DateTimeFormatter TWO_DAY_CTIME_FORMATTER = DateTimeFormat.forPattern("EEE MMM dd HH:mm:ss yyyy");
 
-    private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("-", Locale.US);
+    private final static DateTimeFormatter TO_S_FORMATTER = DateTimeFormat.forPattern("EEE MMM dd HH:mm:ss Z yyyy");
+    private final static DateTimeFormatter TO_S_UTC_FORMATTER = DateTimeFormat.forPattern("EEE MMM dd HH:mm:ss 'UTC' yyyy");
 
     // There are two different popular TZ formats: legacy (AST+3:00:00, GMT-3), and
     // newer one (US/Pacific, America/Los_Angeles). This pattern is to detect
@@ -76,13 +81,13 @@ public class RubyTime extends RubyObject {
     
     private static final ByteList TZ_STRING = ByteList.create("TZ");
      
-    public static TimeZone getLocalTimeZone(Ruby runtime) {
+    public static DateTimeZone getLocalTimeZone(Ruby runtime) {
         // TODO: cache the RubyString "TZ" so it doesn't need to be recreated for each call?
         RubyString tzVar = runtime.newString(TZ_STRING);
         RubyHash h = ((RubyHash)runtime.getObject().fastGetConstant("ENV"));
         IRubyObject tz = h.op_aref(tzVar);
         if (tz == null || ! (tz instanceof RubyString)) {
-            return TimeZone.getDefault();
+            return DateTimeZone.getDefault();
         } else {
             String zone = tz.toString();
 
@@ -108,7 +113,9 @@ public class RubyTime extends RubyObject {
                     zone += minutes;
                 }
             }
-            return TimeZone.getTimeZone(zone);
+
+            zone = zone.replaceAll("GMT","Etc/GMT");
+            return DateTimeZone.forTimeZone(TimeZone.getTimeZone(zone));
         }
     }
     
@@ -116,17 +123,15 @@ public class RubyTime extends RubyObject {
         super(runtime, rubyClass);
     }
     
-    public RubyTime(Ruby runtime, RubyClass rubyClass, Calendar cal) {
+    public RubyTime(Ruby runtime, RubyClass rubyClass, DateTime dt) {
         super(runtime, rubyClass);
-        this.cal = cal;
+        this.dt = dt;
     }
     
     private static ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyTime instance = new RubyTime(runtime, klass);
-            Calendar cal = Calendar.getInstance(getLocalTimeZone(runtime));
-            instance.setJavaCalendar(cal);
-            return instance;
+            DateTime dt = new DateTime(getLocalTimeZone(runtime));
+            return new RubyTime(runtime, klass, dt);
         }
     };
     
@@ -149,28 +154,20 @@ public class RubyTime extends RubyObject {
         return usec;
     }
     
-    public void updateCal(Calendar calendar) {
-        calendar.setTimeZone(cal.getTimeZone());
-        calendar.setTimeInMillis(getTimeInMillis());
+    public void updateCal(DateTime dt) {
+        this.dt = dt;
     }
     
     protected long getTimeInMillis() {
-        return cal.getTimeInMillis();  // For JDK 1.4 we can use "cal.getTimeInMillis()"
+        return dt.getMillis();  // For JDK 1.4 we can use "cal.getTimeInMillis()"
     }
     
     public static RubyTime newTime(Ruby runtime, long milliseconds) {
-        Calendar cal = Calendar.getInstance();
-        RubyTime time = new RubyTime(runtime, runtime.getTime(), cal);
-        
-        cal.setTimeInMillis(milliseconds);
-        
-        return time;
+        return newTime(runtime, new DateTime(milliseconds));
     }
     
-    public static RubyTime newTime(Ruby runtime, Calendar cal) {
-        RubyTime time = new RubyTime(runtime, runtime.getTime(), cal);
-        
-        return time;
+    public static RubyTime newTime(Ruby runtime, DateTime dt) {
+        return new RubyTime(runtime, runtime.getTime(), dt);
     }
 
     @JRubyMethod(name = "initialize_copy", required = 1)
@@ -181,7 +178,8 @@ public class RubyTime extends RubyObject {
         
         RubyTime originalTime = (RubyTime) original;
         
-        cal = (Calendar)(originalTime.cal.clone());
+        // We can just use dt, since it is immutable
+        dt = originalTime.dt;
         usec = originalTime.usec;
         
         return this;
@@ -189,51 +187,42 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "succ")
     public RubyTime succ() {
-        Calendar newCal = (Calendar)cal.clone();
-        newCal.add(Calendar.SECOND,1);
-        return newTime(getRuntime(),newCal);
+        return newTime(getRuntime(),dt.plusSeconds(1));
     }
 
     @JRubyMethod(name = {"gmtime", "utc"})
     public RubyTime gmtime() {
-        cal.setTimeZone(TimeZone.getTimeZone(UTC));
+        dt = new DateTime(dt.getMillis()).withZone(DateTimeZone.UTC);
         return this;
     }
 
     @JRubyMethod(name = "localtime")
     public RubyTime localtime() {
-        long dump = cal.getTimeInMillis();
-        cal = Calendar.getInstance(getLocalTimeZone(getRuntime()));
-        cal.setTimeInMillis(dump);
+        dt = dt.withZone(getLocalTimeZone(getRuntime()));
         return this;
     }
     
     @JRubyMethod(name = {"gmt?", "utc?", "gmtime?"})
     public RubyBoolean gmt() {
-        return getRuntime().newBoolean(cal.getTimeZone().getID().equals(UTC));
+        return getRuntime().newBoolean(dt.getZone().getID().equals("UTC"));
     }
     
     @JRubyMethod(name = {"getgm", "getutc"})
     public RubyTime getgm() {
-        Calendar newCal = (Calendar)cal.clone();
-        newCal.setTimeZone(TimeZone.getTimeZone(UTC));
-        return newTime(getRuntime(), newCal);
+        return newTime(getRuntime(), dt.withZone(DateTimeZone.UTC));
     }
 
     @JRubyMethod(name = "getlocal")
     public RubyTime getlocal() {
-        Calendar newCal = (Calendar)cal.clone();
-        newCal.setTimeZone(getLocalTimeZone(getRuntime()));
-        return newTime(getRuntime(), newCal);
+        return newTime(getRuntime(), dt.withZone(getLocalTimeZone(getRuntime())));
     }
 
     @JRubyMethod(name = "strftime", required = 1)
     public RubyString strftime(IRubyObject format) {
         final RubyDateFormat rubyDateFormat = new RubyDateFormat("-", Locale.US);
-        rubyDateFormat.setCalendar(cal);
         rubyDateFormat.applyPattern(format.toString());
-        String result = rubyDateFormat.format(cal.getTime());
-
+        rubyDateFormat.setDateTime(dt);
+        String result = rubyDateFormat.format(null);
         return getRuntime().newString(result);
     }
     
@@ -301,9 +290,7 @@ public class RubyTime extends RubyObject {
 		time += adjustment;
 
 		RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
-		newTime.cal = Calendar.getInstance();
-        newTime.cal.setTimeZone(cal.getTimeZone());
-		newTime.cal.setTime(new Date(time));
+		newTime.dt = new DateTime(time).withZone(dt.getZone());
         newTime.setUSec(micro);
 
 		return newTime;
@@ -325,9 +312,7 @@ public class RubyTime extends RubyObject {
         time -= adjustment;
 
 		RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
-		newTime.cal = Calendar.getInstance();
-        newTime.cal.setTimeZone(cal.getTimeZone());
-		newTime.cal.setTime(new Date(time));
+		newTime.dt = new DateTime(time).withZone(dt.getZone());
         newTime.setUSec(micro);
 
 		return newTime;
@@ -388,26 +373,27 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"asctime", "ctime"})
     public RubyString asctime() {
-        simpleDateFormat.setCalendar(cal);
-        if (cal.get(Calendar.DAY_OF_MONTH) < 10) {
-            simpleDateFormat.applyPattern("EEE MMM  d HH:mm:ss yyyy");
-        } else {
-            simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss yyyy");
-        }
-        String result = simpleDateFormat.format(cal.getTime());
+        DateTimeFormatter simpleDateFormat;
 
+        if (dt.getDayOfMonth() < 10) {
+            simpleDateFormat = ONE_DAY_CTIME_FORMATTER;
+        } else {
+            simpleDateFormat = TWO_DAY_CTIME_FORMATTER;
+        }
+        String result = simpleDateFormat.print(dt);
         return getRuntime().newString(result);
     }
 
     @JRubyMethod(name = {"to_s", "inspect"})
     public IRubyObject to_s() {
-        simpleDateFormat.setCalendar(cal);
-        if (cal.getTimeZone().getID().equals(UTC)) {
-            simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss 'UTC' yyyy");
+        DateTimeFormatter simpleDateFormat;
+        if (dt.getZone().equals(DateTimeZone.UTC)) {
+            simpleDateFormat = TO_S_UTC_FORMATTER;
         } else {
-            simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss Z yyyy");
+            simpleDateFormat = TO_S_FORMATTER;
         }
-        String result = simpleDateFormat.format(cal.getTime());
+
+        String result = simpleDateFormat.print(dt);
 
         return getRuntime().newString(result);
     }
@@ -432,14 +418,14 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"usec", "tv_usec"})
     public RubyInteger usec() {
-        return getRuntime().newFixnum(cal.get(Calendar.MILLISECOND) * 1000 + getUSec());
+        return getRuntime().newFixnum(dt.getMillisOfSecond() * 1000 + getUSec());
     }
 
     public void setMicroseconds(long mic) {
         long millis = getTimeInMillis() % 1000;
         long withoutMillis = getTimeInMillis() - millis;
         withoutMillis += (mic / 1000);
-        cal.setTimeInMillis(withoutMillis);
+        dt = dt.withMillis(withoutMillis);
         usec = mic % 1000;
     }
     
@@ -449,81 +435,81 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "sec")
     public RubyInteger sec() {
-        return getRuntime().newFixnum(cal.get(Calendar.SECOND));
+        return getRuntime().newFixnum(dt.getSecondOfMinute());
     }
 
     @JRubyMethod(name = "min")
     public RubyInteger min() {
-        return getRuntime().newFixnum(cal.get(Calendar.MINUTE));
+        return getRuntime().newFixnum(dt.getMinuteOfHour());
     }
 
     @JRubyMethod(name = "hour")
     public RubyInteger hour() {
-        return getRuntime().newFixnum(cal.get(Calendar.HOUR_OF_DAY));
+        return getRuntime().newFixnum(dt.getHourOfDay());
     }
 
     @JRubyMethod(name = {"mday", "day"})
     public RubyInteger mday() {
-        return getRuntime().newFixnum(cal.get(Calendar.DAY_OF_MONTH));
+        return getRuntime().newFixnum(dt.getDayOfMonth());
     }
 
     @JRubyMethod(name = {"month", "mon"})
     public RubyInteger month() {
-        return getRuntime().newFixnum(cal.get(Calendar.MONTH) + 1);
+        return getRuntime().newFixnum(dt.getMonthOfYear());
     }
 
     @JRubyMethod(name = "year")
     public RubyInteger year() {
-        return getRuntime().newFixnum(cal.get(Calendar.YEAR));
+        return getRuntime().newFixnum(dt.getYear());
     }
 
     @JRubyMethod(name = "wday")
     public RubyInteger wday() {
-        return getRuntime().newFixnum(cal.get(Calendar.DAY_OF_WEEK) - 1);
+        return getRuntime().newFixnum((dt.getDayOfWeek()%7));
     }
 
     @JRubyMethod(name = "yday")
     public RubyInteger yday() {
-        return getRuntime().newFixnum(cal.get(Calendar.DAY_OF_YEAR));
+        return getRuntime().newFixnum(dt.getDayOfYear());
     }
 
     @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})
     public RubyInteger gmt_offset() {
-        int offset = cal.get(Calendar.ZONE_OFFSET);
-        
-        if (isdst().isTrue()) {
-            offset += cal.get(Calendar.DST_OFFSET);
-        }
+        int offset = dt.getZone().getOffsetFromLocal(dt.getMillis());
         
         return getRuntime().newFixnum((int)(offset/1000));
     }
 
     @JRubyMethod(name = {"isdst", "dst?"})
     public RubyBoolean isdst() {
-        return getRuntime().newBoolean(cal.getTimeZone().inDaylightTime(cal.getTime()));
+        return getRuntime().newBoolean(!dt.getZone().isStandardOffset(dt.getMillis()));
     }
 
     @JRubyMethod(name = "zone")
     public RubyString zone() {
-        return getRuntime().newString(cal.getTimeZone().getDisplayName(cal.get(Calendar.DST_OFFSET) != 0, TimeZone.SHORT));
+        String zone = dt.getZone().getShortName(dt.getMillis());
+        if(zone.equals("+00:00")) {
+            zone = "GMT";
+        }
+        return getRuntime().newString(zone);
     }
 
-    public void setJavaCalendar(Calendar cal) {
-        this.cal = cal;
+    public void setDateTime(DateTime dt) {
+        this.dt = dt;
     }
 
-    public Calendar getJavaCalendar() {
-        return this.cal;
+    public DateTime getDateTime() {
+        return this.dt;
     }
 
     public Date getJavaDate() {
-        return this.cal.getTime();
+        return this.dt.toDate();
     }
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
     	// modified to match how hash is calculated in 1.8.2
-        return getRuntime().newFixnum((int)(((cal.getTimeInMillis() / 1000) ^ microseconds()) << 1) >> 1);
+        return getRuntime().newFixnum((int)(((dt.getMillis() / 1000) ^ microseconds()) << 1) >> 1);
     }    
 
     @JRubyMethod(name = "_dump", optional = 1, frame = true)
@@ -535,18 +521,18 @@ public class RubyTime extends RubyObject {
 
     public RubyObject mdump(final IRubyObject[] args) {
         RubyTime obj = (RubyTime)args[0];
-        Calendar calendar = obj.gmtime().cal;
+        DateTime dt = obj.gmtime().dt;
         byte dumpValue[] = new byte[8];
         int pe = 
             0x1                                 << 31 |
-            (calendar.get(Calendar.YEAR)-1900)  << 14 |
-            calendar.get(Calendar.MONTH)        << 10 |
-            calendar.get(Calendar.DAY_OF_MONTH) << 5  |
-            calendar.get(Calendar.HOUR_OF_DAY);
+            (dt.getYear()-1900)                 << 14 |
+            dt.getMonthOfYear()                 << 10 |
+            dt.getDayOfMonth()                  << 5  |
+            dt.getHourOfDay();
         int se =
-            calendar.get(Calendar.MINUTE)       << 26 |
-            calendar.get(Calendar.SECOND)       << 20 |
-            calendar.get(Calendar.MILLISECOND);
+            dt.getMinuteOfHour()                << 26 |
+            dt.getSecondOfMinute()              << 20 |
+            dt.getMillisOfSecond();
 
         for(int i = 0; i < 4; i++) {
             dumpValue[i] = (byte)(pe & 0xFF);
@@ -568,10 +554,7 @@ public class RubyTime extends RubyObject {
     
     public static IRubyObject s_new(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
-        RubyTime time = new RubyTime(runtime, (RubyClass) recv);
-        GregorianCalendar cal = new GregorianCalendar();
-        cal.setTime(new Date());
-        time.setJavaCalendar(cal);
+        RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime());
         time.callInit(args,block);
         return time;
     }
@@ -587,12 +570,11 @@ public class RubyTime extends RubyObject {
     public static IRubyObject at(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
 
-        Calendar cal = Calendar.getInstance(getLocalTimeZone(runtime));
-        RubyTime time = new RubyTime(runtime, (RubyClass) recv, cal);
+        RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime(getLocalTimeZone(runtime)));
 
         if (args[0] instanceof RubyTime) {
             RubyTime other = (RubyTime) args[0];
-            other.updateCal(cal);
+            time.dt = other.dt;
             time.setUSec(other.getUSec());
         } else {
             long seconds = RubyNumeric.num2long(args[0]);
@@ -616,7 +598,7 @@ public class RubyTime extends RubyObject {
                 }
             }
             time.setUSec(microsecs);
-            cal.setTimeInMillis(seconds * 1000 + millisecs);
+            time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
         }
 
         time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
@@ -641,9 +623,9 @@ public class RubyTime extends RubyObject {
 
     protected static RubyTime s_mload(IRubyObject recv, RubyTime time, IRubyObject from) {
         Ruby runtime = recv.getRuntime();
-        Calendar calendar = Calendar.getInstance();
-        calendar.clear();
-        calendar.setTimeZone(TimeZone.getTimeZone(RubyTime.UTC));
+
+        DateTime dt = new DateTime(DateTimeZone.UTC);
+
         byte[] fromAsBytes = null;
         fromAsBytes = from.convertToString().getBytes();
         if(fromAsBytes.length != 8) {
@@ -658,18 +640,18 @@ public class RubyTime extends RubyObject {
             s |= ((int)fromAsBytes[i] & 0xFF) << (8 * (i - 4));
         }
         if ((p & (1<<31)) == 0) {
-            calendar.setTimeInMillis(p * 1000L + s);
+            dt = dt.withMillis(p * 1000L + s);
         } else {
             p &= ~(1<<31);
-            calendar.set(Calendar.YEAR, ((p >>> 14) & 0xFFFF) + 1900);
-            calendar.set(Calendar.MONTH, ((p >>> 10) & 0xF));
-            calendar.set(Calendar.DAY_OF_MONTH, ((p >>> 5)  & 0x1F));
-            calendar.set(Calendar.HOUR_OF_DAY, (p & 0x1F));
-            calendar.set(Calendar.MINUTE, ((s >>> 26) & 0x3F));
-            calendar.set(Calendar.SECOND, ((s >>> 20) & 0x3F));
-            calendar.set(Calendar.MILLISECOND, (s & 0xFFFFF));
+            dt = dt.withYear(((p >>> 14) & 0xFFFF) + 1900);
+            dt = dt.withMonthOfYear(((p >>> 10) & 0xF));
+            dt = dt.withDayOfMonth(((p >>> 5)  & 0x1F));
+            dt = dt.withHourOfDay((p & 0x1F));
+            dt = dt.withMinuteOfHour(((s >>> 26) & 0x3F));
+            dt = dt.withSecondOfMinute(((s >>> 20) & 0x3F));
+            dt = dt.withMillisOfSecond((s & 0xFFFFF));
         }
-        time.setJavaCalendar(calendar);
+        time.setDateTime(dt);
         return time;
     }
     
@@ -706,7 +688,7 @@ public class RubyTime extends RubyObject {
         }
         
         int year = (int) RubyNumeric.num2long(args[0]);
-        int month = 0;
+        int month = 1;
         
         if (len > 1) {
             if (!args[1].isNil()) {
@@ -714,22 +696,22 @@ public class RubyTime extends RubyObject {
                     month = -1;
                     for (int i = 0; i < 12; i++) {
                         if (months[i].equalsIgnoreCase(args[1].toString())) {
-                            month = i;
+                            month = i+1;
                         }
                     }
                     if (month == -1) {
                         try {
-                            month = Integer.parseInt(args[1].toString()) - 1;
+                            month = Integer.parseInt(args[1].toString());
                         } catch (NumberFormatException nfExcptn) {
                             throw runtime.newArgumentError("Argument out of range.");
                         }
                     }
                 } else {
-                    month = (int)RubyNumeric.num2long(args[1]) - 1;
+                    month = (int)RubyNumeric.num2long(args[1]);
                 }
             }
-            if (0 > month || month > 11) {
-                throw runtime.newArgumentError("Argument out of range.");
+            if (1 > month || month > 12) {
+                throw runtime.newArgumentError("Argument out of range: for month: " + month);
             }
         }
 
@@ -754,30 +736,35 @@ public class RubyTime extends RubyObject {
             year += 1900;
         }
 
-        Calendar cal;
+        DateTime dt = new DateTime();
         if (gmt) {
-            cal = Calendar.getInstance(TimeZone.getTimeZone(RubyTime.UTC)); 
+            dt = dt.withZone(DateTimeZone.UTC);
         } else {
-            cal = Calendar.getInstance(RubyTime.getLocalTimeZone(runtime));
+            dt = dt.withZone(getLocalTimeZone(runtime));
         }
-        cal.set(year, month, int_args[0], int_args[1], int_args[2], int_args[3]);
-        cal.set(Calendar.MILLISECOND, 0);
 
-        RubyTime time = new RubyTime(runtime, (RubyClass) recv, cal);
+        dt = dt.withDate(year, month, int_args[0])
+            .withHourOfDay(int_args[1])
+            .withMinuteOfHour(int_args[2])
+            .withSecondOfMinute(int_args[3])
+            .withMillisOfSecond(0);
+
+        RubyTime time = new RubyTime(runtime, (RubyClass) recv, dt);
         // Ignores usec if 8 args (for compatibility with parsedate) or if not supplied.
         if (args.length != 8 && !args[6].isNil()) {
             int usec = int_args[4] % 1000;
             int msec = int_args[4] / 1000;
+
             if (int_args[4] < 0) {
                 msec -= 1;
                 usec += 1000;
             }
-            cal.add(Calendar.MILLISECOND, msec);
+            time.dt = dt.withMillis(dt.getMillis()+msec);
             time.setUSec(usec);
         }
 
         // Restrict to time_t for compatibility
-        long seconds = cal.getTimeInMillis() / 1000;
+        long seconds = dt.getMillis() / 1000;
         if (seconds > Integer.MAX_VALUE || seconds < Integer.MIN_VALUE) {
             throw runtime.newArgumentError("time out of range");
         }

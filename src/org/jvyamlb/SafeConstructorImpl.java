@@ -30,7 +30,6 @@ package org.jvyamlb;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -46,6 +45,9 @@ import org.jvyamlb.nodes.Node;
 import org.jvyamlb.util.Base64Coder;
 
 import org.jruby.util.ByteList;
+
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -169,18 +171,17 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
             final String year_s = match.group(1);
             final String month_s = match.group(2);
             final String day_s = match.group(3);
-            final Calendar cal = Calendar.getInstance();
-            cal.clear();
+            DateTime dt = new DateTime(0,1,1,0,0,0,0);
             if(year_s != null) {
-                cal.set(Calendar.YEAR,Integer.parseInt(year_s));
+                dt = dt.withYear(Integer.parseInt(year_s));
             }
             if(month_s != null) {
-                cal.set(Calendar.MONTH,Integer.parseInt(month_s)-1); // Java's months are zero-based...
+                dt = dt.withMonthOfYear(Integer.parseInt(month_s));
             }
             if(day_s != null) {
-                cal.set(Calendar.DAY_OF_MONTH,Integer.parseInt(day_s));
+                dt = dt.withDayOfMonth(Integer.parseInt(day_s));
             }
-            return cal.getTime();
+            return dt;
         }
         match = TIMESTAMP_REGEXP.matcher(node.getValue().toString());
         if(!match.matches()) {
@@ -206,10 +207,9 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
                 }
             }
         }
-        final Calendar cal = Calendar.getInstance();
-        cal.clear();
+        DateTime dt = new DateTime(0,1,1,0,0,0,0);
         if("Z".equalsIgnoreCase(utc)) {
-            cal.setTimeZone(java.util.TimeZone.getTimeZone("GMT"));
+            dt = dt.withZone(DateTimeZone.forID("Etc/GMT"));
         } else {
             if(timezoneh_s != null || timezonem_s != null) {
                 int zone = 0;
@@ -223,30 +223,29 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
                 if(timezonem_s != null) {
                     zone += Integer.parseInt(timezonem_s)*60000;
                 }
-                cal.setTimeZone(java.util.TimeZone.getTimeZone("GMT"));
-                cal.set(Calendar.ZONE_OFFSET,sign*zone);
+                dt = dt.withZone(DateTimeZone.forOffsetMillis(sign*zone));
             }
         }
         if(year_s != null) {
-            cal.set(Calendar.YEAR,Integer.parseInt(year_s));
+            dt = dt.withYear(Integer.parseInt(year_s));
         }
         if(month_s != null) {
-            cal.set(Calendar.MONTH,Integer.parseInt(month_s)-1); // Java's months are zero-based...
+            dt = dt.withMonthOfYear(Integer.parseInt(month_s));
         }
         if(day_s != null) {
-            cal.set(Calendar.DAY_OF_MONTH,Integer.parseInt(day_s));
+            dt = dt.withDayOfMonth(Integer.parseInt(day_s));
         }
         if(hour_s != null) {
-            cal.set(Calendar.HOUR_OF_DAY,Integer.parseInt(hour_s));
+            dt = dt.withHourOfDay(Integer.parseInt(hour_s));
         }
         if(min_s != null) {
-            cal.set(Calendar.MINUTE,Integer.parseInt(min_s));
+            dt = dt.withMinuteOfHour(Integer.parseInt(min_s));
         }
         if(sec_s != null) {
-            cal.set(Calendar.SECOND,Integer.parseInt(sec_s));
+            dt = dt.withSecondOfMinute(Integer.parseInt(sec_s));
         }
-        cal.set(Calendar.MILLISECOND,usec/1000);
-        return cal;
+        dt = dt.withMillisOfSecond(usec/1000);
+        return dt;
     }
 
     public static Object constructYamlInt(final Constructor ctor, final Node node) {

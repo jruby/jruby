@@ -110,11 +110,8 @@ public class YAMLLoadTest extends TestCase {
     }
 
     public void testJavaBeanLoad() throws Exception {
-        final java.util.Calendar cal = java.util.Calendar.getInstance();
-        cal.clear();
-        cal.set(1982,5-1,3); // Java's months are zero-based...
-        
-        final TestBean expected = new TestBean(s("Ola Bini"), 24, cal.getTime());
+        org.joda.time.DateTime dt = new org.joda.time.DateTime(1982,5,3,0,0,0,0);
+        final TestBean expected = new TestBean(s("Ola Bini"), 24, dt);
         assertEquals(expected, YAML.load(s("--- !java/object:org.jvyamlb.TestBean\nname: Ola Bini\nage: 24\nborn: 1982-05-03\n")));
     }
 }// YAMLLoadTest

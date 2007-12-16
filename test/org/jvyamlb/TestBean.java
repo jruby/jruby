@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jvyamlb;
 
-import java.util.Date;
+import org.joda.time.DateTime;
 
 import org.jruby.util.ByteList;
 
@@ -37,12 +37,12 @@ import org.jruby.util.ByteList;
 public class TestBean {
     private ByteList name;
     private int age;
-    private Date born;
+    private DateTime born;
 
     public TestBean() {
     }
 
-    public TestBean(final ByteList name, final int age, final Date born) {
+    public TestBean(final ByteList name, final int age, final DateTime born) {
         this.name = name;
         this.age = age;
         this.born = born;
@@ -56,7 +56,7 @@ public class TestBean {
         return age;
     }
 
-    public Date getBorn() {
+    public DateTime getBorn() {
         return born;
     }
 
@@ -68,7 +68,7 @@ public class TestBean {
         this.age = age;
     }
 
-    public void setBorn(final Date born) {
+    public void setBorn(final DateTime born) {
         this.born = born;
     }
 

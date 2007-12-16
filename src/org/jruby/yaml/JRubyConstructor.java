@@ -27,8 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.yaml;
 
-import java.util.Date;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -61,6 +59,8 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.ByteList;
+
+import org.joda.time.DateTime;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -215,16 +215,14 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public static Object constructYamlTimestamp(final Constructor ctor, final Node node) {
-        Calendar c = (Calendar)SafeConstructorImpl.constructYamlTimestamp(ctor,node);
-        return org.jruby.RubyTime.newTime(((JRubyConstructor)ctor).runtime,c);
+        DateTime dt = (DateTime)SafeConstructorImpl.constructYamlTimestamp(ctor,node);
+        return org.jruby.RubyTime.newTime(((JRubyConstructor)ctor).runtime,dt);
     }
 
     public static Object constructYamlTimestampYMD(final Constructor ctor, final Node node) {
-        Date d = (Date)SafeConstructorImpl.constructYamlTimestamp(ctor,node);
-        Calendar c = Calendar.getInstance();
-        c.setTime(d);
+        DateTime dt = (DateTime)SafeConstructorImpl.constructYamlTimestamp(ctor,node);
         Ruby runtime = ((JRubyConstructor)ctor).runtime;
-        return runtime.fastGetClass("Date").callMethod(runtime.getCurrentContext(),"new",new IRubyObject[]{runtime.newFixnum(c.get(Calendar.YEAR)),runtime.newFixnum(c.get(Calendar.MONTH)+1),runtime.newFixnum(c.get(Calendar.DAY_OF_MONTH))});
+        return runtime.fastGetClass("Date").callMethod(runtime.getCurrentContext(),"new",new IRubyObject[]{runtime.newFixnum(dt.getYear()),runtime.newFixnum(dt.getMonthOfYear()),runtime.newFixnum(dt.getDayOfMonth())});
     }
 
     public static Object constructYamlInt(final Constructor ctor, final Node node) {

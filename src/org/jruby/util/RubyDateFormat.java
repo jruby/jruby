@@ -34,13 +34,15 @@ import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.FieldPosition;
 import java.text.ParsePosition;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeConstants;
 
 public class RubyDateFormat extends DateFormat {
 	private static final long serialVersionUID = -250429218019023997L;
@@ -244,13 +246,16 @@ public class RubyDateFormat extends DateFormat {
         }
     }
 
+    private DateTime dt;
+
+    public void setDateTime(final DateTime dt) {
+        this.dt = dt;
+    }
+
     /**
      * @see DateFormat#format(Date, StringBuffer, FieldPosition)
      */
-    public StringBuffer format(Date date, StringBuffer toAppendTo, FieldPosition fieldPosition) {
-        calendar.setTime(date);
-        calendar.setMinimalDaysInFirstWeek(1);
-        
+    public StringBuffer format(Date ignored, StringBuffer toAppendTo, FieldPosition fieldPosition) {
         Iterator iter = compiledPattern.iterator();
         while (iter.hasNext()) {
             Token token = (Token) iter.next();
@@ -260,40 +265,55 @@ public class RubyDateFormat extends DateFormat {
                     toAppendTo.append(token.getData());
                     break;
                 case FORMAT_WEEK_LONG:
-                    toAppendTo.append(formatSymbols.getWeekdays()[calendar.get(Calendar.DAY_OF_WEEK)]);
+                    // This is GROSS, but Java API's aren't ISO 8601 compliant at all
+                    int v = (dt.getDayOfWeek()+1)%8;
+                    if(v == 0) {
+                        v++;
+                    }
+                    toAppendTo.append(formatSymbols.getWeekdays()[v]);
                     break;
                 case FORMAT_WEEK_SHORT:
-                    toAppendTo.append(formatSymbols.getShortWeekdays()[calendar.get(Calendar.DAY_OF_WEEK)]);
+                    // This is GROSS, but Java API's aren't ISO 8601 compliant at all
+                    v = (dt.getDayOfWeek()+1)%8;
+                    if(v == 0) {
+                        v++;
+                    }
+                    toAppendTo.append(formatSymbols.getShortWeekdays()[v]);
                     break;
                 case FORMAT_MONTH_LONG:
-                    toAppendTo.append(formatSymbols.getMonths()[calendar.get(Calendar.MONTH)]);
+                    toAppendTo.append(formatSymbols.getMonths()[dt.getMonthOfYear()-1]);
                     break;
                 case FORMAT_MONTH_SHORT:
-                    toAppendTo.append(formatSymbols.getShortMonths()[calendar.get(Calendar.MONTH)]);
+                    toAppendTo.append(formatSymbols.getShortMonths()[dt.getMonthOfYear()-1]);
                     break;
                 case FORMAT_DAY:
-                    int value = calendar.get(Calendar.DAY_OF_MONTH);
+                    int value = dt.getDayOfMonth();
                     if (value < 10) {
                         toAppendTo.append('0');
                     }
                     toAppendTo.append(value);
                     break;
                 case FORMAT_DAY_S: 
-                    value = calendar.get(Calendar.DAY_OF_MONTH);
+                    value = dt.getDayOfMonth();
                     if (value < 10) {
                         toAppendTo.append(' ');
                     }
                     toAppendTo.append(value);
                     break;
                 case FORMAT_HOUR:
-                    value = calendar.get(Calendar.HOUR_OF_DAY);
+                    value = dt.getHourOfDay();
                     if (value < 10) {
                         toAppendTo.append('0');
                     }
                     toAppendTo.append(value);
                     break;
                 case FORMAT_HOUR_M:
-                    value = calendar.get(Calendar.HOUR);
+                    value = dt.getHourOfDay();
+
+                    if(value > 12) {
+                        value-=12;
+                    }
+
                     if(value == 0) {
                         toAppendTo.append("12");
                     } else {
@@ -304,7 +324,7 @@ public class RubyDateFormat extends DateFormat {
                     }
                     break;
                 case FORMAT_DAY_YEAR:
-                    value = calendar.get(Calendar.DAY_OF_YEAR);
+                    value = dt.getDayOfYear();
                     if (value < 10) {
                         toAppendTo.append("00");
                     } else if (value < 100) {
@@ -313,46 +333,46 @@ public class RubyDateFormat extends DateFormat {
                     toAppendTo.append(value);
                     break;
                 case FORMAT_MINUTES:
-                    value = calendar.get(Calendar.MINUTE);
+                    value = dt.getMinuteOfHour();
                     if (value < 10) {
                         toAppendTo.append('0');
                     }
                     toAppendTo.append(value);
                     break;
                 case FORMAT_MONTH:
-                    value = calendar.get(Calendar.MONTH) + 1;
+                    value = dt.getMonthOfYear();
                     if (value < 10) {
                         toAppendTo.append('0');
                     }
                     toAppendTo.append(value);
                     break;
                 case FORMAT_MERIDIAN:
-                    if (calendar.get(Calendar.AM_PM) == Calendar.AM) {
+                    if (dt.getHourOfDay() < 12) {
                         toAppendTo.append("AM");
                     } else {
                         toAppendTo.append("PM");
                     }
                     break;
                 case FORMAT_SECONDS:
-                    value = calendar.get(Calendar.SECOND);
+                    value = dt.getSecondOfMinute();
                     if (value < 10) {
                         toAppendTo.append('0');
                     }
                     toAppendTo.append(value);
                     break;
                 case FORMAT_WEEK_YEAR_M:
-                	formatWeekYear(Calendar.MONDAY, toAppendTo);
+                	formatWeekYear(java.util.Calendar.MONDAY, toAppendTo);
                     break;
                 	// intentional fall-through
                 case FORMAT_WEEK_YEAR_S:
-                	formatWeekYear(Calendar.SUNDAY, toAppendTo);
+                	formatWeekYear(java.util.Calendar.SUNDAY, toAppendTo);
                     break;
                 case FORMAT_DAY_WEEK:
-                    value = calendar.get(Calendar.DAY_OF_WEEK) - 1;
+                    value = dt.getDayOfWeek() ;
                     toAppendTo.append(value);
                     break;
                 case FORMAT_YEAR_LONG:
-                    value = calendar.get(Calendar.YEAR);
+                    value = dt.getYear();
                     if (value < 10) {
                         toAppendTo.append("000");
                     } else if (value < 100) {
@@ -363,14 +383,14 @@ public class RubyDateFormat extends DateFormat {
                     toAppendTo.append(value);
                     break;
                 case FORMAT_YEAR_SHORT:
-                    value = calendar.get(Calendar.YEAR) % 100;
+                    value = dt.getYear() % 100;
                     if (value < 10) {
                         toAppendTo.append('0');
                     }
                     toAppendTo.append(value);
                     break;
                 case FORMAT_ZONE_OFF:
-                    value = calendar.getTimeZone().getOffset(calendar.getTimeInMillis());
+                    value = dt.getZone().getOffset(dt.getMillis());
                     if (value <= 0) {
                         toAppendTo.append('+');
                     } else {
@@ -388,7 +408,7 @@ public class RubyDateFormat extends DateFormat {
                     toAppendTo.append(value);
                     break;
                 case FORMAT_ZONE_ID:
-                    toAppendTo.append(calendar.getTimeZone().getDisplayName(calendar.get(Calendar.DST_OFFSET) != 0, TimeZone.SHORT));
+                    toAppendTo.append(dt.getZone().getShortName(dt.getMillis()));
                     break;
             }
         }
@@ -397,16 +417,16 @@ public class RubyDateFormat extends DateFormat {
     }
 
 	private void formatWeekYear(int firstDayOfWeek, StringBuffer toAppendTo) {
+        java.util.Calendar calendar = dt.toGregorianCalendar();
 		calendar.setFirstDayOfWeek(firstDayOfWeek);
-		int value = calendar.get(Calendar.WEEK_OF_YEAR);
-		if (calendar.get(Calendar.DAY_OF_WEEK) != firstDayOfWeek) {
+		int value = calendar.get(java.util.Calendar.WEEK_OF_YEAR);
+		if (calendar.get(java.util.Calendar.DAY_OF_WEEK) != firstDayOfWeek) {
 			value--;
 		}
 		if (value < 10) {
 		    toAppendTo.append('0');
 		}
 		toAppendTo.append(value);
-		calendar.setFirstDayOfWeek(Calendar.SUNDAY);
 	}
 
     /**
