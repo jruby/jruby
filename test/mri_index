@@ -51,3 +51,4 @@ externals/mri/ruby/test_whileuntil
 externals/mri/stringio/test_stringio
 externals/mri/openssl/test_hmac
 externals/mri/openssl/test_digest
+externals/mri/strscan/test_stringscanner

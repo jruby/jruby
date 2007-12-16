@@ -28,17 +28,13 @@
 
 package org.jruby.util;
 
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
-import org.jruby.Ruby;
-import org.jruby.runtime.builtin.IRubyObject;
-
 import org.joni.encoding.Encoding;
 import org.joni.encoding.specific.ASCIIEncoding;
 import org.joni.encoding.specific.EUCJPEncoding;
 import org.joni.encoding.specific.SJISEncoding;
 import org.joni.encoding.specific.UTF8Encoding;
+import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public final class KCode {
     public static final KCode NIL = new KCode(null, 0, ASCIIEncoding.INSTANCE);
@@ -59,18 +55,14 @@ public final class KCode {
     }
 
     public static KCode create(Ruby runtime, String lang) {
-        if(lang == null) {
-            return NIL;
-        }
+        if(lang == null) return NIL;
 
         switch(lang.charAt(0)) {
         case 'E':
         case 'e':
-            runtime.getWarnings().warn("JRuby supports only Unicode regexp.");
             return EUC;
         case 'S':
         case 's':
-            runtime.getWarnings().warn("JRuby supports only Unicode regexp.");
             return SJIS;
         case 'U':
         case 'u':
@@ -94,10 +86,6 @@ public final class KCode {
 
     public int bits() {
         return code;
-    }
-
-    public int flags() {
-        return 0;
     }
 
     public String name() {
