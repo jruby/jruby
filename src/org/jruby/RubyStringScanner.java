@@ -329,7 +329,7 @@ public class RubyStringScanner extends RubyObject {
         return this;
     }
     
-    @JRubyMethod(name = {"bol?", "beginning_of_line"})
+    @JRubyMethod(name = "beginning_of_line?", alias = "bol?")
     public IRubyObject bol_p() {
         check();
         ByteList value = str.getByteList();
