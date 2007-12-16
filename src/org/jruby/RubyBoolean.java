@@ -138,6 +138,14 @@ public class RubyBoolean extends RubyObject {
         }
     }
 
+    public IRubyObject taint() {
+        return this;
+    }
+
+    public IRubyObject freeze() {
+        return this;
+    }
+
     public IRubyObject false_to_s() {
         return getRuntime().newString("false");
     }

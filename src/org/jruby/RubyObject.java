@@ -858,12 +858,12 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     @JRubyMethod(name = "freeze")
     public IRubyObject freeze() {
-        if (getRuntime().getSafeLevel() >= 4 && isTaint()) {
-            throw getRuntime().newSecurityError("Insecure: can't freeze object");
+        if ((flags & FROZEN_F) == 0) {
+            if (getRuntime().getSafeLevel() >= 4 && isTaint()) {
+                throw getRuntime().newSecurityError("Insecure: can't freeze object");
+            }
+            flags |= FROZEN_F;
         }
-        
-        if (!this.isImmediate()) setFrozen(true);
-
         return this;
     }
 

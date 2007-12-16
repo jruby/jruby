@@ -178,11 +178,15 @@ public class RubyNil extends RubyObject {
         return getRuntime().getTrue();
     }
     
+    public RubyFixnum id() {
+        return getRuntime().newFixnum(4);
+    }
+    
     public IRubyObject taint() {
         return this;
     }
-    
-    public RubyFixnum id() {
-        return getRuntime().newFixnum(4);
+
+    public IRubyObject freeze() {
+        return this;
     }
 }
