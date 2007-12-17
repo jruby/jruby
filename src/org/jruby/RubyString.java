@@ -980,6 +980,8 @@ public class RubyString extends RubyObject {
                 sb.append('\\').append('v');
             } else if (c == '\u0007') {
                 sb.append('\\').append('a');
+            } else if (c == '\u0008') {
+                sb.append('\\').append('b');
             } else if (c == '\u001B') {
                 sb.append('\\').append('e');
             } else {
@@ -1948,7 +1950,13 @@ public class RubyString extends RubyObject {
             pos = strRindex((RubyString)sub, pos);
             if (pos >= 0) return RubyFixnum.newFixnum(getRuntime(), pos);
         } else if (sub instanceof RubyFixnum) {
-            byte c = (byte)RubyNumeric.fix2int(sub);
+            int c_int = RubyNumeric.fix2int(sub);
+            if (c_int < 0x00 || c_int > 0xFF) {
+                // out of byte range
+                // there will be no match for sure
+                return getRuntime().getNil();
+            }
+            byte c = (byte)c_int;
 
             byte[]bytes = value.bytes;
             int pbeg = value.begin;

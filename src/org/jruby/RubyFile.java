@@ -1094,11 +1094,29 @@ public class RubyFile extends RubyIO {
         JRubyFile newFile = JRubyFile.create(runtime.getCurrentDirectory(), newNameString.toString());
         
         if (!oldFile.exists() || !newFile.getParentFile().exists()) {
-            throw runtime.newErrnoENOENTError("No such file or directory - " + oldNameString + " or " + newNameString);
+            throw runtime.newErrnoENOENTError("No such file or directory - " + oldNameString + 
+                    " or " + newNameString);
         }
-        oldFile.renameTo(JRubyFile.create(runtime.getCurrentDirectory(), newNameString.toString()));
-        
-        return RubyFixnum.zero(runtime);
+
+        JRubyFile dest = JRubyFile.create(runtime.getCurrentDirectory(), newNameString.toString());
+
+        if (oldFile.renameTo(dest)) {  // rename is successful
+            return RubyFixnum.zero(runtime);
+        }
+
+        // rename via Java API call wasn't successful, let's try some tricks, similar to MRI 
+
+        if (newFile.exists()) {
+            recv.getRuntime().getPosix().chmod(newNameString.toString(), 0666);
+            newFile.delete();
+        }
+
+        if (oldFile.renameTo(dest)) { // try to rename one more time
+            return RubyFixnum.zero(runtime);
+        }
+
+        throw runtime.newErrnoEACCESError("Permission denied - " + oldNameString + " or " + 
+                newNameString);
     }
     
     @JRubyMethod(required = 1, meta = true)

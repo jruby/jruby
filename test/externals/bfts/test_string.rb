@@ -641,7 +641,7 @@ class TestString < RubiconTestCase
     assert_equal :'"\t"',     S("\t").inspect.intern
     assert_equal :'"\f"',     S("\f").inspect.intern
     assert_equal :'"\001"',   S("\001").inspect.intern
-    assert_equal :'"\010"',   S("\010").inspect.intern
+    assert_equal :'"\b"',   S("\010").inspect.intern
     assert_equal :'"\177"',   S("\177").inspect.intern
     assert_equal :'"\377"',   S("\377").inspect.intern
 

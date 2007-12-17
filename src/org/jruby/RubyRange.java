@@ -207,12 +207,8 @@ public class RubyRange extends RubyObject {
 
         if (endLong < 0 || (!isExclusive && endLong == 0)) {
             endLong += limit;
-            if (endLong < 0) {
-                if (isStrict) {
-                    throw getRuntime().newRangeError(inspect().toString() + " out of range.");
-                }
-                return null;
-            }
+            // don't check against negative endLong,
+            // that's how MRI behaves.
         }
 
         return new long[]{beginLong, Math.max(endLong - beginLong, 0L)};
