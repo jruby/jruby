@@ -685,6 +685,24 @@ public class Convert {
                         state = SDIGITS;
                     }
                     break states;
+                case 'd':
+                case 'D':
+                    if (base == 0 || base == 10) {
+                        radix = 10;
+                        state = ++i >= buflen ? SEOF : SPOST_SIGN;
+                    } else {
+                        state = SDIGITS;
+                    }
+                    break states;
+                case 'o':
+                case 'O':
+                    if (base == 0 || base == 8) {
+                        radix = 8;
+                        state = ++i >= buflen ? SEOF : SPOST_SIGN;
+                    } else {
+                        state = SDIGITS;
+                    }
+                    break states;
                 default:
                     if (base == 0 || base == 8) {
                         radix = 8;

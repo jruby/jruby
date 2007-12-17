@@ -2316,6 +2316,8 @@ public class RubyString extends RubyObject {
                 base = 16;
             } else if(value.bytes[pos+1] == 'b' || value.bytes[pos+1] == 'B') {
                 base = 2;
+            } else if(value.bytes[pos+1] == 'd' || value.bytes[pos+1] == 'D') {
+                base = 10;
             }
         }
         return RubyNumeric.str2inum(getRuntime(), this, base);

@@ -265,6 +265,10 @@ test_exception(ArgumentError)  { "hi".rjust(11, "") }
 # oct should return zero in appropriate cases
 test_equal(0, "b".oct)
 test_equal(0, "".oct)
+test_equal(500, "0d500".oct)
+test_equal(7, "0o7".oct)
+test_equal(11, "0d11".oct)
+test_equal(255, "0377bad".oct)
 
 ##### replace #####
 t = "hello"
@@ -464,7 +468,7 @@ test_equal(294977, "1100101".to_i(8))
 test_equal(1100101, "1100101".to_i(10))
 test_equal(17826049, "1100101".to_i(16))
 test_equal(199066177, "1100101".to_i(24))
-
+test_equal(500, "0d500".to_i)
 
 ##### to_sym (see intern) #####
 
