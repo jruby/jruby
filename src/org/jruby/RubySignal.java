@@ -53,4 +53,44 @@ public class RubySignal {
         runtime.getLoadService().require("jsignal");
         return RuntimeHelpers.invoke(runtime.getCurrentContext(), runtime.getKernel(), "__jtrap", args, CallType.FUNCTIONAL, block);
     }
+
+    private final static class JRubySignalHandler implements sun.misc.SignalHandler {
+        public Ruby runtime;
+        public IRubyObject block;
+        public IRubyObject signal_object;
+        public String signal;
+
+        public void handle(sun.misc.Signal signal) {
+            try {
+                block.callMethod(runtime.getCurrentContext(), "call", new IRubyObject[0]);
+            } catch(org.jruby.exceptions.RaiseException e) {
+                try {
+                    runtime.getThread().callMethod(runtime.getCurrentContext(), "main", new IRubyObject[0]).callMethod(runtime.getCurrentContext(), "raise", new IRubyObject[]{e.getException()});
+                } catch(Exception ignored) {}
+            } finally {
+                sun.misc.Signal.handle(new sun.misc.Signal(this.signal), this);
+            }
+        }
+    }
+
+    @JRubyMethod(name = "__jtrap_kernel", required = 3,meta = true)
+    public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        final JRubySignalHandler handler = new JRubySignalHandler();
+        handler.runtime = recv.getRuntime();
+        handler.block = arg1;
+        handler.signal_object = arg2;
+        handler.signal = arg3.toString();
+        final sun.misc.SignalHandler oldHandler = sun.misc.Signal.handle(new sun.misc.Signal(handler.signal), handler);
+        if(oldHandler instanceof JRubySignalHandler) {
+            return ((JRubySignalHandler)oldHandler).block;
+        } else {
+            return RubyProc.newProc(recv.getRuntime(), org.jruby.runtime.CallBlock.newCallClosure(recv, (RubyModule)recv, 
+                                                                                org.jruby.runtime.Arity.noArguments(), new org.jruby.runtime.BlockCallback(){
+                                                                                        public IRubyObject call(org.jruby.runtime.ThreadContext context, IRubyObject[] args, Block block) {
+                                                                                            oldHandler.handle(new sun.misc.Signal(handler.signal));
+                                                                                            return recv.getRuntime().getNil();
+                                                                                        }
+                                                                                    }, recv.getRuntime().getCurrentContext()), Block.Type.NORMAL);
+        }
+    }
 }// RubySignal
