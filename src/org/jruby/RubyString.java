@@ -2335,16 +2335,21 @@ public class RubyString extends RubyObject {
     @JRubyMethod(name = "split", optional = 2)
     public RubyArray split(IRubyObject[] args) {
         final int i, lim;
-        boolean limit = false;
-            
+        final boolean limit;
+
         if (Arity.checkArgumentCount(getRuntime(), args, 0, 2) == 2) {
             lim = RubyNumeric.fix2int(args[1]);
-            if (lim == 1) return value.realSize == 0 ? getRuntime().newArray() : getRuntime().newArray(this);
-            if (lim > 0) limit = true;
+            if (lim <= 0) {
+                limit = false;
+            } else {
+                if (lim == 1) return value.realSize == 0 ? getRuntime().newArray() : getRuntime().newArray(this);
+                limit = true;
+            }
             i = 1;
         } else {
             i = 0;
             lim = 0;
+            limit = false;
         }
         
         IRubyObject spat = (args.length == 0 || args[0].isNil()) ? null : args[0];
@@ -2389,7 +2394,7 @@ public class RubyString extends RubyObject {
         boolean lastNull = false;
         RubyArray result = runtime.newArray();
         if (regex.numberOfCaptures() == 0) { // shorter path, no captures defined, no region will be returned 
-            while (start < range && (end = matcher.search(start, range, Option.NONE)) >= 0) {
+            while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
                 if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
                     if (value.realSize == 0) {
                         result.append(newEmptyString(runtime, getMetaClass()));
@@ -2398,7 +2403,11 @@ public class RubyString extends RubyObject {
                         result.append(substr(beg, regex.getEncoding().length(value.bytes[begin + beg])));
                         beg = start - begin;
                     } else {
-                        start += regex.getEncoding().length(value.bytes[start]);
+                        if (start == range) {
+                            start++;
+                        } else {
+                            start += regex.getEncoding().length(value.bytes[start]);
+                        }
                         lastNull = true;
                         continue;
                     }
@@ -2411,7 +2420,7 @@ public class RubyString extends RubyObject {
                 if (limit && lim <= ++i) break;
             }
         } else {
-            while (start < range && (end = matcher.search(start, range, Option.NONE)) >= 0) {
+            while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
                 final Region region = matcher.getRegion();
                 if (start == end + begin && region.beg[0] == region.end[0]) {
                     if (value.realSize == 0) {                        
@@ -2421,7 +2430,11 @@ public class RubyString extends RubyObject {
                         result.append(substr(beg, regex.getEncoding().length(value.bytes[begin + beg])));
                         beg = start - begin;
                     } else {
-                        start += regex.getEncoding().length(value.bytes[start]);
+                        if (start == range) {
+                            start++;
+                        } else {
+                            start += regex.getEncoding().length(value.bytes[start]);
+                        }
                         lastNull = true;
                         continue;
                     }                    
