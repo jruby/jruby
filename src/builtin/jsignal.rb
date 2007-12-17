@@ -8,6 +8,25 @@ module ::Kernel
   }
   
   begin
+    class JRubySignalHandler
+      include Java::sun.misc.SignalHandler
+      
+      def initialize(block, signal_class, signal_object)
+        @block, @signal_class, @signal_object = block, signal_class, signal_object
+      end
+      
+      def handle(signal)
+        begin
+          @block.call
+        rescue Exception => e
+          Thread.main.raise(e) rescue nil
+        ensure
+          # re-register the handler
+          @signal_class.handle(@signal_object, self) rescue nil
+        end
+      end
+    end
+    
     def __jtrap(*args, &block)
       sig = args.shift
       sig = SIGNALS[sig] if sig.kind_of?(Fixnum)
@@ -18,17 +37,11 @@ module ::Kernel
       signal_class = Java::sun.misc.Signal
       signal_object = signal_class.new(sig) rescue nil
       return unless signal_object
-      signal_handler = Java::sun.misc.SignalHandler.impl do
-        begin
-          block.call
-        rescue Exception => e
-          Thread.main.raise(e) rescue nil
-        ensure
-          # re-register the handler
-          signal_class.handle(signal_object, signal_handler) rescue nil
-        end
-      end
+
+      signal_handler = JRubySignalHandler.new(block, signal_class, signal_handler)
+
       last = signal_class.handle(signal_object, signal_handler)
+
       proc do
         if last.respond_to?(:handle)
           last.handle(signal_object)
