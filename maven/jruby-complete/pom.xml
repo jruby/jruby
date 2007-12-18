@@ -58,6 +58,12 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>1.5.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jna</artifactId>
       <version>jruby-pre</version>
@@ -113,6 +119,11 @@
                   <groupId>org.joni</groupId>
                   <artifactId>joni</artifactId>
                   <version>1.0-SNAPSHOT</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>joda-time</groupId>
+                  <artifactId>joda-time</artifactId>
+                  <version>1.5.1</version>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.jruby.extras</groupId>
