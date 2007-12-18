@@ -208,7 +208,7 @@ public class RubyInstanceConfig {
                 .append("    -d              set debugging flags (set $DEBUG to true)").append("\n")
                 .append("    -v              print version number, then turn on verbose mode").append("\n")
                 .append("    -O              run with ObjectSpace disabled (default; improves performance)").append("\n")
-                .append("    +O              run with ObjectSpace enabled (default; reduces performance)").append("\n")
+                .append("    +O              run with ObjectSpace enabled (reduces performance)").append("\n")
                 .append("    -S cmd          run the specified command in JRuby's bin dir").append("\n")
                 .append("    -C              disable all compilation").append("\n")
                 .append("    +C              force compilation of all scripts before they are run (except eval)").append("\n")
