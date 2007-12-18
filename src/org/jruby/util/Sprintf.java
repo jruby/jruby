@@ -206,6 +206,7 @@ public class Sprintf {
     private static class Buffer {
         byte[] buf;
         int size;
+        private boolean tainted = false;
          
         Buffer() {
             buf = new byte[INITIAL_BUFFER_SIZE];
@@ -284,6 +285,17 @@ public class Sprintf {
     public static CharSequence sprintf(Locale locale, CharSequence format, IRubyObject args) {
         return rubySprintf(format, new Args(locale,args));
     }
+    
+    // Special form of sprintf that returns a RubyString and handles
+    // tainted strings correctly.
+    public static RubyString sprintf(Ruby runtime, Locale locale, CharSequence format, IRubyObject args) {
+        Buffer b = rubySprintfToBuffer(format, new Args(locale,args));
+        RubyString s = runtime.newString(b.toByteList());
+        if (b.tainted) {
+            s.setTaint(true);
+        }
+        return s;
+    }
 
     public static CharSequence sprintf(CharSequence format, IRubyObject args) {
         return rubySprintf(format, new Args(args));
@@ -306,6 +318,10 @@ public class Sprintf {
     }
     
     private static CharSequence rubySprintf(CharSequence charFormat, Args args) {
+        return rubySprintfToBuffer(charFormat, args).toByteList();
+    }
+    
+    private static Buffer rubySprintfToBuffer(CharSequence charFormat, Args args) {
         byte[] format;
         Buffer buf = new Buffer();
         
@@ -530,6 +546,9 @@ public class Sprintf {
                     }
                     ByteList bytes = arg.asString().getByteList();
                     int len = bytes.length();
+                    if (arg.isTaint()) {
+                        buf.tainted = true;
+                    }
                     if ((flags & FLAG_PRECISION) != 0 && precision < len) {
                         len = precision;
                     }
@@ -579,7 +598,11 @@ public class Sprintf {
                             arg = RubyNumeric.str2inum(arg.getRuntime(),(RubyString)arg,0,true);
                             break;
                         default:
-                            arg = TypeConverter.convertToType(arg, arg.getRuntime().getInteger(), MethodIndex.TO_I, "to_i", true);
+                            if (arg.respondsTo("to_int")) {
+                                arg = TypeConverter.convertToType(arg, arg.getRuntime().getInteger(), MethodIndex.TO_INT, "to_int", true);
+                            } else {
+                                arg = TypeConverter.convertToType(arg, arg.getRuntime().getInteger(), MethodIndex.TO_I, "to_i", true);
+                            }
                             break;
                         }
                         type = arg.getMetaClass().index;
@@ -1227,7 +1250,7 @@ public class Sprintf {
             }
         } // main while loop (offset < length)
         
-        return buf.toByteList();
+        return buf;
     }
 
     // debugging code, keeping for now

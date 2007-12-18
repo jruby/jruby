@@ -308,7 +308,13 @@ class TestKernel < Test::Unit::TestCase
   def test_sprintf
     assert_equal 'Hello', Kernel.sprintf('Hello')
   end
-  
+
+  def test_sprintf_with_object
+    obj = Object.new
+    def obj.to_int() 4 end
+    assert_equal '4', Kernel.sprintf('%d', obj)
+  end
+
   def test_srand
     Kernel.srand
     Kernel.srand(0)

@@ -495,6 +495,16 @@ test_equal("05", '%02g' % '5')
 test_equal("05", '%02G' % '5')
 test_equal("  ", '%2s' % nil)
 
+# underscore right after 0:
+test_equal("ff", '%x' % "0_3_7_7")
+test_equal("255", "%u" % "0_3_7_7")
+
+# tainted args
+str = "string".taint
+def str.inspect() "string".taint end
+test_equal(true, ("%s" % str).tainted?)
+test_equal(true, ("%p" % str).tainted?)
+
 # test that extensions of the base classes are typed correctly
 class StringExt < String
   def [](arg)

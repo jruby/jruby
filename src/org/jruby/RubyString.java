@@ -424,7 +424,7 @@ public class RubyString extends RubyObject {
     @JRubyMethod(name = "%", required = 1)
     public IRubyObject op_format(IRubyObject arg) {
         // FIXME: Should we make this work with platform's locale, or continue hardcoding US?
-        return getRuntime().newString((ByteList)Sprintf.sprintf(Locale.US, value, arg));
+        return Sprintf.sprintf(getRuntime(), Locale.US, value, arg);
     }
 
     @JRubyMethod(name = "hash")

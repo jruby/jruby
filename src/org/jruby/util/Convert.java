@@ -696,6 +696,7 @@ public class Convert {
                     break states;
                 case 'o':
                 case 'O':
+                case '_':
                     if (base == 0 || base == 8) {
                         radix = 8;
                         state = ++i >= buflen ? SEOF : SPOST_SIGN;
