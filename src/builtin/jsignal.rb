@@ -8,6 +8,7 @@ module ::Kernel
   }
 
   begin
+    JavaSignal = Java::sun.misc.Signal
     def __jtrap(*args, &block)
       sig = args.shift
       sig = SIGNALS[sig] if sig.kind_of?(Fixnum)
@@ -15,27 +16,10 @@ module ::Kernel
 
       block = args.shift unless args.empty?
 
-      signal_class = Java::sun.misc.Signal
-      signal_object = signal_class.new(sig) rescue nil
+      signal_object = JavaSignal.new(sig) rescue nil
       return unless signal_object
-      signal_handler = Java::sun.misc.SignalHandler.impl do
-        begin
-          block.call
-        rescue Exception => e
-          Thread.main.raise(e) rescue nil
-        ensure
-          # re-register the handler
-          signal_class.handle(signal_object, signal_handler) rescue nil
-        end
-      end
-      last = signal_class.handle(signal_object, signal_handler)
-      proc do
-        if last.respond_to?(:handle)
-          last.handle(signal_object)
-        else
-          last.call
-        end
-      end
+      
+      Signal::__jtrap_kernel(block, signal_object, sig)
     rescue java.lang.IllegalArgumentException
       warn "The signal #{sig} is in use by the JVM and will not work correctly on this platform"
     end
