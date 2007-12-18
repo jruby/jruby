@@ -526,7 +526,7 @@ public class RubyTime extends RubyObject {
         int pe = 
             0x1                                 << 31 |
             (dt.getYear()-1900)                 << 14 |
-            dt.getMonthOfYear()                 << 10 |
+            (dt.getMonthOfYear()-1)             << 10 |
             dt.getDayOfMonth()                  << 5  |
             dt.getHourOfDay();
         int se =
@@ -644,7 +644,7 @@ public class RubyTime extends RubyObject {
         } else {
             p &= ~(1<<31);
             dt = dt.withYear(((p >>> 14) & 0xFFFF) + 1900);
-            dt = dt.withMonthOfYear(((p >>> 10) & 0xF));
+            dt = dt.withMonthOfYear(((p >>> 10) & 0xF) + 1);
             dt = dt.withDayOfMonth(((p >>> 5)  & 0x1F));
             dt = dt.withHourOfDay((p & 0x1F));
             dt = dt.withMinuteOfHour(((s >>> 26) & 0x3F));
