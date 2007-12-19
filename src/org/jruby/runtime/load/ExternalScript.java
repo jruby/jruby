@@ -34,7 +34,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import org.jruby.Ruby;
-import org.jruby.runtime.load.LoadServiceResource;
 
 public class ExternalScript implements Library {
     private final LoadServiceResource resource;

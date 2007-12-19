@@ -761,7 +761,6 @@ public class ASTCompiler {
 
         Node tag = expressionsNode.get(conditionIndex);
 
-        // need to add in position stuff some day :)
         context.setPosition(tag.getPosition());
 
         // reduce the when cases to a true or false ruby value for the branch below
@@ -949,7 +948,7 @@ public class ASTCompiler {
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
         Node constNode = constDeclNode.getConstNode();
 
-        if (constDeclNode.getConstNode() == null) {
+        if (constNode == null) {
             compile(constDeclNode.getValueNode(), context);
 
             context.assignConstantInCurrent(constDeclNode.getName());
@@ -969,10 +968,13 @@ public class ASTCompiler {
         context.lineNumber(node.getPosition());
 
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
+        Node constNode = constDeclNode.getConstNode();
 
-        if (constDeclNode.getConstNode() == null) {
+        if (constNode == null) {
             context.assignConstantInCurrent(constDeclNode.getName());
-        } else if (constDeclNode.nodeId == NodeType.COLON2NODE) {
+        } else if (constNode.nodeId == NodeType.COLON2NODE) {
+            compile(((Colon2Node) constNode).getLeftNode(), context);
+            context.swapValues();
             context.assignConstantInModule(constDeclNode.getName());
         } else {// colon3, assign in Object
             context.assignConstantInObject(constDeclNode.getName());
@@ -1582,7 +1584,7 @@ public class ASTCompiler {
         inspector.inspect(defnNode.getArgsNode());
         inspector.inspect(defnNode.getBodyNode());
 
-        context.defineNewMethod(defnNode.getName(), defnNode.getScope(), body, args, null, inspector, isAtRoot);
+        context.defineNewMethod(defnNode.getName(), defnNode.getArgsNode().getArity().getValue(), defnNode.getScope(), body, args, null, inspector, isAtRoot);
     }
 
     public void compileDefs(Node node, MethodCompiler context) {
@@ -1621,7 +1623,7 @@ public class ASTCompiler {
         inspector.inspect(defsNode.getArgsNode());
         inspector.inspect(defsNode.getBodyNode());
 
-        context.defineNewMethod(defsNode.getName(), defsNode.getScope(), body, args, receiver, inspector, false);
+        context.defineNewMethod(defsNode.getName(), defsNode.getArgsNode().getArity().getValue(), defsNode.getScope(), body, args, receiver, inspector, false);
     }
 
     public void compileArgs(Node node, MethodCompiler context) {
@@ -3132,6 +3134,7 @@ public class ASTCompiler {
                     }
                 };
 
+        context.setPosition(arrayNode.getPosition());
         context.createObjectArray(arrayNode.childNodes().toArray(), callback);
     // leave as a normal array
     }

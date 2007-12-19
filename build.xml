@@ -274,43 +274,6 @@
     </java>
   </target>
   
-  <target name="run-spec">
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
-      <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.objectspace.enabled" value="true"/>
-      <arg value="-I"/>
-      <arg value="test/externals/rubinius/spec"/>
-      <arg value="-S"/>
-      <arg value="spec"/>
-      <arg value="--format"/>
-      <arg value="e"/>
-      <arg line="${SPEC}"/>
-      
-      <jvmarg value="-ea"/>
-    </java>
-  </target>
-  
-  <target name="run-spec-compiled">
-    <java classname="org.jruby.Main" fork="true" failonerror="true">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
-      <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.jit.threshold" value="0"/>
-      <sysproperty key="jruby.objectspace.enabled" value="true"/>
-      <arg value="-I"/>
-      <arg value="test/externals/rubinius/spec"/>
-      <arg value="-S"/>
-      <arg value="spec"/>
-      <arg value="--format"/>
-      <arg value="e"/>
-      <arg line="${SPEC}"/>
-      
-      <jvmarg value="-ea"/>
-    </java>
-  </target>
-  
   <target name="compile-stdlib">
     <copy todir="${build.dir}/stdlib">
         <fileset dir="${basedir}/lib/ruby/1.8">
@@ -330,12 +293,6 @@
       <arg value="jrubyc"/>
       <arg line="."/>
     </java>
-  </target>
-
-  <target name="spec" depends="jar,install-gems">
-    <antcall target="run-spec">
-        <param name="SPEC" value="test/externals/rubinius/spec"/>
-    </antcall>
   </target>
 
   <target name="emma" description="turns on EMMA instrumentation/reporting" >
@@ -374,40 +331,47 @@
   <target name="test" depends="
     copy-test-files,
     instrument,
-    run-junit-compiled,
+    run-junit-precompiled,
     run-junit-interpreted,
+    run-junit-precompiled-1.9,
     run-junit-interpreted-1.9,
-    test-spec-compiled,
-    test-spec-interpreted,
+    run-spec-precompiled,
+    run-spec-interpreted,
     compile-stdlib,
     coverage-report">
   </target>
 
-  <target name="test-compiled" depends="copy-test-files,run-junit-compiled"/>
+  <target name="test-compiled" depends="copy-test-files,run-junit-compiled,run-junit-precompiled"/>
+  <target name="test-compiled-1.9" depends="copy-test-files,run-junit-compiled-1.9,run-junit-precompiled-1.9"/>
   <target name="test-interpreted" depends="copy-test-files,run-junit-interpreted"/>
-  <target name="test-interpreted-1.9" depends="copy-test-files,run-junit-interpreted-1.9,run-junit-compiled-1.9"/>
-  <target name="test-reflected" depends="copy-test-files,run-junit-reflected-compiled,run-junit-reflected-interpreted"/>
-  <target name="test-threadpool" depends="copy-test-files,run-junit-compiled-threadpool,run-junit-interpreted-threadpool"/>
+  <target name="test-interpreted-1.9" depends="copy-test-files,run-junit-interpreted-1.9"/>
+  <target name="test-reflected" depends="copy-test-files,run-junit-reflected-compiled,run-junit-reflected-precompiled,run-junit-reflected-interpreted"/>
+  <target name="test-threadpool" depends="copy-test-files,run-junit-compiled-threadpool,run-junit-precompiled-threadpool,run-junit-interpreted-threadpool"/>
   
   <target name="test-all" depends="
       copy-test-files,
       instrument,
       run-junit-interpreted,
       run-junit-compiled,
+      run-junit-precompiled,
       run-junit-interpreted-1.9,
       run-junit-compiled-1.9,
+      run-junit-precompiled-1.9,
       run-junit-reflected-interpreted,
       run-junit-reflected-compiled,
+      run-junit-reflected-precompiled,
       run-junit-compiled-threadpool,
+      run-junit-precompiled-threadpool,
       run-junit-interpreted-threadpool,
       run-junit-object-persistence,
-      test-spec-compiled,
-      test-spec-interpreted,
+      run-spec-compiled,
+      run-spec-precompiled,
+      run-spec-interpreted,
       compile-stdlib,
       coverage-report
   "/>
   
-  <target name="test-spec" depends="test-spec-compiled, test-spec-interpreted"/>
+  <target name="test-spec" depends="run-spec-compiled, run-spec-precompiled, run-spec-interpreted"/>
   
   <property name="working.rubinius.specs" value="
 test/externals/rubinius/spec/core/enumerable_spec.rb
@@ -445,50 +409,66 @@ test/externals/rubinius/spec/language/literals
 test/externals/rubinius/spec/library
 test/externals/rubinius/spec/parser"/>
   
-  <target name="test-spec-compiled" depends="install-gems">
-    <antcall target="run-spec-compiled"><param name="SPEC" value="${working.rubinius.specs}"/></antcall>
+  <target name="run-spec-compiled" depends="install-gems">
+      <antcall target="run-spec" inheritall="false">
+          <param name="compile.mode" value="JIT"/>
+          <param name="jit.threshold" value="0"/>
+          <param name="SPEC" value="${working.rubinius.specs}"/>
+      </antcall>
   </target>
   
-  <target name="test-spec-interpreted" depends="install-gems">
-    <antcall target="run-spec"><param name="SPEC" value="${working.rubinius.specs}"/></antcall>
+  <target name="run-spec-precompiled" depends="install-gems">
+      <antcall target="run-spec" inheritall="false">
+          <param name="compile.mode" value="FORCE"/>
+          <param name="jit.threshold" value="0"/>
+          <param name="SPEC" value="${working.rubinius.specs}"/>
+      </antcall>
+  </target>
+  
+  <target name="run-spec-interpreted" depends="install-gems">
+      <antcall target="run-spec" inheritall="false">
+          <param name="compile.mode" value="OFF"/>
+          <param name="jit.threshold" value="0"/>
+          <param name="SPEC" value="${working.rubinius.specs}"/>
+      </antcall>
   </target>
   
   <target name="run-junit-interpreted" description="runs junit tests">
-      <antcall target="run-junit-1.8"/>
+      <antcall target="run-junit-1.8" inheritall="false"/>
   </target>
   
   <target name="run-junit-interpreted-1.9" description="runs junit tests">
-      <antcall target="run-junit-1.9"/>
+      <antcall target="run-junit-1.9" inheritall="false"/>
   </target>
   
   <target name="run-junit-reflected-interpreted" description="runs junit tests">
-      <antcall target="run-junit-1.8">
+      <antcall target="run-junit-1.8" inheritall="false">
           <param name="reflection " value="true"/>
       </antcall>
   </target>
   
   <target name="run-junit-reflected-interpreted-1.9" description="runs junit tests">
-      <antcall target="run-junit-1.9">
+      <antcall target="run-junit-1.9" inheritall="false">
           <param name="reflection " value="true"/>
       </antcall>
   </target>
   
   <target name="run-junit-compiled" description="runs junit tests">
-      <antcall target="run-junit-1.8">
+      <antcall target="run-junit-1.8" inheritall="false">
           <param name="compile.mode" value="JIT"/>
           <param name="jit.threshold" value="0"/>
       </antcall>
   </target>
   
   <target name="run-junit-compiled-1.9" description="runs junit tests">
-      <antcall target="run-junit-1.9">
+      <antcall target="run-junit-1.9" inheritall="false">
           <param name="compile.mode" value="JIT"/>
           <param name="jit.threshold" value="0"/>
       </antcall>
   </target>
   
   <target name="run-junit-reflected-compiled" description="runs junit tests">
-      <antcall target="run-junit-1.8">
+      <antcall target="run-junit-1.8" inheritall="false">
           <param name="compile.mode" value="JIT"/>
           <param name="jit.threshold" value="0"/>
           <param name="reflection" value="true"/>
@@ -496,8 +476,38 @@ test/externals/rubinius/spec/parser"/>
   </target>
   
   <target name="run-junit-reflected-compiled-1.9" description="runs junit tests">
-      <antcall target="run-junit-1.9">
+      <antcall target="run-junit-1.9" inheritall="false">
           <param name="compile.mode" value="JIT"/>
+          <param name="jit.threshold" value="0"/>
+          <param name="reflection" value="true"/>
+      </antcall>
+  </target>
+  
+  <target name="run-junit-precompiled" description="runs junit tests">
+      <antcall target="run-junit-1.8" inheritall="false">
+          <param name="compile.mode" value="FORCE"/>
+          <param name="jit.threshold" value="0"/>
+      </antcall>
+  </target>
+  
+  <target name="run-junit-precompiled-1.9" description="runs junit tests">
+      <antcall target="run-junit-1.9" inheritall="false">
+          <param name="compile.mode" value="FORCE"/>
+          <param name="jit.threshold" value="0"/>
+      </antcall>
+  </target>
+  
+  <target name="run-junit-reflected-precompiled" description="runs junit tests">
+      <antcall target="run-junit-1.8" inheritall="false">
+          <param name="compile.mode" value="FORCE"/>
+          <param name="jit.threshold" value="0"/>
+          <param name="reflection" value="true"/>
+      </antcall>
+  </target>
+  
+  <target name="run-junit-reflected-precompiled-1.9" description="runs junit tests">
+      <antcall target="run-junit-1.9" inheritall="false">
+          <param name="compile.mode" value="FORCE"/>
           <param name="jit.threshold" value="0"/>
           <param name="reflection" value="true"/>
       </antcall>
@@ -506,14 +516,22 @@ test/externals/rubinius/spec/parser"/>
   <target name="run-junit-threadpool" depends="run-junit-interpreted-threadpool,run-junit-compiled-threadpool"/>
   
   <target name="run-junit-interpreted-threadpool" description="runs junit tests">
-      <antcall target="run-junit-1.8">
+      <antcall target="run-junit-1.8" inheritall="false">
           <param name="thread.pooling" value="true"/>
       </antcall>
   </target>
   
   <target name="run-junit-compiled-threadpool" description="runs junit tests">
-      <antcall target="run-junit-1.8">
+      <antcall target="run-junit-1.8" inheritall="false">
           <param name="compile.mode" value="JIT"/>
+          <param name="jit.threshold" value="0"/>
+          <param name="thread.pooling" value="true"/>
+      </antcall>
+  </target>
+  
+  <target name="run-junit-precompiled-threadpool" description="runs junit tests">
+      <antcall target="run-junit-1.8" inheritall="false">
+          <param name="compile.mode" value="FORCE"/>
           <param name="jit.threshold" value="0"/>
           <param name="thread.pooling" value="true"/>
       </antcall>
@@ -551,6 +569,7 @@ test/externals/rubinius/spec/parser"/>
       <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
       <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
       <sysproperty key="jruby.reflection" value="${reflection}"/>
+      <sysproperty key="jruby.jit.logging.verbose" value="true"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
 
@@ -599,6 +618,7 @@ test/externals/rubinius/spec/parser"/>
       <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
       <sysproperty key="jruby.reflection" value="${reflection}"/>
       <sysproperty key="jruby.compat.version" value="ruby1_9"/>
+      <sysproperty key="jruby.jit.logging.verbose" value="true"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
 
@@ -649,6 +669,79 @@ test/externals/rubinius/spec/parser"/>
       <fileset dir="${test.results.dir}" includes="TEST-*.xml"/>
       <report format="frames" todir="${html.test.results.dir}"/>
     </junitreport>
+  </target>
+  
+  <target name="fetch-specs">
+      <exec dir="${build.dir}" executable="git">
+          <arg value="clone"/>
+          <arg value="--depth"/><arg value="1"/>
+          <arg value="git://git.rubini.us/code"/>
+          <arg value="rubinius"/>
+      </exec>
+  </target>
+  
+  <target name="clear-specs">
+      <delete dir="${build.dir}/rubinius"/>
+  </target>
+  
+  <target name="run-specs" >
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubinius">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      
+      <arg value="bin/mspec"/>
+      <arg value="-t"/>
+      <arg value="j"/>
+      <arg value="-p"/>
+      <arg value="spec"/>
+    </java>
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubinius">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      <sysproperty key="jruby.objectspace.enabled" value="true"/>
+      
+      <jvmarg value="-ea"/>
+      
+      <arg value="-Ispec"/>
+      <arg value="-rmini_rspec.rb"/>
+      <arg value="-rmini_mock.rb"/>
+      <arg value="tmp/last_mspec.rb"/>
+    </java>
+  </target>
+  
+  <target name="run-spec">
+    <!-- set up properties that haven't been assigned -->
+    <property name="compile.mode" value="OFF"/>
+    <property name="jit.threshold" value="20"/>
+    <property name="objectspace.enabled" value="true"/>
+    <property name="thread.pooling" value="false"/>
+    <property name="reflection" value="false"/>
+    <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
+    
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      
+      <sysproperty key="jruby.compile.mode" value="${compile.mode}"/>
+      <sysproperty key="jruby.jit.threshold" value="${jit.threshold}"/>
+      <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
+      <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
+      <sysproperty key="jruby.reflection" value="${reflection}"/>
+      <sysproperty key="jruby.compat.version" value="ruby1_8"/>
+      
+      <arg value="-I"/>
+      <arg value="test/externals/rubinius/spec"/>
+      <arg value="-S"/>
+      <arg value="spec"/>
+      <arg value="--format"/>
+      <arg value="e"/>
+      <arg line="${SPEC}"/>
+      
+      <jvmarg value="-ea"/>
+    </java>
   </target>
 
   <target name="create-apidocs" depends="prepare" 

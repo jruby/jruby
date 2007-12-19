@@ -5,40 +5,47 @@
 
 package org.jruby.util;
 
+import java.io.IOException;
+import java.util.regex.Pattern;
+
 /**
  *
  * @author headius
  */
 public class JavaNameMangler {
+    public static final Pattern PATH_SPLIT = Pattern.compile("[/\\\\]");
+    
     public static String mangleFilenameForClasspath(String filename) {
-        String classPath = filename;
-        if (classPath.startsWith("./")) classPath = classPath.substring(2);
-
-        classPath = classPath.substring(0, classPath.lastIndexOf(".")).replace('-', '_').replace('.', '_');
-        int lastSlashIndex = classPath.lastIndexOf('/');
-        if (!Character.isJavaIdentifierStart(classPath.charAt(lastSlashIndex + 1))) {
-            if (lastSlashIndex == -1) {
-                classPath = "_" + classPath;
-            } else {
-                classPath = classPath.substring(0, lastSlashIndex + 1) + "_" + classPath.substring(lastSlashIndex + 1);
+        try {
+            String classPath = new JRubyFile(filename).getCanonicalPath().toString();
+            String[] pathElements = PATH_SPLIT.split(classPath);
+            StringBuffer newPath = new StringBuffer("ruby");
+            
+            for (String element : pathElements) {
+                if (element.length() <= 0) {
+                    continue;
+                }
+                
+                newPath.append("/");
+                if (!Character.isJavaIdentifierStart(element.charAt(0))) {
+                    newPath.append("$");
+                }
+                newPath.append(mangleMethodForCleanJavaIdentifier(element));
             }
+
+            return newPath.toString();
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new RuntimeException(ioe);
         }
-        
-        return classPath;
     }
     
     public static String mangledFilenameForStartupClasspath(String filename) {
-        String classname;
         if (filename.equals("-e")) {
-            classname = "__dash_e__";
-        } else {
-            classname = filename.replace('\\', '/').replaceAll(".rb", "");
+            return "__dash_e__";
         }
-        // remove leading / or ./ from classname, since it will muck up the dotted name
-        if (classname.startsWith("/")) classname = classname.substring(1);
-        if (classname.startsWith("./")) classname = classname.substring(2);
         
-        return classname;
+        return mangleFilenameForClasspath(filename);
     }
     
     public static String mangleMethodForCleanJavaIdentifier(String name) {
@@ -97,6 +104,9 @@ public class JavaNameMangler {
                     continue;
                 case '&':
                     cleanBuffer.append("and_");
+                    continue;
+                case '.':
+                    cleanBuffer.append("dot_");
                     continue;
                 default:
                     cleanBuffer.append(Integer.toHexString(characters[i])).append("_");

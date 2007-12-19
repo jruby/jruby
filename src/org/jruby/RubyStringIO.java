@@ -435,6 +435,8 @@ public class RubyStringIO extends RubyObject {
         switch (args.length) {
         case 2:
             originalString = args[1].convertToString();
+            // must let original string know we're modifying, so shared buffers aren't damaged
+            originalString.modify();
             buf = originalString.getByteList();
         case 1:
             if (!args[0].isNil()) {

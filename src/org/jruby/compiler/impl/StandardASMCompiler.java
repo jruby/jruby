@@ -2273,7 +2273,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeUtilityMethod("retryJump", cg.sig(IRubyObject.class));
         }
 
-        public void defineNewMethod(String name, StaticScope scope, 
+        public void defineNewMethod(String name, int methodArity, StaticScope scope, 
                 CompilerCallback body, CompilerCallback args, 
                 CompilerCallback receiver, ASTInspector inspector, boolean root) {
             // TODO: build arg list based on number of args, optionals, etc
@@ -2308,7 +2308,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             buildStaticScopeNames(method, scope);
 
-            method.ldc(scope.getArity().getValue());
+            method.ldc(methodArity);
             
             // arities
             method.ldc(scope.getRequiredArgs());

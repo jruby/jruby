@@ -523,6 +523,10 @@ public final class Ruby {
     }
     
     private Script tryCompile(Node node) {
+        return tryCompile(node, new JRubyClassLoader(getJRubyClassLoader()));
+    }
+    
+    private Script tryCompile(Node node, JRubyClassLoader classLoader) {
         Script script = null;
         try {
             String filename = node.getPosition().getFile();
@@ -534,7 +538,7 @@ public final class Ruby {
             StandardASMCompiler asmCompiler = new StandardASMCompiler(classname, filename);
             ASTCompiler compiler = new ASTCompiler();
             compiler.compileRoot(node, asmCompiler, inspector);
-            script = (Script)asmCompiler.loadClass(this.getJRubyClassLoader()).newInstance();
+            script = (Script)asmCompiler.loadClass(classLoader).newInstance();
 
             if (config.isJitLogging()) {
                 System.err.println("compiled: " + node.getPosition().getFile());
@@ -542,22 +546,27 @@ public final class Ruby {
         } catch (NotCompilableException nce) {
             if (config.isJitLoggingVerbose()) {
                 System.err.println("Error -- Not compileable: " + nce.getMessage());
+                nce.printStackTrace();
             }
         } catch (ClassNotFoundException e) {
             if (config.isJitLoggingVerbose()) {
                 System.err.println("Error -- Not compileable: " + e.getMessage());
+                e.printStackTrace();
             }
         } catch (InstantiationException e) {
             if (config.isJitLoggingVerbose()) {
                 System.err.println("Error -- Not compileable: " + e.getMessage());
+                e.printStackTrace();
             }
         } catch (IllegalAccessException e) {
             if (config.isJitLoggingVerbose()) {
                 System.err.println("Error -- Not compileable: " + e.getMessage());
+                e.printStackTrace();
             }
         } catch (Throwable t) {
             if (config.isJitLoggingVerbose()) {
-                System.err.println("coult not compile: " + node.getPosition().getFile() + " because of: \"" + t.getMessage() + "\"");
+                System.err.println("could not compile: " + node.getPosition().getFile() + " because of: \"" + t.getMessage() + "\"");
+                t.printStackTrace();
             }
         }
         
@@ -1836,9 +1845,7 @@ public final class Ruby {
             
             Node scriptNode = parseFile(in, filename, null);
             
-            getCurrentContext().getCurrentFrame().setPosition(scriptNode.getPosition());
-            
-            Script script = tryCompile(scriptNode);
+            Script script = tryCompile(scriptNode, new JRubyClassLoader(jrubyClassLoader));
             if (script == null) {
                 System.err.println("Error, could not compile; pass -J-Djruby.jit.logging.verbose=true for more details");
             }

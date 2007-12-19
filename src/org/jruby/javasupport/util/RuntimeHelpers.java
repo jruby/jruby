@@ -798,7 +798,7 @@ public class RuntimeHelpers {
     }
     
     public static void preLoad(ThreadContext context, String[] varNames) {
-        StaticScope staticScope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), varNames);
+        StaticScope staticScope = new LocalStaticScope(null, varNames);
         staticScope.setModule(context.getRuntime().getObject());
         DynamicScope scope = DynamicScope.newDynamicScope(staticScope);
         

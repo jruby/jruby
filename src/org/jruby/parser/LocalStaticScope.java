@@ -34,7 +34,6 @@ import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.VCallNode;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.DynamicScope;
 
 public class LocalStaticScope extends StaticScope {
     private static final long serialVersionUID = 2204064248888411628L;
