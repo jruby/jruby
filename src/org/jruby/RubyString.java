@@ -1942,7 +1942,6 @@ public class RubyString extends RubyObject {
             RubyRegexp regSub = (RubyRegexp)sub;
             if(regSub.length() > 0) {
                 pos = regSub.adjustStartPos(this, pos, true);
-                if (pos == value.realSize) pos--;
                 pos = regSub.search(this, pos, true);
             }
             if (pos >= 0) return RubyFixnum.newFixnum(getRuntime(), pos);
