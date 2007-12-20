@@ -30,7 +30,7 @@ public class JavaNameMangler {
                 if (!Character.isJavaIdentifierStart(element.charAt(0))) {
                     newPath.append("$");
                 }
-                newPath.append(mangleMethodForCleanJavaIdentifier(element));
+                newPath.append(mangleStringForCleanJavaIdentifier(element));
             }
 
             return newPath.toString();
@@ -48,7 +48,7 @@ public class JavaNameMangler {
         return mangleFilenameForClasspath(filename);
     }
     
-    public static String mangleMethodForCleanJavaIdentifier(String name) {
+    public static String mangleStringForCleanJavaIdentifier(String name) {
         char[] characters = name.toCharArray();
         StringBuffer cleanBuffer = new StringBuffer();
         boolean prevWasReplaced = false;

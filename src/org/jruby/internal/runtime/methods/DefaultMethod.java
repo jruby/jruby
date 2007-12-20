@@ -167,7 +167,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                 callCount++;
 
                 if (callCount >= runtime.getInstanceConfig().getJitThreshold()) {
-                    String cleanName = JavaNameMangler.mangleMethodForCleanJavaIdentifier(name);
+                    String cleanName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
                     String filename = "__eval__";
                     if (body != null) {
                         filename = body.getPosition().getFile();

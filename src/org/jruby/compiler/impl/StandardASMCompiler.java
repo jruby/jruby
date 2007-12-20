@@ -2028,7 +2028,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 final CompilerCallback pathCallback, 
                 final CompilerCallback bodyCallback, 
                 final CompilerCallback receiverCallback) {
-            String methodName = "rubyclass__" + JavaNameMangler.mangleMethodForCleanJavaIdentifier(name) + "__" + ++methodIndex;
+            String methodName = "rubyclass__" + JavaNameMangler.mangleStringForCleanJavaIdentifier(name) + "__" + ++methodIndex;
 
             final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null);
             
@@ -2119,7 +2119,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void defineModule(final String name, final StaticScope staticScope, final CompilerCallback pathCallback, final CompilerCallback bodyCallback) {
-            String methodName = "rubyclass__" + JavaNameMangler.mangleMethodForCleanJavaIdentifier(name) + "__" + ++methodIndex;
+            String methodName = "rubyclass__" + JavaNameMangler.mangleStringForCleanJavaIdentifier(name) + "__" + ++methodIndex;
 
             final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null);
 
@@ -2282,7 +2282,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             if (root && Boolean.getBoolean("jruby.compile.toplevel")) {
                 methodName = name;
             } else {
-                methodName = JavaNameMangler.mangleMethodForCleanJavaIdentifier(name) + "__" + methodIndex;
+                methodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name) + "__" + methodIndex;
             }
 
             MethodCompiler methodCompiler = startMethod(methodName, args, scope, inspector);
@@ -2686,7 +2686,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
     
     public String cacheCallSite(String name, CallType callType) {
-        String fieldName = getNewConstant(cg.ci(CallSite.class), JavaNameMangler.mangleMethodForCleanJavaIdentifier(name));
+        String fieldName = getNewConstant(cg.ci(CallSite.class), JavaNameMangler.mangleStringForCleanJavaIdentifier(name));
         
         // retrieve call adapter
         initMethod.aload(THIS);
@@ -2704,11 +2704,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
     
     public String cachePosition(String file, int line) {
-        String cleanName = JavaNameMangler.mangleMethodForCleanJavaIdentifier(file + "$" + line);
+        String cleanName = JavaNameMangler.mangleStringForCleanJavaIdentifier(file + "$" + line);
         String fieldName = sourcePositions.get(cleanName);
         if (fieldName == null) {
             fieldName = getNewStaticConstant(cg.ci(ISourcePosition.class), cleanName);
-            sourcePositions.put(JavaNameMangler.mangleMethodForCleanJavaIdentifier(file + "$" + line), fieldName);
+            sourcePositions.put(JavaNameMangler.mangleStringForCleanJavaIdentifier(file + "$" + line), fieldName);
 
             clinitMethod.ldc(file);
             clinitMethod.ldc(line);
