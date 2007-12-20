@@ -554,6 +554,19 @@ $KCODE = old_code
 # unpack("U*") should raise ArgumentError when the string is not valid UTF8
 test_exception(ArgumentError) { x2.unpack("U*") }
 
+# unpack with Z* and Z patterns
+test_equal(["abc ", "abc "],    "abc \0abc \0".unpack('Z*Z*'))
+test_equal(["abc "],            "abc \0abc \0".unpack('Z10'))
+test_equal(["abc ", "c "],      "abc \0abc \0".unpack('Z7Z*'))
+test_equal(["abc ", ""],        "abc \0abc \0".unpack('Z50Z*'))
+test_equal(["abc ", ""],        "abc \0\0\0abc \0".unpack('Z*Z*'))
+test_equal(["abc "],            "abc \0\0\0\0".unpack('Z*'))
+test_equal(["abc ", ""],        "abc \0\0\0\0".unpack('Z*Z*'))
+test_equal([""],                "\0".unpack('Z*'))
+test_equal([""],                "\0\0".unpack('Z*'))
+test_equal([""],                "\0\0abc".unpack('Z*'))
+test_equal([""],                "\0\0abc\0\0".unpack('Z*'))
+
 # and just for kicks, make sure we're returning appropriate byte values for each_byte!
 
 bytes = []

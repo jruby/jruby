@@ -678,22 +678,44 @@ public class Pack {
                     break;
                 case 'Z' :
                     {
-                    if (occurrences == IS_STAR || occurrences > encode.remaining()) {
-                        occurrences = encode.remaining();
-                    }
+                        boolean isStar = (occurrences == IS_STAR);
 
-                    byte[] potential = new byte[occurrences];
-                    encode.get(potential);
+                        if (occurrences == IS_STAR || occurrences > encode.remaining()) {
+                            occurrences = encode.remaining();
+                        }
 
-                    for (int t = occurrences - 1; occurrences > 0; occurrences--, t--) {
-                        char c = (char)potential[t];
+                        byte[] potential = new byte[occurrences];
+                        int t = 0;
 
-                           if (c != '\0') {
-                               break;
-                           }
-                    }
+                        while (t < occurrences) {
+                            byte b = encode.get();
+                            if (b == 0) {
+                                break;
+                            }
+                            potential[t] = b; 
+                            t++;
+                        }
 
-                    result.append(RubyString.newString(runtime, new ByteList(potential, 0, occurrences,false)));
+                        result.append(RubyString.newString(runtime,
+                                new ByteList(potential, 0, t , false)));
+
+                        // In case when the number of occurences is
+                        // explicitly specified, we have to read up
+                        // the remaining garbage after the '\0' to
+                        // satisfy the requested pattern.
+                        if (!isStar) {
+                            if (t < occurrences) {
+                                // We encountered '\0' when
+                                // were reading the buffer above,
+                                // increment the number of read bytes.
+                                t++;
+                            }
+
+                            while (t < occurrences) {
+                                encode.get();
+                                t++;
+                            }
+                        }
                     }
                     break;
                 case 'a' :
