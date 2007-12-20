@@ -1774,8 +1774,6 @@ public class RubyString extends RubyObject {
         ThreadContext context = getRuntime().getCurrentContext();
         Frame frame = context.getPreviousFrame();
         
-        tmpLock();
-        
         int n = 0;
         int offset = 0;
         RubyString val;
@@ -1853,7 +1851,6 @@ public class RubyString extends RubyObject {
         }        
         
         rubyRegex.updateBackRef(this, frame, matcher);
-        tmpUnlock(); // MRI doesn't rb_ensure this
 
         dest.realSize = bp - buf;
         if (bang) {
