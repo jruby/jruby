@@ -331,11 +331,11 @@
   <target name="test" depends="
     copy-test-files,
     instrument,
-    run-junit-precompiled,
+    run-junit-compiled,
     run-junit-interpreted,
-    run-junit-precompiled-1.9,
+    run-junit-compiled-1.9,
     run-junit-interpreted-1.9,
-    run-spec-precompiled,
+    run-spec-compiled,
     run-spec-interpreted,
     compile-stdlib,
     coverage-report">
@@ -557,7 +557,7 @@ test/externals/rubinius/spec/parser"/>
     <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
     
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
+    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="600000">
       <classpath refid="test.class.path"/>
       
       <sysproperty key="java.awt.headless" value="true"/>
@@ -605,7 +605,7 @@ test/externals/rubinius/spec/parser"/>
     <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
     
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
+    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="600000">
       <classpath refid="test.class.path"/>
       
       <sysproperty key="java.awt.headless" value="true"/>
@@ -646,7 +646,7 @@ test/externals/rubinius/spec/parser"/>
     <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
     
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="180000">
+    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="600000">
       <classpath refid="test.class.path"/>
       
       <sysproperty key="java.awt.headless" value="true"/>
@@ -670,6 +670,8 @@ test/externals/rubinius/spec/parser"/>
       <report format="frames" todir="${html.test.results.dir}"/>
     </junitreport>
   </target>
+  
+  <target name="spec" depends="clear-specs, fetch-specs, run-specs"/>
   
   <target name="fetch-specs">
       <exec dir="${build.dir}" executable="git">
