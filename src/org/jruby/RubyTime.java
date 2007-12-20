@@ -724,7 +724,7 @@ public class RubyTime extends RubyObject {
                 }
                 long value = RubyNumeric.num2long(args[i + 2]);
                 if (time_min[i] > value || value > time_max[i]) {
-                    throw runtime.newArgumentError("Argument out of range.");
+                    throw runtime.newArgumentError("argument out of range.");
                 }
                 int_args[i] = (int) value;
             }
@@ -743,6 +743,22 @@ public class RubyTime extends RubyObject {
             dt = dt.withZone(getLocalTimeZone(runtime));
         }
 
+        // round seconds and minutes up to the nearest minute and hour
+        if (int_args[3] > 59) {
+            int minutes = int_args[3] / 60;
+            int seconds = int_args[3] % 60;
+            int_args[3] = seconds;
+            int_args[2] += minutes;
+        }
+        if (int_args[2] > 59) {
+            int hours = int_args[2] / 60;
+            int minutes = int_args[2] % 60;
+            int_args[2] = minutes;
+            int_args[1] += hours;
+        }
+        if (int_args[1] > 23) {
+            throw runtime.newArgumentError("argument out of range.");
+        }
         dt = dt.withDate(year, month, int_args[0])
             .withHourOfDay(int_args[1])
             .withMinuteOfHour(int_args[2])
