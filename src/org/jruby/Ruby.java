@@ -226,9 +226,10 @@ public final class Ruby {
     private RubyModule precisionModule;
 
     private RubyClass exceptionClass;
+    private RubyClass standardError;
 
-    private RubyClass systemCallError = null;
-    private RubyModule errnoModule = null;
+    private RubyClass systemCallError;
+    private RubyModule errnoModule;
     private IRubyObject topSelf;
     
     // record separator var, to speed up io ops that use it
@@ -962,7 +963,11 @@ public final class Ruby {
     }
     void setException(RubyClass exceptionClass) {
         this.exceptionClass = exceptionClass;
-    }    
+    }
+    
+    public RubyClass getStandardError() {
+        return standardError;
+    }
 
     public RubyModule getModule(String name) {
         return (RubyModule) objectClass.getConstantAt(name);
@@ -1281,6 +1286,8 @@ public final class Ruby {
         registerBuiltin("bigdecimal.rb", new LateLoadingLibrary("bigdecimal", "org.jruby.libraries.BigDecimalLibrary", getJRubyClassLoader()));
         registerBuiltin("io/wait.so", new LateLoadingLibrary("io/wait", "org.jruby.libraries.IOWaitLibrary", getJRubyClassLoader()));
         registerBuiltin("etc.so", NO_OP_LIBRARY);
+        registerBuiltin("weakref.rb", new LateLoadingLibrary("weakref", "org.jruby.ext.WeakRef$WeakRefLibrary", getJRubyClassLoader()));
+        
         if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
             registerBuiltin("fiber.so", new LateLoadingLibrary("fiber", "org.jruby.libraries.FiberLibrary", getJRubyClassLoader()));
         }
@@ -1380,8 +1387,6 @@ public final class Ruby {
         if (profile.allowClass("Time")) RubyTime.createTimeClass(this);
         if (profile.allowClass("UnboundMethod")) RubyUnboundMethod.defineUnboundMethodClass(this);
 
-        RubyClass exceptionClass = fastGetClass("Exception");
-        RubyClass standardError = null;
         RubyClass runtimeError = null;
         RubyClass ioError = null;
         RubyClass scriptError = null;
