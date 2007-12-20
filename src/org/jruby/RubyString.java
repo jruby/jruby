@@ -416,7 +416,7 @@ public class RubyString extends RubyObject {
             newBytes.append(value);
         }
 
-        RubyString newString = newString(getRuntime(), newBytes);
+        RubyString newString = new RubyString(getRuntime(), getMetaClass(), newBytes);
         newString.setTaint(isTaint());
         return newString;
     }

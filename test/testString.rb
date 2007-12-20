@@ -640,6 +640,11 @@ f = FooStr.new("AAAA")
 
 test_equal("AAAA", [f].join(','))
 
+# multiplication shoul return proper subclass
+class MyTestString < String; end
+my_str = MyTestString.new
+test_equal(my_str.class, (my_str * 3).class)
+
 # test coercion for multiple methods
 class Foo
   def to_int
