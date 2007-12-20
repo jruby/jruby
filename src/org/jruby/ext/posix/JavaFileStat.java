@@ -29,8 +29,12 @@ public class JavaFileStat implements FileStat {
         // Parent file last modified will only represent when something was added or removed.
         // This is not correct, but it is better than nothing and does work in one common use
         // case.
-        st_ctime = (int) (file.getParentFile().lastModified() / 1000);
         st_mtime = (int) (file.lastModified() / 1000);
+        if (file.getParentFile() != null) {
+            st_ctime = (int) (file.getParentFile().lastModified() / 1000);
+        } else {
+            st_ctime = st_mtime;
+        }
     }
 
     private short calculateMode(File file, short st_mode) {
@@ -56,6 +60,10 @@ public class JavaFileStat implements FileStat {
     }
     
     private short calculateSymlink(File file, short st_mode) throws IOException {
+        if (file.getAbsoluteFile().getParentFile() == null) {
+            return st_mode;
+        }
+
         File absoluteParent = file.getAbsoluteFile().getParentFile();
         File canonicalParent = absoluteParent.getCanonicalFile();
         

@@ -38,6 +38,7 @@ import junit.framework.TestSuite;
 
 import org.jruby.ast.executable.YARVMachineTest;
 import org.jruby.ast.visitor.rewriter.VisitorTestSuite;
+import org.jruby.ext.posix.JavaFileStatTest;
 import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
 import org.jruby.runtime.callback.TestReflectionCallback;
@@ -83,6 +84,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestParser.class);    
         suite.addTestSuite(TestRubyBigDecimal.class);
         suite.addTestSuite(JRubyThreadContextTest.class);
+        suite.addTestSuite(JavaFileStatTest.class);
         return suite;
     }
 }
