@@ -505,6 +505,13 @@ def str.inspect() "string".taint end
 test_equal(true, ("%s" % str).tainted?)
 test_equal(true, ("%p" % str).tainted?)
 
+test_equal(true, "hello".taint.crypt("other").tainted?)
+test_equal(true, "hello".crypt("other".taint).tainted?)
+test_equal(true, "hello".taint.dump.tainted?)
+test_equal(true, "hello".taint.inspect.tainted?)
+test_equal(true, ("%s".taint % "hello").tainted?)
+test_equal(true, "hello".taint.inspect.tainted?)
+
 # test that extensions of the base classes are typed correctly
 class StringExt < String
   def [](arg)

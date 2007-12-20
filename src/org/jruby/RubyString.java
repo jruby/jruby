@@ -424,7 +424,9 @@ public class RubyString extends RubyObject {
     @JRubyMethod(name = "%", required = 1)
     public IRubyObject op_format(IRubyObject arg) {
         // FIXME: Should we make this work with platform's locale, or continue hardcoding US?
-        return Sprintf.sprintf(getRuntime(), Locale.US, value, arg);
+        RubyString s = Sprintf.sprintf(getRuntime(), Locale.US, value, arg);
+        s.infectBy(this);
+        return s;
     }
 
     @JRubyMethod(name = "hash")
@@ -990,7 +992,9 @@ public class RubyString extends RubyObject {
         }
 
         sb.append('\"');
-        return getRuntime().newString(sb);
+        RubyString s = getRuntime().newString(sb);
+        s.infectBy(this);
+        return s;
     }
     
     private boolean isEVStr(int i, int length) {
@@ -1051,7 +1055,10 @@ public class RubyString extends RubyObject {
         }
 
         salt = salt.makeShared(0, 2);
-        return RubyString.newStringShared(getRuntime(),getMetaClass(), JavaCrypt.crypt(salt, this.getByteList()));
+        RubyString s = RubyString.newStringShared(getRuntime(),getMetaClass(), JavaCrypt.crypt(salt, this.getByteList()));
+        s.infectBy(this);
+        s.infectBy(other);
+        return s;
     }
 
     public static class JavaCrypt {
