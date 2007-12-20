@@ -54,6 +54,7 @@ class TestThread < Test::Unit::TestCase
 
   def test_status
     t = Thread.new { Thread.current.status }
+    t.join
     v = t.value
     assert_equal("run", v)
     assert_equal(false, t.status)
