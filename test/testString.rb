@@ -367,6 +367,24 @@ s = o.dup
 test_equal("Bar", s.slice!("Bar"))
 test_equal("Foo", s)
 
+s = o.dup
+res = "Exception thrown"
+test_no_exception {
+  res = s.slice!(0.5, 2.5)
+}
+test_equal("Fo", res)
+test_equal("oBar", s)
+
+s = o.dup
+obj = Object.new
+def obj.to_int() 2 end
+res = "Exception thrown"
+test_no_exception {
+  res = s.slice!(obj, obj)
+}
+test_equal("oB", res)
+test_equal("Foar", s)
+
 ##### split ######
 
 test_equal(["1", "2", "3"], "1x2x3".split('x'))

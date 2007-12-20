@@ -2096,38 +2096,28 @@ public class RubyString extends RubyObject {
     public IRubyObject op_aset(IRubyObject[] args) {
         int strLen = value.length();
         if (Arity.checkArgumentCount(getRuntime(), args, 2, 3) == 3) {
-            if (args[0] instanceof RubyFixnum) {
-                RubyString repl = stringValue(args[2]);
-                int beg = RubyNumeric.fix2int(args[0]);
-                int len = RubyNumeric.fix2int(args[1]);
-                if (len < 0) throw getRuntime().newIndexError("negative length");
-                if (beg < 0) beg += strLen;
-
-                if (beg < 0 || (beg > 0 && beg > strLen)) {
-                    throw getRuntime().newIndexError("string index out of bounds");
-                }
-                if (beg + len > strLen) len = strLen - beg;
-
-                replace(beg, len, repl);
-                return repl;
-            }
             if (args[0] instanceof RubyRegexp) {
                 RubyString repl = stringValue(args[2]);
                 int nth = RubyNumeric.fix2int(args[1]);
                 subpatSet((RubyRegexp) args[0], nth, repl);
                 return repl;
             }
+            RubyString repl = stringValue(args[2]);
+            int beg = RubyNumeric.fix2int(args[0]);
+            int len = RubyNumeric.fix2int(args[1]);
+            if (len < 0) throw getRuntime().newIndexError("negative length");
+            if (beg < 0) beg += strLen;
+
+            if (beg < 0 || (beg > 0 && beg > strLen)) {
+                throw getRuntime().newIndexError("string index out of bounds");
+            }
+            if (beg + len > strLen) len = strLen - beg;
+
+            replace(beg, len, repl);
+            return repl;
         }
         if (args[0] instanceof RubyFixnum || args[0].respondsTo("to_int")) { // FIXME: RubyNumeric or RubyInteger instead?
-            int idx = 0;
-
-            // FIXME: second instanceof check adds overhead?
-            if (!(args[0] instanceof RubyFixnum)) {
-                // FIXME: ok to cast?
-                idx = (int)args[0].convertToInteger().getLongValue();
-            } else {
-                idx = RubyNumeric.fix2int(args[0]); // num2int?
-            }
+            int idx = RubyNumeric.fix2int(args[0]);
             
             if (idx < 0) idx += value.length();
 
