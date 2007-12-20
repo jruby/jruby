@@ -1567,8 +1567,7 @@ public class RubyIO extends RubyObject {
            
            if (block.isGiven()) {
                try {
-                   block.yield(runtime.getCurrentContext(), io);
-                   return runtime.getNil();
+                   return block.yield(runtime.getCurrentContext(), io);
                } finally {
                    io.close();
                    runtime.getGlobalVariables().set("$?",  RubyProcess.RubyStatus.newProcessStatus(runtime, (process.waitFor() * 256)));
