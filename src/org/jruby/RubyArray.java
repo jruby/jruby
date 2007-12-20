@@ -1172,14 +1172,8 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "each", frame = true)
     public IRubyObject each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
-        if (isShared) {
-            for (int i = begin; i < begin + realLength; i++) {
-                block.yield(context, values[i]);
-            }
-        } else {
-            for (int i = 0; i < realLength; i++) {
-                block.yield(context, values[i]);
-            }
+        for (int i = 0; i < realLength; i++) {
+            block.yield(context, values[begin + i]);
         }
         return this;
     }
