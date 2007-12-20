@@ -24,7 +24,7 @@ public class ByteListLexerSource extends LexerSource {
     }
 
     @Override
-    public boolean matchMarker(ByteList marker, boolean indent) throws IOException {
+    public boolean matchMarker(ByteList marker, boolean indent, boolean checkNewline) throws IOException {
         // Where we started this marker match
         int start = index;
         
@@ -45,16 +45,20 @@ public class ByteListLexerSource extends LexerSource {
             }
         }
 
+        if (!checkNewline) return true;
+        
         char c = (char) internalRead();
-        if (c != RubyYaccLexer.EOF && c != '\n') return false;
-
-        return true;
+        
+        if (c == RubyYaccLexer.EOF || c == '\n') return true;
+        
+        index = start;
+        
+        return false; 
     }
 
     @Override
     public boolean peek(int c) throws IOException {
-        // PEEK(EOF)?
-        if (index >= realSize) return false;
+        if (index >= realSize) return c == RubyYaccLexer.EOF;
         
         return bytes[index] == c;
     }
@@ -99,7 +103,7 @@ public class ByteListLexerSource extends LexerSource {
             count++;
         }
         
-        return new ByteList(bytes, index - count, count, false);
+        return new ByteList(bytes, index - count - 1, count, false);
     }
     
     @Override
@@ -132,23 +136,10 @@ public class ByteListLexerSource extends LexerSource {
         return index == 0 || bytes[index - 1] == '\n';
     }
 
-    // FIXME: Make faster
     @Override
-    public String matchMarkerNoCase(ByteList match) throws IOException {
-       ByteList buf = new ByteList(match.length());
-        
-        for (int i = 0; i < match.length(); i++) {
-            char c = match.charAt(i);
-            int r = read();
-            buf.append(r);
-            
-            if (Character.toLowerCase(c) != r && Character.toUpperCase(c) != r) {
-                unreadMany(buf);
-                return null;
-            }
-        }
-
-        return buf.toString();
+    public boolean lastWasBeginOfLine() {
+        // FIXME: Old Mac format strings?
+        return index == 0 || bytes[index] == '\n';
     }
 
     public static LexerSource getSource(String file, ByteList content, List<String> list,
@@ -182,21 +173,21 @@ public class ByteListLexerSource extends LexerSource {
     }
 
     @Override
-    public ByteList readIdentifer() throws IOException {
-        int begin = index;
-        int i = begin;
+    public String toString() {
+        try {
+            ByteList buffer = new ByteList(20);
+            buffer.append(bytes[index - 1]);
+            buffer.append(bytes[index]);
+            buffer.append(new byte[] {'-', '>'});
+            for (int i = index + 1; i < index + 20; i++) {
+                if (index > realSize) break;
 
-        for ( ; i < realSize && RubyYaccLexer.isIdentifierChar((char) bytes[i]); i++ ) {
-        }
-        
-        if (bytes[i] == '!' || bytes[i] == '?') {
-            if ((i + 1) < realSize && bytes[i+1] != '=') {
-                i++;
+                buffer.append(bytes[i]);
             }
+            buffer.append(new byte[] {' ', '.', '.', '.'});
+            return buffer.toString();
+        } catch(Exception e) {
+            return null;
         }
-        
-        index = i;
-        return new ByteList(bytes, begin, i - begin, false);
     }
-
 }

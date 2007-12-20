@@ -166,13 +166,12 @@ public abstract class LexerSource {
      * 
      * @param marker to match against
      * @param indent eat any leading whitespace
+     * @param withNewline includes a check that marker is followed by newline or EOF
      * @return true if marker matches...false otherwise
      * @throws IOException if an error occurred reading from underlying IO source
      */
-    public abstract boolean matchMarker(ByteList marker, boolean indent) throws IOException;
-    public abstract String matchMarkerNoCase(ByteList marker) throws IOException;
+    public abstract boolean matchMarker(ByteList marker, boolean indent, boolean withNewline) throws IOException;
 
-    public abstract ByteList readIdentifer() throws IOException;
     public abstract int read() throws IOException;
     public abstract ByteList readUntil(char c) throws IOException;
     public abstract ByteList readLineBytes() throws IOException;
@@ -180,5 +179,6 @@ public abstract class LexerSource {
     public abstract void unread(int c);
     public abstract void unreadMany(CharSequence line);
     public abstract boolean peek(int c) throws IOException;
+    public abstract boolean lastWasBeginOfLine();
     public abstract boolean wasBeginOfLine();
 }

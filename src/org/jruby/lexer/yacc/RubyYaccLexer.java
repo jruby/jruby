@@ -46,6 +46,7 @@ import org.jruby.ast.CommentNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.NthRefNode;
+import org.jruby.ast.StrNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.Tokens;
@@ -510,6 +511,7 @@ public class RubyYaccLexer {
             do {
                 markerValue.append(c);
             } while ((c = src.read()) != EOF && isIdentifierChar(c));
+
             src.unread(c);
         }
 
@@ -570,7 +572,7 @@ public class RubyYaccLexer {
      * Not normally used, but is left in here since it can be useful in debugging
      * grammar and lexing problems.
      *
-     *
+     */
     private void printToken(int token) {
         //System.out.print("LOC: " + support.getPosition() + " ~ ");
         
@@ -631,7 +633,7 @@ public class RubyYaccLexer {
         	case Tokens.tCVAR: System.err.print("tCVAR,"); break;
         	case Tokens.tINTEGER: System.err.print("tINTEGER,"); break;
         	case Tokens.tFLOAT: System.err.print("tFLOAT,"); break;
-            case Tokens.tSTRING_CONTENT: System.err.print("tSTRING_CONTENT[" + yaccValue + "],"); break;
+            case Tokens.tSTRING_CONTENT: System.err.print("tSTRING_CONTENT[" + ((StrNode) value()).getValue().toString() + "],"); break;
             case Tokens.tSTRING_BEG: System.err.print("tSTRING_BEG,"); break;
             case Tokens.tSTRING_END: System.err.print("tSTRING_END,"); break;
             case Tokens.tSTRING_DBEG: System.err.print("STRING_DBEG,"); break;
@@ -681,12 +683,12 @@ public class RubyYaccLexer {
 
     // DEBUGGING HELP 
     private int yylex2() throws IOException {
-        int token = yylex2();
+        int token = yylex();
         
         printToken(token);
         
         return token;
-    }*/
+    }
 
     /**
      *  Returns the next token. Also sets yyVal is needed.
@@ -750,11 +752,10 @@ public class RubyYaccLexer {
                 // documentation nodes
                 if (src.wasBeginOfLine()) {
                     boolean doComments = parserSupport.getConfiguration().hasExtraPositionInformation();
-                    String equalLabel;
-                    if ((equalLabel = src.matchMarkerNoCase(BEGIN_DOC_MARKER)) != null) {
+                    if (src.matchMarker(BEGIN_DOC_MARKER, false, false)) {
                         if (doComments) {
                             tokenBuffer.setLength(0);
-                            tokenBuffer.append(equalLabel);
+                            tokenBuffer.append(BEGIN_DOC_MARKER);
                         }
                         c = src.read();
                         
@@ -775,8 +776,8 @@ public class RubyYaccLexer {
                                     throw new SyntaxException(getPosition(), "embedded document meets end of file");
                                 }
                                 if (c != '=') continue;
-                                if (src.wasBeginOfLine() && (equalLabel = src.matchMarkerNoCase(END_DOC_MARKER)) != null) {
-                                    if (doComments) tokenBuffer.append(equalLabel);
+                                if (src.wasBeginOfLine() && src.matchMarker(END_DOC_MARKER, false, false)) {
+                                    if (doComments) tokenBuffer.append(END_DOC_MARKER);
                                     ByteList list = src.readLineBytes();
                                     if (doComments) tokenBuffer.append(list);
                                     src.unread('\n');
@@ -882,7 +883,7 @@ public class RubyYaccLexer {
             case '@':
                 return at();
             case '_':
-                if (src.wasBeginOfLine() && src.matchMarker(END_MARKER, false)) {
+                if (src.wasBeginOfLine() && src.matchMarker(END_MARKER, false, true)) {
                 	parserSupport.getResult().setEndOffset(src.getOffset());
                     return EOF;
                 }

@@ -358,7 +358,7 @@ stmt          : kALIAS fitem {
               }
               | klEND tLCURLY compstmt tRCURLY {
                   if (support.isInDef() || support.isInSingle()) {
-                      yyerror("END in method; use at_exit");
+                      warnings.warn(getPosition($1), "END in method; use at_exit");
                   }
                   $$ = new PostExeNode(getPosition($3), $3);
               }
@@ -1602,10 +1602,10 @@ f_norm_arg     : tCONSTANT {
                    yyerror("formal argument cannot be a constant");
                }
                | tIVAR {
-                   yyerror("formal argument cannot be a global variable");
+                   yyerror("formal argument cannot be a instance variable");
                }
                | tGVAR {
-                   yyerror("formal argument cannot be an instance variable");
+                   yyerror("formal argument cannot be an global variable");
                }
                | tCVAR {
                    yyerror("formal argument cannot be a class variable");
@@ -1690,8 +1690,10 @@ singleton     : var_ref {
               | tLPAREN2 {
                   lexer.setState(LexState.EXPR_BEG);
               } expr opt_nl tRPAREN {
-                  if ($3 instanceof ILiteralNode) {
-                      yyerror("Can't define single method for literals.");
+                  if ($3 == null) {
+                      yyerror("can't define single method for ().");
+                  } else if ($3 instanceof ILiteralNode) {
+                      yyerror("can't define single method for literals.");
                   }
 		  support.checkExpression($3);
                   $$ = $3;
@@ -1707,7 +1709,7 @@ assoc_list    : none { // [!null]
               }
               | args trailer {
                   if ($1.size() % 2 != 0) {
-                      yyerror("Odd number list for Hash.");
+                      yyerror("odd number list for Hash.");
                   }
                   $$ = $1;
               }

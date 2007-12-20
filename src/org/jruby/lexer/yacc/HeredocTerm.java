@@ -66,12 +66,11 @@ public class HeredocTerm extends StrTerm {
     
     public int parseString(RubyYaccLexer lexer, LexerSource src) throws java.io.IOException {
         boolean indent = (flags & RubyYaccLexer.STR_FUNC_INDENT) != 0;
-        ByteList str = new ByteList();
 
         if (src.peek(RubyYaccLexer.EOF)) syntaxError(src);
 
         // Found end marker for this heredoc
-        if (src.wasBeginOfLine() && src.matchMarker(marker, indent)) {
+        if (src.lastWasBeginOfLine() && src.matchMarker(marker, indent, true)) {
             // Put back lastLine for any elements past start of heredoc marker
             src.unreadMany(lastLine);
             
@@ -79,15 +78,16 @@ public class HeredocTerm extends StrTerm {
             return Tokens.tSTRING_END;
         }
 
+        ByteList str = new ByteList();
+
         if ((flags & RubyYaccLexer.STR_FUNC_EXPAND) == 0) {
             do {
                 str.append(src.readLineBytes());
                 str.append('\n');
                 if (src.peek(RubyYaccLexer.EOF)) syntaxError(src);
-            } while (!src.matchMarker(marker, indent));
+            } while (!src.matchMarker(marker, indent, true));
         } else {
             int c = src.read();
-            ByteList buffer = new ByteList();
             if (c == '#') {
                 switch (c = src.read()) {
                 case '$':
@@ -99,7 +99,7 @@ public class HeredocTerm extends StrTerm {
                     lexer.setValue(new Token("#" + c, lexer.getPosition()));
                     return Tokens.tSTRING_DBEG;
                 }
-                buffer.append('#');
+                str.append('#');
             }
 
             src.unread(c);
@@ -108,22 +108,17 @@ public class HeredocTerm extends StrTerm {
             // more strange in
             // comparison
             do {
-                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, buffer)) == RubyYaccLexer.EOF) {
+                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, str)) == RubyYaccLexer.EOF) {
                     syntaxError(src);
                 }
                 if (c != '\n') {
-                    lexer.yaccValue = new StrNode(lexer.getPosition(), buffer);
+                    lexer.yaccValue = new StrNode(lexer.getPosition(), str);
                     return Tokens.tSTRING_CONTENT;
                 }
-                buffer.append(src.read());
+                str.append(src.read());
                 
-                if ((c = src.read()) == RubyYaccLexer.EOF) syntaxError(src);
-
-                // We need to pushback so when whole match looks it did not
-                // lose a char during last EOF
-                src.unread(c);
-            } while (!src.matchMarker(marker, indent));
-            str = buffer;
+                if (src.peek(RubyYaccLexer.EOF)) syntaxError(src);
+            } while (!src.matchMarker(marker, indent, true));
         }
 
         src.unreadMany(lastLine);

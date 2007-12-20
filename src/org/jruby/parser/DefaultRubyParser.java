@@ -781,17 +781,8 @@ public class DefaultRubyParser {
       @param expected list of acceptable tokens, if available.
     */
   public void yyerror (String message, String[] expected, String found) {
-    StringBuffer text = new StringBuffer(message);
-
-    if (expected != null && expected.length > 0) {
-      text.append(", expecting");
-      for (int n = 0; n < expected.length; ++ n) {
-        text.append("\t").append(expected[n]);
-      }
-      text.append(" but found " + found + " instead\n");
-    }
-
-    throw new SyntaxException(getPosition(null), text.toString());
+    String text = ", unexpected " + found + "\n"; 
+    throw new SyntaxException(getPosition(null), text);
   }
 
   /** computes list of expected tokens on error by tracing the tables.
@@ -1084,7 +1075,7 @@ case 22:
 					// line 359 "DefaultRubyParser.y"
   {
                   if (support.isInDef() || support.isInSingle()) {
-                      yyerror("END in method; use at_exit");
+                      warnings.warn(getPosition(((Token)yyVals[-3+yyTop])), "END in method; use at_exit");
                   }
                   yyVal = new PostExeNode(getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]));
               }
@@ -3069,13 +3060,13 @@ case 441:
 case 442:
 					// line 1604 "DefaultRubyParser.y"
   {
-                   yyerror("formal argument cannot be a global variable");
+                   yyerror("formal argument cannot be a instance variable");
                }
   break;
 case 443:
 					// line 1607 "DefaultRubyParser.y"
   {
-                   yyerror("formal argument cannot be an instance variable");
+                   yyerror("formal argument cannot be an global variable");
                }
   break;
 case 444:
@@ -3195,71 +3186,73 @@ case 461:
 case 462:
 					// line 1692 "DefaultRubyParser.y"
   {
-                  if (((Node)yyVals[-2+yyTop]) instanceof ILiteralNode) {
-                      yyerror("Can't define single method for literals.");
+                  if (((Node)yyVals[-2+yyTop]) == null) {
+                      yyerror("can't define single method for ().");
+                  } else if (((Node)yyVals[-2+yyTop]) instanceof ILiteralNode) {
+                      yyerror("can't define single method for literals.");
                   }
 		  support.checkExpression(((Node)yyVals[-2+yyTop]));
                   yyVal = ((Node)yyVals[-2+yyTop]);
               }
   break;
 case 463:
-					// line 1702 "DefaultRubyParser.y"
+					// line 1704 "DefaultRubyParser.y"
   { /* [!null]*/
                   yyVal = new ArrayNode(getPosition(null));
               }
   break;
 case 464:
-					// line 1705 "DefaultRubyParser.y"
+					// line 1707 "DefaultRubyParser.y"
   { /* [!null]*/
                   yyVal = ((ListNode)yyVals[-1+yyTop]);
               }
   break;
 case 465:
-					// line 1708 "DefaultRubyParser.y"
+					// line 1710 "DefaultRubyParser.y"
   {
                   if (((ListNode)yyVals[-1+yyTop]).size() % 2 != 0) {
-                      yyerror("Odd number list for Hash.");
+                      yyerror("odd number list for Hash.");
                   }
                   yyVal = ((ListNode)yyVals[-1+yyTop]);
               }
   break;
 case 467:
-					// line 1717 "DefaultRubyParser.y"
+					// line 1719 "DefaultRubyParser.y"
   { /* [!null]*/
                   yyVal = ((ListNode)yyVals[-2+yyTop]).addAll(((ListNode)yyVals[0+yyTop]));
               }
   break;
 case 468:
-					// line 1722 "DefaultRubyParser.y"
+					// line 1724 "DefaultRubyParser.y"
   { /* [!null]*/
                   yyVal = new ArrayNode(support.union(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop])).add(((Node)yyVals[0+yyTop]));
               }
   break;
 case 488:
-					// line 1734 "DefaultRubyParser.y"
+					// line 1736 "DefaultRubyParser.y"
   {
                   yyerrok();
               }
   break;
 case 491:
-					// line 1740 "DefaultRubyParser.y"
+					// line 1742 "DefaultRubyParser.y"
   {
                   yyerrok();
               }
   break;
 case 492:
-					// line 1744 "DefaultRubyParser.y"
+					// line 1746 "DefaultRubyParser.y"
   {
                   yyVal = null;
               }
   break;
 case 493:
-					// line 1748 "DefaultRubyParser.y"
+					// line 1750 "DefaultRubyParser.y"
   {  
                   yyVal = null;
 	      }
   break;
-					// line 7452 "-"
+					// line 7445 "-"
         }
         yyTop -= yyLen[yyN];
         yyState = yyStates[yyTop];
@@ -3284,7 +3277,7 @@ case 493:
     }
   }
 
-					// line 1753 "DefaultRubyParser.y"
+					// line 1755 "DefaultRubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -3334,4 +3327,4 @@ case 493:
 	return lexer.getPosition(null, inclusive);
     }
 }
-					// line 7532 "-"
+					// line 7525 "-"

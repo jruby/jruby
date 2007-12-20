@@ -99,8 +99,11 @@ public class InputStreamLexerSource extends LexerSource {
      * @throws IOException
      */
     public boolean peek(int to) throws IOException {
+        // keep value of twoAgo around so we can restore after we unread
+        int captureTwoAgo = twoAgo;
         int c = read();
         unread(c);
+        twoAgo = captureTwoAgo;
         return c == to;
     }
     
@@ -171,7 +174,7 @@ public class InputStreamLexerSource extends LexerSource {
     }
 
     @Override
-    public boolean matchMarker(ByteList match, boolean indent) throws IOException {
+    public boolean matchMarker(ByteList match, boolean indent, boolean checkNewline) throws IOException {
         int length = match.length();
         ByteList buffer = new ByteList(length + 1);
         
@@ -195,31 +198,19 @@ public class InputStreamLexerSource extends LexerSource {
                 return false;
             }
         }
+
+        if (!checkNewline) return true;
         
         c = read();
-        if (c != RubyYaccLexer.EOF && c != '\n') return false;
         
-        return true;
+        if (c == RubyYaccLexer.EOF || c == '\n') return true;
+
+        buffer.append(c);
+        unreadMany(buffer);
+        
+        return false; 
     }
     
-    @Override
-    public String matchMarkerNoCase(ByteList match) throws IOException {
-       ByteList buf = new ByteList(match.length());
-        
-        for (int i = 0; i < match.length(); i++) {
-            char c = match.charAt(i);
-            int r = read();
-            buf.append(r);
-            
-            if (Character.toLowerCase(c) != r && Character.toUpperCase(c) != r) {
-                unreadMany(buf);
-                return null;
-            }
-        }
-
-        return buf.toString();
-    }
-
     /**
      * Was the last character read from the stream the first character on a line
      * 
@@ -229,14 +220,27 @@ public class InputStreamLexerSource extends LexerSource {
         return twoAgo == '\n';
     }
 
+    public boolean lastWasBeginOfLine() {
+        return oneAgo == '\n';
+    }
+
     public String toString() {
         try {
             ByteList buffer = new ByteList(20);
-            for (int i = 0; i < 20; i++) {
-                buffer.append(read());
+            buffer.append(twoAgo);
+            buffer.append(oneAgo);
+            buffer.append(new byte[] {'-', '>'});
+            int i = 0;
+            for (; i < 20; i++) {
+                int c = read();
+                if (c == 0) {
+                    i--;
+                    break;
+                }
+                buffer.append(c);
             }
-            for (int i = 0; i < 20; i++) {
-                unread(buffer.charAt(buffer.length() - i - 1));
+            for (; i >= 0; i++) {
+                unread(buffer.charAt(i));
             }
             buffer.append(new byte[] {' ', '.', '.', '.'});
             return buffer.toString();
@@ -259,26 +263,5 @@ public class InputStreamLexerSource extends LexerSource {
         unread(c);
         
         return list;
-    }
-    
-    @Override
-    public ByteList readIdentifer() throws IOException {
-        ByteList tokenBuffer = new ByteList();
-        int c;        
-        for (c = read(); RubyYaccLexer.isIdentifierChar(c); c = read()) {
-            tokenBuffer.append(c);
-        }
-        
-        if (c == '!' || c == '?') {
-            if (!peek('=')) {
-                tokenBuffer.append(c);
-            } else {
-                unread(c);
-            }
-        } else {
-            unread(c);
-        }
-        
-        return tokenBuffer;
     }
 }

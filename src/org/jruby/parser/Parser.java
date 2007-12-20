@@ -75,6 +75,8 @@ public class Parser {
     @SuppressWarnings("unchecked")
     public Node parse(String file, ByteList content, DynamicScope blockScope,
             ParserConfiguration configuration) {
+        return parse(file, new ByteArrayInputStream(content.bytes()), blockScope, configuration);
+        /*
         // Make a shared copy in case someone modifies this bytelist while we are parsing
         content = new ByteList(content, false);
         IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
@@ -133,6 +135,7 @@ public class Parser {
         }
 
         return result.getAST();
+        */
     }
     
     @SuppressWarnings("unchecked")
