@@ -557,7 +557,7 @@ test/externals/rubinius/spec/parser"/>
     <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
     
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="600000">
+    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="600000">
       <classpath refid="test.class.path"/>
       
       <sysproperty key="java.awt.headless" value="true"/>
@@ -605,7 +605,7 @@ test/externals/rubinius/spec/parser"/>
     <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
     
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="600000">
+    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="600000">
       <classpath refid="test.class.path"/>
       
       <sysproperty key="java.awt.headless" value="true"/>
@@ -646,7 +646,7 @@ test/externals/rubinius/spec/parser"/>
     <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
     
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="384M" showoutput="true" timeout="600000">
+    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="600000">
       <classpath refid="test.class.path"/>
       
       <sysproperty key="java.awt.headless" value="true"/>

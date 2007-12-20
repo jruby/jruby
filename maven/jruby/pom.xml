@@ -204,10 +204,13 @@
             <phase>test</phase>
             <configuration>
               <tasks>
+                <property file="${project.basedir}/../../build.properties"/>
+                <property file="${project.basedir}/../../default.build.properties"/>
                 <mkdir dir="${project.build.directory}/surefire-reports"/>
                 <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
                   classpathref="maven.plugin.classpath"/>
-                <junit fork="yes" forkMode="once" haltonfailure="true" dir="${project.build.testOutputDirectory}" maxmemory="384M">
+                <junit fork="yes" forkMode="once" haltonfailure="true"
+                  dir="${project.build.testOutputDirectory}" maxmemory="${jruby.test.memory}">
                   <classpath>
                     <path refid="maven.test.classpath"/>
                     <path refid="maven.plugin.classpath"/>
@@ -223,6 +226,7 @@
                   <sysproperty key="jruby.base" value="${basedir}/../.."/>
                   <sysproperty key="jruby.lib" value="${basedir}/../../lib"/>
                   <sysproperty key="jruby.objectspace.enabled" value="true"/>
+
                   <env key="CLASSPATH" value="${project.build.outputDirectory}"/>
                   <test name="org.jruby.test.MainTestSuite" unless="maven.test.skip"
                       todir="${project.build.directory}/surefire-reports"/>

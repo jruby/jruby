@@ -249,10 +249,13 @@
             <phase>test</phase>
             <configuration>
               <tasks>
+                <property file="${project.basedir}/../../build.properties"/>
+                <property file="${project.basedir}/../../default.build.properties"/>
                 <mkdir dir="${project.build.directory}/surefire-reports"/>
                 <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
                   classpathref="maven.plugin.classpath"/>
-                <junit fork="yes" forkMode="once" haltonfailure="true" dir="${project.build.testOutputDirectory}" maxmemory="384M">
+                  <junit fork="yes" forkMode="once" haltonfailure="true"
+                    dir="${project.build.testOutputDirectory}" maxmemory="${jruby.test.memory}">
                   <classpath>
                     <path refid="maven.test.classpath"/>
                     <path refid="maven.plugin.classpath"/>
