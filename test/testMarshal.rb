@@ -391,3 +391,13 @@ test_ok(in_stream.binmode_called)
 
 # thread isn't marshalable
 test_exception(TypeError) { Marshal.dump(Thread.new {}) }
+
+# time marshalling
+unpacked_marshaled_time = [4, 8, 117, 58, 9, 84, 105, 109, 101, 13, 247, 239, 26, 128, 57, 48, 112, 57]
+actual_time = Time.utc(2007, 12, 31, 23, 14, 23, 12345)
+test_equal(
+  unpacked_marshaled_time,
+  Marshal.dump(actual_time).unpack('C*'))
+test_equal(
+  0,
+  actual_time <=> Marshal.load(unpacked_marshaled_time.pack('C*')))

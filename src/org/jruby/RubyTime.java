@@ -532,7 +532,7 @@ public class RubyTime extends RubyObject {
         int se =
             dt.getMinuteOfHour()                << 26 |
             dt.getSecondOfMinute()              << 20 |
-            dt.getMillisOfSecond();
+            (dt.getMillisOfSecond() * 1000 + (int)usec); // dump usec, not msec
 
         for(int i = 0; i < 4; i++) {
             dumpValue[i] = (byte)(pe & 0xFF);
@@ -649,7 +649,9 @@ public class RubyTime extends RubyObject {
             dt = dt.withHourOfDay((p & 0x1F));
             dt = dt.withMinuteOfHour(((s >>> 26) & 0x3F));
             dt = dt.withSecondOfMinute(((s >>> 20) & 0x3F));
-            dt = dt.withMillisOfSecond((s & 0xFFFFF));
+            // marsaling dumps usec, not msec
+            dt = dt.withMillisOfSecond((s & 0xFFFFF) / 1000);
+            time.setUSec((s & 0xFFFFF) % 1000);
         }
         time.setDateTime(dt);
         return time;
