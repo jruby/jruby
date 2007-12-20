@@ -414,6 +414,13 @@ test_equal("AAAA0000", "ZZZ9999".succ)
 test_succ!("AAAA0000", "ZZZ9999")
 test_equal("**+", "***".succ)
 test_succ!("**+", "***")
+# JRUBY-1750
+test_equal("*10", "*9".succ)
+test_succ!("*10", "*9")
+test_equal("*AA", "*Z".succ)
+test_succ!("*AA", "*Z")
+test_equal("100*AA", "99*ZZ".succ)
+test_succ!("100*AA", "99*ZZ")
 
 ##### sum #####
 

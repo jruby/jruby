@@ -2231,7 +2231,7 @@ public class RubyString extends RubyObject {
             // values?  Therefore leftmost numeric must be '1' and not '0'
             // 999 -> 1000, not 999 -> 0000.  whereas chars should be
             // zzz -> aaaa and non-alnum byte values should be "\377" -> "\001\000"
-            value.prepend((byte) n);
+            value.insert(pos, (byte) n);
         }
         return this;
     }
