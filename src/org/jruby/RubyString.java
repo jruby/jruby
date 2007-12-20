@@ -923,7 +923,9 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "dump")
     public IRubyObject dump() {
-        return inspect();
+        RubyString s = new RubyString(getRuntime(), getMetaClass(), inspectIntoByteList());
+        s.infectBy(this);
+        return s;
     }
 
     @JRubyMethod(name = "insert", required = 2)
@@ -947,6 +949,12 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
+        RubyString s = getRuntime().newString(inspectIntoByteList());
+        s.infectBy(this);
+        return s;
+    }
+    
+    private ByteList inspectIntoByteList() {
         final int length = value.length();
         Ruby runtime = getRuntime();
         ByteList sb = new ByteList(length + 2 + length / 100);
@@ -992,9 +1000,7 @@ public class RubyString extends RubyObject {
         }
 
         sb.append('\"');
-        RubyString s = getRuntime().newString(sb);
-        s.infectBy(this);
-        return s;
+        return sb;
     }
     
     private boolean isEVStr(int i, int length) {
@@ -1055,7 +1061,7 @@ public class RubyString extends RubyObject {
         }
 
         salt = salt.makeShared(0, 2);
-        RubyString s = RubyString.newStringShared(getRuntime(),getMetaClass(), JavaCrypt.crypt(salt, this.getByteList()));
+        RubyString s = RubyString.newStringShared(getRuntime(), JavaCrypt.crypt(salt, this.getByteList()));
         s.infectBy(this);
         s.infectBy(other);
         return s;
