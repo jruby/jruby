@@ -29,11 +29,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.lang.ref.WeakReference;
+
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class MetaClass extends RubyClass {
     
-    private IRubyObject attached; 
+    private WeakReference<IRubyObject> attached = new WeakReference<IRubyObject>(null); 
 
     /** NEWOBJ (in RubyObject#getSingletonClassClone()) 
      * 
@@ -67,15 +69,15 @@ public final class MetaClass extends RubyClass {
     }
 
     public void methodAdded(RubySymbol symbol) {
-        attached.callMethod(getRuntime().getCurrentContext(), "singleton_method_added", symbol);
+        attached.get().callMethod(getRuntime().getCurrentContext(), "singleton_method_added", symbol);
     }
 
     public IRubyObject getAttached() {
-        return attached;
+        return attached.get();
     }
 
     public void setAttached(IRubyObject attached) {
-        this.attached = attached;
+        this.attached = new WeakReference<IRubyObject>(attached);
     }
 
 }
