@@ -366,7 +366,15 @@ public class Sprintf {
             for ( ; incomplete && offset < length ; ) {
                 switch(fchar = format[offset]) {
                 default:
-                    if (isPrintable(fchar)) {
+                    if (fchar == '\0' && flags == FLAG_NONE) {
+                        // MRI 1.8.6 behavior: null byte after '%'
+                        // leads to "%" string. Null byte in
+                        // other places, like "%5\0", leads to error.
+                        buf.write('%');
+                        incomplete = false;
+                        offset++;
+                        break;
+                    } else if (isPrintable(fchar)) {
                         raiseArgumentError(args,"malformed format string - %" + (char)fchar);
                     } else {
                         raiseArgumentError(args,ERR_MALFORMED_FORMAT);
