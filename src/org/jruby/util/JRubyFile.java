@@ -35,6 +35,8 @@ import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 
+import org.jruby.Ruby;
+
 /**
  * <p>This file acts as an alternative to NormalizedFile, due to the problems with current working 
  * directory.</p>
@@ -44,7 +46,7 @@ public class JRubyFile extends File {
     private static final long serialVersionUID = 435364547567567L;
 
     public static JRubyFile create(String cwd, String pathname) {
-        if (pathname == null || pathname.equals("")) {
+        if (pathname == null || pathname.equals("") || Ruby.isSecurityRestricted()) {
             return JRubyNonExistentFile.NOT_EXIST;
         }
         File internal = new File(pathname);

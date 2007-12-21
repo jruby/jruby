@@ -504,12 +504,15 @@ e.printStackTrace();
                 }
             } 
             try {
-                JRubyFile current = JRubyFile.create(JRubyFile.create(runtime.getCurrentDirectory(),entry).getAbsolutePath(), name);
-                if (current.isFile()) {
-                    try {
-                        return new LoadServiceResource(current.toURI().toURL(), current.getPath());
-                    } catch (MalformedURLException e) {
-                        throw runtime.newIOErrorFromException(e);
+                if (!Ruby.isSecurityRestricted()) {
+                    JRubyFile current = JRubyFile.create(JRubyFile.create(
+                            runtime.getCurrentDirectory(),entry).getAbsolutePath(), name);
+                    if (current.isFile()) {
+                        try {
+                            return new LoadServiceResource(current.toURI().toURL(), current.getPath());
+                        } catch (MalformedURLException e) {
+                            throw runtime.newIOErrorFromException(e);
+                        }
                     }
                 }
             } catch (SecurityException secEx) { }

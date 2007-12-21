@@ -102,6 +102,9 @@ public class JavaSupport {
 
     
     public Class loadJavaClass(String className) {
+        if (Ruby.isSecurityRestricted() && className.startsWith("sun.misc.")) {
+            throw runtime.newNameError("security: cannot load class " + className, className);
+        }
         try {
             Class result = primitiveClass(className);
             if(result == null) {

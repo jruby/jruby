@@ -61,7 +61,12 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "ruby_version", versionParts[0] + '.' + versionParts[1]);
         setConfig(configHash, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
 
-        String normalizedHome = new NormalizedFile(runtime.getJRubyHome()).getAbsolutePath();
+        String normalizedHome;
+        if (Ruby.isSecurityRestricted()) {
+            normalizedHome = "SECURITY RESTRICTED";
+        } else {
+            normalizedHome = new NormalizedFile(runtime.getJRubyHome()).getAbsolutePath();
+        }
         setConfig(configHash, "bindir", new NormalizedFile(normalizedHome, "bin").getAbsolutePath());
         setConfig(configHash, "RUBY_INSTALL_NAME", jruby_script());
         setConfig(configHash, "ruby_install_name", jruby_script());

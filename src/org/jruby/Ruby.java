@@ -2473,7 +2473,10 @@ public final class Ruby {
 
     public String getJRubyHome() {
         if (jrubyHome == null) {
-            jrubyHome = verifyHome(System.getProperty("jruby.home", System.getProperty("user.home") + "/.jruby"));
+            if (isSecurityRestricted()) {
+                return "SECURITY RESTRICTED";
+            }
+            jrubyHome = verifyHome(SafePropertyAccessor.getProperty("jruby.home", SafePropertyAccessor.getProperty("user.home") + "/.jruby"));
         }
         
         try {

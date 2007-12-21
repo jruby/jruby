@@ -46,6 +46,14 @@ public class JRubyNonExistentFile extends JRubyFile {
     public String getAbsolutePath() {
         return "";
     }
+    
+    public boolean isDirectory() {
+        return false;
+    }
+    
+    public boolean exists() {
+        return false;
+    }
 
     public String getCanonicalPath() throws IOException {
         throw new FileNotFoundException("File does not exist");

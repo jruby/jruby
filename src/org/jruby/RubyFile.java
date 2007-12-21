@@ -103,6 +103,8 @@ public class RubyFile extends RubyIO {
             return new FileInputStream(path);
         } catch (FileNotFoundException e) {
             throw runtime.newIOError(e.getMessage());
+        } catch (SecurityException se) {
+            throw runtime.newIOError(se.getMessage());
         }
     }
     
@@ -249,7 +251,7 @@ public class RubyFile extends RubyIO {
         } catch (FileNotFoundException e) {
             // FNFException can be thrown in both cases, when the file
             // is not found, or when permission is denied.
-            if (new File(newPath).exists()) {
+            if (Ruby.isSecurityRestricted() || new File(newPath).exists()) {
                 throw getRuntime().newErrnoEACCESError(
                         "Permission denied - " + newPath);
             }
@@ -257,7 +259,9 @@ public class RubyFile extends RubyIO {
                     "File not found - " + newPath);
         } catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
-		}
+        } catch (SecurityException se) {
+            throw getRuntime().newIOError(se.getMessage());
+        }
     }
     
     @JRubyMethod

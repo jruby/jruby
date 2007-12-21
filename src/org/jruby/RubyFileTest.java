@@ -87,6 +87,9 @@ public class RubyFileTest {
     
     @JRubyMethod(name = {"exist?", "exists?"}, required = 1, module = true)
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {
+        if (Ruby.isSecurityRestricted()) {
+            return recv.getRuntime().newBoolean(false);
+        }
         return recv.getRuntime().newBoolean(file(filename).exists());
     }
 
