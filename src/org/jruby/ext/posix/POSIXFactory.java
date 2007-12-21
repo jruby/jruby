@@ -2,13 +2,15 @@ package org.jruby.ext.posix;
 
 import java.util.HashMap;
 
+import org.jruby.util.SafePropertyAccessor;
+
 import com.sun.jna.Native;
 
 public class POSIXFactory {
     static LibC libc = null;
     
     public static POSIX getPOSIX(POSIXHandler handler, boolean useNativePOSIX) {
-        boolean thirtyTwoBit = "32".equals(System.getProperty("sun.arch.data.model")) == true;
+        boolean thirtyTwoBit = "32".equals(SafePropertyAccessor.getProperty("sun.arch.data.model", "32")) == true;
         
         // No 64 bit structures defined yet.
         if (useNativePOSIX && thirtyTwoBit) {

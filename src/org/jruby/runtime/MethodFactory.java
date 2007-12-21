@@ -36,6 +36,7 @@ import org.jruby.internal.runtime.methods.ReflectionMethodFactory;
 import org.jruby.internal.runtime.methods.InvocationMethodFactory;
 import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
 import org.jruby.parser.StaticScope;
+import org.jruby.util.SafePropertyAccessor;
 
 public abstract class MethodFactory {
     public interface MethodDefiningCallback {
@@ -56,12 +57,12 @@ public abstract class MethodFactory {
        if (Ruby.isSecurityRestricted())
            reflection = true;
        else {
-           if (System.getProperty("jruby.reflection") != null && Boolean.getBoolean("jruby.reflection")) {
+           if (SafePropertyAccessor.getProperty("jruby.reflection") != null && SafePropertyAccessor.getBoolean("jruby.reflection")) {
                reflection = true;
            }
-           if (System.getProperty("jruby.dump_invocations") != null) {
+           if (SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
                dumping = true;
-               dumpingPath = System.getProperty("jruby.dump_invocations").toString();
+               dumpingPath = SafePropertyAccessor.getProperty("jruby.dump_invocations").toString();
            }
        }
     }

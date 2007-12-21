@@ -104,6 +104,7 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.MethodCache;
 import org.jruby.util.NormalizedFile;
+import org.jruby.util.SafePropertyAccessor;
 
 import org.jruby.util.JavaNameMangler;
 
@@ -138,7 +139,8 @@ public final class Ruby {
     private final boolean objectSpaceEnabled;
     
     private static ThreadLocal<Ruby> currentRuntime = new ThreadLocal<Ruby>();
-    public static final boolean RUNTIME_THREADLOCAL = Boolean.getBoolean("jruby.runtime.threadlocal");
+    public static final boolean RUNTIME_THREADLOCAL
+            = SafePropertyAccessor.getBoolean("jruby.runtime.threadlocal");
 
     private long globalState = 1;
 
@@ -254,6 +256,23 @@ public final class Ruby {
     private JRubyClassLoader jrubyClassLoader;
 
     private static boolean securityRestricted = false;
+
+    static {
+        if (SafePropertyAccessor.isSecurityProtected("jruby.reflection")) {
+            // can't read non-standard properties
+            securityRestricted = true;
+        } else {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                try {
+                    sm.checkCreateClassLoader();
+                } catch (SecurityException se) {
+                    // can't create custom classloaders
+                    securityRestricted = true;
+                }
+            }
+        }
+    }
 
     private Parser parser = new Parser(this);
 
@@ -1482,7 +1501,11 @@ public final class Ruby {
         initErrnoErrors();
 
         if (profile.allowClass("Data")) defineClass("Data", objectClass, objectClass.getAllocator());
-        if (profile.allowModule("Signal")) RubySignal.createSignal(this);
+        if (!isSecurityRestricted()) {
+            // Signal uses sun.misc.* classes, this is not allowed
+            // in the security-sensitive environments
+            if (profile.allowModule("Signal")) RubySignal.createSignal(this);
+        }
         if (profile.allowClass("Continuation")) RubyContinuation.createContinuation(this);
     }
 

@@ -81,6 +81,7 @@ import org.jruby.ast.WhileNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.types.INameNode;
+import org.jruby.util.SafePropertyAccessor;
 
 /**
  *
@@ -129,7 +130,7 @@ public class ASTInspector {
         hasRestArg = true;
     }
     
-    public static final boolean ENABLED = System.getProperty("jruby.astInspector.enabled", "true").equals("true");
+    public static final boolean ENABLED = SafePropertyAccessor.getProperty("jruby.astInspector.enabled", "true").equals("true");
     
     public void inspect(Node node) {
         // TODO: This code effectively disables all inspection-based optimizations; none of them are 100% safe yet

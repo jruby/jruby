@@ -58,7 +58,7 @@ public class JRubyFile extends File {
     }
 
     public static String getFileProperty(String property) {
-        String value = System.getProperty(property);
+        String value = SafePropertyAccessor.getProperty(property, "/");
         
         return value.replace(File.separatorChar, '/');
     }

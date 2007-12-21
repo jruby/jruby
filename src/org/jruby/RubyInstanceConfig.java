@@ -43,6 +43,7 @@ import org.jruby.runtime.load.LoadService;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
+import org.jruby.util.SafePropertyAccessor;
 
 public class RubyInstanceConfig {
     
@@ -73,7 +74,8 @@ public class RubyInstanceConfig {
     private PrintStream output         = System.out;
     private PrintStream error          = System.err;
     private Profile profile            = Profile.DEFAULT;
-    private boolean objectSpaceEnabled = false;
+    private boolean objectSpaceEnabled
+            = SafePropertyAccessor.getBoolean("jruby.objectspace.enabled", false);
     private CompileMode compileMode = CompileMode.JIT;
     private boolean runRubyInProcess   = true;
     private String currentDirectory;
@@ -114,9 +116,20 @@ public class RubyInstanceConfig {
     private boolean yarvCompile = false;
     private KCode kcode = KCode.NONE;
     
-    public static final boolean FRAMELESS_COMPILE_ENABLED = Boolean.getBoolean("jruby.compile.frameless");
+    public static final boolean FRAMELESS_COMPILE_ENABLED
+            = SafePropertyAccessor.getBoolean("jruby.compile.frameless");
     public static boolean nativeEnabled = true;
     
+    static {
+        try {
+            if (System.getProperty("jruby.native.enabled") != null) {
+                nativeEnabled = Boolean.getBoolean("jruby.native.enabled");
+            }
+        } catch (SecurityException se) {
+            nativeEnabled = false;
+        }
+    }
+
     public int characterIndex = 0;
     
     public static interface LoadServiceCreator {
@@ -130,25 +143,16 @@ public class RubyInstanceConfig {
     }
 
     private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
-    
-    static {
-        if (System.getProperty("jruby.native.enabled") != null) {
-            nativeEnabled = Boolean.getBoolean("jruby.native.enabled");
-        }
-    }
 
     public RubyInstanceConfig() {
         if (Ruby.isSecurityRestricted())
             currentDirectory = "/";
         else {
             currentDirectory = JRubyFile.getFileProperty("user.dir");
-            if (System.getProperty("jruby.objectspace.enabled") != null) {
-                objectSpaceEnabled = Boolean.getBoolean("jruby.objectspace.enabled");
-            }
         }
 
-        samplingEnabled = System.getProperty("jruby.sampling.enabled") != null && Boolean.getBoolean("jruby.sampling.enabled");
-        String compatString = System.getProperty("jruby.compat.version", "RUBY1_8");
+        samplingEnabled = SafePropertyAccessor.getBoolean("jruby.sampling.enabled", false);
+        String compatString = SafePropertyAccessor.getProperty("jruby.compat.version", "RUBY1_8");
         if (compatString.equalsIgnoreCase("RUBY1_8")) {
             compatVersion = CompatVersion.RUBY1_8;
         } else if (compatString.equalsIgnoreCase("RUBY1_9")) {
@@ -164,17 +168,15 @@ public class RubyInstanceConfig {
             jitLoggingVerbose = false;
             jitThreshold = -1;
         } else {
-            String threshold = System.getProperty("jruby.jit.threshold");
+            String threshold = SafePropertyAccessor.getProperty("jruby.jit.threshold");
 
-            if (System.getProperty("jruby.launch.inproc") != null) {
-                runRubyInProcess = Boolean.getBoolean("jruby.launch.inproc");
-            }
-            boolean jitProperty = System.getProperty("jruby.jit.enabled") != null;
+            runRubyInProcess = SafePropertyAccessor.getBoolean("jruby.launch.inproc", true);
+            boolean jitProperty = SafePropertyAccessor.getProperty("jruby.jit.enabled") != null;
             if (jitProperty) {
                 error.print("jruby.jit.enabled property is deprecated; use jruby.compile.mode=(OFF|JIT|FORCE) for -C, default, and +C flags");
-                compileMode = Boolean.getBoolean("jruby.jit.enabled") ? CompileMode.JIT : CompileMode.OFF;
+                compileMode = SafePropertyAccessor.getBoolean("jruby.jit.enabled") ? CompileMode.JIT : CompileMode.OFF;
             } else {
-                String jitModeProperty = System.getProperty("jruby.compile.mode", "JIT");
+                String jitModeProperty = SafePropertyAccessor.getProperty("jruby.compile.mode", "JIT");
                 
                 if (jitModeProperty.equals("OFF")) {
                     compileMode = CompileMode.OFF;
@@ -187,12 +189,12 @@ public class RubyInstanceConfig {
                     compileMode = CompileMode.JIT;
                 }
             }
-            jitLogging = Boolean.getBoolean("jruby.jit.logging");
-            jitLoggingVerbose = Boolean.getBoolean("jruby.jit.logging.verbose");
+            jitLogging = SafePropertyAccessor.getBoolean("jruby.jit.logging");
+            jitLoggingVerbose = SafePropertyAccessor.getBoolean("jruby.jit.logging.verbose");
             jitThreshold = threshold == null ? 20 : Integer.parseInt(threshold); 
         }
 
-        defaultRegexpEngine = System.getProperty("jruby.regexp","jregex");
+        defaultRegexpEngine = SafePropertyAccessor.getProperty("jruby.regexp","jregex");
         defaultJRubyClassLoader = null;
     }
     
@@ -262,7 +264,7 @@ public class RubyInstanceConfig {
                 .append(" (")
                 .append(Constants.COMPILE_DATE + " rev " + Constants.REVISION)
                 .append(") [")
-                .append(System.getProperty("os.arch") + "-jruby" + Constants.VERSION)
+                .append(SafePropertyAccessor.getProperty("os.arch", "unknown") + "-jruby" + Constants.VERSION)
                 .append("]")
                 .append("\n");
         

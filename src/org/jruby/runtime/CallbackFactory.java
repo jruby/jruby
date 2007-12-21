@@ -37,6 +37,7 @@ import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callback.ReflectionCallbackFactory;
 import org.jruby.runtime.callback.InvocationCallbackFactory;
 import org.jruby.runtime.callback.DumpingInvocationCallbackFactory;
+import org.jruby.util.SafePropertyAccessor;
 
 /**
  * Helper class to build Callback method.
@@ -146,10 +147,10 @@ public abstract class CallbackFactory {
        if (Ruby.isSecurityRestricted())
            reflection = true;
        else {
-           if(System.getProperty("jruby.reflection") != null && Boolean.getBoolean("jruby.reflection")) {
+           if(SafePropertyAccessor.getProperty("jruby.reflection") != null && SafePropertyAccessor.getBoolean("jruby.reflection")) {
                reflection = true;
            }
-           if(System.getProperty("jruby.dump_invocations") != null) {
+           if(SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
                dumping = true;
            }
        }

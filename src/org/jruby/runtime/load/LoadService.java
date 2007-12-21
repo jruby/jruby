@@ -255,7 +255,13 @@ public class LoadService {
         
         // First try suffixes with normal loading
         for (int i = 0; i < extensionsToSearch.length; i++) {
-            library = findLibrary(file + extensionsToSearch[i], true);
+            if (Ruby.isSecurityRestricted()) {
+                // search in CWD only in if no security restrictions
+                library = findLibrary(file + extensionsToSearch[i], false);
+            } else {
+                library = findLibrary(file + extensionsToSearch[i], true);
+            }
+
             if (library != null) {
                 loadName = file + extensionsToSearch[i];
                 break;
@@ -524,6 +530,11 @@ e.printStackTrace();
         // Look in classpath next (we do not use File as a test since UNC names will match)
         // Note: Jar resources must NEVER begin with an '/'. (previous code said "always begin with a /")
         ClassLoader classLoader = runtime.getJRubyClassLoader();
+
+        // handle security-sensitive case
+        if (Ruby.isSecurityRestricted() && classLoader == null) {
+            classLoader = runtime.getInstanceConfig().getLoader();
+        }
 
         for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
             String entry = pathIter.next().toString();

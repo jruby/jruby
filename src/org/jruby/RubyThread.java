@@ -55,6 +55,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Visibility;
+import org.jruby.util.SafePropertyAccessor;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -92,7 +93,7 @@ public class RubyThread extends RubyObject {
     
    static {
        if (Ruby.isSecurityRestricted()) USE_POOLING = false;
-       else USE_POOLING = Boolean.getBoolean("jruby.thread.pooling");
+       else USE_POOLING = SafePropertyAccessor.getBoolean("jruby.thread.pooling");
    }
    
     public static RubyClass createThreadClass(Ruby runtime) {

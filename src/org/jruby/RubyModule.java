@@ -76,6 +76,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.MethodCache;
+import org.jruby.util.SafePropertyAccessor;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.ClassIndex;
@@ -454,7 +455,8 @@ public class RubyModule extends RubyObject {
         }
     }
     
-    private static final boolean indexedMethods = Boolean.getBoolean("jruby.indexed.methods");
+    private static final boolean indexedMethods
+            = SafePropertyAccessor.getBoolean("jruby.indexed.methods");
     
     public void defineAnnotatedMethods(Class clazz) {
         if (indexedMethods) {
