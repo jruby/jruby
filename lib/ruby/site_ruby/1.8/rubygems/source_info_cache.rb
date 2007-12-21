@@ -1,9 +1,8 @@
 require 'fileutils'
-require 'rubygems'
-require 'rubygems/remote_fetcher'
-require 'rubygems/source_info_cache_entry'
 
-require 'sources'
+require 'rubygems'
+require 'rubygems/source_info_cache_entry'
+require 'rubygems/user_interaction'
 
 # SourceInfoCache stores a copy of the gem index for each gem source.
 #
@@ -38,7 +37,7 @@ class Gem::SourceInfoCache
   def self.cache
     return @cache if @cache
     @cache = new
-    @cache.refresh
+    @cache.refresh if Gem.configuration.update_sources
     @cache
   end
 
@@ -47,8 +46,14 @@ class Gem::SourceInfoCache
   end
 
   # Search all source indexes for +pattern+.
-  def self.search(pattern)
-    cache.search(pattern)
+  def self.search(pattern, platform_only = false)
+    cache.search pattern, platform_only
+  end
+
+  # Search all source indexes for +pattern+.  Only returns gems matching
+  # Gem.platforms when +only_platform+ is true.  See #search_with_source.
+  def self.search_with_source(pattern, only_platform = false)
+    cache.search_with_source(pattern, only_platform)
   end
 
   def initialize # :nodoc:
@@ -60,29 +65,48 @@ class Gem::SourceInfoCache
   # The most recent cache data.
   def cache_data
     return @cache_data if @cache_data
-    @dirty = false
     cache_file # HACK writable check
-    # Marshal loads 30-40% faster from a String, and 2MB on 20061116 is small
+
     begin
+      # Marshal loads 30-40% faster from a String, and 2MB on 20061116 is small
       data = File.open cache_file, 'rb' do |fp| fp.read end
       @cache_data = Marshal.load data
+
       @cache_data.each do |url, sice|
-        next unless Hash === sice
-        @dirty = true
-        if sice.key? 'cache' and sice.key? 'size' and
-           Gem::SourceIndex === sice['cache'] and Numeric === sice['size'] then
-          new_sice = Gem::SourceInfoCacheEntry.new sice['cache'], sice['size']
+        next unless sice.is_a?(Hash)
+        update
+        cache = sice['cache']
+        size  = sice['size']
+        if cache.is_a?(Gem::SourceIndex) and size.is_a?(Numeric) then
+          new_sice = Gem::SourceInfoCacheEntry.new cache, size
           @cache_data[url] = new_sice
         else # irreperable, force refetch.
-          sice = Gem::SourceInfoCacheEntry.new Gem::SourceIndex.new, 0
-          sice.refresh url # HACK may be unnecessary, see ::cache and #refresh
-          @cache_data[url] = sice
+          reset_cache_for(url)
         end
       end
       @cache_data
-    rescue
-      {}
+    rescue => e
+      if Gem.configuration.really_verbose then
+        say "Exception during cache_data handling: #{ex.class} - #{ex}"
+        say "Cache file was: #{cache_file}"
+        say "\t#{e.backtrace.join "\n\t"}"
+      end
+      reset_cache_data
     end
+  end
+
+  def reset_cache_for(url)
+    say "Reseting cache for #{url}" if Gem.configuration.really_verbose
+
+    sice = Gem::SourceInfoCacheEntry.new Gem::SourceIndex.new, 0
+    sice.refresh url # HACK may be unnecessary, see ::cache and #refresh
+
+    @cache_data[url] = sice
+    @cache_data
+  end
+
+  def reset_cache_data
+    @cache_data = {}
   end
 
   # The name of the cache file to be read
@@ -108,17 +132,36 @@ class Gem::SourceInfoCache
         cache_data[source_uri] = cache_entry
       end
 
-      cache_entry.refresh source_uri
+      update if cache_entry.refresh source_uri
     end
-    update
+
     flush
   end
 
   # Searches all source indexes for +pattern+.
-  def search(pattern)
-    cache_data.map do |source, sic_entry|
-      sic_entry.source_index.search pattern
-    end.flatten
+  def search(pattern, platform_only = false)
+    cache_data.map do |source_uri, sic_entry|
+      next unless Gem.sources.include? source_uri
+      sic_entry.source_index.search pattern, platform_only
+    end.flatten.compact
+  end
+
+  # Searches all source indexes for +pattern+.  If +only_platform+ is true,
+  # only gems matching Gem.platforms will be selected.  Returns an Array of
+  # pairs containing the Gem::Specification found and the source_uri it was
+  # found at.
+  def search_with_source(pattern, only_platform = false)
+    results = []
+
+    cache_data.map do |source_uri, sic_entry|
+      next unless Gem.sources.include? source_uri
+
+      sic_entry.source_index.search(pattern, only_platform).each do |spec|
+        results << [spec, source_uri]
+      end
+    end
+
+    results
   end
 
   # Mark the cache as updated (i.e. dirty).
@@ -133,7 +176,7 @@ class Gem::SourceInfoCache
 
   # The name of the system cache file. (class method)
   def self.system_cache_file
-    @system_cache_file ||= File.join(Gem.dir, "source_cache")
+    @system_cache_file ||= Gem.default_system_source_cache_dir
   end
 
   # The name of the user cache file.
@@ -144,7 +187,7 @@ class Gem::SourceInfoCache
   # The name of the user cache file. (class method)
   def self.user_cache_file
     @user_cache_file ||=
-      ENV['GEMCACHE'] || File.join(Gem.user_home, ".gem", "source_cache")
+      ENV['GEMCACHE'] || Gem.default_user_source_cache_dir
   end
 
   # Write data to the proper cache.
@@ -155,12 +198,12 @@ class Gem::SourceInfoCache
   end
 
   # Set the source info cache data directly.  This is mainly used for unit
-  # testing when we don't want to read a file system for to grab the cached
-  # source index information.  The +hash+ should map a source URL into a 
-  # SourceIndexCacheEntry.
+  # testing when we don't want to read a file system to grab the cached source
+  # index information.  The +hash+ should map a source URL into a
+  # SourceInfoCacheEntry.
   def set_cache_data(hash)
     @cache_data = hash
-    @dirty = false
+    update
   end
 
   private
@@ -171,15 +214,15 @@ class Gem::SourceInfoCache
     return fn if File.writable?(fn)
     return nil if File.exist?(fn)
     dir = File.dirname(fn)
-    if ! File.exist? dir
+    unless File.exist? dir then
       begin
         FileUtils.mkdir_p(dir)
-      rescue RuntimeError
+      rescue RuntimeError, SystemCallError
         return nil
       end
     end
     if File.writable?(dir)
-      File.open(fn, "w") {|f| f << Marshal.dump({}) }
+      File.open(fn, "wb") { |f| f << Marshal.dump({}) }
       return fn
     end
     nil

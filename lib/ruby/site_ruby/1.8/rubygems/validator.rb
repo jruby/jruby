@@ -4,9 +4,13 @@
 # See LICENSE.txt for permissions.
 #++
 
-module Gem
+require 'find'
 
-  class VerificationError < Gem::Exception; end
+require 'rubygems/digest/md5'
+require 'rubygems/format'
+require 'rubygems/installer'
+
+module Gem
 
   ##
   # Validator performs various gem file and gem database validation
@@ -17,17 +21,19 @@ module Gem
     # Given a gem file's contents, validates against its own MD5 checksum
     # gem_data:: [String] Contents of the gem file
     def verify_gem(gem_data)
-      if(gem_data.size == 0) then
-        raise VerificationError.new("Empty Gem file")
-      end
-      require 'rubygems/digest/md5'
-      unless(gem_data =~ /MD5SUM/m)
+      raise VerificationError, 'empty gem file' if gem_data.size == 0
+
+      unless gem_data =~ /MD5SUM/ then
         return # Don't worry about it...this sucks.  Need to fix MD5 stuff for
                # new format
                # FIXME
       end
-      unless (Gem::MD5.hexdigest(gem_data.gsub(/MD5SUM = "([a-z0-9]+)"/, "MD5SUM = \"" + ("F" * 32) + "\"")) == $1.to_s) 
-        raise VerificationError.new("Invalid checksum for Gem file")
+
+      sum_data = gem_data.gsub(/MD5SUM = "([a-z0-9]+)"/,
+                               "MD5SUM = \"#{"F" * 32}\"")
+
+      unless Gem::MD5.hexdigest(sum_data) == $1.to_s then
+        raise VerificationError, 'invalid checksum for gem file'
       end
     end
 
@@ -36,14 +42,12 @@ module Gem
     # 
     # gem_path:: [String] Path to gem file
     def verify_gem_file(gem_path)
-      begin
-        File.open(gem_path, 'rb') do |file|
-          gem_data = file.read
-          verify_gem(gem_data)
-        end
-      rescue Errno::ENOENT
-        raise Gem::VerificationError.new("Missing gem file #{gem_path}")
+      File.open gem_path, 'rb' do |file|
+        gem_data = file.read
+        verify_gem gem_data
       end
+    rescue Errno::ENOENT
+      raise Gem::VerificationError.new("missing gem file #{gem_path}")
     end
 
     private
@@ -73,9 +77,6 @@ module Gem
     # 
     # returns a hash of ErrorData objects, keyed on the problem gem's name.
     def alien
-      require 'rubygems/installer'
-      require 'find'
-      require 'rubygems/digest/md5'
       errors = {}
       Gem::SourceIndex.from_installed_gems.each do |gem_name, gem_spec|
         errors[gem_name] ||= []
@@ -89,15 +90,18 @@ module Gem
         end
     
         begin
-          require 'rubygems/format.rb'
           verify_gem_file(gem_path)
-          File.open(gem_path) do |file|
+          File.open(gem_path, 'rb') do |file|
             format = Gem::Format.from_file_by_path(gem_path)
             format.file_entries.each do |entry, data|
               # Found this file.  Delete it from list
               installed_files.delete remove_leading_dot_dir(entry['path'])
+
+              next unless data # HACK `gem check -a mkrf`
+
               File.open(File.join(gem_directory, entry['path']), 'rb') do |f|
-                unless Gem::MD5.hexdigest(f.read).to_s == Gem::MD5.hexdigest(data).to_s
+                unless Gem::MD5.hexdigest(f.read).to_s ==
+                       Gem::MD5.hexdigest(data).to_s then
                   errors[gem_name] << ErrorData.new(entry['path'], "installed file doesn't match original from gem")
                 end
               end
@@ -117,6 +121,32 @@ module Gem
       end
       errors
     end
+
+    class TestRunner
+      def initialize(suite, ui)
+        @suite = suite
+        @ui = ui
+      end
+
+      def self.run(suite, ui)
+        require 'test/unit/ui/testrunnermediator'
+        return new(suite, ui).start
+      end
+
+      def start
+        @mediator = Test::Unit::UI::TestRunnerMediator.new(@suite)
+        @mediator.add_listener(Test::Unit::TestResult::FAULT, &method(:add_fault))
+        return @mediator.run_suite
+      end
+
+      def add_fault(fault)
+        if Gem.configuration.verbose then
+          @ui.say fault.long_display
+        end
+      end
+    end
+
+    autoload :TestRunner, 'test/unit/ui/testrunnerutilities'
    
     ##
     # Runs unit tests for a given gem specification
@@ -127,17 +157,17 @@ module Gem
         # XXX: why do we need this gem_spec when we've already got 'spec'?
       test_files = gem_spec.test_files
       if test_files.empty?
-        say "There are no unit tests to run for #{gem_spec.name}-#{gem_spec.version}"
-        return
+        say "There are no unit tests to run for #{gem_spec.full_name}"
+        require 'test/unit/ui/console/testrunner'
+        return Test::Unit::TestResult.new
       end
       gem gem_spec.name, "= #{gem_spec.version.version}"
       test_files.each do |f| require f end
-      require 'test/unit/ui/console/testrunner'
       suite = Test::Unit::TestSuite.new("#{gem_spec.name}-#{gem_spec.version}")
       ObjectSpace.each_object(Class) do |klass|
         suite << klass.suite if (klass < Test::Unit::TestCase)
       end
-      result = Test::Unit::UI::Console::TestRunner.run(suite, Test::Unit::UI::SILENT)
+      result = TestRunner.run(suite, ui())
       unless result.passed?
         alert_error(result.to_s)
         #unless ask_yes_no(result.to_s + "...keep Gem?", true) then

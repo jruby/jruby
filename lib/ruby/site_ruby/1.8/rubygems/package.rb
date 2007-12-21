@@ -1,25 +1,21 @@
-#
+#++
 # Copyright (C) 2004 Mauricio Julio Fernández Pradier
 # See LICENSE.txt for additional licensing information.
-#
+#--
 
-require 'yaml'
-require 'yaml/syck'
-require 'fileutils'
-require 'zlib'
-require 'digest/md5'
 require 'fileutils'
 require 'find'
 require 'stringio'
+require 'yaml'
+require 'zlib'
 
-require 'rubygems/specification'
+require 'rubygems/digest/md5'
 require 'rubygems/security'
+require 'rubygems/specification'
 
 # Wrapper for FileUtils meant to provide logging and additional operations if
 # needed.
 class Gem::FileOperations
-
-  extend FileUtils
 
   def initialize(logger = nil)
     @logger = logger
@@ -146,6 +142,7 @@ module Gem::Package
     end
 
     def calculate_checksum(hdr)
+      #hdr.split('').map { |c| c[0] }.inject { |a, b| a + b } # HACK rubinius
       hdr.unpack("C*").inject{|a,b| a+b}
     end
 
@@ -383,7 +380,7 @@ module Gem::Package
       end
 
       alias_method :is_directory, :is_directory?
-      alias_method :is_file, :is_file
+      alias_method :is_file, :is_file?
 
       def bytes_read
         @read
@@ -488,14 +485,13 @@ module Gem::Package
       @tarreader.each do |entry|
         case entry.full_name
         when "metadata"
-          # (GS) Changed to line below: @metadata = YAML.load(entry.read) rescue nil
           @metadata = load_gemspec(entry.read)
           has_meta = true
           break
         when "metadata.gz"
           begin
-            # if we have a security_policy, then pre-read the
-            # metadata file and calculate it's digest
+            # if we have a security_policy, then pre-read the metadata file
+            # and calculate it's digest
             sio = nil
             if security_policy
               Gem.ensure_ssl_available
@@ -506,7 +502,6 @@ module Gem::Package
 
             gzis = Zlib::GzipReader.new(sio || entry)
             # YAML wants an instance of IO
-            # (GS) Changed to line below: @metadata = YAML.load(gzis) rescue nil
             @metadata = load_gemspec(gzis)
             has_meta = true
           ensure
@@ -524,23 +519,24 @@ module Gem::Package
         end
       end
 
-      if security_policy
+      if security_policy then
         Gem.ensure_ssl_available
-        # map trust policy from string to actual class (or a
-        # serialized YAML file, if that exists)
-        if (security_policy.is_a?(String))
-          if Gem::Security.constants.index(security_policy)
+
+        # map trust policy from string to actual class (or a serialized YAML
+        # file, if that exists)
+        if String === security_policy then
+          if Gem::Security::Policy.key? security_policy then
             # load one of the pre-defined security policies
-            security_policy = Gem::Security.const_get(security_policy)
-          elsif File.exist?(security_policy)
+            security_policy = Gem::Security::Policy[security_policy]
+          elsif File.exist? security_policy then
             # FIXME: this doesn't work yet
-            security_policy = YAML::load(File.read(security_policy))
+            security_policy = YAML.load File.read(security_policy)
           else
             raise Gem::Exception, "Unknown trust policy '#{security_policy}'"
           end
         end
 
-        if data_sig && data_dgst && meta_sig && meta_dgst
+        if data_sig && data_dgst && meta_sig && meta_dgst then
           # the user has a trust policy, and we have a signed gem
           # file, so use the trust policy to verify the gem signature
 
@@ -618,9 +614,14 @@ module Gem::Package
     # this method would use the String IO approach on all platforms at all
     # times.  And that's the way it is.
     def zipped_stream(entry)
-      zis = Zlib::GzipReader.new entry
-      dis = zis.read
-      is = StringIO.new(dis)
+      # This is Jamis Buck's ZLib workaround.  The original code is
+      # commented out while we evaluate this patch.
+      entry.read(10) # skip the gzip header
+      zis = Zlib::Inflate.new(-Zlib::MAX_WBITS)
+      is = StringIO.new(zis.inflate(entry.read))
+      # zis = Zlib::GzipReader.new entry
+      # dis = zis.read
+      # is = StringIO.new(dis)
     ensure
       zis.finish if zis
     end
@@ -706,11 +707,7 @@ module Gem::Package
 
             TarWriter.new(os) do |inner_tar_stream|
               klass = class << inner_tar_stream; self end
-              if RUBY_VERSION >= "1.9" then
-                klass.funcall(:define_method, :metadata=, &set_meta)
-              else
-                klass.send(:define_method, :metadata=, &set_meta)
-              end
+              klass.send(:define_method, :metadata=, &set_meta)
               block.call inner_tar_stream
             end
           ensure
@@ -846,7 +843,7 @@ module Gem::Package
       Dir
     end
 
-    def find_class
+    def find_class # HACK kill me
       Find
     end
   end

@@ -1,27 +1,31 @@
-require 'rubygems'
-Gem.manage_gems
 require 'webrick'
-require 'yaml'
-require 'optparse'
 require 'rdoc/template'
+require 'yaml'
+require 'zlib'
 
+require 'rubygems'
+
+##
 # Gem::Server and allows users to serve gems for consumption by
 # `gem --remote-install`.
-# 
+#
 # gem_server starts an HTTP server on the given port and serves the folowing:
 # * "/" - Browsing of gem spec files for installed gems
-# * "/yaml" - Full yaml dump of metadata for installed gems
+# * "/Marshal" - Full SourceIndex dump of metadata for installed gems
+# * "/yaml" - YAML dump of metadata for installed gems - deprecated
 # * "/gems" - Direct access to download the installable gems
 #
 # == Usage
 #
-#   gem_server [-p portnum] [-d gem_path]
+#   gem server [-p portnum] [-d gem_path]
 #
 # port_num:: The TCP port the HTTP server will bind to
 # gem_path::
 #   Root gem directory containing both "cache" and "specifications"
 #   subdirectories.
 class Gem::Server
+
+  include Gem::UserInteraction
 
   DOC_TEMPLATE = <<-WEBPAGE
 <?xml version="1.0" encoding="iso-8859-1"?>
@@ -33,7 +37,7 @@ class Gem::Server
 <head>
   <title>RubyGems Documentation Index</title>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-  <link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+  <link rel="stylesheet" href="gem-server-rdoc-style.css" type="text/css" media="screen" />
 </head>
 <body>
   <div id="fileHeader">
@@ -71,13 +75,13 @@ IFNOT:rdoc_installed
   <span title="rdoc not installed">[rdoc]</span>
 ENDIF:rdoc_installed
 IF:homepage
-<a href="%homepage%" target="_blank" title="%homepage%">[www]</a>
+<a href="%homepage%" title="%homepage%">[www]</a>
 ENDIF:homepage
 IFNOT:homepage
 <span title="no homepage available">[www]</span>
 ENDIF:homepage
 IF:has_deps
- - depends on 
+ - depends on
 START:dependencies
 IFNOT:is_last
 <a href="#%name%" title="%version%">%name%</a>,
@@ -337,75 +341,104 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
 .ruby-value   { color: #7fffd4; background: transparent; }
   RDOCCSS
 
-  def self.process_args(args)
-    options = {}
-    options[:port] = 8808
-    options[:gemdir] = Gem.dir
-    options[:daemon] = false
-
-    opts = OptionParser.new do |opts|
-      opts.on_tail("--help", "show this message") do
-        puts opts
-        exit
-      end
-
-      opts.on('-p', '--port=PORT', "Specify the port to listen on") do |port|
-        options[:port] = port
-      end
-
-      opts.on('-d', '--dir=GEMDIR', 
-              "Specify the directory from which to serve Gems") do |gemdir|
-        options[:gemdir] = gemdir
-      end
-
-      opts.on(      '--daemon', "Run as a daemon") do |daemon|
-        options[:daemon] = daemon
-      end
-
-    end
-
-    opts.parse! args
-
-    options
-  end
-
-  def self.run(args = ARGV)
-    options = process_args args
+  def self.run(options)
     new(options[:gemdir], options[:port], options[:daemon]).run
   end
 
   def initialize(gemdir, port, daemon)
-    Socket.do_not_reverse_lookup=true
+    Socket.do_not_reverse_lookup = true
 
     @gemdir = gemdir
     @port = port
     @daemon = daemon
+    logger = WEBrick::Log.new nil, WEBrick::BasicLog::FATAL
+    @server = WEBrick::HTTPServer.new :DoNotListen => true, :Logger => logger
+
+    @spec_dir = File.join @gemdir, "specifications"
+    @source_index = Gem::SourceIndex.from_gems_in @spec_dir
+  end
+
+  def quick(req, res)
+    res['content-type'] = 'text/plain'
+    res['date'] = File.stat(@spec_dir).mtime
+
+    case req.request_uri.request_uri
+    when '/quick/index' then
+      res.body << @source_index.map { |name,_| name }.join("\n")
+    when '/quick/index.rz' then
+      index = @source_index.map { |name,_| name }.join("\n")
+      res.body << Zlib::Deflate.deflate(index)
+    when %r|^/quick/(Marshal.#{Regexp.escape Gem.marshal_version}/)?(.*?)-([0-9.]+)(-.*?)?\.gemspec\.rz$| then
+      dep = Gem::Dependency.new $2, $3
+      specs = @source_index.search dep
+
+      selector = [$2, $3, $4].map { |s| s.inspect }.join ' '
+
+      platform = if $4 then
+                   Gem::Platform.new $4.sub(/^-/, '')
+                 else
+                   Gem::Platform::RUBY
+                 end
+
+      specs = specs.select { |s| s.platform == platform }
+
+      if specs.empty? then
+        res.status = 404
+        res.body = "No gems found matching #{selector}"
+      elsif specs.length > 1 then
+        res.status = 500
+        res.body = "Multiple gems found matching #{selector}"
+      elsif $1 then # marshal quickindex instead of YAML
+        res.body << Zlib::Deflate.deflate(Marshal.dump(specs.first))
+      else # deprecated YAML format
+        res.body << Zlib::Deflate.deflate(specs.first.to_yaml)
+      end
+    else
+      res.status = 404
+      res.body = "#{req.request_uri} not found"
+    end
   end
 
   def run
+    @server.listen nil, @port
+
+    say "Starting gem server on http://localhost:#{@port}/"
+
     WEBrick::Daemon.start if @daemon
 
-    spec_dir = File.join @gemdir, "specifications"
-
-    s = WEBrick::HTTPServer.new :Port => @port
-
-    s.mount_proc("/yaml") do |req, res|
+    @server.mount_proc("/yaml") do |req, res|
       res['content-type'] = 'text/plain'
-      res['date'] = File.stat(spec_dir).mtime
-      res.body << Gem::SourceIndex.from_gems_in(spec_dir).to_yaml
+      res['date'] = File.stat(@spec_dir).mtime
+      if req.request_method == 'HEAD' then
+        res['content-length'] = @source_index.to_yaml.length
+      else
+        res.body << @source_index.to_yaml
+      end
     end
 
-    s.mount_proc("/rdoc-style.css") do |req, res|
+    @server.mount_proc("/Marshal") do |req, res|
+      res['content-type'] = 'text/plain'
+      res['date'] = File.stat(@spec_dir).mtime
+      if req.request_method == 'HEAD' then
+        res['content-length'] = Marshal.dump(@source_index).length
+      else
+        res.body << Marshal.dump(@source_index)
+      end
+    end
+
+    @server.mount_proc("/quick/", &method(:quick))
+
+    @server.mount_proc("/gem-server-rdoc-style.css") do |req, res|
       res['content-type'] = 'text/css'
-      res['date'] = File.stat(spec_dir).mtime
+      res['date'] = File.stat(@spec_dir).mtime
       res.body << RDOC_CSS
     end
 
-    s.mount_proc("/") do |req, res|
+    @server.mount_proc("/") do |req, res|
       specs = []
       total_file_count = 0
 
-      Gem::SourceIndex.from_gems_in(spec_dir).each do |path, spec|
+      @source_index.each do |path, spec|
         total_file_count += spec.files.size
         deps = spec.dependencies.collect { |dep|
           { "name"    => dep.name, 
@@ -472,14 +505,14 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
 
     paths = { "/gems" => "/cache/", "/doc_root" => "/doc/" }
     paths.each do |mount_point, mount_dir|
-      s.mount(mount_point, WEBrick::HTTPServlet::FileHandler,
+      @server.mount(mount_point, WEBrick::HTTPServlet::FileHandler,
               File.join(@gemdir, mount_dir), true)
     end
 
-    trap("INT") { s.shutdown; exit! }
-    trap("TERM") { s.shutdown; exit! }
+    trap("INT") { @server.shutdown; exit! }
+    trap("TERM") { @server.shutdown; exit! }
 
-    s.start
+    @server.start
   end
 
 end

@@ -1,12 +1,16 @@
+require 'rubygems/command'
+require 'rubygems/version_option'
+require 'rubygems/uninstaller'
+
 module Gem
   module Commands
     class UninstallCommand < Command
+
       include VersionOption
-      include CommandAids
 
       def initialize
-        super('uninstall', 'Uninstall gems from the local repository',
-              { :version => "> 0" })
+        super 'uninstall', 'Uninstall gems from the local repository',
+              :version => Gem::Requirement.default
 
         add_option('-a', '--[no-]all',
           'Uninstall all matching versions'
@@ -26,19 +30,20 @@ module Gem
           options[:executables] = value
         end
 
-        add_version_option('uninstall')
+        add_version_option
+        add_platform_option
       end
 
-      def defaults_str
-        "--version '> 0' --no-force"
+      def arguments # :nodoc:
+        "GEMNAME       name of gem to uninstall"
       end
-    
-      def usage
+
+      def defaults_str # :nodoc:
+        "--version '#{Gem::Requirement.default}' --no-force"
+      end
+
+      def usage # :nodoc:
         "#{program_name} GEMNAME [GEMNAME ...]"
-      end
-
-      def arguments
-        "GEMNAME   name of gem to uninstall"
       end
 
       def execute

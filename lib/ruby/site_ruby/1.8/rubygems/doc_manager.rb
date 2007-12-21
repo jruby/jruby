@@ -4,10 +4,10 @@
 # See LICENSE.txt for permissions.
 #++
 
+require 'fileutils'
+
 module Gem
 
-  class DocumentError < Gem::Exception; end
-  
   class DocManager
   
     include UserInteraction
@@ -20,7 +20,6 @@ module Gem
     def initialize(spec, rdoc_args="")
       @spec = spec
       @doc_dir = File.join(spec.installation_path, "doc", spec.full_name)
-      Gem::FilePermissionError.new(spec.installation_path) unless File.writable?(spec.installation_path)
       @rdoc_args = rdoc_args.nil? ? [] : rdoc_args.split
     end
     
@@ -35,8 +34,6 @@ module Gem
     # same process, the RI docs should be done first (a likely bug in
     # RDoc will cause RI docs generation to fail if run after RDoc).
     def generate_ri
-      require 'fileutils'
-
       if @spec.has_rdoc then
         load_rdoc
         install_ri # RDoc bug, ri goes first
@@ -51,8 +48,6 @@ module Gem
     # same process, the RI docs should be done first (a likely bug in
     # RDoc will cause RI docs generation to fail if run after RDoc).
     def generate_rdoc
-      require 'fileutils'
-
       if @spec.has_rdoc then
         load_rdoc
         install_rdoc
@@ -63,26 +58,36 @@ module Gem
 
     # Load the RDoc documentation generator library.
     def load_rdoc
-      if File.exist?(@doc_dir) && !File.writable?(@doc_dir)
-        Gem::FilePermissionError.new(@doc_dir)
+      if File.exist?(@doc_dir) && !File.writable?(@doc_dir) then
+        raise Gem::FilePermissionError.new(@doc_dir)
       end
+
       FileUtils.mkdir_p @doc_dir unless File.exist?(@doc_dir)
+
       begin
         require 'rdoc/rdoc'
       rescue LoadError => e
-        raise DocumentError, 
+        raise Gem::DocumentError,
           "ERROR: RDoc documentation generator not installed!"
       end
     end
 
     def install_rdoc
+      rdoc_dir = File.join @doc_dir, 'rdoc'
+
+      FileUtils.rm_rf rdoc_dir
+
       say "Installing RDoc documentation for #{@spec.full_name}..."
-      run_rdoc '--op', File.join(@doc_dir, 'rdoc')
+      run_rdoc '--op', rdoc_dir
     end
 
     def install_ri
+      ri_dir = File.join @doc_dir, 'ri'
+
+      FileUtils.rm_rf ri_dir
+
       say "Installing ri documentation for #{@spec.full_name}..."
-      run_rdoc '--ri', '--op', File.join(@doc_dir, 'ri')
+      run_rdoc '--ri', '--op', ri_dir
     end
 
     def run_rdoc(*args)
@@ -103,20 +108,37 @@ module Gem
         dirname = File.dirname e.message.split("-")[1].strip
         raise Gem::FilePermissionError.new(dirname)
       rescue RuntimeError => ex
-        STDERR.puts "While generating documentation for #{@spec.full_name}"
-        STDERR.puts "... MESSAGE:   #{ex}"
-        STDERR.puts "... RDOC args: #{args.join(' ')}"
-        STDERR.puts ex.backtrace if Gem.configuration.backtrace
-        STDERR.puts "(continuing with the rest of the installation)"
+        alert_error "While generating documentation for #{@spec.full_name}"
+        ui.errs.puts "... MESSAGE:   #{ex}"
+        ui.errs.puts "... RDOC args: #{args.join(' ')}"
+        ui.errs.puts "\t#{ex.backtrace.join "\n\t"}" if
+          Gem.configuration.backtrace
+        ui.errs.puts "(continuing with the rest of the installation)"
       ensure
         Dir.chdir(old_pwd)
       end
     end
 
     def uninstall_doc
-      doc_dir = File.join(@spec.installation_path, "doc", @spec.full_name)
+      raise Gem::FilePermissionError.new(@spec.installation_path) unless
+        File.writable? @spec.installation_path
+
+      original_name = [
+        @spec.name, @spec.version, @spec.original_platform].join '-'
+
+      doc_dir = File.join @spec.installation_path, 'doc', @spec.full_name
+      unless File.directory? doc_dir then
+        doc_dir = File.join @spec.installation_path, 'doc', original_name
+      end
+
       FileUtils.rm_rf doc_dir
-      ri_dir = File.join(@spec.installation_path, "ri", @spec.full_name)
+
+      ri_dir = File.join @spec.installation_path, 'ri', @spec.full_name
+
+      unless File.directory? ri_dir then
+        ri_dir = File.join @spec.installation_path, 'ri', original_name
+      end
+
       FileUtils.rm_rf ri_dir
     end
 

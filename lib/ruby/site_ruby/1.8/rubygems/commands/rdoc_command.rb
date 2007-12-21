@@ -1,14 +1,17 @@
+require 'rubygems/command'
+require 'rubygems/version_option'
+require 'rubygems/doc_manager'
+
 module Gem
   module Commands
     class RdocCommand < Command
       include VersionOption
-      include CommandAids
 
       def initialize
         super('rdoc',
           'Generates RDoc for pre-installed gems',
           {
-            :version => "> 0.0.0",
+            :version => Gem::Requirement.default,
             :include_rdoc => true,
             :include_ri => true,
           })
@@ -27,19 +30,19 @@ module Gem
           ) do |value, options|
           options[:include_ri] = value
         end
-        add_version_option('rdoc')
+        add_version_option
       end
 
-      def defaults_str
-        "--version '> 0.0.0' --rdoc --ri"
+      def arguments # :nodoc:
+        "GEMNAME       gem to generate documentation for (unless --all)"
       end
 
-      def usage
+      def defaults_str # :nodoc:
+        "--version '#{Gem::Requirement.default}' --rdoc --ri"
+      end
+
+      def usage # :nodoc:
         "#{program_name} [args]"
-      end
-
-      def arguments
-        "GEMNAME          The gem to generate RDoc for (unless --all)"
       end
 
       def execute

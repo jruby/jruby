@@ -7,6 +7,7 @@
 
 require 'digest/md5'
 
+# :stopdoc:
 module Gem
   if RUBY_VERSION >= '1.8.6'
     MD5 = Digest::MD5
@@ -18,3 +19,5 @@ module Gem
     end
   end
 end
+# :startdoc:
+

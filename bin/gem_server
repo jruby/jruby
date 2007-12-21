@@ -1,6 +1,3 @@
-#!/usr/bin/env jruby
+#!/Users/headius/NetBeansProjects/jruby/bin/jruby
 
-require 'rubygems/server'
-
-Gem::Server.run ARGV
-
+abort "`gem_server` has been deprecated.  Use `gem server` instead."

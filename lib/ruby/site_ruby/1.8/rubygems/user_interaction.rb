@@ -81,6 +81,9 @@ module Gem
   ####################################################################
   # StreamUI implements a simple stream based user interface.
   class StreamUI
+
+    attr_reader :ins, :outs, :errs
+
     def initialize(in_stream, out_stream, err_stream=STDERR)
       @ins = in_stream
       @outs = out_stream
@@ -97,12 +100,28 @@ module Gem
       end
       @outs.print "> "
       @outs.flush
-      result = @ins.gets.strip.to_i - 1
+
+      result = @ins.gets
+
+      return nil, nil unless result
+
+      result = result.strip.to_i - 1
       return list[result], result
     end
 
-    # Ask a question.  Returns a true for yes, false for no.
+    # Ask a question.  Returns a true for yes, false for no.  If not
+    # connected to a tty, raises an exception if default is nil,
+    # otherwise returns default.
     def ask_yes_no(question, default=nil)
+      if not @ins.tty? then
+        if default.nil? then
+          raise(
+              Gem::OperationNotSupportedError,
+              "Not connected to a tty and no default specified")
+        else
+          return default
+        end
+      end
       qstr = case default
       when nil
         'yn'
@@ -119,15 +138,19 @@ module Gem
           true
         when /^[Nn].*/
           false
-        else
+        when /^$/
           default
+        else
+          nil
         end
       end
       return result
     end
     
-    # Ask a question.  Returns an answer.  
+    # Ask a question.  Returns an answer if connected to a tty, nil
+    # otherwise.
     def ask(question)
+      return nil if not @ins.tty?
       @outs.print(question + "  ")
       @outs.flush
       result = @ins.gets
@@ -186,7 +209,7 @@ module Gem
     class SilentProgressReporter
       attr_reader :count
 
-      def initialize(out_stream, size, initial_message)
+      def initialize(out_stream, size, initial_message, terminal_message = nil)
       end
 
       def updated(message)
@@ -201,10 +224,13 @@ module Gem
 
       attr_reader :count
 
-      def initialize(out_stream, size, initial_message)
+      def initialize(out_stream, size, initial_message,
+                     terminal_message = "complete")
         @out = out_stream
         @total = size
         @count = 0
+        @terminal_message = terminal_message
+
         @out.puts initial_message
       end
 
@@ -215,7 +241,7 @@ module Gem
       end
 
       def done
-        @out.puts "\ncomplete"
+        @out.puts "\n#{@terminal_message}"
       end
     end
 
@@ -224,10 +250,13 @@ module Gem
 
       attr_reader :count
 
-      def initialize(out_stream, size, initial_message)
+      def initialize(out_stream, size, initial_message,
+                     terminal_message = 'complete')
         @out = out_stream
         @total = size
         @count = 0
+        @terminal_message = terminal_message
+
         @out.puts initial_message
       end
 
@@ -237,7 +266,7 @@ module Gem
       end
 
       def done
-        @out.puts "complete"
+        @out.puts @terminal_message
       end
     end
   end

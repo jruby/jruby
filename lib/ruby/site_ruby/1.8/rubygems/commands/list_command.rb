@@ -1,7 +1,9 @@
+require 'rubygems/command'
+require 'rubygems/commands/query_command'
+
 module Gem
   module Commands
     class ListCommand < QueryCommand
-      include CommandAids
 
       def initialize
         super(
@@ -11,16 +13,16 @@ module Gem
         remove_option('--name-matches')
       end
 
-      def defaults_str
+      def arguments # :nodoc:
+        "STRING        start of gem name to look for"
+      end
+
+      def defaults_str # :nodoc:
         "--local --no-details"
       end
 
-      def usage
+      def usage # :nodoc:
         "#{program_name} [STRING]"
-      end
-
-      def arguments
-        "STRING   start of gem name to look for"
       end
 
       def execute
