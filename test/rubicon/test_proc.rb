@@ -45,5 +45,10 @@ class TestProc < Test::Unit::TestCase
     a = Proc.new { "there" }
     assert_equal("there", a.call)
   end
+  
+  def test_to_s
+    a = Proc.new {}
+    assert(a.to_s[__FILE__ + ":50"])
+  end
 
 end

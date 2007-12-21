@@ -56,9 +56,11 @@ public class CompiledBlock extends BlockBody {
     
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+        Frame f = context.getCurrentFrame();
+        f.setPosition(context.getPosition());
         return newCompiledClosure(
                 self,
-                context.getCurrentFrame(),
+                f,
                 Visibility.PUBLIC,
                 context.getRubyClass(),
                 context.getCurrentScope(),
