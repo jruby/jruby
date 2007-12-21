@@ -141,7 +141,8 @@ public class RubyMath {
     
     @JRubyMethod(name = "tanh", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat tanh(IRubyObject recv, IRubyObject x) {
-        return RubyFloat.newFloat(recv.getRuntime(), sinh(recv, x).getDoubleValue() / cosh(recv, x).getDoubleValue());
+        double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
+        return RubyFloat.newFloat(recv.getRuntime(), Math.tanh(value));
     }          
     
     @JRubyMethod(name = "acosh", required = 1, module = true, visibility = Visibility.PRIVATE)
