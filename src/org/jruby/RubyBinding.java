@@ -33,12 +33,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -52,12 +53,14 @@ public class RubyBinding extends RubyObject {
         
         this.binding = binding;
     }
+
+    private RubyBinding(Ruby runtime, RubyClass rubyClass) {
+        super(runtime, rubyClass);
+    }
     
     private static ObjectAllocator BINDING_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyBinding instance = runtime.newBinding();
-            
-            instance.setMetaClass(klass);
+            RubyBinding instance = new RubyBinding(runtime, klass);
             
             return instance;
         }
@@ -120,5 +123,27 @@ public class RubyBinding extends RubyObject {
         //Binding.createBinding(previousFrame, context.getCurrentScope());
         
         return new RubyBinding(runtime, runtime.getBinding(), binding);
+    }
+    
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    @Override
+    public IRubyObject initialize() {
+        ThreadContext context = getRuntime().getCurrentContext();
+
+        // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
+        Frame frame = context.getCurrentFrame();
+        binding = new Binding(frame, context.getBindingRubyClass(), context.getCurrentScope());
+        
+        return this;
+    }
+    
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
+    @Override
+    public IRubyObject initialize_copy(IRubyObject other) {
+        RubyBinding otherBinding = (RubyBinding)other;
+        
+        binding = otherBinding.binding;
+        
+        return this;
     }
 }
