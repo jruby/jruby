@@ -88,7 +88,6 @@ public class RubyInstanceConfig {
     private final boolean samplingEnabled;
     private CompatVersion compatVersion;
 
-    private final String defaultRegexpEngine;
     private final JRubyClassLoader defaultJRubyClassLoader;
 
     private ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -185,7 +184,7 @@ public class RubyInstanceConfig {
                 } else if (jitModeProperty.equals("FORCE")) {
                     compileMode = CompileMode.FORCE;
                 } else {
-                    error.print("jruby.jit.mode property must be OFF, JIT, FORCE, or unset; defaulting to JIT");
+                    error.print("jruby.compile.mode property must be OFF, JIT, FORCE, or unset; defaulting to JIT");
                     compileMode = CompileMode.JIT;
                 }
             }
@@ -194,7 +193,6 @@ public class RubyInstanceConfig {
             jitThreshold = threshold == null ? 20 : Integer.parseInt(threshold); 
         }
 
-        defaultRegexpEngine = SafePropertyAccessor.getProperty("jruby.regexp","jregex");
         defaultJRubyClassLoader = null;
     }
     
@@ -232,7 +230,7 @@ public class RubyInstanceConfig {
                 .append("    jruby.compile.mode=JIT|FORCE|OFF").append("\n")
                 .append("       Set compilation mode. JIT is default; FORCE compiles all, OFF disables").append("\n")
                 .append("    jruby.compile.boxed=true|false").append("\n")
-                .append("       Use boxed variables; this can speed up some methods. Default is false").append("\n")
+                .append("       (EXPERIMENTAL) Use boxed variables; this can speed up some methods. Default is false").append("\n")
                 .append("    jruby.compile.frameless=true|false").append("\n")
                 .append("       (EXPERIMENTAL) Turn on frameless compilation where possible").append("\n")
                 .append("    jruby.jit.threshold=<invocation count>").append("\n")
@@ -245,7 +243,9 @@ public class RubyInstanceConfig {
                 .append("       Set in-process launching of e.g. system('ruby ...'). Default is true").append("\n")
                 .append("    jruby.native.enabled=true|false").append("\n")
                 .append("       Enable/disable native extensions (like JNA for non-Java APIs; Default is true").append("\n")
-                .append("       (This affects all JRuby instances in a given JVM)").append("\n");
+                .append("       (This affects all JRuby instances in a given JVM)").append("\n")
+                .append("    jruby.compat.version=RUBY1_8|RUBY1_9").append("\n")
+                .append("       Specify the major Ruby version to be compatible with; Default is RUBY1_8").append("\n");
         
         return sb.toString();
     }
@@ -377,10 +377,6 @@ public class RubyInstanceConfig {
 
     public Map getEnvironment() {
         return environment;
-    }
-
-    public String getDefaultRegexpEngine() {
-        return defaultRegexpEngine;
     }
     
     public JRubyClassLoader getJRubyClassLoader() {
