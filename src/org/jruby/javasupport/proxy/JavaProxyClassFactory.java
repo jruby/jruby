@@ -36,6 +36,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -233,7 +234,7 @@ public class JavaProxyClassFactory {
                 try {
                     defineClass_method = ClassLoader.class.getDeclaredMethod(
                             "defineClass", new Class[] { String.class,
-                                    byte[].class, int.class, int.class });
+                                    byte[].class, int.class, int.class, ProtectionDomain.class });
                 } catch (Exception e) {
                     // should not happen!
                     e.printStackTrace();
@@ -250,7 +251,7 @@ public class JavaProxyClassFactory {
         try {
             return (Class) defineClass_method
                     .invoke(loader, new Object[] { className, data,
-                            new Integer(0), new Integer(data.length) });
+                            new Integer(0), new Integer(data.length), JavaProxyClassFactory.class.getProtectionDomain() });
         } catch (IllegalArgumentException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
