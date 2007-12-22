@@ -65,8 +65,11 @@ import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
 
 /**
+ * Implementation of Ruby String class
+ * 
+ * Concurrency: no synchronization is required among readers, but
+ * all users must synchronize externally with writers.
  *
- * @author  jpetersen
  */
 public class RubyString extends RubyObject {
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
@@ -74,10 +77,10 @@ public class RubyString extends RubyObject {
     private static final int TMPLOCK_STR_F = 1 << 11;
     private static final int TMPLOCK_OR_FROZEN_STR_F = TMPLOCK_STR_F | FROZEN_F;
 
-    // string doesn't have it's own ByteList (values) 
+    // string has it's own ByteList, but it's pointing to a shared buffer (byte[])
     private volatile boolean shared_buffer = false;
 
-    // string has it's own ByteList, but it's pointing to a shared buffer (byte[])
+    // string doesn't have it's own ByteList (values) 
     private volatile boolean shared_bytelist = false;
     
     private ByteList value;

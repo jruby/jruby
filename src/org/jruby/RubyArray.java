@@ -63,6 +63,10 @@ import org.jruby.util.Pack;
 
 /**
  * The implementation of the built-in class Array in Ruby.
+ *
+ * Concurrency: no synchronization is required among readers, but
+ * all users must synchronize externally with writers.
+ *
  */
 public class RubyArray extends RubyObject implements List {
 

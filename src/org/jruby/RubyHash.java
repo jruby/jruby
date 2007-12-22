@@ -87,12 +87,13 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 //
 // This design means that iterators are never invalidated by changes to the
 // hashtable, and they do not need to modify the structure during their
-// lifecycle.  This means that no synchronization at all is required among
-// concurrent readers, although all concurrent users must externally
-// synchronize with writers to avoid data races.
+// lifecycle.
 //
 
 /** Implementation of the Hash class.
+ *
+ *  Concurrency: no synchronization is required among readers, but
+ *  all users must synchronize externally with writers.
  *
  */
 public class RubyHash extends RubyObject implements Map {
