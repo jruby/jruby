@@ -709,6 +709,9 @@ public class RubyFile extends RubyIO {
         Arity.checkArgumentCount(runtime, args, 1, 2);
         
         String relativePath = RubyString.stringValue(args[0]).toString();
+
+        boolean isAbsoluteWithFilePrefix = relativePath.startsWith("file:/");
+
         String cwd = null;
         
         // Handle ~user paths 
@@ -765,7 +768,13 @@ public class RubyFile extends RubyIO {
             path = JRubyFile.create(cwd, relativePath);
         }
         
-        return runtime.newString(padSlashes + canonicalize(path.getAbsolutePath()));
+        String tempResult = padSlashes + canonicalize(path.getAbsolutePath());
+
+        if(isAbsoluteWithFilePrefix) {
+            tempResult = tempResult.substring(tempResult.indexOf("file:/"));
+        }
+
+        return runtime.newString(tempResult);
     }
     
     /**
@@ -966,22 +975,38 @@ public class RubyFile extends RubyIO {
     
     @JRubyMethod(name = "lstat", required = 1, meta = true)
     public static IRubyObject lstat(IRubyObject recv, IRubyObject filename) {
-        return recv.getRuntime().newFileStat(filename.convertToString().toString(), true);
+        String f = filename.convertToString().toString();
+        if(f.startsWith("file:/")) {
+            f = f.substring(5, f.indexOf("!"));
+        }
+        return recv.getRuntime().newFileStat(f, true);
     }
 
     @JRubyMethod(name = "stat", required = 1, meta = true)
     public static IRubyObject stat(IRubyObject recv, IRubyObject filename) {
-        return recv.getRuntime().newFileStat(filename.convertToString().toString(), false);
+        String f = filename.convertToString().toString();
+        if(f.startsWith("file:/")) {
+            f = f.substring(5, f.indexOf("!"));
+        }
+        return recv.getRuntime().newFileStat(f, false);
     }
 
     @JRubyMethod(name = "atime", required = 1, meta = true)
     public static IRubyObject atime(IRubyObject recv, IRubyObject filename) {
-        return recv.getRuntime().newFileStat(filename.convertToString().toString(), false).atime();
+        String f = filename.convertToString().toString();
+        if(f.startsWith("file:/")) {
+            f = f.substring(5, f.indexOf("!"));
+        }
+        return recv.getRuntime().newFileStat(f, false).atime();
     }
 
     @JRubyMethod(name = "ctime", required = 1, meta = true)
     public static IRubyObject ctime(IRubyObject recv, IRubyObject filename) {
-        return recv.getRuntime().newFileStat(filename.convertToString().toString(), false).ctime();
+        String f = filename.convertToString().toString();
+        if(f.startsWith("file:/")) {
+            f = f.substring(5, f.indexOf("!"));
+        }
+        return recv.getRuntime().newFileStat(f, false).ctime();
     }
 
     @JRubyMethod(required = 2, rest = true, meta = true)

@@ -90,6 +90,23 @@ public class RubyFileTest {
         if (Ruby.isSecurityRestricted()) {
             return recv.getRuntime().newBoolean(false);
         }
+
+        if(filename.convertToString().toString().startsWith("file:/")) {
+            String file = filename.convertToString().toString().substring(5);
+            String jar = file.substring(0,file.indexOf("!"));
+            String after = file.substring(file.indexOf("!")+2);
+            try {
+                java.util.jar.JarFile jf = new java.util.jar.JarFile(jar);
+                if(jf.getJarEntry(after) != null) {
+                    return recv.getRuntime().newBoolean(true);
+                } else {
+                    return recv.getRuntime().newBoolean(false);
+                }
+            } catch(Exception e) {
+                return recv.getRuntime().newBoolean(false);
+            }
+        }
+
         return recv.getRuntime().newBoolean(file(filename).exists());
     }
 

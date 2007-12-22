@@ -57,6 +57,9 @@ class TestFile < Test::Unit::TestCase
       assert_equal(File.join(Dir.pwd, "x/y/z/a/b"), File.expand_path("a/b", "x/y/z"))
       assert_equal(File.join(Dir.pwd, "bin"), File.expand_path("../../bin", "tmp/x"))
       assert_equal("/bin", File.expand_path("./../foo/./.././../bin", "/a/b"))
+
+      assert_equal("file:/foo/bar", File.expand_path("file:/foo/bar"))
+      assert_equal("file:/bar", File.expand_path("file:/foo/../bar"))
     end
   end # if windows
 
@@ -198,6 +201,13 @@ class TestFile < Test::Unit::TestCase
 
   def test_file_exist_query
     assert(File.exist?('test'))
+  end
+
+  def test_file_exist_in_jar_file
+    assert(File.exist?("file:" + File.expand_path("test/test_jar.jar") + "!/abc/foo.rb"))
+    assert(File.exist?("file:" + File.expand_path("test/test_jar.jar") + "!/inside_jar.rb"))
+    assert(!File.exist?("file:" + File.expand_path("test/test_jar.jar") + "!/inside_jar2.rb"))
+    assert(!File.exist?("file:" + File.expand_path("test/test_jar.jar") + "!/"))
   end
 
   def test_file_size_query
