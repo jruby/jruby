@@ -357,10 +357,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            if (!value.isNil() && ! (value instanceof RubyString)) {
-                throw runtime.newTypeError("value of " + name() + " must be a String");
-            }
-            runtime.setKCode(KCode.create(runtime, value.toString()));
+            runtime.setKCode(KCode.create(runtime, value.convertToString().toString()));
             return value;
         }
     }
