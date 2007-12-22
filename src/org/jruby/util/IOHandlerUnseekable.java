@@ -154,11 +154,12 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
             final int CHUNK = 8192;
             while (true) { // read until EOF
                 list.append(input, CHUNK);
+                read = true;
             }
         } catch (EOFException e) {
             if (!read) throw e;
         }
-        
+
         return list;
     }
 

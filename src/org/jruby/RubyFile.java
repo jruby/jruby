@@ -100,8 +100,16 @@ public class RubyFile extends RubyIO {
     // use static function because constructor call must be first statement in above constructor
     private static InputStream open(Ruby runtime, String path) {
         try {
-            return new FileInputStream(path);
-        } catch (FileNotFoundException e) {
+            if(path.startsWith("file:/")) {
+                String filePath = path.substring(5, path.indexOf("!"));
+                String internalPath = path.substring(path.indexOf("!") + 2);
+
+                java.util.jar.JarFile jf = new java.util.jar.JarFile(filePath);
+                return jf.getInputStream(jf.getEntry(internalPath));
+            } else {
+                return new FileInputStream(path);
+            }
+        } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         } catch (SecurityException se) {
             throw runtime.newIOError(se.getMessage());
@@ -239,6 +247,27 @@ public class RubyFile extends RubyIO {
         try {
             if (newPath.equals("/dev/null")) {
                 handler = new IOHandlerNull(getRuntime(), newModes);
+            } else if(newPath.startsWith("file:/")) {
+                String filePath = path.substring(5, path.indexOf("!"));
+                String internalPath = path.substring(path.indexOf("!") + 2);
+
+                java.util.jar.JarFile jf;
+                try {
+                    jf = new java.util.jar.JarFile(filePath);
+                } catch(IOException e) {
+                    throw getRuntime().newErrnoENOENTError(
+                                                           "File not found - " + newPath);
+                }
+
+                java.util.zip.ZipEntry zf = jf.getEntry(internalPath);
+                
+                if(zf == null) {
+                    throw getRuntime().newErrnoENOENTError(
+                                                           "File not found - " + newPath);
+                }
+
+                InputStream is = jf.getInputStream(zf);
+                handler = new IOHandlerUnseekable(getRuntime(), is, null);
             } else {
                 handler = new IOHandlerSeekable(getRuntime(), newPath, newModes);
             }

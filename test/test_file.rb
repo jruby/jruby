@@ -210,6 +210,33 @@ class TestFile < Test::Unit::TestCase
     assert(!File.exist?("file:" + File.expand_path("test/test_jar.jar") + "!/"))
   end
 
+  def test_file_read_in_jar_file
+    assert_equal("foobarx\n", File.read("file:" + File.expand_path("test/test_jar2.jar") + "!/test_value.rb"))
+
+    assert_raises(Errno::ENOENT) do 
+      File.read("file:" + File.expand_path("test/test_jar2.jar") + "!/inside_jar2.rb")
+    end
+
+    assert_raises(Errno::ENOENT) do 
+      File.read("file:" + File.expand_path("test/test_jar3.jar") + "!/inside_jar2.rb")
+    end
+
+    val = ""
+    open("file:" + File.expand_path("test/test_jar2.jar") + "!/test_value.rb") do |f|
+      val = f.read
+    end
+    assert_equal "foobarx\n", val
+
+    values = ""
+    File.open("file:" + File.expand_path("test/test_jar2.jar") + "!/test_value.rb") do |f|
+      f.each do |s|
+        values << s
+      end
+    end
+
+    assert_equal "foobarx\n", values
+  end
+  
   def test_file_size_query
     assert(File.size?('build.xml'))
   end
