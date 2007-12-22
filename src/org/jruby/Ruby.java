@@ -103,7 +103,6 @@ import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
-import org.jruby.util.MethodCache;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
 
@@ -116,7 +115,6 @@ public final class Ruby {
     private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "yaml/syck", "jsignal" };
 
     private CacheMap cacheMap = new CacheMap();
-    private MethodCache methodCache = new MethodCache();
     private ThreadService threadService;
     private Hashtable<Object, Object> runtimeInformation;
     
@@ -1178,15 +1176,6 @@ public final class Ruby {
     }
     
     /**
-     * Retrieve method cache.
-     * 
-     * @return method cache where cached methods have been stored
-     */
-    public MethodCache getMethodCache() {
-        return methodCache;
-    }
-
-    /**
      * @see org.jruby.Ruby#getRuntimeInformation
      */
     public Map<Object, Object> getRuntimeInformation() {
@@ -1258,8 +1247,6 @@ public final class Ruby {
         getObject().defineConstant("TOPLEVEL_BINDING", newBinding());
 
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
-        
-        methodCache.initialized();
     }
 
     private void initLibraries() {
