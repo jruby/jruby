@@ -75,7 +75,6 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
-import org.jruby.util.MethodCache;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
@@ -673,7 +672,6 @@ public class RubyModule extends RubyObject {
             if (existingMethod != null) {
                 getRuntime().getCacheMap().remove(name, existingMethod);
             }
-            getRuntime().getMethodCache().removeMethod(name);
             putMethod(name, method);
         }
     }
@@ -695,8 +693,6 @@ public class RubyModule extends RubyObject {
                 throw getRuntime().newNameError("method '" + name + "' not defined in " + getName(), name);
             }
             
-            getRuntime().getMethodCache().removeMethod(name);
-
             getRuntime().getCacheMap().remove(name, method);
         }
         
@@ -708,22 +704,6 @@ public class RubyModule extends RubyObject {
     }
     }
 
-    private DynamicMethod searchMethodWithoutCache(String name) {
-        for (RubyModule searchModule = this; searchModule != null; searchModule = searchModule.getSuperClass()) {
-            // included modules use delegates methods for we need to synchronize on result of getMethods
-            synchronized(searchModule.getMethods()) {
-                // See if current class has method or if it has been cached here already
-                DynamicMethod method = (DynamicMethod) searchModule.getMethods().get(name);
-                
-                if (method != null) {
-                    return method;
-                }
-            }
-        }
-
-        return UndefinedMethod.getInstance();
-    }
-
     /**
      * Search through this module and supermodules for method definitions. Cache superclass definitions in this class.
      * 
@@ -731,12 +711,6 @@ public class RubyModule extends RubyObject {
      * @return The method, or UndefinedMethod if not found
      */
     public DynamicMethod searchMethod(String name) {
-        MethodCache cache = getRuntime().getMethodCache();
-        MethodCache.CacheEntry entry = cache.getMethod(this, name);
-        if (entry.klass.get() == this && name.equals(entry.methodName)) {
-            return entry.method.get();
-        }
-        
         for (RubyModule searchModule = this; searchModule != null; searchModule = searchModule.getSuperClass()) {
             // included modules use delegates methods for we need to synchronize on result of getMethods
             synchronized(searchModule.getMethods()) {
@@ -744,13 +718,6 @@ public class RubyModule extends RubyObject {
                 DynamicMethod method = (DynamicMethod) searchModule.getMethods().get(name);
                 
                 if (method != null) {
-                    cache.putMethod(this, name, method);
-                    /*
-                    // TO BE REMOVED
-                    if (searchModule != this) {
-                        addCachedMethod(name, method);
-                    }
-                    */
                     return method;
                 }
             }
@@ -834,7 +801,7 @@ public class RubyModule extends RubyObject {
             getRuntime().secure(4);
         }
         DynamicMethod method = searchMethod(oldName);
-        DynamicMethod oldMethod = searchMethodWithoutCache(name);
+        DynamicMethod oldMethod = searchMethod(name);
         if (method.isUndefined()) {
             if (isModule()) {
                 method = getRuntime().getObject().searchMethod(oldName);
@@ -845,7 +812,6 @@ public class RubyModule extends RubyObject {
                         (isModule() ? "module" : "class") + " `" + getName() + "'", oldName);
             }
         }
-        getRuntime().getMethodCache().removeMethod(name);
         getRuntime().getCacheMap().remove(name, method);
         getRuntime().getCacheMap().remove(name, oldMethod);
         getRuntime().getCacheMap().remove(name, oldMethod.getRealMethod());
@@ -1730,8 +1696,6 @@ public class RubyModule extends RubyObject {
     }
 
     private void doIncludeModule(RubyModule includedModule) {
-
-        boolean changed = false;
         boolean skip = false;
 
         RubyModule currentModule = this;
@@ -1769,14 +1733,10 @@ public class RubyModule extends RubyObject {
                 currentModule.setSuperClass(new IncludedModuleWrapper(getRuntime(), currentModule.getSuperClass(),
                         includedModule.getNonIncludedClass()));
                 currentModule = currentModule.getSuperClass();
-                changed = true;
             }
 
             includedModule = includedModule.getSuperClass();
             skip = false;
-        }
-        if (changed) {
-            getRuntime().getMethodCache().clearCacheForModule(this);
         }
     }
 
