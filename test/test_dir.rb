@@ -103,6 +103,17 @@ class TestDir < Test::Unit::TestCase
     assert_equal("testDir_4", pwd.split("/")[-1].strip)
   end
 
+  def test_glob_inside_jar_file
+    require 'test/test_jar.jar'
+    require 'inside_jar'
+
+    jar_file = "file:" + File.expand_path(File.join(File.dirname(__FILE__), "test_jar.jar")) + "!"
+
+    assert_equal ["#{jar_file}/abc", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].sort, $__glob_value.sort
+    assert_equal ["#{jar_file}/abc", "#{jar_file}/abc/foo.rb", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].sort, $__glob_value2.sort
+    assert_equal ["#{jar_file}/abc"], Dir["#{jar_file}/abc"]
+  end
+  
   if WINDOWS
     def test_drive_letter_dirname_leaves_trailing_slash
       assert_equal "C:/", File.dirname('C:/Temp')

@@ -34,6 +34,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+
+import java.util.Enumeration;
+
 /**
  * This class exists as a counterpart to the dir.c file in 
  * MRI source. It contains many methods useful for 
@@ -464,6 +469,38 @@ public class Dir {
                 if(new File(new String(_path, path, plen - path)).exists()) {
                     status = func.call(_path, path, plen, arg);
                 }
+            } else if(plen > 6 &&
+                      _path[path] == 'f' &&
+                      _path[path+1] == 'i' &&
+                      _path[path+2] == 'l' &&
+                      _path[path+3] == 'e' &&
+                      _path[path+4] == ':'
+                      ) {
+
+                int ix = -1;
+                for(int i = 0;i<plen;i++) {
+                    if(_path[path+i] == '!') {
+                        ix = i;
+                        break;
+                    }
+                }
+
+                st = new File(new String(_path, path+5, ix-5));
+                String jar = new String(_path, path+ix+1, plen-(ix+1));
+                try {
+                    JarFile jf = new JarFile(st);
+                    
+                    if(jar.startsWith("/")) {
+                        jar = jar.substring(1);
+                    }
+
+                    if(jf.getEntry(jar + "/") != null) {
+                        jar = jar + "/";
+                    }
+                    if(jf.getEntry(jar) != null) {
+                        status = func.call(_path, path, plen, arg);
+                    }
+                } catch(Exception e) {}
             } else {
                 if(new File(cwd, new String(_path, path, plen - path)).exists()) {
                     status = func.call(_path, path, plen, arg);
@@ -485,6 +522,9 @@ public class Dir {
                     byte[] dir;
                     byte[] magic;
                     boolean recursive = false;
+                    String jar = null;
+                    JarFile jf = null;
+
                     if(path == p) {
                         dir = new byte[]{'.'};
                     } else {
@@ -493,11 +533,43 @@ public class Dir {
                     magic = extract_elem(_path,p,plen);
                     if(dir[0] == '/'  || (DOSISH && 2<dir.length && dir[1] == ':' && isdirsep(dir[2]))) {
                         st = new File(new String(dir));
+                    } else if(dir.length > 6 &&
+                              dir[0] == 'f' &&
+                              dir[1] == 'i' &&
+                              dir[2] == 'l' &&
+                              dir[3] == 'e' &&
+                              dir[4] == ':'
+                              ) {
+
+                        int ix = -1;
+                        for(int i = 0;i<dir.length;i++) {
+                            if(dir[i] == '!') {
+                                ix = i;
+                                break;
+                            }
+                        }
+
+                        st = new File(new String(dir, 5, ix-5));
+                        jar = new String(dir, ix+1, dir.length-(ix+1));
+                        try {
+                            jf = new JarFile(st);
+
+                            if(jar.startsWith("/")) {
+                                jar = jar.substring(1);
+                            }
+
+                            if(jf.getEntry(jar + "/") != null) {
+                                jar = jar + "/";
+                            }
+                        } catch(Exception e) {
+                            jar = null;
+                            jf = null;
+                        }
                     } else {
                         st = new File(cwd, new String(dir));
                     }
 
-                    if(st.isDirectory()) {
+                    if((jf != null && ("".equals(jar) || (jf.getJarEntry(jar) != null && jf.getJarEntry(jar).isDirectory()))) || st.isDirectory()) {
                         if(m != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
                             int n = base.length;
                             recursive = true;
@@ -513,52 +585,115 @@ public class Dir {
                         break mainLoop;
                     }
 
-                    String[] dirp = st.list();
-                    for(int i=0;i<dirp.length;i++) {
-                        if(recursive) {
+                    if(jar == null) {
+                        String[] dirp = st.list();
+                        for(int i=0;i<dirp.length;i++) {
+                            if(recursive) {
+                                byte[] bs = dirp[i].getBytes();
+                                if(fnmatch(STAR,0,1,bs,0,bs.length,flags) != 0) {
+                                    continue;
+                                }
+                                buf.length(0);
+                                buf.append(base);
+                                buf.append( BASE(base) ? SLASH : EMPTY );
+                                buf.append(dirp[i].getBytes());
+                                if(buf.bytes[0] == '/' || (DOSISH && 2<buf.realSize && buf.bytes[1] == ':' && isdirsep(buf.bytes[2]))) {
+                                    st = new File(new String(buf.bytes, buf.begin, buf.realSize));
+                                } else {
+                                    st = new File(cwd, new String(buf.bytes, buf.begin, buf.realSize));
+                                }
+                                if(st.isDirectory()) {
+                                    int t = buf.realSize;
+                                    buf.append(SLASH);
+                                    buf.append(DOUBLE_STAR);
+                                    buf.append(_path, p+m, plen-(p+m));
+                                    status = glob_helper(cwd, buf.bytes, buf.begin, buf.realSize, t, flags, func, arg);
+                                    if(status != 0) {
+                                        break;
+                                    }
+                                }
+                                continue;
+                            }
                             byte[] bs = dirp[i].getBytes();
-                            if(fnmatch(STAR,0,1,bs,0,bs.length,flags) != 0) {
-                                continue;
+                            if(fnmatch(magic,0,magic.length,bs,0,bs.length,flags) == 0) {
+                                buf.length(0);
+                                buf.append(base);
+                                buf.append( BASE(base) ? SLASH : EMPTY );
+                                buf.append(dirp[i].getBytes());
+                                if(m == -1) {
+                                    status = func.call(buf.bytes,0,buf.realSize,arg);
+                                    if(status != 0) {
+                                        break;
+                                    }
+                                    continue;
+                                }
+                                link.add(buf);
+                                buf = new ByteList(20);
                             }
-                            buf.length(0);
-                            buf.append(base);
-                            buf.append( BASE(base) ? SLASH : EMPTY );
-                            buf.append(dirp[i].getBytes());
-                            if(buf.bytes[0] == '/' || (DOSISH && 2<buf.realSize && buf.bytes[1] == ':' && isdirsep(buf.bytes[2]))) {
-                                st = new File(new String(buf.bytes, buf.begin, buf.realSize));
-                            } else {
-                                st = new File(cwd, new String(buf.bytes, buf.begin, buf.realSize));
-                            }
-                            if(st.isDirectory()) {
-                                int t = buf.realSize;
-                                buf.append(SLASH);
-                                buf.append(DOUBLE_STAR);
-                                buf.append(_path, p+m, plen-(p+m));
-                                status = glob_helper(cwd, buf.bytes, buf.begin, buf.realSize, t, flags, func, arg);
-                                if(status != 0) {
-                                    break;
+                        }
+                    } else {
+                        try {
+                            List<JarEntry> dirp = new ArrayList<JarEntry>();
+                            for(Enumeration<JarEntry> eje = jf.entries(); eje.hasMoreElements(); ) {
+                                JarEntry je = eje.nextElement();
+                                String name = je.getName();
+                                int ix = name.indexOf('/', jar.length());
+                                if((!name.startsWith("META-INF") && (ix == -1 || ix == name.length()-1))) {
+                                    if("/".equals(jar) || (name.startsWith(jar) && name.length()>jar.length())) {
+                                        dirp.add(je);
+                                    }
                                 }
                             }
-                            continue;
-                        }
-                        byte[] bs = dirp[i].getBytes();
-                        if(fnmatch(magic,0,magic.length,bs,0,bs.length,flags) == 0) {
-                            buf.length(0);
-                            buf.append(base);
-                            buf.append( BASE(base) ? SLASH : EMPTY );
-                            buf.append(dirp[i].getBytes());
-                            if(m == -1) {
-                                status = func.call(buf.bytes,0,buf.realSize,arg);
-                                if(status != 0) {
-                                    break;
+                            for(JarEntry je : dirp) {
+                                byte[] bs = je.getName().getBytes();
+                                int len = bs.length;
+
+                                if(je.isDirectory()) {
+                                    len--;
                                 }
-                                continue;
+
+                                if(recursive) {
+                                    if(fnmatch(STAR,0,1,bs,0,len,flags) != 0) {
+                                        continue;
+                                    }
+                                    buf.length(0);
+                                    buf.append(base, 0, base.length - jar.length());
+                                    buf.append( BASE(base) ? SLASH : EMPTY );
+                                    buf.append(bs, 0, len);
+
+                                    if(je.isDirectory()) {
+                                        int t = buf.realSize;
+                                        buf.append(SLASH);
+                                        buf.append(DOUBLE_STAR);
+                                        buf.append(_path, p+m, plen-(p+m));
+                                        status = glob_helper(cwd, buf.bytes, buf.begin, buf.realSize, t, flags, func, arg);
+                                        if(status != 0) {
+                                            break;
+                                        }
+                                    }
+                                    continue;
+                                }
+
+                                if(fnmatch(magic,0,magic.length,bs,0,len,flags) == 0) {
+                                    buf.length(0);
+                                    buf.append(base, 0, base.length - jar.length());
+                                    buf.append( BASE(base) ? SLASH : EMPTY );
+                                    buf.append(bs, 0, len);
+                                    if(m == -1) {
+                                        status = func.call(buf.bytes,0,buf.realSize,arg);
+                                        if(status != 0) {
+                                            break;
+                                        }
+                                        continue;
+                                    }
+                                    link.add(buf);
+                                    buf = new ByteList(20);
+                                }
                             }
-                            link.add(buf);
-                            buf = new ByteList(20);
-                        }
+                        } catch(Exception e) {}
                     }
                 } while(false);
+
                 if(link.size() > 0) {
                     for(Iterator<ByteList> iter = link.iterator(); iter.hasNext();) {
                         if(status == 0) {
