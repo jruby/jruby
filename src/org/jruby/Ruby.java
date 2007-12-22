@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.RubiniusRunner;
@@ -290,8 +291,14 @@ public final class Ruby {
 
     private KCode kcode = KCode.NONE;
 
-    public int symbolLastId = 128;
-    public int moduleLastId = 0;
+    private AtomicInteger symbolLastId = new AtomicInteger(128);
+    public int allocSymbolId() {
+        return symbolLastId.incrementAndGet();
+    }
+    private AtomicInteger moduleLastId = new AtomicInteger(0);
+    public int allocModuleId() {
+        return moduleLastId.incrementAndGet();
+    }
 
     private Object respondToMethod;
 

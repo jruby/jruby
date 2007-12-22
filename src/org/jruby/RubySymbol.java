@@ -66,8 +66,7 @@ public class RubySymbol extends RubyObject {
 
         this.symbol = internedSymbol;
 
-        runtime.symbolLastId++;
-        this.id = runtime.symbolLastId;
+        this.id = runtime.allocSymbolId();
     }
     
     public static RubyClass createSymbolClass(Ruby runtime) {

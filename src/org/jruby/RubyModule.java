@@ -186,7 +186,7 @@ public class RubyModule extends RubyObject {
      */
     protected RubyModule(Ruby runtime, RubyClass metaClass, boolean objectSpace) {
         super(runtime, metaClass, objectSpace);
-        id = ++runtime.moduleLastId;
+        id = runtime.allocModuleId();
         // if (parent == null) parent = runtime.getObject();
         setFlag(USER7_F, !isClass());
     }
