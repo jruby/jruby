@@ -112,6 +112,10 @@ module YAML
       attr_accessor :value
       attr_accessor :style
       attr_accessor :type_id
+
+      def to_str
+        YAML.dump(self)
+      end
     end
 
     class Scalar < Node
@@ -120,6 +124,10 @@ module YAML
         self.type_id = type_id
         self.value = val
         self.style = style
+      end
+      
+      def to_yaml_node(repr)
+        repr.scalar(self.type_id,self.value,self.style)
       end
     end
 
@@ -133,6 +141,10 @@ module YAML
       def add(v)
         @value << v
       end
+      
+      def to_yaml_node(repr)
+        repr.seq(self.type_id,self.value,self.style)
+      end
     end
 
     class Map < Node
@@ -144,6 +156,10 @@ module YAML
       end
       def add(k, v)
         @value[k] = v
+      end
+
+      def to_yaml_node(repr)
+        repr.map(self.type_id,self.value,self.style)
       end
     end
   end

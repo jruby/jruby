@@ -72,6 +72,7 @@ public class RubyYAML {
     public static RubyModule createYAMLModule(Ruby runtime) {
         runtime.getKernel().callMethod(runtime.getCurrentContext(),"require", runtime.newString("date"));
         RubyModule result = runtime.defineModule("YAML");
+
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyYAML.class);
 
         result.defineAnnotatedMethods(RubyYAML.class);
