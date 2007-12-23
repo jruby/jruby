@@ -48,9 +48,9 @@ public class TypeConverter {
                 } else if (obj instanceof RubyBoolean) {
                     type = obj.isTrue() ? "true" : "false";
                 } else {
-                    type = target.getName();
+                    type = obj.getMetaClass().getRealClass().getName();
                 }
-                throw obj.getRuntime().newTypeError("can't convert " + obj.getMetaClass().getName() + " into " + type);
+                throw obj.getRuntime().newTypeError("can't convert " + type + " into " + target);
             } else {
                 return obj.getRuntime().getNil();
             }
