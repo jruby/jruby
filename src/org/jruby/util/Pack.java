@@ -993,8 +993,12 @@ public class Pack {
         for (; occurrences-- > 0;) {
             result.append(converter.decode(runtime, encode));
         }
-        for (; lPadLength-- > 0;)
+
+        // MRI behavior:  for 'Q', do not add trailing nils
+        if (converter != converters['Q']) {
+            for (; lPadLength-- > 0;)
             result.append(runtime.getNil());
+        }
     }
 
     public static int encode(Ruby runtime, int occurrences, StringBuffer result,

@@ -628,6 +628,10 @@ $KCODE = old_code
 # unpack("U*") should raise ArgumentError when the string is not valid UTF8
 test_exception(ArgumentError) { x2.unpack("U*") }
 
+# unpack with Q/q patterns
+test_equal([18446744073709551615], ("\xFF" * 8).unpack('Q5'))
+test_equal([-1, nil, nil, nil, nil], ("\xFF" * 8).unpack('q5'))
+
 # unpack with Z* and Z patterns
 test_equal(["abc ", "abc "],    "abc \0abc \0".unpack('Z*Z*'))
 test_equal(["abc "],            "abc \0abc \0".unpack('Z10'))
