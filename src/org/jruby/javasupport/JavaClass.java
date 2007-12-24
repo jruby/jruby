@@ -239,16 +239,18 @@ public class JavaClass extends JavaObject {
     }
 
     private static abstract class MethodCallback extends NamedCallback {
-        boolean haveLocalMethod;
-        List methods;
-        List aliases;
-        IntHashMap javaMethods;
-        IntHashMap matchingMethods;
-        JavaMethod javaMethod;
+        private boolean haveLocalMethod;
+        private List methods;
+        protected List aliases;
+        protected JavaMethod javaMethod;
+        protected IntHashMap javaMethods;
+        protected IntHashMap matchingMethods;
         MethodCallback(){}
         MethodCallback(String name, int type) {
             super(name,type);
         }
+
+        // called only by initializing thread; no synchronization required
         void addMethod(Method method, Class javaClass) {
             if (methods == null) {
                 methods = new ArrayList();
@@ -256,6 +258,8 @@ public class JavaClass extends JavaObject {
             methods.add(method);
             haveLocalMethod |= javaClass == method.getDeclaringClass();
         }
+
+        // called only by initializing thread; no synchronization required
         void addAlias(String alias) {
             if (aliases == null) {
                 aliases = new ArrayList();
@@ -263,14 +267,17 @@ public class JavaClass extends JavaObject {
             if (!aliases.contains(alias))
                 aliases.add(alias);
         }
+
+        // modified only by addMethod; no synchronization required
         boolean hasLocalMethod () {
             return haveLocalMethod;
         }
+
         // TODO: varargs?
         // TODO: rework Java.matching_methods_internal and
         // ProxyData.method_cache, since we really don't need to be passing
         // around RubyArray objects anymore.
-        void createJavaMethods(Ruby runtime) {
+        synchronized void createJavaMethods(Ruby runtime) {
             if (methods != null) {
                 if (methods.size() == 1) {
                     javaMethod = JavaMethod.create(runtime,(Method)methods.get(0));
@@ -292,6 +299,7 @@ public class JavaClass extends JavaObject {
                 methods = null;
             }
         }
+
         void raiseNoMatchingMethodError(IRubyObject proxy, IRubyObject[] args, int start) {
             int len = args.length;
             List argTypes = new ArrayList(len - start);
@@ -307,8 +315,9 @@ public class JavaClass extends JavaObject {
         StaticMethodInvoker(String name) {
             super(name,STATIC_METHOD);
         }
+
         void install(RubyClass proxy) {
-            if (haveLocalMethod) {
+            if (hasLocalMethod()) {
                 RubyClass singleton = proxy.getSingletonClass();
                 singleton.defineFastMethod(this.name,this,this.visibility);
                 if (aliases != null && isPublic() ) {
@@ -319,10 +328,10 @@ public class JavaClass extends JavaObject {
                 }
             }
         }
-        public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            if (javaMethod == null && javaMethods == null) {
-                createJavaMethods(self.getRuntime());
-            }
+
+        // synchronized due to modification of matchingMethods
+        synchronized public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+            createJavaMethods(self.getRuntime());
             // TODO: ok to convert args in place, rather than new array?
             int len = args.length;
             IRubyObject[] convertedArgs = new IRubyObject[len];
@@ -359,7 +368,7 @@ public class JavaClass extends JavaObject {
             super(name,INSTANCE_METHOD);
         }
         void install(RubyClass proxy) {
-            if (haveLocalMethod) {
+            if (hasLocalMethod()) {
                 proxy.defineFastMethod(this.name,this,this.visibility);
                 if (aliases != null && isPublic()) {
                     for (Iterator iter = aliases.iterator(); iter.hasNext(); ) {
@@ -369,10 +378,10 @@ public class JavaClass extends JavaObject {
                 }
             }
         }
-        public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            if (javaMethod == null && javaMethods == null) {
-                createJavaMethods(self.getRuntime());
-            }
+
+        // synchronized due to modification of matchingMethods
+        synchronized public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+            createJavaMethods(self.getRuntime());
             // TODO: ok to convert args in place, rather than new array?
             int len = args.length;
             if (block.isGiven()) { // convert block to argument
@@ -427,6 +436,8 @@ public class JavaClass extends JavaObject {
         void install(final RubyModule proxy) {
             if (proxy.fastGetConstantAt(field.getName()) == null) {
                 JavaField javaField = new JavaField(proxy.getRuntime(),field);
+                // TODO: catch exception if constant is already set by other
+                // thread
                 proxy.const_set(javaField.name(),Java.java_to_ruby(proxy,javaField.static_value(),Block.NULL_BLOCK));
             }
         }
