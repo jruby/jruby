@@ -143,25 +143,6 @@ public class JavaClass extends JavaObject {
         boolean isProtected() {
             return visibility == Visibility.PROTECTED;
         }
-//        void logMessage(IRubyObject self, IRubyObject[] args) {
-//            if (!DEBUG) {
-//                return;
-//            }
-//            String type;
-//            switch (this.type) {
-//            case STATIC_FIELD: type = "static field"; break;
-//            case STATIC_METHOD: type = "static method"; break;
-//            case INSTANCE_FIELD: type = "instance field"; break;
-//            case INSTANCE_METHOD: type = "instance method"; break;
-//            default: type = "?"; break;
-//            }
-//            StringBuffer b = new StringBuffer(type).append(" => '").append(name)
-//                .append("'; args.length = ").append(args.length);
-//            for (int i = 0; i < args.length; i++) {
-//                b.append("\n   arg[").append(i).append("] = ").append(args[i]);
-//            }
-//            System.out.println(b);
-//        }
     }
 
     private static abstract class FieldCallback extends NamedCallback {
@@ -171,10 +152,6 @@ public class JavaClass extends JavaObject {
         FieldCallback(String name, int type, Field field) {
             super(name,type);
             this.field = field;
-//            if (Modifier.isProtected(field.getModifiers())) {
-//                field.setAccessible(true);
-//                this.visibility = Visibility.PROTECTED;
-//            }
         }
     }
 
@@ -187,7 +164,6 @@ public class JavaClass extends JavaObject {
             proxy.getSingletonClass().defineFastMethod(this.name,this,this.visibility);
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            //logMessage(self,args);
             if (javaField == null) {
                 javaField = new JavaField(getRuntime(),field);
             }
@@ -207,7 +183,6 @@ public class JavaClass extends JavaObject {
             proxy.getSingletonClass().defineFastMethod(this.name,this,this.visibility);
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            //logMessage(self,args);
             if (javaField == null) {
                 javaField = new JavaField(getRuntime(),field);
             }
@@ -229,7 +204,6 @@ public class JavaClass extends JavaObject {
             proxy.defineFastMethod(this.name,this,this.visibility);
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            //logMessage(self,args);
             if (javaField == null) {
                 javaField = new JavaField(getRuntime(),field);
             }
@@ -251,7 +225,6 @@ public class JavaClass extends JavaObject {
             proxy.defineFastMethod(this.name,this,this.visibility);
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            //logMessage(self,args);
             if (javaField == null) {
                 javaField = new JavaField(getRuntime(),field);
             }
@@ -281,9 +254,6 @@ public class JavaClass extends JavaObject {
                 methods = new ArrayList();
             }
             methods.add(method);
-//            if (Modifier.isProtected(method.getModifiers())) {
-//                visibility = Visibility.PROTECTED;
-//            }
             haveLocalMethod |= javaClass == method.getDeclaringClass();
         }
         void addAlias(String alias) {
@@ -310,7 +280,6 @@ public class JavaClass extends JavaObject {
                     for (Iterator iter = methods.iterator(); iter.hasNext() ;) {
                         Method method = (Method)iter.next();
                         // TODO: deal with varargs
-                        //int arity = method.isVarArgs() ? -1 : method.getParameterTypes().length;
                         int arity = method.getParameterTypes().length;
                         RubyArray methodsForArity = (RubyArray)javaMethods.get(arity);
                         if (methodsForArity == null) {
@@ -351,7 +320,6 @@ public class JavaClass extends JavaObject {
             }
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            //logMessage(self,args);
             if (javaMethod == null && javaMethods == null) {
                 createJavaMethods(self.getRuntime());
             }
@@ -402,7 +370,6 @@ public class JavaClass extends JavaObject {
             }
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            //logMessage(self,args);
             if (javaMethod == null && javaMethods == null) {
                 createJavaMethods(self.getRuntime());
             }
