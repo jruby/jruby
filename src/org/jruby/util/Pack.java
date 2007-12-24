@@ -950,7 +950,10 @@ public class Pack {
                     break;
                  case 'X':
                      if (occurrences == IS_STAR) {
-                         occurrences = encode.limit() - encode.remaining();
+                         // MRI behavior: Contrary to what seems to be logical,
+                         // when '*' is given, MRI calculates the distance
+                         // to the end, in order to go backwards.
+                         occurrences = /*encode.limit() - */encode.remaining();
                      }
 
                      try {

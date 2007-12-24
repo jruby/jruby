@@ -645,6 +645,10 @@ test_equal([""],                "\0\0".unpack('Z*'))
 test_equal([""],                "\0\0abc".unpack('Z*'))
 test_equal([""],                "\0\0abc\0\0".unpack('Z*'))
 
+# unpack with X* pattern
+test_equal(["a", "b", "b"], "abc".unpack("aaX*a"))
+test_exception(ArgumentError) { "a".unpack("X*") }
+
 # and just for kicks, make sure we're returning appropriate byte values for each_byte!
 
 bytes = []
