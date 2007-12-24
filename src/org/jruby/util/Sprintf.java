@@ -953,7 +953,7 @@ public class Sprintf {
                             decDigits = nDigits - 1;
                             // precision for G/g includes integer digits
                             precision = Math.max(0,precision - 1);
-                            
+
                             if (precision < decDigits) {
                                 int n = round(digits,nDigits,precision,precision!=0);
                                 if (n > nDigits) {
@@ -962,16 +962,52 @@ public class Sprintf {
                                 decDigits = Math.min(nDigits - 1,precision);
                             }
                             exponent += nDigits - 1;
-                            if (precision > 0) {
-                                len += 1 + precision; // n.prec
-                            } else {
-                                len += 1; // n
-                                if ((flags & FLAG_SHARP) != 0) {
-                                    len++; // will have a trailing '.'
-                                }
-                            }
                             
-                            width -= len + 5; // 5 -> e+nnn / e-nnn
+                            boolean isSharp = (flags & FLAG_SHARP) != 0;
+
+                            // deal with length/width
+			    
+                            len++; // first digit is always printed
+
+                            // MRI behavior: Be default, 2 digits
+                            // in the exponent. Use 3 digits
+                            // only when necessary.
+                            // See comment for writeExp method for more details.
+                            if (exponent > 99)
+                            	len += 5; // 5 -> e+nnn / e-nnn
+                            else
+                            	len += 4; // 4 -> e+nn / e-nn
+
+                            if (isSharp) {
+                            	// in this mode, '.' is always printed
+                            	len++;
+                            }
+
+                            if (precision > 0) {
+                            	if (!isSharp) {
+                            	    // MRI behavior: In this mode
+                            	    // trailing zeroes are removed:
+                            	    // 1.500E+05 -> 1.5E+05 
+                            	    int j = decDigits;
+                            	    for (; j >= 1; j--) {
+                            	        if (digits[j]== '0') {
+                            	            decDigits--;
+                            	        } else {
+                            	            break;
+                            	        }
+                            	    }
+
+                            	    if (decDigits > 0) {
+                            	        len += 1; // '.' is printed
+                            	        len += decDigits;
+                            	    }
+                            	} else  {
+                            	    // all precision numebers printed
+                            	    len += precision;
+                            	}
+                            }
+
+                            width -= len;
 
                             if (width > 0 && (flags & (FLAG_ZERO|FLAG_MINUS)) == 0) {
                                 buf.fill(' ',width);
@@ -984,25 +1020,28 @@ public class Sprintf {
                                 buf.fill('0',width);
                                 width = 0;
                             }
+
                             // now some data...
                             buf.write(digits[0]);
-                            if (precision > 0) {
-                                buf.write(args.getDecimalSeparator()); // '.'
-                                if (decDigits > 0) {
-                                    buf.write(digits,1,decDigits);
-                                    precision -= decDigits;
-                                }
-                            } else if ((flags & FLAG_SHARP) != 0) {
-                                buf.write(args.getDecimalSeparator());
+
+                            boolean dotToPrint = isSharp
+                                    || (precision > 0 && decDigits > 0);
+
+                            if (dotToPrint) {
+                            	buf.write(args.getDecimalSeparator()); // '.'
                             }
-                            buf.write(expChar); // E or e
-                            buf.write(exponent >= 0 ? '+' : '-');
-                            if (exponent < 0) {
-                                exponent = -exponent;
+
+                            if (precision > 0 && decDigits > 0) {
+                            	buf.write(digits, 1, decDigits);
+                            	precision -= decDigits;
                             }
-                            buf.write(exponent / 100 + '0');
-                            buf.write(exponent % 100 / 10 + '0');
-                            buf.write(exponent % 10 + '0');
+
+                            if (precision > 0 && isSharp) {
+                            	buf.fill('0', precision);
+                            }
+
+                            writeExp(buf, exponent, expChar);
+
                             if (width > 0) {
                                 buf.fill(' ', width);
                             }
@@ -1189,17 +1228,31 @@ public class Sprintf {
                             decDigits = Math.min(nDigits - 1,precision);
                         }
                         exponent += nDigits - 1;
+
+                        boolean isSharp = (flags & FLAG_SHARP) != 0;
+
+                        // deal with length/width
+
+                        len++; // first digit is always printed
+
+                        // MRI behavior: Be default, 2 digits
+                        // in the exponent. Use 3 digits
+                        // only when necessary.
+                        // See comment for writeExp method for more details.
+                        if (exponent > 99)
+                            len += 5; // 5 -> e+nnn / e-nnn
+                        else
+                            len += 4; // 4 -> e+nn / e-nn
+
                         if (precision > 0) {
-                            len += 2 + precision; // n.prec
-                        } else {
-                            len += 1; // n
-                            if ((flags & FLAG_SHARP) != 0) {
-                                len++; // will have a trailing '.'
-                            }
+                            // '.' and all precision digits printed
+                            len += 1 + precision;
+                        } else  if (isSharp) {
+                            len++;  // in this mode, '.' is always printed
                         }
-                        
-                        width -= len + 5; // 5 -> e+nnn / e-nnn
-                        
+
+                        width -= len;
+
                         if (width > 0 && (flags & (FLAG_ZERO|FLAG_MINUS)) == 0) {
                             buf.fill(' ',width);
                             width = 0;
@@ -1226,14 +1279,9 @@ public class Sprintf {
                         } else if ((flags & FLAG_SHARP) != 0) {
                             buf.write(args.getDecimalSeparator());
                         }
-                        buf.write(expChar); // E or e
-                        buf.write(exponent >= 0 ? '+' : '-');
-                        if (exponent < 0) {
-                            exponent = -exponent;
-                        }
-                        buf.write(exponent / 100 + '0');
-                        buf.write(exponent % 100 / 10 + '0');
-                        buf.write(exponent % 10 + '0');
+
+                        writeExp(buf, exponent, expChar);
+
                         if (width > 0) {
                             buf.fill(' ', width);
                         }
@@ -1259,6 +1307,28 @@ public class Sprintf {
         } // main while loop (offset < length)
         
         return buf;
+    }
+
+    private static void writeExp(Buffer buf, int exponent, byte expChar) {
+        // Unfortunately, the number of digits in the exponent is
+        // not clearly defined in Ruby documentation. This is a
+        // platform/version-dependent behavior. On Linux/Mac/Cygwin/*nix,
+        // two digits are used. On Windows, 3 digits are used.
+        // It is desirable for JRuby to have consistent behavior, and
+        // the two digits behavior was selected. This is also in sync
+        // with "Java-native" sprintf behavior (java.util.Formatter).
+        buf.write(expChar); // E or e
+        buf.write(exponent >= 0 ? '+' : '-');
+        if (exponent < 0) {
+            exponent = -exponent;
+        }
+        if (exponent > 99) {                                
+            buf.write(exponent / 100 + '0');
+            buf.write(exponent % 100 / 10 + '0');
+        } else {
+            buf.write(exponent / 10 + '0');
+        }
+        buf.write(exponent % 10 + '0');
     }
 
     // debugging code, keeping for now
