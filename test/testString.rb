@@ -798,3 +798,7 @@ test_no_exception do
   b = a[2..2]
   b.each { |c| c + "" }
 end
+
+# JRUBY-1778
+"hello.".gsub('.', "!")
+test_ok("hello".match('.') != nil, "match after gsub must not return nil")

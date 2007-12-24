@@ -2535,19 +2535,23 @@ public class RubyString extends RubyObject {
             if (val.isNil()) throw getRuntime().newTypeError("wrong argument type " + obj.getMetaClass() + " (expected Regexp)");
             obj = val; 
         }
-        
-        return ((RubyString)obj).getCachedPattern(quote);
+
+        // now handle the remaining case, when obj is a RubyString
+        if (quote) {
+            obj = RubyRegexp.quote((RubyString)obj, (KCode)null);
+        }
+
+        return ((RubyString)obj).getCachedPattern();
     }
 
     /** rb_reg_regcomp
      * 
      */
-    private final RubyRegexp getCachedPattern(boolean quote) {
+    private final RubyRegexp getCachedPattern() {
         final HashMap<ByteList, RubyRegexp> cache = patternCache.get();
         RubyRegexp regexp = cache.get(value);
         if (regexp == null || regexp.getKCode() != getRuntime().getKCode()) {
-            RubyString str = quote ? RubyRegexp.quote(this, (KCode)null) : this;
-            regexp = RubyRegexp.newRegexp(getRuntime(), str.value, 0);
+            regexp = RubyRegexp.newRegexp(getRuntime(), value, 0);
             cache.put(value, regexp);
         }
         return regexp;
