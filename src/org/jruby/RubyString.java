@@ -1767,7 +1767,13 @@ public class RubyString extends RubyObject {
         
         int beg = matcher.search(begin, range, Option.NONE);
 
-        if (beg < 0) return bang ? getRuntime().getNil() : strDup(); /* bang: true, no match, no substitution */
+        ThreadContext context = getRuntime().getCurrentContext();
+        Frame frame = context.getPreviousFrame();
+        
+        if (beg < 0) {
+            frame.setBackRef(getRuntime().getNil());
+            return bang ? getRuntime().getNil() : strDup(); /* bang: true, no match, no substitution */
+        }
         
         int blen = value.realSize + 30; /* len + margin */
         ByteList dest = new ByteList(blen);
@@ -1775,20 +1781,17 @@ public class RubyString extends RubyObject {
         int buf = 0, bp = 0;
         int cp = value.begin;
         
-        ThreadContext context = getRuntime().getCurrentContext();
-        Frame frame = context.getPreviousFrame();
-        
-        int n = 0;
         int offset = 0;
         RubyString val;
 
+        RubyMatchData match = null;
         while (beg >= 0) {
-            n++;
             final int begz, endz;
             if (iter) {
                 byte[]bytes = value.bytes;
                 int size = value.realSize;
-                rubyRegex.updateBackRef(this, frame, matcher).use();
+                match = rubyRegex.updateBackRef(this, frame, matcher);
+                match.use();
                 if (regex.numberOfCaptures() == 0) {
                     begz = matcher.getBegin();
                     endz = matcher.getEnd();
@@ -1854,7 +1857,11 @@ public class RubyString extends RubyObject {
             bp += value.realSize - offset;
         }        
         
-        rubyRegex.updateBackRef(this, frame, matcher);
+        if (match != null) {
+            frame.setBackRef(match);
+        } else {
+            rubyRegex.updateBackRef(this, frame, matcher);
+        }
 
         dest.realSize = bp - buf;
         if (bang) {
