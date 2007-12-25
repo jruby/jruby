@@ -1676,7 +1676,8 @@ public class RubyString extends RubyObject {
             if (iter) {                
                 byte[]bytes = value.bytes;
                 int size = value.realSize;
-                rubyRegex.updateBackRef(this, frame, matcher).use();
+                RubyMatchData match = rubyRegex.updateBackRef(this, frame, matcher);
+                match.use();
                 if (regex.numberOfCaptures() == 0) {
                     repl = objAsString(block.yield(context, substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
                 } else {
@@ -1685,7 +1686,7 @@ public class RubyString extends RubyObject {
                 }
                 modifyCheck(bytes, size);
                 frozenCheck();
-                rubyRegex.updateBackRef(this, frame, matcher);
+                frame.setBackRef(match);
             } else {
                 repl = rubyRegex.regsub(repl, this, matcher);
                 rubyRegex.updateBackRef(this, frame, matcher);
