@@ -600,6 +600,12 @@ test_equal(2, StringExt.new[2])
 
 test_equal("foa3VCPbMb8XQ", "foobar".crypt("foo"))
 
+# regression test for String#crypt
+test_no_exception {
+  "hello".crypt("\x80\x80")
+  "hello".crypt("\xFF\xFF")
+}
+
 test_exception(TypeError) { "this" =~ "that" }
 
 # UTF behavior around inspect, to_s, and split

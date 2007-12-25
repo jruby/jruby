@@ -1583,8 +1583,8 @@ public class RubyString extends RubyObject {
             buffer.set(0,charZero);
             buffer.set(1,charOne);
 
-            int Eswap0 = con_salt[(int)(charZero&0xFF)];
-            int Eswap1 = con_salt[(int)(charOne&0xFF)] << 4;
+            int Eswap0 = con_salt[(int)(charZero&0x7F)];
+            int Eswap1 = con_salt[(int)(charOne&0x7F)] << 4;
 
             byte key[] = new byte[8];
 
