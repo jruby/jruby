@@ -930,6 +930,8 @@ public class JavaClass extends JavaObject {
                 callbackFactory.getFastMethod("array_p"));
         result.defineFastMethod("name", 
                 callbackFactory.getFastMethod("name"));
+        result.defineFastMethod("class_loader", 
+                callbackFactory.getFastMethod("class_loader"));
         result.defineFastMethod("simple_name",
                 callbackFactory.getFastMethod("simple_name"));
         result.defineFastMethod("to_s", 
@@ -1053,7 +1055,10 @@ public class JavaClass extends JavaObject {
     public RubyString name() {
         return getRuntime().newString(javaClass().getName());
     }
-    
+
+    public IRubyObject class_loader() {
+        return Java.java_to_ruby(this, JavaObject.wrap(getRuntime(),javaClass().getClassLoader()), Block.NULL_BLOCK);
+    }
 
     private static String getSimpleName(Class class_) {
  		if (class_.isArray()) {

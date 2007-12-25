@@ -24,6 +24,7 @@ testInspect.rb
 testInstantiatingInterfaces.rb
 testInteger.rb
 testJavaArraySupport.rb
+testJavaIntegration.rb
 testLine.rb
 testLine_block_comment.rb
 testLine_block_comment_start.rb
