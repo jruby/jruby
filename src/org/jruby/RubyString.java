@@ -2574,7 +2574,6 @@ public class RubyString extends RubyObject {
         ThreadContext context = runtime.getCurrentContext();
         Frame frame = context.getPreviousFrame();
         
-        
         final RubyRegexp rubyRegex = getPattern(arg, true);
         final Regex regex = rubyRegex.getPattern();
         
@@ -2587,30 +2586,38 @@ public class RubyString extends RubyObject {
             RubyArray ary = runtime.newArray();
             
             if (regex.numberOfCaptures() == 0) {
-                while ((result = scanOnceNG(regex, matcher, range)) != null) ary.append(result);
+                while ((result = scanOnceNG(rubyRegex, matcher, range)) != null) ary.append(result);
             } else {
-                while ((result = scanOnce(regex, matcher, range)) != null) ary.append(result);
+                while ((result = scanOnce(rubyRegex, matcher, range)) != null) ary.append(result);
             }
-            rubyRegex.updateBackRef(this, frame, matcher);
+
+            if (ary.size() > 0) {
+                rubyRegex.updateBackRef(this, frame, matcher);
+            } else {
+                frame.setBackRef(runtime.getNil());
+            }
             return ary;
         } else {
             byte[]bytes = value.bytes;
             int size = value.realSize;
+            RubyMatchData match = null;
             
             if (regex.numberOfCaptures() == 0) {
-                while ((result = scanOnceNG(regex, matcher, range)) != null) {
-                    rubyRegex.updateBackRef(this, frame, matcher).use();
+                while ((result = scanOnceNG(rubyRegex, matcher, range)) != null) {
+                    match = rubyRegex.updateBackRef(this, frame, matcher);
+                    match.use();
                     block.yield(context, result);
                     modifyCheck(bytes, size);
                 }
             } else {
-                while ((result = scanOnce(regex, matcher, range)) != null) {
-                    rubyRegex.updateBackRef(this, frame, matcher).use();
+                while ((result = scanOnce(rubyRegex, matcher, range)) != null) {
+                    match = rubyRegex.updateBackRef(this, frame, matcher);
+                    match.use();
                     block.yield(context, result);
                     modifyCheck(bytes, size);
                 }
             }
-            rubyRegex.updateBackRef(this, frame, matcher);
+            frame.setBackRef(match == null ? runtime.getNil() : match);
             return this;
         }
     }
@@ -2625,31 +2632,31 @@ public class RubyString extends RubyObject {
     }
     
     // no group version
-    private IRubyObject scanOnceNG(Regex regex, Matcher matcher, int range) {    
+    private IRubyObject scanOnceNG(RubyRegexp regex, Matcher matcher, int range) {    
         if (matcher.search(matcher.value + value.begin, range, Option.NONE) >= 0) {
             int end = matcher.getEnd();
             if (matcher.getBegin() == end) {
                 if (value.realSize > end) {
-                    matcher.value = end + regex.getEncoding().length(value.bytes[value.begin + end]);
+                    matcher.value = end + regex.getPattern().getEncoding().length(value.bytes[value.begin + end]);
                 } else {
                     matcher.value = end + 1;
                 }
             } else {
                 matcher.value = end;
             }
-            return substr(matcher.getBegin(), end - matcher.getBegin());
+            return substr(matcher.getBegin(), end - matcher.getBegin()).infectBy(regex);
         }
         return null;
     }
     
     // group version
-    private IRubyObject scanOnce(Regex regex, Matcher matcher, int range) {    
+    private IRubyObject scanOnce(RubyRegexp regex, Matcher matcher, int range) {    
         if (matcher.search(matcher.value + value.begin, range, Option.NONE) >= 0) {
             Region region = matcher.getRegion();
             int end = region.end[0];
             if (region.beg[0] == end) {
                 if (value.realSize > end) {
-                    matcher.value = end + regex.getEncoding().length(value.bytes[value.begin + end]);
+                    matcher.value = end + regex.getPattern().getEncoding().length(value.bytes[value.begin + end]);
                 } else {
                     matcher.value = end + 1;
                 }
@@ -2663,7 +2670,7 @@ public class RubyString extends RubyObject {
                 if (beg == -1) {
                     result.append(getRuntime().getNil());
                 } else {
-                    result.append(substr(beg, region.end[i] - beg));
+                    result.append(substr(beg, region.end[i] - beg).infectBy(regex));
                 }
             }
             return result;
