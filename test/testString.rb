@@ -661,6 +661,12 @@ numbers.each do |n|
   test_equal([n], [n].pack("U").unpack("U"))
 end
 
+# unpack with "@" pattern
+test_equal(['a'], "abcdef".unpack("@5@a"))
+test_equal(['a', 'd'], "abcd".unpack("a@*a"))
+test_equal(['a'], "abcdef".unpack("@-777a"))
+test_exception(ArgumentError) { "a".unpack("@10") }
+
 # and just for kicks, make sure we're returning appropriate byte values for each_byte!
 
 bytes = []

@@ -649,7 +649,15 @@ public class Pack {
             // Otherwise the unpack should be here...
             switch (type) {
                 case '@' :
-                    encode.position(occurrences);
+                    try {
+                        if (occurrences == IS_STAR) {
+                            encode.position(encode.remaining());
+                        } else {
+                            encode.position(occurrences);
+                        }
+                    } catch (IllegalArgumentException iae) {
+                        throw runtime.newArgumentError("@ outside of string");
+                    }
                     break;
                 case '%' :
                     throw runtime.newArgumentError("% is not supported");
