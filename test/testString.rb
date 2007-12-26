@@ -655,6 +655,12 @@ test_equal([""],                "\0\0abc\0\0".unpack('Z*'))
 test_equal(["a", "b", "b"], "abc".unpack("aaX*a"))
 test_exception(ArgumentError) { "a".unpack("X*") }
 
+# pack/unpack with "U" pattern
+numbers = [0, 1, 15, 16, 127, 127, 255, 1024, 2048, 2**16 -1, 2**16, 2**16 + 1, 2**30]
+numbers.each do |n|
+  test_equal([n], [n].pack("U").unpack("U"))
+end
+
 # and just for kicks, make sure we're returning appropriate byte values for each_byte!
 
 bytes = []

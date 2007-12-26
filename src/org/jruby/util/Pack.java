@@ -38,6 +38,8 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import org.joni.encoding.specific.UTF8Encoding;
+import org.joni.encoding.unicode.UnicodeEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -1728,24 +1730,21 @@ public class Pack {
                     }
                     break;
                 case 'U' :
-
-                    char[] c = new char[occurrences];
-                    for (int cIndex = 0; occurrences-- > 0; cIndex++) {
+                    UnicodeEncoding enc = UTF8Encoding.INSTANCE;
+                    byte[] packedBytes = new byte[enc.maxLength() * occurrences];
+                    int index = 0;
+                    
+                    while (occurrences-- > 0) {
                         if (listSize-- <= 0) {
                            throw runtime.newArgumentError(sTooFew);
                         }
 
                         IRubyObject from = list.eltInternal(idx++);
-                        long l = from == runtime.getNil() ? 0 : RubyNumeric.num2long(from);
+                        int code = from == runtime.getNil() ? 0 : RubyNumeric.num2int(from);
 
-                        c[cIndex] = (char) l;
-                    }
-
-                    try {
-                        byte[] bytes = new String(c).getBytes("UTF8");
-                        result.append(RubyString.bytesToString(bytes));
-                    } catch (java.io.UnsupportedEncodingException e) {
-                        assert false : "can't convert to UTF8";
+                        int length = enc.codeToMbc(code, packedBytes, index);
+                        result.append(RubyString.bytesToString(packedBytes, index, length));
+                        index += length;
                     }
                     break;
                 case 'w' :
