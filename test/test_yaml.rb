@@ -1315,6 +1315,33 @@ EOY
       b = YAML::load( yml )
       assert_equal a,b
     end
+
+    # JRUBY-1768: yaml_initialize not getting called
+    class MyType
+      attr_accessor :yaml_init_called
+      attr_accessor :tag
+      attr_accessor :values
+
+      def initialize
+        @value = "hello"
+      end
+
+      def yaml_initialize(tag, values)
+        @yaml_init_called = true
+        @tag = tag
+        @values = values
+      end
+    end
+
+    def test_yaml_initialize
+      obj = MyType.new
+      yaml = obj.to_yaml
+      obj2 = YAML::load(yaml)
+
+      assert(obj2.class == MyType)
+      assert(obj2.yaml_init_called)
+      assert_equal({"value" => "hello"}, obj2.values)
+    end
 end
 
 #if $0 == __FILE__

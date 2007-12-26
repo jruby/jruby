@@ -293,23 +293,30 @@ public class JRubyConstructor extends ConstructorImpl {
         final Ruby runtime = ((JRubyConstructor)ctor).runtime;
         if(theCls.respondsTo("yaml_new")) {
             final RubyHash vars = (RubyHash)(((JRubyConstructor)ctor).constructRubyMapping(node));
-            return theCls.callMethod(runtime.getCurrentContext(), "yaml_new", new IRubyObject[]{theCls, runtime.newString(node.getTag()), vars});
+            IRubyObject[] args = new IRubyObject[]{theCls, runtime.newString(node.getTag()), vars};
+            return theCls.callMethod(runtime.getCurrentContext(), "yaml_new", args);
         } else {
             final RubyObject oo = (RubyObject)theCls.getAllocator().allocate(runtime, theCls);
-            final Map vars = (Map)(ctor.constructMapping(node));
-            ctor.doRecursionFix(node, oo);
-            for(final Iterator iter = vars.keySet().iterator();iter.hasNext();) {
-                final IRubyObject key = (IRubyObject)iter.next();
-                final Object val = vars.get(key);
-                if(val instanceof LinkNode) {
-                    final String KEY = "@" + key.toString();
-                    ctor.addFixer((Node)(((LinkNode)val).getValue()), new RecursiveFixer() {
-                            public void replace(Node node, Object real) {
-                                oo.setInstanceVariable(KEY,(IRubyObject)real);
-                            }
-                        });
-                } else {
-                    oo.setInstanceVariable("@" + key.toString(),(IRubyObject)val);
+            if (oo.respondsTo("yaml_initialize")) {
+                RubyHash vars = (RubyHash)(((JRubyConstructor)ctor).constructRubyMapping(node));
+                IRubyObject[] args = new IRubyObject[] {runtime.newString(node.getTag()), vars};
+                RuntimeHelpers.invoke(runtime.getCurrentContext(), oo, "yaml_initialize", args);
+            } else {
+                final Map vars = (Map)(ctor.constructMapping(node));
+                ctor.doRecursionFix(node, oo);
+                for(final Iterator iter = vars.keySet().iterator();iter.hasNext();) {
+                    final IRubyObject key = (IRubyObject)iter.next();
+                    final Object val = vars.get(key);
+                    if(val instanceof LinkNode) {
+                        final String KEY = "@" + key.toString();
+                        ctor.addFixer((Node)(((LinkNode)val).getValue()), new RecursiveFixer() {
+                                public void replace(Node node, Object real) {
+                                    oo.setInstanceVariable(KEY,(IRubyObject)real);
+                                }
+                            });
+                    } else {
+                        oo.setInstanceVariable("@" + key.toString(),(IRubyObject)val);
+                    }
                 }
             }
             return oo;
