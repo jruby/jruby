@@ -124,7 +124,7 @@ class Gem::Version
   #
   def <=>(other)
     return 1 unless other
-    @ints <=> other.to_ints
+    @ints <=> other.ints
   end
 
   alias eql? == # :nodoc:
