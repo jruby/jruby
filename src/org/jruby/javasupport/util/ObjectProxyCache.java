@@ -178,7 +178,6 @@ public abstract class ObjectProxyCache<T,A> {
         final int hash;
         final EntryRef<T> proxyRef;
         final Entry<T> next;
-        volatile boolean invalid = false;
         
         Entry(Object object, int hash, T proxy, ReferenceType type, Entry<T> next, ReferenceQueue<Object> queue) {
             this.hash = hash;
