@@ -37,11 +37,6 @@ package org.jruby.util;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CodingErrorAction;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -926,25 +921,19 @@ public class Pack {
                         if (occurrences == IS_STAR || occurrences > encode.remaining()) {
                             occurrences = encode.remaining();
                         }
-                        //get the correct substring
-                        byte[] toUnpack = new byte[occurrences];
-                        encode.get(toUnpack);
-                        CharBuffer lUtf8 = null;
-                        try {
-                            Charset utf8 = Charset.forName("UTF-8");
-                            CharsetDecoder utf8Decoder = utf8.newDecoder();
-                            utf8Decoder.onMalformedInput(CodingErrorAction.REPORT);
-                            utf8Decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
-                            ByteBuffer buffer = ByteBuffer.wrap(toUnpack);
 
-                            lUtf8 = utf8Decoder.decode(buffer);
-                        } catch (CharacterCodingException cce) {
-                            // invalid incoming bytes; fail to encode.
-                            throw runtime.newArgumentError("malformed UTF-8 character");
-                        }
-                        while (occurrences-- > 0 && lUtf8.hasRemaining()) {
-                            long lCurChar = lUtf8.get();
-                            result.append(runtime.newFixnum(lCurChar));
+                        while (occurrences-- > 0 && encode.remaining() > 0) {
+                            try {
+                                // TODO: for now, we use a faithful
+                                // reimplementation of MRI's algorithm,
+                                // but should use UTF8Encoding facilities
+                                // from Joni, once it starts prefroming
+                                // UTF-8 content validation. 
+                                result.append(
+                                        runtime.newFixnum(utf8Decode(encode)));
+                            } catch (IllegalArgumentException e) {
+                                throw runtime.newArgumentError(e.getMessage());
+                            }
                         }
                     }
                     break;
@@ -978,6 +967,69 @@ public class Pack {
         }
         return result;
     }
+
+    /** utf8_to_uv
+     */
+    private static int utf8Decode(ByteBuffer buffer) {        
+        int c = buffer.get() & 0xFF;
+        int uv = c;
+        int n;
+
+        if ((c & 0x80) == 0) {
+            return c;
+        }
+
+        if ((c & 0x40) == 0) {
+            throw new IllegalArgumentException("malformed UTF-8 character");
+        }
+        
+      if      ((uv & 0x20) == 0) { n = 2; uv &= 0x1f; }
+      else if ((uv & 0x10) == 0) { n = 3; uv &= 0x0f; }
+      else if ((uv & 0x08) == 0) { n = 4; uv &= 0x07; }
+      else if ((uv & 0x04) == 0) { n = 5; uv &= 0x03; }
+      else if ((uv & 0x02) == 0) { n = 6; uv &= 0x01; }
+      else {
+          throw new IllegalArgumentException("malformed UTF-8 character");
+      }
+      if (n > buffer.remaining() + 1) {
+          throw new IllegalArgumentException(
+                  "malformed UTF-8 character (expected " + n + " bytes, "
+                  + "given " + (buffer.remaining() + 1)  + " bytes)");
+      }
+
+      int limit = n - 1;
+
+      n--;
+
+      if (n != 0) {
+          while (n-- != 0) {
+              c = buffer.get() & 0xff;
+              if ((c & 0xc0) != 0x80) {
+                  throw new IllegalArgumentException("malformed UTF-8 character");
+              }
+              else {
+                  c &= 0x3f;
+                  uv = uv << 6 | c;
+              }
+          }
+      }
+
+      if (uv < utf8_limits[limit]) {
+          throw new IllegalArgumentException("redundant UTF-8 sequence");
+      }
+
+      return uv;
+    }
+
+    private static final long utf8_limits[] = {
+        0x0,                        /* 1 */
+        0x80,                       /* 2 */
+        0x800,                      /* 3 */
+        0x10000,                    /* 4 */
+        0x200000,                   /* 5 */
+        0x4000000,                  /* 6 */
+        0x80000000,                 /* 7 */
+    };
 
     private static byte safeGet(ByteBuffer encode) {
         return encode.hasRemaining() ? encode.get() : 0;
