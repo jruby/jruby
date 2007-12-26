@@ -63,24 +63,14 @@ public class JavaObject extends RubyObject {
     }
 
     public static JavaObject wrap(Ruby runtime, Object value) {
-        Object lock = value == null ? NULL_LOCK : value;
-        
-        synchronized (lock) {
-            JavaObject wrapper = runtime.getJavaSupport().getJavaObjectFromCache(value);
-            if (wrapper == null) {
-            	if (value == null) {
-            		wrapper = new JavaObject(runtime, value);
-            	} else if (value.getClass().isArray()) {
-                	wrapper = new JavaArray(runtime, value);
-                } else if (value.getClass().equals(Class.class)) {
-                	wrapper = JavaClass.get(runtime, (Class)value);
-                } else {
-                	wrapper = new JavaObject(runtime, value);
-                }
-                runtime.getJavaSupport().putJavaObjectIntoCache(wrapper);
+        if (value != null) {
+            if (value instanceof Class) {
+                return JavaClass.get(runtime, (Class)value);
+            } else if (value.getClass().isArray()) {
+                return new JavaArray(runtime, value);
             }
-            return wrapper;
         }
+        return new JavaObject(runtime, value);
     }
 
     public Class getJavaClass() {

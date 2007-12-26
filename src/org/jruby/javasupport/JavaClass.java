@@ -873,16 +873,16 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private void extendProxy(final IRubyObject extender) {
+    private void extendProxy(IRubyObject extender) {
         extender.callMethod(getRuntime().getCurrentContext(), "extend_proxy", proxyModule);
     }
     
-    public IRubyObject extend_proxy(final IRubyObject extender) {
+    public IRubyObject extend_proxy(IRubyObject extender) {
         addProxyExtender(extender);
         return getRuntime().getNil();
     }
     
-    public static JavaClass get(final Ruby runtime, final Class klass) {
+    public static JavaClass get(Ruby runtime, Class klass) {
         JavaClass javaClass = runtime.getJavaSupport().getJavaClassFromCache(klass);
         if (javaClass == null) {
             javaClass = createJavaClass(runtime,klass);

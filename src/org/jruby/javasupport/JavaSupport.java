@@ -33,8 +33,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import java.lang.ref.WeakReference;
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,8 +42,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
-import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
@@ -53,8 +51,21 @@ public class JavaSupport {
     private final Ruby runtime;
 
     private final Map exceptionHandlers = new HashMap();
+    
+    private final ObjectProxyCache<IRubyObject,RubyClass> objectProxyCache = 
+        // TODO: specifying soft refs, may want to compare memory consumption,
+        // behavior with weak refs (specify WEAK in place of SOFT below)
+        new ObjectProxyCache<IRubyObject,RubyClass>(ObjectProxyCache.ReferenceType.SOFT) {
 
-    private final Map instanceCache = Collections.synchronizedMap(new WeakIdentityHashMap(100));
+        public IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
+            IRubyObject proxy = clazz.allocate();
+            proxy.getInstanceVariables().fastSetInstanceVariable("@java_object",
+                    JavaObject.wrap(clazz.getRuntime(), javaObject));
+            return proxy;
+        }
+
+    };
+
     
     // There's not a compelling reason to keep JavaClass instances in a weak map
     // (any proxies created are [were] kept in a non-weak map, so in most cases they will
@@ -172,21 +183,9 @@ public class JavaSupport {
         }
         return null;
     }
-
-    public JavaObject getJavaObjectFromCache(Object object) {
-    	WeakReference ref = (WeakReference)instanceCache.get(object);
-    	if (ref == null) {
-    		return null;
-    	}
-    	JavaObject javaObject = (JavaObject) ref.get();
-    	if (javaObject != null && javaObject.getValue() == object) {
-    		return javaObject;
-    	}
-        return null;
-    }
     
-    public void putJavaObjectIntoCache(JavaObject object) {
-    	instanceCache.put(object.getValue(), new WeakReference(object));
+    public ObjectProxyCache<IRubyObject,RubyClass> getObjectProxyCache() {
+        return objectProxyCache;
     }
 
     // not synchronizing these methods, no harm if these values get set twice...

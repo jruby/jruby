@@ -259,7 +259,10 @@ public class JavaUtil {
             if (object instanceof IRubyObject) {
                 return (IRubyObject) object;
             }
-            
+ 
+            // Note: returns JavaObject instance, which is not
+            // directly usable. probably too late to change this now,
+            // supplying alternate method convertJavaToUsableRubyObject
             return JavaObject.wrap(runtime, object);
         }
     };
@@ -341,7 +344,8 @@ public class JavaUtil {
         }
     };
     
-    private static final Map JAVA_CONVERTERS = new HashMap();
+    private static final Map<Class,JavaConverter> JAVA_CONVERTERS =
+        new HashMap<Class,JavaConverter>();
     
     static {
         JAVA_CONVERTERS.put(Byte.class, JAVA_BYTE_CONVERTER);
@@ -370,7 +374,7 @@ public class JavaUtil {
     }
     
     public static JavaConverter getJavaConverter(Class clazz) {
-        JavaConverter converter = (JavaConverter)JAVA_CONVERTERS.get(clazz);
+        JavaConverter converter = JAVA_CONVERTERS.get(clazz);
         
         if (converter == null) {
             converter = JAVA_DEFAULT_CONVERTER;
@@ -379,6 +383,16 @@ public class JavaUtil {
         return converter;
     }
 
+    /**
+     * Converts object to the corresponding Ruby type; however, for non-primitives,
+     * a JavaObject instance is returned. This must be subsequently wrapped by
+     * calling one of Java.wrap, Java.java_to_ruby, Java.new_instance_for, or
+     * Java.getInstance, depending on context.
+     * 
+     * @param runtime
+     * @param object 
+     * @return corresponding Ruby type, or a JavaObject instance
+     */
     public static IRubyObject convertJavaToRuby(Ruby runtime, Object object) {
         if (object == null) {
             return runtime.getNil();
@@ -388,6 +402,23 @@ public class JavaUtil {
 
     public static IRubyObject convertJavaToRuby(Ruby runtime, Object object, Class javaClass) {
         return getJavaConverter(javaClass).convert(runtime, object);
+    }
+    
+    /**
+     * Returns a usable RubyObject; for types that are not converted to Ruby native
+     * types, a Java proxy will be returned. 
+     * 
+     * @param runtime
+     * @param object
+     * @return corresponding Ruby type, or a functional Java proxy
+     */
+    public static IRubyObject convertJavaToUsableRubyObject(Ruby runtime, Object object) {
+        if (object == null) return runtime.getNil();
+        JavaConverter converter = JAVA_CONVERTERS.get(object.getClass());
+        if (converter == null || converter == JAVA_DEFAULT_CONVERTER) {
+            return Java.getInstance(runtime, object);
+        }
+        return converter.convert(runtime, object);
     }
 
     public static Class primitiveToWrapper(Class type) {
