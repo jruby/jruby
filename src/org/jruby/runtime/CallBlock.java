@@ -45,7 +45,7 @@ public class CallBlock extends BlockBody {
     
     public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
         Binding binding = new Binding(self,
-                context.getCurrentFrame().duplicate(),
+                context.getCurrentFrame(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
                 context.getCurrentScope());
