@@ -213,13 +213,13 @@ public abstract class ObjectProxyCache<T,A> {
     // inserting cache reference to work around various problems generically
     // referencing methods/vars across classes.
     static class Segment<T,A> extends ReentrantLock {
-        
+
         final ObjectProxyCache<T,A> cache;
         final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<Object>();
         volatile Entry<T>[] entryTable;
         int tableSize;
         int threshold;
-        
+
         Segment(int capacity, ObjectProxyCache<T,A> cache) {
             threshold = (int)(capacity * DEFAULT_LOAD_FACTOR);
             entryTable = Entry.newArray(capacity);
@@ -342,9 +342,11 @@ public abstract class ObjectProxyCache<T,A> {
 
         T getOrCreate(Object object, int hash, A allocator) {
             Entry<T>[] table;
+            T proxy;
             for (Entry<T> e = (table = entryTable)[hash & table.length - 1]; e != null; e = e.next) {
                 if (hash == e.hash && object == e.objectRef.get()) {
-                    return e.proxyRef.get();
+                    if ((proxy = e.proxyRef.get()) != null) return proxy;
+                    break;
                 }
             }
             lock();
@@ -358,7 +360,6 @@ public abstract class ObjectProxyCache<T,A> {
                 }
                 int index;
                 Entry<T> e;
-                T proxy;
                 for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
                     if (hash == e.hash && object == e.objectRef.get()) {
                         if ((proxy = e.proxyRef.get()) != null) return proxy;
