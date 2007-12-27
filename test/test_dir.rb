@@ -107,7 +107,9 @@ class TestDir < Test::Unit::TestCase
     require 'test/test_jar.jar'
     require 'inside_jar'
 
-    jar_file = "file:" + File.expand_path(File.join(File.dirname(__FILE__), "test_jar.jar")) + "!"
+    prefix = WINDOWS ? "file:/" : "file:"
+    
+    jar_file = prefix + File.expand_path(File.join(File.dirname(__FILE__), "test_jar.jar")) + "!"
 
     assert_equal ["#{jar_file}/abc", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].sort, $__glob_value.sort
     assert_equal ["#{jar_file}/abc", "#{jar_file}/abc/foo.rb", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].sort, $__glob_value2.sort

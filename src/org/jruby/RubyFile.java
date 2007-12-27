@@ -100,7 +100,7 @@ public class RubyFile extends RubyIO {
     // use static function because constructor call must be first statement in above constructor
     private static InputStream open(Ruby runtime, String path) {
         try {
-            if(path.startsWith("file:/")) {
+            if(path.startsWith("file:")) {
                 String filePath = path.substring(5, path.indexOf("!"));
                 String internalPath = path.substring(path.indexOf("!") + 2);
 
@@ -247,7 +247,7 @@ public class RubyFile extends RubyIO {
         try {
             if (newPath.equals("/dev/null")) {
                 handler = new IOHandlerNull(getRuntime(), newModes);
-            } else if(newPath.startsWith("file:/")) {
+            } else if(newPath.startsWith("file:")) {
                 String filePath = path.substring(5, path.indexOf("!"));
                 String internalPath = path.substring(path.indexOf("!") + 2);
 
@@ -739,7 +739,7 @@ public class RubyFile extends RubyIO {
         
         String relativePath = RubyString.stringValue(args[0]).toString();
 
-        boolean isAbsoluteWithFilePrefix = relativePath.startsWith("file:/");
+        boolean isAbsoluteWithFilePrefix = relativePath.startsWith("file:");
 
         String cwd = null;
         
@@ -800,7 +800,7 @@ public class RubyFile extends RubyIO {
         String tempResult = padSlashes + canonicalize(path.getAbsolutePath());
 
         if(isAbsoluteWithFilePrefix) {
-            tempResult = tempResult.substring(tempResult.indexOf("file:/"));
+            tempResult = tempResult.substring(tempResult.indexOf("file:"));
         }
 
         return runtime.newString(tempResult);
@@ -1005,7 +1005,7 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(name = "lstat", required = 1, meta = true)
     public static IRubyObject lstat(IRubyObject recv, IRubyObject filename) {
         String f = filename.convertToString().toString();
-        if(f.startsWith("file:/")) {
+        if(f.startsWith("file:")) {
             f = f.substring(5, f.indexOf("!"));
         }
         return recv.getRuntime().newFileStat(f, true);
@@ -1014,7 +1014,7 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(name = "stat", required = 1, meta = true)
     public static IRubyObject stat(IRubyObject recv, IRubyObject filename) {
         String f = filename.convertToString().toString();
-        if(f.startsWith("file:/")) {
+        if(f.startsWith("file:")) {
             f = f.substring(5, f.indexOf("!"));
         }
         return recv.getRuntime().newFileStat(f, false);
@@ -1023,7 +1023,7 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(name = "atime", required = 1, meta = true)
     public static IRubyObject atime(IRubyObject recv, IRubyObject filename) {
         String f = filename.convertToString().toString();
-        if(f.startsWith("file:/")) {
+        if(f.startsWith("file:")) {
             f = f.substring(5, f.indexOf("!"));
         }
         return recv.getRuntime().newFileStat(f, false).atime();
@@ -1032,7 +1032,7 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(name = "ctime", required = 1, meta = true)
     public static IRubyObject ctime(IRubyObject recv, IRubyObject filename) {
         String f = filename.convertToString().toString();
-        if(f.startsWith("file:/")) {
+        if(f.startsWith("file:")) {
             f = f.substring(5, f.indexOf("!"));
         }
         return recv.getRuntime().newFileStat(f, false).ctime();

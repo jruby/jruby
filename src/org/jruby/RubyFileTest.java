@@ -91,7 +91,7 @@ public class RubyFileTest {
             return recv.getRuntime().newBoolean(false);
         }
 
-        if(filename.convertToString().toString().startsWith("file:/")) {
+        if(filename.convertToString().toString().startsWith("file:")) {
             String file = filename.convertToString().toString().substring(5);
             String jar = file.substring(0,file.indexOf("!"));
             String after = file.substring(file.indexOf("!")+2);
