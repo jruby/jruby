@@ -916,10 +916,23 @@ public class Pack {
                                 lElem[index++] = c;
                             } else {
                                 if (!encode.hasRemaining()) break;
+                                encode.mark();
                                 byte c1 = safeGet(encode);
                                 if (c1 == '\n') continue;
+                                int d1 = Character.digit((char)(c1 & 0xFF), 16);
+                                if (d1 == -1) {
+                                    encode.reset();
+                                    break;
+                                }
+                                encode.mark();
+                                if (!encode.hasRemaining()) break;
                                 byte c2 = safeGet(encode);
-                                byte value = (byte)(Character.digit((char)(c1 & 0xFF), 16) * 16 + Character.digit((char)(c2 & 0xFF), 16));
+                                int d2 = Character.digit((char)(c2 & 0xFF), 16);
+                                if (d2 == -1) {
+                                    encode.reset();
+                                    break;
+                                }
+                                byte value = (byte)(d1 << 4 | d2);
                                 lElem[index++] = value;
                             }
                         }

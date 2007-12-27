@@ -667,6 +667,11 @@ test_equal(['a', 'd'], "abcd".unpack("a@*a"))
 test_equal(['a'], "abcdef".unpack("@-777a"))
 test_exception(ArgumentError) { "a".unpack("@10") }
 
+# unpack with "M" pattern
+test_equal(["", ""], "=5".unpack('Ma'))
+test_equal(["abc"], "abc=".unpack('M'))
+test_equal(["a", "*", "", ""], "a=*".unpack('MMMM'))
+
 # and just for kicks, make sure we're returning appropriate byte values for each_byte!
 
 bytes = []
