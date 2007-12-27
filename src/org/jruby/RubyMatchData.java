@@ -92,7 +92,7 @@ public class RubyMatchData extends RubyObject {
 
     private RubyArray match_array(int start) {
         if (regs == null) {
-            if (start != 0) return getRuntime().newArray();
+            if (start != 0) return getRuntime().newEmptyArray();
             if (begin == -1) {
                 return getRuntime().newArray(getRuntime().getNil());
             } else {
