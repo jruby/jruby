@@ -3408,10 +3408,11 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "each_byte", frame = true)
     public RubyString each_byte(Block block) {
-        int lLength = value.length();
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        for (int i = 0; i < lLength; i++) {
+        // Check the length every iteration, since
+        // the block can modify this string.
+        for (int i = 0; i < value.length(); i++) {
             block.yield(context, runtime.newFixnum(value.get(i) & 0xFF));
         }
         return this;
