@@ -654,26 +654,13 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     @Override
     public String toString() {
         try {
-            if (stringValue == null) stringValue = toString("ISO-8859-1");
+            if (stringValue == null) stringValue = new String(bytes, begin, realSize, "ISO-8859-1");
             return stringValue;
         } catch (UnsupportedEncodingException uee) {
             throw new RuntimeException("ISO-8859-1 encoding should never fail; report this at www.jruby.org");
         }
-     }
-    
-    public String toUtf8String() {
-        // TODO: no caching? :(
-        try {
-            return toString("UTF-8");
-        } catch (UnsupportedEncodingException uee) {
-            throw new RuntimeException("UTF-8 encoding should never fail; report this at www.jruby.org");
-        }
     }
     
-    public String toString(String encoding) throws UnsupportedEncodingException {
-        return new String(this.bytes, begin, realSize, encoding);
-    }
-
     public static ByteList create(CharSequence s) {
         return new ByteList(plain(s),false);
     }
