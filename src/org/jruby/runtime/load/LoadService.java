@@ -488,7 +488,7 @@ e.printStackTrace();
                 String canonicalEntry = after+name;
                 if(after.length()>0) {
                     try {
-                        canonicalEntry = new File(after+name).getCanonicalPath().substring(new File(".").getCanonicalPath().length()+1);
+                        canonicalEntry = new File(after+name).getCanonicalPath().substring(new File(".").getCanonicalPath().length()+1).replaceAll("\\\\","/");;
                     } catch(Exception e) {}
                 }
                 if (current.getJarEntry(canonicalEntry) != null) {
