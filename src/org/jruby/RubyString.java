@@ -1911,7 +1911,13 @@ public class RubyString extends RubyObject {
             pos = regSub.adjustStartPos(this, pos, false);
             pos = regSub.search(this, pos, false);
         } else if (sub instanceof RubyFixnum) {
-            byte c = (byte)RubyNumeric.fix2int(sub);
+            int c_int = RubyNumeric.fix2int(sub);
+            if (c_int < 0x00 || c_int > 0xFF) {
+                // out of byte range
+                // there will be no match for sure
+                return getRuntime().getNil();
+            }
+            byte c = (byte)c_int;
             byte[]bytes = value.bytes;
             int end = value.begin + value.realSize;
 
