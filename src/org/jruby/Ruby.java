@@ -2063,6 +2063,10 @@ public final class Ruby {
 
     // new factory methods ------------------------------------------------------------------------
 
+    public RubyArray newEmptyArray() {
+        return RubyArray.newEmptyArray(this);
+    }
+
     public RubyArray newArray() {
         return RubyArray.newArray(this);
     }

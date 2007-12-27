@@ -153,6 +153,10 @@ public class RubyArray extends RubyObject implements List {
     public static RubyArray newArray(Ruby runtime, IRubyObject car, IRubyObject cdr) {
         return new RubyArray(runtime, new IRubyObject[] { car, cdr });
     }
+    
+    public static RubyArray newEmptyArray(Ruby runtime) {
+        return new RubyArray(runtime, NULL_ARRAY);
+    }
 
     /** rb_ary_new4, rb_ary_new3
      *   
