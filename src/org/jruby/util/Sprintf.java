@@ -371,6 +371,7 @@ public class Sprintf {
                         // leads to "%" string. Null byte in
                         // other places, like "%5\0", leads to error.
                         buf.write('%');
+                        buf.write(fchar);
                         incomplete = false;
                         offset++;
                         break;
