@@ -224,7 +224,6 @@ public class RubyString extends RubyObject {
     /** rb_str_modify
      * 
      */
-
     public final void modify() {
         modifyCheck();
 
@@ -240,7 +239,10 @@ public class RubyString extends RubyObject {
 
         value.invalidate();
     }
-    
+
+    /** rb_str_modify (with length bytes ensured)
+     * 
+     */    
     public final void modify(int length) {
         modifyCheck();
 
@@ -253,7 +255,7 @@ public class RubyString extends RubyObject {
             shared_buffer = false;
             shared_bytelist = false;
         } else {
-            value = value.dup(length);
+            value.ensure(length);
         }
         value.invalidate();
     }        
@@ -575,31 +577,34 @@ public class RubyString extends RubyObject {
         return newString(getRuntime(), value.dup());
     }
 
-    // FIXME: cat methods should be more aware of sharing to prevent unnecessary reallocations in certain situations 
     public RubyString cat(byte[] str) {
-        modify();
-        value.append(str);
+        modify(value.realSize + str.length);
+        System.arraycopy(str, 0, value.bytes, value.begin + value.realSize, str.length);
+        value.realSize += str.length;
         return this;
     }
 
     public RubyString cat(byte[] str, int beg, int len) {
-        modify();        
-        value.append(str, beg, len);
+        modify(value.realSize + len);        
+        System.arraycopy(str, beg, value.bytes, value.begin + value.realSize, len);
+        value.realSize += len;
         return this;
     }
 
     public RubyString cat(ByteList str) {
-        modify();        
-        value.append(str);
+        modify(value.realSize + str.realSize);
+        System.arraycopy(str.bytes, str.begin, value.bytes, value.begin + value.realSize, str.realSize);
+        value.realSize += str.realSize;
         return this;
     }
 
     public RubyString cat(byte ch) {
-        modify();        
-        value.append(ch);
+        modify(value.realSize + 1);        
+        value.bytes[value.begin + value.realSize] = ch;
+        value.realSize++;
         return this;
     }
-
+    
     /** rb_str_replace_m
      *
      */

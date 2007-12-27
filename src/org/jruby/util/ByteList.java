@@ -150,9 +150,13 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     public ByteList dup() {
-        return dup(realSize);
+        ByteList dup = dup(realSize);
+        dup.validHash = validHash;
+        dup.hash = hash;
+        dup.stringValue = stringValue;
+        return dup;
     }
-    
+
     /**
      * @param length is the value of how big the buffer is going to be, not the actual length to copy
      * 
@@ -165,14 +169,15 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
         System.arraycopy(bytes, begin, dup.bytes, 0, realSize);
         dup.realSize = realSize;
         dup.begin = 0;
+        return dup;
+    }
 
-        if (length == realSize) {
-            dup.validHash = validHash;
-            dup.hash = hash;
-            dup.stringValue = stringValue;
+    public void ensure(int length) {
+        if (length >= bytes.length) {
+            byte[]tmp = new byte[length + (length >>> 1)];
+            System.arraycopy(bytes, begin, tmp, 0, realSize);
+            bytes = tmp;
         }
-
-        return dup;        
     }
     
     public ByteList makeShared(int index, int len) {
@@ -192,11 +197,17 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
         unshare(realSize);
     }
     
+    /**
+     * @param length is the value of how big the buffer is going to be, not the actual length to copy
+     * 
+     * It is used by RubyString.modify(int) to prevent COW pathological situations
+     * (namely to COW with having <code>length - realSize</code> bytes ahead)
+     */
     public void unshare(int length) {
-        byte[] newBytes = new byte[length];
-        System.arraycopy(bytes, begin, newBytes, 0, realSize);
-        bytes = newBytes;
-        begin = 0;        
+        byte[] tmp = new byte[length];
+        System.arraycopy(bytes, begin, tmp, 0, realSize);
+        bytes = tmp;
+        begin = 0;
     }
 
     public void invalidate() {
