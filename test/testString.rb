@@ -519,8 +519,8 @@ test_equal("05", '%02d' % '5')
 test_equal("05", '%02g' % '5')
 test_equal("05", '%02G' % '5')
 test_equal("  ", '%2s' % nil)
-test_equal("%", "%\0" % [])
-test_equal("%x he1\005llo", "%\0x he%x\05llo" % [1])
+test_equal("%\000", "%\0" % [])
+test_equal("%\000x he1\005llo", "%\0x he%x\05llo" % [1])
 
 # underscore right after 0:
 test_equal("ff", '%x' % "0_3_7_7")
