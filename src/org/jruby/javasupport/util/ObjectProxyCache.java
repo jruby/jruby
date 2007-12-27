@@ -31,11 +31,17 @@ public abstract class ObjectProxyCache<T,A> {
     public static enum ReferenceType { WEAK, SOFT }
     
     private static final int DEFAULT_SEGMENTS = 16; // must be power of 2
-    private static final int DEFAULT_SEGMENT_SIZE = 16; // must be power of 2
+    private static final int DEFAULT_SEGMENT_SIZE = 8; // must be power of 2
     private static final float DEFAULT_LOAD_FACTOR = 0.75f;
     private static final int MAX_CAPACITY = 1 << 30;
     private static final int MAX_SEGMENTS = 1 << 16;
-    private static final int VULTURE_RUN_FREQ_SECONDS = 10;
+    private static final int VULTURE_RUN_FREQ_SECONDS = 5;
+    
+    private static int _nextId = 0;
+    
+    private static synchronized int nextId() {
+        return ++_nextId;
+    }
 
     
     private final ReferenceType referenceType;
@@ -43,6 +49,7 @@ public abstract class ObjectProxyCache<T,A> {
     private final int segmentShift;
     private final int segmentMask;
     private final Thread vulture;
+    private final int id;
     
     public ObjectProxyCache() {
         this(DEFAULT_SEGMENTS, DEFAULT_SEGMENT_SIZE, ReferenceType.WEAK);
@@ -57,6 +64,7 @@ public abstract class ObjectProxyCache<T,A> {
         if (numSegments <= 0 || initialSegCapacity <= 0 || refType == null) {
             throw new IllegalArgumentException();
         }
+        this.id = nextId();
         this.referenceType = refType;
         if (numSegments > MAX_SEGMENTS) numSegments = MAX_SEGMENTS;
     
@@ -67,9 +75,12 @@ public abstract class ObjectProxyCache<T,A> {
             ++sshift;
             ssize <<= 1;
         }
-        segmentShift = 32 - sshift;
-        segmentMask = ssize - 1;
-        segments = Segment.newArray(ssize);
+        // note segmentShift differs from ConcurrentHashMap's calculation due to
+        // issues with System.identityHashCode (upper n bits always 0, at least 
+        // under Java 1.6 / WinXP)
+        this.segmentShift = 24 - sshift;
+        this.segmentMask = ssize - 1;
+        this.segments = Segment.newArray(ssize);
     
         if (initialSegCapacity > MAX_CAPACITY)
             initialSegCapacity = MAX_CAPACITY;
@@ -83,15 +94,23 @@ public abstract class ObjectProxyCache<T,A> {
         // entries.  entries are also expunged during 'put'
         // operations; this is designed to cover the case where
         // many objects are created initially, followed by limited
-        // put activiity.
-        vulture = new Thread("ObjectProxyCache vulture") {
+        // put activity.
+        //
+        // FIXME: DISABLED (below) pending resolution of finalization issue
+        //
+        this.vulture = new Thread("ObjectProxyCache "+id+" vulture") {
             public void run() {
                 for ( ;; ) {
                     try {
                         sleep(VULTURE_RUN_FREQ_SECONDS * 1000);
                     } catch (InterruptedException e) {}
+                    boolean dump = size() > 200;
+                    if (dump) {
+                        System.err.println("***Vulture "+id+" waking, stats:");
+                        System.err.println(stats());
+                    }
                     for (int i = segments.length; --i >= 0; ) {
-                        Segment seg = segments[i];
+                        Segment<T,A> seg = segments[i];
                         seg.lock();
                         try {
                             seg.expunge();
@@ -100,14 +119,28 @@ public abstract class ObjectProxyCache<T,A> {
                         }
                         yield();
                     }
+                    if (dump) {
+                        System.err.println("***Vulture "+id+" sleeping, stats:");
+                        System.err.println(stats());
+                    }
                 }
             }
         };
         try {
             vulture.setDaemon(true);
         } catch (SecurityException e) {}
-        vulture.start();
+
+        
+        // FIXME: vulture daemon thread prevents finalization,
+        // find alternative approach.
+        // vulture.start();
+
+//      System.err.println("***ObjectProxyCache " + id + " started at "+ new java.util.Date());
     }
+    
+//    protected void finalize() throws Throwable {
+//        System.err.println("***ObjectProxyCache " + id + " finalized at "+ new java.util.Date());
+//    }
     
     public abstract T allocateProxy(Object javaObject, A allocator);
     
@@ -134,9 +167,51 @@ public abstract class ObjectProxyCache<T,A> {
         h ^= (h >>> 20) ^ (h >>> 12);
         return h ^ (h >>> 7) ^ (h >>> 4);
     }
-    
+
     private Segment<T,A> segmentFor(int hash) {
         return segments[(hash >>> segmentShift) & segmentMask];
+    }
+    
+    /**
+     * Returns the approximate size (elements in use) of the cache. The
+     * sizes of the segments are summed. No effort is made to synchronize
+     * across segments, so the value returned may differ from the actual
+     * size at any point in time.
+     * 
+     * @return
+     */
+    public int size() {
+       int size = 0;
+       for (Segment<T,A> seg : segments) {
+           size += seg.tableSize;
+       }
+       return size;
+    }
+    
+    public String stats() {
+        StringBuilder b = new StringBuilder();
+        int n = 0;
+        int size = 0;
+        int alloc = 0;
+        b.append("Segments: ").append(segments.length).append("\n");
+        for (Segment<T,A> seg : segments) {
+            int ssize = 0;
+            int salloc = 0;
+            seg.lock();
+            try {
+                ssize = seg.count();
+                salloc = seg.entryTable.length;
+            } finally {
+                seg.unlock();
+            }
+            size += ssize;
+            alloc += salloc;
+            b.append("seg[").append(n++).append("]:  size: ").append(ssize)
+                .append("  alloc: ").append(salloc).append("\n");
+        }
+        b.append("Total: size: ").append(size)
+            .append("  alloc: ").append(alloc).append("\n");
+        return b.toString();
     }
     
     // EntryRefs include hash with key to facilitate lookup by Segment#expunge
@@ -262,9 +337,23 @@ public abstract class ObjectProxyCache<T,A> {
                 }
             }
         }
-        
+
+        // temp method to verify tableSize value
+        // must be called under lock
+        private int count() {
+            int count = 0;
+            for (Entry<T> e : entryTable) {
+                while (e != null) {
+                    count++;
+                    e = e.next;
+                }
+            }
+            return count;
+        }
+
         // must be called under lock
         private Entry<T>[] rehash() {
+            assert tableSize == count() : "tableSize "+tableSize+" != count() "+count();
             Entry<T>[] oldTable = entryTable; // read-volatile
             int oldCapacity;
             if ((oldCapacity = oldTable.length) >= MAX_CAPACITY) {
