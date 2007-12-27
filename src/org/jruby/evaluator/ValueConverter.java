@@ -45,7 +45,7 @@ public final class ValueConverter {
 
     public RubyArray singleToArray(IRubyObject value) {
         if (value == null || value.isNil()) {
-            return runtime.newArray(0);
+            return runtime.newEmptyArray();
         } else if (value instanceof RubyArray) {
             if (((RubyArray)value).getLength() == 1) {
                 return (RubyArray) value;
@@ -72,7 +72,7 @@ public final class ValueConverter {
 
     public RubyArray singleToMultiple(IRubyObject value) {
         if (value == null || value.isNil()) {
-            return runtime.newArray(0);
+            return runtime.newEmptyArray();
         } else if (value instanceof RubyArray) {
             return (RubyArray) value;
         } else {
@@ -98,7 +98,7 @@ public final class ValueConverter {
 
     private RubyArray toArray(IRubyObject value) {
         if (value.isNil()) {
-            return runtime.newArray(0);
+            return runtime.newEmptyArray();
         } else if (value instanceof RubyArray) {
             return (RubyArray)value;
         }

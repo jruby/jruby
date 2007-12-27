@@ -130,7 +130,7 @@ public class RubyNil extends RubyObject {
      */
     @JRubyMethod(name = "to_a")
     public static RubyArray to_a(IRubyObject recv) {
-        return recv.getRuntime().newArray(0);
+        return recv.getRuntime().newEmptyArray();
     }
     
     /** nil_inspect
