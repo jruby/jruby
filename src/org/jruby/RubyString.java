@@ -933,6 +933,10 @@ public class RubyString extends RubyObject {
 
     @JRubyMethod(name = "insert", required = 2)
     public IRubyObject insert(IRubyObject indexArg, IRubyObject stringArg) {
+        // MRI behavior: first check for ability to convert to String...
+        ByteList insert = ((RubyString)stringArg.convertToString()).value;
+
+        // ... and then the index
         int index = (int) indexArg.convertToInteger().getLongValue();
         if (index < 0) index += value.length() + 1;
 
@@ -941,8 +945,7 @@ public class RubyString extends RubyObject {
         }
 
         modify();
-        
-        ByteList insert = ((RubyString)stringArg.convertToString()).value;
+
         value.unsafeReplace(index, 0, insert);
         return this;
     }
