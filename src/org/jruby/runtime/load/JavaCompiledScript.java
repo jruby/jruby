@@ -45,7 +45,7 @@ public class JavaCompiledScript implements Library {
         this.resource = resource;
     }
 
-    public void load(Ruby runtime) {
+    public void load(Ruby runtime, boolean wrap) {
         InputStream in = null;
         try {
             in = new BufferedInputStream(resource.getURL().openStream());

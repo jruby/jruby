@@ -42,13 +42,13 @@ public class ExternalScript implements Library {
         this.resource = resource;
     }
 
-    public void load(Ruby runtime) {
+    public void load(Ruby runtime, boolean wrap) {
         try {
             InputStream in = new BufferedInputStream(resource.getURL().openStream());
             if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
-                runtime.compileAndLoadFile(resource.getName(), in);
+                runtime.compileAndLoadFile(resource.getName(), in, wrap);
             } else {
-                runtime.loadFile(resource.getName(), in);
+                runtime.loadFile(resource.getName(), in, wrap);
             }
             // FIXME: This should be in finally
             in.close();

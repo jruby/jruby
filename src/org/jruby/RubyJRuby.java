@@ -83,7 +83,7 @@ public class RubyJRuby {
     }
 
     public static class ExtLibrary implements Library {
-        public void load(Ruby runtime) throws IOException {
+        public void load(Ruby runtime, boolean wrap) throws IOException {
             RubyJRuby.createJRubyExt(runtime);
         }
     }

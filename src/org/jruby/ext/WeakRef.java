@@ -35,7 +35,7 @@ public class WeakRef extends RubyObject {
     };
     
     public static class WeakRefLibrary implements Library {
-        public void load(Ruby runtime) throws IOException {
+        public void load(Ruby runtime, boolean wrap) throws IOException {
             RubyKernel.require(runtime.getKernel(), runtime.newString("delegate"), Block.NULL_BLOCK);
             
             RubyClass delegatorClass = (RubyClass)runtime.getClassFromPath("Delegator");

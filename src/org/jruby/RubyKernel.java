@@ -687,7 +687,7 @@ public class RubyKernel {
         if (args.length == 2) {
             wrap = args[1].isTrue();
         }
-        recv.getRuntime().getLoadService().load(file.getByteList().toString());
+        recv.getRuntime().getLoadService().load(file.getByteList().toString(), wrap);
         return recv.getRuntime().getTrue();
     }
 

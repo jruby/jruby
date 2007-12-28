@@ -51,7 +51,7 @@ import org.jruby.runtime.MethodIndex;
  */
 public class Generator {
     public static class Service implements Library {
-        public void load(final Ruby runtime) throws IOException {
+        public void load(final Ruby runtime, boolean wrap) throws IOException {
             createGenerator(runtime);
         }
     }

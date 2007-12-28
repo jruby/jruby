@@ -38,7 +38,7 @@ import org.jruby.runtime.load.Library;
  * @author Nick Sieger
  */
 public class IOWaitLibrary implements Library {
-    public void load(Ruby runtime) {
+    public void load(Ruby runtime, boolean wrap) {
         RubyClass ioClass = runtime.getIO();
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyIO.class);
         ioClass.defineFastMethod("ready?", callbackFactory.getFastMethod("ready"));

@@ -1252,7 +1252,7 @@ public final class Ruby {
     private void initLibraries() {
         loadService = config.createLoadService(this);
         registerBuiltin("java.rb", new Library() {
-                public void load(Ruby runtime) throws IOException {
+                public void load(Ruby runtime, boolean wrap) throws IOException {
                     Java.createJavaModule(runtime);
                     runtime.getLoadService().smartLoad("builtin/javasupport");
                     RubyClassPathVariable.createClassPathVariable(runtime);
@@ -1269,7 +1269,7 @@ public final class Ruby {
         }
 
         final Library NO_OP_LIBRARY = new Library() {
-                public void load(Ruby runtime) throws IOException {
+                public void load(Ruby runtime, boolean wrap) throws IOException {
                 }
             };
 
@@ -1286,7 +1286,7 @@ public final class Ruby {
         registerBuiltin("readline.rb", new LateLoadingLibrary("readline", "org.jruby.ext.Readline$Service", getJRubyClassLoader()));
         registerBuiltin("thread.so", new LateLoadingLibrary("thread", "org.jruby.libraries.ThreadLibrary", getJRubyClassLoader()));
         registerBuiltin("openssl.so", new Library() {
-                public void load(Ruby runtime) throws IOException {
+                public void load(Ruby runtime, boolean wrap) throws IOException {
                     runtime.getLoadService().require("jruby/openssl/stub");
                 }
             });
@@ -1824,7 +1824,7 @@ public final class Ruby {
         }
     }
     
-    public void loadFile(String scriptName, InputStream in) {
+    public void loadFile(String scriptName, InputStream in, boolean wrap) {
         if (!Ruby.isSecurityRestricted()) {
             File f = new File(scriptName);
             if(f.exists() && !f.isAbsolute() && !scriptName.startsWith("./")) {
@@ -1832,7 +1832,12 @@ public final class Ruby {
             }
         }
 
-        IRubyObject self = getTopSelf();
+        IRubyObject self = null;
+        if (wrap) {
+            self = TopSelfFactory.createTopSelf(this);
+        } else {
+            self = getTopSelf();
+        }
         ThreadContext context = getCurrentContext();
 
         try {
@@ -1849,15 +1854,13 @@ public final class Ruby {
         }
     }
     
-    public void compileAndLoadFile(String filename, InputStream in) {
-        // FIXME: what is this for?
-//        if (!Ruby.isSecurityRestricted()) {
-//            File f = new File(scriptName);
-//            if(f.exists() && !f.isAbsolute() && !scriptName.startsWith("./")) {
-//                scriptName = "./" + scriptName;
-//            };
-//        }
-        IRubyObject self = getTopSelf();
+    public void compileAndLoadFile(String filename, InputStream in, boolean wrap) {
+        IRubyObject self = null;
+        if (wrap) {
+            self = TopSelfFactory.createTopSelf(this);
+        } else {
+            self = getTopSelf();
+        }
         ThreadContext context = getCurrentContext();
 
         try {

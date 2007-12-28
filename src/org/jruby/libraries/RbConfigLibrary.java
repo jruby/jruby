@@ -48,7 +48,7 @@ public class RbConfigLibrary implements Library {
      * unit tests. The tests use <code>bindir</code>, <code>RUBY_INSTALL_NAME</code> and
      * <code>EXEEXT</code>.
      */
-    public void load(Ruby runtime) {
+    public void load(Ruby runtime, boolean wrap) {
         RubyModule configModule = runtime.defineModule("Config");
         RubyHash configHash = RubyHash.newHash(runtime);
         configModule.defineConstant("CONFIG", configHash);

@@ -35,7 +35,7 @@ import org.jruby.runtime.load.Library;
 
 public class IConvLibrary implements Library {
 
-    public void load(Ruby runtime) throws IOException {
+    public void load(Ruby runtime, boolean wrap) throws IOException {
         RubyIconv.createIconv(runtime);
     }
 

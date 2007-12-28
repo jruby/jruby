@@ -34,7 +34,7 @@ import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
 public class StringIOLibrary implements Library {
-    public void load(Ruby runtime) throws IOException {
+    public void load(Ruby runtime, boolean wrap) throws IOException {
         RubyStringIO.createStringIOClass(runtime);
     }
 }

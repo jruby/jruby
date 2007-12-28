@@ -41,7 +41,7 @@ import org.jruby.runtime.load.Library;
  * @version $Revision: $
  */
 public class YamlLibrary implements Library {
-    public void load(final Ruby runtime) throws IOException {
+    public void load(final Ruby runtime, boolean wrap) throws IOException {
         RubyYAML.createYAMLModule(runtime);
     }
 }// YamlLibrary

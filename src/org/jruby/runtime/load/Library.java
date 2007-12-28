@@ -34,5 +34,5 @@ import org.jruby.Ruby;
 
 public interface Library {
 
-    void load(Ruby runtime) throws IOException;
+    void load(Ruby runtime, boolean wrap) throws IOException;
 }

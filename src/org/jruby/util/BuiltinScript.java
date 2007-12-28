@@ -47,13 +47,13 @@ public class BuiltinScript implements Library {
         this.name = name;
     }
 
-    public void load(Ruby runtime) throws IOException {
+    public void load(Ruby runtime, boolean wrap) throws IOException {
         String resourceName = "/builtin/" + name + ".rb";
         InputStream in = getClass().getResourceAsStream(resourceName);
 
         if (in == null) throw runtime.newIOError("Resource not found: " + resourceName);
 
-        runtime.loadFile(name, new BufferedInputStream(in));
+        runtime.loadFile(name, new BufferedInputStream(in), wrap);
         
         in.close();
     }

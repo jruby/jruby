@@ -58,7 +58,7 @@ public class JarredScript implements Library {
         return this.resource;
     }
 
-    public void load(Ruby runtime) {
+    public void load(Ruby runtime, boolean wrap) {
         URL jarFile = resource.getURL();
 
         // Make Java class files in the jar reachable from Ruby
@@ -79,7 +79,7 @@ public class JarredScript implements Library {
                         IRubyObject old = runtime.getGlobalVariables().isDefined("$JAR_URL") ? runtime.getGlobalVariables().get("$JAR_URL") : runtime.getNil();
                         try {
                             runtime.getGlobalVariables().set("$JAR_URL", runtime.newString("jar:" + jarFile + "!/"));
-                            runtime.loadFile("init", in);
+                            runtime.loadFile("init", in, wrap);
                         } finally {
                             runtime.getGlobalVariables().set("$JAR_URL", old);
                         }

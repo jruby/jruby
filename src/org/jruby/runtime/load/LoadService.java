@@ -195,7 +195,7 @@ public class LoadService {
         }
     }
 
-    public void load(String file) {
+    public void load(String file, boolean wrap) {
         if(!runtime.getProfile().allowLoad(file)) {
             throw runtime.newLoadError("No such file to load -- " + file);
         }
@@ -211,7 +211,7 @@ public class LoadService {
             }
         }
         try {
-            library.load(runtime);
+            library.load(runtime, wrap);
         } catch (IOException e) {
             e.printStackTrace();
             throw runtime.newLoadError("IO error -- " + file);
@@ -323,7 +323,7 @@ public class LoadService {
                 return true;
             }
             
-            library.load(runtime);
+            library.load(runtime, false);
             return true;
         } catch (Throwable e) {
             if(library instanceof JarredScript && file.endsWith(".jar")) {

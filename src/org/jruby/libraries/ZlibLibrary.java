@@ -34,7 +34,7 @@ import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
 public class ZlibLibrary implements Library {
-    public void load(final Ruby runtime) throws IOException {
+    public void load(final Ruby runtime, boolean wrap) throws IOException {
         RubyZlib.createZlibModule(runtime);
     }
 }

@@ -55,7 +55,7 @@ import org.jruby.runtime.MethodIndex;
  */
 public class Readline {
     public static class Service implements Library {
-        public void load(final Ruby runtime) throws IOException {
+        public void load(final Ruby runtime, boolean wrap) throws IOException {
             createReadline(runtime);
         }
     }

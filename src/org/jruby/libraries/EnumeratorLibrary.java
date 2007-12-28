@@ -35,7 +35,7 @@ import org.jruby.RubyEnumerator;
 import org.jruby.runtime.load.Library;
 
 public class EnumeratorLibrary implements Library {
-    public void load(final Ruby runtime) throws IOException {
+    public void load(final Ruby runtime, boolean wrap) throws IOException {
         RubyEnumerator.defineEnumerator(runtime);
     }
 }

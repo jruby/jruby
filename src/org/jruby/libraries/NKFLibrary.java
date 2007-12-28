@@ -8,7 +8,7 @@ import org.jruby.runtime.load.Library;
 
 public class NKFLibrary implements Library {
 
-    public void load(Ruby runtime) throws IOException {
+    public void load(Ruby runtime, boolean wrap) throws IOException {
         RubyNKF.createNKF(runtime);
     }
 }

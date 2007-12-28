@@ -44,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * A basic implementation of Ruby 1.9 Fiber library.
  */
 public class FiberLibrary implements Library {
-    public void load(final Ruby runtime) throws IOException {
+    public void load(final Ruby runtime, boolean wrap) throws IOException {
         Fiber.setup(runtime);
     }
 

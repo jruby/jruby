@@ -52,7 +52,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:mental@rydia.net">MenTaLguY</a>
  */
 public class ThreadLibrary implements Library {
-    public void load(final Ruby runtime) throws IOException {
+    public void load(final Ruby runtime, boolean wrap) throws IOException {
         Mutex.setup(runtime);
         ConditionVariable.setup(runtime);
         Queue.setup(runtime);

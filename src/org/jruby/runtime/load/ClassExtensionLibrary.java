@@ -44,7 +44,7 @@ public class ClassExtensionLibrary implements Library {
         theClass = extension;
     }
 
-    public void load(Ruby runtime) throws IOException {
+    public void load(Ruby runtime, boolean wrap) throws IOException {
         if(BasicLibraryService.class.isAssignableFrom(theClass)) {
             try {
                 ((BasicLibraryService)theClass.newInstance()).basicLoad(runtime);
