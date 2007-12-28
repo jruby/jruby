@@ -76,6 +76,7 @@ public class RubyInstanceConfig {
     private Profile profile            = Profile.DEFAULT;
     private boolean objectSpaceEnabled
             = SafePropertyAccessor.getBoolean("jruby.objectspace.enabled", false);
+    
     private CompileMode compileMode = CompileMode.JIT;
     private boolean runRubyInProcess   = true;
     private String currentDirectory;
@@ -117,6 +118,8 @@ public class RubyInstanceConfig {
     
     public static final boolean FRAMELESS_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.frameless");
+    public static final boolean indexedMethods
+            = SafePropertyAccessor.getBoolean("jruby.indexed.methods");
     public static boolean nativeEnabled = true;
     
     static {
@@ -245,7 +248,9 @@ public class RubyInstanceConfig {
                 .append("       Enable/disable native extensions (like JNA for non-Java APIs; Default is true").append("\n")
                 .append("       (This affects all JRuby instances in a given JVM)").append("\n")
                 .append("    jruby.compat.version=RUBY1_8|RUBY1_9").append("\n")
-                .append("       Specify the major Ruby version to be compatible with; Default is RUBY1_8").append("\n");
+                .append("       Specify the major Ruby version to be compatible with; Default is RUBY1_8").append("\n")
+                .append("    jruby.indexed.methods=true|false").append("\n")
+                .append("       Generate \"invokers\" for core classes using a single indexed class").append("\n");
         
         return sb.toString();
     }

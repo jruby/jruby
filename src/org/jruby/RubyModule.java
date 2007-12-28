@@ -454,11 +454,8 @@ public class RubyModule extends RubyObject {
         }
     }
     
-    private static final boolean indexedMethods
-            = SafePropertyAccessor.getBoolean("jruby.indexed.methods");
-    
     public void defineAnnotatedMethods(Class clazz) {
-        if (indexedMethods) {
+        if (RubyInstanceConfig.indexedMethods) {
             defineAnnotatedMethodsIndexed(clazz);
         } else {
             defineAnnotatedMethodsIndividually(clazz);
