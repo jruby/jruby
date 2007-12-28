@@ -118,7 +118,7 @@ public class RubyInstanceConfig {
     
     public static final boolean FRAMELESS_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.frameless");
-    public static final boolean indexedMethods
+    public static final boolean INDEXED_METHODS
             = SafePropertyAccessor.getBoolean("jruby.indexed.methods");
     public static boolean nativeEnabled = true;
     

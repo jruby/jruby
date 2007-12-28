@@ -455,7 +455,7 @@ public class RubyModule extends RubyObject {
     }
     
     public void defineAnnotatedMethods(Class clazz) {
-        if (RubyInstanceConfig.indexedMethods) {
+        if (RubyInstanceConfig.INDEXED_METHODS) {
             defineAnnotatedMethodsIndexed(clazz);
         } else {
             defineAnnotatedMethodsIndividually(clazz);

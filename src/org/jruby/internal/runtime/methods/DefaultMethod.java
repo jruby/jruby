@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import java.util.ArrayList;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
@@ -44,6 +43,7 @@ import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.MethodCompiler;
 import org.jruby.compiler.ASTCompiler;
+import org.jruby.compiler.JITCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.ASTInterpreter;
@@ -58,7 +58,6 @@ import org.jruby.runtime.EventHook;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JavaNameMangler;
 
@@ -91,6 +90,42 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 		
         assert argsNode != null;
     }
+    
+    public int getCallCount() {
+        return callCount;
+    }
+    
+    public void setCallCount(int callCount) {
+        this.callCount = callCount;
+    }
+    
+    public Script getJITCompilerScript() {
+        return jitCompiledScript;
+    }
+    
+    public void setJITCompiledScript(Script jitCompiledScript) {
+        this.jitCompiledScript = jitCompiledScript;
+    }
+    
+    public CallConfiguration getJITCallConfig() {
+        return jitCallConfig;
+    }
+    
+    public void setJITCallConfig(CallConfiguration jitCallConfig) {
+        this.jitCallConfig = jitCallConfig;
+    }
+    
+    public Node getBodyNode() {
+        return body;
+    }
+    
+    public ArgsNode getArgsNode() {
+        return argsNode;
+    }
+    
+    public StaticScope getStaticScope() {
+        return staticScope;
+    }
 
     /**
      * @see AbstractCallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
@@ -103,7 +138,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         Ruby runtime = context.getRuntime();
 
         if (runtime.getInstanceConfig().getCompileMode().shouldJIT()) {
-            runJIT(runtime, context, name);
+            JITCompiler.runJIT(this, runtime, context, name);
         }
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
@@ -158,92 +193,6 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                 }
                 callConfig.post(context);
             }
-        }
-    }
-
-    private void runJIT(Ruby runtime, ThreadContext context, String name) {
-        if (callCount >= 0) {
-            try {
-                callCount++;
-
-                if (callCount >= runtime.getInstanceConfig().getJitThreshold()) {
-                    String cleanName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
-                    String filename = "__eval__";
-                    if (body != null) {
-                        filename = body.getPosition().getFile();
-                    } else if (argsNode != null) {
-                        filename = argsNode.getPosition().getFile();
-                    }
-                    StandardASMCompiler asmCompiler = new StandardASMCompiler(cleanName + hashCode() + "_" + context.hashCode(), filename);
-                    asmCompiler.startScript(staticScope);
-                    final ASTCompiler compiler = new ASTCompiler();
-        
-                    CompilerCallback args = new CompilerCallback() {
-                        public void call(MethodCompiler context) {
-                            compiler.compileArgs(argsNode, context);
-                        }
-                    };
-        
-                    ASTInspector inspector = new ASTInspector();
-                    inspector.inspect(body);
-                    inspector.inspect(argsNode);
-                    
-                    MethodCompiler methodCompiler;
-                    if (body != null) {
-                        // we have a body, do a full-on method
-                        methodCompiler = asmCompiler.startMethod("__file__", args, staticScope, inspector);
-                        compiler.compile(body, methodCompiler);
-                    } else {
-                        // If we don't have a body, check for required or opt args
-                        // if opt args, they could have side effects
-                        // if required args, need to raise errors if too few args passed
-                        // otherwise, method does nothing, make it a nop
-                        if (argsNode != null && (argsNode.getRequiredArgsCount() > 0 || argsNode.getOptionalArgsCount() > 0)) {
-                            methodCompiler = asmCompiler.startMethod("__file__", args, staticScope, inspector);
-                            methodCompiler.loadNil();
-                        } else {
-                            methodCompiler = asmCompiler.startMethod("__file__", null, staticScope, inspector);
-                            methodCompiler.loadNil();
-                            jitCallConfig = CallConfiguration.NO_FRAME_NO_SCOPE;
-                        }
-                    }
-                    methodCompiler.endMethod();
-                    asmCompiler.endScript();
-                    Class sourceClass = asmCompiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
-                    
-                    // if we haven't already decided on a do-nothing call
-                    if (jitCallConfig == null) {
-                        // if we're not doing any of the operations that still need a scope, use the scopeless config
-                        if (!(inspector.hasClosure() || inspector.hasScopeAwareMethods())) {
-                            // switch to a slightly faster call config
-                            jitCallConfig = CallConfiguration.FRAME_ONLY;
-                        } else {
-                            jitCallConfig = CallConfiguration.FRAME_AND_SCOPE;
-                        }
-                    }
-                    
-                    // finally, grab the script
-                    jitCompiledScript = (Script)sourceClass.newInstance();
-                    
-                    if (runtime.getInstanceConfig().isJitLogging()) {
-                        String className = getImplementationClass().getBaseName();
-                        if (className == null) {
-                            className = "<anon class>";
-                        }
-                        System.err.println("compiled: " + className + "." + name);
-                    }
-                    callCount = -1;
-                }
-            } catch (Exception e) {
-                if (runtime.getInstanceConfig().isJitLoggingVerbose()) {
-                    String className = getImplementationClass().getBaseName();
-                    if (className == null) {
-                        className = "<anon class>";
-                    }
-                    System.err.println("could not compile: " + className + "." + name + " because of: \"" + e.getMessage() + '"');
-                }
-                callCount = -1;
-             }
         }
     }
 
