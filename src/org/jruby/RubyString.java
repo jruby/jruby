@@ -932,7 +932,7 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "dump")
     public IRubyObject dump() {
-        RubyString s = new RubyString(getRuntime(), getMetaClass(), inspectIntoByteList());
+        RubyString s = new RubyString(getRuntime(), getMetaClass(), inspectIntoByteList(true));
         s.infectBy(this);
         return s;
     }
@@ -963,29 +963,35 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
-        RubyString s = getRuntime().newString(inspectIntoByteList());
+        RubyString s = getRuntime().newString(inspectIntoByteList(false));
         s.infectBy(this);
         return s;
     }
     
-    private ByteList inspectIntoByteList() {
-        final int length = value.length();
+    private ByteList inspectIntoByteList(boolean ignoreKCode) {
         Ruby runtime = getRuntime();
+        Encoding enc = runtime.getKCode().getEncoding();
+        final int length = value.length();
         ByteList sb = new ByteList(length + 2 + length / 100);
 
         sb.append('\"');
 
-        // FIXME: This may not be unicode-safe
         for (int i = 0; i < length; i++) {
             int c = value.get(i) & 0xFF;
+            
+            if (!ignoreKCode) {
+                int seqLength = enc.length((byte)c);
+                
+                if (seqLength > 1 && (i + seqLength -1 < length)) {
+                    // don't escape multi-byte characters, leave them as bytes
+                    sb.append(value, i, seqLength);
+                    i += seqLength - 1;
+                    continue;
+                }
+            } 
+            
             if (isAlnum(c)) {
                 sb.append((char)c);
-            } else if (runtime.getKCode() == KCode.UTF8 && c == 0xEF) {
-                // don't escape encoded UTF8 characters, leave them as bytes
-                // append byte order mark plus two character bytes
-                sb.append((char)c);
-                sb.append((char)(value.get(++i) & 0xFF));
-                sb.append((char)(value.get(++i) & 0xFF));
             } else if (c == '\"' || c == '\\') {
                 sb.append('\\').append((char)c);
             } else if (c == '#' && isEVStr(i, length)) {
@@ -1009,7 +1015,7 @@ public class RubyString extends RubyObject {
             } else if (c == '\u001B') {
                 sb.append('\\').append('e');
             } else {
-                sb.append(ByteList.plain(Sprintf.sprintf(runtime,"\\%.3o",c)));
+                sb.append(ByteList.plain(Sprintf.sprintf(runtime,"\\%03o",c)));
             }
         }
 
