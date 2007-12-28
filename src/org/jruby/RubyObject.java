@@ -961,11 +961,27 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     public IRubyObject methods(IRubyObject[] args) {
     	Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
-    	if (args.length == 0) {
-    		args = new IRubyObject[] { getRuntime().getTrue() };
-    	}
+        boolean all = true;
+        if (args.length == 1) {
+            all = args[0].isTrue();
+        }
 
-        return getMetaClass().instance_methods(args);
+        RubyArray singletonMethods = null;
+        if (getMetaClass().isSingleton()) {
+            singletonMethods =
+                    getMetaClass().instance_methods(new IRubyObject[] {getRuntime().getFalse()});
+            if (all) {
+                singletonMethods.concat(getMetaClass().getSuperClass().instance_methods(new IRubyObject[] {getRuntime().getTrue()}));
+            }
+        } else {
+            if (all) {
+                singletonMethods = getMetaClass().instance_methods(new IRubyObject[] {getRuntime().getTrue()});
+            } else {
+                singletonMethods = getRuntime().newEmptyArray();
+            }
+        }
+        
+        return singletonMethods;
     }
 
     @JRubyMethod(name = "public_methods", optional = 1)
@@ -977,7 +993,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         }
 
         return getMetaClass().public_instance_methods(args);
-	}
+    }
 
     /** rb_obj_protected_methods
      *
