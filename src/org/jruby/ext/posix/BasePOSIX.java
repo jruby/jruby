@@ -86,4 +86,8 @@ public abstract class BasePOSIX implements POSIX {
     public int symlink(String oldpath, String newpath) {
         return libc.symlink(oldpath, newpath);
     }
+    
+    public int umask(int mask) {
+        return libc.umask(mask);
+    }
 }

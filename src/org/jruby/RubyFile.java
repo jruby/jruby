@@ -230,7 +230,7 @@ public class RubyFile extends RubyIO {
         constants.fastSetConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
         constants.fastSetConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
         
-        // TODO Singleton methods: readlink, umask 
+        // TODO Singleton methods: readlink
         
         runtime.getFileTest().extend_object(fileClass);
         
@@ -1217,7 +1217,21 @@ public class RubyFile extends RubyIO {
         
         return RubyFixnum.zero(runtime);
     }
-    
+
+    @JRubyMethod(meta = true, optional = 1)
+    public static IRubyObject umask(IRubyObject recv, IRubyObject[] args) {
+        int oldMask = 0;
+        if (args.length == 0) {
+            oldMask = recv.getRuntime().getPosix().umask(0);
+        } else if (args.length == 1) {
+            oldMask = recv.getRuntime().getPosix().umask((int) args[0].convertToInteger().getLongValue()); 
+        } else {
+            recv.getRuntime().newArgumentError("wrong number of arguments");
+        }
+        
+        return recv.getRuntime().newFixnum(oldMask);
+    }
+
     /**
      * This method does NOT set atime, only mtime, since Java doesn't support anything else.
      */

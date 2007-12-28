@@ -200,4 +200,10 @@ public class JavaLibC implements LibC {
             return -1;
         }
     }
+
+    public int umask(int mask) {
+        // TODO: We can possibly maintain an internal mask and try and apply it to individual
+        // libc methods.  
+        return 0;
+    }
 }

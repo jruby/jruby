@@ -49,4 +49,5 @@ public interface LibC extends Library {
     public int lstat(String path, FileStat stat);
     public int stat(String path, FileStat stat);
     public int symlink(String oldpath,String newpath);
+    public int umask(int mask);
 }

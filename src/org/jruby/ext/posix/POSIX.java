@@ -23,4 +23,5 @@ public interface POSIX {
     public FileStat lstat(String path);
     public FileStat stat(String path);
     public int symlink(String oldpath,String newpath);
+    public int umask(int mask);
 }
