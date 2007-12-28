@@ -113,7 +113,8 @@ public class RubyTime extends RubyObject {
                     zone += minutes;
                 }
             }
-
+            
+            zone = zone.replaceAll("GMT","Etc/GMT");
             return DateTimeZone.forTimeZone(TimeZone.getTimeZone(zone));
         }
     }
