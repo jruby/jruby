@@ -680,9 +680,13 @@ public class RubyKernel {
         return recv.getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "load", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject load(IRubyObject recv, IRubyObject arg1, Block block) {
-        RubyString file = arg1.convertToString();
+    @JRubyMethod(name = "load", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block block) {
+        RubyString file = args[0].convertToString();
+        boolean wrap = false;
+        if (args.length == 2) {
+            wrap = args[1].isTrue();
+        }
         recv.getRuntime().getLoadService().load(file.getByteList().toString());
         return recv.getRuntime().getTrue();
     }
@@ -1051,7 +1055,8 @@ public class RubyKernel {
         Ruby runtime = recv.getRuntime();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         
-        int resultCode = new ShellLauncher(runtime).runAndWait(new IRubyObject[] {aString}, output);
+        RubyString string = aString.convertToString();
+        int resultCode = new ShellLauncher(runtime).runAndWait(new IRubyObject[] {string}, output);
         
         recv.getRuntime().getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         
