@@ -25,7 +25,7 @@ module ::Kernel
     end
   rescue NameError
     def __jtrap(*args, &block)
-      warn "trap not supported by this VM"
+      warn "trap not supported or not allowed by this VM"
     end
   end
 end
