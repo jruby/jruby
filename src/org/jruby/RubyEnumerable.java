@@ -513,7 +513,7 @@ public class RubyEnumerable {
         }
     }
 
-    @JRubyMethod(name = "group_by", frame = true)
+    @JRubyMethod(name = "group_by", frame = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject group_by(IRubyObject self, final Block block) {
         final Ruby runtime = self.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
