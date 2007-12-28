@@ -5,6 +5,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.PipedInputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -19,8 +21,6 @@ import javax.swing.JTextPane;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class IRBConsole extends JFrame {
     public IRBConsole(String title) {
@@ -51,6 +51,11 @@ public class IRBConsole extends JFrame {
         console.validate();
 
         final TextAreaReadline tar = new TextAreaReadline(text, " Welcome to the JRuby IRB Console \n\n");
+        console.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                tar.notifyFinished();
+            }
+        });
 
         final RubyInstanceConfig config = new RubyInstanceConfig() {{
             setInput(pipeIn);

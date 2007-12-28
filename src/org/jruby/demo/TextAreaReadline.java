@@ -49,6 +49,7 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
     private BasicComboPopup completePopup;
     private int start;
     private int end;
+    private volatile boolean finished = false;
     
     public TextAreaReadline(JTextComponent area) {
         this(area, null);
@@ -256,6 +257,13 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
         }
     }
     
+    void notifyFinished() {
+        synchronized (amEditing) {
+            finished = true;
+            amEditing.notify();
+        }
+    }
+
     public String readLine(final String prompt)
     {
         append(prompt.trim(), promptStyle);
@@ -266,11 +274,12 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
         Readline.getHistory().moveToEnd();
         
         synchronized (amEditing) {
+            if (finished) return "exit";
             try {
                 amEditing.wait();
             } catch (InterruptedException e) { }
         }
-        String result = getLine().trim();
+        String result = finished? "exit": getLine().trim();
         return result;
     }
     
