@@ -123,7 +123,7 @@ public class RubyMethod extends RubyObject {
     public RubyBoolean op_equal(IRubyObject other) {
         if (!(other instanceof RubyMethod)) return getRuntime().getFalse();
         RubyMethod otherMethod = (RubyMethod)other;
-        return getRuntime().newBoolean(method == otherMethod.method && receiver == otherMethod.receiver);
+        return getRuntime().newBoolean(method.getRealMethod() == otherMethod.method.getRealMethod() && receiver == otherMethod.receiver);
     }
 
     @JRubyMethod(name = "clone")
@@ -192,7 +192,6 @@ public class RubyMethod extends RubyObject {
     public RubyUnboundMethod unbind(Block unusedBlock) {
         RubyUnboundMethod unboundMethod =
         	RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
-        unboundMethod.receiver = this;
         unboundMethod.infectBy(this);
         
         return unboundMethod;

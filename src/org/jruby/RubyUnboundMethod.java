@@ -107,6 +107,11 @@ public class RubyUnboundMethod extends RubyMethod {
         return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, aReceiver);
     }
     
+    @JRubyMethod(name = "clone")
+    public RubyMethod rbClone() {
+        return newUnboundMethod(implementationModule, methodName, originModule, originName, method);
+    }
+
     @JRubyMethod(name = "to_proc", frame = true)
     public IRubyObject to_proc(Block unusedBlock) {
         return super.to_proc(unusedBlock);
