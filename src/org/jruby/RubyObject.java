@@ -1030,31 +1030,26 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @JRubyMethod(name = "singleton_methods", optional = 1)
     public RubyArray singleton_methods(IRubyObject[] args) {
         boolean all = true;
-        if(Arity.checkArgumentCount(getRuntime(), args,0,1) == 1) {
+        if(args.length == 1) {
             all = args[0].isTrue();
         }
 
-        RubyArray result = getRuntime().newArray();
-
-        for (RubyClass type = getMetaClass(); type != null && ((type instanceof MetaClass) || (all && type.isIncluded()));
-             type = type.getSuperClass()) {
-        	for (Iterator iter = type.getMethods().entrySet().iterator(); iter.hasNext(); ) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                DynamicMethod method = (DynamicMethod) entry.getValue();
-
-                // We do not want to capture cached methods
-                if (method.getImplementationClass() != type && !(all && type.isIncluded())) {
-                	continue;
-                }
-
-                RubyString methodName = getRuntime().newString((String) entry.getKey());
-                if (method.getVisibility() == Visibility.PUBLIC && ! result.includes(methodName)) {
-                    result.append(methodName);
+        RubyArray singletonMethods = null;
+        if (getMetaClass().isSingleton()) {
+            singletonMethods =
+                    getMetaClass().instance_methods(new IRubyObject[] {getRuntime().getFalse()});
+            if (all) {
+                RubyClass superClass = getMetaClass().getSuperClass();
+                while (superClass.isIncluded()) {
+                    singletonMethods.concat(superClass.instance_methods(new IRubyObject[] {getRuntime().getFalse()}));
+                    superClass = superClass.getSuperClass();
                 }
             }
+        } else {
+            singletonMethods = getRuntime().newEmptyArray();
         }
-
-        return result;
+        
+        return singletonMethods;
     }
 
     @JRubyMethod(name = "method", required = 1)

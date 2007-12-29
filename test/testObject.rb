@@ -135,7 +135,7 @@ class MethodFixture
   private
     def method5; end
 end
-test_equal(2, MethodFixture.singleton_methods(false).length)
+test_equal(3, MethodFixture.singleton_methods(false).length)
 m = MethodFixture.new
 test_equal(3 + Object.new.methods.length, m.methods.length)
 test_equal(2, m.public_methods(false).length)
