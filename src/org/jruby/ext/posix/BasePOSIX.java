@@ -65,14 +65,16 @@ public abstract class BasePOSIX implements POSIX {
         return libc.link(oldpath, newpath);
     }
     
-    public abstract FileStat allocateStat();
-
     public FileStat lstat(String path) {
         FileStat stat = allocateStat();
 
         if (libc.lstat(path, stat) < 0) handler.error(ERRORS.ENOENT, path);
         
         return stat;
+    }
+    
+    public int mkdir(String path, int mode) {
+        return libc.mkdir(path, mode);
     }
 
     public FileStat stat(String path) {
@@ -90,4 +92,6 @@ public abstract class BasePOSIX implements POSIX {
     public int umask(int mask) {
         return libc.umask(mask);
     }
+    
+    public abstract FileStat allocateStat();
 }

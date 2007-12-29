@@ -47,6 +47,7 @@ public interface LibC extends Library {
     public int lchown(String filename, int user, int group);
     public int link(String oldpath,String newpath);
     public int lstat(String path, FileStat stat);
+    public int mkdir(String path, int mode);
     public int stat(String path, FileStat stat);
     public int symlink(String oldpath,String newpath);
     public int umask(int mask);

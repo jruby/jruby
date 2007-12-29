@@ -21,6 +21,7 @@ public interface POSIX {
     public int lchown(String filename, int user, int group);
     public int link(String oldpath,String newpath);
     public FileStat lstat(String path);
+    public int mkdir(String path, int mode);
     public FileStat stat(String path);
     public int symlink(String oldpath,String newpath);
     public int umask(int mask);

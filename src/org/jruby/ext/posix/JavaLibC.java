@@ -168,6 +168,14 @@ public class JavaLibC implements LibC {
         return 0;
     }
     
+    public int mkdir(String path, int mode) {
+        File dir = new File(path);
+        
+        dir.mkdir();
+        chmod(path, mode);
+        
+        return 0;
+    }
     
     public int stat(String path, FileStat stat) {
         // FIXME: Bulletproof this or no?

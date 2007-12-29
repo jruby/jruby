@@ -277,26 +277,23 @@ public class RubyDir extends RubyObject {
      */
     @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true)
     public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
-        if (args.length < 1) {
-            throw recv.getRuntime().newArgumentError(args.length, 1);
-        }
-        if (args.length > 2) {
-            throw recv.getRuntime().newArgumentError(args.length, 2);
-        }
-
-        recv.getRuntime().checkSafeString(args[0]);
+        Ruby runtime = recv.getRuntime();
+        runtime.checkSafeString(args[0]);
         String path = args[0].toString();
 
-        File newDir = getDir(recv.getRuntime(), path, false);
+        File newDir = getDir(runtime, path, false);
         if (File.separatorChar == '\\') {
             newDir = new File(newDir.getPath());
         }
         
-        if (newDir.mkdirs()) {
-          return RubyFixnum.zero(recv.getRuntime());
-        } else {
-          throw recv.getRuntime().newSystemCallError("mkdir failed");
+        int mode = args.length == 2 ? ((int) args[1].convertToInteger().getLongValue()) : 0777;
+
+        if (runtime.getPosix().mkdir(newDir.getAbsolutePath(), mode) < 0) {
+            // FIXME: This is a system error based on errno
+            throw recv.getRuntime().newSystemCallError("mkdir failed");
         }
+        
+        return RubyFixnum.zero(recv.getRuntime());
     }
 
     /**
