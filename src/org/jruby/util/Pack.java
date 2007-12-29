@@ -875,31 +875,64 @@ public class Pack {
                     byte[] lElem = new byte[length];
                     int a = -1, b = -1, c = 0, d;
                     int index = 0;
+                    int s = -1;
+
                     while (encode.hasRemaining()) {
-                        int s;
-                        do {
+                        a = b = c = d = -1;
+                        
+                        // obtain a
+                        s = safeGet(encode);
+                        while (((a = b64_xtable[s]) == -1) && encode.hasRemaining()) {
                             s = safeGet(encode);
-                        } while (s == '\r' || s == '\n');
+                        }
+                        if (a == -1) break;
+                        
+                        // obtain b
+                        s = safeGet(encode);
+                        while (((b = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                            s = safeGet(encode);
+                        }
+                        if (b == -1) break;
+                        
+                        // obtain c
+                        s = safeGet(encode);
+                        while (((c = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                            if (s == '=') break;
+                            s = safeGet(encode);
+                        }
+                        if ((s == '=') || c == -1) {
+                            if (s == '=') {
+                                encode.position(encode.position() - 1);
+                            }
+                            break;
+                        }
+                        
+                        // obtain d
+                        s = safeGet(encode);
+                        while (((d = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                            if (s == '=') break;
+                            s = safeGet(encode);
+                        }
+                        if ((s == '=') || d == -1) {
+                            if (s == '=') {
+                                encode.position(encode.position() - 1);
+                            }
+                            break;
+                        }
 
-                        if ((a = b64_xtable[s]) == -1) break;
-                        s = safeGet(encode);
-                        if ((b = b64_xtable[s]) == -1) break;
-                        s = safeGet(encode);
-                        if ((c = b64_xtable[s]) == -1) break;
-                        s = safeGet(encode);
-                        if ((d = b64_xtable[s]) == -1) break;
-
+                        // calculate based on a, b, c and d
                         lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                         lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
                         lElem[index++] = (byte)((c << 6 | d) & 255);
-                        a = -1;
                     }
-                    if (a != -1 && b != -1) {
-                        lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                        if(c != -1) {
-                        	lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
-                        }
 
+                    if (a != -1 && b != -1) {
+                        if (c == -1 && s == '=') {
+                            lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                        } else if(c != -1 && s == '=') {
+                            lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                            lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+                        }
                     }
                     result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index,false)));
                 }
