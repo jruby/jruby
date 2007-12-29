@@ -55,6 +55,8 @@ import org.jruby.util.ByteList;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.Days;
+import org.joda.time.Months;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -776,13 +778,18 @@ public class RubyTime extends RubyObject {
             int_args[1] += hours;
         }
         if (int_args[1] > 23) {
-            throw runtime.newArgumentError("argument out of range.");
+            int days = int_args[1] / 24;
+            int hours = int_args[1] % 24;
+            int_args[1] = hours;
+            int_args[0] += days;
         }
-        dt = dt.withDate(year, month, int_args[0])
+        // set up with day == 1 and then add additional days
+        dt = dt.withDate(year, month, 1)
             .withHourOfDay(int_args[1])
             .withMinuteOfHour(int_args[2])
             .withSecondOfMinute(int_args[3])
             .withMillisOfSecond(0);
+        dt = dt.plusDays(int_args[0] - 1);
 
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, dt);
         // Ignores usec if 8 args (for compatibility with parsedate) or if not supplied.
