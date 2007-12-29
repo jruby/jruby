@@ -676,7 +676,7 @@ public final class ThreadContext {
     
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block, 
             StaticScope staticScope, JumpTarget jumpTarget) {
-        RubyModule implementationClass = getCurrentScope().getStaticScope().getModule();
+        RubyModule implementationClass = staticScope.getModule();
         // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
         if (implementationClass == null) {
             implementationClass = clazz;
@@ -705,7 +705,7 @@ public final class ThreadContext {
     }
     
     public void preMethodScopeOnly(RubyModule clazz, StaticScope staticScope) {
-        RubyModule implementationClass = getCurrentScope().getStaticScope().getModule();
+        RubyModule implementationClass = staticScope.getModule();
         // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
         if (implementationClass == null) {
             implementationClass = clazz;
