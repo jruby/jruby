@@ -591,11 +591,11 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                 IRubyObject source = args[1];
                 IRubyObject filename = args[2];
-                // FIXME: lineNumber is not supported
-                //IRubyObject lineNumber = args[3];
+                // Line numbers are zero-based so we subtract one
+                int lineNumber = (int) (args[3].convertToInteger().getLongValue() - 1);
 
                 return ASTInterpreter.evalSimple(source.getRuntime().getCurrentContext(),
-                                  args[0], source, filename.convertToString().toString());
+                                  args[0], source, filename.convertToString().toString(), lineNumber);
             }
 
             public Arity getArity() {

@@ -76,6 +76,7 @@ public abstract class LexerSource {
      */
     protected LexerSource(String sourceName, List<String> list, int line, boolean extraPositionInformation) {
         this.sourceName = sourceName;
+        this.line = line;
 
         if (extraPositionInformation) {
             positionFactory = new IDESourcePositionFactory(this, line);
