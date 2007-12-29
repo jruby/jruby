@@ -674,7 +674,7 @@ public class RubyKernel {
      **/
     @JRubyMethod(name = "require", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject require(IRubyObject recv, IRubyObject name, Block block) {
-        if (recv.getRuntime().getLoadService().require(name.toString())) {
+        if (recv.getRuntime().getLoadService().require(name.convertToString().toString())) {
             return recv.getRuntime().getTrue();
         }
         return recv.getRuntime().getFalse();
