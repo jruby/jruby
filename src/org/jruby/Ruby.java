@@ -1477,7 +1477,7 @@ public final class Ruby {
             defineClass("ThreadError", standardError, standardError.getAllocator());
         }
         if (profile.allowClass("SystemStackError")) {
-            defineClass("SystemStackError", exceptionClass, exceptionClass.getAllocator());
+            defineClass("SystemStackError", standardError, standardError.getAllocator());
         }
         if (profile.allowClass("ZeroDivisionError")) {
             defineClass("ZeroDivisionError", standardError, standardError.getAllocator());
