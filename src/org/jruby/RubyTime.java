@@ -764,32 +764,17 @@ public class RubyTime extends RubyObject {
             dt = dt.withZone(getLocalTimeZone(runtime));
         }
 
-        // round seconds and minutes up to the nearest minute and hour
-        if (int_args[3] > 59) {
-            int minutes = int_args[3] / 60;
-            int seconds = int_args[3] % 60;
-            int_args[3] = seconds;
-            int_args[2] += minutes;
-        }
-        if (int_args[2] > 59) {
-            int hours = int_args[2] / 60;
-            int minutes = int_args[2] % 60;
-            int_args[2] = minutes;
-            int_args[1] += hours;
-        }
-        if (int_args[1] > 23) {
-            int days = int_args[1] / 24;
-            int hours = int_args[1] % 24;
-            int_args[1] = hours;
-            int_args[0] += days;
-        }
-        // set up with day == 1 and then add additional days
-        dt = dt.withDate(year, month, 1)
-            .withHourOfDay(int_args[1])
-            .withMinuteOfHour(int_args[2])
-            .withSecondOfMinute(int_args[3])
-            .withMillisOfSecond(0);
-        dt = dt.plusDays(int_args[0] - 1);
+        // set up with min values and then add to allow rolling over
+        dt = dt.withDate(year, 1, 1)
+                .withHourOfDay(0)
+                .withMinuteOfHour(0)
+                .withSecondOfMinute(0)
+                .withMillisOfSecond(0);
+        dt = dt.plusMonths(month - 1)
+                .plusDays(int_args[0] - 1)
+                .plusHours(int_args[1])
+                .plusMinutes(int_args[2])
+                .plusSeconds(int_args[3]);
 
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, dt);
         // Ignores usec if 8 args (for compatibility with parsedate) or if not supplied.
