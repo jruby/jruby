@@ -38,7 +38,9 @@ package org.jruby;
 
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.anno.JRubyMethod;
@@ -82,6 +84,8 @@ public class RubyTime extends RubyObject {
             = Pattern.compile("(\\D+?)([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
     
     private static final ByteList TZ_STRING = ByteList.create("TZ");
+    private static final ThreadLocal<Map<String, DateTimeZone>> LOCAL_ZONES_CACHE
+            = new ThreadLocal<Map<String,DateTimeZone>>();
      
     public static DateTimeZone getLocalTimeZone(Ruby runtime) {
         // TODO: cache the RubyString "TZ" so it doesn't need to be recreated for each call?
@@ -92,6 +96,17 @@ public class RubyTime extends RubyObject {
             return DateTimeZone.getDefault();
         } else {
             String zone = tz.toString();
+            Map<String, DateTimeZone> zonesCache = LOCAL_ZONES_CACHE.get();
+            if (zonesCache != null) {
+                DateTimeZone cachedZone = zonesCache.get(zone);
+                if (cachedZone != null) {
+                    return cachedZone;
+                }
+            } else {
+                zonesCache = new WeakHashMap<String, DateTimeZone>();
+                LOCAL_ZONES_CACHE.set(zonesCache);
+            }
+            String originalZone = zone;
 
             // Value of "TZ" property is of a bit different format,
             // which confuses the Java's TimeZone.getTimeZone(id) method,
@@ -134,7 +149,9 @@ public class RubyTime extends RubyObject {
                 zone = "Etc/" + zone;
             }
 
-            return DateTimeZone.forTimeZone(TimeZone.getTimeZone(zone));
+            DateTimeZone dtz = DateTimeZone.forTimeZone(TimeZone.getTimeZone(zone));
+            zonesCache.put(originalZone, dtz);
+            return dtz;
         }
     }
     
