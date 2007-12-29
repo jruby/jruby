@@ -1290,13 +1290,8 @@ public class RubyModule extends RubyObject {
     */
     @JRubyMethod(name = "<=>", required = 1)
    public IRubyObject op_cmp(IRubyObject obj) {
-        if (this == obj) {
-            return getRuntime().newFixnum(0);
-        }
-
-        if (!(obj instanceof RubyModule)) {
-            throw getRuntime().newTypeError("<=> requires Class or Module (" + getMetaClass().getName() + " given)");
-        }
+        if (this == obj) return getRuntime().newFixnum(0);
+        if (!(obj instanceof RubyModule)) return getRuntime().getNil();
 
         RubyModule module = (RubyModule) obj;
 
