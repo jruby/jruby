@@ -701,7 +701,7 @@ public class RubyKernel {
         
         IRubyObject scope = null;
         String file = "(eval)";
-        int line = 1;
+        int line = 0;
         
         // determine scope and position
         if (args.length > 1 && !args[1].isNil()) {
@@ -736,7 +736,7 @@ public class RubyKernel {
         if (args.length > 3) {
             line = (int)args[3].convertToInteger().getLongValue();
         } else {
-            line = 1;
+            line = 0;
         }
         
         ThreadContext context = runtime.getCurrentContext();
