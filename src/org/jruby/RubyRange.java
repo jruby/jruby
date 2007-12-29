@@ -402,7 +402,7 @@ public class RubyRange extends RubyObject {
             if (!isExclusive) {
                 end = end.callMethod(context, MethodIndex.OP_PLUS, "+", RubyFixnum.one(getRuntime()));
             }
-            while (begin.callMethod(context, MethodIndex.OP_LT, "<", end).isTrue()) {
+            while (begin.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", end).convertToInteger().getLongValue() < 0) {
                 block.yield(context, begin);
                 begin = begin.callMethod(context, MethodIndex.OP_PLUS, "+", RubyFixnum.one(getRuntime()));
             }
@@ -410,7 +410,7 @@ public class RubyRange extends RubyObject {
             IRubyObject v = begin;
 
             if (isExclusive) {
-                while (v.callMethod(context, MethodIndex.OP_LT, "<", end).isTrue()) {
+                while (v.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", end).convertToInteger().getLongValue() < 0) {
                     if (v.equals(end)) {
                         break;
                     }
@@ -418,7 +418,7 @@ public class RubyRange extends RubyObject {
                     v = v.callMethod(context, "succ");
                 }
             } else {
-                while (v.callMethod(context, MethodIndex.OP_LE, "<=", end).isTrue()) {
+                while (v.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", end).convertToInteger().getLongValue() <= 0) {
                     block.yield(context, v);
                     if (v.equals(end)) {
                         break;
@@ -433,8 +433,6 @@ public class RubyRange extends RubyObject {
     
     @JRubyMethod(name = "step", optional = 1, frame = true)
     public IRubyObject step(IRubyObject[] args, Block block) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
-        
         IRubyObject currentObject = begin;
         int compareMethod = isExclusive ? MethodIndex.OP_LT : MethodIndex.OP_LE;
         // int stepSize = (int) (args.length == 0 ? 1 : args[0].convertToInteger().getLongValue());
@@ -453,6 +451,7 @@ public class RubyRange extends RubyObject {
         
         if (begin instanceof RubyFloat && end instanceof RubyFloat) {
             RubyFloat stepNum = getRuntime().newFloat(stepSize);
+            
             while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES.get(compareMethod), end).isTrue()) {
                 block.yield(context, currentObject);
                 currentObject = currentObject.callMethod(context, MethodIndex.OP_PLUS, "+", stepNum);
@@ -463,6 +462,7 @@ public class RubyRange extends RubyObject {
                 throw getRuntime().newArgumentError("step can't be 0");
             }
             RubyFixnum stepNum = getRuntime().newFixnum(Double.valueOf(stepSize).longValue());
+            
             while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES.get(compareMethod), end).isTrue()) {
                 block.yield(context, currentObject);
                 currentObject = currentObject.callMethod(context, MethodIndex.OP_PLUS, "+", stepNum);
@@ -470,6 +470,7 @@ public class RubyRange extends RubyObject {
         } else if(begin instanceof RubyString && end instanceof RubyString) {
           RubyString afterEnd = isExclusive ? (RubyString) end : (RubyString) end.callMethod(context, "succ");
           boolean pastEnd = isExclusive && currentObject.callMethod(context, MethodIndex.EQUALEQUAL, "==", end).isTrue();  
+          
           while(pastEnd == false) {
               block.yield(context, currentObject);
               for (int i = 0; i < stepSize; i++) {
@@ -481,6 +482,8 @@ public class RubyRange extends RubyObject {
               }
           }
         } else {
+            if (!begin.respondsTo("succ")) throw getRuntime().newTypeError("can't iterate from " + begin.getMetaClass().getName());
+            
             while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES.get(compareMethod), end).isTrue()) {
                 block.yield(context, currentObject);
                 
