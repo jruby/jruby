@@ -40,7 +40,7 @@
 # $Id$
 #
 
-require 'parsedate'
+require 'date/format'
 
 #
 # Implements the extensions to the Time class that are described in the
@@ -150,7 +150,7 @@ class Time
 
     def make_time(year, mon, day, hour, min, sec, sec_fraction, zone, now)
       usec = nil
-      usec = (sec_fraction * 1000000).to_i if sec_fraction
+      usec = sec_fraction * 1000000 if sec_fraction
       if now
         begin
           break if year; year = now.year
@@ -181,7 +181,7 @@ class Time
         t.localtime if !zone_utc?(zone)
         t
       else
-        Time.local(year, mon, day, hour, min, sec, usec)
+        self.local(year, mon, day, hour, min, sec, usec)
       end
     end
     private :make_time
@@ -243,6 +243,21 @@ class Time
       make_time(year, d[:mon], d[:mday], d[:hour], d[:min], d[:sec], d[:sec_fraction], d[:zone], now)
     end
 
+    #
+    # Parses +date+ using Date._strptime and converts it to a Time object.
+    #
+    # If a block is given, the year described in +date+ is converted by the
+    # block.  For example:
+    #
+    #     Time.strptime(...) {|y| y < 100 ? (y >= 69 ? y + 1900 : y + 2000) : y}
+    def strptime(date, format, now=Time.now)
+      d = Date._strptime(date, format)
+      raise ArgumentError, "invalid strptime format - `#{format}'" unless d
+      year = d[:year]
+      year = yield(year) if year && block_given?
+      make_time(year, d[:mon], d[:mday], d[:hour], d[:min], d[:sec], d[:sec_fraction], d[:zone], now)
+    end
+
     MonthValue = {
       'JAN' => 1, 'FEB' => 2, 'MAR' => 3, 'APR' => 4, 'MAY' => 5, 'JUN' => 6,
       'JUL' => 7, 'AUG' => 8, 'SEP' => 9, 'OCT' =>10, 'NOV' =>11, 'DEC' =>12
@@ -289,7 +304,7 @@ class Time
 
         year, mon, day, hour, min, sec =
           apply_offset(year, mon, day, hour, min, sec, zone_offset(zone))
-        t = Time.utc(year, mon, day, hour, min, sec)
+        t = self.utc(year, mon, day, hour, min, sec)
         t.localtime if !zone_utc?(zone)
         t
       else
@@ -316,14 +331,14 @@ class Time
           (\d{2}):(\d{2}):(\d{2})\x20
           GMT
           \s*\z/ix =~ date
-        Time.rfc2822(date)
+        self.rfc2822(date)
       elsif /\A\s*
              (?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\x20
              (\d\d)-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d\d)\x20
              (\d\d):(\d\d):(\d\d)\x20
              GMT
              \s*\z/ix =~ date
-        Time.parse(date)
+        self.parse(date)
       elsif /\A\s*
              (?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\x20
              (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\x20
@@ -331,7 +346,7 @@ class Time
              (\d\d):(\d\d):(\d\d)\x20
              (\d{4})
              \s*\z/ix =~ date
-        Time.utc($6.to_i, MonthValue[$1.upcase], $2.to_i,
+        self.utc($6.to_i, MonthValue[$1.upcase], $2.to_i,
                  $3.to_i, $4.to_i, $5.to_i)
       else
         raise ArgumentError.new("not RFC 2616 compliant date: #{date.inspect}")
@@ -446,10 +461,10 @@ class Time
       year, mon, day, hour, min, sec) +
     if fraction_digits == 0
       ''
-    elsif fraction_digits <= 6
-      '.' + sprintf('%06d', usec)[0, fraction_digits]
+    elsif fraction_digits <= 9
+      '.' + sprintf('%09d', nsec)[0, fraction_digits]
     else
-      '.' + sprintf('%06d', usec) + '0' * (fraction_digits - 6)
+      '.' + sprintf('%09d', nsec) + '0' * (fraction_digits - 9)
     end +
     if utc?
       'Z'
@@ -792,6 +807,15 @@ if __FILE__ == $0
 
     def test_parse_fraction
       assert_equal(500000, Time.parse("2000-01-01T00:00:00.5+00:00").tv_usec)
+    end
+
+    def test_strptime
+      assert_equal(Time.utc(2005, 8, 28, 06, 54, 20), Time.strptime("28/Aug/2005:06:54:20 +0000", "%d/%b/%Y:%T %z"))
+    end
+
+    def test_nsec
+      assert_equal(123456789, Time.xmlschema("2000-01-01T00:00:00.123456789+00:00").tv_nsec)
+      assert_equal(123456789, Time.parse("2000-01-01T00:00:00.123456789+00:00").tv_nsec)
     end
   end
 end
