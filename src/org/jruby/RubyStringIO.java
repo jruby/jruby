@@ -544,8 +544,6 @@ public class RubyStringIO extends RubyObject {
     
     @JRubyMethod(name = "reopen", required = 1, optional = 1)
     public IRubyObject reopen(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
-        
         IRubyObject str = args[0];
         if (str instanceof RubyStringIO) {
             pos = ((RubyStringIO)str).pos;
@@ -565,10 +563,19 @@ public class RubyStringIO extends RubyObject {
         
         if (args.length == 2) {
             setupModes(args[1].convertToString().toString());
+        } else {
+            // reset modes to default if none specified
+            setupModes("");
         }
         
         if (internal.isFrozen() && (closedRead || append)) {
             throw getRuntime().newErrnoEACCESError("not opened for writing");
+        }
+        
+        if (closedRead) {
+            // if doing explicit write mode, truncate incoming string
+            internal.modify();
+            internal.setValue("");
         }
         
         return this;
