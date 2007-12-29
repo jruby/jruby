@@ -572,18 +572,18 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         */
         
         // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
-        args[0].convertToString();
-        
-		IRubyObject file = args.length > 1 ? args[1] : getRuntime().newString("(eval)");
-		IRubyObject line = args.length > 2 ? args[2] : RubyFixnum.one(getRuntime());
+        args[0] = args[0].convertToString();
 
-		Visibility savedVisibility = tc.getCurrentVisibility();
+        IRubyObject file = args.length > 1 ? args[1] : getRuntime().newString("(eval)");
+        IRubyObject line = args.length > 2 ? args[2] : RubyFixnum.one(getRuntime());
+
+        Visibility savedVisibility = tc.getCurrentVisibility();
         tc.setCurrentVisibility(Visibility.PUBLIC);
-		try {
-		    return evalUnder(mod, args[0], file, line);
-		} finally {
+        try {
+            return evalUnder(mod, args[0], file, line);
+        } finally {
             tc.setCurrentVisibility(savedVisibility);
-		}
+        }
     }
 
     public IRubyObject evalUnder(RubyModule under, IRubyObject src, IRubyObject file, IRubyObject line) {
