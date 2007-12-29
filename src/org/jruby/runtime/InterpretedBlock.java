@@ -63,7 +63,7 @@ public class InterpretedBlock extends BlockBody {
         f.setPosition(context.getPosition());
         return newInterpretedClosure(iterNode,
                          self,
-                         iterNode == null ? null : Arity.procArityOf(iterNode.getVarNode()),
+                         Arity.procArityOf(iterNode.getVarNode()),
                          f,
                          f.getVisibility(),
                          context.getRubyClass(),
@@ -83,48 +83,22 @@ public class InterpretedBlock extends BlockBody {
     
     public static Block newInterpretedClosure(IterNode iterNode, IRubyObject self, Arity arity, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
-        return new Block(new InterpretedBlock(iterNode, arity), new Binding(self, frame, visibility, klass, dynamicScope));
+        NodeType argsNodeId = getArgumentTypeWackyHack(iterNode);
+        return new Block(new InterpretedBlock(iterNode, arity, asArgumentType(argsNodeId)), new Binding(self, frame, visibility, klass, dynamicScope));
     }
 
-    public InterpretedBlock(IterNode iterNode) {
-        this(iterNode, iterNode == null ? null : Arity.procArityOf(iterNode.getVarNode()));
+    public InterpretedBlock(IterNode iterNode, int argumentType) {
+        this(iterNode, Arity.procArityOf(iterNode == null ? null : iterNode.getVarNode()), argumentType);
     }
     
-    public InterpretedBlock(IterNode iterNode, Arity arity) {
+    public InterpretedBlock(IterNode iterNode, Arity arity, int argumentType) {
+        super(argumentType);
         this.iterNode = iterNode;
         this.arity = arity;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        switch (type) {
-        case NORMAL: {
-            assert false : "can this happen?";
-            if (args.length == 1 && args[0] instanceof RubyArray && iterNode != null) {
-                Node vNode = iterNode.getVarNode();
-
-                if (vNode.nodeId == NodeType.MULTIPLEASGNNODE) {
-                    args = ((RubyArray) args[0]).toJavaArray();
-                }
-            }
-            break;
-        }
-        case PROC: {
-            if (args.length == 1 && args[0] instanceof RubyArray && iterNode != null) {
-                Node vNode = iterNode.getVarNode();
-
-                if (vNode.nodeId == NodeType.MULTIPLEASGNNODE) {
-                    // if we only have *arg, we leave it wrapped in the array
-                    if (((MultipleAsgnNode)vNode).getArgsNode() == null) {
-                        args = ((RubyArray) args[0]).toJavaArray();
-                    }
-                }
-            }
-            break;
-        }
-        case LAMBDA:
-            arity().checkArity(context.getRuntime(), args);
-            break;
-        }
+        args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }
@@ -274,22 +248,5 @@ public class InterpretedBlock extends BlockBody {
      */
     public boolean isGiven() {
         return true;
-    }
-    
-    /**
-     * Compiled codes way of examining arguments
-     * 
-     * @param nodeId to be considered
-     * @return something not linked to AST and a constant to make compiler happy
-     */
-    public static int asArgumentType(NodeType nodeId) {
-        if (nodeId == null) return ZERO_ARGS;
-        
-        switch (nodeId) {
-        case ZEROARGNODE: return ZERO_ARGS;
-        case MULTIPLEASGNNODE: return MULTIPLE_ASSIGNMENT;
-        case SVALUENODE: return SINGLE_RESTARG;
-        }
-        return ARRAY;
     }
 }

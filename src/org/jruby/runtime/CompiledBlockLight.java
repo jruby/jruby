@@ -42,7 +42,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CompiledBlockLight extends BlockBody {
     protected final CompiledBlockCallback callback;
     protected final boolean hasMultipleArgsHead;
-    protected final int argumentType;
     protected final Arity arity;
     protected final DynamicScope dummyScope;
     
@@ -72,36 +71,15 @@ public class CompiledBlockLight extends BlockBody {
     }
 
     protected CompiledBlockLight(Arity arity, DynamicScope dummyScope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+        super(argumentType);
         this.arity = arity;
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
-        this.argumentType = argumentType;
         this.dummyScope = dummyScope;
     }
     
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        switch (type) {
-        case NORMAL: {
-            assert false : "can this happen?";
-            if (args.length == 1 && args[0] instanceof RubyArray) {
-                if (argumentType == MULTIPLE_ASSIGNMENT || argumentType == SINGLE_RESTARG) {
-                    args = ((RubyArray) args[0]).toJavaArray();
-                }
-                break;
-            }
-        }
-        case PROC: {
-            if (args.length == 1 && args[0] instanceof RubyArray) {
-                if (argumentType == MULTIPLE_ASSIGNMENT && argumentType != SINGLE_RESTARG) {
-                    args = ((RubyArray) args[0]).toJavaArray();
-                }
-            }
-            break;
-        }
-        case LAMBDA:
-            arity().checkArity(context.getRuntime(), args);
-            break;
-        }
+        args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }

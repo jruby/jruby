@@ -60,6 +60,7 @@ public class MethodBlock extends BlockBody {
     }
 
     public MethodBlock(Callback callback, RubyMethod method) {
+        super(BlockBody.SINGLE_RESTARG);
         this.callback = callback;
         this.method = method;
         this.arity = Arity.createArity((int) method.arity().getLongValue());

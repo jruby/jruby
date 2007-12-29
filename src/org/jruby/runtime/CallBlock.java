@@ -55,6 +55,7 @@ public class CallBlock extends BlockBody {
     }
 
     private CallBlock(RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
+        super(BlockBody.SINGLE_RESTARG);
         this.arity = arity;
         this.callback = callback;
         this.imClass = imClass;

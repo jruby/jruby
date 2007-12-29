@@ -183,22 +183,4 @@ public class Block {
     public Frame getFrame() {
         return binding.getFrame();
     }
-
-    
-    /**
-     * Compiled codes way of examining arguments
-     * 
-     * @param nodeId to be considered
-     * @return something not linked to AST and a constant to make compiler happy
-     */
-    public static int asArgumentType(NodeType nodeId) {
-        if (nodeId == null) return ZERO_ARGS;
-        
-        switch (nodeId) {
-        case ZEROARGNODE: return ZERO_ARGS;
-        case MULTIPLEASGNNODE: return MULTIPLE_ASSIGNMENT;
-        case SVALUENODE: return SINGLE_RESTARG;
-        }
-        return ARRAY;
-    }
 }

@@ -38,6 +38,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedBlock;
 
 /**
@@ -61,7 +62,8 @@ public class IterNode extends Node {
         this.varNode = varNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
-        this.blockBody = new InterpretedBlock(this, Arity.procArityOf(varNode));
+        NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(this);
+        this.blockBody = new InterpretedBlock(this, Arity.procArityOf(varNode), BlockBody.asArgumentType(argsNodeId));
     }
 
     /**

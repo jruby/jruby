@@ -80,6 +80,7 @@ import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
@@ -966,7 +967,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THIS);
             method.getfield(classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
             method.ldc(Boolean.valueOf(hasMultipleArgsHead));
-            method.ldc(Block.asArgumentType(argsNodeId));
+            method.ldc(BlockBody.asArgumentType(argsNodeId));
             // if there's a sub-closure or there's scope-aware methods, it can't be "light"
             method.ldc(!(inspector.hasClosure() || inspector.hasScopeAwareMethods()));
 
@@ -1059,7 +1060,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THIS);
             method.getfield(classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
             method.ldc(Boolean.valueOf(hasMultipleArgsHead));
-            method.ldc(Block.asArgumentType(argsNodeId));
+            method.ldc(BlockBody.asArgumentType(argsNodeId));
 
             invokeUtilityMethod("createSharedScopeBlock", cg.sig(Block.class,
                     cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE)));

@@ -34,6 +34,8 @@ package org.jruby.runtime;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.ast.IterNode;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NodeType;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.parser.StaticScope;
@@ -49,8 +51,9 @@ public abstract class BlockBody implements JumpTarget {
     public static final int MULTIPLE_ASSIGNMENT = 1;
     public static final int ARRAY = 2;
     public static final int SINGLE_RESTARG = 3;
+    protected final int argumentType;
     
-    public static final BlockBody NULL_BODY = new BlockBody() {
+    public static final BlockBody NULL_BODY = new BlockBody(ZERO_ARGS) {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
             return null;
@@ -82,7 +85,8 @@ public abstract class BlockBody implements JumpTarget {
         }
     };
     
-    public BlockBody() {
+    public BlockBody(int argumentType) {
+        this.argumentType = argumentType;
     }
 
     public abstract IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type);
@@ -131,5 +135,58 @@ public abstract class BlockBody implements JumpTarget {
         case SVALUENODE: return SINGLE_RESTARG;
         }
         return ARRAY;
+    }
+    
+    public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
+        switch (type) {
+        case NORMAL: {
+            assert false : "can this happen?";
+            if (args.length == 1 && args[0] instanceof RubyArray) {
+                if (argumentType == MULTIPLE_ASSIGNMENT || argumentType == SINGLE_RESTARG) {
+                    args = ((RubyArray) args[0]).toJavaArray();
+                }
+                break;
+            }
+        }
+        case PROC: {
+            if (args.length == 1 && args[0] instanceof RubyArray) {
+                if (argumentType == MULTIPLE_ASSIGNMENT && argumentType != SINGLE_RESTARG) {
+                    args = ((RubyArray) args[0]).toJavaArray();
+                }
+            }
+            break;
+        }
+        case LAMBDA:
+            if (argumentType == ARRAY && args.length != 1) {
+                context.getRuntime().getWarnings().warn("multiple values for a block parameter (" + args.length + " for " + arity().getValue() + ")");
+                if (args.length == 0) {
+                    args = new IRubyObject[] {context.getRuntime().getNil()};
+                } else {
+                    args = new IRubyObject[] {context.getRuntime().newArrayNoCopy(args)};
+                }
+            } else {
+                arity().checkArity(context.getRuntime(), args);
+            }
+            break;
+        }
+        
+        return args;
+    }
+    
+    public static NodeType getArgumentTypeWackyHack(IterNode iterNode) {
+        NodeType argsNodeId = null;
+        if (iterNode.getVarNode() != null && iterNode.getVarNode().nodeId != NodeType.ZEROARGNODE) {
+            // if we have multiple asgn with just *args, need a special type for that
+            argsNodeId = iterNode.getVarNode().nodeId;
+            if (argsNodeId == NodeType.MULTIPLEASGNNODE) {
+                MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)iterNode.getVarNode();
+                if (multipleAsgnNode.getHeadNode() == null && multipleAsgnNode.getArgsNode() != null) {
+                    // FIXME: This is gross. Don't do this.
+                    argsNodeId = NodeType.SVALUENODE;
+                }
+            }
+        }
+        
+        return argsNodeId;
     }
 }

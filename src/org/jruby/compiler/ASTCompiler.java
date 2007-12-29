@@ -125,6 +125,7 @@ import org.jruby.ast.VAliasNode;
 import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -2269,18 +2270,7 @@ public class ASTCompiler {
             hasMultipleArgsHead = ((MultipleAsgnNode) iterNode.getVarNode()).getHeadNode() != null;
         }
 
-        NodeType argsNodeId = null;
-        if (iterNode.getVarNode() != null && iterNode.getVarNode().nodeId != NodeType.ZEROARGNODE) {
-            // if we have multiple asgn with just *args, need a special type for that
-            argsNodeId = iterNode.getVarNode().nodeId;
-            if (argsNodeId == NodeType.MULTIPLEASGNNODE) {
-                MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)iterNode.getVarNode();
-                if (multipleAsgnNode.getHeadNode() == null && multipleAsgnNode.getArgsNode() != null) {
-                    // FIXME: This is gross. Don't do this.
-                    argsNodeId = NodeType.SVALUENODE;
-                }
-            }
-        }
+        NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
 
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(iterNode.getBodyNode());

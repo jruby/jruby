@@ -40,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class SharedScopeBlock extends InterpretedBlock {
     protected SharedScopeBlock(IterNode iterNode) {
-        super(iterNode);
+        super(iterNode, asArgumentType(getArgumentTypeWackyHack(iterNode)));
     }
     
     public static Block newInterpretedSharedScopeClosure(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
