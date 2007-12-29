@@ -13,9 +13,10 @@ context "ObjectSpace class methods" do
 
   specify "each_object should call the block once for each living, nonimmediate object in the Ruby process" do
     class ObjectSpaceSpecEachObject; end
-    ObjectSpaceSpecEachObject.new
+    new_obj = ObjectSpaceSpecEachObject.new
 
     count = ObjectSpace.each_object(ObjectSpaceSpecEachObject) {}
     count.should == 1
+    new_obj.should_not == nil
   end
 end
