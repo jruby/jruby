@@ -40,7 +40,7 @@
 # $Id$
 #
 
-require 'date/format'
+require 'parsedate'
 
 #
 # Implements the extensions to the Time class that are described in the
@@ -150,7 +150,7 @@ class Time
 
     def make_time(year, mon, day, hour, min, sec, sec_fraction, zone, now)
       usec = nil
-      usec = sec_fraction * 1000000 if sec_fraction
+      usec = (sec_fraction * 1000000).to_i if sec_fraction
       if now
         begin
           break if year; year = now.year
@@ -238,21 +238,6 @@ class Time
     #
     def parse(date, now=Time.now)
       d = Date._parse(date, false)
-      year = d[:year]
-      year = yield(year) if year && block_given?
-      make_time(year, d[:mon], d[:mday], d[:hour], d[:min], d[:sec], d[:sec_fraction], d[:zone], now)
-    end
-
-    #
-    # Parses +date+ using Date._strptime and converts it to a Time object.
-    #
-    # If a block is given, the year described in +date+ is converted by the
-    # block.  For example:
-    #
-    #     Time.strptime(...) {|y| y < 100 ? (y >= 69 ? y + 1900 : y + 2000) : y}
-    def strptime(date, format, now=Time.now)
-      d = Date._strptime(date, format)
-      raise ArgumentError, "invalid strptime format - `#{format}'" unless d
       year = d[:year]
       year = yield(year) if year && block_given?
       make_time(year, d[:mon], d[:mday], d[:hour], d[:min], d[:sec], d[:sec_fraction], d[:zone], now)
@@ -461,10 +446,10 @@ class Time
       year, mon, day, hour, min, sec) +
     if fraction_digits == 0
       ''
-    elsif fraction_digits <= 9
-      '.' + sprintf('%09d', nsec)[0, fraction_digits]
+    elsif fraction_digits <= 6
+      '.' + sprintf('%06d', usec)[0, fraction_digits]
     else
-      '.' + sprintf('%09d', nsec) + '0' * (fraction_digits - 9)
+      '.' + sprintf('%06d', usec) + '0' * (fraction_digits - 6)
     end +
     if utc?
       'Z'
@@ -807,15 +792,6 @@ if __FILE__ == $0
 
     def test_parse_fraction
       assert_equal(500000, Time.parse("2000-01-01T00:00:00.5+00:00").tv_usec)
-    end
-
-    def test_strptime
-      assert_equal(Time.utc(2005, 8, 28, 06, 54, 20), Time.strptime("28/Aug/2005:06:54:20 +0000", "%d/%b/%Y:%T %z"))
-    end
-
-    def test_nsec
-      assert_equal(123456789, Time.xmlschema("2000-01-01T00:00:00.123456789+00:00").tv_nsec)
-      assert_equal(123456789, Time.parse("2000-01-01T00:00:00.123456789+00:00").tv_nsec)
     end
   end
 end

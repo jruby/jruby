@@ -17,6 +17,7 @@
 # See Rational for full documentation.
 #
 
+
 #
 # Creates a Rational number (i.e. a fraction).  +a+ and +b+ should be Integers:
 # 
@@ -354,7 +355,7 @@ class Rational < Numeric
   # Converts the rational to a Float.
   #
   def to_f
-    @numerator.quof(@denominator)
+    @numerator.to_f/@denominator.to_f
   end
 
   #
@@ -445,6 +446,10 @@ class Integer
     max
   end
 
+  #
+  # Returns the <em>lowest common multiple</em> (LCM) of the two arguments
+  # (+self+ and +other+).
+  #
   # Examples:
   #   6.lcm 7        # -> 42
   #   6.lcm 9        # -> 18
@@ -456,7 +461,7 @@ class Integer
       (self.div(self.gcd(other)) * other).abs
     end
   end
-  
+
   #
   # Returns the GCD _and_ the LCM (see #gcd and #lcm) of the two arguments
   # (+self+ and +other+).  This is more efficient than calculating them
@@ -476,7 +481,6 @@ class Integer
 end
 
 class Fixnum
-  alias quof quo
   undef quo
   # If Rational is defined, returns a Rational number instead of a Fixnum.
   def quo(other)
@@ -504,7 +508,6 @@ class Bignum
     alias power! **
   end
 
-  alias quof quo
   undef quo
   # If Rational is defined, returns a Rational number instead of a Bignum.
   def quo(other)
