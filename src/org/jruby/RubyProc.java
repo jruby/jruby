@@ -97,6 +97,30 @@ public class RubyProc extends RubyObject implements JumpTarget {
         return proc;
     }
     
+    /**
+     * Create a new instance of a Proc object.  We override this method (from RubyClass)
+     * since we need to deal with special case of Proc.new with no arguments or block arg.  In 
+     * this case, we need to check previous frame for a block to consume.
+     */
+    @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
+    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = recv.getRuntime();
+        
+        // No passed in block, lets check next outer frame for one ('Proc.new')
+        if (!block.isGiven()) {
+            block = runtime.getCurrentContext().getPreviousFrame().getBlock();
+        }
+        
+        if (block.isGiven() && block.getProcObject() != null) {
+            return block.getProcObject();
+        }
+        
+        IRubyObject obj = ((RubyClass) recv).allocate();
+        
+        obj.callMethod(runtime.getCurrentContext(), "initialize", args, block);
+        return obj;
+    }
+    
     @JRubyMethod(name = "initialize", rest = true, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block procBlock) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 0);
@@ -150,25 +174,6 @@ public class RubyProc extends RubyObject implements JumpTarget {
         return RubyString.newString(getRuntime(), 
                 "#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" + 
                 pos.getFile() + ":" + (pos.getStartLine() + 1) + ">");
-    }
-    
-    /**
-     * Create a new instance of a Proc object.  We override this method (from RubyClass)
-     * since we need to deal with special case of Proc.new with no arguments or block arg.  In 
-     * this case, we need to check previous frame for a block to consume.
-     */
-    @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
-        IRubyObject obj = ((RubyClass) recv).allocate();
-        
-        // No passed in block, lets check next outer frame for one ('Proc.new')
-        if (!block.isGiven()) {
-            block = runtime.getCurrentContext().getPreviousFrame().getBlock();
-        }
-        
-        obj.callMethod(runtime.getCurrentContext(), "initialize", args, block);
-        return obj;
     }
 
     @JRubyMethod(name = "binding")
