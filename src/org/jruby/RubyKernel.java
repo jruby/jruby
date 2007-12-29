@@ -805,7 +805,12 @@ public class RubyKernel {
         }
 
         // No catch active for this throw
-        throw runtime.newNameError(message, tag);
+        RubyThread currentThread = context.getThread();
+        if (currentThread == runtime.getThreadService().getMainThread()) {
+            throw runtime.newNameError(message, tag);
+        } else {
+            throw runtime.newThreadError(message + " in thread 0x" + Integer.toHexString(RubyInteger.fix2int(currentThread.id())));
+        }
     }
 
     @JRubyMethod(name = "trap", required = 1, frame = true, optional = 1, module = true, visibility = Visibility.PRIVATE)
