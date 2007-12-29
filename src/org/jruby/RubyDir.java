@@ -310,12 +310,10 @@ public class RubyDir extends RubyObject {
         if (!block.isGiven()) return directory;
         
         try {
-            block.yield(recv.getRuntime().getCurrentContext(), directory);
+            return block.yield(recv.getRuntime().getCurrentContext(), directory);
         } finally {
             directory.close();
         }
-            
-        return recv.getRuntime().getNil();
     }
 
 // ----- Ruby Instance Methods -------------------------------------------------
