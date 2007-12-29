@@ -171,7 +171,8 @@ public class JavaLibC implements LibC {
     public int mkdir(String path, int mode) {
         File dir = new File(path);
         
-        dir.mkdir();
+        if (!dir.mkdir()) return -1;
+
         chmod(path, mode);
         
         return 0;
