@@ -127,7 +127,12 @@ public class RubyFileTest {
     
     @JRubyMethod(name = "identical?", required = 2, module = true)
     public static IRubyObject identical_p(IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
-        throw recv.getRuntime().newNotImplementedError("FileTest#identical? not yet implemented");
+        Ruby runtime = recv.getRuntime();
+        JRubyFile file1 = file(filename1);
+        JRubyFile file2 = file(filename2);
+        
+        return runtime.newBoolean(file1.exists() && file2.exists() &&
+                runtime.getPosix().stat(file1.getAbsolutePath()).isIdentical(runtime.getPosix().stat(file2.getAbsolutePath())));
     }
 
     @JRubyMethod(name = "owned?", required = 1, module = true)

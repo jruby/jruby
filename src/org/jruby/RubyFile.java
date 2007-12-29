@@ -953,7 +953,7 @@ public class RubyFile extends RubyIO {
         return runtime.getFalse();
     }
     
-    @JRubyMethod(name = "ftype", required = 1)
+    @JRubyMethod(name = "ftype", required = 1, meta = true)
     public static IRubyObject ftype(IRubyObject recv, IRubyObject filename) {
         return recv.getRuntime().newFileStat(filename.convertToString().toString(), true).ftype();
     }

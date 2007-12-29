@@ -8,6 +8,7 @@ public interface FileStat {
     public static final int S_IFREG = 0100000;  // regular
     public static final int S_IFLNK = 0120000;  // symbolic link
     public static final int S_IFSOCK = 0140000; // socket
+    public static final int S_IFMT = 0170000;   // file mask for type checks
     public static final int S_ISUID = 0004000;  // set user id on execution
     public static final int S_ISGID = 0002000;  // set group id on execution
     public static final int S_ISVTX = 0001000;  // save swapped text even after use
@@ -43,6 +44,7 @@ public interface FileStat {
     public boolean isFifo();
     public boolean isFile();
     public boolean isGroupOwned();
+    public boolean isIdentical(FileStat other);
     public boolean isNamedPipe();
     public boolean isOwned();
     public boolean isROwned();

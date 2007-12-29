@@ -41,15 +41,15 @@ public abstract class BaseNativeFileStat extends Structure implements FileStat {
     }
     
     public boolean isBlockDev() {
-        return (mode() & S_IFBLK) != 0;
+        return (mode() & S_IFMT) == S_IFBLK;
     }
     
     public boolean isCharDev() {
-        return (mode() & S_IFCHR) != 0;
+        return (mode() & S_IFMT) == S_IFCHR;
     }
 
     public boolean isDirectory() {
-        return (mode() & S_IFDIR) != 0;
+        return (mode() & S_IFMT) == S_IFDIR;
     }
     
     public boolean isEmpty() {
@@ -60,26 +60,22 @@ public abstract class BaseNativeFileStat extends Structure implements FileStat {
         if (posix.geteuid() == 0) return (mode() & S_IXUGO) != 0;
         if (isOwned()) return (mode() & S_IXUSR) != 0;
         if (isGroupOwned()) return (mode() & S_IXGRP) != 0;
-        if ((mode() & S_IXOTH) != 0) return false;
-
-        return true;
+        return (mode() & S_IXOTH) != 0;
     }
     
     public boolean isExecutableReal() {
         if (posix.getuid() == 0) return (mode() & S_IXUGO) != 0;
         if (isROwned()) return (mode() & S_IXUSR) != 0;
         if (groupMember(gid())) return (mode() & S_IXGRP) != 0;
-        if ((mode() & S_IXOTH) != 0) return false;
-
-        return true;
+        return (mode() & S_IXOTH) != 0;
     }
     
     public boolean isFile() {
-        return (mode() & S_IFREG) != 0;
+        return (mode() & S_IFMT) == S_IFREG;
     }
 
     public boolean isFifo() {
-        return (mode() & S_IFIFO) != 0;
+        return (mode() & S_IFMT) == S_IFIFO;
     }
     
     public boolean isGroupOwned() {
@@ -106,18 +102,14 @@ public abstract class BaseNativeFileStat extends Structure implements FileStat {
         if (posix.geteuid() == 0) return true;
         if (isOwned()) return (mode() & S_IRUSR) != 0;
         if (isGroupOwned()) return (mode() & S_IRGRP) != 0;
-        if ((mode() & S_IROTH) != 0) return false;
-
-        return true;
+        return (mode() & S_IROTH) != 0;
     }
     
     public boolean isReadableReal() {
         if (posix.getuid() == 0) return true;
         if (isROwned()) return (mode() & S_IRUSR) != 0;
         if (groupMember(gid())) return (mode() & S_IRGRP) != 0;
-        if ((mode() & S_IROTH) != 0) return false;
-
-        return true;
+        return (mode() & S_IROTH) != 0;
     }
     
     public boolean isSetgid() {
@@ -129,7 +121,7 @@ public abstract class BaseNativeFileStat extends Structure implements FileStat {
     }
 
     public boolean isSocket() {
-        return (mode() & S_IFSOCK) == S_IFSOCK;
+        return (mode() & S_IFMT) == S_IFSOCK;
     }
     
     public boolean isSticky() {
@@ -137,25 +129,21 @@ public abstract class BaseNativeFileStat extends Structure implements FileStat {
     }
 
     public boolean isSymlink() {
-        return (mode() & S_IFLNK) == S_IFLNK;
+        return (mode() & S_IFMT) == S_IFLNK;
     }
 
     public boolean isWritable() {
         if (posix.geteuid() == 0) return true;
         if (isOwned()) return (mode() & S_IWUSR) != 0;
         if (isGroupOwned()) return (mode() & S_IWGRP) != 0;
-        if ((mode() & S_IWOTH) != 0) return false;
-
-        return true;
+        return (mode() & S_IWOTH) != 0;
     }
 
     public boolean isWritableReal() {
         if (posix.getuid() == 0) return true;
         if (isROwned()) return (mode() & S_IWUSR) != 0;
         if (groupMember(gid())) return (mode() & S_IWGRP) != 0;
-        if ((mode() & S_IWOTH) != 0) return false;
-
-        return true;
+        return (mode() & S_IWOTH) != 0;
     }
 
     public int major(long dev) {

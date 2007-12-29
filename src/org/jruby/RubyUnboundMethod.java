@@ -31,7 +31,6 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -69,8 +68,6 @@ public class RubyUnboundMethod extends RubyMethod {
         	runtime.defineClass("UnboundMethod", runtime.getMethod(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setUnboundMethod(newClass);
 
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyUnboundMethod.class);
-        
         newClass.defineAnnotatedMethods(RubyUnboundMethod.class);
 
         return newClass;

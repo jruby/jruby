@@ -71,8 +71,6 @@ public class RubyMethod extends RubyObject {
         RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setMethod(methodClass);
         
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyMethod.class);
-        
         methodClass.defineAnnotatedMethods(RubyMethod.class);
         
         return methodClass;
@@ -202,8 +200,34 @@ public class RubyMethod extends RubyObject {
     
     @JRubyMethod(name = {"inspect", "to_s"})
     public IRubyObject inspect() {
-        String cname = getMetaClass().getRealClass().getName();
-        RubyString str = getRuntime().newString("#<" + cname + ": " + originModule.getName() + "#" + methodName + ">");
+        StringBuilder buf = new StringBuilder("#<");
+        char delimeter = '#';
+        
+        buf.append(getMetaClass().getRealClass().getName()).append(": ");
+        
+        if (originModule.isSingleton()) {
+            IRubyObject attached = ((MetaClass) originModule).getAttached();
+            if (receiver == getRuntime().getNil()) {
+                buf.append(implementationModule.getName());
+            } else if (receiver == attached) {
+                buf.append(attached.inspect().toString());
+                delimeter = '.';
+            } else {
+                buf.append(receiver.inspect().toString());
+                buf.append('(').append(attached.inspect().toString()).append(')');
+                delimeter = '.';
+            }
+        } else {
+            buf.append(originModule.getName());
+            
+            if (implementationModule != originModule) {
+                buf.append('(').append(implementationModule.getName()).append(')');
+            }
+        }
+        
+        buf.append(delimeter).append(methodName).append('>');
+        
+        RubyString str = getRuntime().newString(buf.toString());
         str.setTaint(isTaint());
         return str;
     }
