@@ -328,6 +328,15 @@
     </emma>
   </target>
 
+  <target name="test-short" depends="
+    copy-test-files,
+    instrument,
+    run-junit-interpreted,
+    run-junit-interpreted-1.9,
+    run-spec-interpreted,
+    coverage-report">
+  </target>
+
   <target name="test" depends="
     copy-test-files,
     instrument,
