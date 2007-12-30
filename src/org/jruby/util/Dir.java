@@ -31,7 +31,6 @@ import java.io.File;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import java.util.jar.JarEntry;
@@ -76,8 +75,7 @@ public class Dir {
         return s;
     }
 
-    public static int fnmatch(byte[] _pat, int pstart, int plen, byte[] string, int sstart, int slen, int flags) {
-        byte c;
+    public static int fnmatch(byte[] bytes, int pstart, int plen, byte[] string, int sstart, int slen, int flags) {
         char test;
         int s = sstart;
         int pat = pstart;
@@ -88,7 +86,7 @@ public class Dir {
         boolean nocase = (flags & FNM_CASEFOLD) != 0;
 
         while(pat<len) {
-            c = _pat[pat++];
+            byte c = bytes[pat++];
             switch(c) {
             case '?':
                 if(s >= slen || (pathname && isdirsep(string[s])) || 
@@ -98,7 +96,7 @@ public class Dir {
                 s++;
                 break;
             case '*':
-                while(pat < len && (c = _pat[pat++]) == '*');
+                while(pat < len && (c = bytes[pat++]) == '*');
                 if(s < slen && (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
                     return FNM_NOMATCH;
                 }
@@ -116,12 +114,12 @@ public class Dir {
                     }
                     return FNM_NOMATCH;
                 }
-                test = (char)((escape && c == '\\' && pat < len ? _pat[pat] : c)&0xFF);
+                test = (char)((escape && c == '\\' && pat < len ? bytes[pat] : c)&0xFF);
                 test = Character.toLowerCase(test);
                 pat--;
                 while(s < slen) {
                     if((c == '?' || c == '[' || Character.toLowerCase((char) string[s]) == test) &&
-                       fnmatch(_pat, pat, plen, string, s, slen, flags | FNM_DOTMATCH) == 0) {
+                       fnmatch(bytes, pat, plen, string, s, slen, flags | FNM_DOTMATCH) == 0) {
                         return 0;
                     } else if((pathname && isdirsep(string[s]))) {
                         break;
@@ -134,7 +132,7 @@ public class Dir {
                                  (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1])))))) {
                     return FNM_NOMATCH;
                 }
-                pat = range(_pat, pat, plen, (char)(string[s]&0xFF), flags);
+                pat = range(bytes, pat, plen, (char)(string[s]&0xFF), flags);
                 if(pat == -1) {
                     return FNM_NOMATCH;
                 }
@@ -143,11 +141,11 @@ public class Dir {
             case '\\':
                 if(escape &&
                    (!DOSISH ||
-                    (pat < len && "*?[]\\".indexOf((char)_pat[pat]) != -1))) {
+                    (pat < len && "*?[]\\".indexOf((char)bytes[pat]) != -1))) {
                     if(pat >= len) {
                         c = '\\';
                     } else {
-                        c = _pat[pat++];
+                        c = bytes[pat++];
                     }
                 }
             default:
@@ -217,47 +215,87 @@ public class Dir {
         return ok == not ? -1 : pat + 1;
     }
 
+    public static List<ByteList> push_glob(String cwd, ByteList globByteList, int flags) {
+        List<ByteList> result = new ArrayList<ByteList>();
 
-    public static List<ByteList> push_glob(String cwd, byte[] str, int p, int pend, int flags) {
-        int buf;
-        int nest, maxnest;
-        int status = 0;
-        boolean noescape = (flags & FNM_NOESCAPE) != 0;
-        List<ByteList> ary = new ArrayList<ByteList>();
+        push_braces(cwd, result, new GlobPattern(globByteList, flags));
+
+        return result;
+    }
+    
+    private static class GlobPattern {
+        byte[] bytes;
+        int index;
+        int begin;
+        int end;
+        int flags;
         
-        while(p < pend) {
-            nest = maxnest = 0;
-            while(p<pend && str[p] == 0) {
-                p++;
-            }
-            buf = p;
-            while(p<pend && str[p] != 0) {
-                if(str[p] == '{') {
-                    nest++;
-                    maxnest++;
-                } else if(str[p] == '}') {
-                    nest--;
-                } else if(!noescape && str[p] == '\\') {
-                    if(++p == pend) {
-                        break;
-                    }
-                }
-                p++;
-            }
-            if(maxnest == 0) {
-                status = push_globs(cwd, ary, str, buf, pend, flags);
-                if(status != 0) {
-                    break;
-                }
-            } else if(nest == 0) {
-                status = push_braces(cwd, ary, str, buf, pend, flags);
-                if(status != 0) {
-                    break;
-                }
-            }
-            /* else unmatched braces */
+        public GlobPattern(ByteList bytelist, int flags) {
+            this(bytelist.bytes, bytelist.begin,  bytelist.begin + bytelist.realSize, flags);
         }
-        return ary;
+        
+        public GlobPattern(byte[] bytes, int index, int end, int flags) {
+            this.bytes = bytes;
+            this.index = index;
+            this.begin = index;
+            this.end = end;
+            this.flags = flags;
+        }
+        
+        public int findClosingIndexOf(int leftTokenIndex) {
+            if (leftTokenIndex == -1 || leftTokenIndex > end) return -1;
+            
+            byte leftToken = bytes[leftTokenIndex];
+            byte rightToken;
+            
+            switch (leftToken) {
+            case '{': rightToken = '}'; break;
+            case '[': rightToken = ']'; break;
+            default: return -1;
+            }
+            
+            int nest = 1; // leftToken made us start as nest 1
+            index = leftTokenIndex + 1;
+            while (hasNext()) {
+                byte c = next();
+                
+                if (c == leftToken) {
+                    nest++;
+                } else if (c == rightToken && --nest == 0) {
+                    return index();
+                }
+            }
+            
+            return -1;
+        }
+        
+        public boolean hasNext() {
+            return index < end;
+        }
+        
+        public void reset() {
+            index = begin;
+        }
+        
+        public void setIndex(int value) {
+            index = value;
+        }
+        
+        // Get index of last read byte
+        public int index() {
+            return index - 1;
+        }
+        
+        public int indexOf(byte c) {
+            while (hasNext()) if (next() == c) return index();
+            
+            return -1;
+        }
+        
+        public byte next() {
+            return bytes[index++];
+        }
+
     }
 
     private static interface GlobFunc {
@@ -268,6 +306,11 @@ public class Dir {
         GlobFunc func;
         int c = -1;
         List<ByteList> v;
+        
+        public GlobArgs(GlobFunc func, List<ByteList> arg) {
+            this.func = func;
+            this.v = arg;
+        }
     }
 
     public final static GlobFunc push_pattern = new GlobFunc() {
@@ -278,92 +321,58 @@ public class Dir {
             }
         };
     public final static GlobFunc glob_caller = new GlobFunc() {
-            public int call(byte[] ptr, int p, int len, Object ary) {
-                GlobArgs args = (GlobArgs)ary;
-                args.c = p;
-                return args.func.call(ptr, args.c, len, args.v);
-            }
-        };
+        public int call(byte[] ptr, int p, int len, Object ary) {
+            GlobArgs args = (GlobArgs)ary;
+            args.c = p;
+            return args.func.call(ptr, args.c, len, args.v);
+        }
+    };
 
-    private static int push_braces(String cwd, List<ByteList> ary, byte[] str, int _s, int slen, int flags) {
+    /*
+     * Process {}'s (example: Dir.glob("{jruby,jython}/README*") 
+     */
+    private static int push_braces(String cwd, List<ByteList> result, GlobPattern pattern) {
+        pattern.reset();
+        int lbrace = pattern.indexOf((byte) '{'); // index of left-most brace
+        int rbrace = pattern.findClosingIndexOf(lbrace);// index of right-most brace
+
+        // No or mismatched braces..Move along..nothing to see here
+        if (lbrace == -1 || rbrace == -1) return push_globs(cwd, result, pattern); 
+
+        // Peel onion...make subpatterns out of outer layer of glob and recall with each subpattern 
+        // Example: foo{a{c},b}bar -> fooa{c}bar, foobbar
         ByteList buf = new ByteList(20);
-        int s, p, t, lbrace, rbrace;
-        int nest = 0;
-        int status = 0;
-        s = p = 0;
-
-        s = p = _s;
-        lbrace = rbrace = -1;
-
-        while(p<slen) {
-            if(str[p] == '{') {
-                lbrace = p;
-                break;
+        int middleRegionIndex;
+        int i = lbrace;
+        while (pattern.bytes[i] != '}') {
+            middleRegionIndex = i + 1;
+            for(i = middleRegionIndex; i < pattern.end && pattern.bytes[i] != '}' && pattern.bytes[i] != ','; i++) {
+                if (pattern.bytes[i] == '{') pattern.findClosingIndexOf(i); // skip inner braces
             }
-            p++;
-        }
-        while(p<slen) {
-            if(str[p] == '{') {
-                nest++;
-            } else if(str[p] == '}' && --nest == 0) {
-                rbrace = p;
-                break;
-            }
-            p++;
-        }
 
-        if(lbrace != -1 && rbrace != -1) {
-            p = lbrace;
-            while(str[p] != '}') {
-                t = p + 1;
-                for(p = t; p<slen && str[p] != '}' && str[p]!=','; p++) {
-                    /* skip inner braces */
-                    if(str[p] == '{') {
-                        nest = 1;
-                        while(str[++p] != '}' || --nest != 0) {
-                            if(str[p] == '{') {
-                                nest++;
-                            }
-                        }
-                    }
-                }
-                buf.length(0);
-                buf.append(str,s,lbrace-s);
-                buf.append(str, t, p-t);
-                buf.append(str, rbrace+1, slen-(rbrace+1));
-                status = push_braces(cwd, ary, buf.bytes, buf.begin, buf.realSize, flags);
-                if(status != 0) {
-                    break;
-                }
-            }
-        } else {
-            status = push_globs(cwd, ary, str, s, slen, flags);
+            buf.length(0);
+            buf.append(pattern.bytes, pattern.begin, lbrace - pattern.begin);
+            buf.append(pattern.bytes, middleRegionIndex, i - middleRegionIndex);
+            buf.append(pattern.bytes, rbrace + 1, pattern.end - (rbrace + 1));
+            int status = push_braces(cwd, result, new GlobPattern(buf.bytes, buf.begin, buf.realSize, pattern.flags));
+            if(status != 0) return status;
         }
-        return status;
+        
+        return 0; // All braces pushed..
     }
 
-    private static int push_globs(String cwd, List<ByteList> ary, byte[] str, int s, int slen, int flags) {
-        return rb_glob2(cwd, str, s, slen, flags, push_pattern, ary);
+    private static int push_globs(String cwd, List<ByteList> ary, GlobPattern pattern) {
+        pattern.flags |= FNM_SYSCASE;
+        return glob_helper(cwd, pattern.bytes, pattern.begin, pattern.end, -1, pattern.flags, glob_caller, new GlobArgs(push_pattern, ary));
     }
 
-    private static int rb_glob2(String cwd, byte[] _path, int path, int plen, int flags, GlobFunc func, List<ByteList> arg) {
-        GlobArgs args = new GlobArgs();
-        args.func = func;
-        args.v = arg;
-        flags |= FNM_SYSCASE;
-        return glob_helper(cwd, _path, path, plen, -1, flags, glob_caller, args);
-    }
-
-    private static boolean has_magic(byte[] str, int s, int send, int slen, int flags) {
-        int p = s;
-        byte c;
-        int open = 0;
+    private static boolean has_magic(byte[] bytes, int begin, int end, int flags) {
         boolean escape = (flags & FNM_NOESCAPE) == 0;
         boolean nocase = (flags & FNM_CASEFOLD) != 0;
+        int open = 0;
 
-        while(p < slen) {
-            c = str[p++];
-            switch(c) {
+        for (int i = begin; i < end; i++) {
+            switch(bytes[i]) {
             case '?':
             case '*':
                 return true;
@@ -371,71 +380,56 @@ public class Dir {
                 open++;	/* brace to match it.  Bracket expressions must be */
                 continue;	/* complete, according to Posix.2 */
             case ']':
-                if(open > 0) {
-                    return true;
-                }
+                if (open > 0) return true;
+
                 continue;
             case '\\':
-                if(escape && p == slen) {
-                    return false;
-                }
+                if (escape && i == end) return false;
+
                 break;
             default:
-                if(FNM_SYSCASE==0 && Character.isLetter((char)(c&0xFF)) && nocase) {
-                    return true;
-                }
-            }
-            if(send != -1 && p >= send) {
-                break;
+                if (FNM_SYSCASE == 0 && nocase && Character.isLetter((char)(bytes[i]&0xFF))) return true;
             }
         }
 
         return false;
     }
 
-    private static int remove_backslashes(byte[] pa, int p, int len) {
-        int pend = len;
-        int t = p;
-        while(p < pend) {
-            if(pa[p] == '\\') {
-                if(++p == pend) {
-                    break;
-                }
-            }
-            pa[t++] = pa[p++];
+    private static int remove_backslashes(byte[] bytes, int index, int len) {
+        int t = index;
+        
+        for (; index < len; index++, t++) {
+            if (bytes[index] == '\\' && ++index == len) break;
+            
+            bytes[t] = bytes[index];
         }
+        
         return t;
     }
 
-    private static int strchr(byte[] _s, int s, byte ch) {
-        for(int i=s,e=_s.length;i<e; i++) {
-            if(_s[i] == ch) {
-                return i-s;
-            }
+    private static int strchr(byte[] bytes, int begin, int end, byte ch) {
+        for (int i = begin; i < end; i++) {
+            if (bytes[i] == ch) return i;
         }
+        
         return -1;
     }
 
-    private static byte[] extract_path(byte[] _p, int p, int pend) {
-        byte[] alloc;
-        int len;
-        len = pend-p;
-        if(len > 1 && _p[pend-1] == '/' && (!DOSISH || (len < 2 || _p[pend-2] != ':'))) {
-            len--;
-        }
-        alloc = new byte[len];
-        System.arraycopy(_p,p,alloc,0,len);
+    private static byte[] extract_path(byte[] bytes, int begin, int end) {
+        int len = end - begin;
+        
+        if (len > 1 && bytes[end-1] == '/' && (!DOSISH || (len < 2 || bytes[end-2] != ':'))) len--;
+
+        byte[] alloc = new byte[len];
+        System.arraycopy(bytes,begin,alloc,0,len);
         return alloc;
     }
 
-    private static byte[] extract_elem(byte[] _p, int p, int pend) {
-        int _pend = strchr(_p,p,(byte)'/');
-        if(_pend == -1 || (_pend+p) > pend) {
-            _pend = pend;
-        }else {
-            _pend+=p;
-        }
-        return extract_path(_p, p, _pend);
+    private static byte[] extract_elem(byte[] bytes, int begin, int end) {
+        int elementEnd = strchr(bytes, begin, end, (byte)'/');
+        if (elementEnd == -1) elementEnd = end;
+        
+        return extract_path(bytes, begin, elementEnd);
     }
 
     private static boolean BASE(byte[] base) {
@@ -444,103 +438,94 @@ public class Dir {
             :
             (base.length > 0 && !(isdirsep(base[0]) && base.length < 2));
     }
+    
+    private static boolean isJarFilePath(byte[] bytes, int begin, int end) {
+        return end > 6 && bytes[begin] == 'f' && bytes[begin+1] == 'i' &&
+            bytes[begin+2] == 'l' && bytes[begin+3] == 'e' && bytes[begin+4] == ':';
+    }
 
-    private static int glob_helper(String cwd, byte[] _path, int path, int plen, int sub, int flags, GlobFunc func, GlobArgs arg) {
+    private static String[] files(File directory) {
+        String[] files = directory.list();
+        
+        String[] filesPlusDotFiles = new String[files.length + 2];
+        System.arraycopy(files, 0, filesPlusDotFiles, 2, files.length);
+        filesPlusDotFiles[0] = ".";
+        filesPlusDotFiles[1] = "..";
+        
+        return filesPlusDotFiles;
+    }
+
+    private static int glob_helper(String cwd, byte[] bytes, int begin, int end, int sub, int flags, GlobFunc func, GlobArgs arg) {
         int p,m;
         int status = 0;
         byte[] newpath = null;
         File st;
-        p = sub != -1 ? sub : path;
-        if(!has_magic(_path, p, -1, plen, flags)) {
-            if(DOSISH || (flags & FNM_NOESCAPE) == 0) {
-                newpath = new byte[plen];
-                System.arraycopy(_path,0,newpath,0,plen);
-                if(sub != -1) {
-                    p = (sub - path);
-                    plen = remove_backslashes(newpath, p, plen);
+        p = sub != -1 ? sub : begin;
+        if (!has_magic(bytes, p, end, flags)) {
+            if (DOSISH || (flags & FNM_NOESCAPE) == 0) {
+                newpath = new byte[end];
+                System.arraycopy(bytes,0,newpath,0,end);
+                if (sub != -1) {
+                    p = (sub - begin);
+                    end = remove_backslashes(newpath, p, end);
                     sub = p;
                 } else {
-                    plen = remove_backslashes(newpath, 0, plen);
-                    _path = newpath;
+                    end = remove_backslashes(newpath, 0, end);
+                    bytes = newpath;
                 }
             }
 
-            if(_path[path] == '/' || (DOSISH && path+2<plen && _path[path+1] == ':' && isdirsep(_path[path+2]))) {
-                if(new File(new String(_path, path, plen - path)).exists()) {
-                    status = func.call(_path, path, plen, arg);
+            if (bytes[begin] == '/' || (DOSISH && begin+2<end && bytes[begin+1] == ':' && isdirsep(bytes[begin+2]))) {
+                if (new File(new String(bytes, begin, end - begin)).exists()) {
+                    status = func.call(bytes, begin, end, arg);
                 }
-            } else if(plen > 6 &&
-                      _path[path] == 'f' &&
-                      _path[path+1] == 'i' &&
-                      _path[path+2] == 'l' &&
-                      _path[path+3] == 'e' &&
-                      _path[path+4] == ':'
-                      ) {
-
+            } else if (isJarFilePath(bytes, begin, end)) {
                 int ix = -1;
-                for(int i = 0;i<plen;i++) {
-                    if(_path[path+i] == '!') {
+                for(int i = 0;i<end;i++) {
+                    if(bytes[begin+i] == '!') {
                         ix = i;
                         break;
                     }
                 }
 
-                st = new File(new String(_path, path+5, ix-5));
-                String jar = new String(_path, path+ix+1, plen-(ix+1));
+                st = new File(new String(bytes, begin+5, ix-5));
+                String jar = new String(bytes, begin+ix+1, end-(ix+1));
                 try {
                     JarFile jf = new JarFile(st);
                     
-                    if(jar.startsWith("/")) {
-                        jar = jar.substring(1);
-                    }
-
-                    if(jf.getEntry(jar + "/") != null) {
-                        jar = jar + "/";
-                    }
-                    if(jf.getEntry(jar) != null) {
-                        status = func.call(_path, path, plen, arg);
+                    if (jar.startsWith("/")) jar = jar.substring(1);
+                    if (jf.getEntry(jar + "/") != null) jar = jar + "/";
+                    if (jf.getEntry(jar) != null) {
+                        status = func.call(bytes, begin, end, arg);
                     }
                 } catch(Exception e) {}
-            } else {
-                if(new File(cwd, new String(_path, path, plen - path)).exists()) {
-                    status = func.call(_path, path, plen, arg);
+            } else if ((end - begin) > 0) { // Length check is a hack.  We should not be reeiving "" as a filename ever. 
+                if (new File(cwd, new String(bytes, begin, end - begin)).exists()) {
+                    status = func.call(bytes, begin, end, arg);
                 }
             }
 
             return status;
         }
+        
         ByteList buf = new ByteList(20);
         List<ByteList> link = new ArrayList<ByteList>();
         mainLoop: while(p != -1 && status == 0) {
-            if(_path[p] == '/') {
-                p++;
-            }
-            m = strchr(_path, p, (byte)'/');
-            if(has_magic(_path, p, (m == -1 ? m : p+m), plen, flags)) {
+            if (bytes[p] == '/') p++;
+
+            m = strchr(bytes, p, end, (byte)'/');
+            if(has_magic(bytes, p, m == -1 ? end : m, flags)) {
                 finalize: do {
-                    byte[] base = extract_path(_path, path, p);
-                    byte[] dir;
-                    byte[] magic;
+                    byte[] base = extract_path(bytes, begin, p);
+                    byte[] dir = begin == p ? new byte[]{'.'} : base; 
+                    byte[] magic = extract_elem(bytes,p,end);
                     boolean recursive = false;
                     String jar = null;
                     JarFile jf = null;
 
-                    if(path == p) {
-                        dir = new byte[]{'.'};
-                    } else {
-                        dir = base;
-                    }
-                    magic = extract_elem(_path,p,plen);
                     if(dir[0] == '/'  || (DOSISH && 2<dir.length && dir[1] == ':' && isdirsep(dir[2]))) {
                         st = new File(new String(dir));
-                    } else if(dir.length > 6 &&
-                              dir[0] == 'f' &&
-                              dir[1] == 'i' &&
-                              dir[2] == 'l' &&
-                              dir[3] == 'e' &&
-                              dir[4] == ':'
-                              ) {
-
+                    } else if(isJarFilePath(dir, 0, dir.length)) {
                         int ix = -1;
                         for(int i = 0;i<dir.length;i++) {
                             if(dir[i] == '!') {
@@ -554,13 +539,8 @@ public class Dir {
                         try {
                             jf = new JarFile(st);
 
-                            if(jar.startsWith("/")) {
-                                jar = jar.substring(1);
-                            }
-
-                            if(jf.getEntry(jar + "/") != null) {
-                                jar = jar + "/";
-                            }
+                            if (jar.startsWith("/")) jar = jar.substring(1);
+                            if (jf.getEntry(jar + "/") != null) jar = jar + "/";
                         } catch(Exception e) {
                             jar = null;
                             jf = null;
@@ -575,7 +555,7 @@ public class Dir {
                             recursive = true;
                             buf.length(0);
                             buf.append(base);
-                            buf.append(_path, p + (base.length > 0 ? m : m + 1), plen - (p + (base.length > 0 ? m : m + 1)));
+                            buf.append(bytes, (base.length > 0 ? m : m + 1), end - (base.length > 0 ? m : m + 1));
                             status = glob_helper(cwd, buf.bytes, buf.begin, buf.realSize, n, flags, func, arg);
                             if(status != 0) {
                                 break finalize;
@@ -586,27 +566,28 @@ public class Dir {
                     }
 
                     if(jar == null) {
-                        String[] dirp = st.list();
+                        String[] dirp = files(st);
+
                         for(int i=0;i<dirp.length;i++) {
                             if(recursive) {
                                 byte[] bs = dirp[i].getBytes();
-                                if(fnmatch(STAR,0,1,bs,0,bs.length,flags) != 0) {
+                                if (fnmatch(STAR,0,1,bs,0,bs.length,flags) != 0) {
                                     continue;
                                 }
                                 buf.length(0);
                                 buf.append(base);
                                 buf.append( BASE(base) ? SLASH : EMPTY );
                                 buf.append(dirp[i].getBytes());
-                                if(buf.bytes[0] == '/' || (DOSISH && 2<buf.realSize && buf.bytes[1] == ':' && isdirsep(buf.bytes[2]))) {
+                                if (buf.bytes[0] == '/' || (DOSISH && 2<buf.realSize && buf.bytes[1] == ':' && isdirsep(buf.bytes[2]))) {
                                     st = new File(new String(buf.bytes, buf.begin, buf.realSize));
                                 } else {
                                     st = new File(cwd, new String(buf.bytes, buf.begin, buf.realSize));
                                 }
-                                if(st.isDirectory()) {
+                                if(st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
                                     int t = buf.realSize;
                                     buf.append(SLASH);
                                     buf.append(DOUBLE_STAR);
-                                    buf.append(_path, p+m, plen-(p+m));
+                                    buf.append(bytes, m, end - m);
                                     status = glob_helper(cwd, buf.bytes, buf.begin, buf.realSize, t, flags, func, arg);
                                     if(status != 0) {
                                         break;
@@ -615,7 +596,7 @@ public class Dir {
                                 continue;
                             }
                             byte[] bs = dirp[i].getBytes();
-                            if(fnmatch(magic,0,magic.length,bs,0,bs.length,flags) == 0) {
+                            if(fnmatch(magic,0,magic.length,bs,0, bs.length,flags) == 0) {
                                 buf.length(0);
                                 buf.append(base);
                                 buf.append( BASE(base) ? SLASH : EMPTY );
@@ -665,7 +646,7 @@ public class Dir {
                                         int t = buf.realSize;
                                         buf.append(SLASH);
                                         buf.append(DOUBLE_STAR);
-                                        buf.append(_path, p+m, plen-(p+m));
+                                        buf.append(bytes, m, end - m);
                                         status = glob_helper(cwd, buf.bytes, buf.begin, buf.realSize, t, flags, func, arg);
                                         if(status != 0) {
                                             break;
@@ -694,10 +675,9 @@ public class Dir {
                     }
                 } while(false);
 
-                if(link.size() > 0) {
-                    for(Iterator<ByteList> iter = link.iterator(); iter.hasNext();) {
-                        if(status == 0) {
-                            ByteList b = (ByteList)iter.next();
+                if (link.size() > 0) {
+                    for (ByteList b : link) {
+                        if (status == 0) {
                             if(b.bytes[0] == '/'  || (DOSISH && 2<b.realSize && b.bytes[1] == ':' && isdirsep(b.bytes[2]))) {
                                 st = new File(new String(b.bytes, 0, b.realSize));
                             } else {
@@ -708,7 +688,7 @@ public class Dir {
                                 int len = b.realSize;
                                 buf.length(0);
                                 buf.append(b);
-                                buf.append(_path, p+m, plen-(p+m));
+                                buf.append(bytes, m, end - m);
                                 status = glob_helper(cwd,buf.bytes,0,buf.realSize,len,flags,func,arg);
                             }
                         }
@@ -716,8 +696,8 @@ public class Dir {
                     break mainLoop;
                 }
             }
-            p = (m == -1 ? m : p+m);
+            p = m;
         }
         return status;
     }
-}// Dir
+}

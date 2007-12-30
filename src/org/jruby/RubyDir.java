@@ -35,7 +35,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
 
@@ -112,7 +111,7 @@ public class RubyDir extends RubyObject {
             throw getRuntime().newErrnoENOENTError(newPath.toString() + " is not a directory");
         }
         path = newPath;
-		List snapshotList = new ArrayList();
+		List<String> snapshotList = new ArrayList<String>();
 		snapshotList.add(".");
 		snapshotList.add("..");
 		snapshotList.addAll(getContents(dir));
@@ -132,35 +131,35 @@ public class RubyDir extends RubyObject {
      */
     @JRubyMethod(name = {"glob", "[]"}, required = 1, optional = 1, frame = true, meta = true)
     public static IRubyObject glob(IRubyObject recv, IRubyObject[] args, Block block) {
-        String cwd = recv.getRuntime().getCurrentDirectory();
-        int flags = 0;
-        if(Arity.checkArgumentCount(recv.getRuntime(),args,1,2) == 2) {
-            flags = RubyNumeric.num2int(args[1]);
-        }
-        ByteList pt = args[0].convertToString().getByteList();
+        Ruby runtime = recv.getRuntime();
+        int flags = args.length == 2 ?  RubyNumeric.num2int(args[1]) : 0;
+        ByteList globPattern = args[0].convertToString().getByteList();
 
-        String cwd2;
+        String cwd;
         try {
-            cwd2 = new org.jruby.util.NormalizedFile(cwd).getCanonicalPath();
+            cwd = new org.jruby.util.NormalizedFile(runtime.getCurrentDirectory()).getCanonicalPath();
         } catch(Exception e) {
-            cwd2 = cwd;
+            cwd = runtime.getCurrentDirectory();
         }
 
-        List l = Dir.push_glob(cwd2, pt.bytes, pt.begin, pt.realSize, flags);
+        List<ByteList> fileList = Dir.push_glob(cwd, globPattern, flags);
         
-        if(block.isGiven()) {
-            ThreadContext context = recv.getRuntime().getCurrentContext();
-            for(Iterator iter = l.iterator(); iter.hasNext(); ) {
-                block.yield(context, RubyString.newString(recv.getRuntime(),(ByteList)iter.next()));
+        if (block.isGiven()) {
+            ThreadContext context = runtime.getCurrentContext();
+            
+            for (ByteList file: fileList) {
+                block.yield(context, RubyString.newString(runtime, file));
             }
+            
             return recv.getRuntime().getNil();
         }
-        IRubyObject[] l2 = new IRubyObject[l.size()];
+        
+        IRubyObject[] tempFileList = new IRubyObject[fileList.size()];
         int i=0;
-        for(Iterator iter = l.iterator(); iter.hasNext(); i++) {
-            l2[i] = RubyString.newString(recv.getRuntime(),(ByteList)iter.next());
+        for (ByteList file: fileList) {
+            tempFileList[i++] = RubyString.newString(runtime, file);
         }
-        return recv.getRuntime().newArrayNoCopy(l2);
+        return runtime.newArrayNoCopy(tempFileList);
     }
 
     /**
@@ -181,9 +180,9 @@ public class RubyDir extends RubyObject {
         if (!directory.isDirectory()) {
             throw recv.getRuntime().newErrnoENOENTError("No such directory");
         }
-        List fileList = getContents(directory);
-		fileList.add(0,".");
-		fileList.add(1,"..");
+        List<String> fileList = getContents(directory);
+		fileList.add(0, ".");
+		fileList.add(1, "..");
         Object[] files = fileList.toArray();
         return recv.getRuntime().newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
@@ -429,9 +428,9 @@ public class RubyDir extends RubyObject {
      * Returns the contents of the specified <code>directory</code> as an
      * <code>ArrayList</code> containing the names of the files as Java Strings.
      */
-    protected static List getContents(File directory) {
+    protected static List<String> getContents(File directory) {
         String[] contents = directory.list();
-        List result = new ArrayList();
+        List<String> result = new ArrayList<String>();
 
         // If an IO exception occurs (something odd, but possible)
         // A directory may return null.
@@ -447,8 +446,8 @@ public class RubyDir extends RubyObject {
      * Returns the contents of the specified <code>directory</code> as an
      * <code>ArrayList</code> containing the names of the files as Ruby Strings.
      */
-    protected static List getContents(File directory, Ruby runtime) {
-        List result = new ArrayList();
+    protected static List<RubyString> getContents(File directory, Ruby runtime) {
+        List<RubyString> result = new ArrayList<RubyString>();
         String[] contents = directory.list();
         
         for (int i = 0; i < contents.length; i++) {
