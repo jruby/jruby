@@ -1136,8 +1136,14 @@ public class RubyKernel {
     }
     
     @JRubyMethod(name = "fork", module = true, visibility = Visibility.PRIVATE)
-    public static RubyFixnum fork(IRubyObject recv) {
+    public static IRubyObject fork(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
-        return runtime.newFixnum(runtime.getPosix().fork());
+        int result = runtime.getPosix().fork();
+        
+        if (result == -1) {
+            return runtime.getNil();
+        }
+        
+        return runtime.newFixnum(result);
     }
 }

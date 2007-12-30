@@ -417,4 +417,9 @@ public class RubyProcess {
     public static IRubyObject pid(IRubyObject recv) {
         return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getpid());
     }
+    
+    @JRubyMethod(name = "fork", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject fork(IRubyObject recv) {
+        return RubyKernel.fork(recv);
+    }
 }
