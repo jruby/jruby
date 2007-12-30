@@ -1134,4 +1134,10 @@ public class RubyKernel {
         recv.getRuntime().getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         return runtime.newBoolean(resultCode == 0);
     }
+    
+    @JRubyMethod(name = "fork", module = true, visibility = Visibility.PRIVATE)
+    public static RubyFixnum fork(IRubyObject recv) {
+        Ruby runtime = recv.getRuntime();
+        return runtime.newFixnum(runtime.getPosix().fork());
+    }
 }

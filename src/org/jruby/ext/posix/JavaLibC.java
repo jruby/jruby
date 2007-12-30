@@ -238,4 +238,8 @@ public class JavaLibC implements LibC {
         // libc methods.  
         return 0;
     }
+    
+    public int fork() {
+        return -1;
+    }
 }

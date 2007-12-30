@@ -53,4 +53,5 @@ public interface LibC extends Library {
     public int symlink(String oldpath,String newpath);
     public int readlink(String oldpath,ByteBuffer buffer,int len);
     public int umask(int mask);
+    public int fork();
 }

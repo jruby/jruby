@@ -3,6 +3,7 @@ package org.jruby.ext.posix;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import org.jruby.RubyInstanceConfig;
 
 public abstract class BasePOSIX implements POSIX {
     protected LibC libc;
@@ -107,6 +108,14 @@ public abstract class BasePOSIX implements POSIX {
     
     public int umask(int mask) {
         return libc.umask(mask);
+    }
+    
+    public int fork() {
+        if (RubyInstanceConfig.FORK_ENABLED) {
+            return libc.fork();
+        } else {
+            return -1;
+        }
     }
     
     public abstract FileStat allocateStat();

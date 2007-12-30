@@ -27,4 +27,5 @@ public interface POSIX {
     public int symlink(String oldpath,String newpath);
     public String readlink(String path);
     public int umask(int mask);
+    public int fork();
 }

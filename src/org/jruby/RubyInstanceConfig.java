@@ -120,6 +120,8 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getBoolean("jruby.compile.frameless");
     public static final boolean INDEXED_METHODS
             = SafePropertyAccessor.getBoolean("jruby.indexed.methods");
+    public static final boolean FORK_ENABLED
+            = SafePropertyAccessor.getBoolean("jruby.fork.enabled");
     public static boolean nativeEnabled = true;
     
     static {
@@ -197,6 +199,10 @@ public class RubyInstanceConfig {
         }
 
         defaultJRubyClassLoader = null;
+        
+        if (FORK_ENABLED) {
+            error.print("WARNING: fork is highly unlikely to be safe or stable on the JVM. Have fun!");
+        }
     }
     
     public String getBasicUsageHelp() {
@@ -250,7 +256,9 @@ public class RubyInstanceConfig {
                 .append("    jruby.compat.version=RUBY1_8|RUBY1_9").append("\n")
                 .append("       Specify the major Ruby version to be compatible with; Default is RUBY1_8").append("\n")
                 .append("    jruby.indexed.methods=true|false").append("\n")
-                .append("       Generate \"invokers\" for core classes using a single indexed class").append("\n");
+                .append("       Generate \"invokers\" for core classes using a single indexed class").append("\n")
+                .append("    jruby.fork.enabled=true|false").append("\n")
+                .append("       (EXPERIMENTAL, maybe dangerous) Enable fork(2) on platforms that support it.").append("\n");
         
         return sb.toString();
     }
