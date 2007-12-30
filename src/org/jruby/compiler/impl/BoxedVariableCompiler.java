@@ -89,12 +89,11 @@ public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
     }
 
     public void assignLocalVariable(int index) {
-        method.dup();
-
         if (scope.isCaptured(index)) {
             super.assignLocalVariable(index);
         } else {
             // non-captured var, just use locals
+            method.dup();
             method.astore(10 + index);
         }
     }
