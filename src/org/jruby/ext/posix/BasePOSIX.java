@@ -54,6 +54,38 @@ public abstract class BasePOSIX implements POSIX {
         return libc.getuid();
     }
 
+    public int setegid(int egid) {
+        return libc.setegid(egid);
+    }
+
+    public int seteuid(int euid) {
+        return libc.seteuid(euid);
+    }
+
+    public int setgid(int gid) {
+        return libc.setgid(gid);
+    }
+
+    public int getpgid(int pid) {
+        return libc.getpgid(pid);
+    }
+
+    public int setpgid(int pid, int pgid) {
+        return libc.setpgid(pid, pgid);
+    }
+
+    public int setpgrp(int pid, int pgrp) {
+        return libc.setpgrp(pid, pgrp);
+    }
+
+    public int setsid() {
+        return libc.setsid();
+    }
+
+    public int setuid(int uid) {
+        return libc.setuid(uid);
+    }
+
     public int kill(int pid, int signal) {
         return libc.kill(pid, signal);
     }
@@ -111,11 +143,23 @@ public abstract class BasePOSIX implements POSIX {
     }
     
     public int fork() {
-        if (RubyInstanceConfig.FORK_ENABLED) {
-            return libc.fork();
-        } else {
-            return -1;
-        }
+        return libc.fork();
+    }
+    
+    public int waitpid(int pid, int[] status, int flags) {
+        return libc.waitpid(pid, status, pid);
+    }
+    
+    public int wait(int[] status) {
+        return libc.wait(status);
+    }
+    
+    public int getpriority(int which, int who) {
+        return libc.getpriority(which, who);
+    }
+    
+    public int setpriority(int which, int who, int prio) {
+        return libc.setpriority(which, who, prio);
     }
     
     public abstract FileStat allocateStat();

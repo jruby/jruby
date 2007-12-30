@@ -201,7 +201,7 @@ public class RubyInstanceConfig {
         defaultJRubyClassLoader = null;
         
         if (FORK_ENABLED) {
-            error.print("WARNING: fork is highly unlikely to be safe or stable on the JVM. Have fun!");
+            error.print("WARNING: fork is highly unlikely to be safe or stable on the JVM. Have fun!\n");
         }
     }
     

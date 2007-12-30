@@ -242,4 +242,76 @@ public class JavaLibC implements LibC {
     public int fork() {
         return -1;
     }
+
+    public int setegid(int egid) {
+        handler.unimplementedError("setegid");
+        
+        return -1;
+    }
+
+    public int seteuid(int euid) {
+        handler.unimplementedError("seteuid");
+        
+        return -1;
+    }
+
+    public int setgid(int gid) {
+        handler.unimplementedError("setgid");
+        
+        return -1;
+    }
+
+    public int getpgid(int pid) {
+        handler.unimplementedError("setpgid");
+        
+        return -1;
+    }
+
+    public int setpgid(int pid, int pgid) {
+        handler.unimplementedError("setpgid");
+        
+        return -1;
+    }
+
+    public int setpgrp(int pid, int pgrp) {
+        handler.unimplementedError("setpgrp");
+        
+        return -1;
+    }
+
+    public int setsid() {
+        handler.unimplementedError("setsid");
+        
+        return -1;
+    }
+
+    public int setuid(int uid) {
+        handler.unimplementedError("setuid");
+        
+        return -1;
+    }
+
+    public int waitpid(int pid, int[] status, int flags) {
+        handler.unimplementedError("waitpid");
+        
+        return -1;
+    }
+
+    public int wait(int[] status) {
+        handler.unimplementedError("wait");
+        
+        return -1;
+    }
+    
+    public int getpriority(int which, int who) {
+        handler.unimplementedError("getpriority");
+        
+        return -1;
+    }
+    
+    public int setpriority(int which, int who, int prio) {
+        handler.unimplementedError("setpriority");
+        
+        return -1;
+    }
 }

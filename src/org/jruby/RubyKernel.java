@@ -1136,14 +1136,39 @@ public class RubyKernel {
     }
     
     @JRubyMethod(name = "fork", module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject fork(IRubyObject recv) {
+    public static IRubyObject fork(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
-        int result = runtime.getPosix().fork();
         
-        if (result == -1) {
-            return runtime.getNil();
+        if (!RubyInstanceConfig.FORK_ENABLED) {
+            throw runtime.newNotImplementedError("fork is unsafe and disabled by default on JRuby");
         }
         
-        return runtime.newFixnum(result);
+        if (block.isGiven()) {
+            int pid = runtime.getPosix().fork();
+            
+            if (pid == 0) {
+                try {
+                    block.yield(runtime.getCurrentContext(), runtime.getNil());
+                } catch (RaiseException re) {
+                    if (re.getException() instanceof RubySystemExit) {
+                        throw re;
+                    }
+                    return exit_bang(recv, new IRubyObject[] {RubyFixnum.minus_one(runtime)});
+                } catch (Throwable t) {
+                    return exit_bang(recv, new IRubyObject[] {RubyFixnum.minus_one(runtime)});
+                }
+                return exit_bang(recv, new IRubyObject[] {RubyFixnum.zero(runtime)});
+            } else {
+                return runtime.newFixnum(pid);
+            }
+        } else {
+            int result = runtime.getPosix().fork();
+        
+            if (result == -1) {
+                return runtime.getNil();
+            }
+
+            return runtime.newFixnum(result);
+        }
     }
 }

@@ -223,6 +223,7 @@ public final class Ruby {
     private RubyClass procStatusClass;
     private RubyModule procUIDModule;
     private RubyModule procGIDModule;
+    private RubyModule procSysModule;
 
     private RubyModule precisionModule;
 
@@ -973,6 +974,9 @@ public final class Ruby {
     }
     void setProcGID(RubyModule procGIDModule) {
         this.procGIDModule = procGIDModule;
+    }
+    void setProcSys(RubyModule procSysModule) {
+        this.procSysModule = procSysModule;
     }
 
     public RubyModule getPrecision() {
@@ -2264,6 +2268,10 @@ public final class Ruby {
     
     public RaiseException newErrnoEDOMError(String message) {
         return newRaiseException(fastGetModule("Errno").fastGetClass("EDOM"), "Domain error - " + message);
+    }   
+    
+    public RaiseException newErrnoECHILDError() {
+        return newRaiseException(fastGetModule("Errno").fastGetClass("ECHILD"), "No child processes");
     }    
 
     public RaiseException newIndexError(String message) {

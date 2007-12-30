@@ -10,13 +10,21 @@ public interface POSIX {
     public int chmod(String filename, int mode);
     public int chown(String filename, int user, int group);
     public int getegid();
+    public int setegid(int egid);
     public int geteuid();
+    public int seteuid(int euid);
     public int getgid();
+    public int setgid(int gid);
     public int getpgid();
+    public int getpgid(int pid);
+    public int setpgid(int pid, int pgid);
     public int getpgrp();
+    public int setpgrp(int pid, int pgrp);
     public int getppid();
     public int getpid();
     public int getuid();
+    public int setsid();
+    public int setuid(int uid);
     public int kill(int pid, int signal);
     public int lchmod(String filename, int mode);
     public int lchown(String filename, int user, int group);
@@ -28,4 +36,8 @@ public interface POSIX {
     public String readlink(String path);
     public int umask(int mask);
     public int fork();
+    public int waitpid(int pid, int[] status, int flags);
+    public int wait(int[] status);
+    public int getpriority(int which, int who);
+    public int setpriority(int which, int who, int prio);
 }
