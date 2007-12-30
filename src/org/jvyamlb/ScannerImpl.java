@@ -158,6 +158,7 @@ public class ScannerImpl implements Scanner {
         STRANGE_CHAR['*'] = true;
         STRANGE_CHAR['%'] = true;
         STRANGE_CHAR['^'] = true;
+        STRANGE_CHAR['#'] = true;
         BLANK_T[' '] = true;
         BLANK_T['\t'] = true;
         SPACES_AND_STUFF['\0'] = true;

@@ -163,8 +163,8 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
         throw new ConstructorException(null,"could not determine a constructor for the tag " + node.getTag(),null);
     }
 
-    private final static Pattern TIMESTAMP_REGEXP = Pattern.compile("^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)(?:(?:[Tt]|[ \t]+)([0-9][0-9]?):([0-9][0-9]):([0-9][0-9])(?:\\.([0-9]*))?(?:[ \t]*(Z|([-+][0-9][0-9]?)(?::([0-9][0-9])?)?))?)?$");
-    private final static Pattern YMD_REGEXP = Pattern.compile("^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)$");
+    private final static Pattern TIMESTAMP_REGEXP = Pattern.compile("^(-?[0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)(?:(?:[Tt]|[ \t]+)([0-9][0-9]?):([0-9][0-9]):([0-9][0-9])(?:\\.([0-9]*))?(?:[ \t]*(Z|([-+][0-9][0-9]?)(?::([0-9][0-9])?)?))?)?$");
+    public final static Pattern YMD_REGEXP = Pattern.compile("^(-?[0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)$");
     public static Object constructYamlTimestamp(final Constructor ctor, final Node node) {
         Matcher match = YMD_REGEXP.matcher(node.getValue().toString());
         if(match.matches()) {

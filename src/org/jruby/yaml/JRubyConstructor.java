@@ -483,7 +483,12 @@ public class JRubyConstructor extends ConstructorImpl {
             });
         addConstructor("tag:yaml.org,2002:timestamp",new YamlConstructor() {
                 public Object call(final Constructor self, final Node node) {
-                    return constructYamlTimestamp(self,node);
+                    java.util.regex.Matcher match = SafeConstructorImpl.YMD_REGEXP.matcher(node.getValue().toString());
+                    if(match.matches()) {
+                        return constructYamlTimestampYMD(self,node);
+                    } else {
+                        return constructYamlTimestamp(self,node);
+                    }
                 }
             });
         addConstructor("tag:yaml.org,2002:timestamp#ymd",new YamlConstructor() {

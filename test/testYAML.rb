@@ -277,3 +277,5 @@ test_equal 3, list2.map{ |ll| ll.object_id }.uniq.length
 # JRUBY-1659
 YAML.load("{a: 2007-01-01 01:12:34}")
 
+# JRUBY-1765
+test_equal Date.new(-1,1,1), YAML.load(Date.new(-1,1,1).to_yaml)
