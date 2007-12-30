@@ -455,7 +455,12 @@ public class RubyGlobal {
                                     value.getType().getName() + " given");
             }
             
+            if ("$stderr".equals(name())) {
+                runtime.defineVariable(new OutputGlobalVariable(runtime, "$deferr", value));
+            }
+            
             if ("$stdout".equals(name())) {
+                runtime.defineVariable(new OutputGlobalVariable(runtime, "$defout", value));
                 runtime.defineVariable(new OutputGlobalVariable(runtime, "$>", value));
             }
 
