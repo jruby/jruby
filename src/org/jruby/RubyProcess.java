@@ -31,10 +31,14 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.posix.POSIX;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -72,6 +76,8 @@ public class RubyProcess {
         process.defineConstant("PRIO_PROCESS", runtime.newFixnum(0));
         process.defineConstant("PRIO_PGRP", runtime.newFixnum(1));
         process.defineConstant("PRIO_USER", runtime.newFixnum(2));
+        
+        process.defineConstant("WNOHANG", runtime.newFixnum(1));
         
         // Process::Status methods  
         Callback notImplemented = process_statusCallbackFactory.getFastMethod("not_implemented");
@@ -361,6 +367,10 @@ public class RubyProcess {
         int[] status = new int[1];
         pid = runtime.getPosix().waitpid(pid, status, flags);
         
+        if (pid == -1) {
+            throw runtime.newErrnoECHILDError();
+        }
+        
         runtime.getGlobalVariables().set(
                 "$?", 
                 RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
@@ -378,6 +388,10 @@ public class RubyProcess {
         int[] status = new int[1];
         int pid = runtime.getPosix().wait(status);
         
+        if (pid == -1) {
+            throw runtime.newErrnoECHILDError();
+        }
+        
         runtime.getGlobalVariables().set(
                 "$?", 
                 RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
@@ -393,7 +407,7 @@ public class RubyProcess {
         int[] status = new int[1];
         int result = posix.wait(status);
         while (result != -1) {
-            results.append(runtime.newArray(runtime.newFixnum(result), runtime.newFixnum(status[0])));
+            results.append(runtime.newArray(runtime.newFixnum(result), RubyProcess.RubyStatus.newProcessStatus(runtime, status[0])));
             result = posix.wait(status);
         }
         
@@ -470,7 +484,7 @@ public class RubyProcess {
             throw runtime.newErrnoECHILDError();
         }
         
-        return runtime.newArray(runtime.newFixnum(pid), runtime.newFixnum(status[0]));
+        return runtime.newArray(runtime.newFixnum(pid), RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
     }
 
     @JRubyMethod(name = "initgroups", required = 2, module = true, visibility = Visibility.PRIVATE)
@@ -599,7 +613,22 @@ public class RubyProcess {
 
     @JRubyMethod(name = "detach", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject detach(IRubyObject recv, IRubyObject arg) {
-        throw recv.getRuntime().newNotImplementedError("Process#detach not yet implemented");
+        final int pid = (int)arg.convertToInteger().getLongValue();
+        Ruby runtime = recv.getRuntime();
+        
+        BlockCallback callback = new BlockCallback() {
+            public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+                int[] status = new int[1];
+                int result = context.getRuntime().getPosix().waitpid(pid, status, 0);
+                
+                return context.getRuntime().newFixnum(result);
+            }
+        };
+        
+        return RubyThread.newInstance(
+                runtime.getThread(),
+                IRubyObject.NULL_ARRAY,
+                CallBlock.newCallClosure(recv, (RubyModule)recv, Arity.NO_ARGUMENTS, callback, runtime.getCurrentContext()));
     }
     
     @JRubyMethod(name = "times", frame = true, module = true, visibility = Visibility.PRIVATE)
@@ -621,5 +650,10 @@ public class RubyProcess {
     @JRubyMethod(name = "fork", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject fork(IRubyObject recv, Block block) {
         return RubyKernel.fork(recv, block);
+    }
+    
+    @JRubyMethod(name = "exit", optional = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
+        return RubyKernel.exit_bang(recv, args);
     }
 }
