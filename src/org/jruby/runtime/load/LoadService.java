@@ -129,8 +129,8 @@ public class LoadService {
 
     protected final RubyArray loadPath;
     protected final RubyArray loadedFeatures;
-    protected final Set loadedFeaturesInternal = Collections.synchronizedSet(new HashSet());
-    protected final Set firstLineLoadedFeatures = Collections.synchronizedSet(new HashSet());
+    protected final List loadedFeaturesInternal;
+//    protected final Set firstLineLoadedFeatures = Collections.synchronizedSet(new HashSet());
     protected final Map builtinLibraries = new HashMap();
 
     protected final Map jarFiles = new HashMap();
@@ -142,7 +142,8 @@ public class LoadService {
     public LoadService(Ruby runtime) {
         this.runtime = runtime;
         loadPath = RubyArray.newArray(runtime);
-        loadedFeatures = RubyArray.newArray(runtime);    
+        loadedFeatures = RubyArray.newArray(runtime);
+        loadedFeaturesInternal = Collections.synchronizedList(loadedFeatures);
     }
 
     public void init(List additionalDirectories) {
@@ -222,9 +223,7 @@ public class LoadService {
         if (file.equals("")) {
             throw runtime.newLoadError("No such file to load -- " + file);
         }
-        if(firstLineLoadedFeatures.contains(file)) {
-            return false;
-        }
+        
         Library library = null;
         String loadName = file;
         String[] extensionsToSearch = null;
@@ -306,17 +305,15 @@ public class LoadService {
             }
         }
         
-        if (loadedFeaturesInternal.contains(loadName) || loadedFeatures.include_p(runtime.newString(loadName)).isTrue()) {
+        RubyString loadNameRubyString = runtime.newString(loadName);
+        if (loadedFeaturesInternal.contains(loadNameRubyString)) {
             return false;
         }
         
         // attempt to load the found library
         try {
-            loadedFeaturesInternal.add(loadName);
-            firstLineLoadedFeatures.add(file);
-            synchronized(loadedFeatures) {
-                loadedFeatures.append(runtime.newString(loadName));
-            }
+            loadedFeaturesInternal.add(loadNameRubyString);
+//            firstLineLoadedFeatures.add(file);
 
             if (script != null) {
                 runtime.loadScript(script);
@@ -330,11 +327,11 @@ public class LoadService {
                 return true;
             }
 
-            loadedFeaturesInternal.remove(loadName);
-            firstLineLoadedFeatures.remove(file);
-            synchronized(loadedFeatures) {
-                loadedFeatures.remove(runtime.newString(loadName));
-            }
+            loadedFeaturesInternal.remove(loadNameRubyString);
+            //firstLineLoadedFeatures.remove(file);
+//            synchronized(loadedFeatures) {
+//                loadedFeatures.remove(runtime.newString(loadName));
+//            }
             if (e instanceof RaiseException) throw (RaiseException) e;
 
             if(runtime.getDebug().isTrue()) e.printStackTrace();
