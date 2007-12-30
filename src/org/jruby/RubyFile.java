@@ -230,8 +230,6 @@ public class RubyFile extends RubyIO {
         constants.fastSetConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
         constants.fastSetConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
         
-        // TODO Singleton methods: readlink
-        
         runtime.getFileTest().extend_object(fileClass);
         
         fileClass.defineAnnotatedMethods(RubyFile.class);
@@ -1193,6 +1191,25 @@ public class RubyFile extends RubyIO {
         }
         
         return recv.getRuntime().newFixnum(0);
+    }
+    
+    @JRubyMethod(required = 1, meta = true)
+    public static IRubyObject readlink(IRubyObject recv, IRubyObject path) {
+        String realPath = recv.getRuntime().getPosix().readlink(path.toString());
+        
+        if (!RubyFileTest.exist_p(recv, path).isTrue()) {
+            throw recv.getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+        }
+        
+        if (!RubyFileTest.symlink_p(recv, path).isTrue()) {
+            throw recv.getRuntime().newErrnoEINVALError("invalid argument - " + path);
+        }
+        
+        if (realPath == null) {
+            // FIXME: When we get JNA3 we need to properly write this to errno.
+        }
+
+        return recv.getRuntime().newString(realPath);
     }
 
     // Can we produce IOError which bypasses a close?

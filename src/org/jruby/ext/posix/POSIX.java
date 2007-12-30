@@ -1,5 +1,6 @@
 package org.jruby.ext.posix;
 
+
 public interface POSIX {
     // When we use JNA-3 we can get errno, Then these values should match proper machine values.
     // If by chance these are not the same values on all systems we will have to have concrete
@@ -24,5 +25,6 @@ public interface POSIX {
     public int mkdir(String path, int mode);
     public FileStat stat(String path);
     public int symlink(String oldpath,String newpath);
+    public String readlink(String path);
     public int umask(int mask);
 }

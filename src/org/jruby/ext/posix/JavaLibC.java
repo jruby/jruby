@@ -29,9 +29,11 @@
 package org.jruby.ext.posix;
 
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 
+import java.nio.ByteBuffer;
 import org.jruby.Ruby;
 import org.jruby.ext.posix.POSIX.ERRORS;
 import org.jruby.ext.posix.util.Chmod;
@@ -205,6 +207,27 @@ public class JavaLibC implements LibC {
                     runtime.newString("ln"), runtime.newString("-s"), 
                     runtime.newString(oldpath), runtime.newString(newpath)
             });
+        } catch (Exception e) { // We tried and failed for some reason. Indicate error.
+            return -1;
+        }
+    }
+    
+    public int readlink(String oldpath, ByteBuffer buffer, int length) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            // Replace with non-JRuby-specific shell lancher
+            ShellLauncher launcher = new ShellLauncher(runtime);
+            launcher.runAndWait(
+                    new IRubyObject[] {runtime.newString("readlink"), runtime.newString(oldpath)},
+                    baos);
+            
+            byte[] bytes = baos.toByteArray();
+            
+            if (bytes.length > length) return -1;
+            // trim off \n
+            buffer.put(bytes, 0, bytes.length - 1);
+            
+            return buffer.position();
         } catch (Exception e) { // We tried and failed for some reason. Indicate error.
             return -1;
         }

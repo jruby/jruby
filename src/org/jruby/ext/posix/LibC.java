@@ -30,6 +30,7 @@
 package org.jruby.ext.posix;
 
 import com.sun.jna.Library;
+import java.nio.ByteBuffer;
 
 public interface LibC extends Library {
     public int chmod(String filename, int mode);
@@ -50,5 +51,6 @@ public interface LibC extends Library {
     public int mkdir(String path, int mode);
     public int stat(String path, FileStat stat);
     public int symlink(String oldpath,String newpath);
+    public int readlink(String oldpath,ByteBuffer buffer,int len);
     public int umask(int mask);
 }

@@ -305,6 +305,11 @@ public class RubyYAML {
     public static IRubyObject quick_emit(IRubyObject self, IRubyObject[] args) {
         return self.getRuntime().getNil();
     }
+    
+    @JRubyMethod(name = "tagurize", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject tagurize(IRubyObject self, IRubyObject arg) {
+        return arg.callMethod(self.getRuntime().getCurrentContext(), "taguri");
+    }
 
     // prepares IO port type for load (ported from ext/syck/rubyext.c)
     private static IRubyObject check_yaml_port(IRubyObject port) {

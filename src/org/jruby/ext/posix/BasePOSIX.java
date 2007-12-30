@@ -1,5 +1,9 @@
 package org.jruby.ext.posix;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+
 public abstract class BasePOSIX implements POSIX {
     protected LibC libc;
     protected POSIXHandler handler;
@@ -87,6 +91,18 @@ public abstract class BasePOSIX implements POSIX {
 
     public int symlink(String oldpath, String newpath) {
         return libc.symlink(oldpath, newpath);
+    }
+    
+    public String readlink(String oldpath) {
+        // TODO: this should not be hardcoded to 256 bytes
+        ByteBuffer buffer = ByteBuffer.allocateDirect(256);
+        int result = libc.readlink(oldpath, buffer, buffer.capacity());
+        
+        if (result == -1) return null;
+        
+        buffer.position(0);
+        buffer.limit(result);
+        return Charset.forName("ASCII").decode(buffer).toString();
     }
     
     public int umask(int mask) {
