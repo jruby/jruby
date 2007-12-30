@@ -476,12 +476,12 @@ public class RubyBignum extends RubyInteger {
             }
             return RubyFixnum.one(getRuntime());
         }
-        int position = num2int(other);
-        if (position < 0) {
+        long position = num2long(other);
+        if (position < 0 || position > Integer.MAX_VALUE) {
             return RubyFixnum.zero(getRuntime());
         }
         
-        return value.testBit(num2int(other)) ? RubyFixnum.one(getRuntime()) : RubyFixnum.zero(getRuntime());
+        return value.testBit((int)position) ? RubyFixnum.one(getRuntime()) : RubyFixnum.zero(getRuntime());
     }
 
     /** rb_big_cmp     

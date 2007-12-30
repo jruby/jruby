@@ -37,6 +37,10 @@ class TestBignum < Test::Unit::TestCase
     assert_equal(-(@big2)[0],-1)
     assert_equal(-(@big2)[1],0)
   end
+
+  def test_bignum_aref_with_bignum_arg_no_exception
+    assert_equal(0, (2**64)[2**32])
+  end
   # more to come
   
 end
