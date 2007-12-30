@@ -279,3 +279,11 @@ YAML.load("{a: 2007-01-01 01:12:34}")
 
 # JRUBY-1765
 test_equal Date.new(-1,1,1), YAML.load(Date.new(-1,1,1).to_yaml)
+
+# JRUBY-1766
+test_ok YAML.load(Time.now.to_yaml).instance_of?(Time)
+test_ok YAML.load("2007-01-01 01:12:34").instance_of?(String)
+test_ok YAML.load("2007-01-01 01:12:34.0").instance_of?(String)
+test_ok YAML.load("2007-01-01 01:12:34 +00:00").instance_of?(Time)
+test_ok YAML.load("2007-01-01 01:12:34.0 +00:00").instance_of?(Time)
+test_ok YAML.load("{a: 2007-01-01 01:12:34}")["a"].instance_of?(String)

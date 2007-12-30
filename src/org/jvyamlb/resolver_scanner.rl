@@ -30,7 +30,7 @@ public class ResolverScanner {
         timestampFract = "." digit*;
         timestampZone = [ \t]* ("Z" | (sign digit{1,2} ( ":" digit{2} )?));
         TimestampYMD = digit{4} ("-" digit{2}){2} %/timestamp_ymd_tag;
-        Timestamp = digit{4} ("-" digit{1,2}){2} ([Tt] | [ \t]+) digit{1,2} ":" digit{2} ":" digit{2} timestampFract? timestampZone? %/timestamp_tag;
+        Timestamp = digit{4} ("-" digit{1,2}){2} ([Tt] | [ \t]+) digit{1,2} ":" digit{2} ":" digit{2} timestampFract? timestampZone %/timestamp_tag;
 
         exp = [eE] sign digit+;
 
