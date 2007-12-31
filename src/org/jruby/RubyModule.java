@@ -1022,34 +1022,18 @@ public class RubyModule extends RubyObject {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = getRuntime().newProc(Block.Type.LAMBDA, block);
             body = proc;
-
+            
             // a normal block passed to define_method changes to do arity checking; make it a lambda
             proc.getBlock().type = Block.Type.LAMBDA;
-            
-            proc.getBlock().getBinding().getFrame().setKlazz(this);
-            proc.getBlock().getBinding().getFrame().setName(name);
-            
-            // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
-            proc.getBlock().getBody().getStaticScope().setArgumentScope(true);
-            // just using required is broken...but no more broken than before zsuper refactoring
-            proc.getBlock().getBody().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
 
-            newMethod = new ProcMethod(this, proc, visibility);
+            newMethod = createProcMethod(name, visibility, proc);
         } else if (args.length == 2) {
             if (getRuntime().getProc().isInstance(args[1])) {
                 // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
                 RubyProc proc = (RubyProc)args[1];
                 body = proc;
-                
-                proc.getBlock().getBinding().getFrame().setKlazz(this);
-                proc.getBlock().getBinding().getFrame().setName(name);
 
-                // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
-                proc.getBlock().getBody().getStaticScope().setArgumentScope(true);
-                // just using required is broken...but no more broken than before zsuper refactoring
-                proc.getBlock().getBody().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
-
-                newMethod = new ProcMethod(this, proc, visibility);
+                newMethod = createProcMethod(name, visibility, proc);
             } else if (getRuntime().getMethod().isInstance(args[1])) {
                 RubyMethod method = (RubyMethod)args[1];
                 body = method;
@@ -1079,6 +1063,18 @@ public class RubyModule extends RubyObject {
         }
 
         return body;
+    }
+    
+    private DynamicMethod createProcMethod(String name, Visibility visibility, RubyProc proc) {
+        proc.getBlock().getBinding().getFrame().setKlazz(this);
+        proc.getBlock().getBinding().getFrame().setName(name);
+
+        // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
+        proc.getBlock().getBody().getStaticScope().setArgumentScope(true);
+        // just using required is broken...but no more broken than before zsuper refactoring
+        proc.getBlock().getBody().getStaticScope().setRequiredArgs(proc.getBlock().arity().required());
+
+        return new ProcMethod(this, proc, visibility);
     }
 
     public IRubyObject executeUnder(Callback method, IRubyObject[] args, Block block) {

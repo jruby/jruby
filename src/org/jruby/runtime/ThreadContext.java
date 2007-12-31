@@ -662,17 +662,6 @@ public final class ThreadContext {
     public void postBsfApply() {
         popFrame();
     }
-
-    public void preMethodCall(RubyModule implementationClass, RubyModule clazz,  IRubyObject self, String name, IRubyObject[] args,
-            int req, Block block, JumpTarget jumpTarget) {
-        pushRubyClass(implementationClass);
-        pushCallFrame(clazz, name, self, block, jumpTarget);
-    }
-    
-    public void postMethodCall() {
-        popFrame();
-        popRubyClass();
-    }
     
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, IRubyObject[] args, int req, Block block, 
             StaticScope staticScope, JumpTarget jumpTarget) {
