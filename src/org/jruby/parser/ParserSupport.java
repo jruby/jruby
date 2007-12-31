@@ -568,7 +568,7 @@ public class ParserSupport {
             // FIXME: Temporarily disabling because this fires way too much running Rails tests. JRUBY-518
             /*case CONSTNODE:
                 handleUselessWarn(node, "a constant"); return;*/
-            case BIGNUMNODE: case DREGEXPNODE: case DSTRNODE:
+            case BIGNUMNODE: case DREGEXPNODE: case DSTRNODE: case DSYMBOLNODE:
             case FIXNUMNODE: case FLOATNODE: case REGEXPNODE:
             case STRNODE: case SYMBOLNODE:
                 handleUselessWarn(node, "a literal"); return;
