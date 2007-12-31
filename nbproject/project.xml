@@ -39,8 +39,10 @@
                     <target>jar</target>
                 </action>
                 <action name="debug">
-                    <script>nbproject/ide-file-targets.xml</script>
                     <target>debug-nb</target>
+                </action>
+                <action name="run">
+                    <target>run</target>
                 </action>
             </ide-actions>
             <export>
@@ -74,10 +76,11 @@
                 </items>
                 <context-menu>
                     <ide-action name="build"/>
+                    <ide-action name="rebuild"/>
                     <ide-action name="clean"/>
                     <ide-action name="javadoc"/>
+                    <ide-action name="run"/>
                     <ide-action name="test"/>
-                    <ide-action name="rebuild"/>
                     <ide-action name="debug"/>
                 </context-menu>
             </view>

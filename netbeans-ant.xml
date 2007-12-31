@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." name="netbeans-ant">
+  
+  <target name="profile-gem-install-rake" depends="jar" description="Profile a local gem installation of Rake">
+    <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
+    
+    <nbprofiledirect>
+      <classpath> <pathelement location="... specify ..."/> </classpath>
+    </nbprofiledirect>
+    
+    <java classname="org.jruby.Main" maxmemory="${jruby.launch.memory}" fork="true">
+      <classpath>
+        <pathelement location="${jruby.instrumented.classes.dir}" />
+        <path refid="build.classpath"/>
+        <pathelement path="${lib.dir}/jruby.jar"/>
+        <pathelement path="${test.classes.dir}"/>
+        <pathelement path="${test.dir}/requireTest.jar"/>
+      </classpath>
+      <jvmarg value="-Djruby.base=${basedir}"/>
+      <jvmarg value="-Djruby.home=${basedir}"/>
+      <jvmarg value="-Djruby.lib=${lib.dir}"/>
+      <jvmarg value="-Djruby.shell=/bin/sh"/>
+      <jvmarg value="-Djruby.script=jruby"/>
+      <jvmarg value="${profiler.info.jvmargs.agent}"/>
+      <arg value="bin/gem"/>
+      <arg value="install"/>
+      <arg value="lib/ruby/gems/1.8/cache/rake-0.7.1.gem"/>
+    </java>
+  </target>
+  
+  <target name="profile-rails-server" depends="jar" description="Profile a local gem installation of Rake">
+    <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
+    
+    <nbprofiledirect>
+      <classpath> <pathelement location="... specify ..."/> </classpath>
+    </nbprofiledirect>
+    
+    <java classname="org.jruby.Main" maxmemory="${jruby.launch.memory}" fork="true">
+      <classpath>
+        <pathelement location="${jruby.instrumented.classes.dir}" />
+        <path refid="build.classpath"/>
+        <pathelement path="${lib.dir}/jruby.jar"/>
+        <pathelement path="${test.classes.dir}"/>
+        <pathelement path="${test.dir}/requireTest.jar"/>
+      </classpath>
+      <jvmarg value="-Djruby.base=${basedir}"/>
+      <jvmarg value="-Djruby.home=${basedir}"/>
+      <jvmarg value="-Djruby.lib=${lib.dir}"/>
+      <jvmarg value="-Djruby.shell=/bin/sh"/>
+      <jvmarg value="-Djruby.script=jruby"/>
+      <jvmarg value="-Djruby.thread.pooling=true"/>
+      <jvmarg value="-server"/>
+      <jvmarg value="${profiler.info.jvmargs.agent}"/>
+      <arg value="testapp/script/server"/>
+    </java>
+  </target>
+  
+  <target name="profile-nb" depends="compile" description="Profile Project">
+    <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
+    
+    <nbprofiledirect>
+      <classpath>        
+        <pathelement path="${jruby.classes.dir}"/>
+        <path refid="build.classpath"/>
+      </classpath> 
+    </nbprofiledirect>
+    
+    <java classname="org.jruby.Main" maxmemory="${jruby.launch.memory}" fork="true">
+      <classpath>        
+        <pathelement path="${jruby.classes.dir}"/>
+        <path refid="build.classpath"/>
+      </classpath> 
+      <sysproperty key="jruby.home" value="${jruby.home}"/>            
+      <jvmarg value="${profiler.info.jvmargs.agent}"/>     
+      <jvmarg value="-Djruby.base=${basedir}"/>
+      <jvmarg value="-Djruby.home=${basedir}"/>
+      <jvmarg value="-Djruby.lib=${lib.dir}"/>
+      <jvmarg value="-Djruby.shell=/bin/sh"/>
+      <jvmarg value="-Djruby.script=jruby"/>
+      <!-- uncomment below and point to your ruby script -->
+      <!-- <arg value="/path/to/your/ruby/script.rb"/> -->
+      <arg value="/Users/enebo/scripts/fib.rb"/>
+    </java>
+  </target>
+  
+  <target name="debug-nb" depends="jar" description="Task for debugging JRuby within NetBeans">          
+    <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
+    <nbjpdastart addressproperty="jpda.address" name="JRuby" transport="dt_socket">
+      <classpath>        
+        <pathelement path="${jruby.classes.dir}"/>
+        <path refid="build.classpath"/>
+      </classpath>      
+    </nbjpdastart>
+    <java classname="org.jruby.Main" maxmemory="${jruby.launch.memory}" fork="true">
+      <classpath>        
+        <pathelement path="${jruby.classes.dir}"/>
+        <path refid="build.classpath"/>
+      </classpath> 
+      <sysproperty key="jruby.home" value="${jruby.home}"/>      
+      <jvmarg value="-Xdebug"/>
+      <jvmarg value="-Xnoagent"/>
+      <jvmarg value="-Djava.compiler=none"/>
+      <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
+      <jvmarg value="-Djruby.base=${basedir}"/>
+      <jvmarg value="-Djruby.home=${basedir}"/>
+      <jvmarg value="-Djruby.lib=${lib.dir}"/>
+      <jvmarg value="-Djruby.shell=/bin/sh"/>
+      <jvmarg value="-Djruby.script=jruby"/>
+      <!-- uncomment below and point to your ruby script -->
+      <!-- <arg value="/path/to/your/ruby/script.rb"/> -->
+    </java>
+  </target>   
+</project>

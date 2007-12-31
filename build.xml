@@ -39,6 +39,8 @@
   </patternset>
   
   <taskdef name="retro" classname="net.sourceforge.retroweaver.ant.RetroWeaverTask" classpathref="build.classpath"/>
+  
+  <import file="netbeans-ant.xml" optional="true"/>
 
   <target name="init" description="initialize the build">
     <xmlproperty file="build-config.xml" keepRoot="false" collapseAttributes="true"/>
@@ -956,61 +958,7 @@ test/externals/rubinius/spec/parser"/>
         <fileset dir="${lib.dir}" includes="jruby*.jar"/>
     </delete>
     <delete dir="${api.docs.dir}"/>
-  </target>
-  
-  <target name="profile-gem-install-rake" depends="jar" description="Profile a local gem installation of Rake">
-    <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
-
-    <nbprofiledirect>
-        <classpath> <pathelement location="... specify ..."/> </classpath>
-    </nbprofiledirect>
-
-    <java classname="org.jruby.Main" maxmemory="${jruby.launch.memory}" fork="true">
-      <classpath>
-        <pathelement location="${jruby.instrumented.classes.dir}" />
-        <path refid="build.classpath"/>
-        <pathelement path="${lib.dir}/jruby.jar"/>
-        <pathelement path="${test.classes.dir}"/>
-        <pathelement path="${test.dir}/requireTest.jar"/>
-      </classpath>
-      <jvmarg value="-Djruby.base=${basedir}"/>
-      <jvmarg value="-Djruby.home=${basedir}"/>
-      <jvmarg value="-Djruby.lib=${lib.dir}"/>
-      <jvmarg value="-Djruby.shell=/bin/sh"/>
-      <jvmarg value="-Djruby.script=jruby"/>
-      <jvmarg value="${profiler.info.jvmargs.agent}"/>
-      <arg value="bin/gem"/>
-      <arg value="install"/>
-      <arg value="lib/ruby/gems/1.8/cache/rake-0.7.1.gem"/>
-    </java>
-  </target>
-  
-  <target name="profile-rails-server" depends="jar" description="Profile a local gem installation of Rake">
-    <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
-
-    <nbprofiledirect>
-        <classpath> <pathelement location="... specify ..."/> </classpath>
-    </nbprofiledirect>
-
-    <java classname="org.jruby.Main" maxmemory="${jruby.launch.memory}" fork="true">
-      <classpath>
-        <pathelement location="${jruby.instrumented.classes.dir}" />
-        <path refid="build.classpath"/>
-        <pathelement path="${lib.dir}/jruby.jar"/>
-        <pathelement path="${test.classes.dir}"/>
-        <pathelement path="${test.dir}/requireTest.jar"/>
-      </classpath>
-      <jvmarg value="-Djruby.base=${basedir}"/>
-      <jvmarg value="-Djruby.home=${basedir}"/>
-      <jvmarg value="-Djruby.lib=${lib.dir}"/>
-      <jvmarg value="-Djruby.shell=/bin/sh"/>
-      <jvmarg value="-Djruby.script=jruby"/>
-      <jvmarg value="-Djruby.thread.pooling=true"/>
-      <jvmarg value="-server"/>
-      <jvmarg value="${profiler.info.jvmargs.agent}"/>
-      <arg value="testapp/script/server"/>
-    </java>
-  </target>
+  </target>  
 
   <property name="nailgun.home" value="${basedir}/tool/nailgun"/>
 
