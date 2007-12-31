@@ -79,7 +79,6 @@
       <jvmarg value="-Djruby.script=jruby"/>
       <!-- uncomment below and point to your ruby script -->
       <!-- <arg value="/path/to/your/ruby/script.rb"/> -->
-      <arg value="/Users/enebo/scripts/fib.rb"/>
     </java>
   </target>
   
