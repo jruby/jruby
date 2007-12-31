@@ -758,7 +758,7 @@ test/externals/rubinius/spec/parser"/>
   <target name="create-apidocs" depends="prepare" 
           description="Creates the Java API docs">
     <javadoc destdir="${api.docs.dir}" author="true" version="true" use="true" 
-             windowtitle="JRuby API" source="${javac.version}">
+             windowtitle="JRuby API" source="${javac.version}" useexternalfile="true">
       <fileset dir="${src.dir}">
         <include name="**/*.java"/>
       </fileset>
