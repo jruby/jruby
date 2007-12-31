@@ -181,15 +181,32 @@
       </jarjar>
   </target>
 
+  <path id="lib.classpath">
+    <pathelement location="${build.lib.dir}/retroweaver-rt-2.0.jar"/>
+    <pathelement location="${build.lib.dir}/backport-util-concurrent.jar"/>
+    <pathelement location="/usr/java/j2sdk1.4.2_16/jre/lib/rt.jar" />
+    <pathelement location="${lib.dir}/bsf.jar" />
+  </path>
+
   <target name="jar-1.4" depends="jar-jruby">
     <copy file="${lib.dir}/jruby.jar" tofile="${lib.dir}/jruby1.5.jar"/>
-    <retro inputjar="${lib.dir}/jruby1.5.jar" outputjar="${lib.dir}/jruby.jar"/>
+    <retro inputjar="${lib.dir}/jruby1.5.jar" outputjar="${lib.dir}/jruby.jar" target="1.4" failonerror="false" verify="true">
+      <classpath>
+        <path refid="lib.classpath"/>
+        <pathelement location="${lib.dir}/jruby.jar" />
+      </classpath>
+    </retro>
     <delete file="${lib.dir}/jruby1.5.jar"/>
   </target>
 
   <target name="jar-complete-1.4" depends="jar-complete">
     <copy file="${lib.dir}/jruby-complete.jar" tofile="${lib.dir}/jruby-complete1.5.jar"/>
-    <retro inputjar="${lib.dir}/jruby-complete1.5.jar" outputjar="${lib.dir}/jruby-complete.jar"/>
+    <retro inputjar="${lib.dir}/jruby-complete1.5.jar" outputjar="${lib.dir}/jruby-complete.jar" target="1.4" failonerror="false" verify="true">
+      <classpath>
+        <path refid="lib.classpath"/>
+        <pathelement location="${lib.dir}/jruby-complete.jar" />
+      </classpath>
+    </retro>
     <delete file="${lib.dir}/jruby-complete1.5.jar"/>
   </target>
 
