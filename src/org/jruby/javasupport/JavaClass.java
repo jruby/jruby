@@ -98,7 +98,7 @@ public class JavaClass extends JavaObject {
     }
 
     // TODO: other reserved names?
-    private static final Map RESERVED_NAMES = new HashMap();
+    private static final Map<String, AssignedName> RESERVED_NAMES = new HashMap<String, AssignedName>();
     static {
         RESERVED_NAMES.put("__id__", new AssignedName("__id__", AssignedName.RESERVED));
         RESERVED_NAMES.put("__send__", new AssignedName("__send__", AssignedName.RESERVED));
@@ -112,11 +112,11 @@ public class JavaClass extends JavaObject {
         // weakly reserved names
         RESERVED_NAMES.put("id", new AssignedName("id", AssignedName.WEAKLY_RESERVED));
     }
-    private static final Map STATIC_RESERVED_NAMES = new HashMap(RESERVED_NAMES);
+    private static final Map<String, AssignedName> STATIC_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
     static {
         STATIC_RESERVED_NAMES.put("new", new AssignedName("new", AssignedName.RESERVED));
     }
-    private static final Map INSTANCE_RESERVED_NAMES = new HashMap(RESERVED_NAMES);
+    private static final Map<String, AssignedName> INSTANCE_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
 
     private static abstract class NamedCallback implements Callback {
         static final int STATIC_FIELD = 1;
@@ -240,8 +240,8 @@ public class JavaClass extends JavaObject {
 
     private static abstract class MethodCallback extends NamedCallback {
         private boolean haveLocalMethod;
-        private List methods;
-        protected List aliases;
+        private List<Method> methods;
+        protected List<String> aliases;
         protected JavaMethod javaMethod;
         protected IntHashMap javaMethods;
         protected IntHashMap matchingMethods;
@@ -253,7 +253,7 @@ public class JavaClass extends JavaObject {
         // called only by initializing thread; no synchronization required
         void addMethod(Method method, Class javaClass) {
             if (methods == null) {
-                methods = new ArrayList();
+                methods = new ArrayList<Method>();
             }
             methods.add(method);
             haveLocalMethod |= javaClass == method.getDeclaringClass();
@@ -262,7 +262,7 @@ public class JavaClass extends JavaObject {
         // called only by initializing thread; no synchronization required
         void addAlias(String alias) {
             if (aliases == null) {
-                aliases = new ArrayList();
+                aliases = new ArrayList<String>();
             }
             if (!aliases.contains(alias))
                 aliases.add(alias);
@@ -283,9 +283,8 @@ public class JavaClass extends JavaObject {
                     javaMethod = JavaMethod.create(runtime,(Method)methods.get(0));
                 } else {
                     javaMethods = new IntHashMap();
-                    matchingMethods = new IntHashMap(); 
-                    for (Iterator iter = methods.iterator(); iter.hasNext() ;) {
-                        Method method = (Method)iter.next();
+                    matchingMethods = new IntHashMap();
+                    for (Method method: methods) {
                         // TODO: deal with varargs
                         int arity = method.getParameterTypes().length;
                         RubyArray methodsForArity = (RubyArray)javaMethods.get(arity);
@@ -302,7 +301,7 @@ public class JavaClass extends JavaObject {
 
         void raiseNoMatchingMethodError(IRubyObject proxy, IRubyObject[] args, int start) {
             int len = args.length;
-            List argTypes = new ArrayList(len - start);
+            List<Object> argTypes = new ArrayList<Object>(len - start);
             for (int i = start ; i < len; i++) {
                 argTypes.add(((JavaClass)((JavaObject)args[i]).java_class()).getValue());
             }
@@ -321,8 +320,8 @@ public class JavaClass extends JavaObject {
                 RubyClass singleton = proxy.getSingletonClass();
                 singleton.defineFastMethod(this.name,this,this.visibility);
                 if (aliases != null && isPublic() ) {
-                    for (Iterator iter = aliases.iterator(); iter.hasNext(); ) {
-                        singleton.defineAlias((String)iter.next(), this.name);
+                    for (String alias : aliases) {
+                        singleton.defineAlias(alias, this.name);
                     }
                     aliases = null;
                 }
@@ -371,8 +370,8 @@ public class JavaClass extends JavaObject {
             if (hasLocalMethod()) {
                 proxy.defineFastMethod(this.name,this,this.visibility);
                 if (aliases != null && isPublic()) {
-                    for (Iterator iter = aliases.iterator(); iter.hasNext(); ) {
-                        proxy.defineAlias((String)iter.next(), this.name);
+                    for (String alias: aliases) {
+                        proxy.defineAlias(alias, this.name);
                     }
                     aliases = null;
                 }
@@ -449,11 +448,11 @@ public class JavaClass extends JavaObject {
     
     private final RubyModule JAVA_UTILITIES = getRuntime().getJavaSupport().getJavaUtilitiesModule();
     
-    private Map staticAssignedNames;
-    private Map instanceAssignedNames;
+    private Map<String, AssignedName> staticAssignedNames;
+    private Map<String, AssignedName> instanceAssignedNames;
     private Map staticCallbacks;
     private Map instanceCallbacks;
-    private List constantFields;
+    private List<ConstantField> constantFields;
     // caching constructors, as they're accessed for each new instance
     private RubyArray constructors;
     
@@ -513,10 +512,10 @@ public class JavaClass extends JavaObject {
         proxyLock.unlock();
     }
 
-    protected Map getStaticAssignedNames() {
+    protected Map<String, AssignedName> getStaticAssignedNames() {
         return staticAssignedNames;
     }
-    protected Map getInstanceAssignedNames() {
+    protected Map<String, AssignedName> getInstanceAssignedNames() {
         return instanceAssignedNames;
     }
     
@@ -531,8 +530,8 @@ public class JavaClass extends JavaObject {
     }
     
     private void initializeInterface(Class javaClass) {
-        Map staticNames  = new HashMap(STATIC_RESERVED_NAMES);
-        List constantFields = new ArrayList(); 
+        Map<String, AssignedName> staticNames  = new HashMap<String, AssignedName>(STATIC_RESERVED_NAMES);
+        List<ConstantField> constantFields = new ArrayList<ConstantField>(); 
         Field[] fields;
         try {
             fields = javaClass.getDeclaredFields();
@@ -552,21 +551,21 @@ public class JavaClass extends JavaObject {
 
     private void initializeClass(Class javaClass) {
         Class superclass = javaClass.getSuperclass();
-        Map staticNames;
-        Map instanceNames;
+        Map<String, AssignedName> staticNames;
+        Map<String, AssignedName> instanceNames;
         if (superclass == null) {
-            staticNames = new HashMap();
-            instanceNames = new HashMap();
+            staticNames = new HashMap<String, AssignedName>();
+            instanceNames = new HashMap<String, AssignedName>();
         } else {
             JavaClass superJavaClass = get(getRuntime(),superclass);
-            staticNames = new HashMap(superJavaClass.getStaticAssignedNames());
-            instanceNames = new HashMap(superJavaClass.getInstanceAssignedNames());
+            staticNames = new HashMap<String, AssignedName>(superJavaClass.getStaticAssignedNames());
+            instanceNames = new HashMap<String, AssignedName>(superJavaClass.getInstanceAssignedNames());
         }
         staticNames.putAll(STATIC_RESERVED_NAMES);
         instanceNames.putAll(INSTANCE_RESERVED_NAMES);
         Map staticCallbacks = new HashMap();
         Map instanceCallbacks = new HashMap();
-        List constantFields = new ArrayList(); 
+        List<ConstantField> constantFields = new ArrayList<ConstantField>(); 
         Field[] fields = javaClass.getFields();
         for (int i = fields.length; --i >= 0; ) {
             Field field = fields[i];
@@ -672,8 +671,8 @@ public class JavaClass extends JavaObject {
             return;
         }
 
-        for (Iterator iter = constantFields.iterator(); iter.hasNext(); ) {
-            ((ConstantField)iter.next()).install(proxy);
+        for (ConstantField field: constantFields) {
+            field.install(proxy);
         }
         for (Iterator iter = staticCallbacks.values().iterator(); iter.hasNext(); ) {
             NamedCallback callback = (NamedCallback)iter.next();
@@ -717,7 +716,7 @@ public class JavaClass extends JavaObject {
         // array and static/instance callback hashes at this point. 
     }
 
-    private static void assignAliases(MethodCallback callback, Map assignedNames) {
+    private static void assignAliases(MethodCallback callback, Map<String, AssignedName> assignedNames) {
         String name = callback.name;
         addUnassignedAlias(getRubyCasedName(name),assignedNames,callback);
         // logic adapted from java.beans.Introspector
@@ -728,8 +727,7 @@ public class JavaClass extends JavaObject {
         if (javaPropertyName == null)
             return; // not a Java property name, done with this method
 
-        for (Iterator iter = callback.methods.iterator(); iter.hasNext(); ) {
-            Method method = (Method)iter.next();
+        for (Method method: callback.methods) {
             Class[] argTypes = method.getParameterTypes();
             Class resultType = method.getReturnType();
             int argCount = argTypes.length;
@@ -766,7 +764,7 @@ public class JavaClass extends JavaObject {
         }
     }
     
-    private static void addUnassignedAlias(String name, Map assignedNames,
+    private static void addUnassignedAlias(String name, Map<String, AssignedName> assignedNames,
             MethodCallback callback) {
         if (name != null) {
             AssignedName assignedName = (AssignedName)assignedNames.get(name);
@@ -820,8 +818,8 @@ public class JavaClass extends JavaObject {
         assert this.proxyModule == null;
         this.unfinishedProxyModule = module;
         final Class javaClass = javaClass();
-        for (Iterator iter = constantFields.iterator(); iter.hasNext(); ){
-            ((ConstantField)iter.next()).install(module);
+        for (ConstantField field: constantFields) {
+            field.install(module);
         }
         // setup constants for public inner classes
         final Class[] classes = javaClass.getClasses();

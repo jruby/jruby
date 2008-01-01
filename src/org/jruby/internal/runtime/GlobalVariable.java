@@ -43,7 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public final class GlobalVariable {
     private IAccessor accessor;
-    private ArrayList traces = null;
+    private ArrayList<IRubyObject> traces = null;
     private boolean tracing;
 
     public GlobalVariable(IAccessor accessor) {
@@ -66,7 +66,7 @@ public final class GlobalVariable {
 
     public void addTrace(RubyProc command) {
         if (traces == null) {
-            traces = new ArrayList();
+            traces = new ArrayList<IRubyObject>();
         }
         traces.add(command);
     }

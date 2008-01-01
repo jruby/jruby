@@ -32,7 +32,6 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -43,7 +42,6 @@ public class RubyMath {
     public static RubyModule createMathModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("Math");
         runtime.setMath(result);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyMath.class);
         
         result.defineConstant("E", RubyFloat.newFloat(runtime, Math.E));
         result.defineConstant("PI", RubyFloat.newFloat(runtime, Math.PI));

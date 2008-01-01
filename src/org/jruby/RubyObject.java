@@ -61,7 +61,6 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.util.IdUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.jruby.anno.JRubyMethod;
@@ -138,7 +137,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     
     public class Finalizer implements Finalizable {
         private long id;
-        private List finalizers;
+        private List<RubyProc> finalizers;
         private AtomicBoolean finalized;
         
         public Finalizer(long id) {
@@ -148,7 +147,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         
         public void addFinalizer(RubyProc finalizer) {
             if (finalizers == null) {
-                finalizers = new ArrayList();
+                finalizers = new ArrayList<RubyProc>();
             }
             finalizers.add(finalizer);
         }

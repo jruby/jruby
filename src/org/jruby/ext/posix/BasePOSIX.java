@@ -2,8 +2,6 @@ package org.jruby.ext.posix;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import org.jruby.RubyInstanceConfig;
 
 public abstract class BasePOSIX implements POSIX {
     protected LibC libc;
@@ -33,6 +31,10 @@ public abstract class BasePOSIX implements POSIX {
     public int getgid() {
         return libc.getgid();
     }
+    
+    public String getlogin() {
+        return libc.getlogin();
+    }
 
     public int getpgid() {
         return libc.getpgid();
@@ -48,6 +50,10 @@ public abstract class BasePOSIX implements POSIX {
 
     public int getppid() {
         return libc.getppid();
+    }
+    
+    public Passwd getpwent() {
+        return libc.getpwent();
     }
 
     public int getuid() {

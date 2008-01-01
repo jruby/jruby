@@ -37,7 +37,6 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -58,11 +57,9 @@ public class RubyJRuby {
         runtime.getKernel().callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
         RubyModule jrubyModule = runtime.defineModule("JRuby");
         
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
         jrubyModule.defineAnnotatedMethods(RubyJRuby.class);
 
         RubyClass compiledScriptClass = jrubyModule.defineClassUnder("CompiledScript",runtime.getObject(), runtime.getObject().getAllocator());
-        CallbackFactory compiledScriptCallbackFactory = runtime.callbackFactory(JRubyCompiledScript.class);
 
         compiledScriptClass.attr_accessor(new IRubyObject[]{runtime.newSymbol("name"), runtime.newSymbol("class_name"), runtime.newSymbol("original_script"), runtime.newSymbol("code")});
         compiledScriptClass.defineAnnotatedMethods(JRubyCompiledScript.class);
@@ -73,7 +70,6 @@ public class RubyJRuby {
     public static RubyModule createJRubyExt(Ruby runtime) {
         runtime.getKernel().callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
         RubyModule mJRubyExt = runtime.getOrCreateModule("JRuby").defineModuleUnder("Extensions");
-        CallbackFactory cf = runtime.callbackFactory(JRubyExtensions.class);
         
         mJRubyExt.defineAnnotatedMethods(JRubyExtensions.class);
 

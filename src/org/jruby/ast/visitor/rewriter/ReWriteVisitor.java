@@ -123,10 +123,9 @@ public class ReWriteVisitor implements NodeVisitor {
 	}
 
     private void printCommentsBefore(Node iVisited) {
-        
-		for (Iterator it = iVisited.getComments().iterator(); it.hasNext(); ) {
-			CommentNode n = (CommentNode) it.next();
-			if(getStartLine(n) < getStartLine(iVisited)) {
+
+        for (CommentNode n: iVisited.getComments()) {
+			if (getStartLine(n) < getStartLine(iVisited)) {
 				visitNode(n);
 				print(n.getContent());
                 printNewlineAndIndentation();
@@ -137,8 +136,7 @@ public class ReWriteVisitor implements NodeVisitor {
 	protected boolean printCommentsAfter(Node iVisited) {
 		boolean hasComment = false;
         
-		for (Iterator it = iVisited.getComments().iterator(); it.hasNext(); ) {
-			CommentNode n = (CommentNode) it.next();
+        for (CommentNode n: iVisited.getComments()) {
 			if(getStartLine(n) >= getEndLine(iVisited)) {
 				print(' ');
 				visitNode(n);
@@ -240,9 +238,9 @@ public class ReWriteVisitor implements NodeVisitor {
 		leaveCall();
 	}
 
-	public void visitAndPrintWithSeparator(Iterator it) {
+	public void visitAndPrintWithSeparator(Iterator<Node> it) {
 		while (it.hasNext()) {
-			Node n = (Node) it.next();
+			Node n = it.next();
 			factory.createIgnoreCommentsReWriteVisitor().visitNode(n);
 			if (it.hasNext())
 				print(config.getFormatHelper().getListSeparator());
@@ -286,8 +284,8 @@ public class ReWriteVisitor implements NodeVisitor {
 	}
 
 
-	private ArrayList collectAllArguments(ArgsNode iVisited) {
-		ArrayList arguments = new ArrayList();
+	private ArrayList<Node> collectAllArguments(ArgsNode iVisited) {
+		ArrayList<Node> arguments = new ArrayList<Node>();
         
 		if (iVisited.getArgs() != null) arguments.addAll(iVisited.getArgs().childNodes());
         
@@ -303,9 +301,7 @@ public class ReWriteVisitor implements NodeVisitor {
 	}
 	
 	private boolean hasNodeCommentsAtEnd(Node n) {
-		for (Iterator it = n.getComments().iterator(); it.hasNext(); ) {
-			Node comment = (Node) it.next();
-            
+	    for (Node comment: n.getComments()) {
 			if (getStartLine(comment) == getStartLine(n)) return true;
 		}
         
@@ -324,8 +320,8 @@ public class ReWriteVisitor implements NodeVisitor {
 	
 	public Instruction visitArgsNode(ArgsNode iVisited) {
 
-		for (Iterator it = collectAllArguments(iVisited).iterator(); it.hasNext(); ) {
-			Node n = (Node) it.next();
+		for (Iterator<Node> it = collectAllArguments(iVisited).iterator(); it.hasNext(); ) {
+			Node n = it.next();
             
 			if (n instanceof ArgumentNode) {
 				print(((ArgumentNode) n).getName());
@@ -534,9 +530,7 @@ public class ReWriteVisitor implements NodeVisitor {
         
 	private boolean printCommentsIn(Node iVisited) {
 		boolean hadComment = false;
-		for (Iterator it = iVisited.getComments().iterator(); it.hasNext(); ) {
-			CommentNode n = (CommentNode) it.next();
-            
+		for (CommentNode n: iVisited.getComments()) {
 			if(getStartLine(n) > getStartLine(iVisited) && getEndLine(n) < getEndLine(iVisited)) {
 				hadComment = true;
 				visitNode(n);
@@ -631,8 +625,8 @@ public class ReWriteVisitor implements NodeVisitor {
         
 		config.getPrintQuotesInString().set(false);
 		leaveCall();
-		for (Iterator it = iVisited.childNodes().iterator(); it.hasNext(); ) {
-            visitNode((Node) it.next());
+		for (Node child: iVisited.childNodes()) {
+            visitNode(child);
 		}
 		enterCall();
 		config.getPrintQuotesInString().revert();
@@ -648,8 +642,8 @@ public class ReWriteVisitor implements NodeVisitor {
         
         config.getPrintQuotesInString().set(false);
         leaveCall();
-        for (Iterator it = iVisited.childNodes().iterator(); it.hasNext(); ) {
-            visitNode((Node) it.next());
+        for (Node child: iVisited.childNodes()) {
+            visitNode(child);
         }        
         enterCall();
         config.getPrintQuotesInString().revert();
@@ -692,10 +686,8 @@ public class ReWriteVisitor implements NodeVisitor {
 	}
         
 	protected void printCommentsAtEnd(Node n) {
-		for (Iterator it = n.getComments().iterator(); it.hasNext(); ) {
-			CommentNode comment = (CommentNode) it.next();
-            
-			if(getStartLine(n) == getStartLine(comment)) {
+		for (CommentNode comment: n.getComments()) {
+			if (getStartLine(n) == getStartLine(comment)) {
 				print(' ');
 				visitNode(comment);
                 print(comment.getContent());

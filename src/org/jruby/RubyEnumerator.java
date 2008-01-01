@@ -31,7 +31,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -58,8 +57,6 @@ public class RubyEnumerator extends RubyObject {
     };
 
     public static void defineEnumerator(Ruby runtime) {
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyEnumerator.class);
-
         RubyModule kernel = runtime.getKernel();
         kernel.defineAnnotatedMethod(RubyEnumerator.class, "obj_to_enum");
 

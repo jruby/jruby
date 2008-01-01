@@ -32,7 +32,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.CallbackFactory;
 
 /**
  * @author Anders Bengtsson
@@ -48,7 +47,6 @@ public class RubyNameError extends RubyException {
 
     public static RubyClass createNameErrorClass(Ruby runtime, RubyClass standardErrorClass) {
         RubyClass nameErrorClass = runtime.defineClass("NameError", standardErrorClass, NAMEERROR_ALLOCATOR);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyNameError.class);		
 
         nameErrorClass.defineAnnotatedMethods(RubyNameError.class);
 

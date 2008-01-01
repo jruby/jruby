@@ -1,10 +1,10 @@
 package org.jruby.runtime.scope;
 
-import org.jruby.runtime.*;
 import org.jruby.RubyArray;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

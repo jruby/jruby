@@ -130,7 +130,7 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
         
         int count = expectedArgsCount + iseq.args_arg_opts + iseq.args_rest;
 
-        ArrayList allArgs = new ArrayList();
+        ArrayList<IRubyObject> allArgs = new ArrayList<IRubyObject>();
         
         // Combine static and optional args into a single list allArgs
         for (int i = 0; i < count && i < args.length; i++) {

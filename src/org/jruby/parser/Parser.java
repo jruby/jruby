@@ -41,7 +41,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
 import org.jruby.common.NullWarnings;
-import org.jruby.lexer.yacc.ByteListLexerSource;
+//import org.jruby.lexer.yacc.ByteListLexerSource;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.DynamicScope;

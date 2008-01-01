@@ -33,7 +33,7 @@ import java.util.Stack;
 
 public class BooleanStateStack {
 	
-	private final Stack states = new Stack();
+	private final Stack<Boolean> states = new Stack<Boolean>();
 	private final boolean defaultValue;
 	
 

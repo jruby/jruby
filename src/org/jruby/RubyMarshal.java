@@ -42,7 +42,6 @@ import org.jruby.anno.JRubyMethod;
 
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -63,7 +62,6 @@ public class RubyMarshal {
     public static RubyModule createMarshalModule(Ruby runtime) {
         RubyModule module = runtime.defineModule("Marshal");
         runtime.setMarshal(module);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyMarshal.class);
 
         module.defineAnnotatedMethods(RubyMarshal.class);
         module.defineConstant("MAJOR_VERSION", runtime.newFixnum(Constants.MARSHAL_MAJOR));

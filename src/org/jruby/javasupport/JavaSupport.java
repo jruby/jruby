@@ -50,7 +50,7 @@ import org.jruby.runtime.callback.Callback;
 public class JavaSupport {
     private final Ruby runtime;
 
-    private final Map exceptionHandlers = new HashMap();
+    private final Map<String, RubyProc> exceptionHandlers = new HashMap<String, RubyProc>();
     
     private final ObjectProxyCache<IRubyObject,RubyClass> objectProxyCache = 
         // TODO: specifying soft refs, may want to compare memory consumption,
@@ -74,7 +74,7 @@ public class JavaSupport {
     // methods; etc.).
     // TODO: faster custom concurrent map
     private final ConcurrentHashMap<Class,JavaClass> javaClassCache =
-        new ConcurrentHashMap<Class,JavaClass>(128);
+        new ConcurrentHashMap<Class, JavaClass>(128);
     
     // FIXME: needs to be rethought
     private final Map matchCache = Collections.synchronizedMap(new HashMap(128));
@@ -144,7 +144,7 @@ public class JavaSupport {
             throw (RaiseException) exception;
         }
         Class excptnClass = exception.getClass();
-        RubyProc handler = (RubyProc)exceptionHandlers.get(excptnClass.getName());
+        RubyProc handler = exceptionHandlers.get(excptnClass.getName());
         while (handler == null &&
                excptnClass != Throwable.class) {
             excptnClass = excptnClass.getSuperclass();

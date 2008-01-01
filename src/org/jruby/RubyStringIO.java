@@ -32,10 +32,8 @@ package org.jruby;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -53,9 +51,7 @@ public class RubyStringIO extends RubyObject {
     };
     
     public static RubyClass createStringIOClass(final Ruby runtime) {
-        final RubyClass stringIOClass = runtime.defineClass("StringIO", runtime.getObject(), STRINGIO_ALLOCATOR);
-        
-        final CallbackFactory callbackFactory = runtime.callbackFactory(RubyStringIO.class);
+        RubyClass stringIOClass = runtime.defineClass("StringIO", runtime.getObject(), STRINGIO_ALLOCATOR);
         
         stringIOClass.defineAnnotatedMethods(RubyStringIO.class);
 
@@ -98,7 +94,8 @@ public class RubyStringIO extends RubyObject {
             internal = args[0].convertToString();
             if (args.length > 1) {
                 if (args[1] instanceof RubyFixnum) {
-                    int numericModes = RubyNumeric.fix2int(args[1]);
+                    // FIXME: We should use this somehow. yes?
+                    //int numericModes = RubyNumeric.fix2int(args[1]);
                     
                 }
                 String modes = args[1].convertToString().toString();

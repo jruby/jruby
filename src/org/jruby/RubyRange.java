@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
@@ -313,7 +312,6 @@ public class RubyRange extends RubyObject {
     
     @JRubyMethod(name = "to_s", frame = true)
     public IRubyObject to_s(Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();        
         RubyString str = RubyString.objAsString(begin).strDup();
         RubyString str2 = RubyString.objAsString(end);
 

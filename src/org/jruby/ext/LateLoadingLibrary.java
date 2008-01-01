@@ -48,9 +48,8 @@ public class LateLoadingLibrary implements Library {
             if (classLoader == null && Ruby.isSecurityRestricted()) {
                 classLoader = runtime.getInstanceConfig().getLoader();
             }
-            Class libraryClass = classLoader.loadClass(className);
             
-            Library library = (Library)libraryClass.newInstance();
+            Library library = (Library) classLoader.loadClass(className).newInstance();
             
             library.load(runtime, wrap);
         } catch (Throwable e) {

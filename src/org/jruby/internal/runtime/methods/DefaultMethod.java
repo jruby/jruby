@@ -39,12 +39,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
-import org.jruby.compiler.ASTInspector;
-import org.jruby.compiler.CompilerCallback;
-import org.jruby.compiler.MethodCompiler;
-import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.JITCompiler;
-import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
@@ -58,8 +53,6 @@ import org.jruby.runtime.EventHook;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.JRubyClassLoader;
-import org.jruby.util.JavaNameMangler;
 
 /**
  *

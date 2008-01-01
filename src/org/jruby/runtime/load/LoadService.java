@@ -39,11 +39,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -131,11 +129,11 @@ public class LoadService {
     protected final RubyArray loadedFeatures;
     protected final List loadedFeaturesInternal;
 //    protected final Set firstLineLoadedFeatures = Collections.synchronizedSet(new HashSet());
-    protected final Map builtinLibraries = new HashMap();
+    protected final Map<String, Library> builtinLibraries = new HashMap<String, Library>();
 
-    protected final Map jarFiles = new HashMap();
+    protected final Map<String, JarFile> jarFiles = new HashMap<String, JarFile>();
 
-    protected final Map autoloadMap = new HashMap();
+    protected final Map<String, IAutoloadMethod> autoloadMap = new HashMap<String, IAutoloadMethod>();
 
     protected final Ruby runtime;
     
@@ -358,7 +356,7 @@ e.printStackTrace();
     }
 
     public IAutoloadMethod autoloadFor(String name) {
-        return (IAutoloadMethod)autoloadMap.get(name);
+        return autoloadMap.get(name);
     }
     
     public void removeAutoLoadFor(String name) {
@@ -366,7 +364,7 @@ e.printStackTrace();
     }
 
     public IRubyObject autoload(String name) {
-        IAutoloadMethod loadMethod = (IAutoloadMethod)autoloadMap.remove(name);
+        IAutoloadMethod loadMethod = autoloadMap.remove(name);
         if (loadMethod != null) {
             return loadMethod.load(runtime, name);
         }
@@ -386,9 +384,7 @@ e.printStackTrace();
     }
 
     private Library findLibrary(String file, boolean checkCWD) {
-        if (builtinLibraries.containsKey(file)) {
-            return (Library) builtinLibraries.get(file);
-        }
+        if (builtinLibraries.containsKey(file)) return builtinLibraries.get(file);
         
         LoadServiceResource resource = findFile(file, checkCWD);
         if (resource == null) {
@@ -465,7 +461,7 @@ e.printStackTrace();
             // we should try to make LoadPath a special array object.
             String entry = ((IRubyObject)pathIter.next()).toString();
             if (entry.startsWith("jar:") || (entry.startsWith("file:") && entry.indexOf("!/") != -1)) {
-                JarFile current = (JarFile)jarFiles.get(entry);
+                JarFile current = jarFiles.get(entry);
                 String after = entry.startsWith("file:") ? entry.substring(entry.indexOf("!/") + 2) + "/" : "";
                 String before = entry.startsWith("file:") ? entry.substring(0, entry.indexOf("!/")) : entry;
 

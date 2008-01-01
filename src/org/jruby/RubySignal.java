@@ -30,7 +30,6 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -42,7 +41,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubySignal {
     public static void createSignal(Ruby runtime) {
         RubyModule mSignal = runtime.defineModule("Signal");
-        CallbackFactory cf = runtime.callbackFactory(RubySignal.class);
         
         mSignal.defineAnnotatedMethods(RubySignal.class);
     }

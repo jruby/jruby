@@ -55,6 +55,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyNil;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
@@ -79,10 +80,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  */
 public class JavaProxyClass extends JavaProxyReflectionObject {
-    static ThreadLocal runtimeTLS = new ThreadLocal();
+    static ThreadLocal<Ruby> runtimeTLS = new ThreadLocal<Ruby>();
     private final Class proxyClass;
-    private ArrayList methods = new ArrayList();
-    private HashMap methodMap = new HashMap();
+    private ArrayList<JavaProxyMethod> methods = new ArrayList<JavaProxyMethod>();
+    private HashMap<String, List<JavaProxyMethod>> methodMap = new HashMap<String, List<JavaProxyMethod>>();
 
     /* package scope */
     JavaProxyClass(Class proxyClass) {
@@ -97,12 +98,12 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     private static Ruby getThreadLocalRuntime() {
-        return (Ruby) runtimeTLS.get();
+        return runtimeTLS.get();
     }
 
     public static JavaProxyClass getProxyClass(Ruby runtime, Class superClass,
             Class[] interfaces, Set names) throws InvocationTargetException {
-        Object save = runtimeTLS.get();
+        Ruby save = runtimeTLS.get();
         runtimeTLS.set(runtime);
         try {
             ClassLoader loader = runtime.getJRubyClassLoader();
@@ -168,11 +169,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     public JavaProxyMethod[] getMethods() {
-        return (JavaProxyMethod[]) methods.toArray(new JavaProxyMethod[methods.size()]);
+        return methods.toArray(new JavaProxyMethod[methods.size()]);
     }
 
     public JavaProxyMethod getMethod(String name, Class[] parameterTypes) {
-        List methods = (List)methodMap.get(name);
+        List<JavaProxyMethod> methods = methodMap.get(name);
         if (methods != null) {
             for (int i = methods.size(); --i >= 0; ) {
                 ProxyMethodImpl jpm = (ProxyMethodImpl) methods.get(i);
@@ -392,9 +393,9 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
             JavaProxyMethod jpm = new ProxyMethodImpl(getRuntime(), this, m, sm);
             methods.add(jpm);
-            List methodsWithName = (List)methodMap.get(name);
+            List<JavaProxyMethod> methodsWithName = methodMap.get(name);
             if (methodsWithName == null) {
-                methodsWithName = new ArrayList(2);
+                methodsWithName = new ArrayList<JavaProxyMethod>(2);
                 methodMap.put(name,methodsWithName);
             }
             methodsWithName.add(jpm);
@@ -411,7 +412,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     private static Class[] parse(final ClassLoader loader, String desc)
             throws ClassNotFoundException {
-        List al = new ArrayList();
+        List<Class> al = new ArrayList<Class>();
         int idx = 1;
         while (desc.charAt(idx) != ')') {
 
@@ -429,13 +430,9 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 final String name = desc.substring(idx + 1, semi);
                 idx = semi;
                 try {
-                    type = (Class) AccessController
-                            .doPrivileged(new PrivilegedExceptionAction() {
-                                public Object run()
-                                        throws ClassNotFoundException {
-                                    return Class.forName(
-                                            name.replace('/', '.'), false,
-                                            loader);
+                    type = AccessController.doPrivileged(new PrivilegedExceptionAction<Class>() {
+                                public Class run() throws ClassNotFoundException {
+                                    return Class.forName(name.replace('/', '.'), false, loader);
                                 }
                             });
                 } catch (PrivilegedActionException e) {
@@ -541,8 +538,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         List<IRubyObject> ancestors = clazz.getAncestorList();
         boolean skipRemainingClasses = false;
-        for (Iterator iter = ancestors.iterator(); iter.hasNext(); ) {
-            RubyModule ancestor = (RubyModule)iter.next();
+        for (IRubyObject ancestorObject: ancestors) {
+            RubyModule ancestor = (RubyModule) ancestorObject;
             if (ancestor instanceof RubyClass) {
                 if (skipRemainingClasses) continue;
                 // we only collect methods and interfaces for 
@@ -609,12 +606,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 if (var == null) {
                     // lock in the overridden methods for the new class, and any as-yet
                     // uninstantiated ancestor class.
-                    Map methods;
+                    Map<String, DynamicMethod> methods;
                     RubyArray methodNames;
                     synchronized(methods = ancestor.getMethods()) {
                         methodNames = RubyArray.newArrayLight(runtime,methods.size());
-                        for (Iterator meths = methods.keySet().iterator(); meths.hasNext(); ) {
-                            String methodName = (String)meths.next();
+                        for (String methodName: methods.keySet()) {
                             if (!EXCLUDE_METHODS.contains(methodName)) {
                                 names.add(methodName);
                                 methodNames.add(runtime.newString(methodName));
@@ -641,10 +637,9 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                     }
                 }
             } else if (!EXCLUDE_MODULES.contains(ancestor.getName())) {
-                Map methods;
+                Map<String, DynamicMethod> methods;
                 synchronized(methods = ancestor.getMethods()) {
-                    for (Iterator meths = methods.keySet().iterator(); meths.hasNext(); ) {
-                        String methodName = (String)meths.next();
+                    for (String methodName: methods.keySet()) {
                         if (!EXCLUDE_METHODS.contains(methodName)) {
                             names.add(methodName);
                         }

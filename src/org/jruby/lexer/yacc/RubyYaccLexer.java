@@ -46,7 +46,6 @@ import org.jruby.ast.CommentNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.NthRefNode;
-import org.jruby.ast.StrNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.Tokens;
@@ -572,7 +571,7 @@ public class RubyYaccLexer {
      * Not normally used, but is left in here since it can be useful in debugging
      * grammar and lexing problems.
      *
-     */
+     *
     private void printToken(int token) {
         //System.out.print("LOC: " + support.getPosition() + " ~ ");
         
@@ -688,7 +687,7 @@ public class RubyYaccLexer {
         printToken(token);
         
         return token;
-    }
+    }*/
 
     /**
      *  Returns the next token. Also sets yyVal is needed.

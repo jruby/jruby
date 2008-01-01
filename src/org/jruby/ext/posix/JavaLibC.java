@@ -97,6 +97,10 @@ public class JavaLibC implements LibC {
         
         return -1;
     }
+    
+    public String getlogin() {
+        return System.getProperty("user.name");
+    }
 
     public int getpgid() {
         handler.unimplementedError("getpgid");
@@ -118,6 +122,10 @@ public class JavaLibC implements LibC {
         handler.unimplementedError("getppid");
         
         return -1;
+    }
+
+    public NativePasswd getpwent() {
+        return new JavaPasswd(this, handler);
     }
 
     public int getuid() {

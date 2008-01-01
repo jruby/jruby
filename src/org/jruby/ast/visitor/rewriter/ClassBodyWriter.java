@@ -32,8 +32,8 @@ public class ClassBodyWriter {
 	}
 	
 	private void writeContent(BlockNode node) {
-		for (Iterator it = node.childNodes().iterator(); it.hasNext(); ) {
-			visitor.visitNode((Node) it.next());
+		for (Iterator<Node> it = node.childNodes().iterator(); it.hasNext(); ) {
+			visitor.visitNode(it.next());
             
 			if (it.hasNext()) {
 				context.getOutput().print(context.getFormatHelper().classBodyElementsSeparator());

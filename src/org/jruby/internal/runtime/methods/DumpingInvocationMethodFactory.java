@@ -32,7 +32,6 @@ import java.io.FileOutputStream;
 
 import org.jruby.Ruby;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.MethodVisitor;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

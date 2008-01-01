@@ -11,7 +11,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyKernel;
-import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -43,7 +42,7 @@ public class WeakRef extends RubyObject {
             
             weakrefClass.defineAnnotatedMethods(WeakRef.class);
             
-            RubyClass referrorClass = runtime.defineClass("RefError", runtime.getStandardError(), runtime.getStandardError().getAllocator());
+            runtime.defineClass("RefError", runtime.getStandardError(), runtime.getStandardError().getAllocator());
         }
     }
     

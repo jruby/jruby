@@ -31,7 +31,6 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.CallbackFactory;
 
 public class RubyLocalJumpError extends RubyException {
     private static ObjectAllocator LOCALJUMPERROR_ALLOCATOR = new ObjectAllocator() {
@@ -42,7 +41,6 @@ public class RubyLocalJumpError extends RubyException {
 
     public static RubyClass createLocalJumpErrorClass(Ruby runtime, RubyClass standardErrorClass) {
         RubyClass nameErrorClass = runtime.defineClass("LocalJumpError", standardErrorClass, LOCALJUMPERROR_ALLOCATOR);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyLocalJumpError.class);	
         
         nameErrorClass.defineAnnotatedMethods(RubyLocalJumpError.class);
 

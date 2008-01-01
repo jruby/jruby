@@ -35,7 +35,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -47,7 +46,6 @@ public class RubyComparable {
     public static RubyModule createComparable(Ruby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");
         runtime.setComparable(comparableModule);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyComparable.class);
         
         comparableModule.defineAnnotatedMethods(RubyComparable.class);
 

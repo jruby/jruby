@@ -35,7 +35,6 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallBlock;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -50,7 +49,6 @@ public class RubyEnumerable {
     public static RubyModule createEnumerableModule(Ruby runtime) {
         RubyModule enumModule = runtime.defineModule("Enumerable");
         runtime.setEnumerable(enumModule);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyEnumerable.class);
         
         enumModule.defineAnnotatedMethods(RubyEnumerable.class);
 
@@ -105,11 +103,9 @@ public class RubyEnumerable {
                 }
             });
             
-            Arrays.sort(valuesAndCriteria, new Comparator() {
-                public int compare(Object o1, Object o2) {
-                    IRubyObject ro1 = ((IRubyObject[]) o1)[1];
-                    IRubyObject ro2 = ((IRubyObject[]) o2)[1];
-                    return RubyFixnum.fix2int(ro1.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", ro2));
+            Arrays.sort(valuesAndCriteria, new Comparator<IRubyObject[]>() {
+                public int compare(IRubyObject[] o1, IRubyObject[] o2) {
+                    return RubyFixnum.fix2int(o1[1].callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", o2[1]));
                 }
             });
             
@@ -130,11 +126,9 @@ public class RubyEnumerable {
                 valuesAndCriteria[i][1] = block.yield(context, val);
             }
             
-            Arrays.sort(valuesAndCriteria, new Comparator() {
-                public int compare(Object o1, Object o2) {
-                    IRubyObject ro1 = ((IRubyObject[]) o1)[1];
-                    IRubyObject ro2 = ((IRubyObject[]) o2)[1];
-                    return RubyFixnum.fix2int(ro1.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", ro2));
+            Arrays.sort(valuesAndCriteria, new Comparator<IRubyObject[]>() {
+                public int compare(IRubyObject[] o1, IRubyObject[] o2) {
+                    return RubyFixnum.fix2int(o1[1].callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", o2[1]));
                 }
             });
             

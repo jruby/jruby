@@ -40,6 +40,7 @@ public interface LibC extends Library {
     public int geteuid();
     public int seteuid(int euid);
     public int getgid();
+    public String getlogin();
     public int setgid(int gid);
     public int getpgid();
     public int getpgid(int pid);
@@ -48,6 +49,7 @@ public interface LibC extends Library {
     public int setpgrp(int pid, int pgrp);
     public int getppid();
     public int getpid();
+    public NativePasswd getpwent();
     public int getuid();
     public int setsid();
     public int setuid(int uid);

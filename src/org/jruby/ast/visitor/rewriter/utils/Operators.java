@@ -32,7 +32,7 @@ import java.util.HashSet;
 
 public class Operators {
 	
-	private static HashSet operatorSet = new HashSet();
+	private static HashSet<String> operatorSet = new HashSet<String>();
 	static {
 		String[] operators = new String[] { "**", "<=>", "==", "=~", "===", ">=", "<=", "&", "%", 
                 "/", "+", "-", "*", "<", ">", "<<", ">>", "|"};

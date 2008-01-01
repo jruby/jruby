@@ -193,16 +193,6 @@ public class RubyString extends RubyObject {
         shared.infectBy(this);
         return shared;
     }
-    
-    private void tmpLock() {
-        if ((flags & TMPLOCK_STR_F) != 0) throw getRuntime().newRuntimeError("temporal locking already locked string");
-        flags |= TMPLOCK_STR_F;
-    }
-    
-    private void tmpUnlock() {
-        if ((flags & TMPLOCK_STR_F) == 0) throw getRuntime().newRuntimeError("temporal unlocking already unlocked string");
-        flags &= ~TMPLOCK_STR_F;
-    }
 
     private final void modifyCheck() {
         if ((flags & TMPLOCK_OR_FROZEN_STR_F) != 0) {

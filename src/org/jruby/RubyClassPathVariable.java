@@ -33,7 +33,6 @@ import java.net.URL;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -45,8 +44,6 @@ public class RubyClassPathVariable extends RubyObject {
         RubyClassPathVariable self = new RubyClassPathVariable(runtime);
         runtime.getEnumerable().extend_object(self);
         runtime.defineReadonlyVariable("$CLASSPATH", self);
-        
-        CallbackFactory cf = runtime.callbackFactory(RubyClassPathVariable.class);
         
         self.getMetaClass().defineAnnotatedMethods(RubyClassPathVariable.class);
     }

@@ -145,7 +145,7 @@ public class RubyClass extends RubyModule {
     private final Ruby runtime;
     private ObjectAllocator allocator; // the default allocator
     protected ObjectMarshal marshal;
-    private Set subclasses;
+    private Set<RubyClass> subclasses;
 
     /** separate path for MetaClass and IncludedModuleWrapper construction
      *  (rb_class_boot version for MetaClasses)
@@ -314,10 +314,10 @@ public class RubyClass extends RubyModule {
     
     public Collection subclasses(boolean includeDescendants) {
         if (subclasses != null) {
-            Collection mine = new ArrayList(subclasses);
+            Collection<RubyClass> mine = new ArrayList<RubyClass>(subclasses);
             if (includeDescendants) {
-                for (Object i: subclasses) {
-                    mine.addAll(((RubyClass)i).subclasses(includeDescendants));
+                for (RubyClass i: subclasses) {
+                    mine.addAll(i.subclasses(includeDescendants));
                 }
             }
 
@@ -328,7 +328,7 @@ public class RubyClass extends RubyModule {
     }
     
     public synchronized void addSubclass(RubyClass subclass) {
-        if (subclasses == null) subclasses = new WeakHashSet();
+        if (subclasses == null) subclasses = new WeakHashSet<RubyClass>();
         subclasses.add(subclass);
     }
     

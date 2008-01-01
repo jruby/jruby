@@ -32,11 +32,12 @@
 package org.jruby;
 
 import java.util.Iterator;
+import java.util.List;
+
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -50,7 +51,6 @@ public class RubyObjectSpace {
     public static RubyModule createObjectSpaceModule(Ruby runtime) {
         RubyModule objectSpaceModule = runtime.defineModule("ObjectSpace");
         runtime.setObjectSpaceModule(objectSpaceModule);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyObjectSpace.class);
         
         objectSpaceModule.defineAnnotatedMethods(RubyObjectSpace.class);
 
@@ -117,13 +117,12 @@ public class RubyObjectSpace {
         }
         Ruby runtime = recv.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        Iterator iter;
         int count = 0;
         if (rubyClass != runtime.getClassClass()) {
             if (!runtime.isObjectSpaceEnabled()) {
                 throw runtime.newRuntimeError("ObjectSpace is disabled; each_object will only work with Class, pass +O to enable");
             }
-            iter = recv.getRuntime().getObjectSpace().iterator(rubyClass);
+            Iterator iter = recv.getRuntime().getObjectSpace().iterator(rubyClass);
             
             IRubyObject obj = null;
             while ((obj = (IRubyObject)iter.next()) != null) {
@@ -131,7 +130,7 @@ public class RubyObjectSpace {
                 block.yield(context, obj);
             }
         } else {
-            iter = runtime.getObject().subclasses(true).iterator();
+            Iterator iter = runtime.getObject().subclasses(true).iterator();
             
             while (iter.hasNext()) {
                 count++;

@@ -44,7 +44,6 @@ public class RubyPrecision {
     public static RubyModule createPrecisionModule(Ruby runtime) {
         RubyModule precisionModule = runtime.defineModule("Precision");
         runtime.setPrecision(precisionModule);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyPrecision.class);
         
         precisionModule.defineAnnotatedMethods(RubyPrecision.class);
         

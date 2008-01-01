@@ -38,7 +38,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.jruby.anno.JRubyMethod;
 
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
@@ -77,7 +76,6 @@ public class RubyNKF {
 
     public static void createNKF(Ruby runtime) {
         RubyModule nkfModule = runtime.defineModule("NKF");
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyNKF.class);
 
         nkfModule.defineConstant("AUTO", RubyFixnum.newFixnum(runtime, AUTO.getValue()));
         nkfModule.defineConstant("JIS", RubyFixnum.newFixnum(runtime, JIS.getValue()));
@@ -155,9 +153,9 @@ public class RubyNKF {
             throw runtime.newTypeError("can't convert " + str.getMetaClass() + " into String");
         }
         
-        Map options = parseOpt(opt.convertToString().toString());
+        Map<String, NKFCharset> options = parseOpt(opt.convertToString().toString());
         
-        NKFCharset nc = (NKFCharset)options.get("input");
+        NKFCharset nc = options.get("input");
         if (nc.getValue() == AUTO.getValue()) {
             KCode kcode = runtime.getKCode();
             if (kcode == KCode.SJIS) {
@@ -169,7 +167,7 @@ public class RubyNKF {
             }
         }
         String decodeCharset = nc.getCharset();
-        String encodeCharset = ((NKFCharset)options.get("output")).getCharset();
+        String encodeCharset = options.get("output").getCharset();
         
         return convert(decodeCharset, encodeCharset, str);
     }
@@ -211,8 +209,8 @@ public class RubyNKF {
         return n;
     }
 
-    private static Map parseOpt(String s) {
-        Map options = new HashMap();
+    private static Map<String, NKFCharset> parseOpt(String s) {
+        Map<String, NKFCharset> options = new HashMap<String, NKFCharset>();
 
         // default options
         options.put("input", AUTO);

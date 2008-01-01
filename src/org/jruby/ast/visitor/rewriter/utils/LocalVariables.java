@@ -34,7 +34,7 @@ import org.jruby.parser.StaticScope;
 
 public class LocalVariables {
 	
-	private final HashMap localVariablesMap = new HashMap();
+	private final HashMap<Integer, String> localVariablesMap = new HashMap<Integer, String>();
 
 	public void addLocalVariable(int count, String name) {
 		localVariablesMap.put(new Integer(count), name);

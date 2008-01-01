@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -74,7 +73,6 @@ public class RubyProc extends RubyObject implements JumpTarget {
     public static RubyClass createProcClass(Ruby runtime) {
         RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), PROC_ALLOCATOR);
         runtime.setProc(procClass);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyProc.class);
         
         procClass.defineAnnotatedMethods(RubyProc.class);
         

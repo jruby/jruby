@@ -35,7 +35,6 @@ import java.security.NoSuchAlgorithmException;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -56,8 +55,6 @@ public class RubyDigest {
         RubyModule mDigest = runtime.defineModule("Digest");
         RubyClass cDigestBase = mDigest.defineClassUnder("Base",runtime.getObject(), Base.BASE_ALLOCATOR);
 
-        CallbackFactory basecb = runtime.callbackFactory(Base.class);
-        
         cDigestBase.defineAnnotatedMethods(Base.class);
     }
 

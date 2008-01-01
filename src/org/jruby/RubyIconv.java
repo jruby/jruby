@@ -43,7 +43,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -68,12 +67,10 @@ public class RubyIconv extends RubyObject {
 
     public static void createIconv(Ruby runtime) {
         RubyClass iconvClass = runtime.defineClass("Iconv", runtime.getObject(), ICONV_ALLOCATOR);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyIconv.class);
         
         iconvClass.defineAnnotatedMethods(RubyIconv.class);
 
         RubyModule failure = iconvClass.defineModuleUnder("Failure");
-        CallbackFactory failureCallbackFactory = runtime.callbackFactory(RubyFailure.class);
         RubyClass argumentError = runtime.fastGetClass("ArgumentError");
 
         String[] iconvErrors = {"IllegalSequence", "InvalidCharacter", "InvalidEncoding", 

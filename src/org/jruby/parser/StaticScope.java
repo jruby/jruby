@@ -35,7 +35,6 @@ import org.jruby.ast.AssignableNode;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.DynamicScope;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.

@@ -229,7 +229,7 @@ public class RubySocket extends RubyBasicSocket {
                 }
             }
             InetAddress[] addrs = InetAddress.getAllByName(host.isNil() ? null : host.convertToString().toString());
-            List l = new ArrayList();
+            List<IRubyObject> l = new ArrayList<IRubyObject>();
             for(int i=0;i<addrs.length;i++) {
                 IRubyObject[] c;
                 if(sock_stream) {

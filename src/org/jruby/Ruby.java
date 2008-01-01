@@ -202,6 +202,8 @@ public final class Ruby {
 
     private RubyClass dirClass;
 
+    private RubyModule etcModule;
+
     private RubyClass fileClass;
     private RubyClass fileStatClass;
     private RubyModule fileTestModule;
@@ -215,6 +217,7 @@ public final class Ruby {
 
     private RubyClass structClass;
     private IRubyObject tmsStruct;
+    private IRubyObject passwdStruct;
 
     private RubyModule gcModule;
     private RubyModule objectSpaceModule;
@@ -655,6 +658,14 @@ public final class Ruby {
     public IRubyObject getUndef() {
         return undef;
     }
+    
+    public RubyModule getEtc() {
+        return etcModule;
+    }
+    
+    public void setEtc(RubyModule etcModule) {
+        this.etcModule = etcModule;
+    }
 
     public RubyClass getObject() {
         return objectClass;
@@ -890,8 +901,8 @@ public final class Ruby {
     }
     void setFileTest(RubyModule fileTestModule) {
         this.fileTestModule = fileTestModule;
-    }    
-
+    }
+    
     public RubyClass getIO() {
         return ioClass;
     }
@@ -932,7 +943,14 @@ public final class Ruby {
     }
     void setTmsStruct(RubyClass tmsStruct) {
         this.tmsStruct = tmsStruct;
-    }    
+    }
+    
+    public IRubyObject getPasswdStruct() {
+        return passwdStruct;
+    }
+    void setPasswdStruct(RubyClass passwdStruct) {
+        this.passwdStruct = passwdStruct;
+    }
 
     public RubyModule getGC() {
         return gcModule;
@@ -974,6 +992,10 @@ public final class Ruby {
     }
     void setProcGID(RubyModule procGIDModule) {
         this.procGIDModule = procGIDModule;
+    }
+    
+    public RubyModule getProcSysModule() {
+        return procSysModule;
     }
     void setProcSys(RubyModule procSysModule) {
         this.procSysModule = procSysModule;
@@ -1272,11 +1294,6 @@ public final class Ruby {
             }
         }
 
-        final Library NO_OP_LIBRARY = new Library() {
-                public void load(Ruby runtime, boolean wrap) throws IOException {
-                }
-            };
-
         registerBuiltin("jruby.rb", new LateLoadingLibrary("jruby", "org.jruby.libraries.JRubyLibrary", getJRubyClassLoader()));
         registerBuiltin("jruby/ext.rb", new LateLoadingLibrary("jruby/ext", "org.jruby.RubyJRuby$ExtLibrary", getJRubyClassLoader()));
         registerBuiltin("iconv.rb", new LateLoadingLibrary("iconv", "org.jruby.libraries.IConvLibrary", getJRubyClassLoader()));
@@ -1302,7 +1319,7 @@ public final class Ruby {
         registerBuiltin("digest/sha2.rb", new LateLoadingLibrary("digest/sha2", "org.jruby.libraries.DigestLibrary$SHA2", getJRubyClassLoader()));
         registerBuiltin("bigdecimal.rb", new LateLoadingLibrary("bigdecimal", "org.jruby.libraries.BigDecimalLibrary", getJRubyClassLoader()));
         registerBuiltin("io/wait.so", new LateLoadingLibrary("io/wait", "org.jruby.libraries.IOWaitLibrary", getJRubyClassLoader()));
-        registerBuiltin("etc.so", NO_OP_LIBRARY);
+        registerBuiltin("etc.so", new LateLoadingLibrary("etc", "org.jruby.libraries.EtcLibrary", getJRubyClassLoader()));
         registerBuiltin("weakref.rb", new LateLoadingLibrary("weakref", "org.jruby.ext.WeakRef$WeakRefLibrary", getJRubyClassLoader()));
         
         if (config.getCompatVersion() == CompatVersion.RUBY1_9) {

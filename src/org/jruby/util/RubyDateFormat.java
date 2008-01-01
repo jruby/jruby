@@ -35,19 +35,16 @@ import java.text.DateFormatSymbols;
 import java.text.FieldPosition;
 import java.text.ParsePosition;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone;
 
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeConstants;
 
 public class RubyDateFormat extends DateFormat {
 	private static final long serialVersionUID = -250429218019023997L;
 
-	private List compiledPattern;
+	private List<Token> compiledPattern;
 
     private DateFormatSymbols formatSymbols;
 
@@ -126,7 +123,7 @@ public class RubyDateFormat extends DateFormat {
     }
 
     private void compilePattern(String pattern) {
-        compiledPattern = new LinkedList();
+        compiledPattern = new LinkedList<Token>();
         
         int len = pattern.length();
         for (int i = 0; i < len;) {
@@ -256,10 +253,7 @@ public class RubyDateFormat extends DateFormat {
      * @see DateFormat#format(Date, StringBuffer, FieldPosition)
      */
     public StringBuffer format(Date ignored, StringBuffer toAppendTo, FieldPosition fieldPosition) {
-        Iterator iter = compiledPattern.iterator();
-        while (iter.hasNext()) {
-            Token token = (Token) iter.next();
-            
+        for (Token token: compiledPattern) {
             switch (token.getFormat()) {
                 case FORMAT_STRING:
                     toAppendTo.append(token.getData());

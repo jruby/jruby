@@ -37,7 +37,6 @@ import java.util.regex.Pattern;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -72,8 +71,6 @@ public class RubyYAML {
     public static RubyModule createYAMLModule(Ruby runtime) {
         runtime.getKernel().callMethod(runtime.getCurrentContext(),"require", runtime.newString("date"));
         RubyModule result = runtime.defineModule("YAML");
-
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyYAML.class);
 
         result.defineAnnotatedMethods(RubyYAML.class);
 

@@ -174,11 +174,11 @@ public class RubyModule extends RubyObject {
     protected transient int constantTableThreshold = 
         (int)(CONSTANT_TABLE_DEFAULT_CAPACITY * CONSTANT_TABLE_LOAD_FACTOR);
 
-    private final Map methods = new ConcurrentHashMap(12, 2.0f, 1);
+    private final Map<String, DynamicMethod> methods = new ConcurrentHashMap<String, DynamicMethod>(12, 2.0f, 1);
     
     // ClassProviders return Java class/module (in #defineOrGetClassUnder and
     // #defineOrGetModuleUnder) when class/module is opened using colon syntax. 
-    private transient List classProviders;
+    private transient List<ClassProvider> classProviders;
 
     /** separate path for MetaClass construction
      * 
@@ -230,7 +230,7 @@ public class RubyModule extends RubyObject {
     // FIXME: synchronization is still wrong in CP code
     public synchronized void addClassProvider(ClassProvider provider) {
         if (classProviders == null) {
-            List cp = Collections.synchronizedList(new ArrayList());
+            List<ClassProvider> cp = Collections.synchronizedList(new ArrayList<ClassProvider>());
             cp.add(provider);
             classProviders = cp;
         } else {
@@ -252,9 +252,8 @@ public class RubyModule extends RubyObject {
         if (classProviders != null) {
             synchronized(classProviders) {
                 RubyClass clazz;
-                for (Iterator iter = classProviders.iterator(); iter.hasNext(); ) {
-                    if ((clazz = ((ClassProvider)iter.next())
-                            .defineClassUnder(this, name, superClazz)) != null) {
+                for (ClassProvider classProvider: classProviders) {
+                    if ((clazz = classProvider.defineClassUnder(this, name, superClazz)) != null) {
                         return clazz;
                     }
                 }
@@ -267,8 +266,8 @@ public class RubyModule extends RubyObject {
         if (classProviders != null) {
             synchronized(classProviders) {
                 RubyModule module;
-                for (Iterator iter = classProviders.iterator(); iter.hasNext(); ) {
-                    if ((module = ((ClassProvider)iter.next()).defineModuleUnder(this, name)) != null) {
+                for (ClassProvider classProvider: classProviders) {
+                    if ((module = classProvider.defineModuleUnder(this, name)) != null) {
                         return module;
                     }
                 }
