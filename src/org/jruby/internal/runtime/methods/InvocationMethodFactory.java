@@ -601,17 +601,16 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             Object scriptObject, CallConfiguration callConfig) {
         
         Class scriptClass = scriptObject.getClass();
-        String typePath = p(scriptClass);
         String mname = scriptClass.getName() + "Invoker" + method + arity;
-        String mnamePath = typePath + "Invoker" + method + arity;
         Class generatedClass = tryClass(implementationClass.getRuntime(), mname);
         
         try {
             if (generatedClass == null) {
+                String typePath = p(scriptClass);
+                String mnamePath = typePath + "Invoker" + method + arity;
                 ClassWriter cw = createCompiledCtor(mnamePath,sup);
-                SkinnyMethodAdapter mv = null;
+                SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
                 
-                mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
                 mv.visitCode();
                 Label line = new Label();
                 mv.visitLineNumber(0, line);

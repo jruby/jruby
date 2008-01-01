@@ -35,20 +35,24 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReflectionMethodFactory extends MethodFactory {
+    private final static Class[] COMPILED_METHOD_PARAMS = new Class[] {ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class};
+    
     public DynamicMethod getCompiledMethod(RubyModule implementationClass,
             String methodName, Arity arity, Visibility visibility, 
             StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
-        for (Method method : scriptObject.getClass().getMethods()) {
-            if (method.getName().equals(methodName)) {
-                return new ReflectedCompiledMethod(implementationClass, arity, visibility, scope, scriptObject, method, callConfig);
-            }
+        try {
+            Method method = scriptObject.getClass().getMethod(methodName, COMPILED_METHOD_PARAMS);
+            return new ReflectedCompiledMethod(implementationClass, arity, visibility, scope, scriptObject, method, callConfig);
+        } catch (NoSuchMethodException nsme) {
+            throw new RuntimeException("No method with name " + methodName + " found in " + scriptObject.getClass());
         }
-        
-        throw new RuntimeException("No method with name " + methodName + " found in " + scriptObject.getClass());
     }
     
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method) {
