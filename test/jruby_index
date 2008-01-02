@@ -59,6 +59,7 @@ test_vietnamese_charset
 #test_trace_func
 test_zlib
 test_yaml
+test_system_error
 
 # these tests are last because they pull in libraries that can affect others
 test_base64_strangeness

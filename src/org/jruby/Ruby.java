@@ -47,6 +47,7 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.lang.reflect.Field;
 import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -1529,51 +1530,15 @@ public final class Ruby {
      * own java class.
      */
     private void initErrnoErrors() {
-        createSysErr(IErrno.ENOTEMPTY, "ENOTEMPTY");
-        createSysErr(IErrno.ERANGE, "ERANGE");
-        createSysErr(IErrno.ESPIPE, "ESPIPE");
-        createSysErr(IErrno.ENFILE, "ENFILE");
-        createSysErr(IErrno.EXDEV, "EXDEV");
-        createSysErr(IErrno.ENOMEM, "ENOMEM");
-        createSysErr(IErrno.E2BIG, "E2BIG");
-        createSysErr(IErrno.ENOENT, "ENOENT");
-        createSysErr(IErrno.ENOSYS, "ENOSYS");
-        createSysErr(IErrno.EDOM, "EDOM");
-        createSysErr(IErrno.ENOSPC, "ENOSPC");
-        createSysErr(IErrno.EINVAL, "EINVAL");
-        createSysErr(IErrno.EEXIST, "EEXIST");
-        createSysErr(IErrno.EAGAIN, "EAGAIN");
-        createSysErr(IErrno.ENXIO, "ENXIO");
-        createSysErr(IErrno.EILSEQ, "EILSEQ");
-        createSysErr(IErrno.ENOLCK, "ENOLCK");
-        createSysErr(IErrno.EPIPE, "EPIPE");
-        createSysErr(IErrno.EFBIG, "EFBIG");
-        createSysErr(IErrno.EISDIR, "EISDIR");
-        createSysErr(IErrno.EBUSY, "EBUSY");
-        createSysErr(IErrno.ECHILD, "ECHILD");
-        createSysErr(IErrno.EIO, "EIO");
-        createSysErr(IErrno.EPERM, "EPERM");
-        createSysErr(IErrno.EDEADLOCK, "EDEADLOCK");
-        createSysErr(IErrno.ENAMETOOLONG, "ENAMETOOLONG");
-        createSysErr(IErrno.EMLINK, "EMLINK");
-        createSysErr(IErrno.ENOTTY, "ENOTTY");
-        createSysErr(IErrno.ENOTDIR, "ENOTDIR");
-        createSysErr(IErrno.EFAULT, "EFAULT");
-        createSysErr(IErrno.EBADF, "EBADF");
-        createSysErr(IErrno.EINTR, "EINTR");
-        createSysErr(IErrno.EWOULDBLOCK, "EWOULDBLOCK");
-        createSysErr(IErrno.EDEADLK, "EDEADLK");
-        createSysErr(IErrno.EROFS, "EROFS");
-        createSysErr(IErrno.EMFILE, "EMFILE");
-        createSysErr(IErrno.ENODEV, "ENODEV");
-        createSysErr(IErrno.EACCES, "EACCES");
-        createSysErr(IErrno.ENOEXEC, "ENOEXEC");
-        createSysErr(IErrno.ESRCH, "ESRCH");
-        createSysErr(IErrno.ECONNREFUSED, "ECONNREFUSED");
-        createSysErr(IErrno.ECONNRESET, "ECONNRESET");
-        createSysErr(IErrno.EADDRINUSE, "EADDRINUSE");
-        createSysErr(IErrno.ECONNABORTED, "ECONNABORTED");
-        createSysErr(IErrno.EPROTO, "EPROTO");
+        Field[] fields = IErrno.class.getFields();
+        for(int i = 0; i < fields.length; i++){
+          try{
+            createSysErr(fields[i].getInt(IErrno.class), fields[i].getName());
+          }catch(IllegalAccessException e){
+            throw new RuntimeException("Someone defined a non-public constant in IErrno.java", e);
+          }
+
+        }
     }
 
     /**
