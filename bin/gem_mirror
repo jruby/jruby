@@ -1,3 +1,3 @@
-#!/Users/headius/NetBeansProjects/jruby/bin/jruby
+#!/usr/bin/env jruby
 
 abort "`gem_mirror` has been deprecated.  Use `gem mirror` instead."

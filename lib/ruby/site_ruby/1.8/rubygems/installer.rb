@@ -62,7 +62,7 @@ class Gem::Installer
     options = {
       :force => false,
       :install_dir => Gem.dir,
-      :exec_format => false
+      :exec_format => false,
     }.merge options
 
     @env_shebang = options[:env_shebang]
