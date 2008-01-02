@@ -60,7 +60,11 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
         this.receiverNode = receiverNode;
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        this.callAdapter = new CallSite.InlineCachingCallSite(name, CallType.NORMAL);
+        if (iterNode == null) {
+            this.callAdapter = new CallSite.ICNonBlockCallSite(name, CallType.NORMAL);
+        } else {
+            this.callAdapter = new CallSite.ICBlockCallSite(name, CallType.NORMAL);
+        }
     }
     
     /**

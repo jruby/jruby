@@ -53,9 +53,9 @@ public class OpAsgnNode extends Node {
         super(position, NodeType.OPASGNNODE);
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
-        this.variableCallAdapter = new CallSite.InlineCachingCallSite(variableName, CallType.NORMAL);
-        this.operatorCallAdapter = new CallSite.InlineCachingCallSite(operatorName, CallType.NORMAL);
-        this.variableAsgnCallAdapter = new CallSite.InlineCachingCallSite((variableName + "=").intern(), CallType.NORMAL);
+        this.variableCallAdapter = new CallSite.ICNonBlockCallSite(variableName, CallType.NORMAL);
+        this.operatorCallAdapter = new CallSite.ICNonBlockCallSite(operatorName, CallType.NORMAL);
+        this.variableAsgnCallAdapter = new CallSite.ICNonBlockCallSite((variableName + "=").intern(), CallType.NORMAL);
     }
 
     /**

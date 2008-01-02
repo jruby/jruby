@@ -32,6 +32,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyProc;
 import org.jruby.RubyThread;
 import org.jruby.RubyThreadGroup;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Block;
@@ -53,7 +54,7 @@ public class RubyNativeThread extends Thread {
         this.runtime = rubyThread.getRuntime();
         ThreadContext tc = runtime.getCurrentContext();
         
-        proc = runtime.newProc(Block.Type.PROC, currentBlock);
+        proc = runtime.newProc(Block.Type.THREAD, currentBlock);
         currentFrame = tc.getCurrentFrame();
         this.arguments = args;
     }
@@ -75,6 +76,8 @@ public class RubyNativeThread extends Thread {
             synchronized (rubyThread.killLock) {
                 rubyThread.killLock.notifyAll();
             }
+        } catch (JumpException.ReturnJump rj) {
+            rubyThread.exceptionRaised(runtime.newThreadError("return can't jump across threads"));
         } catch (RaiseException e) {
             rubyThread.exceptionRaised(e);
         } finally {

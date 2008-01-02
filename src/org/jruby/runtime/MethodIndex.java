@@ -88,14 +88,26 @@ public class MethodIndex {
     }
     
     public synchronized static CallSite getCallSite(String name) {
-        return new CallSite.InlineCachingCallSite(name, CallType.NORMAL);
+        return new CallSite.ICBlockCallSite(name, CallType.NORMAL);
     }
     
     public synchronized static CallSite getFunctionalCallSite(String name) {
-        return new CallSite.InlineCachingCallSite(name, CallType.FUNCTIONAL);
+        return new CallSite.ICBlockCallSite(name, CallType.FUNCTIONAL);
     }
     
     public synchronized static CallSite getVariableCallSite(String name) {
-        return new CallSite.InlineCachingCallSite(name, CallType.VARIABLE);
+        return new CallSite.ICBlockCallSite(name, CallType.VARIABLE);
+    }
+    
+    public synchronized static CallSite getNonBlockCallSite(String name) {
+        return new CallSite.ICNonBlockCallSite(name, CallType.NORMAL);
+    }
+    
+    public synchronized static CallSite getNonBlockFunctionalCallSite(String name) {
+        return new CallSite.ICNonBlockCallSite(name, CallType.FUNCTIONAL);
+    }
+    
+    public synchronized static CallSite getNonBlockVariableCallSite(String name) {
+        return new CallSite.ICNonBlockCallSite(name, CallType.VARIABLE);
     }
 }

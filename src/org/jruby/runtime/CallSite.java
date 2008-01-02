@@ -62,9 +62,6 @@ public abstract class CallSite {
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
 
     public static abstract class ArgumentBoxingCallSite extends CallSite {
-        DynamicMethod cachedMethod;
-        RubyClass cachedType;
-        
         public ArgumentBoxingCallSite(String methodName, CallType callType) {
             super(MethodIndex.getIndex(methodName), methodName, callType);
         }
@@ -130,8 +127,49 @@ public abstract class CallSite {
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
     }
 
-    public static class InlineCachingCallSite extends ArgumentBoxingCallSite implements CacheMap.CacheSite {
+    public static abstract class InlineCachingCallSite extends ArgumentBoxingCallSite implements CacheMap.CacheSite {
+        DynamicMethod cachedMethod;
+        RubyClass cachedType;
+        
         public InlineCachingCallSite(String methodName, CallType callType) {
+            super(methodName, callType);
+        }
+        
+        public void removeCachedMethod() {
+            cachedType = null;
+            cachedMethod = null;
+        }
+    }
+
+    public static class ICNonBlockCallSite extends InlineCachingCallSite {
+        public ICNonBlockCallSite(String methodName, CallType callType) {
+            super(methodName, callType);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+            RubyClass selfType = self.getMetaClass();
+
+            if (cachedType == selfType && cachedMethod != null) {
+                return cachedMethod.call(context, self, selfType, methodName, args, block);
+            }
+
+            DynamicMethod method = selfType.searchMethod(methodName);
+
+            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, block);
+            }
+
+            cachedMethod = method;
+            cachedType = selfType;
+
+            selfType.getRuntime().getCacheMap().add(method, this);
+
+            return method.call(context, self, selfType, methodName, args, block);
+        }
+    }
+
+    public static class ICBlockCallSite extends InlineCachingCallSite {
+        public ICBlockCallSite(String methodName, CallType callType) {
             super(methodName, callType);
         }
         
@@ -172,11 +210,6 @@ public abstract class CallSite {
                     throw context.getRuntime().newSystemStackError("stack level too deep");
                 }
             }
-        }
-
-        public void removeCachedMethod() {
-            cachedType = null;
-            cachedMethod = null;
         }
     }
 }

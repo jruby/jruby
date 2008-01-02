@@ -204,19 +204,25 @@ public class RubyProc extends RubyObject implements JumpTarget {
             
             return newBlock.call(context, args);
         } catch (JumpException.BreakJump bj) {
-                if (block.type == Block.Type.LAMBDA) return (IRubyObject) bj.getValue();
-                
-                throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "break from proc-closure");
+            if (block.type == Block.Type.LAMBDA) return (IRubyObject) bj.getValue();
+            
+            throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "break from proc-closure");
         } catch (JumpException.ReturnJump rj) {
             Object target = rj.getTarget();
 
             if (target == this || block.type == Block.Type.LAMBDA) return (IRubyObject) rj.getValue();
 
             if (target == null) {
-                throw runtime.newLocalJumpError("return", (IRubyObject)rj.getValue(), "unexpected return");
+                if (type == Block.Type.THREAD) {
+                    throw runtime.newThreadError("return can't jump across threads");
+                } else {
+                    throw runtime.newLocalJumpError("return", (IRubyObject)rj.getValue(), "unexpected return");
+                }
             }
             throw rj;
-        } 
+        } catch (JumpException.RetryJump rj) {
+            throw runtime.newLocalJumpError("retry", (IRubyObject)rj.getValue(), "retry not supported outside rescue");
+        }
     }
 
     @JRubyMethod(name = "arity")

@@ -693,7 +693,7 @@ public class YARVMachine {
         }
         
         if (instruction.callAdapter == null) {
-            instruction.callAdapter = new CallSite.InlineCachingCallSite(name.intern(), callType);
+            instruction.callAdapter = new CallSite.ICBlockCallSite(name.intern(), callType);
         }
         
         if (TAILCALL_OPT && (bytecodes[ip+1].bytecode == YARVInstructions.LEAVE || 

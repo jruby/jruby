@@ -35,7 +35,6 @@ package org.jruby.runtime;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
-import org.jruby.ast.NodeType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -48,7 +47,7 @@ public class Block {
     public static final int ARRAY = 2;
     public static final int SINGLE_RESTARG = 3;
     
-    public enum Type { NORMAL, PROC, LAMBDA }
+    public enum Type { NORMAL, PROC, LAMBDA, THREAD }
     
     /**
      * The Proc that this block is associated with.  When we reference blocks via variable

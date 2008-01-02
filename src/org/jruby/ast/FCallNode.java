@@ -56,7 +56,11 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         super(position, NodeType.FCALLNODE);
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        this.callAdapter = new CallSite.InlineCachingCallSite(name, CallType.FUNCTIONAL);
+        if (iterNode == null) {
+            this.callAdapter = new CallSite.ICNonBlockCallSite(name, CallType.FUNCTIONAL);
+        } else {
+            this.callAdapter = new CallSite.ICBlockCallSite(name, CallType.FUNCTIONAL);
+        }
     }
     
     /**

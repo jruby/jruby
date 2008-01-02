@@ -46,7 +46,7 @@ import org.jruby.runtime.CallType;
  * @see IterNode
  */
 public class ForNode extends IterNode {
-    public static final CallSite callAdapter = new CallSite.InlineCachingCallSite("each", CallType.NORMAL);
+    public static final CallSite callAdapter = new CallSite.ICBlockCallSite("each", CallType.NORMAL);
 
     private Node iterNode;
 

@@ -2686,18 +2686,28 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return realName;
     }
     
-    public String cacheCallSite(String name, CallType callType) {
+    public String cacheCallSite(String name, CallType callType, boolean block) {
         String fieldName = getNewConstant(cg.ci(CallSite.class), JavaNameMangler.mangleStringForCleanJavaIdentifier(name));
         
         // retrieve call adapter
         initMethod.aload(THIS);
         initMethod.ldc(name);
-        if (callType.equals(CallType.NORMAL)) {
-            initMethod.invokestatic(cg.p(MethodIndex.class), "getCallSite", cg.sig(CallSite.class, cg.params(String.class)));
-        } else if (callType.equals(CallType.FUNCTIONAL)) {
-            initMethod.invokestatic(cg.p(MethodIndex.class), "getFunctionalCallSite", cg.sig(CallSite.class, cg.params(String.class)));
-        } else if (callType.equals(CallType.VARIABLE)) {
-            initMethod.invokestatic(cg.p(MethodIndex.class), "getVariableCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+        if (block) {
+            if (callType.equals(CallType.NORMAL)) {
+                initMethod.invokestatic(cg.p(MethodIndex.class), "getCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+            } else if (callType.equals(CallType.FUNCTIONAL)) {
+                initMethod.invokestatic(cg.p(MethodIndex.class), "getFunctionalCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+            } else if (callType.equals(CallType.VARIABLE)) {
+                initMethod.invokestatic(cg.p(MethodIndex.class), "getVariableCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+            }
+        } else {
+            if (callType.equals(CallType.NORMAL)) {
+                initMethod.invokestatic(cg.p(MethodIndex.class), "getNonBlockCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+            } else if (callType.equals(CallType.FUNCTIONAL)) {
+                initMethod.invokestatic(cg.p(MethodIndex.class), "getNonBlockFunctionalCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+            } else if (callType.equals(CallType.VARIABLE)) {
+                initMethod.invokestatic(cg.p(MethodIndex.class), "getNonBlockVariableCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+            }
         }
         initMethod.putfield(classname, fieldName, cg.ci(CallSite.class));
         

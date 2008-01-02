@@ -48,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class IOOutputStream extends OutputStream {
     private IRubyObject io;
     private CallSite writeAdapter;
-    private CallSite closeAdapter = new CallSite.InlineCachingCallSite("close", CallType.FUNCTIONAL);
+    private CallSite closeAdapter = new CallSite.ICNonBlockCallSite("close", CallType.FUNCTIONAL);
 
     /**
      * Creates a new OutputStream with the object provided.
@@ -57,9 +57,9 @@ public class IOOutputStream extends OutputStream {
      */
     public IOOutputStream(final IRubyObject io) {
         if(io.respondsTo("write")) {
-            writeAdapter = new CallSite.InlineCachingCallSite("write", CallType.FUNCTIONAL);
+            writeAdapter = new CallSite.ICNonBlockCallSite("write", CallType.FUNCTIONAL);
         } else if (io.respondsTo("<<")) {
-            writeAdapter = new CallSite.InlineCachingCallSite("<<", CallType.FUNCTIONAL);
+            writeAdapter = new CallSite.ICNonBlockCallSite("<<", CallType.FUNCTIONAL);
         } else {
             throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"write\".");
         }

@@ -48,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class IOInputStream extends InputStream {
     private IRubyObject io;
     private final IRubyObject numOne;
-    private CallSite readAdapter = new CallSite.InlineCachingCallSite("read", CallType.FUNCTIONAL);
+    private CallSite readAdapter = new CallSite.ICNonBlockCallSite("read", CallType.FUNCTIONAL);
 
     /**
      * Creates a new InputStream with the object provided.

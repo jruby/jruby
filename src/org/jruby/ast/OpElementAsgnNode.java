@@ -59,7 +59,7 @@ public class OpElementAsgnNode extends Node {
         this.receiverNode = receiverNode;
         this.argsNode = argsNode;
         this.valueNode = valueNode;
-        callAdapter = new CallSite.InlineCachingCallSite(operatorName, CallType.NORMAL);
+        callAdapter = new CallSite.ICNonBlockCallSite(operatorName, CallType.NORMAL);
     }
     
     /**

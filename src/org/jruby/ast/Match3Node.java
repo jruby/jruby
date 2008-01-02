@@ -42,7 +42,7 @@ import org.jruby.runtime.CallType;
 public class Match3Node extends Node {
     private final Node receiverNode;
     private final Node valueNode;
-    public static final CallSite callAdapter = new CallSite.InlineCachingCallSite("=~", CallType.FUNCTIONAL);
+    public static final CallSite callAdapter = new CallSite.ICNonBlockCallSite("=~", CallType.FUNCTIONAL);
 
     public Match3Node(ISourcePosition position, Node receiverNode, Node valueNode) {
         super(position, NodeType.MATCH3NODE);
