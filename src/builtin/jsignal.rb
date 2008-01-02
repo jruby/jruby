@@ -20,7 +20,7 @@ module ::Kernel
       return unless signal_object
       
       Signal::__jtrap_kernel(block, signal_object, sig)
-    rescue java.lang.IllegalArgumentException
+    rescue Exception
       warn "The signal #{sig} is in use by the JVM and will not work correctly on this platform"
     end
   rescue NameError
