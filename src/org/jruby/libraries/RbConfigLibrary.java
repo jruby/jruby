@@ -59,7 +59,9 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "MINOR", versionParts[1]);
         setConfig(configHash, "TEENY", versionParts[2]);
         setConfig(configHash, "ruby_version", versionParts[0] + '.' + versionParts[1]);
-        setConfig(configHash, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
+        // Rubygems is too specific on host cpu so until we have real need lets default to universal
+        //setConfig(configHash, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
+        setConfig(configHash, "arch", "universal-java" + System.getProperty("java.specification.version"));
 
         String normalizedHome;
         if (Ruby.isSecurityRestricted()) {
@@ -84,9 +86,7 @@ public class RbConfigLibrary implements Library {
         }
         setConfig(configHash, "target_os", target_os);
         
-        // Rubygems is too specific on host cpu so until we have real need lets default to universal
-        //setConfig(configHash, "target_cpu", System.getProperty("os.arch"));
-        setConfig(configHash, "target_cpu", "universal");
+        setConfig(configHash, "target_cpu", System.getProperty("os.arch"));
         
         String jrubyJarFile = "jruby.jar";
         URL jrubyPropertiesUrl = Ruby.class.getClassLoader().getResource("jruby.properties");
