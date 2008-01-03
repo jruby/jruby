@@ -37,9 +37,15 @@ public class Chmod {
     public static int chmod(File file, String mode) {
         if (CHMOD_API_AVAILABLE) {
             // fast version
-            char other = mode.charAt(mode.length() - 1);
+            char other = '0';
+            if (mode.length() >= 1) {
+                other = mode.charAt(mode.length() - 1);
+            }
             //char group = mode.charAt(mode.length() - 2);
-            char user = mode.charAt(mode.length() - 3);
+            char user = '0';
+            if (mode.length() >= 3) {
+                user = mode.charAt(mode.length() - 3);
+            }
             //char setuidgid = mode.charAt(mode.length() - 3);
             
             // group and setuid/gid are ignored, no way to do them fast. Should we fall back on slow?
