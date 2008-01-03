@@ -39,6 +39,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class RubySignal {
+    // NOTE: The indicies here match exactly the signal values; do not reorder
+    public static final String[] NAMES = {
+            "EXIT", "HUP", "INT", "QUIT", "ILL", "TRAP", "ABRT", "EMT",
+            "FPE", "KILL", "BUS", "SEGV", "SYS", "PIPE", "ALRM", "TERM", "URG",
+            "STOP", "TSTP", "CONT", "CHLD", "TTIN", "TTOU", "IO", "XCPU",
+            "XFSZ", "VTALRM", "PROF", "WINCH", "INFO", "USR1", "USR2"};
+    
     public static void createSignal(Ruby runtime) {
         RubyModule mSignal = runtime.defineModule("Signal");
         
@@ -50,6 +57,20 @@ public class RubySignal {
         Ruby runtime = recv.getRuntime();
         runtime.getLoadService().require("jsignal");
         return RuntimeHelpers.invoke(runtime.getCurrentContext(), runtime.getKernel(), "__jtrap", args, CallType.FUNCTIONAL, block);
+    }
+    
+    @JRubyMethod(name = "list", meta = true)
+    public static IRubyObject list(IRubyObject recv) {
+        Ruby runtime = recv.getRuntime();
+        RubyHash names = RubyHash.newHash(runtime);
+        for (int i = 0; i < NAMES.length; i++) {
+            names.op_aset(runtime.newString(NAMES[i]), runtime.newFixnum(i));
+        }
+        // IOT is also 6
+        names.op_aset(runtime.newString("IOT"), runtime.newFixnum(6));
+        // CLD is also 20
+        names.op_aset(runtime.newString("CLD"), runtime.newFixnum(20));
+        return names;
     }
 
     private final static class JRubySignalHandler implements sun.misc.SignalHandler {
