@@ -84,7 +84,9 @@ public class RbConfigLibrary implements Library {
         }
         setConfig(configHash, "target_os", target_os);
         
-        setConfig(configHash, "target_cpu", System.getProperty("os.arch"));
+        // Rubygems is too specific on host cpu so until we have real need lets default to universal
+        //setConfig(configHash, "target_cpu", System.getProperty("os.arch"));
+        setConfig(configHash, "target_cpu", "universal");
         
         String jrubyJarFile = "jruby.jar";
         URL jrubyPropertiesUrl = Ruby.class.getClassLoader().getResource("jruby.properties");
