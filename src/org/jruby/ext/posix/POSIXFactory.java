@@ -12,22 +12,40 @@ public class POSIXFactory {
     public static POSIX getPOSIX(POSIXHandler handler, boolean useNativePOSIX) {
         boolean thirtyTwoBit = "32".equals(SafePropertyAccessor.getProperty("sun.arch.data.model", "32")) == true;
         
+        POSIX posix = null;
+        
         // No 64 bit structures defined yet.
         if (useNativePOSIX && thirtyTwoBit) {
             try {
                 String os = System.getProperty("os.name");
-                if (os.startsWith("Mac OS")) {
-                    return new MacOSPOSIX(loadMacOSLibC(), handler);
+                if (os.startsWith("Mac OS") || os.startsWith("Darwin")) {
+                    posix = new MacOSPOSIX(loadMacOSLibC(), handler);
                 } else if (os.startsWith("Linux")) {
-                    return new LinuxPOSIX(loadLinuxLibC(), handler);
+                    posix = new LinuxPOSIX(loadLinuxLibC(), handler);
                 } else if (os.startsWith("Windows")) {
-                    return new WindowsPOSIX(loadWindowsLibC(), handler);
+                    posix = new WindowsPOSIX(loadWindowsLibC(), handler);
                 }
-            } catch (Exception e) {
-            } // Loading error...not much to be done with it?
+                
+                if (SafePropertyAccessor.getBoolean("jruby.native.verbose")) {
+                    if (posix != null) {
+                        System.err.println("Successfully loaded native POSIX impl.");
+                    } else {
+                        System.err.println("Failed to load native POSIX impl; falling back on Java impl. Unsupported OS.");
+                    }
+                }
+            } catch (Throwable t) {
+                if (SafePropertyAccessor.getBoolean("jruby.native.verbose")) {
+                    System.err.println("Failed to load native POSIX impl; falling back on Java impl. Stacktrace follows.");
+                    t.printStackTrace();
+                }
+            }
         }
         
-        return getJavaPOSIX(handler);
+        if (posix == null) {
+            posix = getJavaPOSIX(handler);
+        }
+        
+        return posix;
     }
     
     public static POSIX getJavaPOSIX(POSIXHandler handler) {
