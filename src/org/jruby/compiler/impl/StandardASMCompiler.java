@@ -2063,7 +2063,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     } else {
                         methodCompiler.loadRuntime();
 
-                        receiverCallback.call(methodCompiler);
+                        methodCompiler.loadSelf();
 
                         methodCompiler.invokeUtilityMethod("getSingletonClass", cg.sig(RubyClass.class, cg.params(Ruby.class, IRubyObject.class)));
                     }
@@ -2088,6 +2088,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             Label after = new Label();
             Label noException = new Label();
             methodCompiler.method.trycatch(start, end, after, null);
+            
+            // save a reference to self, for singleton 'attached' to prevent GC
+            methodCompiler.loadSelf();
 
             methodCompiler.beginClass(bodyPrep, staticScope);
 
@@ -2098,6 +2101,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // finally with no exception
             methodCompiler.loadThreadContext();
             methodCompiler.invokeThreadContext("postCompiledClass", cg.sig(Void.TYPE, cg.params()));
+            
+            // pop extra self
+            methodCompiler.method.pop();
             
             methodCompiler.method.go_to(noException);
             
@@ -2114,7 +2120,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // prepare to call class definition method
             method.aload(THIS);
             loadThreadContext();
-            loadSelf();
+            if (receiverCallback == null) {
+                loadSelf();
+            } else {
+                receiverCallback.call(this);
+            }
             method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
             method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
 
