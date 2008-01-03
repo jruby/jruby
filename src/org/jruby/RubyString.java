@@ -3372,7 +3372,7 @@ public class RubyString extends RubyObject {
                 if(strBytes[++p] != '\n') {
                     continue;
                 }
-                while(strBytes[p] == '\n') {
+                while(p < pend && strBytes[p] == '\n') {
                     p++;
                 }
             }
