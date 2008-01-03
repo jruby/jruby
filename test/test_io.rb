@@ -131,10 +131,6 @@ class TestIO < Test::Unit::TestCase
     f.close
   end
 
-  def test_seek_on_stdin_fails
-    assert_raises(Errno::ESPIPE) { $stdin.seek(10) }
-  end
-
   def test_empty_write_does_not_complain
     # empty write...writes nothing and does not complain
     f = File.new(@file, "w")
@@ -245,26 +241,6 @@ class TestIO < Test::Unit::TestCase
     def write(content)
       @data = content
       @stream.write(content) if @passthrough
-    end
-  end
-
-  def test_stream_redirection
-    old_stderr = $stderr
-    old_stdout = $stdout
-
-    begin
-      assert_nothing_raised {
-        $stderr = FakeStream.new($stderr)
-        $stdout = FakeStream.new($stdout)
-
-        system("ruby -e '$stdout.write(42); $stderr.write(24)'")
-
-        assert_equal("42", $stdout.data)
-        assert_equal("24", $stderr.data)
-      }
-    ensure
-      $stderr = old_stderr
-      $stdout = old_stdout
     end
   end
 
