@@ -1384,8 +1384,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void pollThreadEvents() {
-            loadThreadContext();
-            invokeThreadContext("pollThreadEvents", cg.sig(Void.TYPE));
+            if (!RubyInstanceConfig.THREADLESS_COMPILE_ENABLED) {
+                loadThreadContext();
+                invokeThreadContext("pollThreadEvents", cg.sig(Void.TYPE));
+            }
         }
 
         public void nullToNil() {
@@ -2258,11 +2260,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void setPosition(ISourcePosition position) {
-            // FIXME I'm still not happy with this additional overhead per line,
-            // nor about the extra script construction cost, but it will have to do for now.
-            loadThreadContext();
-            method.getstatic(classname, cachePosition(position.getFile(), position.getEndLine()), cg.ci(ISourcePosition.class));
-            invokeThreadContext("setPosition", cg.sig(void.class, ISourcePosition.class));
+            if (!RubyInstanceConfig.POSITIONLESS_COMPILE_ENABLED) {
+                // FIXME I'm still not happy with this additional overhead per line,
+                // nor about the extra script construction cost, but it will have to do for now.
+                loadThreadContext();
+                method.getstatic(classname, cachePosition(position.getFile(), position.getEndLine()), cg.ci(ISourcePosition.class));
+                invokeThreadContext("setPosition", cg.sig(void.class, ISourcePosition.class));
+            }
         }
         
         public void checkWhenWithSplat() {

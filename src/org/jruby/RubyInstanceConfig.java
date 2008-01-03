@@ -118,6 +118,10 @@ public class RubyInstanceConfig {
     
     public static final boolean FRAMELESS_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.frameless");
+    public static final boolean POSITIONLESS_COMPILE_ENABLED
+            = SafePropertyAccessor.getBoolean("jruby.compile.positionless");
+    public static final boolean THREADLESS_COMPILE_ENABLED
+            = SafePropertyAccessor.getBoolean("jruby.compile.threadless");
     public static final boolean INDEXED_METHODS
             = SafePropertyAccessor.getBoolean("jruby.indexed.methods");
     public static final boolean FORK_ENABLED
@@ -234,14 +238,18 @@ public class RubyInstanceConfig {
         sb
                 .append("These properties can be used to alter runtime behavior for perf or compatibility.\n")
                 .append("Specify them by passing -J-D<property>=<value>\n")
-                .append("    jruby.objectspace.enabled=true|false\n")
-                .append("       Enable or disable ObjectSpace.each_object (default is disabled)\n")
+                .append("\nCOMPILER SETTINGS:\n")
                 .append("    jruby.compile.mode=JIT|FORCE|OFF\n")
                 .append("       Set compilation mode. JIT is default; FORCE compiles all, OFF disables\n")
                 .append("    jruby.compile.boxed=true|false\n")
                 .append("       (EXPERIMENTAL) Use boxed variables; this can speed up some methods. Default is false\n")
                 .append("    jruby.compile.frameless=true|false\n")
                 .append("       (EXPERIMENTAL) Turn on frameless compilation where possible\n")
+                .append("    jruby.compile.positionless=true|false\n")
+                .append("       (EXPERIMENTAL) Turn on compilation that avoids updating Ruby position info. Default is false\n")
+                .append("    jruby.compile.threadless=true|false\n")
+                .append("       (EXPERIMENTAL) Turn on compilation without polling for \"unsafe\" thread events. Default is false\n")
+                .append("\nJIT SETTINGS:\n")
                 .append("    jruby.jit.threshold=<invocation count>\n")
                 .append("       Set the JIT threshold to the specified method invocation count. Default is 20\n")
                 .append("    jruby.jit.logging=true|false\n")
@@ -250,17 +258,21 @@ public class RubyInstanceConfig {
                 .append("       Enable verbose JIT logging (reports failed compilation). Default is false\n")
                 .append("    jruby.launch.inproc=true|false\n")
                 .append("       Set in-process launching of e.g. system('ruby ...'). Default is true\n")
+                .append("\nNATIVE SUPPORT:\n")
                 .append("    jruby.native.enabled=true|false\n")
                 .append("       Enable/disable native extensions (like JNA for non-Java APIs; Default is true\n")
                 .append("       (This affects all JRuby instances in a given JVM)\n")
                 .append("    jruby.native.verbose=true|false\n")
                 .append("       Enable verbose logging of native extension loading. Default is false.\n")
+                .append("    jruby.fork.enabled=true|false\n")
+                .append("       (EXPERIMENTAL, maybe dangerous) Enable fork(2) on platforms that support it.\n")
+                .append("\nMISCELLANY:\n")
                 .append("    jruby.compat.version=RUBY1_8|RUBY1_9\n")
                 .append("       Specify the major Ruby version to be compatible with; Default is RUBY1_8\n")
                 .append("    jruby.indexed.methods=true|false\n")
                 .append("       Generate \"invokers\" for core classes using a single indexed class\n")
-                .append("    jruby.fork.enabled=true|false\n")
-                .append("       (EXPERIMENTAL, maybe dangerous) Enable fork(2) on platforms that support it.\n");
+                .append("    jruby.objectspace.enabled=true|false\n")
+                .append("       Enable or disable ObjectSpace.each_object (default is disabled)\n");
         
         return sb.toString();
     }
