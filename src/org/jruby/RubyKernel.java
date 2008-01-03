@@ -1134,7 +1134,7 @@ public class RubyKernel {
         return runtime.newFixnum(runtime.getRandom().nextInt((int) ceil));
     }
 
-    @JRubyMethod(name = {"system","exec"}, required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"system"}, required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int resultCode;
@@ -1147,6 +1147,25 @@ public class RubyKernel {
         return runtime.newBoolean(resultCode == 0);
     }
     
+    @JRubyMethod(name = {"exec"}, required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
+    public static RubyBoolean exec(IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = recv.getRuntime();
+        int resultCode;
+        try {
+            // TODO: exec should replace the current process.
+            // This could be possible with JNA. 
+            resultCode = new ShellLauncher(runtime).runAndWait(args);
+        } catch (Exception e) {
+            resultCode = 127;
+        }
+
+        if (resultCode != 0) {
+            throw runtime.newErrnoENOENTError("cannot execute");
+        }
+
+        return runtime.newBoolean(true);
+    }
+
     @JRubyMethod(name = "fork", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject fork(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
