@@ -48,7 +48,7 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
     private final Node receiverNode;
     private Node argsNode;
     private Node iterNode;
-    public final CallSite callAdapter;
+    public CallSite callAdapter;
 
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
         this(position, receiverNode, name, argsNode, null);
@@ -81,6 +81,12 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
     
     public void setIterNode(Node iterNode) {
         this.iterNode = iterNode;
+        // refresh call adapter, since it matters if this is iter-based or not
+        if (iterNode == null) {
+            callAdapter = new CallSite.ICNonBlockCallSite(callAdapter.methodName, CallType.NORMAL);
+        } else {
+            callAdapter = new CallSite.ICBlockCallSite(callAdapter.methodName, CallType.NORMAL);
+        }
     }
 
     /**

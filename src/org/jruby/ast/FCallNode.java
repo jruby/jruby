@@ -46,7 +46,7 @@ import org.jruby.runtime.CallType;
 public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
     private Node argsNode;
     private Node iterNode;
-    public final CallSite callAdapter;
+    public CallSite callAdapter;
 
     public FCallNode(ISourcePosition position, String name, Node argsNode) {
         this(position, name, argsNode, null);
@@ -80,6 +80,12 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     
     public void setIterNode(Node iterNode) {
         this.iterNode = iterNode;
+        // refresh call adapter, since it matters if this is iter-based or not
+        if (iterNode == null) {
+            callAdapter = new CallSite.ICNonBlockCallSite(callAdapter.methodName, CallType.FUNCTIONAL);
+        } else {
+            callAdapter = new CallSite.ICBlockCallSite(callAdapter.methodName, CallType.FUNCTIONAL);
+        }
     }
 
     /**
