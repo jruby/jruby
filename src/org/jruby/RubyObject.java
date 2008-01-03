@@ -1113,7 +1113,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
             if (!args[i].isModule()) throw getRuntime().newTypeError(args[i], getRuntime().getModule()); 
         }
 
-        for (int i = 0; i < args.length; i++) {
+        // MRI extends in order from last to first
+        for (int i = args.length - 1; i >= 0; i--) {
             args[i].callMethod(getRuntime().getCurrentContext(), "extend_object", this);
             args[i].callMethod(getRuntime().getCurrentContext(), "extended", this);
         }
