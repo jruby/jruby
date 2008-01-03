@@ -1036,7 +1036,7 @@ public class RubyString extends RubyObject {
         return isEmpty() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    private boolean isEmpty() {
+    public boolean isEmpty() {
         return value.length() == 0;
     }
 

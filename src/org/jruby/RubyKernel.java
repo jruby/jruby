@@ -110,10 +110,22 @@ public class RubyKernel {
         return recv.getRuntime().newString(autoloadMethod.file());
     }
 
-    @JRubyMethod(name = "autoload", required = 2, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "autoload", required = 2, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
         Ruby runtime = recv.getRuntime(); 
         final LoadService loadService = runtime.getLoadService();
+        String nonInternedName = symbol.asJavaString();
+        
+        if (!IdUtil.isValidConstantName(nonInternedName)) {
+            throw runtime.newNameError("autoload must be constant name", nonInternedName);
+        }
+        
+        RubyString fileString = file.convertToString();
+        
+        if (fileString.isEmpty()) {
+            throw runtime.newArgumentError("empty file name");
+        }
+        
         final String baseName = symbol.asJavaString().intern(); // interned, OK for "fast" methods
         final RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : runtime.getObject();
         String nm = module.getName() + "::" + baseName;
