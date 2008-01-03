@@ -1,19 +1,17 @@
 #
 # BigDecimal utility library.
-# ----------------------------------------------------------------------
-# Contents:
 #
-#   String#
-#     to_d      ... to BigDecimal
+# To use these functions, require 'bigdecimal/util'
 #
-#   Float#
-#     to_d      ... to BigDecimal
+# The following methods are provided to convert other types to BigDecimals:
 #
-#   BigDecimal#
-#     to_r      ... to Rational
+#   String#to_d -> BigDecimal
+#   Float#to_d -> BigDecimal
+#   Rational#to_d -> BigDecimal
 #
-#   Rational#
-#     to_d      ... to BigDecimal
+# The following method is provided to convert BigDecimals to other types:
+#
+#   BigDecimal#to_r -> Rational
 #
 # ----------------------------------------------------------------------
 #
@@ -30,8 +28,8 @@ class String
 end
 
 class BigDecimal < Numeric
-  # to "nnnnnn.mmm" form digit string
-  # Use BigDecimal#to_s("F") instead.
+  # Converts a BigDecimal to a String of the form "nnnnnn.mmm".
+  # This method is deprecated; use BigDecimal#to_s("F") instead.
   def to_digits
      if self.nan? || self.infinite? || self.zero?
         self.to_s
@@ -42,22 +40,21 @@ class BigDecimal < Numeric
      end
   end
 
-  # Convert BigDecimal to Rational
+  # Converts a BigDecimal to a Rational.
   def to_r 
      sign,digits,base,power = self.split
      numerator = sign*digits.to_i
      denomi_power = power - digits.size # base is always 10
      if denomi_power < 0
-        denominator = base ** (-denomi_power)
+        Rational(numerator,base ** (-denomi_power))
      else
-        denominator = base ** denomi_power
+        Rational(numerator * (base ** denomi_power),1)
      end
-     Rational(numerator,denominator)
   end
 end
 
 class Rational < Numeric
-  # Convert Rational to BigDecimal
+  # Converts a Rational to a BigDecimal
   def to_d(nFig=0)
      num = self.numerator.to_s
      if nFig<=0

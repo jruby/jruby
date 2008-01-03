@@ -91,6 +91,9 @@ class Options
   # multiple files
   attr_reader :promiscuous
 
+  # scan newer sources than the flag file if true.
+  attr_reader :force_update
+
   module OptionList
 
     OPTION_LIST = [
@@ -133,6 +136,10 @@ class Options
         "shown with list of files that sharing them.\n" +
         "Silently discarded if --diagram is not given\n" +
         "Experimental." ],
+
+      [ "--force-update",  "-U",   nil,
+        "forces to scan all sources even if newer than\n" +
+        "the flag file." ],
 
       [ "--fmt",           "-f",   "format name",
         "set the output formatter (see below)" ],
@@ -363,6 +370,7 @@ class Options
       @include_line_numbers = false
       @extra_accessor_flags = {}
       @promiscuous = false
+      @force_update = false
 
       @css = nil
       @webcvs = nil
@@ -462,6 +470,9 @@ class Options
             OptionList.error("Unknown extension .#{old} to -E")
           end
 
+        when "--force-update"
+          @force_update = true
+
 	when "--version"
 	  puts VERSION_STRING
 	  exit
@@ -539,12 +550,12 @@ class Options
     ver = nil
     IO.popen("dot -V 2>&1") do |io|
       ver = io.read
-      if ver =~ /dot\s+version(?:\s+gviz)?\s+(\d+)\.(\d+)/
+      if ver =~ /dot.+version(?:\s+gviz)?\s+(\d+)\.(\d+)/
         ok = ($1.to_i > 1) || ($1.to_i == 1 && $2.to_i >= 8)
       end
     end
     unless ok
-      if ver =~ /^dot version/
+      if ver =~ /^dot.+version/
         $stderr.puts "Warning: You may need dot V1.8.6 or later to use\n",
           "the --diagram option correctly. You have:\n\n   ",
           ver,

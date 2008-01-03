@@ -346,16 +346,12 @@ class OptionParser
     # exception.
     #
     def conv_arg(arg, val = nil)
-      if block
-        if conv
-          val = conv.call(*val)
-        else
-          val = *val
-        end
-        return arg, block, val
+      if conv
+        val = conv.call(*val)
       else
-        return arg, nil
+        val = proc {|val| val}.call(*val)
       end
+      return arg, block, val
     end
     private :conv_arg
 
@@ -394,12 +390,31 @@ class OptionParser
         yield(indent + l)
       end
 
-      while (l = left.shift; r = right.shift; l or r)
+      while begin l = left.shift; r = right.shift; l or r end
         l = l.to_s.ljust(width) + ' ' + r if r and !r.empty?
         yield(indent + l)
       end
 
       self
+    end
+
+    def add_banner(to)  # :nodoc:
+      unless @short or @long
+        s = desc.join
+        to << " [" + s + "]..." unless s.empty?
+      end
+      to
+    end
+
+    def match_nonswitch?(str) # :nodoc:
+      @pattern =~ str unless @short or @long
+    end
+
+    #
+    # Main name of the switch.
+    #
+    def switch_name
+      (long.first || short.first).sub(/\A-+(?:\[no-\])?/, '')
     end
 
     #
@@ -410,7 +425,7 @@ class OptionParser
       #
       # Raises an exception if any arguments given.
       #
-      def parse(arg, argv, &error)
+      def parse(arg, argv)
         yield(NeedlessArgument, arg) if arg
         conv_arg(arg)
       end
@@ -588,8 +603,7 @@ class OptionParser
     def search(id, key)
       if list = __send__(id)
         val = list.fetch(key) {return nil}
-        return val unless block_given?
-        yield(val)
+        block_given? ? yield(val) : val
       end
     end
 
@@ -604,6 +618,13 @@ class OptionParser
     end
 
     #
+    # Iterates over each option, passing the option to the +block+.
+    #
+    def each_option(&block)
+      list.each(&block)
+    end
+
+    #
     # Creates the summary table, passing each line to the +block+ (without
     # newline). The arguments +args+ are passed along to the summarize
     # method which is called on every option.
@@ -612,12 +633,21 @@ class OptionParser
       list.each do |opt|
         if opt.respond_to?(:summarize) # perhaps OptionParser::Switch
           opt.summarize(*args, &block)
-        elsif opt.empty?
+        elsif !opt or opt.empty?
           yield("")
         else
           opt.each(&block)
         end
       end
+    end
+
+    def add_banner(to)  # :nodoc:
+      list.each do |opt|
+        if opt.respond_to?(:add_banner)
+          opt.add_banner(to)
+        end
+      end
+      to
     end
   end
 
@@ -757,7 +787,7 @@ class OptionParser
 
   def add_officious  # :nodoc:
     list = base()
-    Officious.each_pair do |opt, block|
+    Officious.each do |opt, block|
       list.long[opt] ||= block.call(self)
     end
   end
@@ -828,7 +858,11 @@ class OptionParser
   # Heading banner preceding summary.
   #
   def banner
-    @banner ||= "Usage: #{program_name} [options]"
+    unless @banner
+      @banner = "Usage: #{program_name} [options]"
+      visit(:add_banner, @banner)
+    end
+    @banner
   end
 
   #
@@ -1020,7 +1054,7 @@ class OptionParser
   #   Handler for the parsed argument value. Either give a block or pass a
   #   Proc or Method as an argument.
   #
-  def make_switch(*opts, &block)
+  def make_switch(opts, block = nil)
     short, long, nolong, style, pattern, conv, not_pattern, not_conv, not_style = [], [], []
     ldesc, sdesc, desc, arg = [], [], []
     default_style = Switch::NoArgument
@@ -1123,20 +1157,24 @@ class OptionParser
     end
 
     default_pattern, conv = search(:atype, default_style.pattern) unless default_pattern
-    s = if short.empty? and long.empty?
-          raise ArgumentError, "no switch given" if style or pattern or block
-          desc
-        else
-          (style || default_style).new(pattern || default_pattern,
+    if !(short.empty? and long.empty?)
+      s = (style || default_style).new(pattern || default_pattern,
                                        conv, sdesc, ldesc, arg, desc, block)
-        end
+    elsif !block
+      raise ArgumentError, "no switch given" if style or pattern
+      s = desc
+    else
+      short << pattern
+      s = (style || default_style).new(pattern,
+                                       conv, nil, nil, arg, desc, block)
+    end
     return s, short, long,
       (not_style.new(not_pattern, not_conv, sdesc, ldesc, nil, desc, block) if not_style),
       nolong
   end
 
   def define(*opts, &block)
-    top.append(*(sw = make_switch(*opts, &block)))
+    top.append(*(sw = make_switch(opts, block)))
     sw[0]
   end
 
@@ -1151,7 +1189,7 @@ class OptionParser
   alias def_option define
 
   def define_head(*opts, &block)
-    top.prepend(*(sw = make_switch(*opts, &block)))
+    top.prepend(*(sw = make_switch(opts, block)))
     sw[0]
   end
 
@@ -1165,7 +1203,7 @@ class OptionParser
   alias def_head_option define_head
 
   def define_tail(*opts, &block)
-    base.append(*(sw = make_switch(*opts, &block)))
+    base.append(*(sw = make_switch(opts, block)))
     sw[0]
   end
 
@@ -1200,6 +1238,10 @@ class OptionParser
   # Same as #order, but removes switches destructively.
   #
   def order!(argv = default_argv, &nonopt)
+    parse_in_order(argv, &nonopt)
+  end
+
+  def parse_in_order(argv = default_argv, setter = nil, &nonopt)  # :nodoc:
     opt, arg, sw, val, rest = nil
     nonopt ||= proc {|arg| throw :terminate, arg}
     argv.unshift(arg) if arg = catch(:terminate) {
@@ -1214,8 +1256,9 @@ class OptionParser
             raise $!.set_option(arg, true)
           end
           begin
-            opt, sw, val = sw.parse(rest, argv) {|*exc| raise(*exc)}
-            sw.call(val) if sw
+            opt, cb, val = sw.parse(rest, argv) {|*exc| raise(*exc)}
+            val = cb.call(val) if cb
+            setter.call(sw.switch_name, val) if setter
           rescue ParseError
             raise $!.set_option(arg, rest)
           end
@@ -1224,7 +1267,8 @@ class OptionParser
         when /\A-(.)((=).*|.+)?/nm
           opt, has_arg, eq, val, rest = $1, $3, $3, $2, $2
           begin
-            unless sw = search(:short, opt)
+            sw, = search(:short, opt)
+            unless sw
               begin
                 sw, = complete(:short, opt)
                 # short option matched.
@@ -1241,25 +1285,34 @@ class OptionParser
             raise $!.set_option(arg, true)
           end
           begin
-            opt, sw, val = sw.parse(val, argv) {|*exc| raise(*exc) if eq}
+            opt, cb, val = sw.parse(val, argv) {|*exc| raise(*exc) if eq}
             raise InvalidOption, arg if has_arg and !eq and arg == "-#{opt}"
             argv.unshift(opt) if opt and (opt = opt.sub(/\A-*/, '-')) != '-'
-            sw.call(val) if sw
+            val = cb.call(val) if cb
+            setter.call(sw.switch_name, val) if setter
           rescue ParseError
             raise $!.set_option(arg, arg.length > 2)
           end
 
         # non-option argument
         else
-          nonopt.call(arg)
+          catch(:prune) do
+            visit(:each_option) do |sw|
+              sw.block.call(arg) if Switch === sw and sw.match_nonswitch?(arg)
+            end
+            nonopt.call(arg)
+          end
         end
       end
 
       nil
     }
 
+    visit(:search, :short, nil) {|sw| sw.block.call(*argv) if !sw.pattern}
+
     argv
   end
+  private :parse_in_order
 
   #
   # Parses command line arguments +argv+ in permutation mode and returns
@@ -1304,16 +1357,25 @@ class OptionParser
   #
   # Wrapper method for getopts.rb.
   #
-  def getopts(argv, single_options, *long_options)
+  #   params = ARGV.getopts("ab:", "foo", "bar:")
+  #   # params[:a] = true   # -a
+  #   # params[:b] = "1"    # -b1
+  #   # params[:foo] = "1"  # --foo
+  #   # params[:bar] = "x"  # --bar x
+  #
+  def getopts(*args)
+    argv = Array === args.first ? args.shift : default_argv
+    single_options, *long_options = *args
+
     result = {}
 
     single_options.scan(/(.)(:)?/) do |opt, val|
       if val
         result[opt] = nil
-        define("-#{opt} VAL") {|val| result[opt] = val}
+        define("-#{opt} VAL")
       else
         result[opt] = false
-        define("-#{opt}") {result[opt] = true}
+        define("-#{opt}")
       end
     end if single_options
 
@@ -1321,14 +1383,14 @@ class OptionParser
       opt, val = arg.split(':', 2)
       if val
         result[opt] = val.empty? ? nil : val
-        define("--#{opt} VAL") {|val| result[opt] = val}
+        define("--#{opt} VAL")
       else
         result[opt] = false
-        define("--#{opt}") {result[opt] = true}
+        define("--#{opt}")
       end
     end
 
-    order!(argv)
+    parse_in_order(argv, result.method(:[]=))
     result
   end
 
@@ -1353,12 +1415,12 @@ class OptionParser
   private :visit
 
   #
-  # Searches key +k+ in @stack for +id+ hash and returns or yields the result.
+  # Searches +key+ in @stack for +id+ hash and returns or yields the result.
   #
-  def search(id, k)
-    visit(:search, id, k) do |k|
-      return k unless block_given?
-      return yield(k)
+  def search(id, key)
+    block_given = block_given?
+    visit(:search, id, key) do |k|
+      return block_given ? yield(k) : k
     end
   end
   private :search
@@ -1570,7 +1632,6 @@ class OptionParser
     end
 
     alias to_s message
-    alias to_str message
   end
 
   #
@@ -1723,5 +1784,5 @@ if $0 == __FILE__
   Version = OptionParser::Version
   ARGV.options {|q|
     q.parse!.empty? or puts "what's #{ARGV.join(' ')}?"
-  } or exit 1
+  } or abort(ARGV.options.to_s)
 end

@@ -367,13 +367,13 @@ class CGI
   #   CGI::unescapeHTML("Usage: foo &quot;bar&quot; &lt;baz&gt;")
   #      # => "Usage: foo \"bar\" <baz>"
   def CGI::unescapeHTML(string)
-    string.gsub(/&(.*?);/n) do
+    string.gsub(/&(amp|quot|gt|lt|\#[0-9]+|\#x[0-9A-Fa-f]+);/n) do
       match = $1.dup
       case match
-      when /\Aamp\z/ni           then '&'
-      when /\Aquot\z/ni          then '"'
-      when /\Agt\z/ni            then '>'
-      when /\Alt\z/ni            then '<'
+      when 'amp'                 then '&'
+      when 'quot'                then '"'
+      when 'gt'                  then '>'
+      when 'lt'                  then '<'
       when /\A#0*(\d+)\z/n       then
         if Integer($1) < 256
           Integer($1).chr
@@ -556,7 +556,8 @@ class CGI
     end
 
     options.delete("nph") if defined?(MOD_RUBY)
-    if options.delete("nph") or /IIS/n.match(env_table['SERVER_SOFTWARE'])
+    if options.delete("nph") or
+        (/IIS\/(\d+)/n.match(env_table['SERVER_SOFTWARE']) and $1.to_i < 5)
       buf += (env_table["SERVER_PROTOCOL"] or "HTTP/1.0")  + " " +
              (HTTP_STATUS[options["status"]] or options["status"] or "200 OK") +
              EOL +
@@ -708,13 +709,13 @@ class CGI
       require "nkf"
       case options["charset"]
       when /iso-2022-jp/ni
-        content = NKF::nkf('-j', content)
+        content = NKF::nkf('-m0 -x -j', content)
         options["language"] = "ja" unless options.has_key?("language")
       when /euc-jp/ni
-        content = NKF::nkf('-e', content)
+        content = NKF::nkf('-m0 -x -e', content)
         options["language"] = "ja" unless options.has_key?("language")
       when /shift_jis/ni
-        content = NKF::nkf('-s', content)
+        content = NKF::nkf('-m0 -x -s', content)
         options["language"] = "ja" unless options.has_key?("language")
       end
     end
@@ -1037,8 +1038,8 @@ class CGI
 
         body.rewind
 
-        /Content-Disposition:.* filename="?([^\";]*)"?/ni.match(head)
-	filename = ($1 or "")
+        /Content-Disposition:.* filename=(?:"((?:\\.|[^\"])*)"|([^;]*))/ni.match(head)
+	filename = ($1 or $2 or "")
 	if /Mac/ni.match(env_table['HTTP_USER_AGENT']) and
 	    /Mozilla/ni.match(env_table['HTTP_USER_AGENT']) and
 	    (not /MSIE/ni.match(env_table['HTTP_USER_AGENT']))
@@ -1063,7 +1064,7 @@ class CGI
           params[name] = [body]
         end
         break if buf.size == 0
-        break if content_length === -1
+        break if content_length == -1
       end
       raise EOFError, "bad boundary end of body part" unless boundary_end=~/--/
 
@@ -1162,6 +1163,7 @@ class CGI
     # retrieved; use #params() to get the array of values.
     def [](key)
       params = @params[key]
+      return '' unless params
       value = params[0]
       if @multipart
         if value

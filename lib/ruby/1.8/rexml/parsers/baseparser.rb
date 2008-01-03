@@ -49,11 +49,11 @@ module REXML
       CLOSE_MATCH = /^\s*<\/(#{NAME_STR})\s*>/um
 
       VERSION = /\bversion\s*=\s*["'](.*?)['"]/um
-      ENCODING = /\bencoding=["'](.*?)['"]/um
-      STANDALONE = /\bstandalone=["'](.*?)['"]/um
+      ENCODING = /\bencoding\s*=\s*["'](.*?)['"]/um
+      STANDALONE = /\bstandalone\s*=\s["'](.*?)['"]/um
 
       ENTITY_START = /^\s*<!ENTITY/
-      IDENTITY = /^([!\*\w\-]+)(\s+#{NCNAME_STR})?(\s+["'].*?['"])?(\s+['"].*?["'])?/u
+      IDENTITY = /^([!\*\w\-]+)(\s+#{NCNAME_STR})?(\s+["'](.*?)['"])?(\s+['"](.*?)["'])?/u
       ELEMENTDECL_START = /^\s*<!ELEMENT/um
       ELEMENTDECL_PATTERN = /^\s*(<!ELEMENT.*?)>/um
       SYSTEMENTITY = /^\s*(%.*?;)\s*$/um
@@ -95,6 +95,13 @@ module REXML
         'quot' => [/&quot;/, '&quot;', '"', /"/], 
         "apos" => [/&apos;/, "&apos;", "'", /'/] 
       }
+
+
+      ######################################################################
+      # These are patterns to identify common markup errors, to make the
+      # error messages more informative.
+      ######################################################################
+      MISSING_ATTRIBUTE_QUOTES = /^<#{NAME_STR}\s+#{NAME_STR}\s*=\s*[^"']/um
 
       def initialize( source )
         self.stream = source
@@ -139,8 +146,6 @@ module REXML
 
       # Returns true if there are no more events
       def empty?
-        #STDERR.puts "@source.empty? = #{@source.empty?}"
-        #STDERR.puts "@stack.empty? = #{@stack.empty?}"
         return (@source.empty? and @stack.empty?)
       end
 
@@ -212,10 +217,10 @@ module REXML
             close = md[2]
             identity =~ IDENTITY
             name = $1
-            raise REXML::ParseException("DOCTYPE is missing a name") if name.nil?
+            raise REXML::ParseException.new("DOCTYPE is missing a name") if name.nil?
             pub_sys = $2.nil? ? nil : $2.strip
-            long_name = $3.nil? ? nil : $3.strip
-            uri = $4.nil? ? nil : $4.strip
+            long_name = $4.nil? ? nil : $4.strip
+            uri = $6.nil? ? nil : $6.strip
             args = [ :start_doctype, name, pub_sys, long_name, uri ]
             if close == ">"
               @document_status = :after_doctype
@@ -335,7 +340,11 @@ module REXML
             else
               # Get the next tag
               md = @source.match(TAG_MATCH, true)
-              raise REXML::ParseException.new("malformed XML: missing tag start", @source) unless md
+              unless md
+                # Check for missing attribute quotes
+                raise REXML::ParseException.new("missing attribute quote", @source) if @source.match(MISSING_ATTRIBUTE_QUOTES )
+                raise REXML::ParseException.new("malformed XML: missing tag start", @source) 
+              end
               attrs = []
               if md[2].size > 0
                 attrs = md[2].scan( ATTRIBUTE_PATTERN )
@@ -354,8 +363,6 @@ module REXML
           else
             md = @source.match( TEXT_PATTERN, true )
             if md[0].length == 0
-              puts "EMPTY = #{empty?}"
-              puts "BUFFER = \"#{@source.buffer}\""
               @source.match( /(\s+)/, true )
             end
             #STDERR.puts "GOT #{md[1].inspect}" unless md[0].length == 0

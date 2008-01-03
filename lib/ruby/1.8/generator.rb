@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 #--
 # $Idaemons: /home/cvs/rb/generator.rb,v 1.8 2001/10/03 08:54:32 knu Exp $
 # $RoughId: generator.rb,v 1.10 2003/10/14 19:36:58 knu Exp $
