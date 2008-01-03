@@ -407,6 +407,7 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = getRuntime();
 
         if (argc == 0) {
+            modifyCheck();
             realLength = 0;
             if (block.isGiven()) runtime.getWarnings().warn("given block not used");
 
@@ -1452,7 +1453,7 @@ public class RubyArray extends RubyObject implements List {
         	lenObj = argc > 2 ? args[2] : null;
         }
 
-        long beg = 0, end = 0, len = 0;
+        int beg = 0, end = 0, len = 0;
         switch (argc) {
         case 1:
             beg = 0;
@@ -1467,36 +1468,43 @@ public class RubyArray extends RubyObject implements List {
             }
             /* fall through */
         case 3:
-            beg = begObj.isNil() ? 0 : RubyNumeric.num2long(begObj);
+            beg = begObj.isNil() ? 0 : RubyNumeric.num2int(begObj);
             if (beg < 0) {
                 beg = realLength + beg;
                 if (beg < 0) beg = 0;
             }
-            len = (lenObj == null || lenObj.isNil()) ? realLength - beg : RubyNumeric.num2long(lenObj);
+            len = (lenObj == null || lenObj.isNil()) ? realLength - beg : RubyNumeric.num2int(lenObj);
+            // TODO: In MRI 1.9, an explicit check for negative length is
+            // added here. IndexError is raised when length is negative.
+            // See [ruby-core:12953] for more details.
             break;
         }
 
         modify();
 
         end = beg + len;
+        // apparently, that's how MRI does overflow check
+        if (end < 0) {
+            throw getRuntime().newArgumentError("argument too big");
+        }
         if (end > realLength) {
-            if (end >= values.length) realloc((int) end);
+            if (end >= values.length) realloc(end);
 
-            Arrays.fill(values, realLength, (int) end, getRuntime().getNil());
-            realLength = (int) end;
+            Arrays.fill(values, realLength, end, getRuntime().getNil());
+            realLength = end;
         }
 
         if (block.isGiven()) {
             Ruby runtime = getRuntime();
             ThreadContext context = runtime.getCurrentContext();
-            for (int i = (int) beg; i < (int) end; i++) {
+            for (int i = beg; i < end; i++) {
                 IRubyObject v = block.yield(context, runtime.newFixnum(i));
                 if (i >= realLength) break;
 
                 values[i] = v;
             }
         } else {
-            if(len > 0) Arrays.fill(values, (int) beg, (int) (beg + len), item);
+            if(len > 0) Arrays.fill(values, beg, beg + len, item);
         }
         
         return this;

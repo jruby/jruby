@@ -67,6 +67,22 @@ class TestArray < Test::Unit::TestCase
     assert_equal([1,1,1,1], arr)
   end
   
+  def test_fill_big_length
+    arr = [1, 2, 3]
+    assert_raises(ArgumentError) {
+      arr.fill(10, 1, 2**31 - 1)
+    }
+    assert_raises(RangeError) {
+      arr.fill(10, 1, 2**31)
+    }
+    assert_raises(RangeError) {
+      arr.fill(10, 1, 2**31 + 1)
+    }
+    assert_raises(RangeError) {
+      arr.fill(10, 1, 2**32)
+    }
+  end
+  
   def test_flatten
     arr = []
     arr << [[[arr]]]
@@ -241,4 +257,9 @@ class TestArray < Test::Unit::TestCase
     assert_equal(0, ([a1] - [a2]).size)
   end
 
+  def test_initialize_on_frozen_array
+    assert_raises(TypeError) {  
+      [1, 2, 3].freeze.instance_eval { initialize }
+    }
+  end
 end
