@@ -699,7 +699,7 @@
       <sysproperty key="jruby.launch.inproc" value="false"/>
       
       <arg value="bin/ci"/>
-      <arg value="-t"/><arg value="j"/>
+      <arg value="-t"/><arg value="${basedir}/bin/jruby"/>
       <arg value="-c"/>
       <arg value="-E"/><arg value="${basedir}/test/spec_excludes"/>
       <arg value="spec/ruby/1.8"/>
@@ -733,7 +733,7 @@
       <sysproperty key="jruby.compat.version" value="ruby1_8"/>
       
       <arg value="bin/ci"/>
-      <arg value="-t"/><arg value="j"/>
+      <arg value="-t"/><arg value="${basedir}/bin/jruby"/>
       <arg value="-f"/><arg value="m"/>
       <arg value="-E"/><arg value="${basedir}/test/spec_excludes"/>
       <arg value="spec/ruby/1.8"/>
