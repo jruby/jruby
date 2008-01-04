@@ -1,0 +1,1 @@
+Array#initialize raises TypeError on frozen arrays even if the array would not be 'modified'

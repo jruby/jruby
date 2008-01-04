@@ -1,0 +1,2 @@
+Process.waitall waits for all children
+Process.waitall returns an array of pid/status pairs

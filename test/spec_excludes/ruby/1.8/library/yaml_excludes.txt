@@ -1,0 +1,2 @@
+YAML class method tagged_classes should return complete dictionary of taguris paied with classes
+YAML class method tagurize should convert a type_id to a taguri

@@ -1,0 +1,1 @@
+File.expand_path raise an exception if the argumnents are not of the correct type or are missing

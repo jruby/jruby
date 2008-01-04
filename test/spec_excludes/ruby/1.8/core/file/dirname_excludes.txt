@@ -1,0 +1,1 @@
+File.dirname dirname should return all the components of filename except the last one

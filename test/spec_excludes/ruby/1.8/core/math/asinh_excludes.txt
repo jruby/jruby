@@ -1,0 +1,1 @@
+Math.asinh returns the inverse hyperbolic sin of the argument

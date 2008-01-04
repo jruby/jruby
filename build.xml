@@ -719,25 +719,31 @@ test/externals/rubinius/spec/parser"/>
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
+      <sysproperty key="jruby.launch.inproc" value="false"/>
       
-      <arg value="bin/mspec"/>
+      <arg value="bin/ci"/>
       <arg value="-t"/>
       <arg value="j"/>
-      <arg value="-p"/>
-      <arg value="spec"/>
+      <arg value="-E"/>
+      <arg value="${basedir}/test/spec_excludes"/>
+      <arg value="spec/ruby/1.8"/>
     </java>
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubinius">
+  </target>
+  
+  <target name="update-excludes" >
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${build.dir}/rubinius">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.objectspace.enabled" value="true"/>
+      <sysproperty key="jruby.launch.inproc" value="false"/>
       
-      <jvmarg value="-ea"/>
-      
-      <arg value="-Ispec"/>
-      <arg value="-rmini_rspec.rb"/>
-      <arg value="-rmini_mock.rb"/>
-      <arg value="tmp/last_mspec.rb"/>
+      <arg value="bin/ci"/>
+      <arg value="-t"/>
+      <arg value="j"/>
+      <arg value="-c"/>
+      <arg value="-E"/>
+      <arg value="${basedir}/test/spec_excludes"/>
+      <arg value="spec/ruby/1.8"/>
     </java>
   </target>
   

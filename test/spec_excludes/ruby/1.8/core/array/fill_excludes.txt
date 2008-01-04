@@ -1,0 +1,1 @@
+Array#fill raises an error if given an index and a negative count
