@@ -59,7 +59,13 @@ public class RubyEtc {
     public static IRubyObject getlogin(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         
-        return runtime.newString(runtime.getPosix().getlogin());
+        String login = runtime.getPosix().getlogin();
+        
+        if (login != null) {
+            return runtime.newString(login);
+        } else {
+            return runtime.getNil();
+        }
     }
     
     /*
