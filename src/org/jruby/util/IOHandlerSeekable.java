@@ -78,7 +78,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
             theFile.createNewFile();
         } else {
             if (!theFile.exists()) {
-                throw new FileNotFoundException();
+                throw runtime.newErrnoENOENTError("file not found - " + path);
             }
         }
 

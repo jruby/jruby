@@ -426,7 +426,7 @@ public class RubyIO extends RubyObject {
             }
 
             try {
-                if (handler != null) {
+                if (handler != null && handler.isOpen()) {
                     close();
                 }
 

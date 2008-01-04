@@ -157,6 +157,9 @@ class TestIO < Test::Unit::TestCase
     assert(f.fileno != i.fileno);
     i.close
     f.close
+    
+    # reopen of a filename after a close should succeed (JRUBY-1885)
+    assert_nothing_raised { f.reopen(@file) }
   end
 
   def test_file_puts_gets_readline
