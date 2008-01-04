@@ -51,21 +51,27 @@ public class RubyGC {
         return result;        
     }
 
-    @JRubyMethod(name = {"start", "garbage_collect"}, module = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject start(IRubyObject recv) {
         System.gc();
         return recv.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "enable", module = true)
-    public static IRubyObject enable(IRubyObject recv) {
-        recv.getRuntime().getWarnings().warn("GC#enable will not work on JRuby");
+    @JRubyMethod
+    public static IRubyObject garbage_collect(IRubyObject recv) {
+        System.gc();
         return recv.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "disable", module = true)
+    @JRubyMethod(meta = true)
+    public static IRubyObject enable(IRubyObject recv) {
+        recv.getRuntime().getWarnings().warn("GC.enable will not work on JRuby");
+        return recv.getRuntime().getNil();
+    }
+
+    @JRubyMethod(meta = true)
     public static IRubyObject disable(IRubyObject recv) {
-        recv.getRuntime().getWarnings().warn("GC#disable will not work on JRuby");
+        recv.getRuntime().getWarnings().warn("GC.disable will not work on JRuby");
         return recv.getRuntime().getNil();
     }
 }
