@@ -26,6 +26,8 @@ begin
   old_verbose, $VERBOSE = $VERBOSE, nil # silence warnings
   require 'jruby/openssl/gem' unless caller.detect {|tr| tr =~ /rubygems/}
 rescue Exception
+  $stderr.puts "The jruby-openssl gem is not installed; some operations may fail."
+  $stderr.puts "Using builtin openssl, which only supports OpenSSL::HMAC and OpenSSL::Digest."
 ensure
   $VERBOSE = old_verbose
 end 
