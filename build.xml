@@ -699,14 +699,29 @@ test/externals/rubinius/spec/parser"/>
     </junitreport>
   </target>
   
-  <target name="spec" depends="clear-specs, fetch-specs, run-specs"/>
+  <target name="spec" depends="fetch-specs, run-specs"/>
   
   <target name="fetch-specs">
+      <condition property="rubinius-repo-exists">
+          <available file="${build.dir}/rubinius"/>
+      </condition>
+      
+      <antcall target="do-fetch-specs"/>
+      <antcall target="do-update-specs"/>
+  </target>
+  
+  <target name="do-fetch-specs" unless="rubinius-repo-exists">
       <exec dir="${build.dir}" executable="git">
           <arg value="clone"/>
           <arg value="--depth"/><arg value="1"/>
           <arg value="git://git.rubini.us/code"/>
           <arg value="rubinius"/>
+      </exec>
+  </target>
+  
+  <target name="do-update-specs" if="rubinius-repo-exists">
+      <exec dir="${build.dir}/rubinius" executable="git">
+          <arg value="pull"/>
       </exec>
   </target>
   
@@ -722,10 +737,9 @@ test/externals/rubinius/spec/parser"/>
       <sysproperty key="jruby.launch.inproc" value="false"/>
       
       <arg value="bin/ci"/>
-      <arg value="-t"/>
-      <arg value="j"/>
-      <arg value="-E"/>
-      <arg value="${basedir}/test/spec_excludes"/>
+      <arg value="-t"/><arg value="j"/>
+      <arg value="-f"/><arg value="m"/>
+      <arg value="-E"/><arg value="${basedir}/test/spec_excludes"/>
       <arg value="spec/ruby/1.8"/>
     </java>
   </target>
@@ -738,11 +752,9 @@ test/externals/rubinius/spec/parser"/>
       <sysproperty key="jruby.launch.inproc" value="false"/>
       
       <arg value="bin/ci"/>
-      <arg value="-t"/>
-      <arg value="j"/>
+      <arg value="-t"/><arg value="j"/>
       <arg value="-c"/>
-      <arg value="-E"/>
-      <arg value="${basedir}/test/spec_excludes"/>
+      <arg value="-E"/><arg value="${basedir}/test/spec_excludes"/>
       <arg value="spec/ruby/1.8"/>
     </java>
   </target>
