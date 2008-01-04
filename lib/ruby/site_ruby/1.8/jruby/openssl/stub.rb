@@ -9,8 +9,10 @@ module OpenSSL
     Config
     Netscape
     PKCS7
+    PKey
     Random
     SSL
+    X509
     ].each {|c| autoload c, "jruby/openssl/gem"}
 
   # These have fallbacks, but will still try to load the gem first
@@ -23,7 +25,4 @@ module OpenSSL
     HMAC
     HMACError
     ].each {|c| autoload c, "jruby/openssl/builtin"}
-
-  # These are needed specifically because Rubygems itself references them
-  %w[PKey X509].each {|c| autoload c, "jruby/openssl/rubygem_preloads"}
 end

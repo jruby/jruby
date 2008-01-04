@@ -1,4 +1,10 @@
-require 'jruby/openssl/rubygem_preloads'
+begin
+  old_verbose, $VERBOSE = $VERBOSE, nil # silence warnings
+  require 'jruby/openssl/gem'
+rescue Exception
+ensure
+  $VERBOSE = old_verbose
+end
 
 module OpenSSL
   VERSION = "1.0.0"
