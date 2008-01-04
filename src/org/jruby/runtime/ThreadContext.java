@@ -550,8 +550,6 @@ public final class ThreadContext {
         
         if (previousFrame.getName() != null) {
             buf.append(":in `").append(previousFrame.getName()).append('\'');
-        } else if (frame.getName() != null) {
-            buf.append(":in `").append(frame.getName()).append('\'');
         }
         
         backtrace.append(backtrace.getRuntime().newString(buf.toString()));
