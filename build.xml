@@ -352,7 +352,6 @@
     instrument,
     run-junit-interpreted,
     run-junit-interpreted-1.9,
-    run-spec-interpreted,
     coverage-report">
   </target>
 
@@ -363,8 +362,6 @@
     run-junit-interpreted,
     run-junit-compiled-1.9,
     run-junit-interpreted-1.9,
-    run-spec-compiled,
-    run-spec-interpreted,
     compile-stdlib,
     coverage-report">
   </target>
@@ -392,74 +389,9 @@
       run-junit-precompiled-threadpool,
       run-junit-interpreted-threadpool,
       run-junit-object-persistence,
-      run-spec-compiled,
-      run-spec-precompiled,
-      run-spec-interpreted,
       compile-stdlib,
       coverage-report
   "/>
-  
-  <target name="test-spec" depends="run-spec-compiled, run-spec-precompiled, run-spec-interpreted"/>
-  
-  <property name="working.rubinius.specs" value="
-test/externals/rubinius/spec/core/enumerable_spec.rb
-test/externals/rubinius/spec/core/false_spec.rb
-test/externals/rubinius/spec/core/hash_spec.rb
-test/externals/rubinius/spec/core/integer_spec.rb
-test/externals/rubinius/spec/core/io_spec.rb
-test/externals/rubinius/spec/core/matchdata_spec.rb
-test/externals/rubinius/spec/core/nil_spec.rb
-test/externals/rubinius/spec/core/object_spec.rb
-test/externals/rubinius/spec/core/objectspace_spec.rb
-test/externals/rubinius/spec/core/proc_spec.rb
-test/externals/rubinius/spec/core/range_spec.rb
-test/externals/rubinius/spec/core/regexp_spec.rb
-test/externals/rubinius/spec/core/struct_spec.rb
-test/externals/rubinius/spec/core/symbol_spec.rb
-test/externals/rubinius/spec/core/time_spec.rb
-test/externals/rubinius/spec/core/thread_spec.rb
-test/externals/rubinius/spec/core/true_spec.rb
-test/externals/rubinius/spec/language/assignment_spec.rb
-test/externals/rubinius/spec/language/class_spec.rb
-test/externals/rubinius/spec/language/case_spec.rb
-test/externals/rubinius/spec/language/splat_spec.rb
-test/externals/rubinius/spec/language/variables_spec.rb
-test/externals/rubinius/spec/language/expressions/for_spec.rb
-test/externals/rubinius/spec/language/expressions/if_spec.rb
-test/externals/rubinius/spec/language/expressions/unless_spec.rb
-test/externals/rubinius/spec/language/expressions/until_spec.rb
-test/externals/rubinius/spec/language/expressions/while_spec.rb
-test/externals/rubinius/spec/language/keywords/break_spec.rb
-test/externals/rubinius/spec/language/keywords/defined_spec.rb
-test/externals/rubinius/spec/language/keywords/next_spec.rb
-test/externals/rubinius/spec/language/keywords/redo_spec.rb
-test/externals/rubinius/spec/language/literals
-test/externals/rubinius/spec/library
-test/externals/rubinius/spec/parser"/>
-  
-  <target name="run-spec-compiled" depends="install-gems">
-      <antcall target="run-spec" inheritall="false">
-          <param name="compile.mode" value="JIT"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="SPEC" value="${working.rubinius.specs}"/>
-      </antcall>
-  </target>
-  
-  <target name="run-spec-precompiled" depends="install-gems">
-      <antcall target="run-spec" inheritall="false">
-          <param name="compile.mode" value="FORCE"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="SPEC" value="${working.rubinius.specs}"/>
-      </antcall>
-  </target>
-  
-  <target name="run-spec-interpreted" depends="install-gems">
-      <antcall target="run-spec" inheritall="false">
-          <param name="compile.mode" value="OFF"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="SPEC" value="${working.rubinius.specs}"/>
-      </antcall>
-  </target>
   
   <target name="run-junit-interpreted" description="runs junit tests">
       <antcall target="run-junit-1.8" inheritall="false"/>
@@ -729,22 +661,37 @@ test/externals/rubinius/spec/parser"/>
       <delete dir="${build.dir}/rubinius"/>
   </target>
   
-  <target name="run-specs" >
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubinius">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
-      <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.launch.inproc" value="false"/>
-      
-      <arg value="bin/ci"/>
-      <arg value="-t"/><arg value="j"/>
-      <arg value="-f"/><arg value="m"/>
-      <arg value="-E"/><arg value="${basedir}/test/spec_excludes"/>
-      <arg value="spec/ruby/1.8"/>
-    </java>
+  <target name="run-specs">
+      <antcall target="run-specs-compiled"/>
+      <antcall target="run-specs-precompiled"/>
+      <antcall target="run-specs-interpreted"/>
   </target>
   
-  <target name="update-excludes" >
+  <target name="run-specs-compiled">
+      <antcall target="_run_specs_internal_" inheritall="false">
+          <param name="compile.mode" value="JIT"/>
+          <param name="jit.threshold" value="0"/>
+          <param name="SPEC" value="${working.rubinius.specs}"/>
+      </antcall>
+  </target>
+  
+  <target name="run-specs-precompiled">
+      <antcall target="_run_specs_internal_" inheritall="false">
+          <param name="compile.mode" value="FORCE"/>
+          <param name="jit.threshold" value="0"/>
+          <param name="SPEC" value="${working.rubinius.specs}"/>
+      </antcall>
+  </target>
+  
+  <target name="run-specs-interpreted">
+      <antcall target="_run_specs_internal_" inheritall="false">
+          <param name="compile.mode" value="OFF"/>
+          <param name="jit.threshold" value="0"/>
+          <param name="SPEC" value="${working.rubinius.specs}"/>
+      </antcall>
+  </target>
+  
+  <target name="update-excludes">
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${build.dir}/rubinius">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
@@ -759,7 +706,7 @@ test/externals/rubinius/spec/parser"/>
     </java>
   </target>
   
-  <target name="run-spec">
+  <target name="_run_specs_internal_">
     <!-- set up properties that haven't been assigned -->
     <property name="compile.mode" value="OFF"/>
     <property name="jit.threshold" value="20"/>
@@ -768,11 +715,16 @@ test/externals/rubinius/spec/parser"/>
     <property name="reflection" value="false"/>
     <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
     
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubinius">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
-      <sysproperty key="jruby.home" value="${basedir}"/>
       
+      <jvmarg value="-ea"/>
+      
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      <sysproperty key="jruby.launch.inproc" value="false"/>
+      
+      <!-- properties tweaked for individual runs -->
       <sysproperty key="jruby.compile.mode" value="${compile.mode}"/>
       <sysproperty key="jruby.jit.threshold" value="${jit.threshold}"/>
       <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
@@ -780,15 +732,11 @@ test/externals/rubinius/spec/parser"/>
       <sysproperty key="jruby.reflection" value="${reflection}"/>
       <sysproperty key="jruby.compat.version" value="ruby1_8"/>
       
-      <arg value="-I"/>
-      <arg value="test/externals/rubinius/spec"/>
-      <arg value="-S"/>
-      <arg value="spec"/>
-      <arg value="--format"/>
-      <arg value="e"/>
-      <arg line="${SPEC}"/>
-      
-      <jvmarg value="-ea"/>
+      <arg value="bin/ci"/>
+      <arg value="-t"/><arg value="j"/>
+      <arg value="-f"/><arg value="m"/>
+      <arg value="-E"/><arg value="${basedir}/test/spec_excludes"/>
+      <arg value="spec/ruby/1.8"/>
     </java>
   </target>
 
