@@ -94,6 +94,7 @@ public class RubyException extends RubyObject {
                               MarshalStream marshalStream) throws IOException {
             RubyException exc = (RubyException)obj;
             
+            marshalStream.registerLinkTarget(exc);
             List<Variable<IRubyObject>> attrs = exc.getVariableList();
             attrs.add(new VariableEntry<IRubyObject>(
                     "mesg", exc.message == null ? runtime.getNil() : exc.message));

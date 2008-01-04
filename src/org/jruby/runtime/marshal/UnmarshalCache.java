@@ -59,12 +59,12 @@ public class UnmarshalCache {
     }
 
     public IRubyObject readLink(UnmarshalStream input, int type) throws IOException {
-        if (type == '@') {
-            return linkedByIndex(input.unmarshalInt());
-        }
-        assert type == ';';
         int i = input.unmarshalInt();
-        
+        if (type == '@') {
+            return linkedByIndex(i);
+        }
+
+        assert type == ';';
         return symbolByIndex(i);
     }
 

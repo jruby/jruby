@@ -37,6 +37,7 @@ test_java_extension
 test_jruby_internals
 test_launching_by_shell_script
 test_local_jump_error
+test_marshal_gemspec
 test_method_missing
 test_methods
 test_pack

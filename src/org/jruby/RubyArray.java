@@ -2178,6 +2178,7 @@ public class RubyArray extends RubyObject implements List {
     }
 
     public static void marshalTo(RubyArray array, MarshalStream output) throws IOException {
+        output.registerLinkTarget(array);
         output.writeInt(array.getList().size());
         for (Iterator iter = array.getList().iterator(); iter.hasNext();) {
             output.dumpObject((IRubyObject) iter.next());

@@ -1111,6 +1111,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     }
 
     public static void marshalTo(RubyRegexp regexp, MarshalStream output) throws java.io.IOException {
+        output.registerLinkTarget(regexp);
         output.writeString(new String(regexp.str.bytes,regexp.str.begin,regexp.str.realSize));
         output.writeInt(regexp.pattern.getOptions() & EMBEDDABLE);
     }

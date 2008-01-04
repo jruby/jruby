@@ -52,7 +52,6 @@ import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
@@ -83,14 +82,16 @@ public class UnmarshalStream extends BufferedInputStream {
         IRubyObject result;
         if (cache.isLinkType(type)) {
             result = cache.readLink(this, type);
-            } else {
+        } else {
             result = unmarshalObjectDirectly(type);
         }
         return result;
     }
 
     public void registerLinkTarget(IRubyObject newObject) {
-        cache.register(newObject);
+        if (MarshalStream.shouldBeRegistered(newObject)) {
+            cache.register(newObject);
+        }
     }
 
     public static RubyModule getModuleFromPath(Ruby runtime, String path) {
@@ -325,11 +326,11 @@ public class UnmarshalStream extends BufferedInputStream {
 
     private IRubyObject userNewUnmarshal() throws IOException {
         String className = unmarshalObject().asJavaString();
-        IRubyObject marshaled = unmarshalObject();
         RubyClass classInstance = findClass(className);
         IRubyObject result = classInstance.allocate();
-        result.callMethod(getRuntime().getCurrentContext(),"marshal_load", marshaled);
         registerLinkTarget(result);
+        IRubyObject marshaled = unmarshalObject();
+        result.callMethod(getRuntime().getCurrentContext(),"marshal_load", marshaled);
         return result;
     }
 

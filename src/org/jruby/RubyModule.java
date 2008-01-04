@@ -1652,6 +1652,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static void marshalTo(RubyModule module, MarshalStream output) throws java.io.IOException {
+        output.registerLinkTarget(module);
         output.writeString(MarshalStream.getPathFromClass(module));
     }
 

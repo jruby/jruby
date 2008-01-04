@@ -521,6 +521,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public static void marshalTo(RubyStruct struct, MarshalStream output) throws java.io.IOException {
+        output.registerLinkTarget(struct);
         output.dumpDefaultObjectHeader('S', struct.getMetaClass());
 
         List members = ((RubyArray) getInternalVariable(struct.classOf(), "__member__")).getList();

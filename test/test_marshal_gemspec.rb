@@ -2,6 +2,7 @@ require 'test/unit'
 require 'rubygems'
 require 'yaml'
 
+# This test demonstrates and verifies the marshalling fix for JRUBY-1877.
 class TestMarshalGemspec < Test::Unit::TestCase
   def setup
     @index = YAML::load <<-YAML

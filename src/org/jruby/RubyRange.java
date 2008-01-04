@@ -99,6 +99,7 @@ public class RubyRange extends RubyObject {
                               MarshalStream marshalStream) throws IOException {
             RubyRange range = (RubyRange)obj;
 
+            marshalStream.registerLinkTarget(range);
             List<Variable<IRubyObject>> attrs = range.getVariableList();
 
             attrs.add(new VariableEntry<IRubyObject>("begin", range.begin));

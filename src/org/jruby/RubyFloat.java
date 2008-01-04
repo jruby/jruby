@@ -581,6 +581,8 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public static void marshalTo(RubyFloat aFloat, MarshalStream output) throws java.io.IOException {
+        output.registerLinkTarget(aFloat);
+
         String strValue = aFloat.toString();
     
         if (Double.isInfinite(aFloat.value)) {

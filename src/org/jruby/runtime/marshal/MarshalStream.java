@@ -94,20 +94,22 @@ public class MarshalStream extends FilterOutputStream {
         if (depth > depthLimit) {
             throw runtime.newArgumentError("exceed depth limit");
         }
-       
         
-        if (!shouldBeRegistered(value)) {
-            writeDirectly(value);
-        } else {
-            writeAndRegister(value);
-        }
+        writeAndRegister(value);
+
         depth--;
         if (depth == 0) {
             out.flush(); // flush afer whole dump is complete
         }
     }
 
-    private boolean shouldBeRegistered(IRubyObject value) {
+    public void registerLinkTarget(IRubyObject newObject) {
+        if (shouldBeRegistered(newObject)) {
+            cache.register(newObject);
+        }
+    }
+
+    static boolean shouldBeRegistered(IRubyObject value) {
         if (value.isNil()) {
             return false;
         } else if (value instanceof RubyBoolean) {
@@ -122,7 +124,6 @@ public class MarshalStream extends FilterOutputStream {
         if (cache.isRegistered(value)) {
             cache.writeLink(this, value);
         } else {
-            cache.register(value);
             if (hasNewUserDefinedMarshaling(value)) {
                 userNewMarshal(value);
             } else if (hasUserDefinedMarshaling(value)) {
@@ -262,6 +263,7 @@ public class MarshalStream extends FilterOutputStream {
                 RubyRegexp.marshalTo((RubyRegexp)value, this);
                 return;
             case ClassIndex.STRING:
+                registerLinkTarget(value);
                 write('"');
                 writeString(value.convertToString().getByteList());
                 return;
@@ -270,6 +272,7 @@ public class MarshalStream extends FilterOutputStream {
                 RubyStruct.marshalTo((RubyStruct)value, this);
                 return;
             case ClassIndex.SYMBOL:
+                registerLinkTarget(value);
                 write(':');
                 writeString(value.toString());
                 return;
@@ -289,6 +292,7 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void userNewMarshal(IRubyObject value) throws IOException {
+        registerLinkTarget(value);
         write(TYPE_USRMARSHAL);
         RubyClass metaclass = value.getMetaClass();
         while (metaclass.isSingleton()) {
@@ -296,7 +300,7 @@ public class MarshalStream extends FilterOutputStream {
         }
         dumpObject(RubySymbol.newSymbol(runtime, metaclass.getName()));
 
-        IRubyObject marshaled =  value.callMethod(runtime.getCurrentContext(), "marshal_dump"); 
+        IRubyObject marshaled = value.callMethod(runtime.getCurrentContext(), "marshal_dump"); 
         dumpObject(marshaled);
     }
 
@@ -305,6 +309,7 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void userMarshal(IRubyObject value) throws IOException {
+        registerLinkTarget(value);
         RubyString marshaled = (RubyString) value.callMethod(runtime.getCurrentContext(), "_dump", runtime.newFixnum(depthLimit)); 
 
         boolean hasVars;

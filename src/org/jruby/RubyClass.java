@@ -399,6 +399,7 @@ public class RubyClass extends RubyModule {
     }
     
     public static void marshalTo(RubyClass clazz, MarshalStream output) throws java.io.IOException {
+        output.registerLinkTarget(clazz);
         output.writeString(MarshalStream.getPathFromClass(clazz));
     }
 
@@ -414,6 +415,7 @@ public class RubyClass extends RubyModule {
                               MarshalStream marshalStream) throws IOException {
             IRubyObject object = (IRubyObject)obj;
             
+            marshalStream.registerLinkTarget(object);
             marshalStream.dumpVariables(object.getVariableList());
         }
 

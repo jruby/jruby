@@ -570,6 +570,8 @@ public class RubyBignum extends RubyInteger {
     }
 
     public static void marshalTo(RubyBignum bignum, MarshalStream output) throws IOException {
+        output.registerLinkTarget(bignum);
+
         output.write(bignum.value.signum() >= 0 ? '+' : '-');
         
         BigInteger absValue = bignum.value.abs();

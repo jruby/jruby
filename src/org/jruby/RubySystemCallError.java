@@ -41,6 +41,7 @@ public class RubySystemCallError extends RubyException {
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             RubySystemCallError exc = (RubySystemCallError) obj;
+            marshalStream.registerLinkTarget(exc);
             
             List<Variable<IRubyObject>> attrs = exc.getVariableList();
             attrs.add(new VariableEntry<IRubyObject>(
