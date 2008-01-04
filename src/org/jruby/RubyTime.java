@@ -728,16 +728,18 @@ public class RubyTime extends RubyObject {
         
         if (len > 1) {
             if (!args[1].isNil()) {
-                if (args[1] instanceof RubyString) {
+                IRubyObject tmp = args[1].checkStringType();
+                if (!tmp.isNil()) {
+                    String monthString = tmp.toString();
                     month = -1;
                     for (int i = 0; i < 12; i++) {
-                        if (months[i].equalsIgnoreCase(args[1].toString())) {
+                        if (months[i].equalsIgnoreCase(monthString)) {
                             month = i+1;
                         }
                     }
                     if (month == -1) {
                         try {
-                            month = Integer.parseInt(args[1].toString());
+                            month = Integer.parseInt(monthString);
                         } catch (NumberFormatException nfExcptn) {
                             throw runtime.newArgumentError("Argument out of range.");
                         }
