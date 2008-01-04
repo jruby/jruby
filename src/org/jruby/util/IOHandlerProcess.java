@@ -80,9 +80,8 @@ public class IOHandlerProcess extends IOHandlerJavaIO {
 
         input.close();
         output.close();
-        
-        // TODO: to destroy or not destroy the process?
-        process.destroy();
+
+        // null out and let the process eventually get collected
         process = null;
     }
 
