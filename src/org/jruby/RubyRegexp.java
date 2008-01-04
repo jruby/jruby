@@ -497,9 +497,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
                                     value.begin + pos + range,
                                     Option.NONE);
         
-        if(result == -2) {
-            rb_reg_raise(value.bytes, value.begin, value.realSize, "Stack overflow in regexp matcher", pattern.getOptions());        
-        } else if (result < 0) {
+        if (result < 0) {
             frame.setBackRef(runtime.getNil());
             return result;
         }
