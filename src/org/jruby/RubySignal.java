@@ -33,11 +33,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * Placeholder until/if we can support this
- *
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
 public class RubySignal {
     // NOTE: The indicies here match exactly the signal values; do not reorder
     public static final String[] NAMES = {
@@ -99,7 +94,12 @@ public class RubySignal {
         handler.block = arg1;
         handler.signal_object = arg2;
         handler.signal = arg3.toString();
-        final sun.misc.SignalHandler oldHandler = sun.misc.Signal.handle(new sun.misc.Signal(handler.signal), handler);
+        final sun.misc.SignalHandler oldHandler;
+        try {
+            oldHandler = sun.misc.Signal.handle(new sun.misc.Signal(handler.signal), handler);
+        } catch (Exception e) {
+            throw recv.getRuntime().newArgumentError(e.getMessage());
+        }
         if(oldHandler instanceof JRubySignalHandler) {
             return ((JRubySignalHandler)oldHandler).block;
         } else {
