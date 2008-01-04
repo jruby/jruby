@@ -122,44 +122,83 @@ public class RubyDir extends RubyObject {
     }
 
 // ----- Ruby Class Methods ----------------------------------------------------
+    
+    private static List<ByteList> dirGlobs(String cwd, IRubyObject[] args, int flags) {
+        List<ByteList> dirs = new ArrayList<ByteList>();
+        
+        for (int i = 0; i < args.length; i++) {
+            ByteList globPattern = args[i].convertToString().getByteList();
+            dirs.addAll(Dir.push_glob(cwd, globPattern, flags));
+        }
+        
+        return dirs;
+    }
+    
+    private static IRubyObject asRubyStringList(Ruby runtime, List<ByteList> dirs) {
+        List<RubyString> allFiles = new ArrayList<RubyString>();
 
+        for (ByteList dir: dirs) {
+            allFiles.add(RubyString.newString(runtime, dir));
+        }            
+
+        IRubyObject[] tempFileList = new IRubyObject[allFiles.size()];
+        allFiles.toArray(tempFileList);
+         
+        return runtime.newArrayNoCopy(tempFileList);
+    }
+    
+    private static String getCWD(Ruby runtime) {
+        try {
+            return new org.jruby.util.NormalizedFile(runtime.getCurrentDirectory()).getCanonicalPath();
+        } catch(Exception e) {
+            return runtime.getCurrentDirectory();
+        }
+    }
+
+    @JRubyMethod(name = "[]", required = 1, optional = 1, meta = true)
+    public static IRubyObject aref(IRubyObject recv, IRubyObject[] args) {
+        List<ByteList> dirs;
+        if (args.length == 1) {
+            ByteList globPattern = args[0].convertToString().getByteList();
+            dirs = Dir.push_glob(getCWD(recv.getRuntime()), globPattern, 0);
+        } else {
+            dirs = dirGlobs(getCWD(recv.getRuntime()), args, 0);
+        }
+
+        return asRubyStringList(recv.getRuntime(), dirs);
+    }
+    
     /**
      * Returns an array of filenames matching the specified wildcard pattern
      * <code>pat</code>. If a block is given, the array is iterated internally
      * with each filename is passed to the block in turn. In this case, Nil is
      * returned.  
      */
-    @JRubyMethod(name = {"glob", "[]"}, required = 1, optional = 1, frame = true, meta = true)
+    @JRubyMethod(name = "glob", required = 1, optional = 1, frame = true, meta = true)
     public static IRubyObject glob(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         int flags = args.length == 2 ?  RubyNumeric.num2int(args[1]) : 0;
-        ByteList globPattern = args[0].convertToString().getByteList();
 
-        String cwd;
-        try {
-            cwd = new org.jruby.util.NormalizedFile(runtime.getCurrentDirectory()).getCanonicalPath();
-        } catch(Exception e) {
-            cwd = runtime.getCurrentDirectory();
+        List<ByteList> dirs;
+        IRubyObject tmp = args[0].checkArrayType();
+        if (tmp.isNil()) {
+            ByteList globPattern = args[0].convertToString().getByteList();
+            dirs = Dir.push_glob(recv.getRuntime().getCurrentDirectory(), globPattern, flags);
+        } else {
+            dirs = dirGlobs(getCWD(runtime), ((RubyArray) tmp).toJavaArray(), flags);
         }
-
-        List<ByteList> fileList = Dir.push_glob(cwd, globPattern, flags);
         
         if (block.isGiven()) {
             ThreadContext context = runtime.getCurrentContext();
-            
-            for (ByteList file: fileList) {
-                block.yield(context, RubyString.newString(runtime, file));
+        
+            for (int i = 0; i < dirs.size(); i++) {
+                block.yield(context, RubyString.newString(runtime, dirs.get(i)));
             }
-            
+        
             return recv.getRuntime().getNil();
         }
-        
-        IRubyObject[] tempFileList = new IRubyObject[fileList.size()];
-        int i=0;
-        for (ByteList file: fileList) {
-            tempFileList[i++] = RubyString.newString(runtime, file);
-        }
-        return runtime.newArrayNoCopy(tempFileList);
+
+        return asRubyStringList(recv.getRuntime(), dirs);
     }
 
     /**
