@@ -1,1 +1,0 @@
-warn 'No ThreadGroup specs'
