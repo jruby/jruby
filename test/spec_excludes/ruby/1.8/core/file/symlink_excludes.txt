@@ -1,1 +1,2 @@
-File.symlink raise an exception if the target already exists
+File.symlink raises an Errno::EEXIST if the target already exists
+File.symlink raises a TypeError if not called with String types

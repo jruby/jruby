@@ -1,1 +1,1 @@
-File.expand_path raise an exception if the argumnents are not of the correct type or are missing
+File.expand_path expands ~ENV['USER'] to the user's home directory
