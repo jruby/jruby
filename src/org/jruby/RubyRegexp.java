@@ -510,7 +510,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     final RubyMatchData updateBackRef(RubyString str, Frame frame, Matcher matcher) {
         IRubyObject backref = frame.getBackRef();
         final RubyMatchData match;
-        if (backref.isNil() || ((RubyMatchData)backref).used()) {
+        if (backref == null || backref.isNil() || ((RubyMatchData)backref).used()) {
             match = new RubyMatchData(getRuntime());
         } else {
             match = (RubyMatchData)backref;
