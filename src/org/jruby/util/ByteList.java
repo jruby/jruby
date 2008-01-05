@@ -272,7 +272,7 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     public void insert(int index, int b) {
-        if (index >= realSize) throw new IndexOutOfBoundsException();
+        if (index >= realSize) throw new IndexOutOfBoundsException("index " + index + " >= than size " + realSize);
         grow(1);
         System.arraycopy(bytes,index,bytes,index+1,realSize-index);
         bytes[index] = (byte)b;

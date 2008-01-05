@@ -240,6 +240,9 @@ public class RubyStringIO extends RubyObject {
     }
 
     public IRubyObject getc() {
+        if (pos >= internal.getByteList().length()) {
+            return getRuntime().getNil();
+        }
         return getRuntime().newFixnum(internal.getByteList().get((int)pos++) & 0xFF);
     }
 
@@ -535,8 +538,12 @@ public class RubyStringIO extends RubyObject {
     }
 
     public IRubyObject ungetc(RubyFixnum args) {
+        int c = RubyNumeric.num2int(args);
+        if (pos == 0) return getRuntime().getNil();
         internal.modify();
-        internal.getByteList().insert((int)pos,(int)args.getLongValue());
+        pos--;
+        internal.getByteList().set((int) pos, c);
+
         return getRuntime().getNil();
     }
 
