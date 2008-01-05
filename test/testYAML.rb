@@ -287,3 +287,18 @@ test_ok YAML.load("2007-01-01 01:12:34.0").instance_of?(String)
 test_ok YAML.load("2007-01-01 01:12:34 +00:00").instance_of?(Time)
 test_ok YAML.load("2007-01-01 01:12:34.0 +00:00").instance_of?(Time)
 test_ok YAML.load("{a: 2007-01-01 01:12:34}")["a"].instance_of?(String)
+
+# JRUBY-1898
+val = YAML.load(<<YAML)
+---
+- foo
+- foo
+- [foo]
+- [foo]
+- {foo: foo}
+- {foo: foo}
+YAML
+
+test_ok val[0].object_id != val[1].object_id
+test_ok val[2].object_id != val[3].object_id
+test_ok val[4].object_id != val[5].object_id

@@ -81,7 +81,6 @@ public class BaseConstructorImpl implements Constructor {
     }
 
     private Composer composer;
-    private Map constructedObjects = new HashMap();
     private Map recursiveObjects = new HashMap();
 
     public BaseConstructorImpl(final Composer composer) {
@@ -116,13 +115,8 @@ public class BaseConstructorImpl implements Constructor {
         return eachDocument();
     }
 
-    public boolean shouldRecreateNode(final Node node) {
-        return false;
-    }
-    
     public Object constructDocument(final Node node) {
         final Object data = constructObject(node);
-        constructedObjects.clear();
         recursiveObjects.clear();
         return data;
     }
@@ -141,9 +135,6 @@ public class BaseConstructorImpl implements Constructor {
     }
 
     public Object constructObject(final Node node) {
-        if(constructedObjects.containsKey(node) && !shouldRecreateNode(node)) {
-            return constructedObjects.get(node);
-        }
         if(recursiveObjects.containsKey(node)) {
             LinkNode n = new LinkNode();
             n.setValue(node);
@@ -177,7 +168,6 @@ public class BaseConstructorImpl implements Constructor {
             }
         }
         final Object data = ctor.call(this,node);
-        constructedObjects.put(node,data);
         doRecursionFix(node,data);
         return data;
     }
