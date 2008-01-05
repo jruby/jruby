@@ -2,6 +2,16 @@ require 'java' #needed for the module JavaUtilities, which JavaEmbedUtils have a
 require 'yaml_internal'
 
 module YAML
+  #
+  # Default settings
+  #
+  DEFAULTS = {
+    :Indent => 2, :UseHeader => false, :UseVersion => false, :Version => '1.0',
+    :SortKeys => false, :AnchorFormat => 'id%03d', :ExplicitTypes => false,
+    :WidthType => 'absolute', :BestWidth => 80,
+    :UseBlock => false, :UseFold => false, :Encoding => :None
+  }
+
   class Error < StandardError; end
   
   # This is not really correct. Fix pending
