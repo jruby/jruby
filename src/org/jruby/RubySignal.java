@@ -33,7 +33,21 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import org.jruby.util.SignalFacade;
+import org.jruby.util.NoFunctionalitySignalFacade;
+
 public class RubySignal {
+    private final static SignalFacade SIGNALS = getSignalFacade();
+
+    private final static SignalFacade getSignalFacade() {
+        try {
+            Class realFacadeClass = Class.forName("org.jruby.util.SunSignalFacade");
+            return (SignalFacade)realFacadeClass.newInstance();
+        } catch(Exception e) {
+            return new NoFunctionalitySignalFacade();
+        }
+    }
+
     // NOTE: The indicies here match exactly the signal values; do not reorder
     public static final String[] NAMES = {
             "EXIT", "HUP", "INT", "QUIT", "ILL", "TRAP", "ABRT", "EMT",
@@ -68,48 +82,8 @@ public class RubySignal {
         return names;
     }
 
-    private final static class JRubySignalHandler implements sun.misc.SignalHandler {
-        public Ruby runtime;
-        public IRubyObject block;
-        public IRubyObject signal_object;
-        public String signal;
-
-        public void handle(sun.misc.Signal signal) {
-            try {
-                block.callMethod(runtime.getCurrentContext(), "call", new IRubyObject[0]);
-            } catch(org.jruby.exceptions.RaiseException e) {
-                try {
-                    runtime.getThread().callMethod(runtime.getCurrentContext(), "main", new IRubyObject[0]).callMethod(runtime.getCurrentContext(), "raise", new IRubyObject[]{e.getException()});
-                } catch(Exception ignored) {}
-            } finally {
-                sun.misc.Signal.handle(new sun.misc.Signal(this.signal), this);
-            }
-        }
-    }
-
     @JRubyMethod(name = "__jtrap_kernel", required = 3,meta = true)
     public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        final JRubySignalHandler handler = new JRubySignalHandler();
-        handler.runtime = recv.getRuntime();
-        handler.block = arg1;
-        handler.signal_object = arg2;
-        handler.signal = arg3.toString();
-        final sun.misc.SignalHandler oldHandler;
-        try {
-            oldHandler = sun.misc.Signal.handle(new sun.misc.Signal(handler.signal), handler);
-        } catch (Exception e) {
-            throw recv.getRuntime().newArgumentError(e.getMessage());
-        }
-        if(oldHandler instanceof JRubySignalHandler) {
-            return ((JRubySignalHandler)oldHandler).block;
-        } else {
-            return RubyProc.newProc(recv.getRuntime(), org.jruby.runtime.CallBlock.newCallClosure(recv, (RubyModule)recv, 
-                                                                                org.jruby.runtime.Arity.noArguments(), new org.jruby.runtime.BlockCallback(){
-                                                                                        public IRubyObject call(org.jruby.runtime.ThreadContext context, IRubyObject[] args, Block block) {
-                                                                                            oldHandler.handle(new sun.misc.Signal(handler.signal));
-                                                                                            return recv.getRuntime().getNil();
-                                                                                        }
-                                                                                    }, recv.getRuntime().getCurrentContext()), Block.Type.NORMAL);
-        }
+        return SIGNALS.trap(recv, arg1, arg2, arg3);
     }
 }// RubySignal
