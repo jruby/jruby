@@ -662,8 +662,8 @@
   </target>
   
   <target name="run-specs">
-      <antcall target="run-specs-compiled"/>
       <antcall target="run-specs-precompiled"/>
+      <antcall target="run-specs-compiled"/>
       <antcall target="run-specs-interpreted"/>
   </target>
   
