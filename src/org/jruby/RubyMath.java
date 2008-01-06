@@ -197,9 +197,10 @@ public class RubyMath {
         } else if (y <= 1.0) {          
             result = value * (1.0 + chebylevSerie(2.0 * value * value - 1.0, ASINH_COEF));
         } else if (y < 94906265.62) {
-            result = Math.log(y + Math.sqrt(y * y + 1.0));
+            result = Math.log(value + Math.sqrt(value * value + 1.0));
         } else {    
             result = 0.69314718055994530941723212145818 + Math.log(y);
+            if (value < 0) result *= -1;
         }
 
         return RubyFloat.newFloat(recv.getRuntime(),result);        
