@@ -48,12 +48,14 @@ import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.Stack;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -108,6 +110,7 @@ import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
 
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.collections.WeakHashSet;
 
 /**
  * The jruby runtime.
@@ -137,6 +140,8 @@ public final class Ruby {
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
     private final boolean objectSpaceEnabled;
+    
+    private final Set<Script> jittedMethods = Collections.synchronizedSet(new WeakHashSet<Script>());
     
     private static ThreadLocal<Ruby> currentRuntime = new ThreadLocal<Ruby>();
     public static final boolean RUNTIME_THREADLOCAL
@@ -2573,5 +2578,9 @@ public final class Ruby {
     
     public GlobalVariable getRecordSeparatorVar() {
         return recordSeparatorVar;
+    }
+    
+    public Set getJittedMethods() {
+        return jittedMethods;
     }
 }

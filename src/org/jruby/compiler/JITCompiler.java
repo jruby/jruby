@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.compiler;
 
+import java.util.Set;
 import org.jruby.Ruby;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
@@ -46,7 +47,11 @@ import org.jruby.util.JavaNameMangler;
 
 public class JITCompiler {
     public static void runJIT(DefaultMethod method, Ruby runtime, ThreadContext context, String name) {
-        if (method.getCallCount() >= 0) {
+        Set jittedMethods = runtime.getJittedMethods();
+        int jitMax = runtime.getInstanceConfig().getJitMax();
+        if (method.getCallCount() >= 0
+                && jitMax != 0
+                && (jitMax == -1 || jittedMethods.size() < jitMax)) {
             try {
                 method.setCallCount(method.getCallCount() + 1);
 
@@ -113,6 +118,9 @@ public class JITCompiler {
                     
                     // finally, grab the script
                     Script jitCompiledScript = (Script)sourceClass.newInstance();
+                    
+                    // add to the jitted methods set
+                    jittedMethods.add(jitCompiledScript);
                     
                     if (runtime.getInstanceConfig().isJitLogging()) {
                         String className = method.getImplementationClass().getBaseName();

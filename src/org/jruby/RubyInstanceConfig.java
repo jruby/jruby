@@ -86,6 +86,7 @@ public class RubyInstanceConfig {
     private final boolean jitLogging;
     private final boolean jitLoggingVerbose;
     private final int jitThreshold;
+    private final int jitMax;
     private final boolean samplingEnabled;
     private CompatVersion compatVersion;
 
@@ -175,8 +176,10 @@ public class RubyInstanceConfig {
             jitLogging = false;
             jitLoggingVerbose = false;
             jitThreshold = -1;
+            jitMax = 0;
         } else {
             String threshold = SafePropertyAccessor.getProperty("jruby.jit.threshold");
+            String max = SafePropertyAccessor.getProperty("jruby.jit.max");
 
             runRubyInProcess = SafePropertyAccessor.getBoolean("jruby.launch.inproc", true);
             boolean jitProperty = SafePropertyAccessor.getProperty("jruby.jit.enabled") != null;
@@ -200,6 +203,7 @@ public class RubyInstanceConfig {
             jitLogging = SafePropertyAccessor.getBoolean("jruby.jit.logging");
             jitLoggingVerbose = SafePropertyAccessor.getBoolean("jruby.jit.logging.verbose");
             jitThreshold = threshold == null ? 20 : Integer.parseInt(threshold); 
+            jitMax = max == null ? 2048 : Integer.parseInt(max);
         }
 
         defaultJRubyClassLoader = null;
@@ -252,6 +256,9 @@ public class RubyInstanceConfig {
                 .append("\nJIT SETTINGS:\n")
                 .append("    jruby.jit.threshold=<invocation count>\n")
                 .append("       Set the JIT threshold to the specified method invocation count. Default is 20\n")
+                .append("    jruby.jit.max=<method count>\n")
+                .append("       Set the max count of active methods eligible for JIT-compilation.\n")
+                .append("       Default is 2048 per runtime. A value of 0 disables JIT, -1 disables max.\n")
                 .append("    jruby.jit.logging=true|false\n")
                 .append("       Enable JIT logging (reports successful compilation). Default is false\n")
                 .append("    jruby.jit.logging.verbose=true|false\n")
@@ -336,6 +343,10 @@ public class RubyInstanceConfig {
     
     public int getJitThreshold() {
         return jitThreshold;
+    }
+    
+    public int getJitMax() {
+        return jitMax;
     }
     
     public boolean isRunRubyInProcess() {

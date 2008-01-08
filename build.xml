@@ -511,10 +511,11 @@
     <!-- set up properties that haven't been assigned -->
     <property name="compile.mode" value="OFF"/>
     <property name="jit.threshold" value="20"/>
+    <property name="jit.max" value="-1"/>
     <property name="objectspace.enabled" value="true"/>
     <property name="thread.pooling" value="false"/>
     <property name="reflection" value="false"/>
-    <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
+    <echo message="compile=${compile.mode}, jit.threshold=${jit.threshold}, jit.max=${jit.max}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
     
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
     <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="600000">
@@ -526,6 +527,7 @@
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
       <sysproperty key="jruby.compile.mode" value="${compile.mode}"/>
       <sysproperty key="jruby.jit.threshold" value="${jit.threshold}"/>
+      <sysproperty key="jruby.jit.max" value="${jit.max}"/>
       <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
       <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
       <sysproperty key="jruby.reflection" value="${reflection}"/>
@@ -559,10 +561,11 @@
     <!-- set up properties that haven't been assigned -->
     <property name="compile.mode" value="OFF"/>
     <property name="jit.threshold" value="20"/>
+    <property name="jit.max" value="-1"/>
     <property name="objectspace.enabled" value="false"/>
     <property name="thread.pooling" value="false"/>
     <property name="reflection" value="false"/>
-    <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
+    <echo message="compile=${compile.mode}, jit.threshold=${jit.threshold}, jit.max=${jit.max}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
     
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
     <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="600000">
@@ -574,6 +577,7 @@
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
       <sysproperty key="jruby.compile.mode" value="${compile.mode}"/>
       <sysproperty key="jruby.jit.threshold" value="${jit.threshold}"/>
+      <sysproperty key="jruby.jit.max" value="${jit.max}"/>
       <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
       <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
       <sysproperty key="jruby.reflection" value="${reflection}"/>
@@ -724,6 +728,7 @@
     <!-- set up properties that haven't been assigned -->
     <property name="compile.mode" value="OFF"/>
     <property name="jit.threshold" value="20"/>
+    <property name="jit.max" value="-1"/>
     <property name="objectspace.enabled" value="true"/>
     <property name="thread.pooling" value="false"/>
     <property name="reflection" value="false"/>
@@ -741,6 +746,7 @@
       <!-- properties tweaked for individual runs -->
       <sysproperty key="jruby.compile.mode" value="${compile.mode}"/>
       <sysproperty key="jruby.jit.threshold" value="${jit.threshold}"/>
+      <sysproperty key="jruby.jit.max" value="${jit.max}"/>
       <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
       <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
       <sysproperty key="jruby.reflection" value="${reflection}"/>
@@ -758,6 +764,7 @@
     <!-- set up properties that haven't been assigned -->
     <property name="compile.mode" value="OFF"/>
     <property name="jit.threshold" value="20"/>
+    <property name="jit.max" value="-1"/>
     <property name="objectspace.enabled" value="true"/>
     <property name="thread.pooling" value="false"/>
     <property name="reflection" value="false"/>
@@ -775,6 +782,7 @@
       <!-- properties tweaked for individual runs -->
       <sysproperty key="jruby.compile.mode" value="${compile.mode}"/>
       <sysproperty key="jruby.jit.threshold" value="${jit.threshold}"/>
+      <sysproperty key="jruby.jit.max" value="${jit.max}"/>
       <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
       <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
       <sysproperty key="jruby.reflection" value="${reflection}"/>
