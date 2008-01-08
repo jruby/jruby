@@ -85,6 +85,7 @@ public class RubyInstanceConfig {
 
     private final boolean jitLogging;
     private final boolean jitLoggingVerbose;
+    private final int jitLogEvery;
     private final int jitThreshold;
     private final int jitMax;
     private final boolean samplingEnabled;
@@ -175,6 +176,7 @@ public class RubyInstanceConfig {
             compileMode = CompileMode.OFF;
             jitLogging = false;
             jitLoggingVerbose = false;
+            jitLogEvery = 0;
             jitThreshold = -1;
             jitMax = 0;
         } else {
@@ -202,6 +204,8 @@ public class RubyInstanceConfig {
             }
             jitLogging = SafePropertyAccessor.getBoolean("jruby.jit.logging");
             jitLoggingVerbose = SafePropertyAccessor.getBoolean("jruby.jit.logging.verbose");
+            String logEvery = SafePropertyAccessor.getProperty("jruby.jit.logEvery");
+            jitLogEvery = logEvery == null ? 0 : Integer.parseInt(logEvery);
             jitThreshold = threshold == null ? 20 : Integer.parseInt(threshold); 
             jitMax = max == null ? 2048 : Integer.parseInt(max);
         }
@@ -263,6 +267,8 @@ public class RubyInstanceConfig {
                 .append("       Enable JIT logging (reports successful compilation). Default is false\n")
                 .append("    jruby.jit.logging.verbose=true|false\n")
                 .append("       Enable verbose JIT logging (reports failed compilation). Default is false\n")
+                .append("    jruby.jit.logEvery=<method count>\n")
+                .append("       Log a message every n methods JIT compiled. Default is 0 (off).\n")
                 .append("    jruby.launch.inproc=true|false\n")
                 .append("       Set in-process launching of e.g. system('ruby ...'). Default is true\n")
                 .append("\nNATIVE SUPPORT:\n")
@@ -335,6 +341,10 @@ public class RubyInstanceConfig {
 
     public boolean isJitLoggingVerbose() {
         return jitLoggingVerbose;
+    }
+
+    public int getJitLogEvery() {
+        return jitLogEvery;
     }
 
     public boolean isSamplingEnabled() {

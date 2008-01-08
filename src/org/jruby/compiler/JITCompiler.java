@@ -34,6 +34,7 @@ package org.jruby.compiler;
 
 import java.util.Set;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
@@ -48,14 +49,15 @@ import org.jruby.util.JavaNameMangler;
 public class JITCompiler {
     public static void runJIT(DefaultMethod method, Ruby runtime, ThreadContext context, String name) {
         Set jittedMethods = runtime.getJittedMethods();
-        int jitMax = runtime.getInstanceConfig().getJitMax();
+        RubyInstanceConfig instanceConfig = runtime.getInstanceConfig();
+        int jitMax = instanceConfig.getJitMax();
         if (method.getCallCount() >= 0
                 && jitMax != 0
                 && (jitMax == -1 || jittedMethods.size() < jitMax)) {
             try {
                 method.setCallCount(method.getCallCount() + 1);
 
-                if (method.getCallCount() >= runtime.getInstanceConfig().getJitThreshold()) {
+                if (method.getCallCount() >= instanceConfig.getJitThreshold()) {
                     String cleanName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
                     String filename = "__eval__";
                     Node bodyNode = method.getBodyNode();
@@ -121,6 +123,15 @@ public class JITCompiler {
                     
                     // add to the jitted methods set
                     jittedMethods.add(jitCompiledScript);
+                    
+                    // logEvery n methods based on configuration
+                    if (instanceConfig.getJitLogEvery() > 0) {
+                        int methodCount = jittedMethods.size();
+                        if (methodCount % instanceConfig.getJitLogEvery() == 0) {
+                            System.err.println("live compiled methods: " + methodCount);
+                        }
+                    }
+                    
                     
                     if (runtime.getInstanceConfig().isJitLogging()) {
                         String className = method.getImplementationClass().getBaseName();
