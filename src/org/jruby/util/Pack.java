@@ -1802,6 +1802,9 @@ public class Pack {
                     }
                     break;
                 case 'w' :
+                    if (listSize-- <= 0) {
+                        throw runtime.newArgumentError(sTooFew);
+                    }
                     IRubyObject from = list.eltInternal(idx++);
                     String stringVal = from == runtime.getNil() ? "0" : from.asString().toString();
                     BigInteger bigInt = new BigInteger(stringVal);
