@@ -1047,7 +1047,7 @@ module FileUtils
     private
 
     def fu_windows?
-      /mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM
+      /mswin|mingw|bccwin|wince|emx|java/ =~ RUBY_PLATFORM
     end
 
     def fu_copy_stream0(src, dest, blksize)   #:nodoc:
