@@ -121,6 +121,15 @@ class TestNumeric < Test::Unit::TestCase
     # n.div(anything) returns 543, n % anything returns 89
     assert_equal [543, 89], n.divmod(:foo)
   end
+  
+  def test_divmod_should_calculate_div_correctly
+    dividends = [-0.58, 0.58, -0.59, 0.59, -0.63, 0.63, -0.66, 0.66, -0.67, 0.67]
+    divisor = 1 / 12.0
+    expected_divs = [-7, 6, -8, 7, -8, 7, -8, 7, -9, 8]
+    dividends.each_with_index { |dividend, idx|
+      assert_equal(expected_divs[idx], dividend.divmod(divisor)[0])
+    }
+  end
 
   def test_divmod_should_raise_when_self_doesnt_implement_div_or_mod
     assert_raises(NoMethodError) { @a.divmod(@b) }

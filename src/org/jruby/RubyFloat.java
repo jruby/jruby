@@ -319,11 +319,10 @@ public class RubyFloat extends RubyNumeric {
             double x = value;
 
             double mod = Math.IEEEremainder(x, y);
-            double div = (x - mod) / y;
+            double div = Math.floor(x / y);
 
             if (y * mod < 0) {
                 mod += y;
-                div -= 1.0;
             }
             final Ruby runtime = getRuntime();
             IRubyObject car = dbl2num(runtime, div);
