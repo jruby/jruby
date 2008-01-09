@@ -1292,7 +1292,10 @@ public class RubyFile extends RubyIO {
             runtime.checkSafeString(filename);
             JRubyFile lToDelete = JRubyFile.create(runtime.getCurrentDirectory(),filename.toString());
             
-            if (!lToDelete.exists()) {
+            boolean isSymlink = RubyFileTest.symlink_p(recv, filename).isTrue();
+            // Broken symlinks considered by exists() as non-existing,
+            // so we need to check for symlinks explicitly.
+            if (!lToDelete.exists() && !isSymlink) {
                 throw runtime.newErrnoENOENTError(" No such file or directory - \"" + filename + "\"");
             }
             
