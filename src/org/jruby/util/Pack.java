@@ -1796,6 +1796,11 @@ public class Pack {
                         IRubyObject from = list.eltInternal(idx++);
                         int code = from == runtime.getNil() ? 0 : RubyNumeric.num2int(from);
 
+                        if (code < 0) {
+                            throw runtime.newRangeError(
+                                    "pack(U): value out of range");
+                        }
+
                         int length = enc.codeToMbc(code, packedBytes, index);
                         result.append(RubyString.bytesToString(packedBytes, index, length));
                         index += length;
@@ -1844,6 +1849,9 @@ public class Pack {
                         }
                         
                         result.append(RubyString.bytesToString(buf));
+                    } else {
+                        throw runtime.newArgumentError(
+                                "can't compress negative numbers");
                     }
                     
                     break;
