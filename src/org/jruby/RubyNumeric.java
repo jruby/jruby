@@ -742,24 +742,13 @@ public class RubyNumeric extends RubyObject {
         }
         return this;
     }
-    
-    //    /** num_equal
-    //     *
-    //     */
-    //    public RubyBoolean veryEqual(IRubyObject other) {
-    //        IRubyObject truth = super.equal(other);
-    //
-    //        return truth == getRuntime().getNil() ? getRuntime().getFalse() : (RubyBoolean) truth;
-    //    }
-    //
-    /** num_equal
+
+    /** num_equal, doesn't override RubyObject.op_equal
      *
      */
-    @Override
-    public IRubyObject op_equal(IRubyObject other) {
-        if (this == other) { // it won't hurt fixnums
-            return getRuntime().getTrue();
-        }
+    protected final IRubyObject op_num_equal(IRubyObject other) {
+        // it won't hurt fixnums
+        if (this == other)  return getRuntime().getTrue();
 
         return other.callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this);
     }

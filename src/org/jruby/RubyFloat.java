@@ -366,7 +366,7 @@ public class RubyFloat extends RubyNumeric {
                     .getDoubleValue());
         default:
             // Numeric.equal            
-            return super.op_equal(other);
+            return super.op_num_equal(other);
         }
     }
 

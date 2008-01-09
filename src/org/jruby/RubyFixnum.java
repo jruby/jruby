@@ -444,8 +444,8 @@ public class RubyFixnum extends RubyInteger {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(getRuntime(), value == ((RubyFixnum) other).value);
         }
-        return super.op_equal(other);
-            }
+        return super.op_num_equal(other);
+    }
 
     /** fix_cmp
      * 
