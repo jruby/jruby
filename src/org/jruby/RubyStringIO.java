@@ -191,9 +191,9 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "each_line", frame = true)
-    public IRubyObject each_line(Block block) {
-        return each(new RubyObject[0], block);
+    @JRubyMethod(name = "each_line", optional = 1, frame = true)
+    public IRubyObject each_line(IRubyObject[] args, Block block) {
+        return each(args, block);
     }
 
     @JRubyMethod(name = "eof")
