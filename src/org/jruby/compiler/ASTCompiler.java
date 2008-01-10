@@ -2874,7 +2874,7 @@ public class ASTCompiler {
 
         methodCompiler.endMethod();
 
-        context.endScript();
+        context.endScript(true, true, true);
     }
 
     public void compileSelf(Node node, MethodCompiler context) {

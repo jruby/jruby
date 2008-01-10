@@ -140,7 +140,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                 // and needed it for compiled module method_function's called from outside the module. Why?
                 jitCallConfig.pre(context, self, implementer, getArity(), name, args, block, staticScope, this);
 
-                return jitCompiledScript.run(context, self, args, block);
+                return jitCompiledScript.__file__(context, self, args, block);
             } catch (JumpException.ReturnJump rj) {
                 if (rj.getTarget() == this) {
                     return (IRubyObject) rj.getValue();

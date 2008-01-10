@@ -188,7 +188,6 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     public void invokeDynamic(String name, CompilerCallback receiverCallback, CompilerCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
         String classname = methodCompiler.getScriptCompiler().getClassname();
         
-        String fieldname = methodCompiler.getScriptCompiler().cacheCallSite(name, callType, closureArg != null);
         
         if (receiverCallback != null) {
             receiverCallback.call(methodCompiler);
@@ -199,7 +198,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // load call adapter
         // FIXME: These swaps suck, but OpAsgn breaks if it can't dup receiver in the middle of making this call :(
         method.aload(THIS);
-        method.getfield(classname, fieldname, cg.ci(CallSite.class));
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, name, callType, closureArg != null);
         method.swap();
 
         methodCompiler.loadThreadContext(); // [adapter, tc]

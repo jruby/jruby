@@ -57,11 +57,13 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
+import org.jruby.ast.executable.AbstractCompiledScript;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.BranchCallback;
+import org.jruby.compiler.CacheCompiler;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.MethodCompiler;
@@ -117,17 +119,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private static final String METHOD_SIGNATURE = cg.sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class});
     private static final String CLOSURE_SIGNATURE = cg.sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class});
 
-    private static final int THIS = 0;
-    private static final int THREADCONTEXT_INDEX = 1;
-    private static final int SELF_INDEX = 2;
-    private static final int ARGS_INDEX = 3;
-    private static final int CLOSURE_INDEX = 4;
-    private static final int DYNAMIC_SCOPE_INDEX = 5;
-    private static final int RUNTIME_INDEX = 6;
-    private static final int VARS_ARRAY_INDEX = 7;
-    private static final int NIL_INDEX = 8;
-    private static final int EXCEPTION_INDEX = 9;
-    private static final int PREVIOUS_EXCEPTION_INDEX = 10;
+    public static final int THIS = 0;
+    public static final int THREADCONTEXT_INDEX = 1;
+    public static final int SELF_INDEX = 2;
+    public static final int ARGS_INDEX = 3;
+    public static final int CLOSURE_INDEX = 4;
+    public static final int DYNAMIC_SCOPE_INDEX = 5;
+    public static final int RUNTIME_INDEX = 6;
+    public static final int VARS_ARRAY_INDEX = 7;
+    public static final int NIL_INDEX = 8;
+    public static final int EXCEPTION_INDEX = 9;
+    public static final int PREVIOUS_EXCEPTION_INDEX = 10;
     
     private String classname;
     private String sourcename;
@@ -142,9 +144,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     int ensureNumber = 1;
     StaticScope topLevelScope;
     
-    Map<String, String> sourcePositions = new HashMap<String, String>();
-    Map<String, String> byteLists = new HashMap<String, String>();
-    Map<String, String> symbols = new HashMap<String, String>();
+    CacheCompiler cacheCompiler;
     
     /** Creates a new instance of StandardCompilerContext */
     public StandardASMCompiler(String classname, String sourcename) {
@@ -201,105 +201,116 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public ClassVisitor getClassVisitor() {
         return classWriter;
     }
+    
+    static boolean USE_INHERITED_CACHE_FIELDS = true;
 
     public void startScript(StaticScope scope) {
         classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
         // Create the class with the appropriate class name and source file
-        classWriter.visit(V1_4, ACC_PUBLIC + ACC_SUPER, classname, null, cg.p(Object.class), new String[]{cg.p(Script.class)});
+        classWriter.visit(V1_4, ACC_PUBLIC + ACC_SUPER, classname, null, cg.p(AbstractCompiledScript.class), null);
         classWriter.visitSource(sourcename, null);
         
         topLevelScope = scope;
 
         beginInit();
         beginClassInit();
+        
+        cacheCompiler = new InheritedCacheCompiler(this);
     }
 
-    public void endScript() {
+    public void endScript(boolean generateRun, boolean generateLoad, boolean generateMain) {
         // add Script#run impl, used for running this script with a specified threadcontext and self
         // root method of a script is always in __file__ method
         String methodName = "__file__";
-        SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "run", METHOD_SIGNATURE, null, null));
-        method.start();
-
-        // invoke __file__ with threadcontext, self, args (null), and block (null)
-        method.aload(THIS);
-        method.aload(THREADCONTEXT_INDEX);
-        method.aload(SELF_INDEX);
-        method.aload(ARGS_INDEX);
-        method.aload(CLOSURE_INDEX);
-
-        method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
-        method.areturn();
         
-        method.end();
-        
-        // the load method is used for loading as a top-level script, and prepares appropriate scoping around the code
-        method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "load", METHOD_SIGNATURE, null, null));
-        method.start();
+        if (generateRun) {
+            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "run", METHOD_SIGNATURE, null, null));
+            method.start();
 
-        // invoke __file__ with threadcontext, self, args (null), and block (null)
-        Label tryBegin = new Label();
-        Label tryFinally = new Label();
-        
-        method.label(tryBegin);
-        method.aload(THREADCONTEXT_INDEX);
-        buildStaticScopeNames(method, topLevelScope);
-        method.invokestatic(cg.p(RuntimeHelpers.class), "preLoad", cg.sig(void.class, ThreadContext.class, String[].class));
-        
-        method.aload(THIS);
-        method.aload(THREADCONTEXT_INDEX);
-        method.aload(SELF_INDEX);
-        method.aload(ARGS_INDEX);
-        method.aload(CLOSURE_INDEX);
+            // invoke __file__ with threadcontext, self, args (null), and block (null)
+            method.aload(THIS);
+            method.aload(THREADCONTEXT_INDEX);
+            method.aload(SELF_INDEX);
+            method.aload(ARGS_INDEX);
+            method.aload(CLOSURE_INDEX);
 
-        method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
-        method.aload(THREADCONTEXT_INDEX);
-        method.invokestatic(cg.p(RuntimeHelpers.class), "postLoad", cg.sig(void.class, ThreadContext.class));
-        method.areturn();
-        
-        method.label(tryFinally);
-        method.aload(THREADCONTEXT_INDEX);
-        method.invokestatic(cg.p(RuntimeHelpers.class), "postLoad", cg.sig(void.class, ThreadContext.class));
-        method.athrow();
-        
-        method.trycatch(tryBegin, tryFinally, tryFinally, null);
-        
-        method.end();
+            method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
+            method.areturn();
 
-        // add main impl, used for detached or command-line execution of this script with a new runtime
-        // root method of a script is always in stub0, method0
-        method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, "main", cg.sig(Void.TYPE, cg.params(String[].class)), null, null));
-        method.start();
-
-        // new instance to invoke run against
-        method.newobj(classname);
-        method.dup();
-        method.invokespecial(classname, "<init>", cg.sig(Void.TYPE));
+            method.end();
+        }
         
-        // instance config for the script run
-        method.newobj(cg.p(RubyInstanceConfig.class));
-        method.dup();
-        method.invokespecial(cg.p(RubyInstanceConfig.class), "<init>", "()V");
+        if (generateLoad || generateMain) {
+            // the load method is used for loading as a top-level script, and prepares appropriate scoping around the code
+            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "load", METHOD_SIGNATURE, null, null));
+            method.start();
+
+            // invoke __file__ with threadcontext, self, args (null), and block (null)
+            Label tryBegin = new Label();
+            Label tryFinally = new Label();
+
+            method.label(tryBegin);
+            method.aload(THREADCONTEXT_INDEX);
+            buildStaticScopeNames(method, topLevelScope);
+            method.invokestatic(cg.p(RuntimeHelpers.class), "preLoad", cg.sig(void.class, ThreadContext.class, String[].class));
+
+            method.aload(THIS);
+            method.aload(THREADCONTEXT_INDEX);
+            method.aload(SELF_INDEX);
+            method.aload(ARGS_INDEX);
+            method.aload(CLOSURE_INDEX);
+
+            method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
+            method.aload(THREADCONTEXT_INDEX);
+            method.invokestatic(cg.p(RuntimeHelpers.class), "postLoad", cg.sig(void.class, ThreadContext.class));
+            method.areturn();
+
+            method.label(tryFinally);
+            method.aload(THREADCONTEXT_INDEX);
+            method.invokestatic(cg.p(RuntimeHelpers.class), "postLoad", cg.sig(void.class, ThreadContext.class));
+            method.athrow();
+
+            method.trycatch(tryBegin, tryFinally, tryFinally, null);
+
+            method.end();
+        }
         
-        // set argv from main's args
-        method.dup();
-        method.aload(0);
-        method.invokevirtual(cg.p(RubyInstanceConfig.class), "setArgv", cg.sig(void.class, String[].class));
+        if (generateMain) {
+            // add main impl, used for detached or command-line execution of this script with a new runtime
+            // root method of a script is always in stub0, method0
+            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, "main", cg.sig(Void.TYPE, cg.params(String[].class)), null, null));
+            method.start();
 
-        // invoke run with threadcontext and topself
-        method.invokestatic(cg.p(Ruby.class), "newInstance", cg.sig(Ruby.class, RubyInstanceConfig.class));
-        method.dup();
+            // new instance to invoke run against
+            method.newobj(classname);
+            method.dup();
+            method.invokespecial(classname, "<init>", cg.sig(Void.TYPE));
 
-        method.invokevirtual(RUBY, "getCurrentContext", cg.sig(ThreadContext.class));
-        method.swap();
-        method.invokevirtual(RUBY, "getTopSelf", cg.sig(IRubyObject.class));
-        method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
-        method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
+            // instance config for the script run
+            method.newobj(cg.p(RubyInstanceConfig.class));
+            method.dup();
+            method.invokespecial(cg.p(RubyInstanceConfig.class), "<init>", "()V");
 
-        method.invokevirtual(classname, "load", METHOD_SIGNATURE);
-        method.voidreturn();
-        method.end();
+            // set argv from main's args
+            method.dup();
+            method.aload(0);
+            method.invokevirtual(cg.p(RubyInstanceConfig.class), "setArgv", cg.sig(void.class, String[].class));
+
+            // invoke run with threadcontext and topself
+            method.invokestatic(cg.p(Ruby.class), "newInstance", cg.sig(Ruby.class, RubyInstanceConfig.class));
+            method.dup();
+
+            method.invokevirtual(RUBY, "getCurrentContext", cg.sig(ThreadContext.class));
+            method.swap();
+            method.invokevirtual(RUBY, "getTopSelf", cg.sig(IRubyObject.class));
+            method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+            method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
+
+            method.invokevirtual(classname, "load", METHOD_SIGNATURE);
+            method.voidreturn();
+            method.end();
+        }
         
         endInit();
         endClassInit();
@@ -323,7 +334,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         initMethod = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC, "<init>", cg.sig(Void.TYPE), null, null));
         initMethod.start();
         initMethod.aload(THIS);
-        initMethod.invokespecial(cg.p(Object.class), "<init>", cg.sig(Void.TYPE));
+        if (USE_INHERITED_CACHE_FIELDS) {
+            initMethod.invokespecial(cg.p(AbstractCompiledScript.class), "<init>", cg.sig(Void.TYPE));
+        } else {
+            initMethod.invokespecial(cg.p(Object.class), "<init>", cg.sig(Void.TYPE));
+        }
         
         cv.visitField(ACC_PRIVATE | ACC_FINAL, "$class", cg.ci(Class.class), null, null);
         
@@ -349,6 +364,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private void endClassInit() {
         clinitMethod.voidreturn();
         clinitMethod.end();
+    }
+    
+    public SkinnyMethodAdapter getInitMethod() {
+        return initMethod;
+    }
+    
+    public SkinnyMethodAdapter getClassInitMethod() {
+        return clinitMethod;
+    }
+    
+    public CacheCompiler getCacheCompiler() {
+        return cacheCompiler;
     }
     
     public MethodCompiler startMethod(String friendlyName, CompilerCallback args, StaticScope scope, ASTInspector inspector) {
@@ -610,19 +637,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void createNewString(ByteList value) {
             // FIXME: this is sub-optimal, storing string value in a java.lang.String again
-            String fieldName = cacheByteList(value.toString());
             loadRuntime();
-            method.getstatic(classname, fieldName, cg.ci(ByteList.class));
+            getCacheCompiler().cacheByteList(method, value.toString());
 
             invokeIRuby("newStringShared", cg.sig(RubyString.class, cg.params(ByteList.class)));
         }
 
         public void createNewSymbol(String name) {
-            method.aload(0);
-            loadRuntime();
-            String methodName = cacheSymbol(name);
-            method.invokevirtual(classname, methodName, 
-                    cg.sig(RubySymbol.class, cg.params(Ruby.class)));
+            getCacheCompiler().cacheSymbol(method, name);
         }
 
         public void createNewArray(boolean lightweight) {
@@ -2272,7 +2294,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 // FIXME I'm still not happy with this additional overhead per line,
                 // nor about the extra script construction cost, but it will have to do for now.
                 loadThreadContext();
-                method.getstatic(classname, cachePosition(position.getFile(), position.getEndLine()), cg.ci(ISourcePosition.class));
+                getCacheCompiler().cachePosition(method, position.getFile(), position.getEndLine());
                 invokeThreadContext("setPosition", cg.sig(void.class, ISourcePosition.class));
             }
         }
@@ -2685,6 +2707,21 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return realName;
     }
 
+    public String getNewField(String type, String name, Object init) {
+        ClassVisitor cv = getClassVisitor();
+
+        // declare the field
+        cv.visitField(ACC_PRIVATE, name, type, null, null).visitEnd();
+
+        if(init != null) {
+            initMethod.aload(THIS);
+            initMethod.ldc(init);
+            initMethod.putfield(classname, name, type);
+        }
+
+        return name;
+    }
+
     public String getNewStaticConstant(String type, String name_prefix) {
         ClassVisitor cv = getClassVisitor();
 
@@ -2696,100 +2733,5 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         // declare the field
         cv.visitField(ACC_PRIVATE | ACC_STATIC, realName, type, null, null).visitEnd();
         return realName;
-    }
-    
-    public String cacheCallSite(String name, CallType callType, boolean block) {
-        String fieldName = getNewConstant(cg.ci(CallSite.class), JavaNameMangler.mangleStringForCleanJavaIdentifier(name));
-        
-        // retrieve call adapter
-        initMethod.aload(THIS);
-        initMethod.ldc(name);
-        if (block) {
-            if (callType.equals(CallType.NORMAL)) {
-                initMethod.invokestatic(cg.p(MethodIndex.class), "getCallSite", cg.sig(CallSite.class, cg.params(String.class)));
-            } else if (callType.equals(CallType.FUNCTIONAL)) {
-                initMethod.invokestatic(cg.p(MethodIndex.class), "getFunctionalCallSite", cg.sig(CallSite.class, cg.params(String.class)));
-            } else if (callType.equals(CallType.VARIABLE)) {
-                initMethod.invokestatic(cg.p(MethodIndex.class), "getVariableCallSite", cg.sig(CallSite.class, cg.params(String.class)));
-            }
-        } else {
-            if (callType.equals(CallType.NORMAL)) {
-                initMethod.invokestatic(cg.p(MethodIndex.class), "getNonBlockCallSite", cg.sig(CallSite.class, cg.params(String.class)));
-            } else if (callType.equals(CallType.FUNCTIONAL)) {
-                initMethod.invokestatic(cg.p(MethodIndex.class), "getNonBlockFunctionalCallSite", cg.sig(CallSite.class, cg.params(String.class)));
-            } else if (callType.equals(CallType.VARIABLE)) {
-                initMethod.invokestatic(cg.p(MethodIndex.class), "getNonBlockVariableCallSite", cg.sig(CallSite.class, cg.params(String.class)));
-            }
-        }
-        initMethod.putfield(classname, fieldName, cg.ci(CallSite.class));
-        
-        return fieldName;
-    }
-    
-    public String cachePosition(String file, int line) {
-        String cleanName = JavaNameMangler.mangleStringForCleanJavaIdentifier(file + "$" + line);
-        String fieldName = sourcePositions.get(cleanName);
-        if (fieldName == null) {
-            fieldName = getNewStaticConstant(cg.ci(ISourcePosition.class), cleanName);
-            sourcePositions.put(JavaNameMangler.mangleStringForCleanJavaIdentifier(file + "$" + line), fieldName);
-
-            clinitMethod.ldc(file);
-            clinitMethod.ldc(line);
-            clinitMethod.invokestatic(cg.p(RuntimeHelpers.class), "constructPosition", cg.sig(ISourcePosition.class, String.class, int.class));
-            clinitMethod.putstatic(classname, fieldName, cg.ci(ISourcePosition.class));
-        }
-        
-        return fieldName;
-    }
-    
-    public String cacheByteList(String contents) {
-        String fieldName = byteLists.get(contents);
-        if (fieldName == null) {
-            fieldName = getNewStaticConstant(cg.ci(ByteList.class), "byteList");
-            byteLists.put(contents, fieldName);
-
-            clinitMethod.ldc(contents);
-            clinitMethod.invokestatic(cg.p(ByteList.class), "create", cg.sig(ByteList.class, CharSequence.class));
-            clinitMethod.putstatic(classname, fieldName, cg.ci(ByteList.class));
-        }
-        
-        return fieldName;
-    }
-    
-    public String cacheSymbol(String symbol) {
-        String methodName = symbols.get(symbol);
-        if (methodName == null) {
-            String fieldName = getNewConstant(cg.ci(RubySymbol.class), "symbol");
-            
-            methodName = "getSymbol" + fieldName;
-            symbols.put(symbol, methodName);
-            
-            ClassVisitor cv = getClassVisitor();
-            
-            SkinnyMethodAdapter symMethod = new SkinnyMethodAdapter(
-                    cv.visitMethod(ACC_PRIVATE | ACC_SYNTHETIC, methodName, 
-                            cg.sig(RubySymbol.class, Ruby.class), null, null));
-            symMethod.start();
-            symMethod.aload(0);
-            symMethod.getfield(classname, fieldName, cg.ci(RubySymbol.class));
-            symMethod.dup();
-            symMethod.astore(2);
-            
-            Label ifNullEnd = new Label();
-            symMethod.ifnull(ifNullEnd);
-            symMethod.aload(2);
-            symMethod.areturn();
-            symMethod.label(ifNullEnd);
-            symMethod.aload(0);
-            symMethod.aload(1);
-            symMethod.ldc(symbol);
-            symMethod.invokevirtual(cg.p(Ruby.class), "fastNewSymbol", cg.sig(RubySymbol.class, String.class));
-            symMethod.dup_x1();
-            symMethod.putfield(classname, fieldName, cg.ci(RubySymbol.class));
-            symMethod.areturn();
-            symMethod.end();
-        }
-        
-        return methodName;
     }
 }

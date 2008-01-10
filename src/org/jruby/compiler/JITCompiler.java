@@ -104,7 +104,7 @@ public class JITCompiler {
                         }
                     }
                     methodCompiler.endMethod();
-                    asmCompiler.endScript();
+                    asmCompiler.endScript(false, false, false);
                     Class sourceClass = asmCompiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
                     
                     // if we haven't already decided on a do-nothing call
