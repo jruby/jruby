@@ -521,7 +521,7 @@ public class RubyBignum extends RubyInteger {
             }
             return RubyBoolean.newBoolean(getRuntime(), a == big2dbl(this));
         } else {
-            return super.op_eqq(other);
+            return other.op_eqq(this);
         }
         return RubyBoolean.newBoolean(getRuntime(), value.compareTo(otherValue) == 0);
     }

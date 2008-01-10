@@ -269,6 +269,8 @@ public interface IRubyObject {
     
     
     public IRubyObject op_equal(IRubyObject other);
+    public IRubyObject op_eqq(IRubyObject other);
+    public boolean eql(IRubyObject other);
 
     public void addFinalizer(RubyProc finalizer);
 

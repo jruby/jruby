@@ -152,6 +152,14 @@ public class RubyUndef implements IRubyObject {
         return null;
     }
 
+    public IRubyObject op_eqq(IRubyObject other) {
+        return null;
+    }
+
+    public IRubyObject eql_p(IRubyObject other) {
+        return null;
+    }
+
     public IRubyObject equalInternal(ThreadContext context, IRubyObject other) {
         return null;
     }

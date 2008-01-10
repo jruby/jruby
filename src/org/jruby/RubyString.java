@@ -120,7 +120,8 @@ public class RubyString extends RubyObject {
      * 
      */
     public final boolean eql(IRubyObject other) {
-        return other instanceof RubyString && value.equal(((RubyString)other).value);
+        if (other.getMetaClass() == getRuntime().getString()) return value.equal(((RubyString)other).value);
+        return super.eql(other);
     }
 
     private RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
@@ -788,7 +789,7 @@ public class RubyString extends RubyObject {
     }
 
     @JRubyMethod(name = "eql?", required = 1)
-    public IRubyObject eql_p(IRubyObject other) {
+    public IRubyObject str_eql_p(IRubyObject other) {
         if (!(other instanceof RubyString)) return getRuntime().getFalse();
         RubyString otherString = (RubyString)other;
         return value.equal(otherString.value) ? getRuntime().getTrue() : getRuntime().getFalse();

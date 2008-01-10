@@ -658,6 +658,13 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
+    /** method used for Hash key comparison (specialized for String, Symbol and Fixnum)
+     * 
+     */
+    public boolean eql(IRubyObject other) {
+        return callMethod(getRuntime().getCurrentContext(), MethodIndex.EQL_P, "eql?", other).isTrue();
+    }
+    
     @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql_p(IRubyObject obj) {
         return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
