@@ -267,7 +267,7 @@ public class RubyBignum extends RubyInteger {
 
         BigInteger[] results = value.divideAndRemainder(otherValue);
 
-        if (results[0].signum() == -1 && results[1].signum() != 0) {
+        if ((value.signum() * otherValue.signum()) == -1 && results[1].signum() != 0) {
             return bignorm(getRuntime(), results[0].subtract(BigInteger.ONE));
         }
         return bignorm(getRuntime(), results[0]);
@@ -293,8 +293,9 @@ public class RubyBignum extends RubyInteger {
 
         BigInteger[] results = value.divideAndRemainder(otherValue);
 
-        if (results[0].signum() == -1 && results[1].signum() != 0) {
-            return bignorm(getRuntime(), results[0].subtract(BigInteger.ONE));
+        if ((value.signum() * otherValue.signum()) == -1 && results[1].signum() != 0) {
+            results[0] = results[0].subtract(BigInteger.ONE);
+            results[1] = otherValue.add(results[1]);
     	}
         final Ruby runtime = getRuntime();
         return RubyArray.newArray(getRuntime(), bignorm(runtime, results[0]), bignorm(runtime, results[1]));
@@ -317,7 +318,7 @@ public class RubyBignum extends RubyInteger {
             throw getRuntime().newZeroDivisionError();
         }
         BigInteger result = value.mod(otherValue.abs());
-        if (otherValue.signum() == -1) {
+        if (otherValue.signum() == -1 && result.signum() != 0) {
             result = otherValue.add(result);
         }
         return bignorm(getRuntime(), result);
