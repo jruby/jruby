@@ -942,7 +942,14 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     @JRubyMethod(name = "instance_of?", required = 1)
     public RubyBoolean instance_of_p(IRubyObject type) {
-        return getRuntime().newBoolean(type() == type);
+        if (type() == type) {
+            return getRuntime().getTrue();
+        } else {
+            if (!(type instanceof RubyModule)) {
+                throw getRuntime().newTypeError("class or module required");
+            }
+            return getRuntime().getFalse();
+        }
     }
 
 
