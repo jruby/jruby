@@ -14,6 +14,7 @@
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2008 Vladimir Sizikov <vsizikov@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,9 +35,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.jruby.anno.JRubyMethod;
 
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
 
 /**
@@ -75,6 +78,14 @@ public class RubyDigest {
         RubyModule mDigest = runtime.fastGetModule("Digest");
         RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_MD5 = mDigest.defineClassUnder("MD5",cDigestBase,cDigestBase.getAllocator());
+        cDigest_MD5.defineFastMethod("block_length", new Callback() {
+            public Arity getArity() {
+                return Arity.NO_ARGUMENTS;
+            }
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+                return RubyFixnum.newFixnum(recv.getRuntime(), 64);
+            }
+        });
         cDigest_MD5.setInternalModuleVariable("metadata",runtime.newString("MD5"));
     }
 
@@ -199,18 +210,64 @@ public class RubyDigest {
             return this;
         }
 
-        @JRubyMethod(name = "digest")
-        public IRubyObject digest() {
+        @JRubyMethod(name = "digest", optional = 1)
+        public IRubyObject digest(IRubyObject[] args) {
+            if (args.length == 1) {
+                reset();
+                data.append(args[0]);
+            }
+
+            IRubyObject digest = getDigest();
+
+            if (args.length == 1) {
+                reset();
+            }
+            return digest;
+        }
+        
+        private IRubyObject getDigest() {
             algo.reset();
             return RubyString.newString(getRuntime(), algo.digest(ByteList.plain(data)));
         }
+        
+        @JRubyMethod(name = "digest!")
+        public IRubyObject digest_bang() {
+            algo.reset();            
+            byte[] digest = algo.digest(ByteList.plain(data));
+            reset();
+            return RubyString.newString(getRuntime(), digest);
+        }
 
-        @JRubyMethod(name = {"hexdigest", "to_s"})
-        public IRubyObject hexdigest() {
+        @JRubyMethod(name = {"hexdigest"}, optional = 1)
+        public IRubyObject hexdigest(IRubyObject[] args) {
+            algo.reset();
+            if (args.length == 1) {
+                reset();
+                data.append(args[0]);
+            }
+
+            byte[] digest = ByteList.plain(toHex(algo.digest(ByteList.plain(data)))); 
+
+            if (args.length == 1) {
+                reset();
+            }
+            return RubyString.newString(getRuntime(), digest);
+        }
+        
+        @JRubyMethod(name = {"to_s"})
+        public IRubyObject to_s() {
             algo.reset();
             return RubyString.newString(getRuntime(), ByteList.plain(toHex(algo.digest(ByteList.plain(data)))));
         }
 
+        @JRubyMethod(name = {"hexdigest!"})
+        public IRubyObject hexdigest_bang() {
+            algo.reset();
+            byte[] digest = ByteList.plain(toHex(algo.digest(ByteList.plain(data))));
+            reset();
+            return RubyString.newString(getRuntime(), digest);
+        }
+        
         @JRubyMethod(name = "inspect")
         public IRubyObject inspect() {
             algo.reset();
@@ -220,13 +277,36 @@ public class RubyDigest {
         @JRubyMethod(name = "==", required = 1)
         public IRubyObject op_equal(IRubyObject oth) {
             boolean ret = this == oth;
-            if(!ret && oth instanceof Base) {
-                Base b = (Base)oth;
-                ret = this.algo.getAlgorithm().equals(b.algo.getAlgorithm()) &&
-                    this.digest().equals(b.digest());
+            if(!ret) {
+                if (oth instanceof Base) {
+                    Base b = (Base)oth;
+                    ret = this.algo.getAlgorithm().equals(b.algo.getAlgorithm()) &&
+                            this.getDigest().equals(b.getDigest());
+                } else {
+                    IRubyObject str = oth.convertToString();
+                    ret = this.to_s().equals(str);
+                }
             }
 
             return ret ? getRuntime().getTrue() : getRuntime().getFalse();
+        }
+        
+        @JRubyMethod(name = {"length", "size", "digest_length"})
+        public IRubyObject length() {
+            return RubyFixnum.newFixnum(getRuntime(), algo.getDigestLength());
+        }
+
+        @JRubyMethod(name = {"block_length"})
+        public IRubyObject block_length() {
+            throw getRuntime().newRuntimeError(
+                    this.getMetaClass() + " doesn't implement block_length()");
+        }
+
+        @JRubyMethod(name = {"reset"})
+        public IRubyObject reset() {
+            algo.reset();
+            data = new StringBuffer();
+            return getRuntime().getNil();
         }
 
        private void setAlgorithm(IRubyObject algo) throws NoSuchAlgorithmException {
