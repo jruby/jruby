@@ -431,6 +431,11 @@ public class RubyFixnum extends RubyInteger {
     @JRubyMethod(name = "abs")
     public IRubyObject abs() {
         if (value < 0) {
+            // A gotcha for Long.MIN_VALUE: value = -value
+            if (value == Long.MIN_VALUE) {
+                return RubyBignum.newBignum(
+                        getRuntime(), BigInteger.valueOf(value).negate());
+            }
             return RubyFixnum.newFixnum(getRuntime(), -value);
         }
         return this;
