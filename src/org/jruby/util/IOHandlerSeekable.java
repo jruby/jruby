@@ -456,7 +456,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
             
             if (read == -1) return -1;
         }
-        return buffer.get();
+        return buffer.get() & 0xFF;
     }
     
     /**

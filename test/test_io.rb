@@ -264,6 +264,16 @@ class TestIO < Test::Unit::TestCase
     end
   end
 
+  # JRUBY-1894
+  def test_getc_255
+     File.open(@file, "wb") do |file|
+       file.putc(255)
+     end
+     File.open(@file, "rb") do |file|
+       assert_equal(255, file.getc)
+     end
+  end
+
   private
   def ensure_files(*files)
     files.each {|f| File.open(f, "w") {|g| g << " " } }
