@@ -11,6 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
+ * Copyright (C) 2008 The JRuby Community <www.jruby.org>
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -38,48 +39,114 @@ import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.SafePropertyAccessor;
 
+/**
+ * MethodFactory is used to generate "invokers" or "method handles" given a target
+ * class, method name, and other characteristics. In order to bind methods into
+ * Ruby's reified class hierarchy, we need a way to treat individual methods as
+ * objects. Implementers of this class provide that functionality.
+ */
 public abstract class MethodFactory {
+    /**
+     * For batched method construction, the logic necessary to bind resulting
+     * method objects into a target module/class must be provided as a callback.
+     * This interface should be implemented by code calling any batched methods
+     * on this MethodFactory.
+     */
     public interface MethodDefiningCallback {
         public void define(RubyModule targetMetaClass, Method method, DynamicMethod dynamicMethod);
     }
-    public abstract DynamicMethod getCompiledMethod(
-            RubyModule implementationClass, String method, 
-            Arity arity, Visibility visibility, StaticScope scope, 
-            Object scriptObject, CallConfiguration callConfig);
-    public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method);
-    public abstract void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class containingClass, MethodDefiningCallback callback);
 
-    private static boolean reflection = false;
-    private static boolean dumping = false;
-    private static String dumpingPath = null;
-
-    static {
-       if (Ruby.isSecurityRestricted())
-           reflection = true;
-       else {
-           if (SafePropertyAccessor.getProperty("jruby.reflection") != null && SafePropertyAccessor.getBoolean("jruby.reflection")) {
-               reflection = true;
-           }
-           if (SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
-               dumping = true;
-               dumpingPath = SafePropertyAccessor.getProperty("jruby.dump_invocations").toString();
-           }
-       }
-    }
-
-    // Called from compiled code
-    public static MethodFactory createFactory() {
-        if (reflection) return new ReflectionMethodFactory();
-        if (dumping) return new DumpingInvocationMethodFactory(dumpingPath);
-
-        return new InvocationMethodFactory();
-    }
-
-    // Called from compiled code
+    /**
+     * Based on optional properties, create a new MethodFactory. By default,
+     * this will create a code-generation-based InvocationMethodFactory. If
+     * security restricts code generation, ReflectionMethodFactory will be used.
+     * If we are dumping class definitions, DumpingInvocationMethodFactory will
+     * be used. See MethodFactory's static initializer for more details.
+     * 
+     * @param classLoader The classloader to use for searching for and
+     * dynamically loading code.
+     * @return A new MethodFactory.
+     */
     public static MethodFactory createFactory(ClassLoader classLoader) {
         if (reflection) return new ReflectionMethodFactory();
         if (dumping) return new DumpingInvocationMethodFactory(dumpingPath);
 
         return new InvocationMethodFactory(classLoader);
+    }
+    
+    /**
+     * Get a new method handle based on the target JRuby-compiled method.
+     * Because compiled Ruby methods have additional requirements and
+     * characteristics not typically found in Java-based methods, this is
+     * provided as a separate way to define such method handles.
+     * 
+     * @param implementationClass The class to which the method will be bound.
+     * @param method The name of the method
+     * @param arity The Arity of the method
+     * @param visibility The method's visibility on the target type.
+     * @param scope The methods static scoping information.
+     * @param scriptObject An instace of the target compiled method class.
+     * @param callConfig The call configuration to use for this method.
+     * @return A new method handle for the target compiled method.
+     */
+    public abstract DynamicMethod getCompiledMethod(
+            RubyModule implementationClass, String method, 
+            Arity arity, Visibility visibility, StaticScope scope, 
+            Object scriptObject, CallConfiguration callConfig);
+    
+    /**
+     * Based on an annotated Java method object, generate a method handle using
+     * the annotation and the target signature. The annotation and signature
+     * will be used to dynamically generate the appropriate call logic for the
+     * handle.
+     * 
+     * @param implementationClass The target class or module on which the method
+     * will be bound.
+     * @param method The java.lang.Method object for the target method.
+     * @return A method handle for the target object.
+     */
+    public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method);
+    
+    /**
+     * Add all annotated methods on the target Java class to the specified
+     * Ruby class using the semantics of getAnnotatedMethod, calling back to
+     * the specified callback for each method to allow the caller to bind
+     * each method.
+     * 
+     * @param implementationClass The target class or module on which the method
+     * will be bound.
+     * @param containingClass The Java class containined annotated methods to
+     * be bound.
+     * @param callback A callback provided by the caller which handles binding
+     * each method.
+     */
+    public abstract void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class containingClass, MethodDefiningCallback callback);
+
+    /**
+     * Use the reflection-based factory.
+     */
+    private static boolean reflection = false;
+    /**
+     * User the dumping-based factory, which generates .class files as it runs.
+     */
+    private static boolean dumping = false;
+    /**
+     * The target path for the dumping factory to save the .class files.
+     */
+    private static String dumpingPath = null;
+    
+    static {
+        // initialize the static settings to determine which factory to use
+        if (Ruby.isSecurityRestricted()) {
+            reflection = true;
+        } else {
+            if (SafePropertyAccessor.getProperty("jruby.reflection") != null && SafePropertyAccessor.getBoolean("jruby.reflection")) {
+                reflection = true;
+            }
+            if (SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
+                dumping = true;
+                dumpingPath = SafePropertyAccessor.getProperty("jruby.dump_invocations").toString();
+            }
+        }
     }
 }
