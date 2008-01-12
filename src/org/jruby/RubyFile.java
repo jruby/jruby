@@ -1089,7 +1089,7 @@ public class RubyFile extends RubyIO {
         RubyString toStr = RubyString.stringValue(to);
         if (recv.getRuntime().getPosix().link(fromStr.toString(),toStr.toString()) == -1) {
             // FIXME: When we get JNA3 we need to properly write this to errno.
-            recv.getRuntime().newSystemCallError("bad symlink");
+            throw recv.getRuntime().newSystemCallError("bad symlink");
         }
         
         return recv.getRuntime().newFixnum(0);
@@ -1191,7 +1191,7 @@ public class RubyFile extends RubyIO {
         RubyString toStr = RubyString.stringValue(to);
         if (recv.getRuntime().getPosix().symlink(fromStr.toString(),toStr.toString()) == -1) {
             // FIXME: When we get JNA3 we need to properly write this to errno.
-            recv.getRuntime().newSystemCallError("bad symlink");
+            throw recv.getRuntime().newSystemCallError("bad symlink");
         }
         
         return recv.getRuntime().newFixnum(0);
