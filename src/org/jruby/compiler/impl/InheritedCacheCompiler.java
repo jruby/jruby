@@ -53,28 +53,28 @@ public class InheritedCacheCompiler implements CacheCompiler {
         initMethod.ldc(name);
         if (block) {
             if (callType.equals(CallType.NORMAL)) {
-                initMethod.invokestatic(cg.p(MethodIndex.class), "getCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+                initMethod.invokestatic(p(MethodIndex.class), "getCallSite", sig(CallSite.class, params(String.class)));
             } else if (callType.equals(CallType.FUNCTIONAL)) {
-                initMethod.invokestatic(cg.p(MethodIndex.class), "getFunctionalCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+                initMethod.invokestatic(p(MethodIndex.class), "getFunctionalCallSite", sig(CallSite.class, params(String.class)));
             } else if (callType.equals(CallType.VARIABLE)) {
-                initMethod.invokestatic(cg.p(MethodIndex.class), "getVariableCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+                initMethod.invokestatic(p(MethodIndex.class), "getVariableCallSite", sig(CallSite.class, params(String.class)));
             }
         } else {
             if (callType.equals(CallType.NORMAL)) {
-                initMethod.invokestatic(cg.p(MethodIndex.class), "getNonBlockCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+                initMethod.invokestatic(p(MethodIndex.class), "getNonBlockCallSite", sig(CallSite.class, params(String.class)));
             } else if (callType.equals(CallType.FUNCTIONAL)) {
-                initMethod.invokestatic(cg.p(MethodIndex.class), "getNonBlockFunctionalCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+                initMethod.invokestatic(p(MethodIndex.class), "getNonBlockFunctionalCallSite", sig(CallSite.class, params(String.class)));
             } else if (callType.equals(CallType.VARIABLE)) {
-                initMethod.invokestatic(cg.p(MethodIndex.class), "getNonBlockVariableCallSite", cg.sig(CallSite.class, cg.params(String.class)));
+                initMethod.invokestatic(p(MethodIndex.class), "getNonBlockVariableCallSite", sig(CallSite.class, params(String.class)));
             }
         }
         if (callSiteCount >= MAX_INHERITED_CALL_SITES) {
-            scriptCompiler.getNewField(cg.ci(CallSite.class), fieldName, null);
-            initMethod.putfield(scriptCompiler.getClassname(), fieldName, cg.ci(CallSite.class));
-            method.getfield(scriptCompiler.getClassname(), fieldName, cg.ci(CallSite.class));
+            scriptCompiler.getNewField(ci(CallSite.class), fieldName, null);
+            initMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
+            method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
         } else {
-            initMethod.putfield(scriptCompiler.getClassname(), fieldName, cg.ci(CallSite.class));
-            method.getfield(scriptCompiler.getClassname(), fieldName, cg.ci(CallSite.class));
+            initMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
+            method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
         }
         callSiteCount++;
     }
@@ -84,37 +84,37 @@ public class InheritedCacheCompiler implements CacheCompiler {
         String fieldName = sourcePositions.get(cleanName);
         if (fieldName == null) {
             SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
-            fieldName = scriptCompiler.getNewStaticConstant(cg.ci(ISourcePosition.class), cleanName);
+            fieldName = scriptCompiler.getNewStaticConstant(ci(ISourcePosition.class), cleanName);
             sourcePositions.put(JavaNameMangler.mangleStringForCleanJavaIdentifier(file + "$" + line), fieldName);
 
             clinitMethod.ldc(file);
             clinitMethod.ldc(line);
-            clinitMethod.invokestatic(cg.p(RuntimeHelpers.class), "constructPosition", cg.sig(ISourcePosition.class, String.class, int.class));
-            clinitMethod.putstatic(scriptCompiler.getClassname(), fieldName, cg.ci(ISourcePosition.class));
+            clinitMethod.invokestatic(p(RuntimeHelpers.class), "constructPosition", sig(ISourcePosition.class, String.class, int.class));
+            clinitMethod.putstatic(scriptCompiler.getClassname(), fieldName, ci(ISourcePosition.class));
         }
         
-        method.getstatic(scriptCompiler.getClassname(), fieldName, cg.ci(ISourcePosition.class));
+        method.getstatic(scriptCompiler.getClassname(), fieldName, ci(ISourcePosition.class));
     }
     
     public void cacheByteList(SkinnyMethodAdapter method, String contents) {
         String fieldName = byteLists.get(contents);
         if (fieldName == null) {
             SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
-            fieldName = scriptCompiler.getNewStaticConstant(cg.ci(ByteList.class), "byteList");
+            fieldName = scriptCompiler.getNewStaticConstant(ci(ByteList.class), "byteList");
             byteLists.put(contents, fieldName);
 
             clinitMethod.ldc(contents);
-            clinitMethod.invokestatic(cg.p(ByteList.class), "create", cg.sig(ByteList.class, CharSequence.class));
-            clinitMethod.putstatic(scriptCompiler.getClassname(), fieldName, cg.ci(ByteList.class));
+            clinitMethod.invokestatic(p(ByteList.class), "create", sig(ByteList.class, CharSequence.class));
+            clinitMethod.putstatic(scriptCompiler.getClassname(), fieldName, ci(ByteList.class));
         }
         
-        method.getstatic(scriptCompiler.getClassname(), fieldName, cg.ci(ByteList.class));
+        method.getstatic(scriptCompiler.getClassname(), fieldName, ci(ByteList.class));
     }
     
     public void cacheSymbol(SkinnyMethodAdapter method, String symbol) {
         String methodName = symbols.get(symbol);
         if (methodName == null) {
-            String fieldName = scriptCompiler.getNewConstant(cg.ci(RubySymbol.class), "symbol");
+            String fieldName = scriptCompiler.getNewConstant(ci(RubySymbol.class), "symbol");
             
             methodName = "getSymbol" + fieldName;
             symbols.put(symbol, methodName);
@@ -123,10 +123,10 @@ public class InheritedCacheCompiler implements CacheCompiler {
             
             SkinnyMethodAdapter symMethod = new SkinnyMethodAdapter(
                     cv.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC, methodName, 
-                            cg.sig(RubySymbol.class, Ruby.class), null, null));
+                            sig(RubySymbol.class, Ruby.class), null, null));
             symMethod.start();
             symMethod.aload(0);
-            symMethod.getfield(scriptCompiler.getClassname(), fieldName, cg.ci(RubySymbol.class));
+            symMethod.getfield(scriptCompiler.getClassname(), fieldName, ci(RubySymbol.class));
             symMethod.dup();
             symMethod.astore(2);
             
@@ -138,9 +138,9 @@ public class InheritedCacheCompiler implements CacheCompiler {
             symMethod.aload(0);
             symMethod.aload(1);
             symMethod.ldc(symbol);
-            symMethod.invokevirtual(cg.p(Ruby.class), "fastNewSymbol", cg.sig(RubySymbol.class, String.class));
+            symMethod.invokevirtual(p(Ruby.class), "fastNewSymbol", sig(RubySymbol.class, String.class));
             symMethod.dup_x1();
-            symMethod.putfield(scriptCompiler.getClassname(), fieldName, cg.ci(RubySymbol.class));
+            symMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(RubySymbol.class));
             symMethod.areturn();
             symMethod.end();
         }
@@ -148,6 +148,6 @@ public class InheritedCacheCompiler implements CacheCompiler {
         method.aload(0);
         method.aload(StandardASMCompiler.RUNTIME_INDEX);
         method.invokevirtual(scriptCompiler.getClassname(), methodName, 
-                cg.sig(RubySymbol.class, cg.params(Ruby.class)));
+                sig(RubySymbol.class, params(Ruby.class)));
     }
 }

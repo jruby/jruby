@@ -37,7 +37,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
+import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.Label;
 
 /**
@@ -45,7 +45,6 @@ import org.objectweb.asm.Label;
  * @author headius
  */
 public class StandardInvocationCompiler implements InvocationCompiler {
-    private static final CodegenUtils cg = CodegenUtils.cg;
     private StandardASMCompiler.AbstractMethodCompiler methodCompiler;
     private SkinnyMethodAdapter method;
     
@@ -81,7 +80,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // pop result, use args[length - 1] captured above
         method.pop(); // [val]
     }
-        
+    
     public void opElementAsgn(CompilerCallback valueCallback, String operator) {
         // FIXME: op element asgn is not yet using CallAdapter. Boo hoo.
         
@@ -96,7 +95,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         Label end = new Label();
         if (operator == "||") {
             Label falseResult = new Label();
-            methodCompiler.invokeIRubyObject("isTrue", cg.sig(boolean.class)); // receiver, args, result, istrue
+            methodCompiler.invokeIRubyObject("isTrue", sig(boolean.class)); // receiver, args, result, istrue
             methodCompiler.method.ifeq(falseResult); // receiver, args, result
             
             // it's true, clear everything but the result
@@ -121,7 +120,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         } else if (operator == "&&") {
             // TODO: This is the reverse of the above logic, and could probably be abstracted better
             Label falseResult = new Label();
-            methodCompiler.invokeIRubyObject("isTrue", cg.sig(boolean.class));
+            methodCompiler.invokeIRubyObject("isTrue", sig(boolean.class));
             methodCompiler.method.ifeq(falseResult);
             
             // it's true, stuff the element in
@@ -153,7 +152,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
 
     public void invokeSuper(CompilerCallback argsCallback, CompilerCallback closureArg) {
         methodCompiler.loadThreadContext();
-        methodCompiler.invokeUtilityMethod("checkSuperDisabled", cg.sig(void.class, ThreadContext.class));
+        methodCompiler.invokeUtilityMethod("checkSuperDisabled", sig(void.class, ThreadContext.class));
         
         methodCompiler.loadSelf();
 
@@ -161,7 +160,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         
         // args
         if (argsCallback == null) {
-            method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+            method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
             // block
             if (closureArg == null) {
                 // no args, no block
@@ -182,7 +181,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             }
         }
         
-        method.invokeinterface(cg.p(IRubyObject.class), "callSuper", cg.sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, Block.class));
+        method.invokeinterface(p(IRubyObject.class), "callSuper", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, Block.class));
     }
 
     public void invokeDynamic(String name, CompilerCallback receiverCallback, CompilerCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
@@ -210,33 +209,33 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             // block
             if (closureArg == null) {
                 // no args, no block
-                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class));
+                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class));
             } else {
                 // no args, with block
                 closureArg.call(methodCompiler);
-                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, Block.class));
+                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, Block.class));
             }
         } else {
             argsCallback.call(methodCompiler);
             // block
             if (closureArg == null) {
                 // with args, no block
-                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class));
+                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject[].class));
             } else {
                 // with args, with block
                 closureArg.call(methodCompiler);
-                signature = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
+                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
             }
         }
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
 
-        method.invokevirtual(cg.p(CallSite.class), "call", signature);
+        method.invokevirtual(p(CallSite.class), "call", signature);
     }
 
     private void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
-        String callSig = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class));
-        String callSigIndexed = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class));
+        String callSig = sig(IRubyObject.class, params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class));
+        String callSigIndexed = sig(IRubyObject.class, params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class));
 
         int index = MethodIndex.getIndex(name);
 
@@ -255,14 +254,14 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             if (hasReceiver) {
                 // receiver already present
                 // empty args list
-                method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+                method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
             } else {
                 // VCall
                 // no receiver present, use self
                 methodCompiler.loadSelf();
 
                 // empty args list
-                method.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+                method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
             }
         }
 
@@ -278,10 +277,10 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // load self for visibility checks
         methodCompiler.loadSelf();
 
-        method.getstatic(cg.p(CallType.class), callType.toString(), cg.ci(CallType.class));
+        method.getstatic(p(CallType.class), callType.toString(), ci(CallType.class));
 
         if (closureArg == null) {
-            method.getstatic(cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
+            method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         } else {
             closureArg.call(methodCompiler);
         }
@@ -293,7 +292,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             // wrap with try/catch for block flow-control exceptions
             // FIXME: for flow-control from containing blocks, but it's not working right;
             // stack is not as expected for invoke calls below...
-            //method.trycatch(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
+            //method.trycatch(tryBegin, tryEnd, tryCatch, p(JumpException.class));
             method.label(tryBegin);
         }
 
@@ -321,7 +320,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             method.label(tryCatch);
             {
                 methodCompiler.loadBlock();
-                methodCompiler.invokeUtilityMethod("handleJumpException", cg.sig(IRubyObject.class, cg.params(JumpException.class, Block.class)));
+                methodCompiler.invokeUtilityMethod("handleJumpException", sig(IRubyObject.class, params(JumpException.class, Block.class)));
             }
 
             method.label(normalEnd);
@@ -349,7 +348,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.aconst_null();
         method.ldc(new Boolean(unwrap));
 
-        method.invokevirtual(cg.p(Block.class), "yield", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyModule.class, Boolean.TYPE)));
+        method.invokevirtual(p(Block.class), "yield", sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyModule.class, Boolean.TYPE)));
     }
 
     public void invokeEqq() {

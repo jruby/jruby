@@ -10,7 +10,7 @@
 package org.jruby.compiler.impl;
 
 import java.io.PrintStream;
-import org.jruby.util.CodegenUtils;
+import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
@@ -63,9 +63,9 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     
     public void aprintln() {
         dup();
-        getstatic(CodegenUtils.cg.p(System.class), "out", CodegenUtils.cg.ci(PrintStream.class));
+        getstatic(p(System.class), "out", ci(PrintStream.class));
         swap();
-        invokevirtual(CodegenUtils.cg.p(PrintStream.class), "println", CodegenUtils.cg.sig(void.class, CodegenUtils.cg.params(Object.class)));
+        invokevirtual(p(PrintStream.class), "println", sig(void.class, params(Object.class)));
     }
     
     public void areturn() {

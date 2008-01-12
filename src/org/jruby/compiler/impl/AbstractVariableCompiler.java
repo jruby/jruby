@@ -27,21 +27,16 @@
 
 package org.jruby.compiler.impl;
 
-import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.CompilerCallback;
-import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.VariableCompiler;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
+import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.Label;
 
 /**
@@ -49,7 +44,6 @@ import org.objectweb.asm.Label;
  * @author headius
  */
 public abstract class AbstractVariableCompiler implements VariableCompiler {
-    protected static final CodegenUtils cg = CodegenUtils.cg;
     protected SkinnyMethodAdapter method;
     protected StandardASMCompiler.AbstractMethodCompiler methodCompiler;
     protected int argsIndex;
@@ -79,21 +73,21 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
         method.dup();
 
         methodCompiler.loadThreadContext();
-        methodCompiler.invokeThreadContext("getCurrentFrame", cg.sig(Frame.class));
+        methodCompiler.invokeThreadContext("getCurrentFrame", sig(Frame.class));
         method.swap();
-        method.invokevirtual(cg.p(Frame.class), "setLastLine", cg.sig(Void.TYPE, cg.params(IRubyObject.class)));
+        method.invokevirtual(p(Frame.class), "setLastLine", sig(Void.TYPE, params(IRubyObject.class)));
     }
 
     public void retrieveLastLine() {
         methodCompiler.loadThreadContext();
-        methodCompiler.invokeThreadContext("getCurrentFrame", cg.sig(Frame.class));
-        method.invokevirtual(cg.p(Frame.class), "getLastLine", cg.sig(IRubyObject.class));
+        methodCompiler.invokeThreadContext("getCurrentFrame", sig(Frame.class));
+        method.invokevirtual(p(Frame.class), "getLastLine", sig(IRubyObject.class));
     }
 
     public void retrieveBackRef() {
         methodCompiler.loadThreadContext();
-        methodCompiler.invokeThreadContext("getCurrentFrame", cg.sig(Frame.class));
-        method.invokevirtual(cg.p(Frame.class), "getBackRef", cg.sig(IRubyObject.class));
+        methodCompiler.invokeThreadContext("getCurrentFrame", sig(Frame.class));
+        method.invokevirtual(p(Frame.class), "getBackRef", sig(IRubyObject.class));
     }
 
     public void checkMethodArity(int requiredArgs, int optArgs, int restArg) {
@@ -138,7 +132,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
         method.aload(argsIndex);
         method.ldc(requiredArgs);
         method.ldc(requiredArgs + optArgs);
-        method.invokestatic(cg.p(Arity.class), "checkArgumentCount", cg.sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+        method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
         method.pop();
 
         method.label(noArityError);
@@ -215,7 +209,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             method.dup(); // dup the original array object
             methodCompiler.loadRuntime();
             method.ldc(currentArgElement);
-            methodCompiler.invokeUtilityMethod("createSubarray", cg.sig(RubyArray.class, IRubyObject[].class, Ruby.class, int.class));
+            methodCompiler.invokeUtilityMethod("createSubarray", sig(RubyArray.class, IRubyObject[].class, Ruby.class, int.class));
             method.go_to(readyForArgs);
 
             // create empty array
@@ -237,7 +231,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             methodCompiler.loadRuntime();
             method.aload(closureIndex);
 
-            methodCompiler.invokeUtilityMethod("processBlockArgument", cg.sig(IRubyObject.class, cg.params(Ruby.class, Block.class)));
+            methodCompiler.invokeUtilityMethod("processBlockArgument", sig(IRubyObject.class, params(Ruby.class, Block.class)));
             blockAssignment.call(methodCompiler);
             method.pop();
         }

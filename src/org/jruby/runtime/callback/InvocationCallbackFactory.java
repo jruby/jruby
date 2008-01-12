@@ -58,26 +58,24 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
+import static org.jruby.util.CodegenUtils.* ;
 import org.jruby.util.JRubyClassLoader;
 
 public class InvocationCallbackFactory extends CallbackFactory implements Opcodes {
-    private final static CodegenUtils cg = CodegenUtils.cg;
-
     private final Class type;
     protected final JRubyClassLoader classLoader;
     private final String typePath;
     protected final Ruby runtime;
 
-    private final static String SUPER_CLASS = cg.p(InvocationCallback.class);
-    private final static String FAST_SUPER_CLASS = cg.p(FastInvocationCallback.class);
-    private final static String CALL_SIG = cg.sig(RubyKernel.IRUBY_OBJECT, cg.params(Object.class,
+    private final static String SUPER_CLASS = p(InvocationCallback.class);
+    private final static String FAST_SUPER_CLASS = p(FastInvocationCallback.class);
+    private final static String CALL_SIG = sig(RubyKernel.IRUBY_OBJECT, params(Object.class,
             Object[].class, Block.class));
-    private final static String FAST_CALL_SIG = cg.sig(RubyKernel.IRUBY_OBJECT, cg.params(
+    private final static String FAST_CALL_SIG = sig(RubyKernel.IRUBY_OBJECT, params(
             Object.class, Object[].class));
-    private final static String BLOCK_CALL_SIG = cg.sig(RubyKernel.IRUBY_OBJECT, cg.params(
+    private final static String BLOCK_CALL_SIG = sig(RubyKernel.IRUBY_OBJECT, params(
             ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject[].class));
-    private final static String IRUB = cg.p(RubyKernel.IRUBY_OBJECT);
+    private final static String IRUB = p(RubyKernel.IRUBY_OBJECT);
     
     
     public static final int DISPATCHER_THREADCONTEXT_INDEX = 1;
@@ -99,7 +97,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } else {
            this.classLoader = new JRubyClassLoader(classLoader);
         }
-        this.typePath = cg.p(type);
+        this.typePath = p(type);
         this.runtime = runtime;
     }
 
@@ -124,11 +122,11 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private ClassWriter createCtorDispatcher(String namePath, Map switchMap) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, cg.p(Dispatcher.class), null);
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", cg.sig(Void.TYPE, cg.params(Ruby.class)), null, null));
+        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, p(Dispatcher.class), null);
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Ruby.class)), null, null));
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, cg.p(Dispatcher.class), "<init>", "()V");
+        mv.visitMethodInsn(INVOKESPECIAL, p(Dispatcher.class), "<init>", "()V");
         Label line = new Label();
         mv.visitLineNumber(0, line);
         
@@ -136,11 +134,11 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.aload(0);
         mv.ldc(new Integer(MethodIndex.NAMES.size()));
         mv.newarray(T_BYTE);
-        mv.putfield(cg.p(Dispatcher.class), "switchTable", cg.ci(byte[].class));
+        mv.putfield(p(Dispatcher.class), "switchTable", ci(byte[].class));
         
         // for each switch value, set it into the table
         mv.aload(0);
-        mv.getfield(cg.p(Dispatcher.class), "switchTable", cg.ci(byte[].class));
+        mv.getfield(p(Dispatcher.class), "switchTable", ci(byte[].class));
         
         for (Iterator switchIter = switchMap.keySet().iterator(); switchIter.hasNext();) {
             Integer switchValue = (Integer)switchIter.next();
@@ -181,18 +179,18 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private ClassWriter createBlockCtor(String namePath) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, cg.p(Object.class),
-                new String[] { cg.p(CompiledBlockCallback.class) });
-        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", cg.ci(Object.class), null, null);
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", cg.sig(Void.TYPE, cg.params(Object.class)), null, null);
+        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, p(Object.class),
+                new String[] { p(CompiledBlockCallback.class) });
+        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ci(Object.class), null, null);
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, cg.p(Object.class), "<init>", "()V");
+        mv.visitMethodInsn(INVOKESPECIAL, p(Object.class), "<init>", "()V");
         Label line = new Label();
         mv.visitLineNumber(0, line);
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ALOAD, 1);
-        mv.visitFieldInsn(PUTFIELD, namePath, "$scriptObject", cg.ci(Object.class));
+        mv.visitFieldInsn(PUTFIELD, namePath, "$scriptObject", ci(Object.class));
         mv.visitInsn(RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
@@ -209,7 +207,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private MethodVisitor startCall(ClassWriter cw) {
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", CALL_SIG, null, null);
-        ;
+        
         mv.visitCode();
         Label line = new Label();
         mv.visitLineNumber(0, line);
@@ -220,7 +218,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private MethodVisitor startCallS(ClassWriter cw) {
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", CALL_SIG, null, null);
-        ;
+        
         mv.visitCode();
         Label line = new Label();
         mv.visitLineNumber(0, line);
@@ -231,7 +229,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private MethodVisitor startCallFast(ClassWriter cw) {
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", FAST_CALL_SIG, null, null);
-        ;
+        
         mv.visitCode();
         Label line = new Label();
         mv.visitLineNumber(0, line);
@@ -241,9 +239,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     private MethodVisitor startDispatcher(ClassWriter cw) {
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "callMethod", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, RubyClass.class, Integer.TYPE, String.class,
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "callMethod", sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, RubyClass.class, Integer.TYPE, String.class,
                 IRubyObject[].class, CallType.class, Block.class)), null, null);
-        ;
+        
         mv.visitCode();
         Label line = new Label();
         mv.visitLineNumber(0, line);
@@ -254,7 +252,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private MethodVisitor startCallSFast(ClassWriter cw) {
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", FAST_CALL_SIG, null, null);
-        ;
+        
         mv.visitCode();
         Label line = new Label();
         mv.visitLineNumber(0, line);
@@ -265,7 +263,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private MethodVisitor startBlockCall(ClassWriter cw) {
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", BLOCK_CALL_SIG, null, null);
-        ;
+        
         mv.visitCode();
         Label line = new Label();
         mv.visitLineNumber(0, line);
@@ -292,7 +290,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     MethodVisitor mv = startCall(cw);
                     
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(1, 3);
                     c = endCall(cw, mv, mname);
@@ -325,7 +323,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     loadArguments(mv, METHOD_ARGS_INDEX, 1, descriptor);
 
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(3, 3);
                     c = endCall(cw, mv, mname);
@@ -359,7 +357,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     loadArguments(mv, METHOD_ARGS_INDEX, 2, descriptor);
 
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(4, 3);
                     c = endCall(cw, mv, mname);
@@ -394,7 +392,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     loadArguments(mv, METHOD_ARGS_INDEX, 3, descriptor);
                     
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(5, 3);
                     c = endCall(cw, mv, mname);
@@ -424,7 +422,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     ClassWriter cw = createCtor(mnamePath);
                     MethodVisitor mv = startCallS(cw);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(1, 3);
                     c = endCall(cw, mv, mname);
@@ -458,7 +456,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     loadArguments(mv, METHOD_ARGS_INDEX, 1, descriptor);
 
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(3, 3);
                     c = endCall(cw, mv, mname);
@@ -492,7 +490,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     loadArguments(mv, METHOD_ARGS_INDEX, 2, descriptor);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(4, 4);
                     c = endCall(cw, mv, mname);
@@ -526,7 +524,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     loadArguments(mv, METHOD_ARGS_INDEX, 3, descriptor);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(5, 3);
                     c = endCall(cw, mv, mname);
@@ -552,10 +550,10 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public CompiledBlockCallback getBlockCallback(String method, Object scriptObject) {
-        Class type = scriptObject.getClass();
-        String typePath = cg.p(type);
-        String mname = type.getName() + "Block" + method + "xx1";
-        String mnamePath = typePath + "Block" + method + "xx1";
+        Class typeClass = scriptObject.getClass();
+        String typePathString = p(typeClass);
+        String mname = typeClass.getName() + "Block" + method + "xx1";
+        String mnamePath = typePathString + "Block" + method + "xx1";
         synchronized (classLoader) {
             Class c = tryClass(mname);
             try {
@@ -563,13 +561,13 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     ClassWriter cw = createBlockCtor(mnamePath);
                     MethodVisitor mv = startBlockCall(cw);
                     mv.visitVarInsn(ALOAD, 0);
-                    mv.visitFieldInsn(GETFIELD, mnamePath, "$scriptObject", cg.ci(Object.class));
-                    mv.visitTypeInsn(CHECKCAST, cg.p(type));
+                    mv.visitFieldInsn(GETFIELD, mnamePath, "$scriptObject", ci(Object.class));
+                    mv.visitTypeInsn(CHECKCAST, p(typeClass));
                     mv.visitVarInsn(ALOAD, 1);
                     mv.visitVarInsn(ALOAD, 2);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(
-                            RubyKernel.IRUBY_OBJECT, cg.params(ThreadContext.class,
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePathString, method, sig(
+                            RubyKernel.IRUBY_OBJECT, params(ThreadContext.class,
                                     RubyKernel.IRUBY_OBJECT, IRubyObject[].class)));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(2, 3);
@@ -601,7 +599,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     mv.visitVarInsn(ALOAD, METHOD_ARGS_INDEX);
                     checkCast(mv, IRubyObject[].class);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(2, 3);
                     c = endCall(cw, mv, mname);
@@ -635,7 +633,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     mv.visitVarInsn(ALOAD, METHOD_ARGS_INDEX);
                     checkCast(mv, IRubyObject[].class);
                     mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(2, 3);
                     c = endCall(cw, mv, mname);
@@ -664,7 +662,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     ClassWriter cw = createCtorFast(mnamePath);
                     MethodVisitor mv = startCallFast(cw);
 
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret));
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, sig(ret));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(1, 3);
                     c = endCall(cw, mv, mname);
@@ -696,7 +694,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     loadArguments(mv, METHOD_ARGS_INDEX, 1, descriptor);
 
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(3, 3);
                     c = endCall(cw, mv, mname);
@@ -729,7 +727,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     loadArguments(mv, METHOD_ARGS_INDEX, 2, descriptor);
 
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(4, 3);
                     c = endCall(cw, mv, mname);
@@ -762,7 +760,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     loadArguments(mv, METHOD_ARGS_INDEX, 3, descriptor);
 
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(5, 3);
                     c = endCall(cw, mv, mname);
@@ -792,7 +790,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     ClassWriter cw = createCtorFast(mnamePath);
                     MethodVisitor mv = startCallSFast(cw);
 
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(1, 3);
                     c = endCall(cw, mv, mname);
@@ -825,7 +823,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     loadArguments(mv, METHOD_ARGS_INDEX, 1, descriptor);
 
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(3, 3);
                     c = endCall(cw, mv, mname);
@@ -859,7 +857,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     loadArguments(mv, METHOD_ARGS_INDEX, 2, descriptor);
 
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(4, 4);
                     c = endCall(cw, mv, mname);
@@ -893,7 +891,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     loadArguments(mv, METHOD_ARGS_INDEX, 3, descriptor);
 
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(5, 3);
                     c = endCall(cw, mv, mname);
@@ -926,7 +924,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     mv.visitVarInsn(ALOAD, METHOD_ARGS_INDEX);
                     checkCast(mv, IRubyObject[].class);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(2, 3);
                     c = endCall(cw, mv, mname);
@@ -958,7 +956,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     mv.visitVarInsn(ALOAD, METHOD_ARGS_INDEX);
                     checkCast(mv, IRubyObject[].class);
-                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, cg.sig(ret, signature));
+                    mv.visitMethodInsn(INVOKESTATIC, typePath, method, sig(ret, signature));
                     mv.visitInsn(ARETURN);
                     mv.visitMaxs(2, 3);
                     c = endCall(cw, mv, mname);
@@ -1045,13 +1043,13 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     // store runtime
                     mv.aload(DISPATCHER_THREADCONTEXT_INDEX);
-                    mv.invokevirtual(cg.p(ThreadContext.class), "getRuntime", cg.sig(Ruby.class));
+                    mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
                     mv.astore(DISPATCHER_RUNTIME_INDEX);
                     
                     Label tryBegin = new Label();
                     Label tryEnd = new Label();
                     Label tryCatch = new Label();
-                    mv.trycatch(tryBegin, tryEnd, tryCatch, cg.p(StackOverflowError.class));
+                    mv.trycatch(tryBegin, tryEnd, tryCatch, p(StackOverflowError.class));
                     mv.label(tryBegin);
                     
                     // invoke directly
@@ -1060,7 +1058,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     
                     // check if tracing is on
                     mv.aload(DISPATCHER_RUNTIME_INDEX);
-                    mv.invokevirtual(cg.p(Ruby.class), "hasEventHooks", cg.sig(boolean.class));
+                    mv.invokevirtual(p(Ruby.class), "hasEventHooks", sig(boolean.class));
                     mv.ifne(defaultLabel);
                     
                     // if no switch values, go straight to default
@@ -1069,7 +1067,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     } else {
                         // load switch value
                         mv.aload(0);
-                        mv.getfield(cg.p(Dispatcher.class), "switchTable", cg.ci(byte[].class));
+                        mv.getfield(p(Dispatcher.class), "switchTable", ci(byte[].class));
                         
                         // ensure size isn't too large
                         mv.dup();
@@ -1129,7 +1127,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                             }
                             
                             Class ret = getReturnClass(method, descriptor);
-                            String callSig = cg.sig(ret, descriptor);
+                            String callSig = sig(ret, descriptor);
 
                             // if block, pass it
                             if (descriptor.length > 0 && descriptor[descriptor.length - 1] == Block.class) {
@@ -1153,7 +1151,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     mv.label(tryCatch);
                     mv.aload(DISPATCHER_RUNTIME_INDEX);
                     mv.ldc("stack level too deep");
-                    mv.invokevirtual(cg.p(Ruby.class), "newSystemStackError", cg.sig(RaiseException.class, cg.params(String.class)));
+                    mv.invokevirtual(p(Ruby.class), "newSystemStackError", sig(RaiseException.class, params(String.class)));
                     mv.athrow();
 
                     // calls done, return
@@ -1178,7 +1176,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         // retrieve method
         mv.aload(DISPATCHER_RUBYMODULE_INDEX); // module
         mv.aload(DISPATCHER_NAME_INDEX); // name
-        mv.invokevirtual(cg.p(RubyModule.class), "searchMethod", cg.sig(DynamicMethod.class, cg.params(String.class)));
+        mv.invokevirtual(p(RubyModule.class), "searchMethod", sig(DynamicMethod.class, params(String.class)));
 
         Label okCall = new Label();
         
@@ -1194,9 +1192,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.aload(DISPATCHER_NAME_INDEX); // name
         mv.aload(DISPATCHER_ARGS_INDEX);
         mv.aload(DISPATCHER_BLOCK_INDEX);
-        mv.invokevirtual(cg.p(DynamicMethod.class), "call",
-                cg.sig(IRubyObject.class, 
-                cg.params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class)));
+        mv.invokevirtual(p(DynamicMethod.class), "call",
+                sig(IRubyObject.class, 
+                params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class)));
     }
     
     public void callMethodMissingIfNecessary(SkinnyMethodAdapter mv, Label afterCall, Label okCall) {
@@ -1204,21 +1202,21 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
         // if undefined, branch to method_missing
         mv.dup();
-        mv.invokevirtual(cg.p(DynamicMethod.class), "isUndefined", cg.sig(boolean.class));
+        mv.invokevirtual(p(DynamicMethod.class), "isUndefined", sig(boolean.class));
         mv.ifne(methodMissing);
 
         // if we're not attempting to invoke method_missing and method is not visible, branch to method_missing
         mv.aload(DISPATCHER_NAME_INDEX);
         mv.ldc("method_missing");
         // if it's method_missing, just invoke it
-        mv.invokevirtual(cg.p(String.class), "equals", cg.sig(boolean.class, cg.params(Object.class)));
+        mv.invokevirtual(p(String.class), "equals", sig(boolean.class, params(Object.class)));
         mv.ifne(okCall);
         // check visibility
         mv.dup(); // dup method
         mv.aload(DISPATCHER_THREADCONTEXT_INDEX);
-        mv.invokevirtual(cg.p(ThreadContext.class), "getFrameSelf", cg.sig(IRubyObject.class));
+        mv.invokevirtual(p(ThreadContext.class), "getFrameSelf", sig(IRubyObject.class));
         mv.aload(DISPATCHER_CALLTYPE_INDEX);
-        mv.invokevirtual(cg.p(DynamicMethod.class), "isCallableFrom", cg.sig(boolean.class, cg.params(IRubyObject.class, CallType.class)));
+        mv.invokevirtual(p(DynamicMethod.class), "isCallableFrom", sig(boolean.class, params(IRubyObject.class, CallType.class)));
         mv.ifne(okCall);
 
         // invoke callMethodMissing
@@ -1233,15 +1231,15 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
         // caller
         mv.aload(DISPATCHER_THREADCONTEXT_INDEX);
-        mv.invokevirtual(cg.p(ThreadContext.class), "getFrameSelf", cg.sig(IRubyObject.class));
+        mv.invokevirtual(p(ThreadContext.class), "getFrameSelf", sig(IRubyObject.class));
 
         mv.aload(DISPATCHER_CALLTYPE_INDEX); // calltype
         mv.aload(DISPATCHER_BLOCK_INDEX); // block
 
         // invoke callMethodMissing method directly
         // TODO: this could be further optimized, since some DSLs hit method_missing pretty hard...
-        mv.invokestatic(cg.p(RuntimeHelpers.class), "callMethodMissing", cg.sig(IRubyObject.class, 
-                cg.params(ThreadContext.class, IRubyObject.class, DynamicMethod.class, String.class, 
+        mv.invokestatic(p(RuntimeHelpers.class), "callMethodMissing", sig(IRubyObject.class, 
+                params(ThreadContext.class, IRubyObject.class, DynamicMethod.class, String.class, 
                                     IRubyObject[].class, IRubyObject.class, CallType.class, Block.class)));
         // if no exception raised, jump to end to leave result on stack for return
         mv.go_to(afterCall);
@@ -1261,7 +1259,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     private void checkCast(MethodVisitor mv, Class clazz) {
-        mv.visitTypeInsn(CHECKCAST, cg.p(clazz));
+        mv.visitTypeInsn(CHECKCAST, p(clazz));
     }
 
     private void checkArity(SkinnyMethodAdapter mv, Arity arity) {
@@ -1296,7 +1294,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             default: mv.ldc(new Integer(arity.getValue()));
             }
 
-            mv.invokevirtual(cg.p(Ruby.class), "newArgumentError", cg.sig(RaiseException.class, cg.params(int.class, int.class)));
+            mv.invokevirtual(p(Ruby.class), "newArgumentError", sig(RaiseException.class, params(int.class, int.class)));
             mv.athrow();
 
             // arity ok, continue
