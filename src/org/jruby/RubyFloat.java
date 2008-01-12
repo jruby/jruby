@@ -319,6 +319,10 @@ public class RubyFloat extends RubyNumeric {
             double x = value;
 
             double mod = Math.IEEEremainder(x, y);
+            // MRI behavior:
+            if (Double.isNaN(mod)) {
+                throw getRuntime().newFloatDomainError("NaN");
+            }
             double div = Math.floor(x / y);
 
             if (y * mod < 0) {
