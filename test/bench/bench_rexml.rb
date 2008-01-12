@@ -12,13 +12,14 @@ class DummyListener
   def cdata(a); end
 end
 
-content = File.read('build.xml')
+filename = ARGV[0] || 'build.xml'
+content = File.read(filename)
 
 puts "read content from stream, no DOM"
 5.times {
   puts Benchmark.measure {
     5.times {
-      REXML::Parsers::StreamParser.new(File.open('build.xml'), DummyListener.new).parse
+      REXML::Parsers::StreamParser.new(File.open(filename), DummyListener.new).parse
     }
   }
 }
@@ -36,7 +37,7 @@ puts "read content from stream, build DOM"
 5.times {
   puts Benchmark.measure {
     5.times {
-      doc = REXML::Document.new(File.open("build.xml"))
+      doc = REXML::Document.new(File.open(filename))
     }
   }
 }
@@ -58,7 +59,7 @@ begin
   5.times {
     puts Benchmark.measure {
       5.times {
-        REXML::Parsers::StreamParser.new(File.open('build.xml'), DummyListener.new).parse
+        REXML::Parsers::StreamParser.new(File.open(filename), DummyListener.new).parse
       }
     }
   }
@@ -76,7 +77,7 @@ begin
   5.times {
     puts Benchmark.measure {
       5.times {
-        doc = REXML::Document.new(File.open("build.xml"))
+        doc = REXML::Document.new(File.open(filename))
       }
     }
   }
