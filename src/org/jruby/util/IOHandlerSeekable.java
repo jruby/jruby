@@ -59,6 +59,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
     protected ByteBuffer buffer; // r/w buffer
     protected boolean reading; // are we reading or writing?
     protected FileChannel channel;
+    private final JRubyFile theFile;
     
     public IOHandlerSeekable(Ruby runtime, String path, IOModes modes) 
         throws IOException, InvalidValueException {
@@ -67,7 +68,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
         this.path = path;
         this.modes = modes;
         this.cwd = runtime.getCurrentDirectory();
-        JRubyFile theFile = JRubyFile.create(cwd,path);
+        theFile = JRubyFile.create(cwd,path);
 
         if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();
         
@@ -98,6 +99,31 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
         // Give a fileno last so that we do not consume then when we have a problem opening a file.
         fileno = RubyIO.getNewFileno();
         
+        // Ensure we clean up after ourselves ... eventually
+        runtime.addInternalFinalizer(this);
+    }
+    
+    // The copying constructor, needed for cloneIOHandler().
+    private IOHandlerSeekable(IOHandlerSeekable other) throws IOException, InvalidValueException{
+        super(other.getRuntime());
+
+        Ruby runtime = other.getRuntime();
+
+        // copy stuff
+        this.path = other.path;
+        this.modes = other.modes;
+        this.cwd = other.cwd;
+        this.reading = other.reading;
+        this.fileno = other.fileno;
+        this.isOpen = other.isOpen;
+        this.theFile = other.theFile;
+
+        // create stuff
+        file = new RandomAccessFile(theFile, javaMode());
+        channel = file.getChannel();
+        buffer = ByteBuffer.allocate(BUFSIZE);
+        buffer.flip();
+
         // Ensure we clean up after ourselves ... eventually
         runtime.addInternalFinalizer(this);
     }
@@ -223,10 +249,8 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
 
 
     public IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException {
-        IOHandler newHandler = new IOHandlerSeekable(getRuntime(), path, modes); 
-            
+        IOHandler newHandler = new IOHandlerSeekable(this); 
         newHandler.seek(pos(), SEEK_CUR);
-            
         return newHandler;
     }
     
