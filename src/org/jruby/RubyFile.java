@@ -1087,9 +1087,15 @@ public class RubyFile extends RubyIO {
     public static IRubyObject link(IRubyObject recv, IRubyObject from, IRubyObject to) {
         RubyString fromStr = RubyString.stringValue(from);
         RubyString toStr = RubyString.stringValue(to);
-        if (recv.getRuntime().getPosix().link(fromStr.toString(),toStr.toString()) == -1) {
-            // FIXME: When we get JNA3 we need to properly write this to errno.
-            throw recv.getRuntime().newSystemCallError("bad symlink");
+        try {
+            if (recv.getRuntime().getPosix().link(
+                    fromStr.toString(),toStr.toString()) == -1) {
+                // FIXME: When we get JNA3 we need to properly write this to errno.
+                throw recv.getRuntime().newSystemCallError("bad symlink");
+            }
+        } catch (java.lang.UnsatisfiedLinkError ule) {
+            throw recv.getRuntime().newNotImplementedError(
+                    "link() function is unimplemented on this machine");
         }
         
         return recv.getRuntime().newFixnum(0);
@@ -1189,9 +1195,15 @@ public class RubyFile extends RubyIO {
     public static IRubyObject symlink(IRubyObject recv, IRubyObject from, IRubyObject to) {
         RubyString fromStr = RubyString.stringValue(from);
         RubyString toStr = RubyString.stringValue(to);
-        if (recv.getRuntime().getPosix().symlink(fromStr.toString(),toStr.toString()) == -1) {
-            // FIXME: When we get JNA3 we need to properly write this to errno.
-            throw recv.getRuntime().newSystemCallError("bad symlink");
+        try {
+            if (recv.getRuntime().getPosix().symlink(
+                    fromStr.toString(), toStr.toString()) == -1) {
+                // FIXME: When we get JNA3 we need to properly write this to errno.
+                throw recv.getRuntime().newSystemCallError("bad symlink");
+            }
+        } catch (java.lang.UnsatisfiedLinkError ule) {
+            throw recv.getRuntime().newNotImplementedError(
+                    "symlink() function is unimplemented on this machine");
         }
         
         return recv.getRuntime().newFixnum(0);
