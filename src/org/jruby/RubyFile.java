@@ -1085,7 +1085,9 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject link(IRubyObject recv, IRubyObject from, IRubyObject to) {
-        if (recv.getRuntime().getPosix().link(from.toString(),to.toString()) == -1) {
+        RubyString fromStr = RubyString.stringValue(from);
+        RubyString toStr = RubyString.stringValue(to);
+        if (recv.getRuntime().getPosix().link(fromStr.toString(),toStr.toString()) == -1) {
             // FIXME: When we get JNA3 we need to properly write this to errno.
             recv.getRuntime().newSystemCallError("bad symlink");
         }
@@ -1185,7 +1187,9 @@ public class RubyFile extends RubyIO {
     
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject symlink(IRubyObject recv, IRubyObject from, IRubyObject to) {
-        if (recv.getRuntime().getPosix().symlink(from.toString(),to.toString()) == -1) {
+        RubyString fromStr = RubyString.stringValue(from);
+        RubyString toStr = RubyString.stringValue(to);
+        if (recv.getRuntime().getPosix().symlink(fromStr.toString(),toStr.toString()) == -1) {
             // FIXME: When we get JNA3 we need to properly write this to errno.
             recv.getRuntime().newSystemCallError("bad symlink");
         }
