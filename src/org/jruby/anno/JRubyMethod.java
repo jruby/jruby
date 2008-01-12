@@ -67,4 +67,8 @@ public @interface JRubyMethod {
      * The visibility of this method.
      */
     Visibility visibility() default Visibility.PUBLIC;
+    /**
+     * Whether to use a frame slot for backtrace information
+     */
+    boolean backtrace() default false;
 }

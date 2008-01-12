@@ -121,7 +121,7 @@ public class CompiledBlock extends BlockBody {
     }
     
     protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preYieldSpecificBlockNEW(binding, scope, klass);
+        context.preYieldSpecificBlock(binding, scope, klass);
     }
     
     protected void post(ThreadContext context, Binding binding) {

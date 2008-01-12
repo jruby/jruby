@@ -104,7 +104,7 @@ public class InterpretedBlock extends BlockBody {
     }
     
     protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preYieldSpecificBlockNEW(binding, iterNode.getScope(), klass);
+        context.preYieldSpecificBlock(binding, iterNode.getScope(), klass);
     }
     
     protected void post(ThreadContext context, Binding binding) {

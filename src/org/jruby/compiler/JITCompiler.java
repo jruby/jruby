@@ -110,11 +110,11 @@ public class JITCompiler {
                     // if we haven't already decided on a do-nothing call
                     if (jitCallConfig == null) {
                         // if we're not doing any of the operations that still need a scope, use the scopeless config
-                        if (!(inspector.hasClosure() || inspector.hasScopeAwareMethods())) {
+                        if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                            jitCallConfig = CallConfiguration.FRAME_AND_SCOPE;
+                        } else {
                             // switch to a slightly faster call config
                             jitCallConfig = CallConfiguration.FRAME_ONLY;
-                        } else {
-                            jitCallConfig = CallConfiguration.FRAME_AND_SCOPE;
                         }
                     }
                     

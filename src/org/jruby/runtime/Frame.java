@@ -139,6 +139,11 @@ public final class Frame implements JumpTarget {
         this.backref = null;
         this.lastline = null;
     }
+
+    public void updateFrame(String name, ISourcePosition position) {
+        this.name = name;
+        this.position = position;
+    }
     
     public Frame duplicate() {
         Frame newFrame = new Frame();

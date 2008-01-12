@@ -59,16 +59,11 @@ public class ReflectionMethodFactory extends MethodFactory {
         JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
         JavaMethod ic = new ReflectedJavaMethod(implementationClass, method, jrubyMethod);
 
-        boolean fast = !(jrubyMethod.frame() || jrubyMethod.scope());
         ic.setArity(Arity.fromAnnotation(jrubyMethod));
         ic.setJavaName(method.getName());
         ic.setArgumentTypes(method.getParameterTypes());
         ic.setSingleton(Modifier.isStatic(method.getModifiers()));
-        if (fast) {
-            ic.setCallConfig(CallConfiguration.NO_FRAME_NO_SCOPE);
-        } else {
-            ic.setCallConfig(CallConfiguration.FRAME_ONLY);
-        }
+        ic.setCallConfig(CallConfiguration.getCallConfigByAnno(jrubyMethod));
         return ic;
     }
 

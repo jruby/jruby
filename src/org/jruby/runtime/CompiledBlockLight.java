@@ -121,7 +121,7 @@ public class CompiledBlockLight extends BlockBody {
     }
     
     protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preYieldLightBlockNEW(binding, dummyScope, klass);
+        context.preYieldLightBlock(binding, dummyScope, klass);
     }
     
     protected void post(ThreadContext context, Binding binding) {

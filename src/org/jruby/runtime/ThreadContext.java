@@ -308,6 +308,15 @@ public final class ThreadContext {
                                IRubyObject self, Block block, JumpTarget jumpTarget) {
         pushFrame(clazz, name, self, block, jumpTarget);        
     }
+    
+    private void pushBacktraceFrame(String name) {
+        pushFrame(name);        
+    }
+
+    private void pushFrame(String name) {
+        frameStack[++frameIndex].updateFrame(name, getPosition());
+        expandFramesIfNecessary(frameIndex + 1);
+    }
 
     private void pushFrame(RubyModule clazz, String name, 
                                IRubyObject self, Block block, JumpTarget jumpTarget) {
@@ -706,6 +715,24 @@ public final class ThreadContext {
         popScope();
     }
     
+    public void preMethodBacktraceAndScope(String name, RubyModule clazz, StaticScope staticScope) {
+        preMethodScopeOnly(clazz, staticScope);
+        pushBacktraceFrame(name);
+    }
+    
+    public void postMethodBacktraceAndScope() {
+        postMethodScopeOnly();
+        popFrame();
+    }
+    
+    public void preMethodBacktraceOnly(String name) {
+        pushBacktraceFrame(name);
+    }
+    
+    public void postMethodBacktraceOnly() {
+        popFrame();
+    }
+    
     public void preInitCoreClasses() {
         pushFrame();
         setCurrentVisibility(Visibility.PRIVATE);
@@ -778,14 +805,7 @@ public final class ThreadContext {
         pushRubyClass((klass != null) ? klass : binding.getKlass());
     }
     
-    public void preYieldSpecificBlock(Binding binding, RubyModule klass) {
-        pushFrame(binding.getFrame());
-        getCurrentFrame().setVisibility(binding.getVisibility());
-        pushScope(binding.getDynamicScope().cloneScope());
-        pushRubyClass((klass != null) ? klass : binding.getKlass());
-    }
-    
-    public void preYieldSpecificBlockNEW(Binding binding, StaticScope scope, RubyModule klass) {
+    public void preYieldSpecificBlock(Binding binding, StaticScope scope, RubyModule klass) {
         pushFrame(binding.getFrame());
         getCurrentFrame().setVisibility(binding.getVisibility());
         // new scope for this invocation of the block, based on parent scope
@@ -793,14 +813,7 @@ public final class ThreadContext {
         pushRubyClass((klass != null) ? klass : binding.getKlass());
     }
     
-    public void preYieldLightBlock(Binding binding, RubyModule klass) {
-        pushFrame(binding.getFrame());
-        getCurrentFrame().setVisibility(binding.getVisibility());
-        pushScope(binding.getDynamicScope());
-        pushRubyClass((klass != null) ? klass : binding.getKlass());
-    }
-    
-    public void preYieldLightBlockNEW(Binding binding, DynamicScope emptyScope, RubyModule klass) {
+    public void preYieldLightBlock(Binding binding, DynamicScope emptyScope, RubyModule klass) {
         pushFrame(binding.getFrame());
         getCurrentFrame().setVisibility(binding.getVisibility());
         // just push the same empty scope, since we won't use one

@@ -389,16 +389,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 
             JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, jrubyMethod.visibility()});
 
-            boolean fast = !(jrubyMethod.frame() || jrubyMethod.scope());
             ic.setArity(Arity.fromAnnotation(jrubyMethod));
             ic.setJavaName(javaMethodName);
             ic.setArgumentTypes(method.getParameterTypes());
             ic.setSingleton(Modifier.isStatic(method.getModifiers()));
-            if (fast) {
-                ic.setCallConfig(CallConfiguration.NO_FRAME_NO_SCOPE);
-            } else {
-                ic.setCallConfig(CallConfiguration.FRAME_ONLY);
-            }
+            ic.setCallConfig(CallConfiguration.getCallConfigByAnno(jrubyMethod));
             return ic;
         } catch(Exception e) {
             e.printStackTrace();
@@ -497,16 +492,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 int index = indexMap.get(method);
                 JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class, int.class}).newInstance(new Object[]{implementationClass, jrubyMethod.visibility(), index});
 
-                boolean fast = !(jrubyMethod.frame() || jrubyMethod.scope());
                 ic.setArity(Arity.fromAnnotation(jrubyMethod));
                 ic.setJavaName(method.getName());
                 ic.setArgumentTypes(method.getParameterTypes());
                 ic.setSingleton(Modifier.isStatic(method.getModifiers()));
-                if (fast) {
-                    ic.setCallConfig(CallConfiguration.NO_FRAME_NO_SCOPE);
-                } else {
-                    ic.setCallConfig(CallConfiguration.FRAME_ONLY);
-                }
+                ic.setCallConfig(CallConfiguration.getCallConfigByAnno(jrubyMethod));
 
                 callback.define(implementationClass, method, ic);
             }
@@ -537,8 +527,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         checkArity(jrubyMethod,method);
         
-        boolean fast = !(jrubyMethod.frame() || jrubyMethod.scope());
-        if (!fast) {
+        CallConfiguration callConfig = CallConfiguration.getCallConfigByAnno(jrubyMethod);
+        if (!callConfig.isNoop()) {
             invokeCallConfigPre(method);
         }
 
@@ -573,7 +563,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         method.label(normalExit);
         
-        if (!fast) {
+        if (!callConfig.isNoop()) {
             invokeCallConfigPost(method);
         }
         
@@ -586,7 +576,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         // finally handling for abnormal exit
         method.label(tryFinally);
         {
-            if (!fast) {
+            if (!callConfig.isNoop()) {
                 invokeCallConfigPost(method);
             }
 
@@ -616,7 +606,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 mv.visitLineNumber(0, line);
                 
                 // invoke pre method stuff
-                if (callConfig != CallConfiguration.NO_FRAME_NO_SCOPE) {
+                if (!callConfig.isNoop()) {
                     mv.aload(0); // load method to get callconfig
                     mv.getfield(cg.p(CompiledMethod.class), "callConfig", cg.ci(CallConfiguration.class));
                     mv.aload(THREADCONTEXT_INDEX); // tc
@@ -674,7 +664,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 //call post method stuff (non-finally)
                 mv.label(normalExit);
-                if (callConfig != CallConfiguration.NO_FRAME_NO_SCOPE) {
+                if (!callConfig.isNoop()) {
                     mv.aload(0); // load method to get callconfig
                     mv.getfield(cg.p(DynamicMethod.class), "callConfig", cg.ci(CallConfiguration.class));
                     mv.aload(1);
@@ -737,7 +727,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.label(tryFinally);
 
                     //call post method stuff (exception raised)
-                    if (callConfig != CallConfiguration.NO_FRAME_NO_SCOPE) {
+                    if (!callConfig.isNoop()) {
                         mv.aload(0); // load method to get callconfig
                         mv.getfield(cg.p(DynamicMethod.class), "callConfig", cg.ci(CallConfiguration.class));
                         mv.aload(1);

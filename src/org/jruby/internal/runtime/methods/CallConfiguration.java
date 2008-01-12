@@ -10,6 +10,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -71,7 +72,58 @@ public abstract class CallConfiguration {
         public String name() {
             return "NO_FRAME_NO_SCOPE";
         }
+        
+        @Override
+        public boolean isNoop() {
+            return true;
+        }
     };
+    public static final CallConfiguration BACKTRACE_ONLY = new CallConfiguration() {
+        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, IRubyObject[] args, Block block, StaticScope scope, JumpTarget jumpTarget) {
+            context.preMethodBacktraceOnly(name);
+        }
+        
+        public void post(ThreadContext context) {
+            context.postMethodBacktraceOnly();
+        }
+        
+        public String name() {
+            return "BACKTRACE_ONLY";
+        }
+    };
+    public static final CallConfiguration BACKTRACE_AND_SCOPE = new CallConfiguration() {
+        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, IRubyObject[] args, Block block, StaticScope scope, JumpTarget jumpTarget) {
+            context.preMethodBacktraceAndScope(name, implementer, scope);
+        }
+        
+        public void post(ThreadContext context) {
+            context.postMethodBacktraceAndScope();
+        }
+        
+        public String name() {
+            return "BACKTRACE_AND_SCOPE";
+        }
+    };
+    
+    public static CallConfiguration getCallConfigByAnno(JRubyMethod anno) {
+        if (anno.frame()) {
+            if (anno.scope()) {
+                return FRAME_AND_SCOPE;
+            } else {
+                return FRAME_ONLY;
+            }
+        } else if (anno.scope()) {
+            if (anno.backtrace()) {
+                return BACKTRACE_AND_SCOPE;
+            } else {
+                return SCOPE_ONLY;
+            }
+        } else if (anno.backtrace()) {
+            return BACKTRACE_ONLY;
+        } else {
+            return NO_FRAME_NO_SCOPE;
+        }
+    }
 
     private CallConfiguration() {
     }
@@ -79,4 +131,7 @@ public abstract class CallConfiguration {
     public abstract void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, IRubyObject[] args, Block block, StaticScope scope, JumpTarget jumpTarget);
     public abstract void post(ThreadContext context);
     public abstract String name();
+    public boolean isNoop() {
+        return false;
+    }
 }

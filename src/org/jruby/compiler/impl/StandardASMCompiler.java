@@ -2360,9 +2360,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             } else {
                 if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                     // TODO: call config with scope but no frame
-                    method.getstatic(cg.p(CallConfiguration.class), CallConfiguration.SCOPE_ONLY.name(), cg.ci(CallConfiguration.class));
+                    method.getstatic(cg.p(CallConfiguration.class), CallConfiguration.BACKTRACE_AND_SCOPE.name(), cg.ci(CallConfiguration.class));
                 } else {
-                    method.getstatic(cg.p(CallConfiguration.class), CallConfiguration.NO_FRAME_NO_SCOPE.name(), cg.ci(CallConfiguration.class));
+                    method.getstatic(cg.p(CallConfiguration.class), CallConfiguration.BACKTRACE_ONLY.name(), cg.ci(CallConfiguration.class));
                 }
             }
             
