@@ -31,6 +31,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
@@ -222,7 +223,16 @@ public class RubyFileTest {
         Ruby runtime = recv.getRuntime();
         JRubyFile file = file(filename);
 
-        return runtime.newBoolean(file.exists() && runtime.getPosix().lstat(file.getAbsolutePath()).isSymlink());
+        try {
+            // Note: We can't use file.exists() to check whether the symlink
+            // exists or not, because that method returns false for existing
+            // but broken symlink. So, we try without the existence check,
+            // but in the try-catch block.
+            // MRI behavior: symlink? on broken symlink should return true.
+            return runtime.newBoolean(runtime.getPosix().lstat(file.getAbsolutePath()).isSymlink());
+        } catch (RaiseException re) {
+            return runtime.newBoolean(false);
+        }
     }
 
     // We do both writable and writable_real through the same method because
