@@ -33,6 +33,7 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.CodegenUtils.*;
 
 /**
  *
@@ -66,7 +67,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
     public void beginClosure(CompilerCallback argsCallback, StaticScope scope) {
         // store the local vars in a local variable
         methodCompiler.loadThreadContext();
-        methodCompiler.invokeThreadContext("getCurrentScope", cg.sig(DynamicScope.class));
+        methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
         method.astore(scopeIndex);
         
         if (scope != null) {
@@ -104,7 +105,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
             method.ldc(new Integer(index));
             method.swap();
             method.ldc(new Integer(depth));
-            method.invokevirtual(cg.p(DynamicScope.class), "setValue", cg.sig(Void.TYPE, cg.params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
+            method.invokevirtual(p(DynamicScope.class), "setValue", sig(Void.TYPE, params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
         }
     }
 
@@ -120,7 +121,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
             method.ldc(new Integer(index));
             method.ldc(new Integer(depth));
             methodCompiler.loadNil();
-            method.invokevirtual(cg.p(DynamicScope.class), "getValueOrNil", cg.sig(IRubyObject.class, cg.params(Integer.TYPE, Integer.TYPE, IRubyObject.class)));
+            method.invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, params(Integer.TYPE, Integer.TYPE, IRubyObject.class)));
         }
     }
 }
