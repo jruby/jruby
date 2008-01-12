@@ -72,6 +72,7 @@ import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
 import org.jruby.util.ShellLauncher;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.IOHandler.BadDescriptorException;
 
 /**
@@ -372,8 +373,10 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newArgumentError("wrong number of arguments");
     	}
     	
-        if (getRuntime().getIO().isInstance(args[0])) {
-            RubyIO ios = (RubyIO) args[0];
+    	IRubyObject tmp = TypeConverter.convertToTypeWithCheck(args[0],
+    	        getRuntime().getIO(), MethodIndex.getIndex("to_io"), "to_io");
+    	if (!tmp.isNil()) {
+    	    RubyIO  ios = (RubyIO) tmp;
 
             int keepFileno = handler.getFileno();
             
