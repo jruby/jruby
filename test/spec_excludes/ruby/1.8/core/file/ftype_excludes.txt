@@ -1,1 +1,0 @@
-File.ftype return characterSpecial when is a char

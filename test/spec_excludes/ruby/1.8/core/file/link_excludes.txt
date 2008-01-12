@@ -1,2 +1,1 @@
 File.link raises an Errno::EEXIST if the target already exists
-File.link raises a TypeError if not passed String types

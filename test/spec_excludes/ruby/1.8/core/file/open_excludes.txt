@@ -1,0 +1,1 @@
+File.open open the file when call with mode, num and permissions
