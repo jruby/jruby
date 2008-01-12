@@ -165,7 +165,7 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = "[]", required = 1, optional = 1)
     public IRubyObject op_aref(IRubyObject[] args) {
-        final IRubyObject rest = Arity.checkArgumentCount(getRuntime(), args,1,2) == 2 ? args[1] : null;
+        final IRubyObject rest = args.length == 2 ? args[1] : null;
         final IRubyObject idx = args[0];
 
         if (rest == null || rest.isNil()) {

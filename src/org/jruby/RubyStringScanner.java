@@ -62,9 +62,9 @@ public class RubyStringScanner extends RubyObject {
         super(runtime, type);
     }
 
+    // second argument is allowed, but ignored (MRI)
     @JRubyMethod(name = "initialize", required = 1, optional = 1, frame = true)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        Arity.checkArgumentCount(getRuntime(), args, 1, 2); // second one allowed, but ignored (MRI)
         str = args[0].convertToString();        
         return this;
     }

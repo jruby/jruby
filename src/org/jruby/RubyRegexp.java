@@ -399,10 +399,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      */
     @JRubyMethod(name = "initialize", optional = 3, visibility = Visibility.PRIVATE)
     public IRubyObject initialize_m(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 1, 3);
-
         ByteList s;
-        int flags = 0;
+        int regexFlags = 0;
 
         if(args[0] instanceof RubyRegexp) {
             if(args.length > 1) {
@@ -410,42 +408,42 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             }
             ((RubyRegexp)args[0]).check();
             RubyRegexp r = (RubyRegexp)args[0];
-            flags = (int)r.pattern.getOptions() & 0xF;
+            regexFlags = (int)r.pattern.getOptions() & 0xF;
             if(!r.isKCodeDefault() && r.kcode != null && r.kcode != KCode.NIL) {
                 if(r.kcode == KCode.NONE) {
-                    flags |= 16;
+                    regexFlags |= 16;
                 } else if(r.kcode == KCode.EUC) {
-                    flags |= 32;
+                    regexFlags |= 32;
                 } else if(r.kcode == KCode.SJIS) {
-                    flags |= 48;
+                    regexFlags |= 48;
                 } else if(r.kcode == KCode.UTF8) {
-                    flags |= 64;
+                    regexFlags |= 64;
                 }
             }
             s = r.str;
         } else {
             if(args.length >= 2) {
                 if(args[1] instanceof RubyFixnum) {
-                    flags = RubyNumeric.fix2int(args[1]);
+                    regexFlags = RubyNumeric.fix2int(args[1]);
                 } else if(args[1].isTrue()) {
-                    flags = RE_OPTION_IGNORECASE;
+                    regexFlags = RE_OPTION_IGNORECASE;
                 }
             }
             if(args.length == 3 && !args[2].isNil()) {
                 char first = args[2].convertToString().getByteList().charAt(0);
-                flags &= ~0x70;
+                regexFlags &= ~0x70;
                 switch(first) {
                 case 'n': case 'N':
-                    flags |= 16;
+                    regexFlags |= 16;
                     break;
                 case 'e': case 'E':
-                    flags |= 32;
+                    regexFlags |= 32;
                     break;
                 case 's': case 'S':
-                    flags |= 48;
+                    regexFlags |= 48;
                     break;
                 case 'u': case 'U':
-                    flags |= 64;
+                    regexFlags |= 64;
                     break;
                 default:
                     break;
@@ -455,7 +453,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             s = bl;
         }
 
-        initialize(s, flags);
+        initialize(s, regexFlags);
 
         return this;
     }
@@ -839,7 +837,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     @JRubyMethod(name = {"quote", "escape"}, required = 1, optional = 1, meta = true)
     public static RubyString quote(IRubyObject recv, IRubyObject[] args) {
         IRubyObject kcode = null;
-        if(Arity.checkArgumentCount(recv.getRuntime(), args,1,2) == 2) {
+        if(args.length == 2) {
             kcode = args[1];
         }
         IRubyObject str = args[0];
@@ -978,7 +976,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      */
     @JRubyMethod(name = "last_match", optional = 1, meta = true)
     public static IRubyObject last_match_s(IRubyObject recv, IRubyObject[] args) {
-        if (Arity.checkArgumentCount(recv.getRuntime(), args, 0, 1) == 1) {
+        if (args.length == 1) {
             return nth_match(RubyNumeric.fix2int(args[0]), recv.getRuntime().getCurrentContext().getCurrentFrame().getBackRef());
         }
 

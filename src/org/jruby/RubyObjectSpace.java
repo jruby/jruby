@@ -61,7 +61,7 @@ public class RubyObjectSpace {
     public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyProc proc = null;
-        if (Arity.checkArgumentCount(runtime, args,1,2) == 2) {
+        if (args.length == 2) {
             if(args[1] instanceof RubyProc) {
                 proc = (RubyProc)args[1];
             } else {

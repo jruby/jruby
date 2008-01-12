@@ -34,13 +34,18 @@ import org.jruby.Ruby;
 import org.objectweb.asm.ClassWriter;
 
 /**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
+ * This factory extends InvocationMethodFactory by also dumping the classes to
+ * .class files at runtime. It is used during the build to save off all
+ * generated method handles to avoid that expense during startup.
+ * 
+ * @see org.jruby.internal.runtime.methods.InvocationMethodFactory
  */
 public class DumpingInvocationMethodFactory extends InvocationMethodFactory {
 
     private String dumpPath;
     
-    public DumpingInvocationMethodFactory(String path) {
+    public DumpingInvocationMethodFactory(String path, ClassLoader classLoader) {
+        super(classLoader);
         this.dumpPath = path;
     }
 

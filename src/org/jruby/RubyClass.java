@@ -260,7 +260,7 @@ public class RubyClass extends RubyModule {
         }
  
         IRubyObject superObject;
-        if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 0) {
+        if (args.length == 0) {
             superObject = getRuntime().getObject();
         } else {
             superObject = args[0];

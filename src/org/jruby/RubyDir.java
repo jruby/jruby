@@ -229,7 +229,6 @@ public class RubyDir extends RubyObject {
     /** Changes the current directory to <code>path</code> */
     @JRubyMethod(name = "chdir", optional = 1, frame = true, meta = true)
     public static IRubyObject chdir(IRubyObject recv, IRubyObject[] args, Block block) {
-        Arity.checkArgumentCount(recv.getRuntime(), args, 0, 1);
         RubyString path = args.length == 1 ? 
             (RubyString) args[0].convertToString() : getHomeDirectoryPath(recv); 
         JRubyFile dir = getDir(recv.getRuntime(), path.toString(), true);

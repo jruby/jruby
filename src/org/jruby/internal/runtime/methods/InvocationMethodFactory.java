@@ -59,29 +59,69 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.util.CheckClassAdapter;
 
+/**
+ * In order to avoid the overhead with reflection-based method handles, this
+ * MethodFactory uses ASM to generate tiny invoker classes. This allows for
+ * better performance and more specialization per-handle than can be supported
+ * via reflection. It also allows optimizing away many conditionals that can
+ * be determined once ahead of time.
+ * 
+ * When running in secured environments, this factory may not function. When
+ * this can be detected, MethodFactory will fall back on the reflection-based
+ * factory instead.
+ * 
+ * @see org.jruby.internal.runtime.methods.MethodFactory
+ */
 public class InvocationMethodFactory extends MethodFactory implements Opcodes {
-    private final static String COMPILED_SUPER_CLASS = CompiledMethod.class.getName().replace('.','/');
+    /** The pathname of the super class for compiled Ruby method handles. */ 
+    private final static String COMPILED_SUPER_CLASS = p(CompiledMethod.class);
+    
+    /** The outward call signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
+    
+    /** The super constructor signature for compile Ruby method handles. */
     private final static String COMPILED_SUPER_SIG = 
             sig(Void.TYPE, RubyModule.class, Arity.class, Visibility.class, StaticScope.class, Object.class, CallConfiguration.class);
+    
+    /** The super constructor signature for Java-based method handles. */
     private final static String JAVA_SUPER_SIG = sig(Void.TYPE, params(RubyModule.class, Visibility.class));
+    
+    /** The super constructor signature for indexed Java-based method handles. */
     private final static String JAVA_INDEXED_SUPER_SIG = sig(Void.TYPE, params(RubyModule.class, Visibility.class, int.class));
     
-    public static final int SCRIPT_INDEX = 0;
+    /** The lvar index of "this" */
     public static final int THIS_INDEX = 0;
+    
+    /** The lvar index of the passed-in ThreadContext */
     public static final int THREADCONTEXT_INDEX = 1;
+    
+    /** The lvar index of the method-receiving object */
     public static final int RECEIVER_INDEX = 2;
+    
+    /** The lvar index of the RubyClass being invoked against */
     public static final int CLASS_INDEX = 3;
+    
+    /** The lvar index method name being invoked */
     public static final int NAME_INDEX = 4;
+    
+    /** The lvar index of the method args on the call */
     public static final int ARGS_INDEX = 5;
+    
+    /** The lvar index of the passed-in Block on the call */
     public static final int BLOCK_INDEX = 6;
 
+    /** The classloader to use for code loading */
     private JRubyClassLoader classLoader;
     
-    public InvocationMethodFactory() {
-    }
-    
+    /**
+     * Construct a new InvocationMethodFactory using the specified classloader
+     * to load code. If the target classloader is not an instance of
+     * JRubyClassLoader, it will be wrapped with one.
+     * 
+     * @param classLoader The classloader to use, or to wrap if it is not a
+     * JRubyClassLoader instance.
+     */
     public InvocationMethodFactory(ClassLoader classLoader) {
         if (classLoader instanceof JRubyClassLoader) {
             this.classLoader = (JRubyClassLoader)classLoader;
@@ -90,6 +130,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
+    /**
+     * Use code generation to provide a method handle for a compiled Ruby method.
+     * 
+     * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
+     */
     public DynamicMethod getCompiledMethod(
             RubyModule implementationClass, String method, Arity arity, 
             Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
@@ -254,6 +299,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
+    /**
+     * Use code generation to provide a method handle based on an annotated Java
+     * method.
+     * 
+     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method) {
         Class type = method.getDeclaringClass();
         JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
@@ -294,6 +345,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
+    /**
+     * Use code generation to generate a set of method handles based on all
+     * annotated methods in the target class.
+     * 
+     * @see org.jruby.internal.runtime.methods.MethodFactory#defineIndexedAnnotatedMethods
+     */
     public void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class type, MethodDefiningCallback callback) {
         String typePath = p(type);
         
@@ -398,62 +455,60 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
-    
+
     /**
-     * Creates a class path name, from a Class.
+     * Emit code to check the arity of a call to a Java-based method.
+     * 
+     * @param jrubyMethod The annotation of the called method
+     * @param method The code generator for the handle being created
      */
-    private static String p(Class n) {
-        return n.getName().replace('.','/');
-    }
-
-    private void checkArity(JRubyMethod jrubyMethod, SkinnyMethodAdapter mv) {
-
-        // check arity
+    private void checkArity(JRubyMethod jrubyMethod, SkinnyMethodAdapter method) {
         Label arityError = new Label();
         Label noArityError = new Label();
 
         if (jrubyMethod.rest()) {
             if (jrubyMethod.required() > 0) {
                 // just confirm minimum args provided
-                mv.aload(ARGS_INDEX);
-                mv.arraylength();
-                mv.ldc(jrubyMethod.required());
-                mv.if_icmplt(arityError);
+                method.aload(ARGS_INDEX);
+                method.arraylength();
+                method.ldc(jrubyMethod.required());
+                method.if_icmplt(arityError);
             }
         } else if (jrubyMethod.optional() > 0) {
             if (jrubyMethod.required() > 0) {
                 // confirm minimum args provided
-                mv.aload(ARGS_INDEX);
-                mv.arraylength();
-                mv.ldc(jrubyMethod.required());
-                mv.if_icmplt(arityError);
+                method.aload(ARGS_INDEX);
+                method.arraylength();
+                method.ldc(jrubyMethod.required());
+                method.if_icmplt(arityError);
             }
 
             // confirm maximum not greater than optional
-            mv.aload(ARGS_INDEX);
-            mv.arraylength();
-            mv.ldc(jrubyMethod.required() + jrubyMethod.optional());
-            mv.if_icmpgt(arityError);
+            method.aload(ARGS_INDEX);
+            method.arraylength();
+            method.ldc(jrubyMethod.required() + jrubyMethod.optional());
+            method.if_icmpgt(arityError);
         } else {
             // just confirm args length == required
-            mv.aload(ARGS_INDEX);
-            mv.arraylength();
-            mv.ldc(jrubyMethod.required());
-            mv.if_icmpne(arityError);
+            method.aload(ARGS_INDEX);
+            method.arraylength();
+            method.ldc(jrubyMethod.required());
+            method.if_icmpne(arityError);
         }
 
-        mv.go_to(noArityError);
+        method.go_to(noArityError);
 
-        mv.label(arityError);
-        mv.aload(THREADCONTEXT_INDEX);
-        mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-        mv.aload(ARGS_INDEX);
-        mv.ldc(jrubyMethod.required());
-        mv.ldc(jrubyMethod.required() + jrubyMethod.optional());
-        mv.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
-        mv.pop();
+        // Raise an error if arity does not match requirements
+        method.label(arityError);
+        method.aload(THREADCONTEXT_INDEX);
+        method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+        method.aload(ARGS_INDEX);
+        method.ldc(jrubyMethod.required());
+        method.ldc(jrubyMethod.required() + jrubyMethod.optional());
+        method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+        method.pop();
 
-        mv.label(noArityError);
+        method.label(noArityError);
     }
 
     private ClassWriter createCompiledCtor(String namePath, String sup) throws Exception {

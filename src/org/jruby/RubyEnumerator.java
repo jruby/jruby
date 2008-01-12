@@ -91,7 +91,6 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 1, -1);
         object = args[0];
         method = args.length > 1 ? args[1] : getRuntime().fastNewSymbol("each");
         if (args.length > 2) {

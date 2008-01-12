@@ -502,7 +502,7 @@ public class RubyZlib {
         @JRubyMethod(name = "flush", optional = 1)
         public IRubyObject flush(IRubyObject[] args) throws Exception {
             int flush = 2; // SYNC_FLUSH
-            if(Arity.checkArgumentCount(getRuntime(), args,0,1) == 1) {
+            if(args.length == 1) {
                 if(!args[0].isNil()) {
                     flush = RubyNumeric.fix2int(args[0]);
                 }

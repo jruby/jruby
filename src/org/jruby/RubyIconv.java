@@ -107,7 +107,6 @@ public class RubyIconv extends RubyObject {
 
         @JRubyMethod(name = "initialize", required = 1, optional = 2, frame = true)
         public IRubyObject initialize(IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(getRuntime(), args, 1, 3);
             super.initialize(args, block);
             success = args.length >= 2 ? args[1] : getRuntime().getNil();
             failed = args.length == 3 ? args[2] : getRuntime().getNil();

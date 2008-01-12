@@ -182,7 +182,6 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     public static IRubyObject gethostbyaddr(IRubyObject recv, IRubyObject[] args) {
-        Arity.checkArgumentCount(recv.getRuntime(), args,1,2);
         Ruby runtime = recv.getRuntime();
         IRubyObject[] ret = new IRubyObject[4];
         ret[0] = runtime.newString(intoAddress(recv,args[0].convertToString().toString()).getCanonicalHostName());

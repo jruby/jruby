@@ -514,7 +514,7 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "initialize", required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        int count = Arity.checkArgumentCount(getRuntime(), args, 1, 2);
+        int count = args.length;
         int newFileno = RubyNumeric.fix2int(args[0]);
         String mode = null;
         
@@ -772,7 +772,6 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "printf", required = 1, rest = true)
     public IRubyObject printf(IRubyObject[] args) {
-    	Arity.checkArgumentCount(getRuntime(), args, 1, -1);
         callMethod(getRuntime().getCurrentContext(), "write", RubyKernel.sprintf(this, args));
         return getRuntime().getNil();
     }
@@ -1041,8 +1040,6 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "puts", rest = true)
     public IRubyObject puts(IRubyObject[] args) {
-    	Arity.checkArgumentCount(getRuntime(), args, 0, -1);
-        
     	ThreadContext context = getRuntime().getCurrentContext();
         
         if (args.length == 0) {
@@ -1155,8 +1152,6 @@ public class RubyIO extends RubyObject {
     // FIXME: according to MRI's RI, sysread only takes one arg
     @JRubyMethod(name = "sysread", required = 1, optional = 1)
     public IRubyObject sysread(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
-
         int len = (int)RubyNumeric.num2long(args[0]);
         if (len < 0) throw getRuntime().newArgumentError("Negative size");
 
@@ -1194,7 +1189,7 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "read", rest = true)
     public IRubyObject read(IRubyObject[] args) {
                
-        int argCount = Arity.checkArgumentCount(getRuntime(), args, 0, 2);
+        int argCount = args.length;
         RubyString callerBuffer = null;
         boolean readEntireStream = (argCount == 0 || args[0].isNil());
 
@@ -1302,8 +1297,6 @@ public class RubyIO extends RubyObject {
      */
     @JRubyMethod(name = {"each_line", "each"}, optional = 1, frame = true)
     public RubyIO each_line(IRubyObject[] args, Block block) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
-        
         ThreadContext context = getRuntime().getCurrentContext(); 
         ByteList separator = getSeparatorForGets(args);
         
@@ -1355,7 +1348,7 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "foreach", required = 1, rest = true, frame = true, meta = true)
     public static IRubyObject foreach(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
-        int count = Arity.checkArgumentCount(runtime, args, 1, -1);
+        int count = args.length;
         IRubyObject filename = args[0].convertToString();
         runtime.checkSafeString(filename);
         RubyIO io = (RubyIO) RubyFile.open(recv, new IRubyObject[] { filename }, false, block);
@@ -1521,8 +1514,6 @@ public class RubyIO extends RubyObject {
    
     @JRubyMethod(name = "read", required = 1, optional = 2, meta = true)
     public static IRubyObject read(IRubyObject recv, IRubyObject[] args, Block block) {
-       Ruby runtime = recv.getRuntime();
-       Arity.checkArgumentCount(runtime, args, 1, 3);
        IRubyObject[] fileArguments = new IRubyObject[] {args[0]};
        RubyIO file = (RubyIO) RubyKernel.open(recv, fileArguments, block);
        IRubyObject[] readArguments;
@@ -1547,7 +1538,7 @@ public class RubyIO extends RubyObject {
    
     @JRubyMethod(name = "readlines", required = 1, optional = 1, meta = true)
     public static RubyArray readlines(IRubyObject recv, IRubyObject[] args, Block block) {
-       int count = Arity.checkArgumentCount(recv.getRuntime(), args, 1, 2);
+       int count = args.length;
        
        IRubyObject[] fileArguments = new IRubyObject[] {args[0]};
        IRubyObject[] separatorArguments = count >= 2 ? new IRubyObject[]{args[1]} : IRubyObject.NULL_ARRAY;
@@ -1563,7 +1554,6 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "popen", required = 1, optional = 1, meta = true)
     public static IRubyObject popen(IRubyObject recv, IRubyObject[] args, Block block) {
        Ruby runtime = recv.getRuntime();
-       Arity.checkArgumentCount(runtime, args, 1, 2);
        IRubyObject cmdObj = args[0].convertToString();
        runtime.checkSafeString(cmdObj);
        

@@ -531,7 +531,6 @@ public class RubyThread extends RubyObject {
 
     @JRubyMethod(name = "raise", optional = 1, frame = true)
     public IRubyObject raise(IRubyObject[] args, Block block) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
         ensureNotCurrent();
         Ruby runtime = getRuntime();
         
@@ -557,8 +556,6 @@ public class RubyThread extends RubyObject {
     }
 
     private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 3); 
-
         if(args.length == 0) {
             IRubyObject lastException = runtime.getGlobalVariables().get("$!");
             if(lastException.isNil()) {

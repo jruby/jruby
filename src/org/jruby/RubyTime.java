@@ -705,7 +705,7 @@ public class RubyTime extends RubyObject {
             args = new IRubyObject[] { args[5], args[4], args[3], args[2], args[1], args[0], runtime.getNil() };
         } else {
             // MRI accepts additional wday argument which appears to be ignored.
-            len = Arity.checkArgumentCount(runtime, args, 1, 8);
+            len = args.length;
             
             if (len < ARG_SIZE) {
                 IRubyObject[] newArgs = new IRubyObject[ARG_SIZE];

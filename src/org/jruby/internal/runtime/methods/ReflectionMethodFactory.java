@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (c) 2007 Peter Brant <peter.brant@gmail.com>
+ * Copyright (C) 2008 The JRuby Community <www.headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -35,15 +36,22 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * This MethodFactory uses reflection to provide method handles. Reflection is
+ * typically slower than code-generated handles, but it does provide a simple
+ * mechanism for binding in environments where code-generation isn't supported.
+ * 
+ * @see org.jruby.internal.runtime.methods.MethodFactory
+ */
 public class ReflectionMethodFactory extends MethodFactory {
-    private final static Class[] COMPILED_METHOD_PARAMS = new Class[] {ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class};
-    
+    /**
+     * Use reflection to provide a method handle for a compiled Ruby method.
+     * 
+     * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
+     */
     public DynamicMethod getCompiledMethod(RubyModule implementationClass,
             String methodName, Arity arity, Visibility visibility, 
             StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
@@ -55,6 +63,12 @@ public class ReflectionMethodFactory extends MethodFactory {
         }
     }
     
+    /**
+     * Use reflection to provide a method handle based on an annotated Java
+     * method.
+     * 
+     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method) {
         JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
         JavaMethod ic = new ReflectedJavaMethod(implementationClass, method, jrubyMethod);
@@ -67,6 +81,12 @@ public class ReflectionMethodFactory extends MethodFactory {
         return ic;
     }
 
+    /**
+     * Use reflection to generate a set of method handles based on all annotated
+     * methods in the target class.
+     * 
+     * @see org.jruby.internal.runtime.methods.MethodFactory#defineIndexedAnnotatedMethods
+     */
     @Override
     public void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class type, MethodDefiningCallback callback) {
         Method[] methods = type.getDeclaredMethods();

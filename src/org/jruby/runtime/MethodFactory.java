@@ -37,6 +37,7 @@ import org.jruby.internal.runtime.methods.ReflectionMethodFactory;
 import org.jruby.internal.runtime.methods.InvocationMethodFactory;
 import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
 
 /**
@@ -46,6 +47,11 @@ import org.jruby.util.SafePropertyAccessor;
  * objects. Implementers of this class provide that functionality.
  */
 public abstract class MethodFactory {
+    /**
+     * A Class[] representing the signature of compiled Ruby method.
+     */
+    public final static Class[] COMPILED_METHOD_PARAMS = new Class[] {ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class};
+    
     /**
      * For batched method construction, the logic necessary to bind resulting
      * method objects into a target module/class must be provided as a callback.
@@ -69,7 +75,7 @@ public abstract class MethodFactory {
      */
     public static MethodFactory createFactory(ClassLoader classLoader) {
         if (reflection) return new ReflectionMethodFactory();
-        if (dumping) return new DumpingInvocationMethodFactory(dumpingPath);
+        if (dumping) return new DumpingInvocationMethodFactory(dumpingPath, classLoader);
 
         return new InvocationMethodFactory(classLoader);
     }

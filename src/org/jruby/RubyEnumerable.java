@@ -176,7 +176,7 @@ public class RubyEnumerable {
         final IRubyObject result[] = new IRubyObject[] { null };
         IRubyObject ifnone = null;
 
-        if (Arity.checkArgumentCount(runtime, args, 0, 1) == 1) ifnone = args[0];
+        if (args.length == 1) ifnone = args[0];
 
         try {
             callEach(runtime, context, self, new BlockCallback() {
@@ -252,7 +252,7 @@ public class RubyEnumerable {
         final ThreadContext context = runtime.getCurrentContext();
         final IRubyObject result[] = new IRubyObject[] { null };
 
-        if (Arity.checkArgumentCount(runtime, args, 0, 1) == 1) result[0] = args[0];
+        if (args.length == 1) result[0] = args[0];
 
         callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {

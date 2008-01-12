@@ -237,7 +237,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "new", required = 1, optional = 1, meta = true)
     public static RubyBigDecimal newInstance(IRubyObject recv, IRubyObject[] args) {
         BigDecimal decimal;
-        if (Arity.checkArgumentCount(recv.getRuntime(), args, 1, 2) == 0) { 
+        if (args.length == 0) { 
             decimal = new BigDecimal(0);
         } else {
             try {
@@ -374,7 +374,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = {"/", "div", "quo"}, required = 1, optional = 1)
     public IRubyObject op_div(IRubyObject[] args) {
         int scale = 0;
-        if(Arity.checkArgumentCount(getRuntime(), args,1,2) == 2) {
+        if(args.length == 2) {
             scale = RubyNumeric.fix2int(args[1]);
         }
 

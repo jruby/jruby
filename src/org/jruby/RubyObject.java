@@ -719,8 +719,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     @JRubyMethod(name = "respond_to?", rest = true)
     public RubyBoolean respond_to_p(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
-
         String name = args[0].asJavaString();
         boolean includePrivate = args.length > 1 ? args[1].isTrue() : false;
 
@@ -972,8 +970,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     @JRubyMethod(name = "methods", optional = 1)
     public IRubyObject methods(IRubyObject[] args) {
-    	Arity.checkArgumentCount(getRuntime(), args, 0, 1);
-
         boolean all = true;
         if (args.length == 1) {
             all = args[0].isTrue();
@@ -999,8 +995,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
     @JRubyMethod(name = "public_methods", optional = 1)
     public IRubyObject public_methods(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
-
         if (args.length == 0) {
             args = new IRubyObject[] { getRuntime().getTrue() };
         }
@@ -1013,8 +1007,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     @JRubyMethod(name = "protected_methods", optional = 1)
     public IRubyObject protected_methods(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
-
         if (args.length == 0) {
             args = new IRubyObject[] { getRuntime().getTrue() };
         }
@@ -1027,8 +1019,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     @JRubyMethod(name = "private_methods", optional = 1)
     public IRubyObject private_methods(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
-
         if (args.length == 0) {
             args = new IRubyObject[] { getRuntime().getTrue() };
         }
@@ -1120,8 +1110,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
     @JRubyMethod(name = "extend", required = 1, rest = true)
     public IRubyObject extend(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 1, -1);
-
         // Make sure all arguments are modules before calling the callbacks
         for (int i = 0; i < args.length; i++) {
             if (!args[i].isModule()) throw getRuntime().newTypeError(args[i], getRuntime().getModule()); 

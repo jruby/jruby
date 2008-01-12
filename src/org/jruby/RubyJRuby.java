@@ -217,7 +217,6 @@ public class RubyJRuby {
 
         @JRubyMethod(name = "steal_methods", required = 1, rest = true, module = true)
         public static IRubyObject steal_methods(IRubyObject recv, IRubyObject[] args) {
-            Arity.checkArgumentCount(recv.getRuntime(), args, 1, -1);
             IRubyObject type = args[0];
             for(int i=1;i<args.length;i++) {
                 steal_method(recv, type, args[i]);

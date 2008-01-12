@@ -236,7 +236,6 @@ public class RubyKernel {
 
     @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        Arity.checkArgumentCount(recv.getRuntime(), args,1,3);
         String arg = args[0].convertToString().toString();
         Ruby runtime = recv.getRuntime();
 
@@ -279,7 +278,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "abort", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject abort(IRubyObject recv, IRubyObject[] args) {
-        if(Arity.checkArgumentCount(recv.getRuntime(), args,0,1) == 1) {
+        if(args.length == 1) {
             recv.getRuntime().getGlobalVariables().get("$stderr").callMethod(recv.getRuntime().getCurrentContext(),"puts",args[0]);
         }
         throw new MainExitException(1,true);

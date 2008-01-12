@@ -119,9 +119,8 @@ public class RubyProc extends RubyObject implements JumpTarget {
         return obj;
     }
     
-    @JRubyMethod(name = "initialize", rest = true, frame = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args, Block procBlock) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 0);
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(Block procBlock) {
         if (!procBlock.isGiven()) {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
         }

@@ -1332,7 +1332,6 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "attr", required = 1, optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject attr(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         boolean writeable = args.length > 1 ? args[1].isTrue() : false;
 
         addAccessor(args[0].asJavaString().intern(), true, writeable);

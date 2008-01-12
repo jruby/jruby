@@ -551,8 +551,6 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "default", optional = 1, frame = true)
     public IRubyObject default_value_get(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
-
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
             if (args.length == 0) return getRuntime().getNil();
             return ifNone.callMethod(getRuntime().getCurrentContext(), "call", new IRubyObject[]{this, args[0]});
@@ -778,7 +776,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "fetch", required = 1, optional = 1, frame = true)
     public IRubyObject fetch(IRubyObject[] args, Block block) {
-        if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2 && block.isGiven()) {
+        if (args.length == 2 && block.isGiven()) {
             getRuntime().getWarnings().warn("block supersedes default value argument");
         }
 

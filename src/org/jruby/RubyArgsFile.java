@@ -341,7 +341,6 @@ public class RubyArgsFile extends RubyObject {
     public IRubyObject read(IRubyObject[] args) {
         IRubyObject tmp, str, length;
         long len = 0;
-        Arity.checkArgumentCount(getRuntime(), args,0,2);
         if(args.length > 0) {
             length = args[0];
             if(args.length > 1) {
