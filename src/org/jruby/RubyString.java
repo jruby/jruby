@@ -39,6 +39,7 @@
 package org.jruby;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -2570,22 +2571,15 @@ public class RubyString extends RubyObject {
      * 
      */
     private final RubyRegexp getCachedPattern() {
-        final HashMap<ByteList, RubyRegexp> cache = patternCache.get();
+        HashMap<ByteList, RubyRegexp> cache = getRuntime().getPatternCache();
         RubyRegexp regexp = cache.get(value);
-        if (regexp == null || regexp.getKCode() != getRuntime().getKCode()) {
-            regexp = RubyRegexp.newRegexp(getRuntime(), value, 0);
-            cache.put(value, regexp);
+        if (regexp != null && regexp.getKCode() == getRuntime().getKCode()) {
+            return regexp;
         }
+        regexp = RubyRegexp.newRegexp(getRuntime(), value, 0);
+        cache.put(value, regexp);
         return regexp;
     }
-    
-    // In future we should store joni Regexes (cross runtime cache)
-    // for 1.9 cache, whole RubyString should be stored so the entry contains encoding information as well 
-    private static final ThreadLocal<HashMap<ByteList, RubyRegexp>> patternCache = new ThreadLocal<HashMap<ByteList, RubyRegexp>>() {
-        protected HashMap<ByteList, RubyRegexp> initialValue() {
-            return new HashMap<ByteList, RubyRegexp>(5);
-        }
-    };
     
     /** rb_str_scan
      *

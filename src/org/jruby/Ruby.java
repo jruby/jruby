@@ -45,10 +45,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.lang.reflect.Field;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -329,6 +331,15 @@ public final class Ruby {
     private final Object internalFinalizersMutex = new Object();
     
     private String[] argv;
+
+    
+    // In future we should store joni Regexes (cross runtime cache)
+    // for 1.9 cache, whole RubyString should be stored so the entry contains encoding information as well 
+    private final ThreadLocal<SoftReference<HashMap<ByteList, RubyRegexp>>> patternCache = new ThreadLocal() {
+        protected SoftReference<HashMap<ByteList, RubyRegexp>> initialValue() {
+            return new SoftReference(new HashMap<ByteList, RubyRegexp>(5));
+        }
+    };
 
     /**
      * Create and initialize a new JRuby Runtime.
@@ -2582,5 +2593,14 @@ public final class Ruby {
     
     public Set getJittedMethods() {
         return jittedMethods;
+    }
+
+    public synchronized HashMap<ByteList, RubyRegexp> getPatternCache() {
+        HashMap<ByteList, RubyRegexp> cache = patternCache.get().get();
+        if (cache == null) {
+            cache = new HashMap<ByteList, RubyRegexp>(5);
+            patternCache.set(new SoftReference<HashMap<ByteList, RubyRegexp>>(cache));
+        }
+        return cache;
     }
 }
