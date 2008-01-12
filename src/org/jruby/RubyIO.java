@@ -378,6 +378,10 @@ public class RubyIO extends RubyObject {
     	if (!tmp.isNil()) {
     	    RubyIO  ios = (RubyIO) tmp;
 
+    	    if (ios == this) {
+    	        return this;
+    	    }
+
             int keepFileno = handler.getFileno();
             
             // close the old handler before it gets overwritten
