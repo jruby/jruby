@@ -21,6 +21,7 @@ module JRuby
           require 'jruby/extract'
           JRuby::Extract.new.extract
           require 'rubygems'
+          require 'rubygems/gem_runner'
           Gem.manage_gems
           Gem::GemRunner.new.run(ARGV)
         end
