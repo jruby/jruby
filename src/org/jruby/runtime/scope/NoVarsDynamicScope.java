@@ -22,9 +22,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 2. Check parent that is passed in and make if new instance is local, then its parent is not local
  */
 public class NoVarsDynamicScope extends DynamicScope {
-    // Our values holder (name of variables are kept in staticScope)
-    private IRubyObject variableValue;
-
     public NoVarsDynamicScope(StaticScope staticScope, DynamicScope parent) {
         super(staticScope, parent);
     }
@@ -34,9 +31,7 @@ public class NoVarsDynamicScope extends DynamicScope {
     }
     
     public void growIfNeeded() {
-        if (staticScope.getNumberOfVariables() != 0) {
-            throw new RuntimeException("NoVarsDynamicScope cannot be grown; use ManyVarsDynamicScope");
-        }
+        assert staticScope.getNumberOfVariables() == 0 : "NoVarsDynamicScope cannot be grown; use ManyVarsDynamicScope";
     }
     
     public DynamicScope cloneScope() {
@@ -44,7 +39,7 @@ public class NoVarsDynamicScope extends DynamicScope {
     }
 
     public IRubyObject[] getValues() {
-        return new IRubyObject[] {variableValue};
+        return IRubyObject.NULL_ARRAY;
     }
     
     /**
@@ -58,31 +53,27 @@ public class NoVarsDynamicScope extends DynamicScope {
      * @return the value here
      */
     public IRubyObject getValue(int offset, int depth) {
-        if (depth > 0) {
-            return parent.getValue(offset, depth - 1);
-        }
-        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+        return parent.getValue(offset, depth - 1);
     }
     
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
      */
     public IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil) {
-        if (depth > 0) {
-            return parent.getValueOrNil(offset, depth - 1, nil);
-        } else {
-            return getValueDepthZeroOrNil(offset, nil);
-        }
+        return parent.getValueOrNil(offset, depth - 1, nil);
     }
     
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
-        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+        assert false : "NoVarsDynamicScope only supports scopes with no variables";
+        return null;
     }
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
-        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+        assert false : "NoVarsDynamicScope only supports scopes with no variables";
+        return null;
     }
     public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
-        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+        assert false : "NoVarsDynamicScope only supports scopes with no variables";
+        return null;
     }
 
     /**
@@ -93,23 +84,17 @@ public class NoVarsDynamicScope extends DynamicScope {
      * @param depth how many captured scopes down this variable should be set
      */
     public void setValue(int offset, IRubyObject value, int depth) {
-        if (depth > 0) {
-            assert parent != null : "If depth > 0, then parent should not ever be null";
-            
-            parent.setValue(offset, value, depth - 1);
-        } else {
-            throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
-        }
+        parent.setValue(offset, value, depth - 1);
     }
 
     public void setValueDepthZero(IRubyObject value, int offset) {
         throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
     }
     public void setValueZeroDepthZero(IRubyObject value) {
-        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+        assert false : "NoVarsDynamicScope only supports scopes with no variables";
     }
     public void setValueOneDepthZero(IRubyObject value) {
-        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+        assert false : "NoVarsDynamicScope only supports scopes with no variables";
     }
 
     /**
@@ -124,7 +109,7 @@ public class NoVarsDynamicScope extends DynamicScope {
      * @param size is the number of values to assign as ordinary parm values
      */
     public void setArgValues(IRubyObject[] values, int size) {
-        if (size > 0) throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+        assert size == 0 : "NoVarsDynamicScope only supports scopes with no variables";
     }
 
     @Override
@@ -134,7 +119,7 @@ public class NoVarsDynamicScope extends DynamicScope {
             return parent.getArgValues();
         }
         int totalArgs = staticScope.getRequiredArgs() + staticScope.getOptionalArgs();
-        if (totalArgs > 0) throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+        assert totalArgs == 0 : "NoVarsDynamicScope only supports scopes with no variables";
         
         return IRubyObject.NULL_ARRAY;
     }

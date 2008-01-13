@@ -59,7 +59,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
+import java.util.Vector;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.ast.Node;
@@ -115,7 +117,17 @@ import org.jruby.util.JavaNameMangler;
 import org.jruby.util.collections.WeakHashSet;
 
 /**
- * The jruby runtime.
+ * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
+ * JRuby supports spawning multiple instances in the same JVM. Generally, objects
+ * created under these instances are tied to a given runtime, for such details
+ * as identity and type, because multiple Ruby instances means there are
+ * multiple instances of each class. This means that in multi-runtime mode
+ * (or really, multi-VM mode, where each JRuby instance is a ruby "VM"), objects
+ * generally can't be transported across runtimes without marshaling.
+ * 
+ * This class roots everything that makes the JRuby runtime function, and
+ * provides a number of utility methods for constructing global types and
+ * accessing global runtime structures.
  */
 public final class Ruby {
     private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "yaml/syck", "jsignal" };
@@ -130,14 +142,13 @@ public final class Ruby {
 
     private ObjectSpace objectSpace = new ObjectSpace();
 
-    public final RubyFixnum[] fixnumCache = new RubyFixnum[256];
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
-    private Hashtable<Integer, WeakReference<IOHandler>> ioHandlers = new Hashtable<Integer, WeakReference<IOHandler>>();
+    private Map<Integer, WeakReference<IOHandler>> ioHandlers = new ConcurrentHashMap<Integer, WeakReference<IOHandler>>();
     private long randomSeed = 0;
     private long randomSeedSequence = 0;
     private Random random = new Random();
 
-    private ArrayList<EventHook> eventHooks = new ArrayList<EventHook>();
+    private List<EventHook> eventHooks = new Vector<EventHook>();
     private boolean hasEventHooks;  
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
@@ -160,90 +171,70 @@ public final class Ruby {
     */
     private int safeLevel = 0;
 
-    // Default classes/objects
+    // Default objects
     private IRubyObject undef;
+    private IRubyObject topSelf;
+    private RubyNil nilObject;
+    private RubyBoolean trueObject;
+    private RubyBoolean falseObject;
+    public final RubyFixnum[] fixnumCache = new RubyFixnum[256];
 
+    private IRubyObject verbose;
+    private IRubyObject debug;
+
+    // Default classes/modules
     private RubyClass objectClass;
     private RubyClass moduleClass;
     private RubyClass classClass;
-
     private RubyModule kernelModule;
-    
     private RubyClass nilClass;
     private RubyClass trueClass;
     private RubyClass falseClass;
-    
     private RubyModule comparableModule;
-    
     private RubyClass numericClass;
     private RubyClass floatClass;
     private RubyClass integerClass;
     private RubyClass fixnumClass;
-
     private RubyModule enumerableModule;    
     private RubyClass arrayClass;
     private RubyClass hashClass;
     private RubyClass rangeClass;
-    
     private RubyClass stringClass;
     private RubyClass symbolClass;
-    
-    private RubyNil nilObject;
-    private RubyBoolean trueObject;
-    private RubyBoolean falseObject;
-    
     private RubyClass procClass;
     private RubyClass bindingClass;
     private RubyClass methodClass;
     private RubyClass unboundMethodClass;
-
     private RubyClass matchDataClass;
     private RubyClass regexpClass;
-
     private RubyClass timeClass;
-
     private RubyModule mathModule;
-
     private RubyModule marshalModule;
-
     private RubyClass bignumClass;
-
     private RubyClass dirClass;
-
     private RubyModule etcModule;
-
     private RubyClass fileClass;
     private RubyClass fileStatClass;
     private RubyModule fileTestModule;
-
     private RubyClass ioClass;
-
     private RubyClass threadClass;
     private RubyClass threadGroupClass;
-
     private RubyClass continuationClass;
-
     private RubyClass structClass;
-    private IRubyObject tmsStruct;
-    private IRubyObject passwdStruct;
-
+    private RubyClass tmsStruct;
+    private RubyClass passwdStruct;
     private RubyModule gcModule;
     private RubyModule objectSpaceModule;
-
     private RubyModule processModule;
     private RubyClass procStatusClass;
     private RubyModule procUIDModule;
     private RubyModule procGIDModule;
     private RubyModule procSysModule;
-
     private RubyModule precisionModule;
-
     private RubyClass exceptionClass;
     private RubyClass standardError;
-
     private RubyClass systemCallError;
     private RubyModule errnoModule;
-    private IRubyObject topSelf;
     
     // record separator var, to speed up io ops that use it
     private GlobalVariable recordSeparatorVar;
@@ -259,31 +250,11 @@ public final class Ruby {
     private PrintStream out;
     private PrintStream err;
 
-    private IRubyObject verbose;
-    private IRubyObject debug;
-
     // Java support
     private JavaSupport javaSupport;
     private JRubyClassLoader jrubyClassLoader;
 
     private static boolean securityRestricted = false;
-
-    static {
-        if (SafePropertyAccessor.isSecurityProtected("jruby.reflection")) {
-            // can't read non-standard properties
-            securityRestricted = true;
-        } else {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                try {
-                    sm.checkCreateClassLoader();
-                } catch (SecurityException se) {
-                    // can't create custom classloaders
-                    securityRestricted = true;
-                }
-            }
-        }
-    }
 
     private Parser parser = new Parser(this);
 
@@ -301,14 +272,9 @@ public final class Ruby {
 
     private KCode kcode = KCode.NONE;
 
+    // Atomic integers for symbol and method IDs
     private AtomicInteger symbolLastId = new AtomicInteger(128);
-    public int allocSymbolId() {
-        return symbolLastId.incrementAndGet();
-    }
     private AtomicInteger moduleLastId = new AtomicInteger(0);
-    public int allocModuleId() {
-        return moduleLastId.incrementAndGet();
-    }
 
     private Object respondToMethod;
 
@@ -332,6 +298,28 @@ public final class Ruby {
     
     private String[] argv;
 
+    static {
+        if (SafePropertyAccessor.isSecurityProtected("jruby.reflection")) {
+            // can't read non-standard properties
+            securityRestricted = true;
+        } else {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                try {
+                    sm.checkCreateClassLoader();
+                } catch (SecurityException se) {
+                    // can't create custom classloaders
+                    securityRestricted = true;
+                }
+            }
+        }
+    }
+    public int allocSymbolId() {
+        return symbolLastId.incrementAndGet();
+    }
+    public int allocModuleId() {
+        return moduleLastId.incrementAndGet();
+    }
     
     // In future we should store joni Regexes (cross runtime cache)
     // for 1.9 cache, whole RubyString should be stored so the entry contains encoding information as well 
@@ -2413,7 +2401,7 @@ public final class Ruby {
         return objectSpace;
     }
 
-    public Hashtable<Integer, WeakReference<IOHandler>> getIoHandlers() {
+    public Map<Integer, WeakReference<IOHandler>> getIoHandlers() {
         return ioHandlers;
     }
 
