@@ -1,5 +1,6 @@
 Marshal.dump with module returns a string-serialized version of the given argument
 Marshal.dump with any extended_object having _dump method returns a string-serialized version of the given argument
+Marshal.dump with any extended_object having marshal_dump method returns a string-serialized version of the given argument
 Marshal.dump with user_regexp having option Regexp::IGNORECASE returns a string-serialized version of the given argument
 Marshal.dump with float 0.0 returns a string-serialized version of the given argument
 Marshal.dump with float -0.0 returns a string-serialized version of the given argument
