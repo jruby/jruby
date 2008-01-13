@@ -134,7 +134,14 @@ public class BaseConstructorImpl implements Constructor {
         }
     }
 
-    public Object constructObject(final Node node) {
+    public Node getNullNode() {
+        return new ScalarNode("tag:yaml.org,2002:null",null,(char)0);
+    }
+
+    public Object constructObject(Node node) {
+        if(node == null) {
+            node = getNullNode();
+        }
         if(recursiveObjects.containsKey(node)) {
             LinkNode n = new LinkNode();
             n.setValue(node);

@@ -302,3 +302,12 @@ YAML
 test_ok val[0].object_id != val[1].object_id
 test_ok val[2].object_id != val[3].object_id
 test_ok val[4].object_id != val[5].object_id
+
+# JRUBY-1911
+val = YAML.load(<<YAML)
+---
+foo: { bar }
+YAML
+
+test_equal({"foo" => {"bar" => nil}}, val)
+
