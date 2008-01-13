@@ -574,6 +574,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "exit!", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
+        // This calls normal exit() on purpose because we should probably not expose System.exit(0)
         return exit(recv, args);
     }
 

@@ -332,6 +332,16 @@ public class RubyProcess {
         }
     }
 
+    @JRubyMethod(name = "abort", optional = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject abort(IRubyObject recv, IRubyObject[] args) {
+        return RubyKernel.abort(recv, args);
+    }
+
+    @JRubyMethod(name = "exit!", optional = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
+        return RubyKernel.exit_bang(recv, args);
+    }
+
     @JRubyMethod(name = "groups", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject groups(IRubyObject recv) {
         throw recv.getRuntime().newNotImplementedError("Process#groups not yet implemented");
@@ -653,7 +663,7 @@ public class RubyProcess {
     }
     
     @JRubyMethod(name = "exit", optional = 1, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
-        return RubyKernel.exit_bang(recv, args);
+    public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
+        return RubyKernel.exit(recv, args);
     }
 }
