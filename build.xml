@@ -293,7 +293,7 @@
     </java>
   </target>
   
-  <target name="compile-stdlib">
+  <target name="compile-stdlib" unless="test">
     <copy todir="${build.dir}/stdlib">
         <fileset dir="${basedir}/lib/ruby/1.8">
           <include name="**/*.rb"/>
@@ -540,15 +540,16 @@
       <formatter type="xml"/>
       <formatter type="brief" usefile="false" />
 
-      <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}"/>
-      <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}"/>
-      <test name="org.jruby.test.BFTSTestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" />
-      <test name="org.jruby.test.RubyTestTestSuite" todir="${test.results.dir}" />
-      <test name="org.jvyamlb.YAMLLoadTest" todir="${test.results.dir}"/>
-      <test name="org.jvyamlb.YAMLDumpTest" todir="${test.results.dir}"/>
+      <test name="${test}" if="test"/>
+      <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
+      <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}" unless="test"/>
+      <test name="org.jruby.test.BFTSTestSuite" todir="${test.results.dir}" unless="test"/>
+      <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" unless="test"/>
+      <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" unless="test"/>
+      <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" unless="test"/>
+      <test name="org.jruby.test.RubyTestTestSuite" todir="${test.results.dir}" unless="test"/>
+      <test name="org.jvyamlb.YAMLLoadTest" todir="${test.results.dir}" unless="test"/>
+      <test name="org.jvyamlb.YAMLDumpTest" todir="${test.results.dir}" unless="test"/>
     </junit>
 
     <junitreport todir="${test.results.dir}">
@@ -591,7 +592,8 @@
       <formatter type="xml"/>
       <formatter type="brief" usefile="false"/>
 
-      <test name="org.jruby.test.Ruby1_9TestSuite" todir="${test.results.dir}" />
+      <test name="${test}" if="test"/>
+      <test name="org.jruby.test.Ruby1_9TestSuite" todir="${test.results.dir}"  unless="test"/>
     </junit>
 
     <junitreport todir="${test.results.dir}">
@@ -626,7 +628,8 @@
       <formatter type="xml"/>
       <formatter type="brief" usefile="false"/>
 
-      <test name="org.jruby.test.ObjectPersistenceTestSuite" todir="${test.results.dir}" />
+      <test name="${test}" if="test"/>
+      <test name="org.jruby.test.ObjectPersistenceTestSuite" todir="${test.results.dir}" unless="test"/>
     </junit>
 
     <junitreport todir="${test.results.dir}">
