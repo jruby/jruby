@@ -310,7 +310,11 @@ public class MarshalStream extends FilterOutputStream {
 
     private void userMarshal(IRubyObject value) throws IOException {
         registerLinkTarget(value);
-        RubyString marshaled = (RubyString) value.callMethod(runtime.getCurrentContext(), "_dump", runtime.newFixnum(depthLimit)); 
+        IRubyObject dumpResult = value.callMethod(runtime.getCurrentContext(), "_dump", runtime.newFixnum(depthLimit));
+        if (!(dumpResult instanceof RubyString)) {
+            throw runtime.newTypeError(dumpResult, runtime.getString());
+        }
+        RubyString marshaled = (RubyString)dumpResult;
 
         boolean hasVars;
         if (hasVars = marshaled.hasVariables()) {
