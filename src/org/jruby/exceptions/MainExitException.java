@@ -27,32 +27,31 @@
 package org.jruby.exceptions;
 
 public class MainExitException extends RuntimeException {
-	private static final long serialVersionUID = -8585821821150293755L;
-	boolean usageError;
-	int status;
+    private static final long serialVersionUID = -8585821821150293755L;
+    boolean usageError;
+    int status;
     private boolean aborted;
 
+    public MainExitException(int status, String message) {
+        super(message);
 
-	public MainExitException(int status, String message) {
-		super(message);
-		
-		this.status = status;
-	}
+        this.status = status;
+    }
 
-	public MainExitException(int status, boolean aborted) {
-		super("aborted");
-		
-		this.status = status;
+    public MainExitException(int status, boolean aborted) {
+        super("aborted");
+
+        this.status = status;
         this.aborted = aborted;
-	}
+    }
 
-	public int getStatus() {
-		return status;
-	}
+    public int getStatus() {
+        return status;
+    }
 
-	public void setStatus(int status) {
-		this.status = status;
-	}
+    public void setStatus(int status) {
+        this.status = status;
+    }
 
     public void setAborted(boolean aborted) {
         this.aborted = aborted;
@@ -62,15 +61,15 @@ public class MainExitException extends RuntimeException {
         return this.aborted;
     }
 
-	public boolean isUsageError() {
-		return usageError;
-	}
+    public boolean isUsageError() {
+        return usageError;
+    }
 
-	public void setUsageError(boolean usageError) {
-		this.usageError = usageError;
-	}
+    public void setUsageError(boolean usageError) {
+        this.usageError = usageError;
+    }
 
     public Throwable fillInStackTrace() {
         return this;
-    }    
+    }
 }

@@ -87,7 +87,12 @@ public class Main {
     }
 
     public int run(String[] args) {
-        config.processArguments(args);
+        try {
+            config.processArguments(args);
+        } catch (MainExitException mee) {
+            config.getOutput().println(mee.getMessage());
+            return mee.getStatus();
+        }
         
         return run();
     }
@@ -95,6 +100,10 @@ public class Main {
     public int run() {
         if (config.isShowVersion()) {
             showVersion();
+        }
+        
+        if (config.isShowCopyright()) {
+            showCopyright();
         }
 
         if (! config.shouldRunInterpreter() ) {
@@ -133,6 +142,10 @@ public class Main {
 
     private void showVersion() {
         config.getOutput().print(config.getVersionString());
+    }
+
+    private void showCopyright() {
+        config.getOutput().print(config.getCopyrightString());
     }
 
     public void printUsage() {

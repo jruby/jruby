@@ -109,6 +109,7 @@ public class RubyInstanceConfig {
     private boolean verbose = false;
     private boolean debug = false;
     private boolean showVersion = false;
+    private boolean showCopyright = false;
     private boolean endOfArguments = false;
     private boolean shouldRunInterpreter = true;
     private boolean shouldPrintUsage = false;
@@ -117,6 +118,7 @@ public class RubyInstanceConfig {
     private boolean rubinius = false;
     private boolean yarvCompile = false;
     private KCode kcode = KCode.NONE;
+    private String recordSeparator = "\n";
     
     public static final boolean FRAMELESS_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.frameless");
@@ -220,23 +222,51 @@ public class RubyInstanceConfig {
     public String getBasicUsageHelp() {
         StringBuffer sb = new StringBuffer();
         sb
-                .append("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]\n")
-                .append("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]\n")
-                .append("    -b              benchmark mode, times the script execution\n")
-                .append("    -Jjava option   pass an option on to the JVM (e.g. -J-Xmx512m)\n")
-                .append("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)\n")
-                .append("    --              optional -- before rubyfile.rb for compatibility with ruby\n")
-                .append("    -d              set debugging flags (set $DEBUG to true)\n")
-                .append("    -v              print version number, then turn on verbose mode\n")
-                .append("    -O              run with ObjectSpace disabled (default; improves performance)\n")
-                .append("    +O              run with ObjectSpace enabled (reduces performance)\n")
-                .append("    -S cmd          run the specified command in JRuby's bin dir\n")
-                .append("    -C              disable all compilation\n")
-                .append("    +C              force compilation of all scripts before they are run (except eval)\n")
-                .append("    -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)\n")
-                .append("    -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)\n")
-                .append("    -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)\n")
-                .append("    --properties    List all configuration properties (specify with -J-Dproperty=value)\n");
+                .append("Usage: jruby [switches] [--] [programfile] [arguments]\n")
+                //.append("  -0[octal]       specify record separator (\0, if no argument)\n")
+                .append("  -a              autosplit mode with -n or -p (splits $_ into $F)\n")
+                .append("  -b              benchmark mode, times the script execution\n")
+                .append("  -c              check syntax only\n")
+                //.append("  -Cdirectory     cd to directory, before executing your script\n")
+                .append("  -d              set debugging flags (set $DEBUG to true)\n")
+                .append("  -e 'command'    one line of script. Several -e's allowed. Omit [programfile]\n")
+                .append("  -Fpattern       split() pattern for autosplit (-a)\n")
+                //.append("  -i[extension]   edit ARGV files in place (make backup if extension supplied)\n")
+                .append("  -Idirectory     specify $LOAD_PATH directory (may be used more than once)\n")
+                .append("  -J[java option] pass an option on to the JVM (e.g. -J-Xmx512m)\n")
+                .append("                    use --properties to list JRuby properties\n")
+                .append("  -Kkcode         specifies KANJI (Japanese) code-set\n")
+                .append("  -l              enable line ending processing\n")
+                .append("  -n              assume 'while gets(); ... end' loop around your script\n")
+                .append("  -p              assume loop like -n but print line also like sed\n")
+                .append("  -rlibrary       require the library, before executing your script\n")
+                //.append("  -s              enable some switch parsing for switches after script name\n")
+                .append("  -S              look for the script in bin or using PATH environment variable\n")
+                .append("  -T[level]       turn on tainting checks\n")
+                .append("  -v              print version number, then turn on verbose mode\n")
+                .append("  -w              turn warnings on for your script\n")
+                //.append("  -W[level]       set warning level; 0=silence, 1=medium, 2=verbose (default)\n")
+                //.append("  -x[directory]   strip off text before #!ruby line and perhaps cd to directory\n")
+                .append("  -X[option]      enable extended option (omit option to list)\n")
+                .append("  --copyright     print the copyright\n")
+                .append("  --properties    List all configuration Java properties (pass -J-Dproperty=value)\n")
+                .append("  --version       print the version\n");
+        
+        return sb.toString();
+    }
+    
+    public String getExtendedHelp() {
+        StringBuffer sb = new StringBuffer();
+        sb
+                .append("These flags are for extended JRuby options.\n")
+                .append("Specify them by passing -X<option>\n")
+                .append("  -O              run with ObjectSpace disabled (default; improves performance)\n")
+                .append("  +O              run with ObjectSpace enabled (reduces performance)\n")
+                .append("  -C              disable all compilation\n")
+                .append("  +C              force compilation of all scripts before they are run (except eval)\n")
+                .append("  -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)\n")
+                .append("  -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)\n")
+                .append("  -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)");
         
         return sb.toString();
     }
@@ -309,6 +339,10 @@ public class RubyInstanceConfig {
                 .append("\n");
         
         return buf.toString();
+    }
+    
+    public String getCopyrightString() {
+        return "JRuby - Copyright (C) 2001-2008 The JRuby Community (and contribs)\n";
     }
     
     public void processArguments(String[] arguments) {
@@ -477,73 +511,89 @@ public class RubyInstanceConfig {
         private boolean isInterpreterArgument(String argument) {
             return (argument.charAt(0) == '-' || argument.charAt(0) == '+') && !endOfArguments;
         }
+        
+        private String getArgumentError(String argument, String additionalError) {
+            return "jruby: invalid argument " + argument + "\n" + additionalError + "\n";
+        }
+        
+        private String getArgumentError(String additionalError) {
+            return "jruby: invalid argument\n" + additionalError + "\n";
+        }
 
         private void processArgument() {
             String argument = arguments[argumentIndex];
             FOR : for (characterIndex = 1; characterIndex < argument.length(); characterIndex++) {
                 switch (argument.charAt(characterIndex)) {
+                    // FIXME: -0 flag not supported
+//                    case '0' :
+//                        break;
+                    case 'a' :
+                        split = true;
+                        break;
+                    case 'b' :
+                        benchmarking = true;
+                        break;
+                    // FIXME: -c flag not supported
+//                    case 'c' :
+//                        break;
+                    // FIXME: -C flag not supported
+//                    case 'C' :
+//                        break;
+                    case 'd' :
+                        debug = true;
+                        verbose = true;
+                        break;
+                    case 'e' :
+                        inlineScript.append(grabValue(getArgumentError(" -e must be followed by an expression to evaluate")));
+                        inlineScript.append('\n');
+                        hasInlineScript = true;
+                        break FOR;
+                    // FIXME: -F flag not supported
+//                    case 'F' :
+//                        break;
                     case 'h' :
                         shouldPrintUsage = true;
                         shouldRunInterpreter = false;
                         break;
+                    // FIXME: -i flag not supported
+//                    case 'i' :
+//                        break;
                     case 'I' :
-                        String s = grabValue(" -I must be followed by a directory name to add to lib path");
+                        String s = grabValue(getArgumentError("-I must be followed by a directory name to add to lib path"));
                         String[] ls = s.split(java.io.File.pathSeparator);
                         for(int i=0;i<ls.length;i++) {
                             loadPaths.add(ls[i]);
                         }
                         break FOR;
-                    case 'r' :
-                        requiredLibraries.add(grabValue("-r must be followed by a package to require"));
-                        break FOR;
-                    case 'e' :
-                        inlineScript.append(grabValue(" -e must be followed by an expression to evaluate"));
-                        inlineScript.append('\n');
-                        hasInlineScript = true;
-                        break FOR;
-                    case 'b' :
-                        benchmarking = true;
+                    case 'K':
+                        // FIXME: No argument seems to work for -K in MRI plus this should not
+                        // siphon off additional args 'jruby -K ~/scripts/foo'.  Also better error
+                        // processing.
+                        String eArg = grabValue(getArgumentError("provide a value for -K"));
+                        kcode = KCode.create(null, eArg);
+                        break;
+                    case 'l' :
+                        processLineEnds = true;
+                        break;
+                    case 'n' :
+                        assumeLoop = true;
                         break;
                     case 'p' :
                         assumePrinting = true;
                         assumeLoop = true;
                         break;
-                    case 'O' :
-                        if (argument.charAt(0) == '-') {
-                            objectSpaceEnabled = false;
-                        } else if (argument.charAt(0) == '+') {
-                            objectSpaceEnabled = true;
-                        }
-                        break;
-                    case 'C' :
-                        if (argument.charAt(0) == '-') {
-                            compileMode = CompileMode.OFF;
-                        } else if (argument.charAt(0) == '+') {
-                            compileMode = CompileMode.FORCE;
-                        }
-                        break;
-                    case 'y' :
-                        yarv = true;
-                        break;
-                    case 'Y' :
-                        yarvCompile = true;
-                        break;
-                    case 'R' :
-                        rubinius = true;
-                        break;
-                    case 'n' :
-                        assumeLoop = true;
-                        break;
-                    case 'a' :
-                        split = true;
-                        break;
-                    case 'd' :
-                        debug = true;
-                        verbose = true;
-                        break;
-                    case 'l' :
-                        processLineEnds = true;
-                        break;
+                    case 'r' :
+                        requiredLibraries.add(grabValue(getArgumentError("-r must be followed by a package to require")));
+                        break FOR;
+                    // FIXME: -s flag not supported
+//                    case 's' :
+//                        break;
+                    case 'S':
+                        runBinScript();
+                        break FOR;
+                    // FIXME: -T flag not supported
+//                    case 'T' :
+//                        break;
                     case 'v' :
                         verbose = true;
                         setShowVersion(true);
@@ -551,19 +601,52 @@ public class RubyInstanceConfig {
                     case 'w' :
                         verbose = true;
                         break;
-                    case 'K':
-                        // FIXME: No argument seems to work for -K in MRI plus this should not
-                        // siphon off additional args 'jruby -K ~/scripts/foo'.  Also better error
-                        // processing.
-                        String eArg = grabValue("provide a value for -K");
-                        kcode = KCode.create(null, eArg);
-                        break;
-                    case 'S':
-                        runBinScript();
+                    // FIXME: -W flag not supported
+//                    case 'W' :
+//                        break;
+                    // FIXME: -x flag not supported
+//                    case 'x' :
+//                        break;
+                    case 'X':
+                        String extendedOption = grabValue("jruby: missing extended option, listing available options\n" + getExtendedHelp());
+                        
+                        if (extendedOption.equals("-O")) {
+                            objectSpaceEnabled = false;
+                        } else if (extendedOption.equals("+O")) {
+                            objectSpaceEnabled = true;
+                        } else if (extendedOption.equals("-C")) {
+                            compileMode = CompileMode.OFF;
+                        } else if (extendedOption.equals("+C")) {
+                            compileMode = CompileMode.FORCE;
+                        } else if (extendedOption.equals("y")) {
+                            yarv = true;
+                        } else if (extendedOption.equals("Y")) {
+                            yarvCompile = true;
+                        } else if (extendedOption.equals("R")) {
+                            rubinius = true;
+                        } else {
+                            MainExitException mee =
+                                    new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
+                            mee.setUsageError(true);
+
+                            throw mee;
+                        }
                         break FOR;
                     case '-' :
-                        if (argument.equals("--version")) {
-                            setShowVersion(true);
+                        if (argument.equals("--command") || argument.equals("--bin")) {
+                            characterIndex = argument.length();
+                            runBinScript();
+                            break;
+                        } else if (argument.equals("--compat")) {
+                            characterIndex = argument.length();
+                            compatVersion = CompatVersion.getVersionFromString(grabValue(getArgumentError("--compat must be RUBY1_8 or RUBY1_9")));
+                            if (compatVersion == null) {
+                                compatVersion = CompatVersion.RUBY1_8;
+                            }
+                            break FOR;
+                        } else if (argument.equals("--copyright")) {
+                            setShowCopyright(true);
+                            shouldRunInterpreter = false;
                             break FOR;
                         } else if(argument.equals("--debug")) {
                             debug = true;
@@ -573,21 +656,13 @@ public class RubyInstanceConfig {
                             shouldPrintUsage = true;
                             shouldRunInterpreter = false;
                             break;
-                        } else if (argument.equals("--command") || argument.equals("--bin")) {
-                            characterIndex = argument.length();
-                            runBinScript();
-                            break;
-                        } else if (argument.equals("--compat")) {
-                            characterIndex = argument.length();
-                            compatVersion = CompatVersion.getVersionFromString(grabValue("--compat must be RUBY1_8 or RUBY1_9"));
-                            if (compatVersion == null) {
-                                compatVersion = CompatVersion.RUBY1_8;
-                            }
-                            break FOR;
                         } else if (argument.equals("--properties")) {
                             shouldPrintProperties = true;
                             shouldRunInterpreter = false;
                             break;
+                        } else if (argument.equals("--version")) {
+                            setShowVersion(true);
+                            break FOR;
                         } else {
                             if (argument.equals("--")) {
                                 // ruby interpreter compatibilty 
@@ -597,14 +672,14 @@ public class RubyInstanceConfig {
                             }
                         }
                     default :
-                        throw new MainExitException(1, "unknown option " + argument.charAt(characterIndex));
+                        throw new MainExitException(1, "jruby: unknown option " + argument);
                 }
             }
         }
 
         private void runBinScript() {
             requiredLibraries.add("jruby/commands");
-            inlineScript.append("JRuby::Commands." + grabValue("provide a bin script to execute"));
+            inlineScript.append("JRuby::Commands." + grabValue("jruby: provide a bin script to execute"));
             inlineScript.append("\n");
             hasInlineScript = true;
             endOfArguments = true;
@@ -620,7 +695,7 @@ public class RubyInstanceConfig {
                 return arguments[argumentIndex];
             }
 
-            MainExitException mee = new MainExitException(1, "invalid argument " + argumentIndex + "\n" + errorMessage);
+            MainExitException mee = new MainExitException(1, errorMessage);
             mee.setUsageError(true);
 
             throw mee;
@@ -746,8 +821,16 @@ public class RubyInstanceConfig {
         return showVersion;
     }
 
+    public boolean isShowCopyright() {
+        return showCopyright;
+    }
+
     protected void setShowVersion(boolean showVersion) {
         this.showVersion = showVersion;
+    }
+
+    protected void setShowCopyright(boolean showCopyright) {
+        this.showCopyright = showCopyright;
     }
 
     public boolean isShouldRunInterpreter() {
@@ -768,5 +851,13 @@ public class RubyInstanceConfig {
     
     public KCode getKCode() {
         return kcode;
+    }
+    
+    public String getRecordSeparator() {
+        return recordSeparator;
+    }
+    
+    public void setRecordSeparator(String recordSeparator) {
+        this.recordSeparator = recordSeparator;
     }
 }
