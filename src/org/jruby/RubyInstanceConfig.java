@@ -229,7 +229,7 @@ public class RubyInstanceConfig {
                 .append("  -a              autosplit mode with -n or -p (splits $_ into $F)\n")
                 .append("  -b              benchmark mode, times the script execution\n")
                 .append("  -c              check syntax only\n")
-                //.append("  -Cdirectory     cd to directory, before executing your script\n")
+                .append("  -Cdirectory     cd to directory, before executing your script\n")
                 .append("  -d              set debugging flags (set $DEBUG to true)\n")
                 .append("  -e 'command'    one line of script. Several -e's allowed. Omit [programfile]\n")
                 .append("  -Fpattern       split() pattern for autosplit (-a)\n")
@@ -538,9 +538,27 @@ public class RubyInstanceConfig {
                     case 'c' :
                         shouldCheckSyntax = true;
                         break;
-                    // FIXME: -C flag not supported
-//                    case 'C' :
-//                        break;
+                case 'C' :
+                    try {
+                        String saved = grabValue(getArgumentError(" -C must be followed by a directory expression"));
+                        File base = new File(currentDirectory);
+                        File newDir = new File(saved);
+                        if(newDir.isAbsolute()) {
+                            currentDirectory = newDir.getCanonicalPath();
+                        } else {
+                            currentDirectory = new File(base, newDir.getPath()).getCanonicalPath();
+                        }
+                        if(!(new File(currentDirectory).isDirectory())) {
+                            MainExitException mee = new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
+                            mee.setUsageError(true);
+                            throw mee;
+                        }
+                    } catch(IOException e) {
+                        MainExitException mee = new MainExitException(1, getArgumentError(" -C must be followed by a valid directory"));
+                        mee.setUsageError(true);
+                        throw mee;
+                    }
+                        break;
                     case 'd' :
                         debug = true;
                         verbose = true;
