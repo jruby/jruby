@@ -55,7 +55,7 @@ public class JavaSupport {
     private final ObjectProxyCache<IRubyObject,RubyClass> objectProxyCache = 
         // TODO: specifying soft refs, may want to compare memory consumption,
         // behavior with weak refs (specify WEAK in place of SOFT below)
-        new ObjectProxyCache<IRubyObject,RubyClass>(ObjectProxyCache.ReferenceType.SOFT) {
+        new ObjectProxyCache<IRubyObject,RubyClass>(ObjectProxyCache.ReferenceType.WEAK) {
 
         public IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
             IRubyObject proxy = clazz.allocate();
