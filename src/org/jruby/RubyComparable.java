@@ -118,7 +118,11 @@ public class RubyComparable {
         try {
             result = recv.callMethod(runtime.getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other);
         } catch (RaiseException e) {
-            return recv.getRuntime().getNil();
+            if (e.getException().kind_of_p(recv.getRuntime().getStandardError()).isTrue()) {
+                return recv.getRuntime().getNil();
+            } else {
+                throw e;
+            }
         }
             
         if(!(result instanceof RubyInteger)) {
