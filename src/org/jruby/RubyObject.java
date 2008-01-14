@@ -1247,7 +1247,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         return variableTableStore(validateInstanceVariable(name.asJavaString()), value);
     }
 
-    @JRubyMethod(name = "remove_instance_variable", required = 1, frame = true)
+    @JRubyMethod(name = "remove_instance_variable", required = 1, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject remove_instance_variable(IRubyObject name, Block block) {
         ensureInstanceVariablesSettable();
         IRubyObject value;
