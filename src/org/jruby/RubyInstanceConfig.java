@@ -120,6 +120,7 @@ public class RubyInstanceConfig {
     private KCode kcode = KCode.NONE;
     private String recordSeparator = "\n";
     private boolean shouldCheckSyntax = false;
+    private String inputFieldSeparator = null;
     
     public static final boolean FRAMELESS_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.frameless");
@@ -549,9 +550,9 @@ public class RubyInstanceConfig {
                         inlineScript.append('\n');
                         hasInlineScript = true;
                         break FOR;
-                    // FIXME: -F flag not supported
-//                    case 'F' :
-//                        break;
+                    case 'F' :
+                        inputFieldSeparator = grabValue(getArgumentError(" -F must be followed by a pattern for input field separation"));
+                        break;
                     case 'h' :
                         shouldPrintUsage = true;
                         shouldRunInterpreter = false;
@@ -844,6 +845,10 @@ public class RubyInstanceConfig {
 
     public boolean isYARVEnabled() {
         return yarv;
+    }
+
+    public String getInputFieldSeparator() {
+        return inputFieldSeparator;
     }
 
     public boolean isRubiniusEnabled() {

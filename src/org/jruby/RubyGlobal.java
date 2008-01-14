@@ -133,7 +133,12 @@ public class RubyGlobal {
 
         runtime.defineVariable(new ErrorInfoGlobalVariable(runtime, "$!", runtime.getNil()));
         runtime.defineVariable(new NonEffectiveGlobalVariable(runtime, "$=", runtime.getFalse()));
-        runtime.defineVariable(new GlobalVariable(runtime, "$;", runtime.getNil()));
+
+        if(runtime.getInstanceConfig().getInputFieldSeparator() == null) {
+            runtime.defineVariable(new GlobalVariable(runtime, "$;", runtime.getNil()));
+        } else {
+            runtime.defineVariable(new GlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), 0)));
+        }
 
         runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"));
 
