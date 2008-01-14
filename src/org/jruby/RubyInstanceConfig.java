@@ -225,7 +225,7 @@ public class RubyInstanceConfig {
         StringBuffer sb = new StringBuffer();
         sb
                 .append("Usage: jruby [switches] [--] [programfile] [arguments]\n")
-                //.append("  -0[octal]       specify record separator (\0, if no argument)\n")
+                .append("  -0[octal]       specify record separator (\0, if no argument)\n")
                 .append("  -a              autosplit mode with -n or -p (splits $_ into $F)\n")
                 .append("  -b              benchmark mode, times the script execution\n")
                 .append("  -c              check syntax only\n")
@@ -526,9 +526,26 @@ public class RubyInstanceConfig {
             String argument = arguments[argumentIndex];
             FOR : for (characterIndex = 1; characterIndex < argument.length(); characterIndex++) {
                 switch (argument.charAt(characterIndex)) {
-                    // FIXME: -0 flag not supported
-//                    case '0' :
-//                        break;
+                case '0' :{
+                    String temp = grabOptionalValue();
+                    if(null == temp) {
+                        recordSeparator = "\u0000";
+                    } else if(temp.equals("0")) {
+                        recordSeparator = "\n\n";
+                    } else if(temp.equals("777")) {
+                        recordSeparator = "\uFFFF"; // Specify something that can't separate
+                    } else {
+                        try {
+                            int val = Integer.parseInt(temp, 8);
+                            recordSeparator = "" + (char)val;
+                        } catch(Exception e) {
+                            MainExitException mee = new MainExitException(1, getArgumentError(" -0 must be followed by either 0, 777, or a valid octal value"));
+                            mee.setUsageError(true);
+                            throw mee;
+                        }
+                    }
+                    break FOR;
+                }
                     case 'a' :
                         split = true;
                         break;
@@ -719,6 +736,14 @@ public class RubyInstanceConfig {
             mee.setUsageError(true);
 
             throw mee;
+        }
+
+        private String grabOptionalValue() {
+            characterIndex++;
+            if (characterIndex < arguments[argumentIndex].length()) {
+                return arguments[argumentIndex].substring(characterIndex);
+            }
+            return null;
         }
     }
 
