@@ -529,6 +529,9 @@ public class RubyKernel {
             // Zero sleeps forever
             milliseconds = 0;
         } else {
+            if (!(args[0] instanceof RubyNumeric)) {
+                throw recv.getRuntime().newTypeError("can't convert " + args[0].getMetaClass().getName() + "into time interval");
+            }
             milliseconds = (long) (args[0].convertToFloat().getDoubleValue() * 1000);
             if (milliseconds < 0) {
                 throw recv.getRuntime().newArgumentError("time interval must be positive");
