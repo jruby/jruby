@@ -200,14 +200,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 mv.aload(8);
                 mv.visitInsn(ARETURN);
 
-                // return jump handling
-                mv.label(catchReturnJump);
-                handleReturn(mv, COMPILED_SUPER_CLASS);
-
-                // redo jump handling
-                mv.label(catchRedoJump);
-                handleRedo(mv, COMPILED_SUPER_CLASS);
-
+                handleReturn(catchReturnJump,mv, doFinally, normalExit, COMPILED_SUPER_CLASS);
+                
+                handleRedo(catchRedoJump, mv, doFinally);
+                
                 // finally handling for abnormal exit
                 {
                     mv.label(doFinally);
@@ -503,22 +499,28 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return cw;
     }
 
-    private void handleRedo(SkinnyMethodAdapter mv, String superClass) {
+    private void handleRedo(Label tryRedoJump, SkinnyMethodAdapter mv, Label tryFinally) {
+        mv.label(tryRedoJump);
+
         // clear the redo
         mv.pop();
 
         // get runtime, dup it
-        mv.aload(0);
         mv.aload(1);
-        mv.invokevirtual(superClass, "handleRedoJump", sig(IRubyObject.class, params(ThreadContext.class)));
-        mv.areturn();
+        mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+        mv.invokevirtual(p(Ruby.class), "newRedoLocalJumpError", sig(RaiseException.class));
+        mv.go_to(tryFinally);
     }
 
-    private void handleReturn(SkinnyMethodAdapter mv, String superClass) {
+    private void handleReturn(Label catchReturnJump, SkinnyMethodAdapter mv, Label doFinally, Label normalExit, String typePath) {
+        mv.label(catchReturnJump);
+
         mv.aload(0);
         mv.swap();
-        mv.invokevirtual(superClass, "handleReturnJump", sig(IRubyObject.class, params(JumpException.ReturnJump.class)));
-        mv.areturn();
+        mv.invokevirtual(typePath, "handleReturnJump", sig(IRubyObject.class, JumpException.ReturnJump.class));
+
+        mv.astore(8);
+        mv.go_to(normalExit);
     }
 
     private void invokeCallConfigPost(SkinnyMethodAdapter mv, String superClass) {
@@ -642,15 +644,15 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         Label tryBegin = new Label();
         Label tryEnd = new Label();
-        Label tryFinally = new Label();
-        Label tryReturnJump = new Label();
-        Label tryRedoJump = new Label();
+        Label doFinally = new Label();
+        Label catchReturnJump = new Label();
+        Label catchRedoJump = new Label();
         Label normalExit = new Label();
 
-        method.trycatch(tryBegin, tryEnd, tryReturnJump, p(JumpException.ReturnJump.class));
-        method.trycatch(tryBegin, tryEnd, tryRedoJump, p(JumpException.RedoJump.class));
-        method.trycatch(tryBegin, tryEnd, tryFinally, null);
-        method.trycatch(tryReturnJump, tryFinally, tryFinally, null);
+        method.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
+        method.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
+        method.trycatch(tryBegin, tryEnd, doFinally, null);
+        method.trycatch(catchReturnJump, doFinally, doFinally, null);
         
         method.label(tryBegin);
         {
@@ -666,6 +668,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 method.invokevirtual(typePath, javaMethodName, sig(ret, signature));
             }
         }
+                
+        // store result in temporary variable 8
+        method.astore(8);
+
         method.label(tryEnd);
         
         method.label(normalExit);
@@ -674,18 +680,16 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             invokeCallConfigPost(method, superClass);
         }
         
+        // reload and return result
+        method.aload(8);
         method.visitInsn(ARETURN);
+
+        handleReturn(catchReturnJump,method, doFinally, normalExit, superClass);
         
-        // return handling
-        method.label(tryReturnJump);
-        handleReturn(method, superClass);
-        
-        // redo handling
-        method.label(tryRedoJump);
-        handleRedo(method, superClass);
+        handleRedo(catchRedoJump, method, doFinally);
 
         // finally handling for abnormal exit
-        method.label(tryFinally);
+        method.label(doFinally);
         {
             if (!callConfig.isNoop()) {
                 invokeCallConfigPost(method, superClass);

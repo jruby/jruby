@@ -93,10 +93,6 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
     }
     
-    protected IRubyObject handleRedoJump(ThreadContext context) {
-        throw context.getRuntime().newLocalJumpError("redo", context.getRuntime().getNil(), "unexpected redo");
-    }
-    
     public void setArity(Arity arity) {
         this.arity = arity;
         this.arityValue = arity.getValue();

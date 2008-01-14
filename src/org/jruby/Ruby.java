@@ -2312,6 +2312,10 @@ public final class Ruby {
         return new RaiseException(new RubyLocalJumpError(this, fastGetClass("LocalJumpError"), message, reason, exitValue), true);
     }
 
+    public RaiseException newRedoLocalJumpError() {
+        return new RaiseException(new RubyLocalJumpError(this, fastGetClass("LocalJumpError"), "unexpected redo", "redo", getNil()), true);
+    }
+
     public RaiseException newLoadError(String message) {
         return newRaiseException(fastGetClass("LoadError"), message);
     }
