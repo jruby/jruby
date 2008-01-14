@@ -32,6 +32,8 @@ package org.jruby.libraries;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,6 +45,14 @@ import org.jruby.runtime.load.Library;
 import org.jruby.util.NormalizedFile;
 
 public class RbConfigLibrary implements Library {
+    /** This is a map from Java's "friendly" OS names to those used by Ruby */
+    public static final Map<String, String> OS_NAMES = new HashMap();
+    
+    static {
+        OS_NAMES.put("Mac OS X", "darwin");
+        OS_NAMES.put("Darwin", "darwin");
+        OS_NAMES.put("Linux", "linux");
+    }
     /**
      * Just enough configuration settings (most don't make sense in Java) to run the rubytests
      * unit tests. The tests use <code>bindir</code>, <code>RUBY_INSTALL_NAME</code> and
@@ -76,15 +86,15 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "prefix", normalizedHome);
         setConfig(configHash, "exec_prefix", normalizedHome);
 
-        setConfig(configHash, "host_os", System.getProperty("os.name"));
+        String osName = OS_NAMES.get(System.getProperty("os.name"));
+        if (osName == null) {
+            osName = System.getProperty("os.name");
+        }
+        setConfig(configHash, "host_os", osName);
         setConfig(configHash, "host_vendor", System.getProperty("java.vendor"));
         setConfig(configHash, "host_cpu", System.getProperty("os.arch"));
         
-        String target_os = System.getProperty("os.name");
-        if (target_os.compareTo("Mac OS X") == 0) {
-            target_os = "darwin";
-        }
-        setConfig(configHash, "target_os", target_os);
+        setConfig(configHash, "target_os", osName);
         
         setConfig(configHash, "target_cpu", System.getProperty("os.arch"));
         
