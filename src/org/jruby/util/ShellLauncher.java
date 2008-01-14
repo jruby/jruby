@@ -221,7 +221,8 @@ public class ShellLauncher {
         private InputStream in;
         private OutputStream out;
         private boolean onlyIfAvailable;
-        private boolean quit;
+        private volatile boolean quit;
+        private final Object waitLock = new Object();
         StreamPumper(InputStream in, OutputStream out, boolean avail) {
             this.in = in;
             this.out = out;
@@ -230,22 +231,51 @@ public class ShellLauncher {
         public void run() {
             byte[] buf = new byte[1024];
             int numRead;
+            boolean hasReadSomething = false;
             try {
                 while (!quit) {
-                    if (onlyIfAvailable && in.available() == 0) {
-                        Thread.sleep(10);
-                        continue;
+                    // The problem we trying to solve below: STDIN in Java
+                    // is blocked and non-interruptible, so if we invoke read
+                    // on it, we might never be able to interrupt such thread.
+                    // So, we use in.available() to see if there is any input
+                    // ready, and only then read it. But this approach can't
+                    // tell whether the end of stream reached or not, so we
+                    // might end up looping right at the end of the stream.
+                    // Well, at least, we can improve the situation by checking
+                    // if some input was ever available, and if so, not
+                    // checking for available anymore, and just go to read.
+                    if (onlyIfAvailable && !hasReadSomething) {
+                        if (in.available() == 0) {
+                            synchronized (waitLock) {
+                                waitLock.wait(10);                                
+                            }
+                            continue;
+                        } else {
+                            hasReadSomething = true;
+                        }
                     }
+
                     if ((numRead = in.read(buf)) == -1) {
                         break;
                     }
                     out.write(buf, 0, numRead);
                 }
             } catch (Exception e) {
+            } finally {
+                if (onlyIfAvailable) {
+                    // We need to close the out, since some
+                    // processes would just wait for the stream
+                    // to be closed before they process its content,
+                    // and produce the output. E.g.: "cat".
+                    try { out.close(); } catch (IOException ioe) {}
+                }                
             }
         }
         public void quit() {
             this.quit = true;
+            synchronized (waitLock) {
+                waitLock.notify();                
+            }
         }
     }
 
@@ -272,6 +302,10 @@ public class ShellLauncher {
         try { pOut.close(); } catch (IOException io) {}
         try { pErr.close(); } catch (IOException io) {}
 
+        // Force t3 to quit, just in case if it's stuck.
+        // Note: On some platforms, even interrupt might not
+        // have an effect if the thread is IO blocked.
+        try { t3.interrupt(); } catch (SecurityException se) {}
     }
 
     private String[] parseCommandLine(Ruby runtime, IRubyObject[] rawArgs) {
