@@ -30,6 +30,7 @@ package org.jruby.runtime;
 
 import org.jruby.RubyClass;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.JumpException.BreakJump;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -134,6 +135,21 @@ public abstract class CallSite {
         public InlineCachingCallSite(String methodName, CallType callType) {
             super(methodName, callType);
         }
+
+        protected IRubyObject cacheAndCall(RubyClass selfType, Block block, IRubyObject[] args, ThreadContext context, IRubyObject self) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+
+            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, block);
+            }
+
+            cachedMethod = method;
+            cachedType = selfType;
+
+            selfType.getRuntime().getCacheMap().add(method, this);
+
+            return method.call(context, self, selfType, methodName, args, block);
+        }
         
         public void removeCachedMethod() {
             cachedType = null;
@@ -153,18 +169,7 @@ public abstract class CallSite {
                 return cachedMethod.call(context, self, selfType, methodName, args, block);
             }
 
-            DynamicMethod method = selfType.searchMethod(methodName);
-
-            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, block);
-            }
-
-            cachedMethod = method;
-            cachedType = selfType;
-
-            selfType.getRuntime().getCacheMap().add(method, this);
-
-            return method.call(context, self, selfType, methodName, args, block);
+            return cacheAndCall(selfType, block, args, context, self);
         }
     }
 
@@ -182,34 +187,28 @@ public abstract class CallSite {
                         return cachedMethod.call(context, self, selfType, methodName, args, block);
                     }
 
-                    DynamicMethod method = selfType.searchMethod(methodName);
-
-                    if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                        return RuntimeHelpers.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, block);
-                    }
-
-                    cachedMethod = method;
-                    cachedType = selfType;
-
-                    selfType.getRuntime().getCacheMap().add(method, this);
-
-                    return method.call(context, self, selfType, methodName, args, block);
+                    return cacheAndCall(selfType, block, args, context, self);
                 } catch (JumpException.BreakJump bj) {
-                    // JRUBY-530, Kernel#loop case:
-                    if (bj.isBreakInKernelLoop()) {
-                        // consume and rethrow or just keep rethrowing?
-                        if (block.getBody() == bj.getTarget()) bj.setBreakInKernelLoop(false);
-
-                        throw bj;
-                    }
-
-                    return (IRubyObject)bj.getValue();
+                    return handleBreakJump(bj, block);
                 } catch (JumpException.RetryJump rj) {
                     throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
                 } catch (StackOverflowError soe) {
                     throw context.getRuntime().newSystemStackError("stack level too deep");
                 }
             }
+        }
+
+        private IRubyObject handleBreakJump(BreakJump bj, Block block) throws BreakJump {
+            // JRUBY-530, Kernel#loop case:
+            if (bj.isBreakInKernelLoop()) {
+                // consume and rethrow or just keep rethrowing?
+                if (block.getBody() == bj.getTarget()) {
+                    bj.setBreakInKernelLoop(false);
+                }
+                throw bj;
+            }
+
+            return (IRubyObject) bj.getValue();
         }
     }
 }

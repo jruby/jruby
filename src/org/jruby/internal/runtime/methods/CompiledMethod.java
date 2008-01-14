@@ -28,6 +28,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -36,15 +37,11 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Block;
 
-public abstract class CompiledMethod extends DynamicMethod implements JumpTarget, Cloneable{
-    protected Arity arity;
-    protected StaticScope staticScope;
+public abstract class CompiledMethod extends JavaMethod implements JumpTarget, Cloneable{
     protected Object $scriptObject;
     
     public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, Object scriptObject, CallConfiguration callConfig) {
-    	super(implementationClass, visibility, callConfig);
-        this.arity = arity;
-        this.staticScope = staticScope;
+    	super(implementationClass, visibility, callConfig, staticScope, arity);
         this.$scriptObject = scriptObject;
     }
 

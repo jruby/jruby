@@ -26,7 +26,9 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.internal.runtime.JumpTarget;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -42,15 +44,26 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
     private String javaName;
     private boolean isSingleton;
     protected final int methodIndex;
+    protected final StaticScope staticScope;
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility) {
         super(implementationClass, visibility, CallConfiguration.FRAME_ONLY);
-        methodIndex = -1;
+        this.methodIndex = -1;
+        this.staticScope = null;
+    }
+
+    public JavaMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+        super(implementationClass, visibility, callConfig);
+        this.methodIndex = -1;
+        this.staticScope = staticScope;
+        this.arity = arity;
+        this.arityValue = arity.getValue();
     }
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility, int methodIndex) {
         super(implementationClass, visibility, CallConfiguration.FRAME_ONLY);
         this.methodIndex = methodIndex;
+        this.staticScope = null;
     }
 
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block);
@@ -62,6 +75,26 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         } catch (CloneNotSupportedException cnse) {
             return null;
         }
+    }
+    
+    protected void pre(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, Block block) {
+        callConfig.pre(context, self, getImplementationClass(), arity, name, args, block, staticScope, this);
+    }
+    
+    protected void post(ThreadContext context) {
+        callConfig.post(context);
+    }
+    
+    protected IRubyObject handleReturnJump(ReturnJump rj) {
+        if (rj.getTarget() == this) {
+            return (IRubyObject)rj.getValue();
+        } else {
+            throw rj;
+        }
+    }
+    
+    protected IRubyObject handleRedoJump(ThreadContext context) {
+        throw context.getRuntime().newLocalJumpError("redo", context.getRuntime().getNil(), "unexpected redo");
     }
     
     public void setArity(Arity arity) {

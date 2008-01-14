@@ -156,28 +156,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 
                 // invoke pre method stuff
                 if (!callConfig.isNoop()) {
-                    mv.aload(0); // load method to get callconfig
-                    mv.getfield(p(CompiledMethod.class), "callConfig", ci(CallConfiguration.class));
-                    mv.aload(THREADCONTEXT_INDEX); // tc
-                    mv.aload(RECEIVER_INDEX); // self
-
-                    // determine the appropriate class, for super calls to work right
-                    mv.aload(0);
-                    mv.invokevirtual(p(CompiledMethod.class), "getImplementationClass", sig(RubyModule.class));
-
-                    mv.aload(0);
-                    mv.getfield(p(CompiledMethod.class), "arity", ci(Arity.class)); // arity
-                    mv.aload(NAME_INDEX); // name
-                    mv.aload(ARGS_INDEX); // args
-                    mv.aload(BLOCK_INDEX); // block
-                    mv.aload(0);
-                    mv.getfield(p(CompiledMethod.class), "staticScope", ci(StaticScope.class));
-                    // static scope
-                    mv.aload(0); // jump target
-                    mv.invokevirtual(p(CallConfiguration.class), "pre", 
-                            sig(void.class, 
-                            params(ThreadContext.class, IRubyObject.class, RubyModule.class, Arity.class, String.class, IRubyObject[].class, Block.class, 
-                            StaticScope.class, JumpTarget.class)));
+                    invokeCallConfigPre(mv, COMPILED_SUPER_CLASS);
                 }
                 
                 // store null for result var
@@ -186,14 +165,15 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     
                 Label tryBegin = new Label();
                 Label tryEnd = new Label();
-                Label tryFinally = new Label();
-                Label tryReturnJump = new Label();
-                Label tryRedoJump = new Label();
+                Label doFinally = new Label();
+                Label catchReturnJump = new Label();
+                Label catchRedoJump = new Label();
                 Label normalExit = new Label();
                 
-                mv.trycatch(tryBegin, tryEnd, tryReturnJump, p(JumpException.ReturnJump.class));
-                mv.trycatch(tryBegin, tryEnd, tryRedoJump, p(JumpException.RedoJump.class));
-                mv.trycatch(tryBegin, tryEnd, tryFinally, null);
+                mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
+                mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
+                mv.trycatch(tryBegin, tryEnd, doFinally, null);
+                mv.trycatch(catchReturnJump, doFinally, doFinally, null);
                 mv.label(tryBegin);
                 
                 mv.aload(0);
@@ -214,73 +194,27 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 //call post method stuff (non-finally)
                 mv.label(normalExit);
                 if (!callConfig.isNoop()) {
-                    mv.aload(0); // load method to get callconfig
-                    mv.getfield(p(DynamicMethod.class), "callConfig", ci(CallConfiguration.class));
-                    mv.aload(1);
-                    mv.invokevirtual(p(CallConfiguration.class), "post", sig(void.class, params(ThreadContext.class)));
+                    invokeCallConfigPost(mv, COMPILED_SUPER_CLASS);
                 }
                 // reload and return result
                 mv.aload(8);
                 mv.visitInsn(ARETURN);
 
                 // return jump handling
-                {
-                    mv.label(tryReturnJump);
-                    
-                    // dup return jump, get target, compare to this method object
-                    mv.dup();
-                    mv.invokevirtual(p(JumpException.FlowControlException.class), "getTarget", sig(JumpTarget.class));
-                    mv.aload(0);
-                    Label rethrow = new Label();
-                    mv.if_acmpne(rethrow);
-
-                    // this is the target, store return value and branch to normal exit
-                    mv.invokevirtual(p(JumpException.FlowControlException.class), "getValue", sig(Object.class));
-                    
-                    mv.astore(8);
-                    mv.go_to(normalExit);
-
-                    // this is not the target, rethrow
-                    mv.label(rethrow);
-                    mv.go_to(tryFinally);
-                }
+                mv.label(catchReturnJump);
+                handleReturn(mv, COMPILED_SUPER_CLASS);
 
                 // redo jump handling
-                {
-                    mv.label(tryRedoJump);
-                    
-                    // clear the redo
-                    mv.pop();
-                    
-                    // get runtime, dup it
-                    mv.aload(1);
-                    mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                    mv.dup();
-                    
-                    // get nil
-                    mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-                    
-                    // load "redo" under nil
-                    mv.ldc("redo");
-                    mv.swap();
-                    
-                    // load "unexpected redo" message
-                    mv.ldc("unexpected redo");
-                    
-                    mv.invokevirtual(p(Ruby.class), "newLocalJumpError", sig(RaiseException.class, params(String.class, IRubyObject.class, String.class)));
-                    mv.go_to(tryFinally);
-                }
+                mv.label(catchRedoJump);
+                handleRedo(mv, COMPILED_SUPER_CLASS);
 
                 // finally handling for abnormal exit
                 {
-                    mv.label(tryFinally);
+                    mv.label(doFinally);
 
                     //call post method stuff (exception raised)
                     if (!callConfig.isNoop()) {
-                        mv.aload(0); // load method to get callconfig
-                        mv.getfield(p(DynamicMethod.class), "callConfig", ci(CallConfiguration.class));
-                        mv.aload(1);
-                        mv.invokevirtual(p(CallConfiguration.class), "post", sig(void.class, params(ThreadContext.class)));
+                        invokeCallConfigPost(mv, COMPILED_SUPER_CLASS);
                     }
 
                     // rethrow exception
@@ -309,6 +243,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class type = method.getDeclaringClass();
         JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
         String typePath = p(type);
+        String superClass = p(JavaMethod.class);
         String javaMethodName = method.getName();
         
         String generatedClassName = type.getName() + "Invoker$" + javaMethodName + "_method_" + jrubyMethod.required() + "_" + jrubyMethod.optional();
@@ -318,7 +253,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         try {
             if (c == null) {
-                ClassWriter cw = createJavaMethodCtor(generatedClassPath, p(JavaMethod.class));
+                ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClass);
                 SkinnyMethodAdapter mv = null;
                 
                 mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
@@ -326,7 +261,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 Label line = new Label();
                 mv.visitLineNumber(0, line);
                 
-                createAnnotatedMethodInvocation(method, mv);
+                createAnnotatedMethodInvocation(method, mv, superClass);
                 
                 c = endCall(implementationClass.getRuntime(), cw, mv, generatedClassName);
             }
@@ -353,6 +288,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class type, MethodDefiningCallback callback) {
         String typePath = p(type);
+        String superClass = p(JavaMethod.class);
         
         String generatedClassName = type.getName() + "Invoker";
         String generatedClassPath = typePath + "Invoker";
@@ -383,7 +319,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
             
             if (c == null) {
-                ClassWriter cw = createIndexedJavaMethodCtor(generatedClassPath, p(JavaMethod.class));
+                ClassWriter cw = createIndexedJavaMethodCtor(generatedClassPath, superClass);
                 SkinnyMethodAdapter mv = null;
                 
                 mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
@@ -403,7 +339,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 
                 for (int i = 0; i < sortedMethods.size(); i++) {
                     mv.label(cases[i]);
-                    String callName = getAnnotatedMethodForIndex(cw, sortedMethods.get(i), i);
+                    String callName = getAnnotatedMethodForIndex(cw, sortedMethods.get(i), i, superClass);
                     
                     // invoke call#_method for method
                     mv.aload(THIS_INDEX);
@@ -567,87 +503,40 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return cw;
     }
 
-    private void handleRedo(Label tryRedoJump, SkinnyMethodAdapter mv, Label tryFinally) {
+    private void handleRedo(SkinnyMethodAdapter mv, String superClass) {
+        // clear the redo
+        mv.pop();
 
-        // redo jump handling
-        {
-            mv.label(tryRedoJump);
-
-            // clear the redo
-            mv.pop();
-
-            // get runtime, dup it
-            mv.aload(1);
-            mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-            mv.dup();
-
-            // get nil
-            mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-
-            // load "redo" under nil
-            mv.ldc("redo");
-            mv.swap();
-
-            // load "unexpected redo" message
-            mv.ldc("unexpected redo");
-
-            mv.invokevirtual(p(Ruby.class), "newLocalJumpError", sig(RaiseException.class, params(String.class, IRubyObject.class, String.class)));
-            mv.go_to(tryFinally);
-        }
-
-        // finally handling for abnormal exit
-    }
-
-    private void handleReturn(SkinnyMethodAdapter mv, Label tryFinally, Label tryReturnJump) {
-
-        // return jump handling
-        {
-            mv.label(tryReturnJump);
-
-            // dup return jump, get target, compare to this method object
-            mv.dup();
-            mv.invokevirtual(p(JumpException.FlowControlException.class), "getTarget", sig(JumpTarget.class));
-            mv.aload(0);
-            Label rethrow = new Label();
-            mv.if_acmpne(rethrow);
-
-            // this is the target, store return value and branch to normal exit
-            mv.invokevirtual(p(JumpException.FlowControlException.class), "getValue", sig(Object.class));
-
-            mv.areturn();
-
-            // this is not the target, rethrow
-            mv.label(rethrow);
-            mv.go_to(tryFinally);
-        }
-    }
-
-    private void invokeCallConfigPost(SkinnyMethodAdapter mv) {
-        //call post method stuff (non-finally)
-        mv.aload(0); // load method to get callconfig
-        mv.getfield(p(JavaMethod.class), "callConfig", ci(CallConfiguration.class));
+        // get runtime, dup it
+        mv.aload(0);
         mv.aload(1);
-        mv.invokevirtual(p(CallConfiguration.class), "post", sig(void.class, params(ThreadContext.class)));
+        mv.invokevirtual(superClass, "handleRedoJump", sig(IRubyObject.class, params(ThreadContext.class)));
+        mv.areturn();
     }
 
-    private void invokeCallConfigPre(SkinnyMethodAdapter mv) {
-        // invoke pre method stuff
-        mv.aload(0); // load method to get callconfig
-        mv.getfield(p(DynamicMethod.class), "callConfig", ci(CallConfiguration.class));
+    private void handleReturn(SkinnyMethodAdapter mv, String superClass) {
+        mv.aload(0);
+        mv.swap();
+        mv.invokevirtual(superClass, "handleReturnJump", sig(IRubyObject.class, params(JumpException.ReturnJump.class)));
+        mv.areturn();
+    }
 
-        // load pre params
+    private void invokeCallConfigPost(SkinnyMethodAdapter mv, String superClass) {
+        //call post method stuff (non-finally)
+        mv.aload(0);
+        mv.aload(1);
+        mv.invokevirtual(superClass, "post", sig(void.class, params(ThreadContext.class)));
+    }
+
+    private void invokeCallConfigPre(SkinnyMethodAdapter mv, String superClass) {
+        // invoke pre method stuff
+        mv.aload(0); 
         mv.aload(THREADCONTEXT_INDEX); // tc
         mv.aload(RECEIVER_INDEX); // self
-        mv.aload(0);
-        mv.invokevirtual(p(DynamicMethod.class), "getImplementationClass", sig(RubyModule.class)); // clazz
-        mv.aload(0);
-        mv.getfield(p(JavaMethod.class), "arity", ci(Arity.class)); // arity
         mv.aload(NAME_INDEX); // name
         mv.aload(ARGS_INDEX); // args
         mv.aload(BLOCK_INDEX); // block
-        mv.aconst_null(); // scope
-        mv.aload(0); // jump target
-        mv.invokevirtual(p(CallConfiguration.class), "pre", sig(void.class, params(ThreadContext.class, IRubyObject.class, RubyModule.class, Arity.class, String.class, IRubyObject[].class, Block.class, StaticScope.class, JumpTarget.class)));
+        mv.invokevirtual(superClass, "pre", sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class)));
     }
 
     private void loadArguments(SkinnyMethodAdapter mv, JRubyMethod jrubyMethod) {
@@ -723,19 +612,19 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.visitInsn(AALOAD);
     }
 
-    private String getAnnotatedMethodForIndex(ClassWriter cw, Method method, int index) {
+    private String getAnnotatedMethodForIndex(ClassWriter cw, Method method, int index, String superClass) {
         String methodName = "call" + index + "_" + method.getName();
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG, null, null));
         mv.visitCode();
         Label line = new Label();
         mv.visitLineNumber(0, line);
-        createAnnotatedMethodInvocation(method, mv);
+        createAnnotatedMethodInvocation(method, mv, superClass);
         endMethod(mv);
         
         return methodName;
     }
 
-    private void createAnnotatedMethodInvocation(Method javaMethod, SkinnyMethodAdapter method) {
+    private void createAnnotatedMethodInvocation(Method javaMethod, SkinnyMethodAdapter method, String superClass) {
         JRubyMethod jrubyMethod = javaMethod.getAnnotation(JRubyMethod.class);
         String typePath = p(javaMethod.getDeclaringClass());
         String javaMethodName = javaMethod.getName();
@@ -746,7 +635,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         CallConfiguration callConfig = CallConfiguration.getCallConfigByAnno(jrubyMethod);
         if (!callConfig.isNoop()) {
-            invokeCallConfigPre(method);
+            invokeCallConfigPre(method, superClass);
         }
 
         boolean getsBlock = signature.length > 0 && signature[signature.length - 1] == Block.class;
@@ -761,6 +650,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         method.trycatch(tryBegin, tryEnd, tryReturnJump, p(JumpException.ReturnJump.class));
         method.trycatch(tryBegin, tryEnd, tryRedoJump, p(JumpException.RedoJump.class));
         method.trycatch(tryBegin, tryEnd, tryFinally, null);
+        method.trycatch(tryReturnJump, tryFinally, tryFinally, null);
         
         method.label(tryBegin);
         {
@@ -770,10 +660,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
             if (Modifier.isStatic(javaMethod.getModifiers())) {
                 // static invocation
-                method.visitMethodInsn(INVOKESTATIC, typePath, javaMethodName, sig(ret, signature));
+                method.invokestatic(typePath, javaMethodName, sig(ret, signature));
             } else {
                 // virtual invocation
-                method.visitMethodInsn(INVOKEVIRTUAL, typePath, javaMethodName, sig(ret, signature));
+                method.invokevirtual(typePath, javaMethodName, sig(ret, signature));
             }
         }
         method.label(tryEnd);
@@ -781,20 +671,24 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         method.label(normalExit);
         
         if (!callConfig.isNoop()) {
-            invokeCallConfigPost(method);
+            invokeCallConfigPost(method, superClass);
         }
         
         method.visitInsn(ARETURN);
         
-        handleReturn(method, tryFinally, tryReturnJump);
+        // return handling
+        method.label(tryReturnJump);
+        handleReturn(method, superClass);
         
-        handleRedo(tryRedoJump, method, tryFinally);
+        // redo handling
+        method.label(tryRedoJump);
+        handleRedo(method, superClass);
 
         // finally handling for abnormal exit
         method.label(tryFinally);
         {
             if (!callConfig.isNoop()) {
-                invokeCallConfigPost(method);
+                invokeCallConfigPost(method, superClass);
             }
 
             // rethrow exception

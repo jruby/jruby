@@ -55,7 +55,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
-import org.jruby.ast.executable.AbstractCompiledScript;
+import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ArrayCallback;
@@ -200,7 +200,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
         // Create the class with the appropriate class name and source file
-        classWriter.visit(V1_4, ACC_PUBLIC + ACC_SUPER, classname, null, p(AbstractCompiledScript.class), null);
+        classWriter.visit(V1_4, ACC_PUBLIC + ACC_SUPER, classname, null, p(AbstractScript.class), null);
         classWriter.visitSource(sourcename, null);
         
         topLevelScope = scope;
@@ -327,7 +327,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         initMethod.start();
         initMethod.aload(THIS);
         if (USE_INHERITED_CACHE_FIELDS) {
-            initMethod.invokespecial(p(AbstractCompiledScript.class), "<init>", sig(Void.TYPE));
+            initMethod.invokespecial(p(AbstractScript.class), "<init>", sig(Void.TYPE));
         } else {
             initMethod.invokespecial(p(Object.class), "<init>", sig(Void.TYPE));
         }

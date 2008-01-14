@@ -14,7 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author headius
  */
-public abstract class AbstractCompiledScript implements Script {
+public abstract class AbstractScript implements Script {
     public CallSite site0;
     public CallSite site1;
     public CallSite site2;
@@ -66,7 +66,7 @@ public abstract class AbstractCompiledScript implements Script {
     public CallSite site48;
     public CallSite site49;
     
-    public AbstractCompiledScript() {}
+    public AbstractScript() {}
     
     public IRubyObject load(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return null;
