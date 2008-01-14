@@ -1133,6 +1133,11 @@ public class RubyKernel {
             
         return runtime.newFixnum(runtime.getRandom().nextInt((int) ceil));
     }
+    
+    @JRubyMethod(name = "syscall", required = 1, optional = 9, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject syscall(IRubyObject recv, IRubyObject[] args) {
+        throw recv.getRuntime().newNotImplementedError("Kernel#syscall is not implemented in JRuby");
+    }
 
     @JRubyMethod(name = {"system"}, required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
