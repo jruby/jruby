@@ -238,6 +238,19 @@ public class RubyClass extends RubyModule {
 
         return method.call(context, self, this, name, args, block);
     }
+    
+    public IRubyObject invokeInherited(ThreadContext context, IRubyObject self,
+            IRubyObject subclass) {
+        String name = "inherited";
+        DynamicMethod method = getMetaClass().searchMethod(name);
+        IRubyObject[] args = new IRubyObject[] {subclass};
+
+        if (method.isUndefined()) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, name, args, context.getFrameSelf(), CallType.FUNCTIONAL, Block.NULL_BLOCK);
+        }
+
+        return method.call(context, self, getMetaClass(), name, args, Block.NULL_BLOCK);
+    }
 
     /** rb_class_new_instance
     *
@@ -349,8 +362,10 @@ public class RubyClass extends RubyModule {
      * 
      */
     public void inherit(RubyClass superClazz) {
-        if (superClazz == null) superClazz = getRuntime().getObject();        
-        superClazz.callMethod(getRuntime().getCurrentContext(), "inherited", this);
+        if (superClazz == null) superClazz = getRuntime().getObject();
+        superClazz.invokeInherited(
+                getRuntime().getCurrentContext(), superClazz,
+                this);
     }
 
     /** Return the real super class of this class.
