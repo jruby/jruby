@@ -157,7 +157,18 @@ public class Pack {
                 return runtime.newFixnum(decodeShortBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
-                int s = o == runtime.getNil() ? 0 : (int) (RubyNumeric.num2long(o) & 0xffff);
+                int s;
+                if (o == runtime.getNil()) {
+                    s = 0;
+                } else {
+                    long l = RubyNumeric.num2long(o);
+                    // MRI 1.8 behavior:
+                    if (l == Long.MIN_VALUE || Math.abs(l) > 0xffffffffL) {
+                        throw runtime.newRangeError(
+                                "bignum too big to convert into 'unsigned long'");
+                    }
+                    s = (int)(l & 0xffff);
+                }
                 encodeShortBigEndian(result, s);
             }};
         tmp = new Converter(2) {
@@ -218,8 +229,18 @@ public class Pack {
                 return runtime.newFixnum(decodeIntBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
-                int s = (o == runtime.getNil() ? 0 :
-                    (int) (RubyNumeric.num2long(o)));
+                int s;
+                if (o == runtime.getNil()) {
+                    s = 0;
+                } else {
+                    long l = RubyNumeric.num2long(o);
+                    // MRI 1.8 behavior:
+                    if (l == Long.MIN_VALUE || Math.abs(l) > 0xffffffffL) {
+                        throw runtime.newRangeError(
+                                "bignum too big to convert into 'unsigned long'");
+                    }
+                    s = (int)l;
+                }
                 encodeIntBigEndian(result, s);
             }
         };
