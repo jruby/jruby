@@ -126,6 +126,10 @@ module YAML
       def to_str
         YAML.dump(self)
       end
+
+      def to_s
+        YAML.dump(self)
+      end
     end
 
     class Scalar < Node

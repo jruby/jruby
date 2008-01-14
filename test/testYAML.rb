@@ -320,3 +320,32 @@ default: –
 YAML
 
 test_equal({"default" => ['a']}, val)
+
+if defined?(JRUBY_VERSION)
+  # JRUBY-1903
+  test_equal(<<YAML_OUT, YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","foobar",'').to_str)
+--- foobar
+YAML_OUT
+
+  test_equal(<<YAML_OUT, YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","foobar",'').to_s)
+--- foobar
+YAML_OUT
+
+  test_equal(<<YAML_OUT, YAML::JvYAML::Seq.new("tag:yaml.org,2002:seq",[YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","foobar",'')],'').to_str)
+--- [foobar]
+YAML_OUT
+
+  test_equal(<<YAML_OUT, YAML::JvYAML::Seq.new("tag:yaml.org,2002:seq",[YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","foobar",'')],'').to_s)
+--- [foobar]
+YAML_OUT
+
+  test_equal(<<YAML_OUT, YAML::JvYAML::Map.new("tag:yaml.org,2002:map",{YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","a",'') => YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","b",'')},'').to_str)
+--- {a: b}
+YAML_OUT
+
+  test_equal(<<YAML_OUT, YAML::JvYAML::Map.new("tag:yaml.org,2002:map",{YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","a",'') => YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","b",'')},'').to_s)
+--- {a: b}
+YAML_OUT
+end
+
+
