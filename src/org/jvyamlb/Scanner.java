@@ -37,6 +37,7 @@ import org.jvyamlb.tokens.Token;
 public interface Scanner {
     boolean checkToken(final Class[] choices);
     Token peekToken();
+    Token peekToken(int index);
     Token getToken();
     Iterator eachToken();
     Iterator iterator();

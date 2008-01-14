@@ -94,6 +94,57 @@ public class ParserImpl implements Parser {
     private final static int P_ALIAS = 44;
     private final static int P_EMPTY_SCALAR = 45;
 
+    private final static String[] productionNames = new String[46];
+
+    static {
+        productionNames[0]="P_STREAM";
+        productionNames[1]="P_STREAM_START";
+        productionNames[2]="P_STREAM_END";
+        productionNames[3]="P_IMPLICIT_DOCUMENT";
+        productionNames[4]="P_EXPLICIT_DOCUMENT";
+        productionNames[5]="P_DOCUMENT_START";
+        productionNames[6]="P_DOCUMENT_START_IMPLICIT";
+        productionNames[7]="P_DOCUMENT_END";
+        productionNames[8]="P_BLOCK_NODE";
+        productionNames[9]="P_BLOCK_CONTENT";
+        productionNames[10]="P_PROPERTIES";
+        productionNames[11]="P_PROPERTIES_END";
+        productionNames[12]="P_FLOW_CONTENT";
+        productionNames[13]="P_BLOCK_SEQUENCE";
+        productionNames[14]="P_BLOCK_MAPPING";
+        productionNames[15]="P_FLOW_SEQUENCE";
+        productionNames[16]="P_FLOW_MAPPING";
+        productionNames[17]="P_SCALAR";
+        productionNames[18]="P_BLOCK_SEQUENCE_ENTRY";
+        productionNames[19]="P_BLOCK_MAPPING_ENTRY";
+        productionNames[20]="P_BLOCK_MAPPING_ENTRY_VALUE";
+        productionNames[21]="P_BLOCK_NODE_OR_INDENTLESS_SEQUENCE";
+        productionNames[22]="P_BLOCK_SEQUENCE_START";
+        productionNames[23]="P_BLOCK_SEQUENCE_END";
+        productionNames[24]="P_BLOCK_MAPPING_START";
+        productionNames[25]="P_BLOCK_MAPPING_END";
+        productionNames[26]="P_INDENTLESS_BLOCK_SEQUENCE";
+        productionNames[27]="P_BLOCK_INDENTLESS_SEQUENCE_START";
+        productionNames[28]="P_INDENTLESS_BLOCK_SEQUENCE_ENTRY";
+        productionNames[29]="P_BLOCK_INDENTLESS_SEQUENCE_END";
+        productionNames[30]="P_FLOW_SEQUENCE_START";
+        productionNames[31]="P_FLOW_SEQUENCE_ENTRY";
+        productionNames[32]="P_FLOW_SEQUENCE_END";
+        productionNames[33]="P_FLOW_MAPPING_START";
+        productionNames[34]="P_FLOW_MAPPING_ENTRY";
+        productionNames[35]="P_FLOW_MAPPING_END";
+        productionNames[36]="P_FLOW_INTERNAL_MAPPING_START";
+        productionNames[37]="P_FLOW_INTERNAL_CONTENT";
+        productionNames[38]="P_FLOW_INTERNAL_VALUE";
+        productionNames[39]="P_FLOW_INTERNAL_MAPPING_END";
+        productionNames[40]="P_FLOW_ENTRY_MARKER";
+        productionNames[41]="P_FLOW_NODE";
+        productionNames[42]="P_FLOW_MAPPING_INTERNAL_CONTENT";
+        productionNames[43]="P_FLOW_MAPPING_INTERNAL_VALUE";
+        productionNames[44]="P_ALIAS";
+        productionNames[45]="P_EMPTY_SCALAR";
+    }
+
     private final static Event DOCUMENT_END_TRUE = new DocumentEndEvent(true);
     private final static Event DOCUMENT_END_FALSE = new DocumentEndEvent(false);
     private final static Event MAPPING_END = new MappingEndEvent();
@@ -371,6 +422,7 @@ public class ParserImpl implements Parser {
                         parseStack.push(P_EMPTY_SCALAR);
                     }
                 }
+
                 return null;
             }
             case P_BLOCK_MAPPING_ENTRY_VALUE: {
@@ -379,6 +431,10 @@ public class ParserImpl implements Parser {
                         scanner.getToken();
                         final Token curr = scanner.peekToken();
                         if(!(curr instanceof KeyToken || curr instanceof ValueToken || curr instanceof BlockEndToken)) {
+                            if(curr instanceof ScalarToken && scanner.peekToken(1) instanceof BlockEntryToken) {
+                                //                                System.err.println("warning, possibly invalid YAML, eating token: " + curr);
+                                scanner.getToken();
+                            }
                             parseStack.push(P_BLOCK_NODE_OR_INDENTLESS_SEQUENCE);
                         } else {
                             parseStack.push(P_EMPTY_SCALAR);

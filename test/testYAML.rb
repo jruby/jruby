@@ -311,3 +311,12 @@ YAML
 
 test_equal({"foo" => {"bar" => nil}}, val)
 
+# JRUBY-1756
+# This is almost certainly invalid YAML. but MRI handles it...
+val = YAML.load(<<YAML)
+---
+default: –
+- a
+YAML
+
+test_equal({"default" => ['a']}, val)

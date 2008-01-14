@@ -407,11 +407,15 @@ public class ScannerImpl implements Scanner {
         return false;
     }
 
-    public Token peekToken() {
-        while(needMoreTokens()) {
+    public Token peekToken(int index) {
+        while(needMoreTokens(index+1)) {
             fetchMoreTokens();
         }
-        return (Token)(this.tokens.isEmpty() ? null : this.tokens.get(0));
+        return (Token)(this.tokens.size() < (index+1) ? null : this.tokens.get(index));
+    }
+
+    public Token peekToken() {
+        return peekToken(0);
     }
 
     public Token getToken() {
@@ -446,12 +450,15 @@ public class ScannerImpl implements Scanner {
         return eachToken();
     }
 
-
     private boolean needMoreTokens() {
+        return needMoreTokens(1);
+    }
+
+    private boolean needMoreTokens(int size) {
         if(this.done) {
             return false;
         }
-        return this.tokens.isEmpty() || nextPossibleSimpleKey() == this.tokensTaken;
+        return this.tokens.size() < size || nextPossibleSimpleKey() == this.tokensTaken;
     }
 
     private boolean isEnding() {

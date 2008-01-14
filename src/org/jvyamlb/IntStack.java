@@ -48,6 +48,17 @@ public class IntStack {
         return index == -1;
     }
 
+    public int size() {
+        return index + 1;
+    }
+    
+    public int get(int ix) {
+        if(ix < 0 || ix > index) {
+            throw new IndexOutOfBoundsException("Index out of bounds: " + ix);
+        }
+        return values[ix];
+    }
+
     public int pop() {
         if(index == -1) {
             throw new IllegalStateException("Can't pop from an empty stack");
