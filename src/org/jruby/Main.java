@@ -169,9 +169,7 @@ public class Main {
             SimpleSampler.startSampleThread();
         }
         
-        if (config.isVerbose()) {
-            runtime.setVerbose(runtime.getTrue());
-        }
+        runtime.setVerbose(getVerbose(runtime, config.getVerbose()));
 
         if (in == null) {
             // no script to run, return success
@@ -239,8 +237,18 @@ public class Main {
         }
     }
 
+    private IRubyObject getVerbose(final Ruby runtime, final Boolean vb) {
+        if (vb == null) {
+            return runtime.getNil();
+        } else if(vb == Boolean.TRUE) {
+            return runtime.getTrue();
+        } else {
+            return runtime.getFalse();
+        }
+    }
+
     private void initializeRuntime(final Ruby runtime, RubyInstanceConfig commandline, String filename) {
-        runtime.setVerbose(runtime.newBoolean(commandline.isVerbose()));
+        runtime.setVerbose(getVerbose(runtime, config.getVerbose()));
         runtime.setDebug(runtime.newBoolean(commandline.isDebug()));
 
         //
@@ -252,8 +260,7 @@ public class Main {
 
         // storing via internal var for now, as setConstant will now fail
         // validation
-        runtime.getObject().setInternalVariable("$VERBOSE",
-                commandline.isVerbose() ? runtime.getTrue() : runtime.getNil());
+        runtime.getObject().setInternalVariable("$VERBOSE", getVerbose(runtime, commandline.getVerbose()));
         //
         //
 

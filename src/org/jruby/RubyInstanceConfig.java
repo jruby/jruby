@@ -106,7 +106,8 @@ public class RubyInstanceConfig {
     private boolean assumePrinting = false;
     private boolean processLineEnds = false;
     private boolean split = false;
-    private boolean verbose = false;
+    // This property is a Boolean, to allow three values, so it can match MRI's nil, false and true
+    private Boolean verbose = Boolean.FALSE;
     private boolean debug = false;
     private boolean showVersion = false;
     private boolean showCopyright = false;
@@ -247,7 +248,7 @@ public class RubyInstanceConfig {
                 .append("  -T[level]       turn on tainting checks\n")
                 .append("  -v              print version number, then turn on verbose mode\n")
                 .append("  -w              turn warnings on for your script\n")
-                //.append("  -W[level]       set warning level; 0=silence, 1=medium, 2=verbose (default)\n")
+                .append("  -W[level]       set warning level; 0=silence, 1=medium, 2=verbose (default)\n")
                 //.append("  -x[directory]   strip off text before #!ruby line and perhaps cd to directory\n")
                 .append("  -X[option]      enable extended option (omit option to list)\n")
                 .append("  --copyright     print the copyright\n")
@@ -578,7 +579,7 @@ public class RubyInstanceConfig {
                         break;
                     case 'd' :
                         debug = true;
-                        verbose = true;
+                        verbose = Boolean.TRUE;
                         break;
                     case 'e' :
                         inlineScript.append(grabValue(getArgumentError(" -e must be followed by an expression to evaluate")));
@@ -632,15 +633,43 @@ public class RubyInstanceConfig {
 //                    case 'T' :
 //                        break;
                     case 'v' :
-                        verbose = true;
+                        verbose = Boolean.TRUE;
                         setShowVersion(true);
                         break;
                     case 'w' :
-                        verbose = true;
+                        verbose = Boolean.TRUE;
                         break;
-                    // FIXME: -W flag not supported
-//                    case 'W' :
-//                        break;
+                    case 'W' :{
+                    String temp = grabOptionalValue();
+                    int value = 2;
+                    if(null != temp) {
+                        if(temp.equals("2")) {
+                            value = 2;
+                        } else if(temp.equals("1")) {
+                            value = 1;
+                        } else if(temp.equals("0")) {
+                            value = 0;
+                        } else {
+                            MainExitException mee = new MainExitException(1, getArgumentError(" -W must be followed by either 0, 1, 2 or nothing"));
+                            mee.setUsageError(true);
+                            throw mee;
+                        }
+                    }
+                    switch(value) {
+                    case 0:
+                        verbose = null;
+                        break;
+                    case 1:
+                        verbose = Boolean.FALSE;
+                        break;
+                    case 2:
+                        verbose = Boolean.TRUE;
+                        break;
+                    }
+
+
+                    break FOR;
+                }
                     // FIXME: -x flag not supported
 //                    case 'x' :
 //                        break;
@@ -687,7 +716,7 @@ public class RubyInstanceConfig {
                             break FOR;
                         } else if(argument.equals("--debug")) {
                             debug = true;
-                            verbose = true;
+                            verbose = Boolean.TRUE;
                             break;
                         } else if (argument.equals("--help")) {
                             shouldPrintUsage = true;
@@ -855,6 +884,10 @@ public class RubyInstanceConfig {
     }
 
     public boolean isVerbose() {
+        return verbose == Boolean.TRUE;
+    }
+
+    public Boolean getVerbose() {
         return verbose;
     }
 
