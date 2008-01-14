@@ -119,6 +119,7 @@ public class RubyInstanceConfig {
     private boolean yarvCompile = false;
     private KCode kcode = KCode.NONE;
     private String recordSeparator = "\n";
+    private boolean shouldCheckSyntax = false;
     
     public static final boolean FRAMELESS_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.frameless");
@@ -533,9 +534,9 @@ public class RubyInstanceConfig {
                     case 'b' :
                         benchmarking = true;
                         break;
-                    // FIXME: -c flag not supported
-//                    case 'c' :
-//                        break;
+                    case 'c' :
+                        shouldCheckSyntax = true;
+                        break;
                     // FIXME: -C flag not supported
 //                    case 'C' :
 //                        break;
@@ -835,6 +836,10 @@ public class RubyInstanceConfig {
 
     public boolean isShouldRunInterpreter() {
         return shouldRunInterpreter;
+    }
+
+    public boolean isShouldCheckSyntax() {
+        return shouldCheckSyntax;
     }
 
     public boolean isYARVEnabled() {

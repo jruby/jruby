@@ -221,11 +221,21 @@ public class Main {
     }
 
     private void runInterpreter(Ruby runtime, InputStream in, String filename) {
-        try {
-            initializeRuntime(runtime, config, filename);
-            runtime.runFromMain(in, filename);
-        } finally {
-            runtime.tearDown();
+        if(config.isShouldCheckSyntax()) {
+            try {
+                initializeRuntime(runtime, config, filename);
+                runtime.parseFromMain(in, filename);
+                System.out.println("Syntax OK");
+            } finally {
+                runtime.tearDown();
+            }
+        } else {
+            try {
+                initializeRuntime(runtime, config, filename);
+                runtime.runFromMain(in, filename);
+            } finally {
+                runtime.tearDown();
+            }
         }
     }
 

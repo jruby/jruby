@@ -475,6 +475,14 @@ public final class Ruby {
             }
         }
     }
+
+    public void parseFromMain(InputStream in, String filename) {
+        if (config.isInlineScript()) {
+            parseInline(in, filename, getCurrentContext().getCurrentScope());
+        } else {
+            parseFile(in, filename, getCurrentContext().getCurrentScope());
+        }
+    }
     
     public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split, boolean yarvCompile) {
         ThreadContext context = getCurrentContext();
