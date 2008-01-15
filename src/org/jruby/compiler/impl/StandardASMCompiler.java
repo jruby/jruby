@@ -1647,7 +1647,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.label(afterMethodBody);
                 mv.go_to(exitRescue);
                 
-                mv.trycatch(beforeBody, afterMethodBody, catchRetry, p(JumpException.RetryJump.class));
+                // retry handling in the rescue block
+                mv.trycatch(catchBlock, afterMethodBody, catchRetry, p(JumpException.RetryJump.class));
                 mv.label(catchRetry);
                 mv.pop();
                 mv.go_to(beforeBody);
