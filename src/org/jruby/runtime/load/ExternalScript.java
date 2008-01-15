@@ -45,10 +45,17 @@ public class ExternalScript implements Library {
     public void load(Ruby runtime, boolean wrap) {
         try {
             InputStream in = new BufferedInputStream(resource.getURL().openStream());
+
+            String name = resource.getName();
+            try {
+                name = java.net.URLDecoder.decode(name, "ISO-8859-1");
+            } catch(Exception ignored) {
+            }
+
             if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
-                runtime.compileAndLoadFile(resource.getName(), in, wrap);
+                runtime.compileAndLoadFile(name, in, wrap);
             } else {
-                runtime.loadFile(resource.getName(), in, wrap);
+                runtime.loadFile(name, in, wrap);
             }
             // FIXME: This should be in finally
             in.close();
