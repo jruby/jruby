@@ -1,0 +1,1 @@
+File.expand_path expands ~ENV['USER'] to the user's home directory

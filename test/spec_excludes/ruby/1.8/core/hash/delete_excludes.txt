@@ -1,1 +1,0 @@
-Hash#delete removes the first entry (#keys order) whose key is == key and return the deleted value

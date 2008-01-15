@@ -1,0 +1,5 @@
+IO#dup returns a new IO instance
+IO#dup sets a new descriptor on the returned object
+IO#dup shares the original stream between the two IOs
+IO#dup allows closing the new IO without affecting the original
+IO#dup allows closing the original IO without affecting the new one

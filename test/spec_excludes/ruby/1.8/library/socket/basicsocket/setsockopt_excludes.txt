@@ -1,0 +1,1 @@
+BasicSocket#setsockopt sets the socket linger to 0

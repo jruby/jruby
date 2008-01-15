@@ -1,1 +1,0 @@
-Comparable#== returns nil if calling #<=> on self raises a StandardError

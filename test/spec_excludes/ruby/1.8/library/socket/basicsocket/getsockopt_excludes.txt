@@ -1,0 +1,3 @@
+BasicSocket#getsockopt identifies the SOCK_STREAM socket type
+BasicSocket#getsockopt identifies the SOCK_DGRAM socket type
+BasicSocket#getsockopt identifies the socket error

@@ -1,0 +1,4 @@
+Socket#unpack_sockaddr_in decodes the port number of a packed sockaddr_in
+Socket#unpack_sockaddr_in decodes the host name of a packed sockaddr_in
+Socket#unpack_sockaddr_in raises an Argument error when the sin_family is not AF_INET
+Socket#unpack_sockaddr_in decodes an empty hostname of a packed sockaddr_in to 0.0.0.0
