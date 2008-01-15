@@ -162,10 +162,21 @@ public class RubyTime extends RubyObject {
         this.dt = dt;
     }
     
+    // We assume that these two time instances
+    // occurred at the same time.
+    private static final long BASE_TIME_MILLIS = System.currentTimeMillis();
+    private static final long BASE_TIME_NANOS = System.nanoTime();
+    
     private static ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            DateTime dt = new DateTime(getLocalTimeZone(runtime));
-            return new RubyTime(runtime, klass, dt);
+            long nanosPassed = System.nanoTime() - BASE_TIME_NANOS;
+            long millisTime = BASE_TIME_MILLIS + nanosPassed / 1000000;
+            long usecs = nanosPassed % 1000;
+            DateTimeZone dtz = getLocalTimeZone(runtime);
+            DateTime dt = new DateTime(millisTime, dtz);
+            RubyTime rt =  new RubyTime(runtime, klass, dt);
+            rt.setUSec(usecs);
+            return rt;
         }
     };
     
@@ -202,6 +213,12 @@ public class RubyTime extends RubyObject {
     
     public static RubyTime newTime(Ruby runtime, DateTime dt) {
         return new RubyTime(runtime, runtime.getTime(), dt);
+    }
+    
+    public static RubyTime newTime(Ruby runtime, DateTime dt, long usec) {
+        RubyTime t = new RubyTime(runtime, runtime.getTime(), dt);
+        t.setUSec(usec);
+        return t;
     }
 
     @JRubyMethod(name = "initialize_copy", required = 1)
@@ -243,12 +260,12 @@ public class RubyTime extends RubyObject {
     
     @JRubyMethod(name = {"getgm", "getutc"})
     public RubyTime getgm() {
-        return newTime(getRuntime(), dt.withZone(DateTimeZone.UTC));
+        return newTime(getRuntime(), dt.withZone(DateTimeZone.UTC), getUSec());
     }
 
     @JRubyMethod(name = "getlocal")
     public RubyTime getlocal() {
-        return newTime(getRuntime(), dt.withZone(getLocalTimeZone(getRuntime())));
+        return newTime(getRuntime(), dt.withZone(getLocalTimeZone(getRuntime())), getUSec());
     }
 
     @JRubyMethod(name = "strftime", required = 1)

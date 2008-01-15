@@ -59,6 +59,12 @@ utc = local2.getutc
 test_equal(local, local2)
 test_equal(gmt, utc)
 
+# time with usecs (JRUBY-1971)
+local = Time.local(2008, 12, 30, 5, 30, 0, 100)
+gmt = local.getgm
+local2 = gmt.getlocal
+test_equal(local, local2)
+
 test_exception { Time::utc(nil,nil,nil,nil,nil,nil,0) }
 
 # Sat Jan  1 14:58:42 2000
