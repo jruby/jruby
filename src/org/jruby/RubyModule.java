@@ -1733,7 +1733,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "class_variable_defined?", required = 1)
     public IRubyObject class_variable_defined_p(IRubyObject var) {
-        String internedName = validateClassVariable(var.asJavaString());
+        String internedName = validateClassVariable(var.asJavaString().intern());
         RubyModule module = this;
         do {
             if (module.fastHasClassVariable(internedName)) {
