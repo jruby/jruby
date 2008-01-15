@@ -110,10 +110,20 @@ public class RubyBigDecimal extends RubyNumeric {
         return recv.getRuntime().newString("1.0.1");
     }
 
+    @JRubyMethod(name = "_dump", optional = 1, frame = true)
+    public IRubyObject dump(IRubyObject[] args, Block unusedBlock) {
+        RubyString precision = RubyString.newUnicodeString(args[0].getRuntime(), "0:");
+        RubyString str = this.asString();
+        return precision.append(str);
+    }
+        
     @JRubyMethod(name = "_load", required = 1, frame = true, meta = true)
-    public static IRubyObject _load(IRubyObject recv, IRubyObject p1, Block block) {
-        // TODO: implement
-        return recv.getRuntime().getNil();
+    public static RubyBigDecimal load(IRubyObject recv, IRubyObject from, Block block) {
+        RubyBigDecimal rubyBigDecimal = (RubyBigDecimal) (((RubyClass)recv).allocate());
+        String precisionAndValue = from.convertToString().asJavaString();
+        String value = precisionAndValue.substring(precisionAndValue.indexOf(":")+1);
+        rubyBigDecimal.value = new BigDecimal(value);
+        return rubyBigDecimal;
     }
 
     @JRubyMethod(name = "double_fig", meta = true)

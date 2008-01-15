@@ -205,5 +205,12 @@ class TestBigDecimal < Test::Unit::TestCase
     
     assert_raises(TypeError) { BigDecimal.mode(BigDecimal::ROUND_MODE, true) } # second argument must be a Fixnum
     assert_raises(TypeError) { BigDecimal.mode(BigDecimal::ROUND_MODE, 7) } # any Fixnum >= 7 should trigger this error, as the valid rounding modes are currently [0..6]
-  end    
+  end
+    
+  def test_marshaling
+    f = 123.456
+    bd = BigDecimal.new(f.to_s)
+    bd_serialized = Marshal.dump(bd)
+    assert_equal f, Marshal.restore(bd_serialized).to_f
+  end
 end
