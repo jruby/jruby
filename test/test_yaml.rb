@@ -1221,8 +1221,7 @@ EOY
         require 'yaml'
         t = Time.now
         5.times do
-	# TODO: commented out until JRUBY-1972 is fixed.
-        #    assert_cycle(t)
+        assert_cycle(t)
         end
     end
 

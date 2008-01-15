@@ -211,12 +211,15 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public static Object constructYamlTimestamp(final Constructor ctor, final Node node) {
-        DateTime dt = (DateTime)SafeConstructorImpl.constructYamlTimestamp(ctor,node);
-        return org.jruby.RubyTime.newTime(((JRubyConstructor)ctor).runtime,dt);
+        Object[] value = (Object[])SafeConstructorImpl.constructYamlTimestamp(ctor,node);
+        DateTime dt = (DateTime)(value[0]);
+        org.jruby.RubyTime rt = org.jruby.RubyTime.newTime(((JRubyConstructor)ctor).runtime,dt);
+        rt.setUSec(((Integer)value[1]));
+        return rt;
     }
 
     public static Object constructYamlTimestampYMD(final Constructor ctor, final Node node) {
-        DateTime dt = (DateTime)SafeConstructorImpl.constructYamlTimestamp(ctor,node);
+        DateTime dt = (DateTime)(((Object[])SafeConstructorImpl.constructYamlTimestamp(ctor,node))[0]);
         Ruby runtime = ((JRubyConstructor)ctor).runtime;
         return runtime.fastGetClass("Date").callMethod(runtime.getCurrentContext(),"new",new IRubyObject[]{runtime.newFixnum(dt.getYear()),runtime.newFixnum(dt.getMonthOfYear()),runtime.newFixnum(dt.getDayOfMonth())});
     }

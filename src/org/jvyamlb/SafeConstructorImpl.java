@@ -181,11 +181,11 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
             if(day_s != null) {
                 dt = dt.withDayOfMonth(Integer.parseInt(day_s));
             }
-            return dt;
+            return new Object[]{dt};
         }
         match = TIMESTAMP_REGEXP.matcher(node.getValue().toString());
         if(!match.matches()) {
-            return ctor.constructPrivateType(node);
+            return new Object[]{ctor.constructPrivateType(node)};
         }
         final String year_s = match.group(1);
         final String month_s = match.group(2);
@@ -197,7 +197,7 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
         final String utc = match.group(8);
         final String timezoneh_s = match.group(9);
         final String timezonem_s = match.group(10);
-        
+
         int usec = 0;
         if(fract_s != null) {
             usec = Integer.parseInt(fract_s);
@@ -245,7 +245,8 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
             dt = dt.withSecondOfMinute(Integer.parseInt(sec_s));
         }
         dt = dt.withMillisOfSecond(usec/1000);
-        return dt;
+
+        return new Object[]{dt, new Integer(usec%1000)};
     }
 
     public static Object constructYamlInt(final Constructor ctor, final Node node) {
@@ -453,12 +454,12 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
             });
         addConstructor("tag:yaml.org,2002:timestamp",new YamlConstructor() {
                 public Object call(final Constructor self, final Node node) {
-                    return constructYamlTimestamp(self,node);
+                    return ((Object[])constructYamlTimestamp(self,node))[0];
                 }
             });
         addConstructor("tag:yaml.org,2002:timestamp#ymd",new YamlConstructor() {
                 public Object call(final Constructor self, final Node node) {
-                    return constructYamlTimestamp(self,node);
+                    return ((Object[])constructYamlTimestamp(self,node))[0];
                 }
             });
         addConstructor("tag:yaml.org,2002:str",new YamlConstructor() {
