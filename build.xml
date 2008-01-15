@@ -757,6 +757,7 @@
       
       <arg value="bin/ci"/>
       <arg value="-t"/><arg value="${basedir}/bin/jruby"/>
+      <arg line="-T -J-ea"/>
       <arg value="-f"/><arg value="m"/>
       <arg value="-E"/><arg value="${basedir}/test/spec_excludes"/>
       <arg value="spec/ruby/1.8"/>
