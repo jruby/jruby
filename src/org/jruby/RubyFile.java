@@ -395,8 +395,9 @@ public class RubyFile extends RubyIO {
             }
         }
 
-        getRuntime().checkSafeString(args[0]);
-        path = args[0].toString();
+        IRubyObject filename = args[0].convertToString();
+        getRuntime().checkSafeString(filename);
+        path = filename.toString();
         modes = args.length > 1 ? getModes(getRuntime(), args[1]) : new IOModes(getRuntime(), IOModes.RDONLY);
 
         // One of the few places where handler may be null.
