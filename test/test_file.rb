@@ -204,10 +204,10 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_file_exist_in_jar_file
-    assert(File.exist?("file:" + File.expand_path("test/test_jar.jar") + "!/abc/foo.rb"))
-    assert(File.exist?("file:" + File.expand_path("test/test_jar.jar") + "!/inside_jar.rb"))
-    assert(!File.exist?("file:" + File.expand_path("test/test_jar.jar") + "!/inside_jar2.rb"))
-    assert(!File.exist?("file:" + File.expand_path("test/test_jar.jar") + "!/"))
+    assert(File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/abc/foo.rb"))
+    assert(File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/inside_jar.rb"))
+    assert(!File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/inside_jar2.rb"))
+    assert(!File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/"))
   end
 
   def test_file_read_in_jar_file
