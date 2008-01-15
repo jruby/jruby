@@ -1,3 +1,2 @@
-BasicSocket#getsockopt identifies the SOCK_STREAM socket type
-BasicSocket#getsockopt identifies the SOCK_DGRAM socket type
-BasicSocket#getsockopt identifies the socket error
+BasicSocket#getsockopt gets a socket option
+BasicSocket#getsockopt raises a SystemCallError with an invalid socket option

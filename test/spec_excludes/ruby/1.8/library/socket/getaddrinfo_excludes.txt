@@ -1,0 +1,1 @@
+Socket#getaddrinfo gets the address information
