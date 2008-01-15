@@ -1,0 +1,2 @@
+Socket#getservbyname identifies service ports 
+Socket#getservbyname raises a SocketError when the service or port is invalid
