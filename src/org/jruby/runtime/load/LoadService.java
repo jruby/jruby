@@ -54,7 +54,6 @@ import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.BuiltinScript;
 import org.jruby.util.JRubyFile;
 
 /**
@@ -117,17 +116,15 @@ import org.jruby.util.JRubyFile;
  * @author jpetersen
  */
 public class LoadService {
-    protected static final String JRUBY_BUILTIN_SUFFIX = ".rb";
-
     protected static final String[] sourceSuffixes = { ".class", ".rb" };
     protected static final String[] extensionSuffixes = { ".so", ".jar" };
     protected static final String[] allSuffixes = { ".class", ".rb", ".so", ".jar" };
     protected static final Pattern sourcePattern = Pattern.compile("\\.(?:rb)$");
     protected static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|dll|jar)$");
 
-    protected final RubyArray loadPath;
-    protected final RubyArray loadedFeatures;
-    protected final List loadedFeaturesInternal;
+    protected RubyArray loadPath;
+    protected RubyArray loadedFeatures;
+    protected List loadedFeaturesInternal;
 //    protected final Set firstLineLoadedFeatures = Collections.synchronizedSet(new HashSet());
     protected final Map<String, Library> builtinLibraries = new HashMap<String, Library>();
 
@@ -139,12 +136,13 @@ public class LoadService {
     
     public LoadService(Ruby runtime) {
         this.runtime = runtime;
-        loadPath = RubyArray.newArray(runtime);
-        loadedFeatures = RubyArray.newArray(runtime);
-        loadedFeaturesInternal = Collections.synchronizedList(loadedFeatures);
     }
 
     public void init(List additionalDirectories) {
+        loadPath = RubyArray.newArray(runtime);
+        loadedFeatures = RubyArray.newArray(runtime);
+        loadedFeaturesInternal = Collections.synchronizedList(loadedFeatures);
+        
         // add all startup load paths to the list first
         for (Iterator iter = additionalDirectories.iterator(); iter.hasNext();) {
             addPath((String) iter.next());
@@ -375,12 +373,8 @@ e.printStackTrace();
         autoloadMap.put(name, loadMethod);
     }
 
-    public void registerBuiltin(String name, Library library) {
+    public void addBuiltinLibrary(String name, Library library) {
         builtinLibraries.put(name, library);
-    }
-
-    public void registerRubyBuiltin(String libraryName) {
-        registerBuiltin(libraryName + JRUBY_BUILTIN_SUFFIX, new BuiltinScript(libraryName));
     }
 
     private Library findLibrary(String file, boolean checkCWD) {

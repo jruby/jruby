@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.load.LoadService;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
@@ -147,18 +146,6 @@ public class RubyInstanceConfig {
 
     public int characterIndex = 0;
     
-    public static interface LoadServiceCreator {
-        LoadService create(Ruby runtime);
-
-        LoadServiceCreator DEFAULT = new LoadServiceCreator() {
-            public LoadService create(Ruby runtime) {
-                return new LoadService(runtime);
-            }
-        };
-    }
-
-    private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
-
     public RubyInstanceConfig() {
         if (Ruby.isSecurityRestricted())
             currentDirectory = "/";
@@ -352,18 +339,6 @@ public class RubyInstanceConfig {
         new ArgumentProcessor(arguments).processArguments();
     }
 
-    public LoadServiceCreator getLoadServiceCreator() {
-        return creator;
-    }
-
-    public void setLoadServiceCreator(LoadServiceCreator creator) {
-        this.creator = creator;
-    }
-
-    public LoadService createLoadService(Ruby runtime) {
-        return this.creator.create(runtime);
-    }
-
     public CompileMode getCompileMode() {
         return compileMode;
     }
@@ -527,19 +502,19 @@ public class RubyInstanceConfig {
             String argument = arguments[argumentIndex];
             FOR : for (characterIndex = 1; characterIndex < argument.length(); characterIndex++) {
                 switch (argument.charAt(characterIndex)) {
-                case '0' :{
+                case '0': {
                     String temp = grabOptionalValue();
-                    if(null == temp) {
+                    if (null == temp) {
                         recordSeparator = "\u0000";
-                    } else if(temp.equals("0")) {
+                    } else if (temp.equals("0")) {
                         recordSeparator = "\n\n";
-                    } else if(temp.equals("777")) {
+                    } else if (temp.equals("777")) {
                         recordSeparator = "\uFFFF"; // Specify something that can't separate
                     } else {
                         try {
                             int val = Integer.parseInt(temp, 8);
-                            recordSeparator = "" + (char)val;
-                        } catch(Exception e) {
+                            recordSeparator = "" + (char) val;
+                        } catch (Exception e) {
                             MainExitException mee = new MainExitException(1, getArgumentError(" -0 must be followed by either 0, 777, or a valid octal value"));
                             mee.setUsageError(true);
                             throw mee;
@@ -547,107 +522,107 @@ public class RubyInstanceConfig {
                     }
                     break FOR;
                 }
-                    case 'a' :
-                        split = true;
-                        break;
-                    case 'b' :
-                        benchmarking = true;
-                        break;
-                    case 'c' :
-                        shouldCheckSyntax = true;
-                        break;
-                case 'C' :
+                case 'a':
+                    split = true;
+                    break;
+                case 'b':
+                    benchmarking = true;
+                    break;
+                case 'c':
+                    shouldCheckSyntax = true;
+                    break;
+                case 'C':
                     try {
                         String saved = grabValue(getArgumentError(" -C must be followed by a directory expression"));
                         File base = new File(currentDirectory);
                         File newDir = new File(saved);
-                        if(newDir.isAbsolute()) {
+                        if (newDir.isAbsolute()) {
                             currentDirectory = newDir.getCanonicalPath();
                         } else {
                             currentDirectory = new File(base, newDir.getPath()).getCanonicalPath();
                         }
-                        if(!(new File(currentDirectory).isDirectory())) {
+                        if (!(new File(currentDirectory).isDirectory())) {
                             MainExitException mee = new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
                             mee.setUsageError(true);
                             throw mee;
                         }
-                    } catch(IOException e) {
+                    } catch (IOException e) {
                         MainExitException mee = new MainExitException(1, getArgumentError(" -C must be followed by a valid directory"));
                         mee.setUsageError(true);
                         throw mee;
                     }
-                        break;
-                    case 'd' :
-                        debug = true;
-                        verbose = Boolean.TRUE;
-                        break;
-                    case 'e' :
-                        inlineScript.append(grabValue(getArgumentError(" -e must be followed by an expression to evaluate")));
-                        inlineScript.append('\n');
-                        hasInlineScript = true;
-                        break FOR;
-                    case 'F' :
-                        inputFieldSeparator = grabValue(getArgumentError(" -F must be followed by a pattern for input field separation"));
-                        break;
-                    case 'h' :
-                        shouldPrintUsage = true;
-                        shouldRunInterpreter = false;
-                        break;
-                    // FIXME: -i flag not supported
+                    break;
+                case 'd':
+                    debug = true;
+                    verbose = Boolean.TRUE;
+                    break;
+                case 'e':
+                    inlineScript.append(grabValue(getArgumentError(" -e must be followed by an expression to evaluate")));
+                    inlineScript.append('\n');
+                    hasInlineScript = true;
+                    break FOR;
+                case 'F':
+                    inputFieldSeparator = grabValue(getArgumentError(" -F must be followed by a pattern for input field separation"));
+                    break;
+                case 'h':
+                    shouldPrintUsage = true;
+                    shouldRunInterpreter = false;
+                    break;
+                // FIXME: -i flag not supported
 //                    case 'i' :
 //                        break;
-                    case 'I' :
-                        String s = grabValue(getArgumentError("-I must be followed by a directory name to add to lib path"));
-                        String[] ls = s.split(java.io.File.pathSeparator);
-                        for(int i=0;i<ls.length;i++) {
-                            loadPaths.add(ls[i]);
-                        }
-                        break FOR;
-                    case 'K':
-                        // FIXME: No argument seems to work for -K in MRI plus this should not
-                        // siphon off additional args 'jruby -K ~/scripts/foo'.  Also better error
-                        // processing.
-                        String eArg = grabValue(getArgumentError("provide a value for -K"));
-                        kcode = KCode.create(null, eArg);
-                        break;
-                    case 'l' :
-                        processLineEnds = true;
-                        break;
-                    case 'n' :
-                        assumeLoop = true;
-                        break;
-                    case 'p' :
-                        assumePrinting = true;
-                        assumeLoop = true;
-                        break;
-                    case 'r' :
-                        requiredLibraries.add(grabValue(getArgumentError("-r must be followed by a package to require")));
-                        break FOR;
-                    // FIXME: -s flag not supported
+                case 'I':
+                    String s = grabValue(getArgumentError("-I must be followed by a directory name to add to lib path"));
+                    String[] ls = s.split(java.io.File.pathSeparator);
+                    for (int i = 0; i < ls.length; i++) {
+                        loadPaths.add(ls[i]);
+                    }
+                    break FOR;
+                case 'K':
+                    // FIXME: No argument seems to work for -K in MRI plus this should not
+                    // siphon off additional args 'jruby -K ~/scripts/foo'.  Also better error
+                    // processing.
+                    String eArg = grabValue(getArgumentError("provide a value for -K"));
+                    kcode = KCode.create(null, eArg);
+                    break;
+                case 'l':
+                    processLineEnds = true;
+                    break;
+                case 'n':
+                    assumeLoop = true;
+                    break;
+                case 'p':
+                    assumePrinting = true;
+                    assumeLoop = true;
+                    break;
+                case 'r':
+                    requiredLibraries.add(grabValue(getArgumentError("-r must be followed by a package to require")));
+                    break FOR;
+                // FIXME: -s flag not supported
 //                    case 's' :
 //                        break;
-                    case 'S':
-                        runBinScript();
-                        break FOR;
-                    // FIXME: -T flag not supported
+                case 'S':
+                    runBinScript();
+                    break FOR;
+                // FIXME: -T flag not supported
 //                    case 'T' :
 //                        break;
-                    case 'v' :
-                        verbose = Boolean.TRUE;
-                        setShowVersion(true);
-                        break;
-                    case 'w' :
-                        verbose = Boolean.TRUE;
-                        break;
-                    case 'W' :{
+                case 'v':
+                    verbose = Boolean.TRUE;
+                    setShowVersion(true);
+                    break;
+                case 'w':
+                    verbose = Boolean.TRUE;
+                    break;
+                case 'W': {
                     String temp = grabOptionalValue();
                     int value = 2;
-                    if(null != temp) {
-                        if(temp.equals("2")) {
+                    if (null != temp) {
+                        if (temp.equals("2")) {
                             value = 2;
-                        } else if(temp.equals("1")) {
+                        } else if (temp.equals("1")) {
                             value = 1;
-                        } else if(temp.equals("0")) {
+                        } else if (temp.equals("0")) {
                             value = 0;
                         } else {
                             MainExitException mee = new MainExitException(1, getArgumentError(" -W must be followed by either 0, 1, 2 or nothing"));
@@ -655,7 +630,7 @@ public class RubyInstanceConfig {
                             throw mee;
                         }
                     }
-                    switch(value) {
+                    switch (value) {
                     case 0:
                         verbose = null;
                         break;
@@ -670,75 +645,75 @@ public class RubyInstanceConfig {
 
                     break FOR;
                 }
-                    // FIXME: -x flag not supported
+                // FIXME: -x flag not supported
 //                    case 'x' :
 //                        break;
-                    case 'X':
-                        String extendedOption = grabValue("jruby: missing extended option, listing available options\n" + getExtendedHelp());
-                        
-                        if (extendedOption.equals("-O")) {
-                            objectSpaceEnabled = false;
-                        } else if (extendedOption.equals("+O")) {
-                            objectSpaceEnabled = true;
-                        } else if (extendedOption.equals("-C")) {
-                            compileMode = CompileMode.OFF;
-                        } else if (extendedOption.equals("+C")) {
-                            compileMode = CompileMode.FORCE;
-                        } else if (extendedOption.equals("y")) {
-                            yarv = true;
-                        } else if (extendedOption.equals("Y")) {
-                            yarvCompile = true;
-                        } else if (extendedOption.equals("R")) {
-                            rubinius = true;
-                        } else {
-                            MainExitException mee =
-                                    new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
-                            mee.setUsageError(true);
+                case 'X':
+                    String extendedOption = grabValue("jruby: missing extended option, listing available options\n" + getExtendedHelp());
 
-                            throw mee;
+                    if (extendedOption.equals("-O")) {
+                        objectSpaceEnabled = false;
+                    } else if (extendedOption.equals("+O")) {
+                        objectSpaceEnabled = true;
+                    } else if (extendedOption.equals("-C")) {
+                        compileMode = CompileMode.OFF;
+                    } else if (extendedOption.equals("+C")) {
+                        compileMode = CompileMode.FORCE;
+                    } else if (extendedOption.equals("y")) {
+                        yarv = true;
+                    } else if (extendedOption.equals("Y")) {
+                        yarvCompile = true;
+                    } else if (extendedOption.equals("R")) {
+                        rubinius = true;
+                    } else {
+                        MainExitException mee =
+                                new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
+                        mee.setUsageError(true);
+
+                        throw mee;
+                    }
+                    break FOR;
+                case '-':
+                    if (argument.equals("--command") || argument.equals("--bin")) {
+                        characterIndex = argument.length();
+                        runBinScript();
+                        break;
+                    } else if (argument.equals("--compat")) {
+                        characterIndex = argument.length();
+                        compatVersion = CompatVersion.getVersionFromString(grabValue(getArgumentError("--compat must be RUBY1_8 or RUBY1_9")));
+                        if (compatVersion == null) {
+                            compatVersion = CompatVersion.RUBY1_8;
                         }
                         break FOR;
-                    case '-' :
-                        if (argument.equals("--command") || argument.equals("--bin")) {
-                            characterIndex = argument.length();
-                            runBinScript();
+                    } else if (argument.equals("--copyright")) {
+                        setShowCopyright(true);
+                        shouldRunInterpreter = false;
+                        break FOR;
+                    } else if (argument.equals("--debug")) {
+                        debug = true;
+                        verbose = Boolean.TRUE;
+                        break;
+                    } else if (argument.equals("--help")) {
+                        shouldPrintUsage = true;
+                        shouldRunInterpreter = false;
+                        break;
+                    } else if (argument.equals("--properties")) {
+                        shouldPrintProperties = true;
+                        shouldRunInterpreter = false;
+                        break;
+                    } else if (argument.equals("--version")) {
+                        setShowVersion(true);
+                        break FOR;
+                    } else {
+                        if (argument.equals("--")) {
+                            // ruby interpreter compatibilty 
+                            // Usage: ruby [switches] [--] [programfile] [arguments])
+                            endOfArguments = true;
                             break;
-                        } else if (argument.equals("--compat")) {
-                            characterIndex = argument.length();
-                            compatVersion = CompatVersion.getVersionFromString(grabValue(getArgumentError("--compat must be RUBY1_8 or RUBY1_9")));
-                            if (compatVersion == null) {
-                                compatVersion = CompatVersion.RUBY1_8;
-                            }
-                            break FOR;
-                        } else if (argument.equals("--copyright")) {
-                            setShowCopyright(true);
-                            shouldRunInterpreter = false;
-                            break FOR;
-                        } else if(argument.equals("--debug")) {
-                            debug = true;
-                            verbose = Boolean.TRUE;
-                            break;
-                        } else if (argument.equals("--help")) {
-                            shouldPrintUsage = true;
-                            shouldRunInterpreter = false;
-                            break;
-                        } else if (argument.equals("--properties")) {
-                            shouldPrintProperties = true;
-                            shouldRunInterpreter = false;
-                            break;
-                        } else if (argument.equals("--version")) {
-                            setShowVersion(true);
-                            break FOR;
-                        } else {
-                            if (argument.equals("--")) {
-                                // ruby interpreter compatibilty 
-                                // Usage: ruby [switches] [--] [programfile] [arguments])
-                                endOfArguments = true;
-                                break;
-                            }
                         }
-                    default :
-                        throw new MainExitException(1, "jruby: unknown option " + argument);
+                    }
+                default:
+                    throw new MainExitException(1, "jruby: unknown option " + argument);
                 }
             }
         }

@@ -43,7 +43,7 @@ public class LateLoadingLibrary implements Library {
         this.classLoader = classLoader;
     }
     
-    public void load(Ruby runtime, boolean wrap) throws IOException {
+    public synchronized void load(Ruby runtime, boolean wrap) throws IOException {
         try {
             if (classLoader == null && Ruby.isSecurityRestricted()) {
                 classLoader = runtime.getInstanceConfig().getLoader();

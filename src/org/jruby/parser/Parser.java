@@ -170,7 +170,7 @@ public class Parser {
             LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
             result = parser.parse(configuration, lexerSource);
             if (result.getEndOffset() >= 0) {
-                org.jruby.runtime.builtin.IRubyObject verbose = runtime.getVerbose();
+                IRubyObject verbose = runtime.getVerbose();
                 runtime.setVerbose(runtime.getNil());
             	runtime.defineGlobalConstant("DATA", new RubyFile(runtime, file, content));
                 runtime.setVerbose(verbose);

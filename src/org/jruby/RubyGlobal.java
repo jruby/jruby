@@ -98,7 +98,21 @@ public class RubyGlobal {
     }
     
     public static void createGlobals(Ruby runtime) {
-
+        runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.newBinding());
+        
+        runtime.defineGlobalConstant("TRUE", runtime.getTrue());
+        runtime.defineGlobalConstant("FALSE", runtime.getFalse());
+        runtime.defineGlobalConstant("NIL", runtime.getNil());
+        
+        // define ARGV and $* for this runtime
+        RubyArray argvArray = runtime.newArray();
+        String[] argv = runtime.getInstanceConfig().getArgv();
+        for (int i = 0; i < argv.length; i++) {
+            argvArray.add(runtime.newString(argv[i]));
+        }
+        runtime.defineGlobalConstant("ARGV", argvArray);
+        runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argvArray));
+        
         // Version information:
         IRubyObject version = runtime.newString(Constants.RUBY_VERSION).freeze();
         IRubyObject release = runtime.newString(Constants.COMPILE_DATE).freeze();
@@ -139,6 +153,21 @@ public class RubyGlobal {
         } else {
             runtime.defineVariable(new GlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), 0)));
         }
+        
+        Boolean verbose = runtime.getInstanceConfig().getVerbose();
+        IRubyObject verboseValue = null;
+        if (verbose == null) {
+            verboseValue = runtime.getNil();
+        } else if(verbose == Boolean.TRUE) {
+            verboseValue = runtime.getTrue();
+        } else {
+            verboseValue = runtime.getFalse();
+        }
+        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$VERBOSE", verboseValue));
+        
+        IRubyObject debug = runtime.newBoolean(runtime.getInstanceConfig().isDebug());
+        runtime.defineVariable(new DebugGlobalVariable(runtime, "$DEBUG", debug));
+        runtime.defineVariable(new DebugGlobalVariable(runtime, "$-d", debug));
 
         runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"));
 
@@ -185,6 +214,15 @@ public class RubyGlobal {
         if (runtime.getGlobalVariables().get("$*").isNil()) {
             runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(runtime.newArray()));
         }
+        
+        runtime.getGlobalVariables().defineReadonly("$-p", 
+                new ValueAccessor(runtime.getInstanceConfig().isAssumePrinting() ? runtime.getTrue() : runtime.getNil()));
+        runtime.getGlobalVariables().defineReadonly("$-n", 
+                new ValueAccessor(runtime.getInstanceConfig().isAssumeLoop() ? runtime.getTrue() : runtime.getNil()));
+        runtime.getGlobalVariables().defineReadonly("$-a", 
+                new ValueAccessor(runtime.getInstanceConfig().isSplit() ? runtime.getTrue() : runtime.getNil()));
+        runtime.getGlobalVariables().defineReadonly("$-l", 
+                new ValueAccessor(runtime.getInstanceConfig().isProcessLineEnds() ? runtime.getTrue() : runtime.getNil()));
 
         // ARGF, $< object
         new RubyArgsFile(runtime).initArgsFile();
@@ -385,6 +423,48 @@ public class RubyGlobal {
             runtime.setSafeLevel(level);
             // thread.setSafeLevel(level);
             return value;
+        }
+    }
+
+    private static class VerboseGlobalVariable extends GlobalVariable {
+        public VerboseGlobalVariable(Ruby runtime, String name, IRubyObject initialValue) {
+            super(runtime, name, initialValue);
+            set(initialValue);
+        }
+        
+        public IRubyObject get() {
+            return runtime.getVerbose();
+        }
+
+        public IRubyObject set(IRubyObject newValue) {
+            if (newValue.isNil()) {
+                runtime.setVerbose(newValue);
+            } else {
+                runtime.setVerbose(runtime.newBoolean(newValue.isTrue()));
+            }
+
+            return newValue;
+        }
+    }
+
+    private static class DebugGlobalVariable extends GlobalVariable {
+        public DebugGlobalVariable(Ruby runtime, String name, IRubyObject initialValue) {
+            super(runtime, name, initialValue);
+            set(initialValue);
+        }
+
+        public IRubyObject get() {
+            return runtime.getDebug();
+        }
+
+        public IRubyObject set(IRubyObject newValue) {
+            if (newValue.isNil()) {
+                runtime.setDebug(newValue);
+            } else {
+                runtime.setDebug(runtime.newBoolean(newValue.isTrue()));
+            }
+
+            return newValue;
         }
     }
 

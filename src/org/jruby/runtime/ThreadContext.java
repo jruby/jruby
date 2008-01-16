@@ -733,16 +733,16 @@ public final class ThreadContext {
         popFrame();
     }
     
-    public void preInitCoreClasses() {
+    public void prepareTopLevel(RubyClass objectClass, IRubyObject topSelf) {
         pushFrame();
         setCurrentVisibility(Visibility.PRIVATE);
-    }
-    
-    public void preInitBuiltinClasses(RubyClass objectClass, IRubyObject topSelf) {
+        
         pushRubyClass(objectClass);
         
         Frame frame = getCurrentFrame();
         frame.setSelf(topSelf);
+        
+        getCurrentScope().getStaticScope().setModule(objectClass);
     }
     
     public void preNodeEval(RubyModule rubyClass, IRubyObject self) {

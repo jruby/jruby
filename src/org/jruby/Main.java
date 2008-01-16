@@ -40,12 +40,8 @@ package org.jruby;
 import java.io.InputStream;
 import java.io.PrintStream;
 
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SimpleSampler;
 
@@ -106,7 +102,7 @@ public class Main {
             showCopyright();
         }
 
-        if (! config.shouldRunInterpreter() ) {
+        if (!config.shouldRunInterpreter() ) {
             if (config.shouldPrintUsage()) {
                 printUsage();
             }
@@ -116,28 +112,65 @@ public class Main {
             return 0;
         }
 
-        long now = -1;
-        if (config.isBenchmarking()) {
-            now = System.currentTimeMillis();
-        }
+        InputStream in   = config.getScriptSource();
+        String filename  = config.displayedFileName();
+        Ruby runtime     = Ruby.newInstance(config);
 
-        int status;
+        if (in == null) {
+            // no script to run, return success below
+        } else if (config.isShouldCheckSyntax()) {
+            runtime.parseFromMain(in, filename);
+            config.getOutput().println("Syntax OK");
+        } else {
+            long now = -1;
 
-        try {
-            status = runInterpreter();
-        } catch (MainExitException mee) {
-            config.getOutput().println(mee.getMessage());
-            if (mee.isUsageError()) {
-                printUsage();
+            try {
+                if (config.isBenchmarking()) {
+                    now = System.currentTimeMillis();
+                }
+
+                if (config.isSamplingEnabled()) {
+                    SimpleSampler.startSampleThread();
+                }
+
+                runtime.runFromMain(in, filename);
+                
+            } catch (RaiseException rj) {
+                RubyException raisedException = rj.getException();
+                if (runtime.fastGetClass("SystemExit").isInstance(raisedException)) {
+                    IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
+
+                    if (status != null && !status.isNil()) {
+                        return RubyNumeric.fix2int(status);
+                    }
+                } else {
+                    runtime.printError(raisedException);
+                    return 1;
+                }
+            } catch (MainExitException mee) {
+                if (mee.isAborted()) {
+                    return mee.getStatus();
+                } else {
+                    config.getOutput().println(mee.getMessage());
+                    if (mee.isUsageError()) {
+                        printUsage();
+                    }
+                    return mee.getStatus();
+                }
+            } finally {
+                runtime.tearDown();
+
+                if (config.isBenchmarking()) {
+                    config.getOutput().println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
+                }
+
+                if(config.isSamplingEnabled()) {
+                    org.jruby.util.SimpleSampler.report();
+                }
             }
-            status = mee.getStatus();
         }
-
-        if (config.isBenchmarking()) {
-            config.getOutput().println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
-        }
-
-        return status;
+        
+        return 0;
     }
 
     private void showVersion() {
@@ -157,130 +190,5 @@ public class Main {
     
     public void printProperties() {
         config.getOutput().print(config.getPropertyHelp());
-    }
-
-    private int runInterpreter() {
-        InputStream in   = config.getScriptSource();
-        String filename = config.displayedFileName();
-        final Ruby runtime = Ruby.newInstance(config);
-        runtime.setKCode(config.getKCode());
-        
-        if (config.isSamplingEnabled()) {
-            SimpleSampler.startSampleThread();
-        }
-        
-        runtime.setVerbose(getVerbose(runtime, config.getVerbose()));
-
-        if (in == null) {
-            // no script to run, return success
-            return 0;
-        }
-
-        try {
-            runInterpreter(runtime, in, filename);
-            return 0;
-        } catch (RaiseException rj) {
-            RubyException raisedException = rj.getException();
-            if (runtime.fastGetClass("SystemExit").isInstance(raisedException)) {
-                IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
-
-                if (status != null && !status.isNil()) {
-                    return RubyNumeric.fix2int(status);
-                } else {
-                    return 0;
-                }
-            } else {
-                runtime.printError(raisedException);
-                return 1;
-            }
-        } catch (JumpException.ThrowJump tj) {
-            return 1;
-        } catch(MainExitException e) {
-            if(e.isAborted()) {
-                return e.getStatus();
-            } else {
-                throw e;
-            }
-        } finally {
-            // Dump the contents of the runtimeInformation map.
-            // This map can be used at development-time to log profiling information
-            // that must be updated as the execution runs.
-            if (!Ruby.isSecurityRestricted() && !runtime.getRuntimeInformation().isEmpty()) {
-                System.err.println("Runtime information dump:");
-
-                for (Object key: runtime.getRuntimeInformation().keySet()) {
-                    System.err.println("[" + key + "]: " + runtime.getRuntimeInformation().get(key));
-                }
-            }
-            if(config.isSamplingEnabled()) {
-                org.jruby.util.SimpleSampler.report();
-            }
-        }
-    }
-
-    private void runInterpreter(Ruby runtime, InputStream in, String filename) {
-        if(config.isShouldCheckSyntax()) {
-            try {
-                initializeRuntime(runtime, config, filename);
-                runtime.parseFromMain(in, filename);
-                System.out.println("Syntax OK");
-            } finally {
-                runtime.tearDown();
-            }
-        } else {
-            try {
-                initializeRuntime(runtime, config, filename);
-                runtime.runFromMain(in, filename);
-            } finally {
-                runtime.tearDown();
-            }
-        }
-    }
-
-    private IRubyObject getVerbose(final Ruby runtime, final Boolean vb) {
-        if (vb == null) {
-            return runtime.getNil();
-        } else if(vb == Boolean.TRUE) {
-            return runtime.getTrue();
-        } else {
-            return runtime.getFalse();
-        }
-    }
-
-    private void initializeRuntime(final Ruby runtime, RubyInstanceConfig commandline, String filename) {
-        runtime.setVerbose(getVerbose(runtime, config.getVerbose()));
-        runtime.setDebug(runtime.newBoolean(commandline.isDebug()));
-
-        //
-        // FIXME: why "constant" and not global variable? this doesn't seem right,
-        // $VERBOSE is set as global var elsewhere.
-        //
-//        runtime.getObject().setConstant("$VERBOSE",
-//                commandline.isVerbose() ? runtime.getTrue() : runtime.getNil());
-
-        // storing via internal var for now, as setConstant will now fail
-        // validation
-        runtime.getObject().setInternalVariable("$VERBOSE", getVerbose(runtime, commandline.getVerbose()));
-        //
-        //
-
-        defineGlobal(runtime, "$-p", commandline.isAssumePrinting());
-        defineGlobal(runtime, "$-n", commandline.isAssumeLoop());
-        defineGlobal(runtime, "$-a", commandline.isSplit());
-        defineGlobal(runtime, "$-l", commandline.isProcessLineEnds());
-
-        IAccessor d = new ValueAccessor(runtime.newString(filename));
-        runtime.getGlobalVariables().define("$PROGRAM_NAME", d);
-        runtime.getGlobalVariables().define("$0", d);
-
-        runtime.getLoadService().init(commandline.loadPaths());
-        
-        for (String scriptName : commandline.requiredLibraries()) {
-            RubyKernel.require(runtime.getTopSelf(), runtime.newString(scriptName), Block.NULL_BLOCK);
-        }
-    }
-
-    private void defineGlobal(Ruby runtime, String name, boolean value) {
-        runtime.getGlobalVariables().defineReadonly(name, new ValueAccessor(value ? runtime.getTrue() : runtime.getNil()));
     }
 }
