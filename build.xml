@@ -651,23 +651,30 @@
       <antcall target="do-update-specs"/>
   </target>
   
+  <target name="download-specs" description="Download the specs as a tgz snapshot and unpack to build/rubyspec/code">
+      <get src="http://git.rubini.us/?p=code;a=snapshot;sf=tgz" dest="${build.dir}/rubyspec.tgz"/>
+      
+      <mkdir dir="${build.dir}/rubyspec"/>
+      <untar src="${build.dir}/rubyspec.tgz" dest="${build.dir}/rubyspec" compression="gzip"/>
+  </target>
+  
   <target name="do-fetch-specs" unless="rubinius-repo-exists">
       <exec dir="${build.dir}" executable="git">
           <arg value="clone"/>
           <arg value="--depth"/><arg value="1"/>
           <arg value="git://git.rubini.us/code"/>
-          <arg value="rubinius"/>
+          <arg value="rubyspec/code"/>
       </exec>
   </target>
   
   <target name="do-update-specs" if="rubinius-repo-exists">
-      <exec dir="${build.dir}/rubinius" executable="git">
+      <exec dir="${build.dir}/rubyspec/code" executable="git">
           <arg value="pull"/>
       </exec>
   </target>
   
   <target name="clear-specs">
-      <delete dir="${build.dir}/rubinius"/>
+      <delete dir="${build.dir}/rubyspec/code"/>
   </target>
   
   <target name="run-specs">
@@ -713,7 +720,7 @@
   </target>
   
   <target name="update-excludes">
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${build.dir}/rubinius">
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${build.dir}/rubyspec/code">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
@@ -737,7 +744,7 @@
     <property name="reflection" value="false"/>
     <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
     
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubinius">
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubyspec/code">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       
