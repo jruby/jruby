@@ -230,7 +230,6 @@ public class ScannerImpl implements Scanner {
         STUPID_CHAR['-'] = false;
         STUPID_CHAR['?'] = false;
         STUPID_CHAR[':'] = false;
-        STUPID_CHAR[','] = false;
         STUPID_CHAR['['] = false;
         STUPID_CHAR[']'] = false;
         STUPID_CHAR['{'] = false;
@@ -520,7 +519,10 @@ public class ScannerImpl implements Scanner {
         case '{': return fetchFlowMappingStart();
         case ']': return fetchFlowSequenceEnd();
         case '}': return fetchFlowMappingEnd();
-        case ',': return fetchFlowEntry();
+        case ',': if(this.flowLevel != 0) {
+                return fetchFlowEntry();
+            }
+            break;
         case '*': return fetchAlias();
         case '&': return fetchAnchor();
         case '!': return fetchTag();

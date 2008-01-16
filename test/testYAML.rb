@@ -348,4 +348,5 @@ YAML_OUT
 YAML_OUT
 end
 
-
+# JRUBY-1978, scalars can start with , if it's not ambigous
+test_equal(",a", YAML.load("--- \n,a"))
