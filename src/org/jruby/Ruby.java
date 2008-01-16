@@ -129,19 +129,21 @@ import org.jruby.util.collections.WeakHashSet;
  */
 public final class Ruby {
     /**
-     * Returns a default instance of the JRuby runtime.
+     * Returns a new instance of the JRuby runtime configured with defaults.
      *
      * @return the JRuby runtime
+     * @see org.jruby.RubyInstanceConfig
      */
     public static Ruby newInstance() {
         return newInstance(new RubyInstanceConfig());
     }
 
     /**
-     * Returns a default instance of the JRuby runtime configured as provided.
+     * Returns a new instance of the JRuby runtime configured as specified.
      *
-     * @param config the instance configuration
-     * @return the JRuby runtime
+     * @param config The instance configuration
+     * @return The JRuby runtime
+     * @see org.jruby.RubyInstanceConfig
      */
     public static Ruby newInstance(RubyInstanceConfig config) {
         Ruby ruby = new Ruby(config);
@@ -153,12 +155,15 @@ public final class Ruby {
     }
 
     /**
-     * Returns a default instance of the JRuby runtime configured with the given input, output and error streams.
+     * Returns a new instance of the JRuby runtime configured with the given
+     * input, output and error streams and otherwise default configuration
+     * (except where specified system properties alter defaults).
      *
      * @param in the custom input stream
      * @param out the custom output stream
      * @param err the custom error stream
      * @return the JRuby runtime
+     * @see org.jruby.RubyInstanceConfig
      */
     public static Ruby newInstance(InputStream in, PrintStream out, PrintStream err) {
         RubyInstanceConfig config = new RubyInstanceConfig();
@@ -169,7 +174,12 @@ public final class Ruby {
     }
     
     /**
-     * Create and initialize a new JRuby Runtime.
+     * Create and initialize a new JRuby runtime. The properties of the
+     * specified RubyInstanceConfig will be used to determine various JRuby
+     * runtime characteristics.
+     * 
+     * @param config The configuration to use for the new instance
+     * @see org.jruby.RubyInstanceConfig
      */
     private Ruby(RubyInstanceConfig config) {
         this.config             = config;
@@ -204,19 +214,19 @@ public final class Ruby {
             }
         }
     }
-
-    public IRubyObject evalFile(InputStream in, String name) {
-        return eval(parseFile(in, name, getCurrentContext().getCurrentScope()));
-    }
     
     /**
-     * Evaluates a script and returns a RubyObject.
+     * Evaluates a script under the current scope (perhaps the top-level
+     * scope) and returns the result (generally the last value calculated).
+     * This version goes straight into the interpreter, bypassing compilation
+     * and runtime preparation typical to normal script runs.
+     * 
+     * @param script The scriptlet to run
+     * @returns The result of the eval
      */
     public IRubyObject evalScriptlet(String script) {
-        return eval(parseEval(script, "<script>", getCurrentContext().getCurrentScope(), 0));
-    }
-
-    public IRubyObject eval(Node node) {
+        Node node = parseEval(script, "<script>", getCurrentContext().getCurrentScope(), 0);
+        
         try {
             ThreadContext tc = getCurrentContext();
             return ASTInterpreter.eval(this, tc, node, tc.getFrameSelf(), Block.NULL_BLOCK);
@@ -230,6 +240,7 @@ public final class Ruby {
     }
     
     /**
+     * Parse and execute the specified script 
      * This differs from the other methods in that it accepts a string-based script and
      * parses and runs it as though it were loaded at a command-line. This is the preferred
      * way to start up a new script when calling directly into the Ruby object (which is
@@ -253,22 +264,36 @@ public final class Ruby {
         return runNormally(node, false);
     }
     
-    public void runFromMain(InputStream in, String filename) {
+    /**
+     * Run the script contained in the specified input stream, using the
+     * specified filename as the name of the script being executed. The stream
+     * will be read fully before being parsed and executed. The given filename
+     * will be used for the ruby $PROGRAM_NAME and $0 global variables in this
+     * runtime.
+     * 
+     * This method is intended to be called once per runtime, generally from
+     * Main or from main-like top-level entry points.
+     * 
+     * As part of executing the script loaded from the input stream, various
+     * RubyInstanceConfig properties will be used to determine whether to
+     * compile the script before execution or run with various wrappers (for
+     * looping, printing, and so on, see jruby -help).
+     * 
+     * @param inputStream The InputStream from which to read the script contents
+     * @param filename The filename to use when parsing, and for $PROGRAM_NAME
+     * and $0 ruby global variables.
+     */
+    public void runFromMain(InputStream inputStream, String filename) {
         IAccessor d = new ValueAccessor(newString(filename));
         getGlobalVariables().define("$PROGRAM_NAME", d);
         getGlobalVariables().define("$0", d);
         
         if(config.isYARVEnabled()) {
-            new YARVCompiledRunner(this, in, filename).run();
+            new YARVCompiledRunner(this, inputStream, filename).run();
         } else if(config.isRubiniusEnabled()) {
-            new RubiniusRunner(this, in, filename).run();
+            new RubiniusRunner(this, inputStream, filename).run();
         } else {
-            Node scriptNode;
-            if (config.isInlineScript()) {
-                scriptNode = parseInline(in, filename, getCurrentContext().getCurrentScope());
-            } else {
-                scriptNode = parseFile(in, filename, getCurrentContext().getCurrentScope());
-            }
+            Node scriptNode = parseFromMain(inputStream, filename);
             
             getCurrentContext().getCurrentFrame().setPosition(scriptNode.getPosition());
 
@@ -281,14 +306,40 @@ public final class Ruby {
         }
     }
 
-    public void parseFromMain(InputStream in, String filename) {
+    /**
+     * Parse the script contained in the given input stream, using the given
+     * filename as the name of the script, and return the root Node. This
+     * is used to verify that the script syntax is valid, for jruby -c. The
+     * current scope (generally the top-level scope) is used as the parent
+     * scope for parsing.
+     * 
+     * @param inputStream The input stream from which to read the script
+     * @param filename The filename to use for parsing
+     * @returns The root node of the parsed script
+     */
+    public Node parseFromMain(InputStream inputStream, String filename) {
         if (config.isInlineScript()) {
-            parseInline(in, filename, getCurrentContext().getCurrentScope());
+            return parseInline(inputStream, filename, getCurrentContext().getCurrentScope());
         } else {
-            parseFile(in, filename, getCurrentContext().getCurrentScope());
+            return parseFile(inputStream, filename, getCurrentContext().getCurrentScope());
         }
     }
     
+    /**
+     * Run the given script with a "while gets; end" loop wrapped around it.
+     * This is primarily used for the -n command-line flag, to allow writing
+     * a short script that processes input lines using the specified code.
+     * 
+     * @param scriptNode The root node of the script to execute
+     * @param printing Whether $_ should be printed after each loop (as in the
+     * -p command-line flag)
+     * @param processLineEnds Whether line endings should be processed by
+     * setting $\ to $/ and <code>chop!</code>ing every line read
+     * @param split Whether to split each line read using <code>String#split</code>
+     * @param yarvCompile Whether to compile the target script to YARV (Ruby 1.9)
+     * bytecode before executing.
+     * @return The result of executing the specified script
+     */
     public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split, boolean yarvCompile) {
         ThreadContext context = getCurrentContext();
         
@@ -345,6 +396,15 @@ public final class Ruby {
         return getNil();
     }
     
+    /**
+     * Run the specified script without any of the loop-processing wrapper
+     * code.
+     * 
+     * @param scriptNode The root node of the script to be executed
+     * @param yarvCompile Whether to compile the script to YARV (Ruby 1.9)
+     * bytecode before execution
+     * @return The result of executing the script
+     */
     public IRubyObject runNormally(Node scriptNode, boolean yarvCompile) {
         Script script = null;
         YARVCompiledRunner runner = null;
@@ -488,24 +548,41 @@ public final class Ruby {
     }
 
     /**
+     * Retrieve the module with the given name from the Object namespace.
      * 
-     * @param internedName the name of the module; <em>must</em> be an interned String!
-     * @return
+     * @param name The name of the module
+     * @return The module or null if not found
+     */
+    public RubyModule getModule(String name) {
+        return (RubyModule) objectClass.getConstantAt(name);
+    }
+
+    /**
+     * Retrieve the module with the given name from the Object namespace. The
+     * module name must be an interned string, but this method will be faster
+     * than the non-interned version.
+     * 
+     * @param internedName The name of the module; <em>must</em> be an interned String
+     * @return The module or null if not found
      */
     public RubyModule fastGetModule(String internedName) {
         return (RubyModule) objectClass.fastGetConstantAt(internedName);
     }
 
-    /** Returns a class from the instance pool.
+    /** 
+     * Retrieve the class with the given name from the Object namespace.
      *
-     * @param name The name of the class.
-     * @return The class.
+     * @param name The name of the class
+     * @return The class
      */
     public RubyClass getClass(String name) {
         return objectClass.getClass(name);
     }
 
     /**
+     * Retrieve the class with the given name from the Object namespace. The
+     * module name must be an interned string, but this method will be faster
+     * than the non-interned version.
      * 
      * @param internedName the name of the class; <em>must</em> be an interned String!
      * @return
@@ -1433,10 +1510,6 @@ public final class Ruby {
     
     public RubyClass getStandardError() {
         return standardError;
-    }
-
-    public RubyModule getModule(String name) {
-        return (RubyModule) objectClass.getConstantAt(name);
     }
 
     /** Getter for property isVerbose.
