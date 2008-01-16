@@ -89,7 +89,7 @@ public class RubyString extends RubyObject {
 
     private static ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyString newString = runtime.newString("");
+            RubyString newString = runtime.newStringShared(ByteList.EMPTY_BYTELIST);
             
             newString.setMetaClass(klass);
             
@@ -654,7 +654,7 @@ public class RubyString extends RubyObject {
      *
      */
     public static RubyString newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyString newString = newString(recv.getRuntime(), "");
+        RubyString newString = newStringShared(recv.getRuntime(), ByteList.EMPTY_BYTELIST);
         newString.setMetaClass((RubyClass) recv);
         newString.callInit(args, block);
         return newString;
