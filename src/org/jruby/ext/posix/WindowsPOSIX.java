@@ -31,6 +31,6 @@ public class WindowsPOSIX extends BasePOSIX {
 
     @Override
     public FileStat lstat(String path) {
-        return fallBack.lstat(path);
+        return stat(path);
     }
 }
