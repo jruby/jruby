@@ -514,30 +514,35 @@ public final class Ruby {
         return objectClass.fastGetClass(internedName);
     }
 
-    /** rb_define_class
+    /** 
+     * Define a new class under the Object namespace. Roughly equivalent to
+     * rb_define_class in MRI.
      *
+     * @param name The name for the new class
+     * @param superClass The super class for the new class
+     * @param allocator An ObjectAllocator instance that can construct
+     * instances of the new class.
+     * @return The new class
      */
     public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator) {
-        IRubyObject classObj = objectClass.getConstantAt(name);
-
-        if (classObj != null) {
-            if (!(classObj instanceof RubyClass)) throw newTypeError(name + " is not a class");
-            RubyClass klazz = (RubyClass)classObj;
-            if (klazz.getSuperClass().getRealClass() != superClass) throw newNameError(name + " is already defined", name);
-            return klazz;
-        }
-
-        if (superClass == null) {
-            warnings.warn("no super class for `" + name + "', Object assumed");
-            superClass = objectClass;
-        }
-
-        return RubyClass.newClass(this, superClass, name, allocator, objectClass, false);
+        return defineClassUnder(name, superClass, allocator, objectClass);
     }
 
-    /** rb_define_class_under
-    *
-    */
+    /**
+     * Define a new class with the given name under the given module or class
+     * namespace. Roughly equivalent to rb_define_class_under in MRI.
+     * 
+     * If the name specified is already bound, its value will be returned if:
+     * * It is a class
+     * * No new superclass is being defined
+     *
+     * @param name The name for the new class
+     * @param superClass The super class for the new class
+     * @param allocator An ObjectAllocator instance that can construct
+     * instances of the new class.
+     * @param parent The namespace under which to define the new class
+     * @return The new class
+     */
     public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, RubyModule parent) {
         IRubyObject classObj = parent.getConstantAt(name);
 
@@ -554,46 +559,66 @@ public final class Ruby {
             }
             return klazz;
         }
+        
+        boolean parentIsObject = parent == objectClass;
 
         if (superClass == null) {
-            warnings.warn("no super class for `" + parent.getName() + "::" + name + "', Object assumed");
+            if (parentIsObject) {
+                warnings.warn("no super class for `" + name + "', Object assumed");
+            } else {
+                warnings.warn("no super class for `" + parent.getName() + "::" + name + "', Object assumed");
+            }
+            
             superClass = objectClass;
         }
 
-        return RubyClass.newClass(this, superClass, name, allocator, parent, true);
+        return RubyClass.newClass(this, superClass, name, allocator, parent, !parentIsObject);
     }
 
-    /** rb_define_module
-     *
+    /** 
+     * Define a new module under the Object namespace. Roughly equivalent to
+     * rb_define_module in MRI.
+     * 
+     * @param name The name of the new module
+     * @returns The new module
      */
     public RubyModule defineModule(String name) {
-        IRubyObject moduleObj = objectClass.getConstantAt(name);
-
-        if (moduleObj != null ) {
-            if (moduleObj.isModule()) return (RubyModule)moduleObj;
-            throw newTypeError(moduleObj.getMetaClass().getName() + " is not a module");
-        }
-
-        return RubyModule.newModule(this, name, objectClass, false);
-    }
-
-    /** rb_define_module_under
-    *
-    */
-    public RubyModule defineModuleUnder(String name, RubyModule parent) {
-        IRubyObject moduleObj = parent.getConstantAt(name);
-
-        if (moduleObj != null ) {
-            if (moduleObj.isModule()) return (RubyModule)moduleObj;
-            throw newTypeError(parent.getName() + "::" + moduleObj.getMetaClass().getName() + " is not a module");
-        }
-
-        return RubyModule.newModule(this, name, parent, true);
+        return defineModuleUnder(name, objectClass);
     }
 
     /**
-     * In the current context, get the named module. If it doesn't exist a
+     * Define a new module with the given name under the given module or
+     * class namespace. Roughly equivalent to rb_define_module_under in MRI.
+     * 
+     * @param name The name of the new module
+     * @param parent The class or module namespace under which to define the
+     * module
+     * @returns The new module
+     */
+    public RubyModule defineModuleUnder(String name, RubyModule parent) {
+        IRubyObject moduleObj = parent.getConstantAt(name);
+        
+        boolean parentIsObject = parent == objectClass;
+
+        if (moduleObj != null ) {
+            if (moduleObj.isModule()) return (RubyModule)moduleObj;
+            
+            if (parentIsObject) {
+                throw newTypeError(moduleObj.getMetaClass().getName() + " is not a module");
+            } else {
+                throw newTypeError(parent.getName() + "::" + moduleObj.getMetaClass().getName() + " is not a module");
+            }
+        }
+
+        return RubyModule.newModule(this, name, parent, !parentIsObject);
+    }
+
+    /**
+     * From Object, retrieve the named module. If it doesn't exist a
      * new module is created.
+     * 
+     * @param name The name of the module
+     * @returns The existing or new module
      */
     public RubyModule getOrCreateModule(String name) {
         IRubyObject module = objectClass.getConstantAt(name);
@@ -609,16 +634,28 @@ public final class Ruby {
     }
 
 
-    /** Getter for property securityLevel.
-     * @return Value of property securityLevel.
+    /** 
+     * Retrieve the current safe level.
+     * 
+     * @see org.jruby.Ruby#setSaveLevel
      */
     public int getSafeLevel() {
         return this.safeLevel;
     }
 
-    /** Setter for property securityLevel.
-     * @param safeLevel New value of property securityLevel.
-     */
+
+    /** 
+     * Set the current safe level:
+     * 
+     * 0 - strings from streams/environment/ARGV are tainted (default)
+     * 1 - no dangerous operation by tainted value
+     * 2 - process/file operations prohibited
+     * 3 - all generated objects are tainted
+     * 4 - no global (non-tainted) variable modification/no direct output
+     * 
+     * The safe level is set using $SAFE in Ruby code. It is not particularly
+     * well supported in JRuby.
+    */
     public void setSafeLevel(int safeLevel) {
         this.safeLevel = safeLevel;
     }
@@ -2439,14 +2476,7 @@ public final class Ruby {
     };
 
     private long globalState = 1;
-
-    /** safe-level:
-            0 - strings from streams/environment/ARGV are tainted (default)
-            1 - no dangerous operation by tainted value
-            2 - process/file operations prohibited
-            3 - all generated objects are tainted
-            4 - no global (non-tainted) variable modification/no direct output
-    */
+    
     private int safeLevel = 0;
 
     // Default objects
@@ -2460,65 +2490,33 @@ public final class Ruby {
     private IRubyObject verbose;
     private IRubyObject debug;
 
-    // Default classes/modules
-    private RubyClass objectClass;
-    private RubyClass moduleClass;
-    private RubyClass classClass;
-    private RubyModule kernelModule;
-    private RubyClass nilClass;
-    private RubyClass trueClass;
-    private RubyClass falseClass;
-    private RubyModule comparableModule;
-    private RubyClass numericClass;
-    private RubyClass floatClass;
-    private RubyClass integerClass;
-    private RubyClass fixnumClass;
-    private RubyModule enumerableModule;    
-    private RubyClass arrayClass;
-    private RubyClass hashClass;
-    private RubyClass rangeClass;
-    private RubyClass stringClass;
-    private RubyClass symbolClass;
-    private RubyClass procClass;
-    private RubyClass bindingClass;
-    private RubyClass methodClass;
-    private RubyClass unboundMethodClass;
-    private RubyClass matchDataClass;
-    private RubyClass regexpClass;
-    private RubyClass timeClass;
-    private RubyModule mathModule;
-    private RubyModule marshalModule;
-    private RubyClass bignumClass;
-    private RubyClass dirClass;
-    private RubyModule etcModule;
-    private RubyClass fileClass;
-    private RubyClass fileStatClass;
-    private RubyModule fileTestModule;
-    private RubyClass ioClass;
-    private RubyClass threadClass;
-    private RubyClass threadGroupClass;
-    private RubyClass continuationClass;
-    private RubyClass structClass;
-    private RubyClass tmsStruct;
-    private RubyClass passwdStruct;
-    private RubyModule gcModule;
-    private RubyModule objectSpaceModule;
-    private RubyModule processModule;
-    private RubyClass procStatusClass;
-    private RubyModule procUIDModule;
-    private RubyModule procGIDModule;
-    private RubyModule procSysModule;
-    private RubyModule precisionModule;
-    private RubyClass exceptionClass;
-    private RubyClass runtimeError;
-    private RubyClass ioError;
-    private RubyClass scriptError;
-    private RubyClass nameError;
-    private RubyClass signalException;
-    private RubyClass standardError;
-    private RubyClass systemCallError;
-    private RubyModule errnoModule;
-    private RubyClass rangeError;
+    /**
+     * All the core classes we keep hard references to. These are here largely
+     * so that if someone redefines String or Array we won't start blowing up
+     * creating strings and arrays internally. They also provide much faster
+     * access than going through normal hash lookup on the Object class.
+     */
+    private RubyClass
+            objectClass, moduleClass, classClass, nilClass, trueClass,
+            falseClass, numericClass, floatClass, integerClass, fixnumClass,
+            arrayClass, hashClass, rangeClass, stringClass, symbolClass,
+            procClass, bindingClass, methodClass, unboundMethodClass,
+            matchDataClass, regexpClass, timeClass, bignumClass, dirClass,
+            fileClass, fileStatClass, ioClass, threadClass, threadGroupClass,
+            continuationClass, structClass, tmsStruct, passwdStruct,
+            procStatusClass, exceptionClass, runtimeError, ioError,
+            scriptError, nameError, signalException, standardError,
+            systemCallError, rangeError;
+    
+    /**
+     * All the core modules we keep direct references to, for quick access and
+     * to ensure they remain available.
+     */
+    private RubyModule
+            kernelModule, comparableModule, enumerableModule, mathModule,
+            marshalModule, etcModule, fileTestModule, gcModule,
+            objectSpaceModule, processModule, procUIDModule, procGIDModule,
+            procSysModule, precisionModule, errnoModule;
     
     // record separator var, to speed up io ops that use it
     private GlobalVariable recordSeparatorVar;
