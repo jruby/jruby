@@ -1156,7 +1156,7 @@ public class RubyKernel {
     }
     
     @JRubyMethod(name = {"exec"}, required = 1, rest = true, module = true, visibility = Visibility.PRIVATE)
-    public static RubyBoolean exec(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject exec(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int resultCode;
         try {
@@ -1164,14 +1164,10 @@ public class RubyKernel {
             // This could be possible with JNA. 
             resultCode = new ShellLauncher(runtime).runAndWait(args);
         } catch (Exception e) {
-            resultCode = 127;
-        }
-
-        if (resultCode != 0) {
             throw runtime.newErrnoENOENTError("cannot execute");
         }
-
-        return runtime.newBoolean(true);
+        
+        return exit(recv, new IRubyObject[] {runtime.newFixnum(resultCode)});
     }
 
     @JRubyMethod(name = "fork", module = true, visibility = Visibility.PRIVATE)
