@@ -41,6 +41,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 
 import org.jruby.Finalizable;
@@ -53,7 +54,6 @@ import org.jruby.RubyIO;
 public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable {
     private final static int BUFSIZE = 16 * 1024;
     
-    protected RandomAccessFile file;
     protected String path;
     protected String cwd;
     protected ByteBuffer buffer; // r/w buffer
@@ -85,7 +85,7 @@ public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable 
         }
 
         // We always open this rw since we can only open it r or rw.
-        file = new RandomAccessFile(theFile, javaMode());
+        RandomAccessFile file = new RandomAccessFile(theFile, javaMode());
 
         if (modes.shouldTruncate()) file.setLength(0L);
 
@@ -120,7 +120,7 @@ public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable 
         this.theFile = other.theFile;
 
         // create stuff
-        file = new RandomAccessFile(theFile, javaMode());
+        RandomAccessFile file = new RandomAccessFile(theFile, javaMode());
         channel = file.getChannel();
         buffer = ByteBuffer.allocate(BUFSIZE);
         buffer.flip();
@@ -216,8 +216,7 @@ public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable 
         long pos = pos();
 
         JRubyFile theFile = JRubyFile.create(cwd,path);
-        file.close();
-        file = new RandomAccessFile(theFile, javaMode());
+        RandomAccessFile file = new RandomAccessFile(theFile, javaMode());
         channel = file.getChannel();
         isOpen = true;
         buffer.clear();
@@ -230,13 +229,8 @@ public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable 
             throw new IOException();
         }
     }
-
-    private void checkReopen() throws IOException {
-        if (file.length() != new java.io.File(path).length()) reopen();
-    }
     
     public ByteList getsEntireStream() throws IOException {
-        checkReopen();
         invalidateBuffer();
         long left = channel.size() - channel.position();
         if (left == 0) return null;
@@ -278,7 +272,6 @@ public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable 
         isOpen = false;
         flushWrite();
         channel.close();
-        file.close();
         if (!finalizing) getRuntime().removeInternalFinalizer(this);
     }
 
@@ -308,14 +301,14 @@ public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable 
      * @see org.jruby.util.IOHandler#getInputStream()
      */
     public InputStream getInputStream() {
-        return new BufferedInputStream(new DataInputBridgeStream(file));
+        return new BufferedInputStream(Channels.newInputStream(channel));
     }
 
     /**
      * @see org.jruby.util.IOHandler#getOutputStream()
      */
     public OutputStream getOutputStream() {
-        return new BufferedOutputStream(new DataOutputBridgeStream(file));
+        return new BufferedOutputStream(Channels.newOutputStream(channel));
     }
     
     /**
@@ -533,7 +526,18 @@ public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable 
     
     public void truncate(long newLength) throws IOException {
         invalidateBuffer();
-        file.setLength(newLength);
+        if (newLength > channel.size()) {
+            // truncate can't lengthen files, so we save position, seek/write, and go back
+            long position = channel.position();
+            int difference = (int)(newLength - channel.size());
+            
+            channel.position(channel.size());
+            // FIXME: This worries me a bit, since it could allocate a lot with a large newLength
+            channel.write(ByteBuffer.allocate(difference));
+            channel.position(position);
+        } else {
+            channel.truncate(newLength);
+        }        
     }
     
     public FileChannel getFileChannel() {
