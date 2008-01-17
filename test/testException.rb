@@ -100,3 +100,7 @@ class TypeError
 end
 
 test_exception(StandardError) { 5 + "A" }
+
+test_exception(SystemExit) { 
+  raise SystemExit
+}
