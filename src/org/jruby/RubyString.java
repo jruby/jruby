@@ -2559,24 +2559,31 @@ public class RubyString extends RubyObject {
             obj = val; 
         }
 
-        // now handle the remaining case, when obj is a RubyString
-        if (quote) {
-            obj = RubyRegexp.quote((RubyString)obj, (KCode)null);
-        }
-
-        return ((RubyString)obj).getCachedPattern();
+        return ((RubyString)obj).getCachedPattern(0, quote);
     }
 
     /** rb_reg_regcomp
      * 
      */
-    private final RubyRegexp getCachedPattern() {
+    public final RubyRegexp getCachedPattern(int options) {
+        return getCachedPattern(options, false);
+    }
+    
+    public final RubyRegexp getCachedPattern(int options, boolean quote) {
         HashMap<ByteList, RubyRegexp> cache = getRuntime().getPatternCache();
         RubyRegexp regexp = cache.get(value);
-        if (regexp != null && regexp.getKCode() == getRuntime().getKCode()) {
+
+        if (regexp != null &&
+            regexp.getKCode() == getRuntime().getKCode() &&
+            regexp.getPattern().getOptions() == options &&
+            regexp.isQuoted() == quote) { // cache hit
             return regexp;
         }
-        regexp = RubyRegexp.newRegexp(getRuntime(), value, 0);
+
+        RubyString str = quote ? RubyRegexp.quote(this, getRuntime().getKCode()) : this;
+        regexp = RubyRegexp.newRegexp(getRuntime(), str.value, options);
+        if (quote) regexp.setQuoted();
+
         cache.put(value, regexp);
         return regexp;
     }

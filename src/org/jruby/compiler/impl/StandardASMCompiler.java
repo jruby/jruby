@@ -1379,12 +1379,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 method.ifnonnull(alreadyCreated);
             }
 
-            loadRuntime();
-
             createStringCallback.call(this);
             method.ldc(new Integer(options));
 
-            method.invokestatic(p(RubyRegexp.class), "newRegexp", sig(RubyRegexp.class, params(Ruby.class, String.class, Integer.TYPE))); //[reg]
+            method.invokevirtual(p(RubyString.class), "getCachedPattern", sig(RubyRegexp.class, params(Integer.TYPE))); //[reg]
 
             // only alter the code if the /o flag was present
             if (onceOnly) {

@@ -1728,7 +1728,6 @@ public class ASTCompiler {
                                     }
                                 };
                         context.createNewString(dstrCallback, dregexpNode.size());
-                        context.toJavaString();
                     }
                 };
 

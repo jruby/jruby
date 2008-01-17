@@ -76,6 +76,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
 
     private static final int REGEXP_LITERAL_F =     1 << 11;
     private static final int REGEXP_KCODE_DEFAULT = 1 << 12;
+    private static final int REGEXP_QUOTED =        1 << 13;
     
     public void setLiteral() {
         flags |= REGEXP_LITERAL_F;
@@ -100,6 +101,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     public boolean isKCodeDefault() {
         return (flags & REGEXP_KCODE_DEFAULT) != 0;
     }
+    
+    public void setQuoted() {
+        flags |= REGEXP_QUOTED;
+    }
+    
+    public void clearQuoted() {
+        flags &= ~REGEXP_QUOTED;
+    }
+    
+    public boolean isQuoted() {
+        return (flags & REGEXP_QUOTED) != 0;
+    }    
 
     public KCode getKCode() {
         return kcode;
@@ -852,8 +865,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      *
      */
     public static RubyString quote(RubyString str, KCode kcode) {
-        if (null == kcode) kcode = str.getRuntime().getKCode();
-
         ByteList bs = str.getByteList();
         int tix = 0;
         int s = bs.begin;

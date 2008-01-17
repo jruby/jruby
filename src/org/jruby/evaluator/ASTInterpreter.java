@@ -982,7 +982,7 @@ public class ASTInterpreter {
         }
    
         try {
-            regexp = RubyRegexp.newRegexp(runtime, string.getByteList(), iVisited.getOptions());
+            regexp = string.getCachedPattern(iVisited.getOptions());
         } catch(Exception e) {
         //                    System.err.println(iVisited.getValue().toString());
         //                    e.printStackTrace();
