@@ -643,8 +643,8 @@
   <target name="spec-all" depends="fetch-specs, run-specs-all"/>
   
   <target name="fetch-specs">
-      <condition property="rubinius-repo-exists">
-          <available file="${build.dir}/rubinius"/>
+      <condition property="rubyspec-repo-exists">
+          <available file="${build.dir}/rubyspec"/>
       </condition>
       
       <antcall target="do-fetch-specs"/>
@@ -658,7 +658,7 @@
       <untar src="${build.dir}/rubyspec.tgz" dest="${build.dir}/rubyspec" compression="gzip"/>
   </target>
   
-  <target name="do-fetch-specs" unless="rubinius-repo-exists">
+  <target name="do-fetch-specs" unless="rubyspec-repo-exists">
       <exec dir="${build.dir}" executable="git">
           <arg value="clone"/>
           <arg value="--depth"/><arg value="1"/>
@@ -667,7 +667,7 @@
       </exec>
   </target>
   
-  <target name="do-update-specs" if="rubinius-repo-exists">
+  <target name="do-update-specs" if="rubyspec-repo-exists">
       <exec dir="${build.dir}/rubyspec/code" executable="git">
           <arg value="pull"/>
       </exec>
