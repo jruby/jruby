@@ -46,6 +46,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -478,6 +480,8 @@ public class Java implements Library {
         packageModule.addClassProvider(JAVA_PACKAGE_CLASS_PROVIDER);
 
         parent.const_set(runtime.newSymbol(name), packageModule);
+        MetaClass metaClass = (MetaClass)packageModule.getMetaClass();
+        metaClass.setAttached(packageModule);
         return packageModule;
     }
     
