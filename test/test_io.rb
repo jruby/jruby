@@ -274,6 +274,20 @@ class TestIO < Test::Unit::TestCase
      end
   end
 
+  # JRUBY-1987
+  def test_reopen_doesnt_close_same_handler
+    f = File.open("__temp1", "w")
+    x = IO.new(f.fileno)
+    f.print "."
+    y = x.dup
+    x.reopen(y)
+    f.print "."
+    f.close
+    out = File.read("__temp1")
+    File.unlink("__temp1")
+    assert_equal "..", out
+  end
+  
   private
   def ensure_files(*files)
     files.each {|f| File.open(f, "w") {|g| g << " " } }
