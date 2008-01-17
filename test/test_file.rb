@@ -129,6 +129,9 @@ class TestFile < Test::Unit::TestCase
     assert_equal(false, File.fnmatch("/*~",""))
     assert_equal(false, File.fnmatch("/.ht*","/favicon.ico"))
     assert_equal(false, File.fnmatch("/*~","/favicon.ico"))
+    
+    # JRUBY-1986, make sure that fnmatch is sharing aware
+    assert_equal(true, File.fnmatch("foobar"[/foo(.*)/, 1], "bar"))
   end
 
   def test_join

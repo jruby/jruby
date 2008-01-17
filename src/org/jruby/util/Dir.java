@@ -68,58 +68,57 @@ public class Dir {
         return DOSISH ? (c == '\\' || c == '/') : c == '/';
     }
 
-    private static int rb_path_next(byte[] _s, int s, int len) {
-        while(s < len && !isdirsep(_s[s])) {
+    private static int rb_path_next(byte[] _s, int s, int send) {
+        while(s < send && !isdirsep(_s[s])) {
             s++;
         }
         return s;
     }
 
-    public static int fnmatch(byte[] bytes, int pstart, int plen, byte[] string, int sstart, int slen, int flags) {
+    public static int fnmatch(byte[] bytes, int pstart, int pend, byte[] string, int sstart, int send, int flags) {
         char test;
         int s = sstart;
         int pat = pstart;
-        int len = plen;
         boolean escape = (flags & FNM_NOESCAPE) == 0;
         boolean pathname = (flags & FNM_PATHNAME) != 0;
         boolean period = (flags & FNM_DOTMATCH) == 0;
         boolean nocase = (flags & FNM_CASEFOLD) != 0;
 
-        while(pat<len) {
+        while(pat<pend) {
             byte c = bytes[pat++];
             switch(c) {
             case '?':
-                if(s >= slen || (pathname && isdirsep(string[s])) || 
+                if(s >= send || (pathname && isdirsep(string[s])) || 
                    (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
                     return FNM_NOMATCH;
                 }
                 s++;
                 break;
             case '*':
-                while(pat < len && (c = bytes[pat++]) == '*');
-                if(s < slen && (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
+                while(pat < pend && (c = bytes[pat++]) == '*');
+                if(s < send && (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
                     return FNM_NOMATCH;
                 }
-                if(pat > len || (pat == len && c == '*')) {
-                    if(pathname && rb_path_next(string, s, slen) < slen) {
+                if(pat > pend || (pat == pend && c == '*')) {
+                    if(pathname && rb_path_next(string, s, send) < send) {
                         return FNM_NOMATCH;
                     } else {
                         return 0;
                     }
                 } else if((pathname && isdirsep(c))) {
-                    s = rb_path_next(string, s, slen);
-                    if(s < slen) {
+                    s = rb_path_next(string, s, send);
+                    if(s < send) {
                         s++;
                         break;
                     }
                     return FNM_NOMATCH;
                 }
-                test = (char)((escape && c == '\\' && pat < len ? bytes[pat] : c)&0xFF);
+                test = (char)((escape && c == '\\' && pat < pend ? bytes[pat] : c)&0xFF);
                 test = Character.toLowerCase(test);
                 pat--;
-                while(s < slen) {
+                while(s < send) {
                     if((c == '?' || c == '[' || Character.toLowerCase((char) string[s]) == test) &&
-                       fnmatch(bytes, pat, plen, string, s, slen, flags | FNM_DOTMATCH) == 0) {
+                       fnmatch(bytes, pat, pend, string, s, send, flags | FNM_DOTMATCH) == 0) {
                         return 0;
                     } else if((pathname && isdirsep(string[s]))) {
                         break;
@@ -128,11 +127,11 @@ public class Dir {
                 }
                 return FNM_NOMATCH;
             case '[':
-                if(s >= slen || (pathname && isdirsep(string[s]) || 
+                if(s >= send || (pathname && isdirsep(string[s]) || 
                                  (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1])))))) {
                     return FNM_NOMATCH;
                 }
-                pat = range(bytes, pat, plen, (char)(string[s]&0xFF), flags);
+                pat = range(bytes, pat, pend, (char)(string[s]&0xFF), flags);
                 if(pat == -1) {
                     return FNM_NOMATCH;
                 }
@@ -141,15 +140,15 @@ public class Dir {
             case '\\':
                 if(escape &&
                    (!DOSISH ||
-                    (pat < len && "*?[]\\".indexOf((char)bytes[pat]) != -1))) {
-                    if(pat >= len) {
+                    (pat < pend && "*?[]\\".indexOf((char)bytes[pat]) != -1))) {
+                    if(pat >= pend) {
                         c = '\\';
                     } else {
                         c = bytes[pat++];
                     }
                 }
             default:
-                if(s >= slen) {
+                if(s >= send) {
                     return FNM_NOMATCH;
                 }
                 if(DOSISH && (pathname && isdirsep(c) && isdirsep(string[s]))) {
@@ -170,10 +169,10 @@ public class Dir {
                 break;
             }
         }
-        return s >= slen ? 0 : FNM_NOMATCH;
+        return s >= send ? 0 : FNM_NOMATCH;
     }
 
-    public static int range(byte[] _pat, int pat, int len, char test, int flags) {
+    public static int range(byte[] _pat, int pat, int pend, char test, int flags) {
         boolean not;
         boolean ok = false;
         //boolean nocase = (flags & FNM_CASEFOLD) != 0;
@@ -191,7 +190,7 @@ public class Dir {
             if(escape && _pat[pat] == '\\') {
                 pat++;
             }
-            if(pat >= len) {
+            if(pat >= pend) {
                 return -1;
             }
             cstart = cend = (char)(_pat[pat++]&0xFF);
@@ -200,7 +199,7 @@ public class Dir {
                 if(escape && _pat[pat] == '\\') {
                     pat++;
                 }
-                if(pat >= len) {
+                if(pat >= pend) {
                     return -1;
                 }
 

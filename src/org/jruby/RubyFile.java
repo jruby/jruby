@@ -941,10 +941,12 @@ public class RubyFile extends RubyIO {
         } else {
             flags = 0;
         }
-        
+
         ByteList pattern = args[0].convertToString().getByteList();
         ByteList path = args[1].convertToString().getByteList();
-        if (org.jruby.util.Dir.fnmatch(pattern.bytes, pattern.begin, pattern.realSize , path.bytes, path.begin, path.realSize, flags) == 0) {
+
+        if (org.jruby.util.Dir.fnmatch(pattern.bytes, pattern.begin, pattern.begin+pattern.realSize, 
+                                       path.bytes, path.begin, path.begin+path.realSize, flags) == 0) {
             return runtime.getTrue();
         }
         return runtime.getFalse();
