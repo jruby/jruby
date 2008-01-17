@@ -391,9 +391,10 @@ public class RubyIO extends RubyObject {
     	    }
 
             int keepFileno = handler.getFileno();
-            
-            // close the old handler before it gets overwritten
-            if (handler.isOpen()) {
+
+            // close the old handler before it gets overwritten, 
+            // but we shouldn't actually close the handler if it's the same as the one we are cloning here
+            if (handler.isOpen() && handler != ios.handler) {
                 try {
                     handler.close();
                 } catch (IOHandler.BadDescriptorException e) {
