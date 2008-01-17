@@ -1,11 +1,9 @@
 package org.jruby.ext.posix;
 
-public class JavaPasswd extends NativePasswd {
-    private LibC libc;
+public class JavaPasswd implements Passwd {
     private POSIXHandler handler;
 
-    public JavaPasswd(LibC libc, POSIXHandler handler) {
-        this.libc = libc;
+    public JavaPasswd(POSIXHandler handler) {
         this.handler = handler;
     }
     
@@ -22,7 +20,9 @@ public class JavaPasswd extends NativePasswd {
     }
 
     public long getGID() {
-        return libc.getgid();
+        handler.unimplementedError("passwd.pw_gid unimplemented");
+
+        return -1;
     }
 
     public String getHome() {
@@ -52,6 +52,8 @@ public class JavaPasswd extends NativePasswd {
     }
 
     public long getUID() {
-        return libc.getuid();
+        handler.unimplementedError("passwd.pw_uid unimplemented");
+        
+        return -1;
     }
 }

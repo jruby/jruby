@@ -1,13 +1,13 @@
 package org.jruby.ext.posix;
 
-public class WindowsPOSIX extends BasePOSIX {
+public class WindowsPOSIX extends BaseNativePOSIX {
     // We fall back to Pure Java Posix impl when windows does not support something
-    POSIX fallBack;
+    JavaLibCHelper helper;
 
     public WindowsPOSIX(LibC libc, POSIXHandler handler) {
         super(libc, handler);
 
-        fallBack = POSIXFactory.getJavaPOSIX(handler);
+        helper = new JavaLibCHelper(handler);
     }
 
     @Override

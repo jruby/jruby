@@ -1,6 +1,6 @@
 package org.jruby.ext.posix;
 
-public class LinuxPOSIX extends BasePOSIX {
+public class LinuxPOSIX extends BaseNativePOSIX {
     private static int STAT_VERSION = 3;
     
     public LinuxPOSIX(LibC libc, POSIXHandler handler) {

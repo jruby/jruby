@@ -3,11 +3,11 @@ package org.jruby.ext.posix;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-public abstract class BasePOSIX implements POSIX {
+public abstract class BaseNativePOSIX implements POSIX {
     protected LibC libc;
     protected POSIXHandler handler;
     
-    public BasePOSIX(LibC libc, POSIXHandler handler) {
+    public BaseNativePOSIX(LibC libc, POSIXHandler handler) {
         this.libc = libc;
         this.handler = handler;
     }

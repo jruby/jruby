@@ -49,7 +49,7 @@ public class POSIXFactory {
     }
     
     public static POSIX getJavaPOSIX(POSIXHandler handler) {
-        return new JavaPOSIX(new JavaLibC(handler), handler);
+        return new JavaPOSIX(handler);
     }
     
     public static LibC loadLinuxLibC() {
