@@ -74,11 +74,19 @@ public class RubyTCPServer extends RubyTCPSocket {
     private ServerSocketChannel ssc;
     private InetSocketAddress socket_address;
 
-    @JRubyMethod(name = "initialize", required = 2, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject hostname, IRubyObject port) {
+    @JRubyMethod(name = "initialize", required = 1, optional = 1, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(IRubyObject[] args) {
+        IRubyObject hostname = args[0];
+        IRubyObject port = args.length > 1 ? args[1] : getRuntime().getNil();
+        
         if(hostname.isNil()) {
             hostname = getRuntime().newString("0.0.0.0");
+        } else if (hostname instanceof RubyFixnum) {
+            // numeric host, use it for port
+            port = hostname;
+            hostname = getRuntime().newString("0.0.0.0");
         }
+        
         String shost = hostname.convertToString().toString();
         try {
             InetAddress addr = InetAddress.getByName(shost);
@@ -101,12 +109,14 @@ public class RubyTCPServer extends RubyTCPSocket {
     @JRubyMethod(name = "accept")
     public IRubyObject accept() {
         RubyTCPSocket socket = new RubyTCPSocket(getRuntime(),getRuntime().fastGetClass("TCPSocket"));
+        ThreadContext context = getRuntime().getCurrentContext();
         Selector selector = null;
         try {
             ssc.configureBlocking(false);
             selector = Selector.open();
             SelectionKey key = ssc.register(selector, SelectionKey.OP_ACCEPT);
             
+            context.getThread().beforeBlockingCall();
             while (true) {
                 int selected = selector.select();
                 if (selected == 0) {
@@ -125,6 +135,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                 if (selector != null) selector.close();
             } catch (IOException ioe) {
             }
+            context.getThread().afterBlockingCall();
         }
     }
 

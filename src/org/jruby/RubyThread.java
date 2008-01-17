@@ -624,7 +624,7 @@ public class RubyThread extends RubyObject {
     @JRubyMethod(name = "status")
     public IRubyObject status() {
         if (threadImpl.isAlive()) {
-        	if (isStopped) {
+            if (isStopped) {
             	return getRuntime().newString("sleep");
             } else if (killed) {
                 return getRuntime().newString("aborting");
@@ -713,5 +713,13 @@ public class RubyThread extends RubyObject {
 
     public static RubyThread mainThread(IRubyObject receiver) {
         return receiver.getRuntime().getThreadService().getMainThread();
+    }
+    
+    public void beforeBlockingCall() {
+        isStopped = true;
+    }
+    
+    public void afterBlockingCall() {
+        isStopped = false;
     }
 }
