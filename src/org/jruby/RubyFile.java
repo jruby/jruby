@@ -683,17 +683,21 @@ public class RubyFile extends RubyIO {
             }
             
             result = jfilename.substring(0, index);
-         }
+       }
 
-         return recv.getRuntime().newString(result).infectBy(filename);
+        while (result.length() > 1 && result.charAt(result.length() - 1) == '/') {
+            result = result.substring(0, result.length() - 1);
+        }
+
+       return recv.getRuntime().newString(result).infectBy(filename);
 
     }
 
     private static boolean isWindowsDriveLetter(char c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+           return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
     }
 
-    
+
     /**
      * Returns the extension name of the file. An empty string is returned if 
      * the filename (not the entire path) starts or ends with a dot.
@@ -702,20 +706,20 @@ public class RubyFile extends RubyIO {
      * @return Extension, including the dot, or an empty string
      */
     @JRubyMethod(required = 1, meta = true)
-    public static IRubyObject extname(IRubyObject recv, IRubyObject arg) {
-        IRubyObject baseFilename = basename(recv, new IRubyObject[] { arg });
-        String filename = RubyString.stringValue(baseFilename).toString();
-        String result = "";
-        
-        int dotIndex = filename.lastIndexOf(".");
-        if (dotIndex > 0  && dotIndex != (filename.length() - 1)) {
-            // Dot is not at beginning and not at end of filename. 
-            result = filename.substring(dotIndex);
-        }
+           public static IRubyObject extname(IRubyObject recv, IRubyObject arg) {
+                   IRubyObject baseFilename = basename(recv, new IRubyObject[] { arg });
+                   String filename = RubyString.stringValue(baseFilename).toString();
+                   String result = "";
 
-        return recv.getRuntime().newString(result);
-    }
-    
+                   int dotIndex = filename.lastIndexOf(".");
+                   if (dotIndex > 0  && dotIndex != (filename.length() - 1)) {
+                           // Dot is not at beginning and not at end of filename. 
+                           result = filename.substring(dotIndex);
+                   }
+
+                   return recv.getRuntime().newString(result);
+           }
+
     /**
      * Converts a pathname to an absolute pathname. Relative paths are 
      * referenced from the current working directory of the process unless 
@@ -1084,7 +1088,8 @@ public class RubyFile extends RubyIO {
             if (recv.getRuntime().getPosix().link(
                     fromStr.toString(),toStr.toString()) == -1) {
                 // FIXME: When we get JNA3 we need to properly write this to errno.
-                throw recv.getRuntime().newSystemCallError("bad symlink");
+                throw recv.getRuntime().newErrnoEEXISTError("File exists - " 
+                               + fromStr + " or " + toStr);
             }
         } catch (java.lang.UnsatisfiedLinkError ule) {
             throw recv.getRuntime().newNotImplementedError(
@@ -1191,7 +1196,8 @@ public class RubyFile extends RubyIO {
             if (recv.getRuntime().getPosix().symlink(
                     fromStr.toString(), toStr.toString()) == -1) {
                 // FIXME: When we get JNA3 we need to properly write this to errno.
-                throw recv.getRuntime().newSystemCallError("bad symlink");
+                throw recv.getRuntime().newErrnoEEXISTError("File exists - " 
+                               + fromStr + " or " + toStr);
             }
         } catch (java.lang.UnsatisfiedLinkError ule) {
             throw recv.getRuntime().newNotImplementedError(
