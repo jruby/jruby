@@ -27,7 +27,7 @@ begin
   test_equal("world!", client_read)
 rescue
 end
-  
+
 serv = TCPServer.new('localhost',2203)
 test_no_exception { serv.listen(1024) } # fix for listen blowing up because it tried to rebind; it's a noop now
 
@@ -36,6 +36,8 @@ test_no_exception {
   TCPServer.open('localhost', 2204) {|sock| test_equal(TCPServer, sock.class)}
   TCPServer.open('localhost', 2204) {}
 }
+
+serv.close
 
 ### UDP ###
 
