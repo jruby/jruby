@@ -898,7 +898,7 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = {"tty?", "isatty?"})
+    @JRubyMethod(name = {"tty?", "isatty"})
     public RubyBoolean tty_p() {
         // TODO: this is less than ideal but might be as close as we'll get
         int fileno = handler.getFileno();
