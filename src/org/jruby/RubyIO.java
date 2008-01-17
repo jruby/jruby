@@ -54,7 +54,6 @@ import java.util.List;
 import java.util.Set;
 import org.jruby.anno.JRubyMethod;
 
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
@@ -64,7 +63,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.IOHandler;
-import org.jruby.util.IOHandlerJavaIO;
 import org.jruby.util.IOHandlerNio;
 import org.jruby.util.IOHandlerNull;
 import org.jruby.util.IOHandlerProcess;
@@ -344,16 +342,26 @@ public class RubyIO extends RubyObject {
     }
 
     public OutputStream getOutStream() {
-        if(handler instanceof IOHandlerJavaIO) {
-            return ((IOHandlerJavaIO) handler).getOutputStream();
+        // FIXME: Temporarily gross
+        if(handler instanceof IOHandlerUnseekable) {
+            return ((IOHandlerUnseekable) handler).getOutputStream();
+        } else if(handler instanceof IOHandlerSeekable) {
+            return ((IOHandlerSeekable) handler).getOutputStream();
+        } else if(handler instanceof IOHandlerProcess) {
+            return ((IOHandlerProcess) handler).getOutputStream();
         } else {
             return null;
         }
     }
 
     public InputStream getInStream() {
-        if (handler instanceof IOHandlerJavaIO) {
-            return ((IOHandlerJavaIO) handler).getInputStream();
+        // FIXME: Temporarily gross
+        if(handler instanceof IOHandlerUnseekable) {
+            return ((IOHandlerUnseekable) handler).getInputStream();
+        } else if(handler instanceof IOHandlerSeekable) {
+            return ((IOHandlerSeekable) handler).getInputStream();
+        } else if(handler instanceof IOHandlerProcess) {
+            return ((IOHandlerProcess) handler).getInputStream();
         } else {
             return null;
         }

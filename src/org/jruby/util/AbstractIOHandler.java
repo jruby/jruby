@@ -11,7 +11,12 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2008 The JRuby Community <www.jruby.org>
+ * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -35,43 +40,85 @@ import org.jruby.Ruby;
 
 /**
  */
-public interface IOHandler {
+public abstract class AbstractIOHandler implements IOHandler {
     public static final int SEEK_SET = 0;
     public static final int SEEK_CUR = 1;
     public static final int SEEK_END = 2;
     
     // We use a highly uncommon string to represent the paragraph delimiter (100% soln not worth it) 
     public static final ByteList PARAGRAPH_DELIMETER = ByteList.create("PARAGRPH_DELIM_MRK_ER");
-
-    public int getFileno();
     
-    public void setFileno(int fileno);
+    private Ruby runtime;
+    protected IOModes modes;
+    protected int fileno;
+    protected boolean isOpen = false;
+    protected boolean isSync = false;
+    
+    protected AbstractIOHandler(Ruby runtime) {
+        this.runtime = runtime;
+    }
 
-    public Ruby getRuntime();
+    public int getFileno() {
+        return fileno;
+    }
+    
+    public void setFileno(int fileno) {
+        this.fileno = fileno;
+    }
+
+    public Ruby getRuntime() {
+        return runtime;
+    }
     
     public abstract FileChannel getFileChannel();
     
-    public boolean isOpen();
+    public boolean isOpen() {
+        return isOpen;
+    }
 
-    public boolean isReadable();
+    public boolean isReadable() {
+        return modes.isReadable();
+    }
 
-    public boolean isWritable();
+    public boolean isWritable() {
+        return modes.isWritable();
+    }
 
-    public void checkOpen(String message) throws IOException;
+    public void checkOpen(String message) throws IOException {
+        if (!isOpen) throw new IOException(message);
+    }
     
-    public void checkReadable() throws IOException, BadDescriptorException;
+    public void checkReadable() throws IOException, BadDescriptorException {
+        if (!isOpen) throw new BadDescriptorException();
+        if (!modes.isReadable()) throw new IOException("not opened for reading");
+    }
 
-    public void checkWritable() throws IOException, BadDescriptorException;
+    public void checkWritable() throws IOException, BadDescriptorException {
+        if (!isOpen) throw new BadDescriptorException();
+        if (!modes.isWritable()) throw new IOException("not opened for writing");
+    }
 
-    public void checkPermissionsSubsetOf(IOModes subsetModes);
+    public void checkPermissionsSubsetOf(IOModes subsetModes) {
+        subsetModes.checkSubsetOf(modes);
+    }
     
-    public IOModes getModes();
+    public IOModes getModes() {
+    	return modes;
+    }
     
-    public boolean isSync();
+    public boolean isSync() {
+        return isSync;
+    }
 
-    public void setIsSync(boolean isSync);
+    public void setIsSync(boolean isSync) {
+        this.isSync = isSync;
+    }
 
-    public void reset(IOModes subsetModes) throws IOException, InvalidValueException;
+    public void reset(IOModes subsetModes) throws IOException, InvalidValueException {
+        checkPermissionsSubsetOf(subsetModes);
+        
+        resetByModes(subsetModes);
+    }
 
     public abstract ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException, EOFException;
     public abstract ByteList getsEntireStream() throws IOException, BadDescriptorException, EOFException;
@@ -91,18 +138,19 @@ public interface IOHandler {
     public abstract int syswrite(ByteList buf) throws IOException, BadDescriptorException;
     public abstract int syswrite(int ch) throws IOException, BadDescriptorException;
     
-    public abstract IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException;
+    public abstract AbstractIOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException;
     public abstract void close() throws IOException, BadDescriptorException;
     public abstract void flush() throws IOException, BadDescriptorException;
 
-    public void closeWrite() throws IOException;
+    public void closeWrite() throws IOException {
+    }
     
     /**
      * <p>Flush and sync all writes to the filesystem.</p>
      * 
      * @throws IOException if the sync does not work
      */
-    public void sync() throws IOException, BadDescriptorException;
+    public abstract void sync() throws IOException, BadDescriptorException;
     
     /**
      * <p>Return true when at end of file (EOF).</p>
@@ -111,14 +159,14 @@ public interface IOHandler {
      * @throws IOException 
      * @throws BadDescriptorException 
      */
-    public boolean isEOF() throws IOException, BadDescriptorException;
+    public abstract boolean isEOF() throws IOException, BadDescriptorException;
     
     /**
      * <p>Get the process ID associated with this handler.</p>
      * 
      * @return the pid if the IOHandler represents a process; otherwise -1
      */
-    public int pid();
+    public abstract int pid();
     
     /**
      * <p>Get the current position within the file associated with this
@@ -129,10 +177,10 @@ public interface IOHandler {
      * @throws PipeException ESPIPE (illegal seek) when not a file 
      * 
      */
-    public long pos() throws IOException, PipeException;
+    public abstract long pos() throws IOException, PipeException;
     
-    public void resetByModes(IOModes newModes) throws IOException, InvalidValueException;
-    public void rewind() throws IOException, PipeException, InvalidValueException;
+    public abstract void resetByModes(IOModes newModes) throws IOException, InvalidValueException;
+    public abstract void rewind() throws IOException, PipeException, InvalidValueException;
     
     /**
      * <p>Perform a seek based on pos().  </p> 
@@ -140,14 +188,14 @@ public interface IOHandler {
      * @throws PipeException 
      * @throws InvalidValueException 
      */
-    public void seek(long offset, int type) throws IOException, PipeException, InvalidValueException;
-    public void truncate(long newLength) throws IOException, PipeException;
+    public abstract void seek(long offset, int type) throws IOException, PipeException, InvalidValueException;
+    public abstract void truncate(long newLength) throws IOException, PipeException;
     
     /**
      * Implement IO#ready? as per io/wait in MRI.
      * returns non-nil if input available without blocking, or nil.
      */
-    public int ready() throws IOException;
+    public abstract int ready() throws IOException;
 
     /**
      * Implement IO#wait as per io/wait in MRI.
@@ -155,17 +203,13 @@ public interface IOHandler {
      *
      * The default implementation loops while ready returns 0.
      */
-    public void waitUntilReady() throws IOException, InterruptedException;
+    public void waitUntilReady() throws IOException, InterruptedException {
+        while (ready() == 0) {
+            Thread.sleep(10);
+        }
+    }
 
-    public boolean hasPendingBuffered();
-    
-    public class PipeException extends Exception {
-		private static final long serialVersionUID = 1L;
-    }
-    public class BadDescriptorException extends Exception {
-		private static final long serialVersionUID = 1L;
-    }
-    public class InvalidValueException extends Exception {
-		private static final long serialVersionUID = 1L;
+    public boolean hasPendingBuffered() {
+        return false;
     }
 }

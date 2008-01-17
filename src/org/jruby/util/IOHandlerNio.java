@@ -44,7 +44,7 @@ import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.io.EOFException;
 
-public class IOHandlerNio extends IOHandler {
+public class IOHandlerNio extends AbstractIOHandler {
     private Channel channel;
 
     private static final int BLOCK_SIZE = 1024 * 16;
@@ -87,7 +87,7 @@ public class IOHandlerNio extends IOHandler {
     }
 
     // this seems wrong...
-    public IOHandler cloneIOHandler() throws IOException {
+    public AbstractIOHandler cloneIOHandler() throws IOException {
         return new IOHandlerNio(getRuntime(), channel);
     }
 
@@ -97,12 +97,12 @@ public class IOHandlerNio extends IOHandler {
         }
     }
 
-    protected void checkReadable() throws IOException  {
+    public void checkReadable() throws IOException  {
         checkOpen("closed stream");
         if (!modes.isReadable()) throw new IOException("not opened for reading");
     }
 
-    protected void checkWritable() throws IOException  {
+    public void checkWritable() throws IOException  {
         checkOpen("closed stream");
         if (!writable || !modes.isWritable()) throw new IOException("not opened for writing");
     }
@@ -419,7 +419,7 @@ public class IOHandlerNio extends IOHandler {
                 return ((FileChannel) channel).position();
             }
         } else {
-            throw new IOHandler.PipeException();
+            throw new AbstractIOHandler.PipeException();
         }
     }
 
@@ -445,7 +445,7 @@ public class IOHandlerNio extends IOHandler {
                 throw new InvalidValueException();
             }
         } else {
-            throw new IOHandler.PipeException();
+            throw new AbstractIOHandler.PipeException();
         }
     }
 
@@ -472,7 +472,7 @@ public class IOHandlerNio extends IOHandler {
                 seek(0, SEEK_SET);
             } catch(InvalidValueException e) {} // won't be thrown
         } else {
-            throw new IOHandler.PipeException();
+            throw new AbstractIOHandler.PipeException();
         }
     }
 
@@ -480,7 +480,7 @@ public class IOHandlerNio extends IOHandler {
         if (channel instanceof FileChannel) {
             ((FileChannel) channel).truncate(length);
         } else {
-            throw new IOHandler.PipeException();
+            throw new AbstractIOHandler.PipeException();
         }
     }
 

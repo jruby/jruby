@@ -35,7 +35,7 @@ package org.jruby.util;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.FileNotFoundException;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -50,7 +50,7 @@ import org.jruby.RubyIO;
 /**
  * <p>This file implements a seekable IO file.</p>
  */
-public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
+public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable {
     private final static int BUFSIZE = 16 * 1024;
     
     protected RandomAccessFile file;
@@ -60,6 +60,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
     protected boolean reading; // are we reading or writing?
     protected FileChannel channel;
     private final JRubyFile theFile;
+    protected int ungotc = -1;
     
     public IOHandlerSeekable(Ruby runtime, String path, IOModes modes) 
         throws IOException, InvalidValueException {
@@ -248,8 +249,8 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
     }
 
 
-    public IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException {
-        IOHandler newHandler = new IOHandlerSeekable(this); 
+    public AbstractIOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException {
+        AbstractIOHandler newHandler = new IOHandlerSeekable(this); 
         newHandler.seek(pos(), SEEK_CUR);
         return newHandler;
     }
@@ -563,6 +564,70 @@ public class IOHandlerSeekable extends IOHandlerJavaIO implements Finalizable {
             if (isOpen) close(true); // close without removing from finalizers
         } catch (Exception e) { // What else could we do?
             e.printStackTrace();
+        }
+    }
+    
+    public int ready() throws IOException {
+        return getInputStream().available();
+    }
+
+    public void putc(int c) throws IOException, BadDescriptorException {
+        try {
+            syswrite(c);
+            flush();
+        } catch (IOException e) {
+        }
+    }
+
+    public void ungetc(int c) {
+        // Ruby silently ignores negative ints for some reason?
+        if (c >= 0) {
+            ungotc = c;
+        }
+    }
+
+    public int getc() throws IOException, BadDescriptorException {
+        checkReadable();
+
+        int c = read();
+
+        if (c == -1) {
+            return c;
+        }
+        return c & 0xff;
+    }
+
+    public int write(ByteList string) throws IOException, BadDescriptorException {
+        return syswrite(string);
+    }
+
+    public ByteList read(int number) throws IOException, BadDescriptorException {
+        try {
+
+            if (ungotc >= 0) {
+                ByteList buf2 = sysread(number - 1);
+                buf2.prepend((byte)ungotc);
+                ungotc = -1;
+                return buf2;
+            }
+
+            return sysread(number);
+        } catch (EOFException e) {
+            return null;
+        }
+    }
+
+    public int read() throws IOException {
+        try {
+            if (ungotc >= 0) {
+                int c = ungotc;
+                ungotc = -1;
+                return c;
+            }
+
+            return sysread();
+        } catch (EOFException e) {
+            return -1;
         }
     }
 }

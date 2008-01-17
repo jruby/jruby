@@ -47,9 +47,10 @@ import org.jruby.RubyIO;
  * IO Handler for an unseekable source (both input and output supported by this class).
  *
  */
-public class IOHandlerUnseekable extends IOHandlerJavaIO {
+public class IOHandlerUnseekable extends AbstractIOHandler {
     protected InputStream input = null;
     protected OutputStream output = null;
+    protected int ungotc = -1;
 
     /**
      * @param inStream
@@ -163,7 +164,7 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
         return list;
     }
 
-    public IOHandler cloneIOHandler() throws IOException {
+    public AbstractIOHandler cloneIOHandler() throws IOException {
         return new IOHandlerUnseekable(getRuntime(), input, output); 
     }
 
@@ -244,7 +245,7 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
      * @see org.jruby.util.IOHandler#pos()
      */
     public long pos() throws PipeException {
-        throw new IOHandler.PipeException();
+        throw new AbstractIOHandler.PipeException();
     }
     
     public void resetByModes(IOModes newModes) {
@@ -255,7 +256,7 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
      * @see org.jruby.util.IOHandler#rewind()
      */
     public void rewind() throws PipeException {
-        throw new IOHandler.PipeException();
+        throw new AbstractIOHandler.PipeException();
     }
     
     /**
@@ -263,7 +264,7 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
      * @see org.jruby.util.IOHandler#seek(long, int)
      */
     public void seek(long offset, int type) throws PipeException {
-        throw new IOHandler.PipeException();
+        throw new AbstractIOHandler.PipeException();
     }
     
     /**
@@ -329,11 +330,121 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
     }
     
     public void truncate(long newLength) throws IOException, PipeException {
-        throw new IOHandler.PipeException();
+        throw new AbstractIOHandler.PipeException();
     }
     
     public FileChannel getFileChannel() {
         assert false : "No file channel for unseekable IO";
         return null;
+    }
+    
+    public int ready() throws IOException {
+        return getInputStream().available();
+    }
+
+    public void putc(int c) throws IOException, BadDescriptorException {
+        try {
+            syswrite(c);
+            flush();
+        } catch (IOException e) {
+        }
+    }
+
+    public void ungetc(int c) {
+        // Ruby silently ignores negative ints for some reason?
+        if (c >= 0) {
+            ungotc = c;
+        }
+    }
+
+    public int getc() throws IOException, BadDescriptorException {
+        checkReadable();
+
+        int c = read();
+
+        if (c == -1) {
+            return c;
+        }
+        return c & 0xff;
+    }
+
+    public int write(ByteList string) throws IOException, BadDescriptorException {
+        return syswrite(string);
+    }
+
+    public int read() throws IOException {
+        try {
+            if (ungotc >= 0) {
+                int c = ungotc;
+                ungotc = -1;
+                return c;
+            }
+
+            return sysread();
+        } catch (EOFException e) {
+            return -1;
+        }
+    }
+
+    public ByteList read(int number) throws IOException, BadDescriptorException {
+        try {
+
+            if (ungotc >= 0) {
+                ByteList buf2 = sysread(number - 1);
+                buf2.prepend((byte)ungotc);
+                ungotc = -1;
+                return buf2;
+            }
+
+            return sysread(number);
+        } catch (EOFException e) {
+            return null;
+        }
+    }
+
+    public ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException {
+        checkReadable();
+
+        if (separatorString == null) {
+            return getsEntireStream();
+        }
+
+        final ByteList separator = (separatorString == PARAGRAPH_DELIMETER) ?
+            ByteList.create("\n\n") : separatorString;
+
+        byte c = (byte)read();
+        if (c == -1) {
+            return null;
+        }
+
+        ByteList buffer = new ByteList();
+
+        LineLoop : while (true) {
+            while (c != separator.bytes[separator.begin] && c != -1) {
+                buffer.append(c);
+                c = (byte)read();
+            }
+            for (int i = 0; i < separator.realSize; i++) {
+                if (c == -1) {
+                    break LineLoop;
+                } else if (c != separator.bytes[separator.begin + i]) {
+                    continue LineLoop;
+                }
+                buffer.append(c);
+                if (i < separator.realSize - 1) {
+                    c = (byte)read();
+                }
+            }
+            break;
+        }
+
+        if (separatorString == PARAGRAPH_DELIMETER) {
+            while (c == separator.bytes[separator.begin]) {
+                c = (byte)read();
+            }
+            ungetc(c);
+        }
+
+        return buffer;
     }
 }

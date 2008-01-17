@@ -34,7 +34,7 @@ import java.nio.channels.FileChannel;
 
 import org.jruby.Ruby;
 
-public class IOHandlerNull extends IOHandler {
+public class IOHandlerNull extends AbstractIOHandler {
     
     public IOHandlerNull(Ruby runtime, IOModes modes) {
         super(runtime);
@@ -88,7 +88,7 @@ public class IOHandlerNull extends IOHandler {
         return 1;
     }
 
-    public IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException {
+    public AbstractIOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException {
         return new IOHandlerNull(getRuntime(), modes);
     }
 
@@ -113,7 +113,7 @@ public class IOHandlerNull extends IOHandler {
         return 0;
     }
 
-    protected void resetByModes(IOModes newModes) throws IOException, InvalidValueException {
+    public void resetByModes(IOModes newModes) throws IOException, InvalidValueException {
     }
 
     public void rewind() throws IOException, PipeException, InvalidValueException {
