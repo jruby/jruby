@@ -57,7 +57,8 @@ public class ZlibDeflate {
 
     public ZlibDeflate(IRubyObject caller, int level, int win_bits, int memlevel, int strategy) {
         super();
-        flater = new Deflater(level,false);
+        // Zlib behavior: negative win_bits means no header and no checksum.
+        flater = new Deflater(level, win_bits < 0);
         flater.setStrategy(strategy);
         collected = new ByteList(BASE_SIZE);
         runtime = caller.getRuntime();

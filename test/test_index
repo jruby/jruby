@@ -76,3 +76,4 @@ testVariableAndMethod.rb
 testVisibility.rb
 testXML.rb
 testYAML.rb
+test_zlib.rb

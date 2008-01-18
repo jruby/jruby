@@ -69,4 +69,20 @@ class TestZlib < Test::Unit::TestCase
     rescue Zlib::GzipReader::Error
     end
   end
+  
+  def test_deflate_positive_winbits
+    d =  Zlib::Deflate.new(Zlib::DEFAULT_COMPRESSION, Zlib::MAX_WBITS)
+    d << 'hello'
+    res = d.finish
+    assert_equal("x\234\313H\315\311\311\a\000\006,\002\025", res)
+  end
+  
+   # negative winbits means no header and no checksum.
+   def test_deflate_negative_winbits
+     d =  Zlib::Deflate.new(Zlib::DEFAULT_COMPRESSION, -Zlib::MAX_WBITS)
+     d << 'hello'
+     res = d.finish
+     assert_equal("\313H\315\311\311\a\000", res)
+  end
+  
 end
