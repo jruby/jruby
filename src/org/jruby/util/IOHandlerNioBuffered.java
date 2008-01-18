@@ -41,6 +41,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 
@@ -51,7 +52,7 @@ import org.jruby.RubyIO;
 /**
  * <p>This file implements a seekable IO file.</p>
  */
-public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable {
+public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizable {
     private final static int BUFSIZE = 16 * 1024;
     
     protected String path;
@@ -62,7 +63,7 @@ public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable 
     private final JRubyFile theFile;
     protected int ungotc = -1;
     
-    public IOHandlerSeekable(Ruby runtime, String path, IOModes modes) 
+    public IOHandlerNioBuffered(Ruby runtime, String path, IOModes modes) 
         throws IOException, InvalidValueException {
         super(runtime);
         
@@ -105,7 +106,7 @@ public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable 
     }
     
     // The copying constructor, needed for cloneIOHandler().
-    private IOHandlerSeekable(IOHandlerSeekable other) throws IOException, InvalidValueException{
+    private IOHandlerNioBuffered(IOHandlerNioBuffered other) throws IOException, InvalidValueException{
         super(other.getRuntime());
 
         Ruby runtime = other.getRuntime();
@@ -133,8 +134,6 @@ public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable 
         // Do not open as 'rw' by default since a file with read-only permissions will fail on 'rw'
         return (modes.isWritable() || modes.shouldTruncate()) ? "rw" : "r";
     }
-    
-    private static final ByteList PARAGRAPH_SEPARATOR = ByteList.create("\n\n");
 
     public ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException {
         checkReadable();
@@ -244,7 +243,7 @@ public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable 
 
 
     public AbstractIOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException {
-        AbstractIOHandler newHandler = new IOHandlerSeekable(this); 
+        AbstractIOHandler newHandler = new IOHandlerNioBuffered(this); 
         newHandler.seek(pos(), SEEK_CUR);
         return newHandler;
     }
@@ -633,5 +632,9 @@ public class IOHandlerSeekable extends AbstractIOHandler implements Finalizable 
         } catch (EOFException e) {
             return -1;
         }
+    }
+
+    public Channel getChannel() {
+        return channel;
     }
 }

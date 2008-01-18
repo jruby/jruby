@@ -43,6 +43,7 @@ import java.io.OutputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
+import java.nio.channels.Channels;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -64,14 +65,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerNio;
-import org.jruby.util.IOHandlerNull;
-import org.jruby.util.IOHandlerProcess;
-import org.jruby.util.IOHandlerSeekable;
-import org.jruby.util.IOHandlerUnseekable;
+import org.jruby.util.IOHandlerNioBuffered;
 import org.jruby.util.IOModes;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.IOHandler.BadDescriptorException;
+import org.jruby.util.io.SplitChannel;
+import org.jruby.util.io.NullWritableChannel;
 
 /**
  * 
@@ -198,7 +198,7 @@ public class RubyIO extends RubyObject {
         }
         
         try {
-            handler = new IOHandlerUnseekable(runtime, null, outputStream);
+            handler = new IOHandlerNio(runtime, Channels.newChannel(outputStream));
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
@@ -215,7 +215,7 @@ public class RubyIO extends RubyObject {
         }
         
         try {
-            handler = new IOHandlerUnseekable(runtime, inputStream, null);
+            handler = new IOHandlerNio(runtime, Channels.newChannel(inputStream));
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
@@ -249,7 +249,10 @@ public class RubyIO extends RubyObject {
         modes = new IOModes(runtime, "w+");
 
         try {
-    	    handler = new IOHandlerProcess(runtime, process, modes);
+            SplitChannel channel = new SplitChannel(
+                    Channels.newChannel(process.getInputStream()),
+                    Channels.newChannel(process.getOutputStream()));
+    	    handler = new IOHandlerNio(runtime, channel, getNewFileno(), modes);
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
@@ -262,13 +265,28 @@ public class RubyIO extends RubyObject {
         super(runtime, runtime.getIO());
 
         try {
-            handler = new IOHandlerUnseekable(runtime, descriptor);
+            handler = handlerForFileno(runtime, descriptor);
         } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
+        } catch (IOException e) {
             throw runtime.newErrnoEBADFError();
         }
         modes = handler.getModes();
         
         registerIOHandler(handler);        
+    }
+    
+    public static IOHandler handlerForFileno(Ruby runtime, int fileno) throws BadDescriptorException, IOException {
+        switch (fileno) {
+        case 0:
+            return new IOHandlerNio(runtime, Channels.newChannel(runtime.getIn()), fileno);
+        case 1:
+            return new IOHandlerNio(runtime, Channels.newChannel(runtime.getOut()), fileno);
+        case 2:
+            return new IOHandlerNio(runtime, Channels.newChannel(runtime.getErr()), fileno);
+        default:
+            throw new BadDescriptorException();
+        }
     }
     
     private static ObjectAllocator IO_ALLOCATOR = new ObjectAllocator() {
@@ -342,29 +360,11 @@ public class RubyIO extends RubyObject {
     }
 
     public OutputStream getOutStream() {
-        // FIXME: Temporarily gross
-        if(handler instanceof IOHandlerUnseekable) {
-            return ((IOHandlerUnseekable) handler).getOutputStream();
-        } else if(handler instanceof IOHandlerSeekable) {
-            return ((IOHandlerSeekable) handler).getOutputStream();
-        } else if(handler instanceof IOHandlerProcess) {
-            return ((IOHandlerProcess) handler).getOutputStream();
-        } else {
-            return null;
-        }
+        return handler.getOutputStream();
     }
 
     public InputStream getInStream() {
-        // FIXME: Temporarily gross
-        if(handler instanceof IOHandlerUnseekable) {
-            return ((IOHandlerUnseekable) handler).getInputStream();
-        } else if(handler instanceof IOHandlerSeekable) {
-            return ((IOHandlerSeekable) handler).getInputStream();
-        } else if(handler instanceof IOHandlerProcess) {
-            return ((IOHandlerProcess) handler).getInputStream();
-        } else {
-            return null;
-        }
+        return handler.getInputStream();
     }
 
     public Channel getChannel() {
@@ -450,9 +450,10 @@ public class RubyIO extends RubyObject {
                 	modes = newModes;
                 }
                 if ("/dev/null".equals(path)) {
-                	handler = new IOHandlerNull(getRuntime(), modes);
+                        Channel nullChannel = new NullWritableChannel();
+                        handler = new IOHandlerNio(getRuntime(), nullChannel, getNewFileno(), newModes);
                 } else {
-                	handler = new IOHandlerSeekable(getRuntime(), path, modes);
+                	handler = new IOHandlerNioBuffered(getRuntime(), path, modes);
                 }
                 
                 registerIOHandler(handler);
@@ -537,16 +538,20 @@ public class RubyIO extends RubyObject {
         IOHandler existingIOHandler = getIOHandlerByFileno(newFileno);
         
         if (existingIOHandler == null) {
+            // this seems unlikely to happen unless it's a totally bogus fileno
+            // ...so do we even need to bother trying to create one?
             if (mode == null) {
                 mode = "r";
             }
             
             try {
-                handler = new IOHandlerUnseekable(getRuntime(), newFileno, mode);
+                handler = handlerForFileno(getRuntime(), fileno);
             } catch (BadDescriptorException e) {
                 throw getRuntime().newErrnoEBADFError();
+            } catch (IOException e) {
+                throw getRuntime().newErrnoEBADFError();
             }
-            modes = new IOModes(getRuntime(), mode);
+            //modes = new IOModes(getRuntime(), mode);
             
             registerIOHandler(handler);
         } else {
@@ -968,13 +973,10 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "close_write")
     public IRubyObject close_write() {
-        if (handler instanceof IOHandlerProcess) {
-            IOHandlerProcess processHandler = (IOHandlerProcess) handler;
-            try {
-                processHandler.getOutputStream().close();
-            } catch (IOException e ) {
-                throw getRuntime().newIOError(e.getMessage());
-            }
+        try {
+            handler.closeWrite();
+        } catch (IOException ioe) {
+            // hmmmm
         }
         return this;
     }

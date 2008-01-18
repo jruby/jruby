@@ -29,6 +29,9 @@ package org.jruby.util;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 
 import org.jruby.Ruby;
@@ -42,6 +45,8 @@ public interface IOHandler {
     
     // We use a highly uncommon string to represent the paragraph delimiter (100% soln not worth it) 
     public static final ByteList PARAGRAPH_DELIMETER = ByteList.create("PARAGRPH_DELIM_MRK_ER");
+    
+    public static final ByteList PARAGRAPH_SEPARATOR = ByteList.create("\n\n");
 
     public int getFileno();
     
@@ -158,6 +163,12 @@ public interface IOHandler {
     public void waitUntilReady() throws IOException, InterruptedException;
 
     public boolean hasPendingBuffered();
+    
+    public InputStream getInputStream();
+    
+    public OutputStream getOutputStream();
+    
+    public Channel getChannel();
     
     public class PipeException extends Exception {
 		private static final long serialVersionUID = 1L;

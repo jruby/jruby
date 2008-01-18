@@ -29,6 +29,9 @@
 
 package org.jruby.util;
 
+import org.jruby.util.io.SplitChannel;
+import java.io.InputStream;
+import java.io.OutputStream;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.RubyIO;
@@ -43,6 +46,7 @@ import java.nio.ByteBuffer;
 
 import java.io.IOException;
 import java.io.EOFException;
+import java.nio.channels.Channels;
 
 public class IOHandlerNio extends AbstractIOHandler {
     private Channel channel;
@@ -54,6 +58,10 @@ public class IOHandlerNio extends AbstractIOHandler {
     private boolean bufferedIO = false;
 
     public IOHandlerNio(Ruby runtime, Channel channel) throws IOException {
+        this(runtime, channel, RubyIO.getNewFileno());
+    }
+
+    public IOHandlerNio(Ruby runtime, Channel channel, int fileno) throws IOException {
         super(runtime);
         String mode = "";
         this.channel = channel;
@@ -78,7 +86,17 @@ public class IOHandlerNio extends AbstractIOHandler {
             }
             modes = new IOModes(runtime, mode);
         }
-        fileno = RubyIO.getNewFileno();
+        this.fileno = fileno;
+        outBuffer = ByteBuffer.allocate(BLOCK_SIZE);
+    }
+
+    public IOHandlerNio(Ruby runtime, Channel channel, int fileno, IOModes modes) throws IOException {
+        super(runtime);
+        this.channel = channel;
+        this.isOpen = true;
+        this.modes = modes;
+        // TODO: Confirm modes correspond to the available modes on the channel
+        this.fileno = fileno;
         outBuffer = ByteBuffer.allocate(BLOCK_SIZE);
     }
 
@@ -112,6 +130,11 @@ public class IOHandlerNio extends AbstractIOHandler {
     public void closeWrite() throws IOException {
         checkOpen("closed stream");
         writable = false;
+        
+        if (channel instanceof SplitChannel) {
+            // split channels have separate read/write, so we *can* close write
+            ((SplitChannel)channel).closeWrite();
+        }
     }
 
     /* Unbuffered operations */
@@ -503,6 +526,22 @@ public class IOHandlerNio extends AbstractIOHandler {
             return inBuffer.remaining();
         } else {
             return ungotc;
+        }
+    }
+
+    public InputStream getInputStream() {
+        if (channel instanceof ReadableByteChannel) {
+            return Channels.newInputStream((ReadableByteChannel)channel);
+        } else {
+            return null;
+        }
+    }
+
+    public OutputStream getOutputStream() {
+        if (channel instanceof WritableByteChannel) {
+            return Channels.newOutputStream((WritableByteChannel)channel);
+        } else {
+            return null;
         }
     }
 }

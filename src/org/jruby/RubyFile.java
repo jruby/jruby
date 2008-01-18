@@ -41,6 +41,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.nio.channels.Channel;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 
@@ -55,13 +57,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.DirectoryAsFileException;
 import org.jruby.util.IOHandler;
-import org.jruby.util.IOHandlerNull;
-import org.jruby.util.IOHandlerSeekable;
-import org.jruby.util.IOHandlerUnseekable;
+import org.jruby.util.IOHandlerNioBuffered;
 import org.jruby.util.IOModes;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.IOHandler.InvalidValueException;
+import org.jruby.util.IOHandlerNio;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.NullWritableChannel;
 
 /**
  * Ruby File class equivalent in java.
@@ -129,7 +131,7 @@ public class RubyFile extends RubyIO {
         super(runtime, runtime.getFile());
         this.path = path;
         try {
-            this.handler = new IOHandlerUnseekable(runtime, in, null);
+            this.handler = new IOHandlerNio(runtime, Channels.newChannel(in));
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
@@ -243,7 +245,8 @@ public class RubyFile extends RubyIO {
         
         try {
             if (newPath.equals("/dev/null")) {
-                handler = new IOHandlerNull(getRuntime(), newModes);
+                Channel nullChannel = new NullWritableChannel();
+                handler = new IOHandlerNio(getRuntime(), nullChannel, getNewFileno(), newModes);
             } else if(newPath.startsWith("file:")) {
                 String filePath = path.substring(5, path.indexOf("!"));
                 String internalPath = path.substring(path.indexOf("!") + 2);
@@ -264,9 +267,9 @@ public class RubyFile extends RubyIO {
                 }
 
                 InputStream is = jf.getInputStream(zf);
-                handler = new IOHandlerUnseekable(getRuntime(), is, null);
+                handler = new IOHandlerNio(getRuntime(), Channels.newChannel(is));
             } else {
-                handler = new IOHandlerSeekable(getRuntime(), newPath, newModes);
+                handler = new IOHandlerNioBuffered(getRuntime(), newPath, newModes);
             }
             
             registerIOHandler(handler);
