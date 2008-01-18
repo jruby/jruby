@@ -245,12 +245,6 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal(true, Foo::ArrayList.new.foo)
   end
     
-  def test_attempt_to_include_string_at_top_level_gives_constant_already_exists
-    assert_raises(ConstantAlreadyExistsError) do
-      TopLevelConstantExistsProc.call
-    end
-  end
-
   def test_same_proxy_does_not_raise
     # JString already included and it is the same proxy, so do not throw an error
     # (e.g. intent of include_class already satisfied)
