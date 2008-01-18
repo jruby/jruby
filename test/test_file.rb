@@ -1,5 +1,6 @@
 require 'test/unit'
 require 'rbconfig'
+require 'fileutils'
 
 class TestFile < Test::Unit::TestCase
   
@@ -253,6 +254,36 @@ class TestFile < Test::Unit::TestCase
     # allow for some slop
     assert((time.to_i - File.mtime(filename).to_i).abs < 5)
     File.unlink(filename)
+  end
+  
+  def test_file_utime_nil_mtime
+    filename = '__test__file'
+    File.open(filename, 'w') {|f| }
+    time = File.mtime(filename)
+    sleep 2
+    File.utime(nil, nil, filename)
+    assert((File.mtime(filename).to_i - time.to_i) >= 2)
+    File.unlink(filename)
+  end
+  
+  def test_file_utime_bad_mtime_raises_typeerror
+    args = [ [], {}, '4000' ]
+    filename = '__test__file'
+    File.open(filename, 'w') {|f| }
+    args.each do |arg|
+      assert_raises(TypeError) {  File.utime(arg, arg, filename) }
+    end
+    File.unlink(filename)
+  end
+  
+  # JRUBY-1982 and JRUBY-1983
+  def test_file_mtime_after_fileutils_touch
+    filename = '__test__file'
+    File.open(filename, 'w') {|f| }
+    time = File.mtime(filename)
+    
+    FileUtils.touch(filename)
+    assert_equal(time, File.mtime(filename))
   end
 
   def test_file_stat # File::Stat tests

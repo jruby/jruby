@@ -1282,8 +1282,11 @@ public class RubyFile extends RubyIO {
             mtime = ((RubyTime) args[1]).getJavaDate().getTime();
         } else if (args[1] instanceof RubyNumeric) {
             mtime = RubyNumeric.num2long(args[1]);
+        } else if (args[1] == runtime.getNil()) {
+            mtime = System.currentTimeMillis();
         } else {
-            mtime = 0;
+            RubyTime time = (RubyTime) TypeConverter.convertToType(args[1], runtime.getTime(), MethodIndex.NO_INDEX,"to_time", true);
+            mtime = time.getJavaDate().getTime();
         }
         
         for (int i = 2, j = args.length; i < j; i++) {
@@ -1325,13 +1328,12 @@ public class RubyFile extends RubyIO {
 
     // Fast path since JNA stat is about 10x slower than this
     private static IRubyObject getLastModified(Ruby runtime, String path) {
-        long lastModified = JRubyFile.create(runtime.getCurrentDirectory(), path).lastModified();
+        JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), path);
         
-        // 0 according to API does is non-existent file or IOError
-        if (lastModified == 0L) {
+        if (!file.exists()) {
             throw runtime.newErrnoENOENTError("No such file or directory - " + path);
         }
         
-        return runtime.newTime(lastModified);
+        return runtime.newTime(file.lastModified());
     }
 }
