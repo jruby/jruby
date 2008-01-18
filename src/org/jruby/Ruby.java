@@ -2008,6 +2008,7 @@ public final class Ruby {
                 }
             } 
         }
+        getThreadService().disposeCurrentThread();
     }
 
     // new factory methods ------------------------------------------------------------------------

@@ -133,8 +133,19 @@ public class Main {
                     SimpleSampler.startSampleThread();
                 }
 
-                runtime.runFromMain(in, filename);
-                
+                try {
+                    runtime.runFromMain(in, filename);
+                } finally {
+                    runtime.tearDown();
+
+                    if (config.isBenchmarking()) {
+                        config.getOutput().println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
+                    }
+
+                    if (config.isSamplingEnabled()) {
+                        org.jruby.util.SimpleSampler.report();
+                    }
+                }
             } catch (RaiseException rj) {
                 RubyException raisedException = rj.getException();
                 if (runtime.fastGetClass("SystemExit").isInstance(raisedException)) {
@@ -156,16 +167,6 @@ public class Main {
                         printUsage();
                     }
                     return mee.getStatus();
-                }
-            } finally {
-                runtime.tearDown();
-
-                if (config.isBenchmarking()) {
-                    config.getOutput().println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
-                }
-
-                if(config.isSamplingEnabled()) {
-                    org.jruby.util.SimpleSampler.report();
                 }
             }
         }

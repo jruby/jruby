@@ -347,22 +347,11 @@
     </emma>
   </target>
 
-  <target name="test-short" depends="
-    copy-test-files,
-    instrument,
-    run-junit-interpreted,
-    run-junit-interpreted-1.9,
-    coverage-report">
-  </target>
-
   <target name="test" depends="
     copy-test-files,
     instrument,
     run-junit-compiled,
-    run-junit-interpreted,
     run-junit-compiled-1.9,
-    run-junit-interpreted-1.9,
-    compile-stdlib,
     coverage-report">
   </target>
 

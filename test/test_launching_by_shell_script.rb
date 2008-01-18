@@ -21,4 +21,11 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     jruby "test/fib.rb"
     assert_equal 0, $?.exitstatus
   end
+
+  def test_at_exit
+    assert_equal "", jruby("-e 'at_exit { exit 0 }'").chomp
+    assert_equal 0, $?.exitstatus
+    assert_equal "", jruby("-e 'at_exit { exit 1 }'").chomp
+    assert_equal 1, $?.exitstatus
+  end
 end

@@ -129,7 +129,6 @@ public class JavaEmbedUtils {
      */
     public static void terminate(Ruby runtime) {
         runtime.tearDown();
-        runtime.getThreadService().disposeCurrentThread();
     }
 
     /**
