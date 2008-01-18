@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 
@@ -41,13 +40,6 @@ import org.jruby.Ruby;
 /**
  */
 public abstract class AbstractIOHandler implements IOHandler {
-    public static final int SEEK_SET = 0;
-    public static final int SEEK_CUR = 1;
-    public static final int SEEK_END = 2;
-    
-    // We use a highly uncommon string to represent the paragraph delimiter (100% soln not worth it) 
-    public static final ByteList PARAGRAPH_DELIMETER = ByteList.create("PARAGRPH_DELIM_MRK_ER");
-    
     private Ruby runtime;
     protected IOModes modes;
     protected int fileno;
@@ -120,82 +112,12 @@ public abstract class AbstractIOHandler implements IOHandler {
         resetByModes(subsetModes);
     }
 
-    public abstract ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException, EOFException;
-    public abstract ByteList getsEntireStream() throws IOException, BadDescriptorException, EOFException;
-
     // TODO: We overflow on large files...We could increase to long to limit
     // this, but then the impl gets more involved since java io APIs based on
     // int (means we have to chunk up a long into a series of int ops).
 
-    public abstract ByteList read(int number) throws IOException, BadDescriptorException, EOFException;
-    public abstract int write(ByteList string) throws IOException, BadDescriptorException;
-
-    public abstract int getc() throws IOException, BadDescriptorException, EOFException;
-    public abstract void ungetc(int c);
-    public abstract void putc(int c) throws IOException, BadDescriptorException;
-    
-    public abstract ByteList sysread(int number) throws IOException, BadDescriptorException, EOFException;
-    public abstract int syswrite(ByteList buf) throws IOException, BadDescriptorException;
-    public abstract int syswrite(int ch) throws IOException, BadDescriptorException;
-    
-    public abstract AbstractIOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException;
-    public abstract void close() throws IOException, BadDescriptorException;
-    public abstract void flush() throws IOException, BadDescriptorException;
-
     public void closeWrite() throws IOException {
     }
-    
-    /**
-     * <p>Flush and sync all writes to the filesystem.</p>
-     * 
-     * @throws IOException if the sync does not work
-     */
-    public abstract void sync() throws IOException, BadDescriptorException;
-    
-    /**
-     * <p>Return true when at end of file (EOF).</p>
-     * 
-     * @return true if at EOF; false otherwise
-     * @throws IOException 
-     * @throws BadDescriptorException 
-     */
-    public abstract boolean isEOF() throws IOException, BadDescriptorException;
-    
-    /**
-     * <p>Get the process ID associated with this handler.</p>
-     * 
-     * @return the pid if the IOHandler represents a process; otherwise -1
-     */
-    public abstract int pid();
-    
-    /**
-     * <p>Get the current position within the file associated with this
-     * handler.</p>  
-     * 
-     * @return the current position in the file.
-     * @throws IOException 
-     * @throws PipeException ESPIPE (illegal seek) when not a file 
-     * 
-     */
-    public abstract long pos() throws IOException, PipeException;
-    
-    public abstract void resetByModes(IOModes newModes) throws IOException, InvalidValueException;
-    public abstract void rewind() throws IOException, PipeException, InvalidValueException;
-    
-    /**
-     * <p>Perform a seek based on pos().  </p> 
-     * @throws IOException 
-     * @throws PipeException 
-     * @throws InvalidValueException 
-     */
-    public abstract void seek(long offset, int type) throws IOException, PipeException, InvalidValueException;
-    public abstract void truncate(long newLength) throws IOException, PipeException;
-    
-    /**
-     * Implement IO#ready? as per io/wait in MRI.
-     * returns non-nil if input available without blocking, or nil.
-     */
-    public abstract int ready() throws IOException;
 
     /**
      * Implement IO#wait as per io/wait in MRI.
