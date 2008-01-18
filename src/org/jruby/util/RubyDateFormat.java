@@ -34,6 +34,7 @@ import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.FieldPosition;
 import java.text.ParsePosition;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -413,9 +414,14 @@ public class RubyDateFormat extends DateFormat {
 	private void formatWeekYear(int firstDayOfWeek, StringBuffer toAppendTo) {
         java.util.Calendar calendar = dt.toGregorianCalendar();
 		calendar.setFirstDayOfWeek(firstDayOfWeek);
+		calendar.setMinimalDaysInFirstWeek(7);
 		int value = calendar.get(java.util.Calendar.WEEK_OF_YEAR);
-		if (calendar.get(java.util.Calendar.DAY_OF_WEEK) != firstDayOfWeek) {
-			value--;
+		if ((value == 52 || value == 53)
+		        && (calendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
+		    // MRI behavior: Week values are monotonous.
+		    // So, weeks that effectively belong to previous year,
+		    // will get the value of 0, not 52 or 53, as in Java.
+		    value = 0;
 		}
 		if (value < 10) {
 		    toAppendTo.append('0');
