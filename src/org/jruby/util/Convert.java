@@ -438,7 +438,7 @@ public class Convert {
     }
 
     public static final byte[] longToHexBytes(long i, boolean upper) {
-        return longToUnsignedBytes(i, 4, true);
+        return longToUnsignedBytes(i, 4, upper);
     }
 
     public static final ByteList longToBinaryByteList(long i) {
