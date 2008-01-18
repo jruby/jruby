@@ -96,7 +96,7 @@ public class ObjectSpace {
             identities.remove(new Long(ref.id()));
     }
     
-    public void addFinalizer(IRubyObject object, RubyProc proc) {
+    public void addFinalizer(IRubyObject object, IRubyObject proc) {
         object.addFinalizer(proc);
     }
     

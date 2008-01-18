@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.Variable;
 
 public class RubyUndef implements IRubyObject {
 
-    public void addFinalizer(RubyProc finalizer) {
+    public void addFinalizer(IRubyObject finalizer) {
     }
 
     public IRubyObject anyToString() {

@@ -137,7 +137,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     
     public class Finalizer implements Finalizable {
         private long id;
-        private List<RubyProc> finalizers;
+        private List<IRubyObject> finalizers;
         private AtomicBoolean finalized;
         
         public Finalizer(long id) {
@@ -145,9 +145,9 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
             this.finalized = new AtomicBoolean(false);
         }
         
-        public void addFinalizer(RubyProc finalizer) {
+        public void addFinalizer(IRubyObject finalizer) {
             if (finalizers == null) {
-                finalizers = new ArrayList<RubyProc>();
+                finalizers = new ArrayList<IRubyObject>();
             }
             finalizers.add(finalizer);
         }
@@ -160,8 +160,10 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
             if (finalized.compareAndSet(false, true)) {
                 if (finalizers != null) {
                     for (int i = 0; i < finalizers.size(); i++) {
-                        ((RubyProc)finalizers.get(i)).call(
-                                new IRubyObject[] {RubyObject.this});
+                        IRubyObject finalizer = finalizers.get(i);                        
+                        RuntimeHelpers.invoke(
+                                finalizer.getRuntime().getCurrentContext(),
+                                finalizer, "call", RubyObject.this.id());
                     }
                 }
             }
@@ -1203,7 +1205,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         return dataStruct;
     }
  
-    public void addFinalizer(RubyProc finalizer) {
+    public void addFinalizer(IRubyObject finalizer) {
         if (this.finalizer == null) {
             this.finalizer = new Finalizer(getRuntime().getObjectSpace().idOf(this));
             getRuntime().addFinalizer(this.finalizer);

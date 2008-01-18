@@ -60,18 +60,18 @@ public class RubyObjectSpace {
     @JRubyMethod(name = "define_finalizer", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
-        RubyProc proc = null;
+        IRubyObject finalizer = null;
         if (args.length == 2) {
-            if(args[1] instanceof RubyProc) {
-                proc = (RubyProc)args[1];
-            } else {
-                proc = (RubyProc)TypeConverter.convertToType(args[1], runtime.getProc(), 0, "to_proc", true);
+            finalizer = args[1];
+            if (!finalizer.respondsTo("call")) {
+                throw runtime.newArgumentError("wrong type argument "
+                        + finalizer.getType() + " (should be callable)");
             }
         } else {
-            proc = runtime.newProc(Block.Type.PROC, block);
+            finalizer = runtime.newProc(Block.Type.PROC, block);
         }
         IRubyObject obj = args[0];
-        runtime.getObjectSpace().addFinalizer(obj, proc);
+        runtime.getObjectSpace().addFinalizer(obj, finalizer);
         return recv;
     }
 
