@@ -834,8 +834,11 @@ public class ASTInterpreter {
         if (constNode == null) {
             return context.setConstantInCurrent(iVisited.getName(), result);
         } else if (constNode.nodeId == NodeType.COLON2NODE) {
-            RubyModule module = (RubyModule)evalInternal(runtime,context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, aBlock);
-            return context.setConstantInModule(iVisited.getName(), module, result);
+            IRubyObject obj = evalInternal(runtime,context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, aBlock);
+            if (!(obj instanceof RubyModule)) {
+                throw runtime.newTypeError(obj.toString() + " is not a class/module");
+            }
+            return context.setConstantInModule(iVisited.getName(), (RubyModule) obj, result);
         } else { // colon3
             return context.setConstantInObject(iVisited.getName(), result);
         }
