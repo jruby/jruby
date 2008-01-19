@@ -356,6 +356,11 @@ public class RubyKernel {
                 defout.callMethod(context, "write", recv.getRuntime().newString("\n"));
             }
         }
+        
+        if (defout instanceof RubyFile) {
+            ((RubyFile)defout).flush();
+        }
+        
         return recv.getRuntime().getNil();
     }
 
