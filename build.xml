@@ -770,7 +770,7 @@
     <property name="reflection" value="false"/>
     <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
     
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubinius">
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubyspec/code">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       

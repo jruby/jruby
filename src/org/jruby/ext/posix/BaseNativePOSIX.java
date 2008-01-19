@@ -23,6 +23,15 @@ public abstract class BaseNativePOSIX implements POSIX {
         return libc.chown(filename, user, group);
     }
 
+    public FileStat fstat(FileDescriptor fileDescriptor) {
+        FileStat stat = allocateStat();
+        int fd = helper.getfd(fileDescriptor);
+
+        if (libc.fstat(fd, stat) < 0) handler.error(ERRORS.ENOENT, ""+fd);
+        
+        return stat;
+    }
+
     public int getegid() {
         return libc.getegid();
     }
@@ -175,8 +184,8 @@ public abstract class BaseNativePOSIX implements POSIX {
         return libc.setpriority(which, who, prio);
     }
 
-    public boolean isatty(int fd) {
-       return libc.isatty(fd) != 0;
+    public boolean isatty(FileDescriptor fd) {
+       return libc.isatty(helper.getfd(fd)) != 0;
     }
     
     public abstract FileStat allocateStat();

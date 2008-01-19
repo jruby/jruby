@@ -33,6 +33,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.FileDescriptor;
+
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.posix.FileStat;
 import org.jruby.runtime.Block;
@@ -78,6 +80,18 @@ public class RubyFileStat extends RubyObject {
         stat.setup(filename, lstat);
         
         return stat;
+    }
+
+    public static RubyFileStat newFileStat(Ruby runtime, FileDescriptor descriptor) {
+        RubyFileStat stat = new RubyFileStat(runtime, runtime.getFileStat());
+        
+        stat.setup(descriptor);
+        
+        return stat;
+    }
+
+    private void setup(FileDescriptor descriptor) {
+        stat = getRuntime().getPosix().fstat(descriptor);
     }
     
     private void setup(String filename, boolean lstat) {

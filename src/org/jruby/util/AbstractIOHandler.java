@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.io.FileDescriptor;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -47,6 +48,7 @@ public abstract class AbstractIOHandler implements IOHandler {
     private Ruby runtime;
     protected IOModes modes;
     protected int fileno;
+    protected FileDescriptor fileDescriptor = null;
     protected boolean isOpen = false;
     protected boolean isSync = false;
     
@@ -60,6 +62,10 @@ public abstract class AbstractIOHandler implements IOHandler {
     
     public void setFileno(int fileno) {
         this.fileno = fileno;
+    }
+    
+    public FileDescriptor getFD() {
+        return fileDescriptor;
     }
 
     public Ruby getRuntime() {

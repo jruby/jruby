@@ -24,6 +24,12 @@ public class JavaPOSIX implements POSIX {
     public int chown(String filename, int user, int group) {
         return helper.chown(filename, user, group);
     }
+    
+    public FileStat fstat(FileDescriptor descriptor) {
+        handler.unimplementedError("fstat unimplemented");
+        
+        return null;
+    }
 
     public int getegid() {
         return unimplementedInt("getegid");
@@ -33,10 +39,6 @@ public class JavaPOSIX implements POSIX {
         return unimplementedInt("geteuid");
     }
     
-    public int getfd(FileDescriptor descriptor) {
-        return helper.getfd(descriptor);
-    }
-
     public int getgid() {
         return unimplementedInt("getgid");
     }
@@ -73,8 +75,8 @@ public class JavaPOSIX implements POSIX {
         return -1;
     }
 
-    public boolean isatty(int fd) {
-        return helper.isatty(fd) != 0;
+    public boolean isatty(FileDescriptor fd) {
+        return helper.isatty(helper.getfd(fd)) != 0;
     }
     
     public int kill(int pid, int signal) {

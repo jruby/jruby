@@ -87,6 +87,8 @@ public class JavaLibCHelper {
     }
 
     public int getfd(FileDescriptor descriptor) {
+        if (descriptor == null) return -1;
+        
         try {
             return field.getInt(descriptor);
         } catch (SecurityException e) {

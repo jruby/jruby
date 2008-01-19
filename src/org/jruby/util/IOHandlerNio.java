@@ -30,6 +30,8 @@
 package org.jruby.util;
 
 import org.jruby.util.io.SplitChannel;
+
+import java.io.FileDescriptor;
 import java.io.InputStream;
 import java.io.OutputStream;
 import org.jruby.Ruby;
@@ -58,10 +60,10 @@ public class IOHandlerNio extends AbstractIOHandler {
     private boolean bufferedIO = false;
 
     public IOHandlerNio(Ruby runtime, Channel channel) throws IOException {
-        this(runtime, channel, RubyIO.getNewFileno());
+        this(runtime, channel, RubyIO.getNewFileno(), (FileDescriptor) null);
     }
 
-    public IOHandlerNio(Ruby runtime, Channel channel, int fileno) throws IOException {
+    public IOHandlerNio(Ruby runtime, Channel channel, int fileno, FileDescriptor fileDescriptor) throws IOException {
         super(runtime);
         String mode = "";
         this.channel = channel;
@@ -87,6 +89,7 @@ public class IOHandlerNio extends AbstractIOHandler {
             modes = new IOModes(runtime, mode);
         }
         this.fileno = fileno;
+        this.fileDescriptor = fileDescriptor;
         outBuffer = ByteBuffer.allocate(BLOCK_SIZE);
     }
 

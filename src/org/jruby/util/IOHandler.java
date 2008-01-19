@@ -28,6 +28,7 @@
 package org.jruby.util;
 
 import java.io.EOFException;
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -51,6 +52,8 @@ public interface IOHandler {
     public int getFileno();
     
     public void setFileno(int fileno);
+
+    public FileDescriptor getFD();
 
     public Ruby getRuntime();
     

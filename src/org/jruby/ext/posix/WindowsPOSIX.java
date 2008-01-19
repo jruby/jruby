@@ -1,5 +1,7 @@
 package org.jruby.ext.posix;
 
+import java.io.FileDescriptor;
+
 public class WindowsPOSIX extends BaseNativePOSIX {
     // We fall back to Pure Java Posix impl when windows does not support something
     JavaLibCHelper helper;
@@ -35,7 +37,7 @@ public class WindowsPOSIX extends BaseNativePOSIX {
     }
 
     @Override
-    public boolean isatty(int fd) {
+    public boolean isatty(FileDescriptor fd) {
        return false;
     }
 }

@@ -36,6 +36,7 @@
 package org.jruby;
 
 import java.io.EOFException;
+import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -174,7 +175,7 @@ public class RubyIO extends RubyObject {
      * However, reopen() makes doing this a little funky. 
      */
     public void registerIOHandler(IOHandler newHandler) {
-        getRuntime().getIoHandlers().put(new Integer(newHandler.getFileno()), new WeakReference(newHandler));
+        getRuntime().getIoHandlers().put(new Integer(newHandler.getFileno()), new WeakReference<IOHandler>(newHandler));
     }
     
     public void unregisterIOHandler(int aFileno) {
@@ -182,7 +183,7 @@ public class RubyIO extends RubyObject {
     }
     
     public IOHandler getIOHandlerByFileno(int aFileno) {
-        Reference reference = ((Reference) getRuntime().getIoHandlers().get(new Integer(aFileno)));
+        Reference<IOHandler> reference = getRuntime().getIoHandlers().get(new Integer(aFileno));
         if (reference == null) {
             return null;
         }
@@ -282,14 +283,14 @@ public class RubyIO extends RubyObject {
         try {
             switch (stdio) {
             case IN:
-                handler = new IOHandlerNio(runtime, Channels.newChannel(runtime.getIn()), 0);
+                handler = new IOHandlerNio(runtime, Channels.newChannel(runtime.getIn()), 0, FileDescriptor.in);
                 break;
             case OUT:
-                handler = new IOHandlerNio(runtime, Channels.newChannel(runtime.getOut()), 1);
+                handler = new IOHandlerNio(runtime, Channels.newChannel(runtime.getOut()), 1, FileDescriptor.out);
                 handler.setIsSync(true);
                 break;
             case ERR:
-                handler = new IOHandlerNio(runtime, Channels.newChannel(runtime.getErr()), 2);
+                handler = new IOHandlerNio(runtime, Channels.newChannel(runtime.getErr()), 2, FileDescriptor.err);
                 handler.setIsSync(true);
                 break;
             }
@@ -305,11 +306,11 @@ public class RubyIO extends RubyObject {
     public static IOHandler handlerForFileno(Ruby runtime, int fileno) throws BadDescriptorException, IOException {
         switch (fileno) {
         case 0:
-            return new IOHandlerNio(runtime, Channels.newChannel(runtime.getIn()), fileno);
+            return new IOHandlerNio(runtime, Channels.newChannel(runtime.getIn()), fileno, FileDescriptor.in);
         case 1:
-            return new IOHandlerNio(runtime, Channels.newChannel(runtime.getOut()), fileno);
+            return new IOHandlerNio(runtime, Channels.newChannel(runtime.getOut()), fileno, FileDescriptor.out);
         case 2:
-            return new IOHandlerNio(runtime, Channels.newChannel(runtime.getErr()), fileno);
+            return new IOHandlerNio(runtime, Channels.newChannel(runtime.getErr()), fileno, FileDescriptor.err);
         default:
             throw new BadDescriptorException();
         }
@@ -929,9 +930,7 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = {"tty?", "isatty"})
     public RubyBoolean tty_p() {
-        int fileno = handler.getFileno();
-        
-        return getRuntime().newBoolean(STDIO.isSTDIO(fileno));
+        return getRuntime().newBoolean(getRuntime().getPosix().isatty(handler.getFD()));
     }
     
     @JRubyMethod(name = "initialize_copy", required = 1)
@@ -1299,6 +1298,11 @@ public class RubyIO extends RubyObject {
         } catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
         }
+    }
+    
+    @JRubyMethod
+    public IRubyObject stat() {
+        return getRuntime().newFileStat(handler.getFD());
     }
 
     /** 

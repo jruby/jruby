@@ -96,6 +96,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         buffer = ByteBuffer.allocate(BUFSIZE);
         buffer.flip();
         reading = true;
+        fileDescriptor = file.getFD();
         
         if (modes.isAppendable()) seek(0, SEEK_END);
 
@@ -120,6 +121,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         this.fileno = other.fileno;
         this.isOpen = other.isOpen;
         this.theFile = other.theFile;
+        this.fileDescriptor = other.fileDescriptor;
 
         // create stuff
         RandomAccessFile file = new RandomAccessFile(theFile, javaMode());

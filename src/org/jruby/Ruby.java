@@ -41,6 +41,7 @@ package org.jruby;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -2061,6 +2062,10 @@ public final class Ruby {
 
     public RubyFileStat newFileStat(String filename, boolean lstat) {
         return RubyFileStat.newFileStat(this, filename, lstat);
+    }
+    
+    public RubyFileStat newFileStat(FileDescriptor descriptor) {
+        return RubyFileStat.newFileStat(this, descriptor);
     }
 
     public RubyFixnum newFixnum(long value) {

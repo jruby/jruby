@@ -35,6 +35,7 @@ import java.nio.ByteBuffer;
 public interface LibC extends Library {
     public int chmod(String filename, int mode);
     public int chown(String filename, int user, int group);
+    public int fstat(int fd, FileStat stat);
     public int getegid();
     public int setegid(int egid);
     public int geteuid();
