@@ -11,6 +11,7 @@ server_thread = Thread.new do
   server_read = sock.read(5)
   sock.write "world!"
   sock.close
+  serv.close
 end
 
 # This test is seriously broken, prone to race conditions and sometimes fail. This is why the rescue nil is there.
@@ -30,6 +31,7 @@ end
 
 serv = TCPServer.new('localhost',2203)
 test_no_exception { serv.listen(1024) } # fix for listen blowing up because it tried to rebind; it's a noop now
+serv.close
 
 # test block behavior for TCPServer::open
 test_no_exception {
@@ -102,7 +104,39 @@ received = client_socket.recv(64)
 
 test_equal("udp recv", received)
 test_ok(client_socket.close)
-  
+
+# JRUBY-2005: test a large write that causes the buffer to flush
+# make sure the result is not corrupted
+t = Thread.new {
+  serv = TCPServer.new('localhost',2202)
+  sock = serv.accept
+
+  result = ''
+  until result.length == 20010
+    result << sock.sysread(20010 - result.length)
+  end
+  sock.close
+  serv.close
+
+  result
+}
+
+sleep 2
+
+# 20k string is larger than our default 16k buffer
+# FIXME: of course if our buffer size changes
+str = "0123456789" * 2000
+client = TCPSocket.new('localhost', 2202)
+# first ten chars should get buffered
+client.write('abcdefghij')
+# large write should force buffer to flush before write
+client.write(str)
+client.close
+
+t.join
+
+test_equal('abcdefghij' + str, t.value)
+
 # test that raising inside an accepting thread doesn't nuke the socket
 # ** Currently FAILING on Windows and Solaris -- the
 # ** 't.raise' is happening before the socket gets fully into #accept
