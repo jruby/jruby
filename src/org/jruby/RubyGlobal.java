@@ -173,9 +173,9 @@ public class RubyGlobal {
 
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"));
 
-        IRubyObject stdin = RubyIO.fdOpen(runtime, RubyIO.STDIN);
-        IRubyObject stdout = RubyIO.fdOpen(runtime, RubyIO.STDOUT);
-        IRubyObject stderr = RubyIO.fdOpen(runtime, RubyIO.STDERR);
+        IRubyObject stdin = new RubyIO(runtime, RubyIO.STDIO.IN);
+        IRubyObject stdout = new RubyIO(runtime, RubyIO.STDIO.OUT);
+        IRubyObject stderr = new RubyIO(runtime, RubyIO.STDIO.ERR);
 
         runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin));
 
@@ -533,7 +533,12 @@ public class RubyGlobal {
                 return value;
             }
             if (value instanceof RubyIO) {
-                ((RubyIO) value).checkWriteable();
+                RubyIO io = (RubyIO)value;
+                io.checkWriteable();
+                
+                // HACK: in order to have stdout/err act like ttys and flush always,
+                // we set anything assigned to stdout/stderr to sync
+                io.getHandler().setIsSync(true);
             }
             if (! value.respondsTo("write")) {
                 throw runtime.newTypeError(name() + " must have write method, " +

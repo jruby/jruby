@@ -289,8 +289,6 @@ public class RubyInstanceConfig {
                 .append("       Enable verbose JIT logging (reports failed compilation). Default is false\n")
                 .append("    jruby.jit.logEvery=<method count>\n")
                 .append("       Log a message every n methods JIT compiled. Default is 0 (off).\n")
-                .append("    jruby.launch.inproc=true|false\n")
-                .append("       Set in-process launching of e.g. system('ruby ...'). Default is true\n")
                 .append("\nNATIVE SUPPORT:\n")
                 .append("    jruby.native.enabled=true|false\n")
                 .append("       Enable/disable native extensions (like JNA for non-Java APIs; Default is true\n")
@@ -305,7 +303,9 @@ public class RubyInstanceConfig {
                 .append("    jruby.indexed.methods=true|false\n")
                 .append("       Generate \"invokers\" for core classes using a single indexed class\n")
                 .append("    jruby.objectspace.enabled=true|false\n")
-                .append("       Enable or disable ObjectSpace.each_object (default is disabled)\n");
+                .append("       Enable or disable ObjectSpace.each_object (default is disabled)\n")
+                .append("    jruby.launch.inproc=true|false\n")
+                .append("       Set in-process launching of e.g. system('ruby ...'). Default is true\n");
         
         return sb.toString();
     }

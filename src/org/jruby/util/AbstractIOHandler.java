@@ -32,9 +32,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.io.EOFException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import org.jruby.Ruby;
 
 /**
@@ -133,5 +137,39 @@ public abstract class AbstractIOHandler implements IOHandler {
 
     public boolean hasPendingBuffered() {
         return false;
+    }
+    
+    public static ByteList sysread(int number, ReadableByteChannel channel) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(number);
+        int bytes_read = 0;
+        bytes_read = channel.read(buffer);
+        if (bytes_read < 0) {
+            throw new EOFException();
+        }
+
+        byte[] ret;
+        if (buffer.hasRemaining()) {
+            buffer.flip();
+            ret = new byte[buffer.remaining()];
+            buffer.get(ret);
+        } else {
+            ret = buffer.array();
+        }
+        return new ByteList(ret,false);
+    }
+    
+    public static int syswrite(ByteList buf, WritableByteChannel channel) throws IOException {
+        // Ruby ignores empty syswrites
+        if (buf == null || buf.length() == 0) return 0;
+        
+        return channel.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+    }
+    
+    public static int syswrite(int c, WritableByteChannel channel) throws IOException {
+        ByteBuffer buf = ByteBuffer.allocate(1);
+        buf.put((byte)c);
+        buf.flip();
+        
+        return channel.write(buf);
     }
 }

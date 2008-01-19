@@ -161,44 +161,19 @@ public class IOHandlerNio extends AbstractIOHandler {
         checkReadable();
         checkBuffered();
 	
-        ByteBuffer buffer = ByteBuffer.allocate(length);
-        int bytes_read = 0;
-        bytes_read = ((ReadableByteChannel) channel).read(buffer);
-        if (bytes_read < 0) {
-            throw new EOFException();
-        }
-
-        byte[] ret;
-        if (buffer.hasRemaining()) {
-            buffer.flip();
-            ret = new byte[buffer.remaining()];
-            buffer.get(ret);
-        } else {
-            ret = buffer.array();
-        }
-        return new ByteList(ret,false);
+        return sysread(length, (ReadableByteChannel)channel);
     }
     
-    public int syswrite(ByteList string) throws BadDescriptorException, IOException {
+    public int syswrite(ByteList buf) throws BadDescriptorException, IOException {
         checkWritable();
-        outBuffer.flip();
-        flushOutBuffer();
     
-        ByteBuffer buffer = ByteBuffer.wrap(string.bytes, string.begin, string.realSize);
-        while (buffer.hasRemaining()) {
-        if (((WritableByteChannel) channel).write(buffer) < 0) {
-            // does this ever happen??
-            throw new IOException("write returned less than zero");
-        }
-        }
-        return buffer.capacity();
+        return syswrite(buf, (WritableByteChannel)channel);
     }
     
     public int syswrite(int c) throws BadDescriptorException, IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(1); // inefficient?
-        buffer.put((byte)c);
+        checkWritable();
         
-        return syswrite(new ByteList(buffer.array(),false));
+        return syswrite(c, (WritableByteChannel)channel);
     }
     
     public ByteList recv(int length) throws EOFException, BadDescriptorException, IOException {
@@ -206,7 +181,7 @@ public class IOHandlerNio extends AbstractIOHandler {
     }
 
     /* Buffered operations */
-    private void setupBufferedIO() {
+    private void setupBufferedRead() {
         if (bufferedIO) {
             return;
         }
@@ -270,7 +245,7 @@ public class IOHandlerNio extends AbstractIOHandler {
 
     public ByteList readpartial(int length) throws IOException, BadDescriptorException, EOFException {
         checkReadable();
-        setupBufferedIO();
+        setupBufferedRead();
 
         if (!inBuffer.hasRemaining() && length > 0) {
             if (fillInBuffer() < 0) {
@@ -281,7 +256,7 @@ public class IOHandlerNio extends AbstractIOHandler {
     }
 
     public ByteList read(int length) throws IOException, BadDescriptorException, EOFException {
-        setupBufferedIO();
+        setupBufferedRead();
         checkReadable();
 
         boolean eof = false;
@@ -305,11 +280,38 @@ public class IOHandlerNio extends AbstractIOHandler {
     }
 
     public int write(ByteList string) throws IOException, BadDescriptorException {
-        return syswrite(string);
+        return bufferedWrite(string);
+    }
+    
+    /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
+     * @see org.jruby.util.IOHandler#syswrite(String buf)
+     */
+    public int bufferedWrite(ByteList buf) throws IOException, BadDescriptorException {
+        getRuntime().secure(4);
+        checkWritable();
+        
+        // Ruby ignores empty syswrites
+        if (buf == null || buf.length() == 0) return 0;
+        
+        if (buf.length() > outBuffer.capacity()) { // Doesn't fit in buffer. Write immediately.
+            flushOutBuffer(); // ensure nothing left to write
+            
+            ((WritableByteChannel)channel).write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+        } else {
+            if (buf.length() > outBuffer.remaining()) flushOutBuffer();
+            
+            outBuffer.put(buf.unsafeBytes(), buf.begin(), buf.length());
+        }
+        
+        if (isSync()) sync();
+        
+        return buf.realSize;
     }
 
     public ByteList gets(ByteList separator) throws IOException, BadDescriptorException, EOFException {
-        setupBufferedIO();
+        setupBufferedRead();
         checkReadable();
 
         ByteList ret = new ByteList();
@@ -341,7 +343,7 @@ public class IOHandlerNio extends AbstractIOHandler {
 
     public ByteList getsEntireStream() throws IOException, BadDescriptorException, EOFException {
         checkReadable();
-        setupBufferedIO();
+        setupBufferedRead();
         ByteList ret = new ByteList();
         boolean eof;
 
@@ -360,7 +362,7 @@ public class IOHandlerNio extends AbstractIOHandler {
 
     public int getc() throws IOException, BadDescriptorException, EOFException {
         checkReadable();
-        setupBufferedIO();
+        setupBufferedRead();
 
         if (ungotc > 0) {
             int i = ungotc;
@@ -377,7 +379,7 @@ public class IOHandlerNio extends AbstractIOHandler {
     }
 
     public void ungetc(int c) {
-        setupBufferedIO();
+        setupBufferedRead();
         ungotc = c;
     }
     
@@ -405,7 +407,7 @@ public class IOHandlerNio extends AbstractIOHandler {
     }
     
     public boolean isEOF() throws IOException, BadDescriptorException {
-        setupBufferedIO();
+        setupBufferedRead();
         checkReadable();
 
         if (ungotc > 0) {

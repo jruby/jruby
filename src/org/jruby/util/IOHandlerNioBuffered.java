@@ -45,6 +45,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 
+import java.nio.channels.ReadableByteChannel;
 import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
@@ -472,12 +473,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         checkReadable();
         ensureReadNonBuffered();
         
-        ByteBuffer buf = ByteBuffer.allocate(number);
-        int read = channel.read(buf);
-        
-        if (read == -1) throw new EOFException();
-        
-        return new ByteList(buf.array(),0,read,false);
+        return sysread(number, channel);
     }
     
     /**
@@ -490,10 +486,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         checkWritable();
         ensureWriteNonBuffered();
         
-        // Ruby ignores empty syswrites
-        if (buf == null || buf.length() == 0) return 0;
-        
-        return channel.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+        return syswrite(buf, channel);
     }
     
     /**
@@ -506,11 +499,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         checkWritable();
         ensureWriteNonBuffered();
         
-        ByteBuffer buf = ByteBuffer.allocate(1);
-        buf.put((byte)c);
-        buf.flip();
-        
-        return channel.write(buf);
+        return syswrite(c, channel);
     }
 
     public ByteList bufferedRead(int number) throws IOException, BadDescriptorException {

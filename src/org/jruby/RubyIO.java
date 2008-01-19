@@ -78,9 +78,24 @@ import org.jruby.util.io.NullWritableChannel;
  * @author jpetersen
  */
 public class RubyIO extends RubyObject {
-    public static final int STDIN = 0;
-    public static final int STDOUT = 1;
-    public static final int STDERR = 2;
+    public enum STDIO {
+        IN, OUT, ERR;
+        
+        public int fileno() {
+            switch (this) {
+            case IN: return 0;
+            case OUT: return 1;
+            case ERR: return 2;
+            default: throw new RuntimeException();
+            }
+        }
+        
+        public static boolean isSTDIO(int fileno) {
+            if (fileno >= 0 && fileno <= 2) return true;
+            
+            return false;
+        }
+    }
     
     protected IOHandler handler;
     protected IOModes modes = null;
@@ -261,16 +276,27 @@ public class RubyIO extends RubyObject {
     	registerIOHandler(handler);
     }
     
-    public RubyIO(Ruby runtime, int descriptor) {
+    public RubyIO(Ruby runtime, STDIO stdio) {
         super(runtime, runtime.getIO());
 
         try {
-            handler = handlerForFileno(runtime, descriptor);
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
+            switch (stdio) {
+            case IN:
+                handler = new IOHandlerNio(runtime, Channels.newChannel(runtime.getIn()), 0);
+                break;
+            case OUT:
+                handler = new IOHandlerNio(runtime, Channels.newChannel(runtime.getOut()), 1);
+                handler.setIsSync(true);
+                break;
+            case ERR:
+                handler = new IOHandlerNio(runtime, Channels.newChannel(runtime.getErr()), 2);
+                handler.setIsSync(true);
+                break;
+            }
         } catch (IOException e) {
             throw runtime.newErrnoEBADFError();
         }
+        
         modes = handler.getModes();
         
         registerIOHandler(handler);        
@@ -321,14 +347,6 @@ public class RubyIO extends RubyObject {
         ioClass.dispatcher = callbackFactory.createDispatcher(ioClass);
 
         return ioClass;
-    }    
-    
-    /**
-     * <p>Open a file descriptor, unless it is already open, then return
-     * it.</p> 
-     */
-    public static IRubyObject fdOpen(Ruby runtime, int descriptor) {
-        return new RubyIO(runtime, descriptor);
     }
 
     /*
@@ -370,9 +388,15 @@ public class RubyIO extends RubyObject {
     public Channel getChannel() {
         if (handler instanceof IOHandlerNio) {
             return ((IOHandlerNio) handler).getChannel();
+        } else if (handler instanceof IOHandlerNioBuffered) {
+            return ((IOHandlerNioBuffered) handler).getChannel();
         } else {
             return null;
         }
+    }
+    
+    public IOHandler getHandler() {
+        return handler;
     }
 
     @JRubyMethod(name = "reopen", required = 1, optional = 1)
@@ -906,11 +930,8 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = {"tty?", "isatty"})
     public RubyBoolean tty_p() {
         int fileno = handler.getFileno();
-        if (fileno == STDOUT || fileno == STDIN || fileno == STDERR) {
-            return getRuntime().getTrue();
-        } else {
-            return getRuntime().getFalse();
-        }
+        
+        return getRuntime().newBoolean(STDIO.isSTDIO(fileno));
     }
     
     @JRubyMethod(name = "initialize_copy", required = 1)
