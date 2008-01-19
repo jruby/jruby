@@ -225,6 +225,7 @@ public class IOHandlerNio extends AbstractIOHandler {
     }
 
     private void flushOutBuffer() throws IOException {
+	outBuffer.flip();
         while (outBuffer.hasRemaining()) {
             if (((WritableByteChannel) channel).write(outBuffer) < 0) {
                 throw new IOException("write returned less than zero");
@@ -390,7 +391,6 @@ public class IOHandlerNio extends AbstractIOHandler {
         checkWritable();
 
         if (!outBuffer.hasRemaining()) {
-            outBuffer.flip();
             flushOutBuffer();
         }
 
@@ -399,7 +399,6 @@ public class IOHandlerNio extends AbstractIOHandler {
 
     public void flush() throws IOException, BadDescriptorException {
         checkWritable();
-        outBuffer.flip();
         flushOutBuffer();
     }
 
@@ -431,7 +430,6 @@ public class IOHandlerNio extends AbstractIOHandler {
         checkOpen("closed stream");
         
 	if (outBuffer.position() > 0) {
-	    outBuffer.flip();
 	    flushOutBuffer();
 	}
 
