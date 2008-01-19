@@ -122,6 +122,8 @@ public class RubyInstanceConfig {
     private boolean shouldCheckSyntax = false;
     private String inputFieldSeparator = null;
     
+    private int safeLevel = 0;
+
     public static final boolean FRAMELESS_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.frameless");
     public static final boolean POSITIONLESS_COMPILE_ENABLED
@@ -604,9 +606,22 @@ public class RubyInstanceConfig {
                 case 'S':
                     runBinScript();
                     break FOR;
-                // FIXME: -T flag not supported
-//                    case 'T' :
-//                        break;
+                case 'T' :{
+                    String temp = grabOptionalValue();
+                    int value = 1;
+                    
+                    if(temp!=null) {
+                        try {
+                            value = Integer.parseInt(temp, 8);
+                        } catch(Exception e) {
+                            value = 1;
+                        }
+                    }
+
+                    safeLevel = value;
+
+                    break FOR;
+                }
                 case 'v':
                     verbose = Boolean.TRUE;
                     setShowVersion(true);
@@ -916,6 +931,10 @@ public class RubyInstanceConfig {
     
     public String getRecordSeparator() {
         return recordSeparator;
+    }
+
+    public int getSafeLevel() {
+        return safeLevel;
     }
     
     public void setRecordSeparator(String recordSeparator) {

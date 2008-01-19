@@ -788,6 +788,8 @@ public final class Ruby {
     private void init() {
         // Get the main threadcontext (gets constructed for us)
         ThreadContext tc = getCurrentContext();
+
+        safeLevel = config.getSafeLevel();
         
         // Construct key services
         loadService = new LoadService(this);
@@ -2551,7 +2553,7 @@ public final class Ruby {
 
     private long globalState = 1;
     
-    private int safeLevel = 0;
+    private int safeLevel = -1;
 
     // Default objects
     private IRubyObject undef;
