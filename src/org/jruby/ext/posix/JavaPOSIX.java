@@ -1,12 +1,13 @@
 package org.jruby.ext.posix;
 
+import java.io.FileDescriptor;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public class JavaPOSIX implements POSIX {
     POSIXHandler handler;
     JavaLibCHelper helper;
-    
+
     public JavaPOSIX(POSIXHandler handler) {
         this.handler = handler;
         helper = new JavaLibCHelper(handler);
@@ -30,6 +31,10 @@ public class JavaPOSIX implements POSIX {
     
     public int geteuid() {
         return unimplementedInt("geteuid");
+    }
+    
+    public int getfd(FileDescriptor descriptor) {
+        return helper.getfd(descriptor);
     }
 
     public int getgid() {
@@ -63,11 +68,15 @@ public class JavaPOSIX implements POSIX {
     public int getuid() {
         return unimplementedInt("getuid");
     }
-
+    
     public int fork() {
         return -1;
     }
 
+    public boolean isatty(int fd) {
+        return helper.isatty(fd) != 0;
+    }
+    
     public int kill(int pid, int signal) {
         return unimplementedInt("kill");    // FIXME: Can be implemented
     }
@@ -173,7 +182,7 @@ public class JavaPOSIX implements POSIX {
     public int setpriority(int which, int who, int prio) {
         return unimplementedInt("setpriority");
     }
-    
+
     private int unimplementedInt(String message) {
         handler.unimplementedError(message);
         

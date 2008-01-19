@@ -33,4 +33,9 @@ public class WindowsPOSIX extends BaseNativePOSIX {
     public FileStat lstat(String path) {
         return stat(path);
     }
+
+    @Override
+    public boolean isatty(int fd) {
+       return false;
+    }
 }

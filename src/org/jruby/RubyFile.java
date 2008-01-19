@@ -511,7 +511,7 @@ public class RubyFile extends RubyIO {
     }
 
     public String toString() {
-        return "RubyFile(" + path + ", " + modes + ", " + fileno + ")";
+        return "RubyFile(" + path + ", " + modes + ", " + handler.getFileno() + ")";
     }
 
     // TODO: This is also defined in the MetaClass too...Consolidate somewhere.

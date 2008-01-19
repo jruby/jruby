@@ -68,4 +68,5 @@ public interface LibC extends Library {
     public int wait(int[] status);
     public int getpriority(int which, int who);
     public int setpriority(int which, int who, int prio);
+    public int isatty(int fd);
 }

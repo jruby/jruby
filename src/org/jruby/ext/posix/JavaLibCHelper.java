@@ -31,8 +31,10 @@ package org.jruby.ext.posix;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.IOException;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import org.jruby.ext.posix.POSIX.ERRORS;
 import org.jruby.ext.posix.util.Chmod;
@@ -45,10 +47,26 @@ import org.jruby.ext.posix.util.ExecIt;
  */
 // FIXME: we ignore all exceptions with shell launcher...should we do something better
 public class JavaLibCHelper {
+    public static final int STDIN = 0;
+    public static final int STDOUT = 1;
+    public static final int STDERR = 2;
+
     POSIXHandler handler;
-    
+    Field field;
+
     public JavaLibCHelper(POSIXHandler handler) {
         this.handler = handler;
+        
+        try {
+            field = FileDescriptor.class.getDeclaredField("fd");
+            field.setAccessible(true);
+        } catch (SecurityException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
     
     public int chmod(String filename, int mode) {
@@ -68,6 +86,17 @@ public class JavaLibCHelper {
         return chownResult != -1 && chgrpResult != -1 ? 0 : 1;
     }
 
+    public int getfd(FileDescriptor descriptor) {
+        try {
+            return field.getInt(descriptor);
+        } catch (SecurityException e) {
+        } catch (IllegalArgumentException e) {
+        } catch (IllegalAccessException e) {
+        }
+
+        return -1;
+    }
+
     public String getlogin() {
         return System.getProperty("user.name");
     }
@@ -78,6 +107,10 @@ public class JavaLibCHelper {
 
     public Passwd getpwent() {
         return new JavaPasswd(handler);
+    }
+    
+    public int isatty(int fd) {
+        return (fd == STDOUT || fd == STDIN || fd == STDERR) ? 1 : 0;
     }
 
     public int link(String oldpath, String newpath) {

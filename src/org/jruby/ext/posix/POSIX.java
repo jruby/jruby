@@ -1,5 +1,7 @@
 package org.jruby.ext.posix;
 
+import java.io.FileDescriptor;
+
 
 public interface POSIX {
     // When we use JNA-3 we can get errno, Then these values should match proper machine values.
@@ -13,6 +15,7 @@ public interface POSIX {
     public int setegid(int egid);
     public int geteuid();
     public int seteuid(int euid);
+    public int getfd(FileDescriptor descriptor);
     public int getgid();
     public String getlogin();
     public int setgid(int gid);
@@ -25,6 +28,7 @@ public interface POSIX {
     public int getpid();
     public Passwd getpwent();
     public int getuid();
+    public boolean isatty(int fd);
     public int setsid();
     public int setuid(int uid);
     public int kill(int pid, int signal);

@@ -175,12 +175,12 @@ public class RubyIO extends RubyObject {
     }
     
     // FIXME can't use static; would interfere with other runtimes in the same JVM
-    protected static int fileno = 2;
+    protected static int filenoIndex = 2;
     
     public static int getNewFileno() {
-        fileno++;
+        filenoIndex++;
         
-        return fileno;
+        return filenoIndex;
     }
 
     // This should only be called by this and RubyFile.
@@ -545,7 +545,7 @@ public class RubyIO extends RubyObject {
             }
             
             try {
-                handler = handlerForFileno(getRuntime(), fileno);
+                handler = handlerForFileno(getRuntime(), newFileno);
             } catch (BadDescriptorException e) {
                 throw getRuntime().newErrnoEBADFError();
             } catch (IOException e) {
@@ -905,7 +905,6 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = {"tty?", "isatty"})
     public RubyBoolean tty_p() {
-        // TODO: this is less than ideal but might be as close as we'll get
         int fileno = handler.getFileno();
         if (fileno == STDOUT || fileno == STDIN || fileno == STDERR) {
             return getRuntime().getTrue();
@@ -1348,7 +1347,7 @@ public class RubyIO extends RubyObject {
     }
 
     public String toString() {
-        return "RubyIO(" + modes + ", " + fileno + ")";
+        return "RubyIO(" + modes + ", " + handler.getFileno() + ")";
     }
     
     /* class methods for IO */

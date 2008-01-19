@@ -1,15 +1,18 @@
 package org.jruby.ext.posix;
 
+import java.io.FileDescriptor;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public abstract class BaseNativePOSIX implements POSIX {
     protected LibC libc;
     protected POSIXHandler handler;
+    protected JavaLibCHelper helper;
     
     public BaseNativePOSIX(LibC libc, POSIXHandler handler) {
         this.libc = libc;
         this.handler = handler;
+        helper = new JavaLibCHelper(handler);
     }
 
     public int chmod(String filename, int mode) {
@@ -70,6 +73,10 @@ public abstract class BaseNativePOSIX implements POSIX {
 
     public int setgid(int gid) {
         return libc.setgid(gid);
+    }
+    
+    public int getfd(FileDescriptor descriptor) {
+        return helper.getfd(descriptor);
     }
 
     public int getpgid(int pid) {
@@ -166,6 +173,10 @@ public abstract class BaseNativePOSIX implements POSIX {
     
     public int setpriority(int which, int who, int prio) {
         return libc.setpriority(which, who, prio);
+    }
+
+    public boolean isatty(int fd) {
+       return libc.isatty(fd) != 0;
     }
     
     public abstract FileStat allocateStat();
