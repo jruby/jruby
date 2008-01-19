@@ -391,31 +391,6 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         flushWrite();
     }
 
-    public ByteList sysread(int number) throws IOException, BadDescriptorException {
-        checkOpen("File not open");
-        checkReadable();
-        ensureRead();
-        
-        ByteBuffer buf = ByteBuffer.allocate(number);
-        if (buffer.hasRemaining()) {// already have some bytes buffered
-            putInto(buf, buffer);
-        }
-        
-        if (buf.position() != buf.capacity()) { // not complete. try to read more
-            if (buf.capacity() > buffer.capacity()) // big read. just do it.
-                channel.read(buf);
-            else { // buffer it
-                buffer.clear();
-                channel.read(buffer);
-                buffer.flip();
-                putInto(buf, buffer); // get what we need
-            }
-        }
-        
-        if (buf.position() == 0 && number != 0) throw new java.io.EOFException();
-        return new ByteList(buf.array(),0,buf.position(),false);
-    }
-
     /**
      * Put one buffer into another, truncating the put (rather than throwing an exception)
      * if src doesn't fit into dest. Shame this doesn't exist already.
@@ -446,13 +421,26 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         buffer.flip();
         reading = true;
     }
-    
+
     /**
-     * Ensure buffer is ready for writing.
+     * Ensure buffer is ready for reading, flushing remaining writes if required
      * @throws IOException
      */
-    private void ensureWrite() throws IOException {
-        if (!reading) return;
+    private void ensureReadNonBuffered() throws IOException {
+        if (reading) {
+            if (buffer.hasRemaining()) {
+                throw getRuntime().newIOError("sysread for buffered IO");
+            }
+        } else {
+            // libc flushes writes on any read from the actual file, so we flush here
+            flushWrite();
+            buffer.clear();
+            buffer.flip();
+            reading = true;
+        }
+    }
+    
+    private void resetForWrite() throws IOException {
         if (buffer.hasRemaining()) { // we have read ahead, and need to back up
             channel.position(channel.position() - buffer.remaining());
         }
@@ -461,9 +449,99 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     }
     
     /**
+     * Ensure buffer is ready for writing.
+     * @throws IOException
+     */
+    private void ensureWrite() throws IOException {
+        if (!reading) return;
+        resetForWrite();
+    }
+    
+    private void ensureWriteNonBuffered() throws IOException {
+        if (!reading) {
+            if (buffer.position() > 0) {
+                getRuntime().getWarnings().warn("syswrite for buffered IO");
+            }
+            return;
+        }
+        resetForWrite();
+    }
+
+    public ByteList sysread(int number) throws IOException, BadDescriptorException {
+        checkOpen("File not open");
+        checkReadable();
+        ensureReadNonBuffered();
+        
+        ByteBuffer buf = ByteBuffer.allocate(number);
+        int read = channel.read(buf);
+        
+        if (read == -1) throw new EOFException();
+        
+        return new ByteList(buf.array(),0,read,false);
+    }
+    
+    /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
+     * @see org.jruby.util.IOHandler#syswrite(String buf)
+     */
+    public int syswrite(ByteList buf) throws IOException, BadDescriptorException {
+        getRuntime().secure(4);
+        checkWritable();
+        ensureWriteNonBuffered();
+        
+        // Ruby ignores empty syswrites
+        if (buf == null || buf.length() == 0) return 0;
+        
+        return channel.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+    }
+    
+    /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
+     * @see org.jruby.util.IOHandler#syswrite(String buf)
+     */
+    public int syswrite(int c) throws IOException, BadDescriptorException {
+        getRuntime().secure(4);
+        checkWritable();
+        ensureWriteNonBuffered();
+        
+        ByteBuffer buf = ByteBuffer.allocate(1);
+        buf.put((byte)c);
+        buf.flip();
+        
+        return channel.write(buf);
+    }
+
+    public ByteList bufferedRead(int number) throws IOException, BadDescriptorException {
+        checkOpen("File not open");
+        checkReadable();
+        ensureRead();
+        
+        ByteBuffer buf = ByteBuffer.allocate(number);
+        if (buffer.hasRemaining()) {// already have some bytes buffered
+            putInto(buf, buffer);
+        }
+        
+        if (buf.position() != buf.capacity()) { // not complete. try to read more
+            if (buf.capacity() > buffer.capacity()) // big read. just do it.
+                channel.read(buf);
+            else { // buffer it
+                buffer.clear();
+                channel.read(buffer);
+                buffer.flip();
+                putInto(buf, buffer); // get what we need
+            }
+        }
+        
+        if (buf.position() == 0 && number != 0) throw new java.io.EOFException();
+        return new ByteList(buf.array(),0,buf.position(),false);
+    }
+    
+    /**
      * @see org.jruby.util.IOHandler#sysread()
      */
-    public int sysread() throws IOException {
+    public int bufferedRead() throws IOException {
         ensureRead();
         
         if (!buffer.hasRemaining()) {
@@ -481,7 +559,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int syswrite(ByteList buf) throws IOException, BadDescriptorException {
+    public int bufferedWrite(ByteList buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWritable();
         ensureWrite();
@@ -509,7 +587,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int syswrite(int c) throws IOException, BadDescriptorException {
+    public int bufferedWrite(int c) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWritable();
         ensureWrite();
@@ -576,7 +654,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
 
     public void putc(int c) throws IOException, BadDescriptorException {
         try {
-            syswrite(c);
+            bufferedWrite(c);
             flush();
         } catch (IOException e) {
         }
@@ -601,20 +679,20 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     }
 
     public int write(ByteList string) throws IOException, BadDescriptorException {
-        return syswrite(string);
+        return bufferedWrite(string);
     }
 
     public ByteList read(int number) throws IOException, BadDescriptorException {
         try {
 
             if (ungotc >= 0) {
-                ByteList buf2 = sysread(number - 1);
+                ByteList buf2 = bufferedRead(number - 1);
                 buf2.prepend((byte)ungotc);
                 ungotc = -1;
                 return buf2;
             }
 
-            return sysread(number);
+            return bufferedRead(number);
         } catch (EOFException e) {
             return null;
         }
@@ -628,7 +706,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
                 return c;
             }
 
-            return sysread();
+            return bufferedRead();
         } catch (EOFException e) {
             return -1;
         }
