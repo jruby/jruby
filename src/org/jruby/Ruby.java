@@ -46,12 +46,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -108,11 +106,10 @@ import org.jruby.util.IOHandler;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
-
-import org.jruby.util.JavaNameMangler;
 import org.jruby.util.collections.WeakHashSet;
 
 /**
@@ -2512,14 +2509,6 @@ public final class Ruby {
         return jittedMethods;
     }
 
-    public synchronized HashMap<ByteList, RubyRegexp> getPatternCache() {
-        HashMap<ByteList, RubyRegexp> cache = patternCache.get().get();
-        if (cache == null) {
-            cache = new HashMap<ByteList, RubyRegexp>(5);
-            patternCache.set(new SoftReference<HashMap<ByteList, RubyRegexp>>(cache));
-        }
-        return cache;
-    }
     private CacheMap cacheMap = new CacheMap();
     private ThreadService threadService;
     private Hashtable<Object, Object> runtimeInformation;
@@ -2548,14 +2537,6 @@ public final class Ruby {
     public static final boolean RUNTIME_THREADLOCAL
             = SafePropertyAccessor.getBoolean("jruby.runtime.threadlocal");
     
-    // In future we should store joni Regexes (cross runtime cache)
-    // for 1.9 cache, whole RubyString should be stored so the entry contains encoding information as well 
-    private final ThreadLocal<SoftReference<HashMap<ByteList, RubyRegexp>>> patternCache = new ThreadLocal() {
-        protected SoftReference<HashMap<ByteList, RubyRegexp>> initialValue() {
-            return new SoftReference(new HashMap<ByteList, RubyRegexp>(5));
-        }
-    };
-
     private long globalState = 1;
     
     private int safeLevel = -1;
