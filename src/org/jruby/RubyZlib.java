@@ -163,13 +163,13 @@ public class RubyZlib {
     @JRubyMethod(name = "crc32", optional = 2, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) throws Exception {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
-        int crc = 0;
+        long crc = 0;
         ByteList bytes = null;
         
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) crc = RubyNumeric.fix2int(args[1]);
+        if (!args[1].isNil()) crc = RubyNumeric.num2long(args[1]);
 
-        CRC32Ext ext = new CRC32Ext(crc);
+        CRC32Ext ext = new CRC32Ext((int)crc);
         if (bytes != null) {
             ext.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
         }
