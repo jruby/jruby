@@ -66,7 +66,7 @@
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jna</artifactId>
-      <version>jruby-pre</version>
+      <version>3.0</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
@@ -128,7 +128,7 @@
                 <artifactItem>
                   <groupId>org.jruby.extras</groupId>
                   <artifactId>jna</artifactId>
-                  <version>jruby-pre</version>
+                  <version>3.0</version>
                 </artifactItem>
               </artifactItems>
               <outputDirectory>${project.build.outputDirectory}</outputDirectory>
