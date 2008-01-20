@@ -258,7 +258,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
 
     private static final int REGEX_QOUTED = 1;
     private void initialize(ByteList bytes, int options, boolean quote) {
-        if (isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: can't modify regexp");
+        if (!isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
         if (isLiteral()) throw getRuntime().newSecurityError("can't modify literal regexp");
 
