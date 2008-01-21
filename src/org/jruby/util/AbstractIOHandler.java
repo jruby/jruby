@@ -50,7 +50,7 @@ public abstract class AbstractIOHandler implements IOHandler {
     protected int fileno;
     protected FileDescriptor fileDescriptor = null;
     protected boolean isOpen = false;
-    protected boolean isSync = false;
+    protected boolean sync = false;
     
     protected AbstractIOHandler(Ruby runtime) {
         this.runtime = runtime;
@@ -109,11 +109,11 @@ public abstract class AbstractIOHandler implements IOHandler {
     }
     
     public boolean isSync() {
-        return isSync;
+        return sync;
     }
 
-    public void setIsSync(boolean isSync) {
-        this.isSync = isSync;
+    public void setSync(boolean sync) {
+        this.sync = sync;
     }
 
     public void reset(IOModes subsetModes) throws IOException, InvalidValueException {

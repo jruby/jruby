@@ -77,7 +77,7 @@ public interface IOHandler {
     
     public boolean isSync();
 
-    public void setIsSync(boolean isSync);
+    public void setSync(boolean isSync);
 
     public void reset(IOModes subsetModes) throws IOException, InvalidValueException;
 

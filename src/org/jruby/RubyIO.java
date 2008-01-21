@@ -217,6 +217,7 @@ public class RubyIO extends RubyObject {
         super(runtime, type);
         
         filePointer = new OpenFile();
+        filePointer.modes = new IOModes(getRuntime());
     }
 
     public RubyIO(Ruby runtime, OutputStream outputStream) {
@@ -283,7 +284,7 @@ public class RubyIO extends RubyObject {
     	super(runtime, runtime.getIO());
         
         filePointer = new OpenFile();
-
+        
         filePointer.modes = new IOModes(runtime, "w+");
 
         try {
@@ -311,11 +312,11 @@ public class RubyIO extends RubyObject {
                 break;
             case OUT:
                 filePointer.handler = new IOHandlerNio(runtime, Channels.newChannel(runtime.getOut()), 1, FileDescriptor.out);
-                filePointer.handler.setIsSync(true);
+                filePointer.handler.setSync(true);
                 break;
             case ERR:
                 filePointer.handler = new IOHandlerNio(runtime, Channels.newChannel(runtime.getErr()), 2, FileDescriptor.err);
-                filePointer.handler.setIsSync(true);
+                filePointer.handler.setSync(true);
                 break;
             }
         } catch (IOException e) {
@@ -497,6 +498,10 @@ public class RubyIO extends RubyObject {
                             selfFile.pipeHandler = pipeFile;
                         } else {
                             selfFile.handler = new IOHandlerNio(getRuntime(), originalFile.handler.getChannel());
+                            
+                            // since we're not actually duping the incoming channel into our handler, we need to
+                            // copy the original sync behavior from the other handler
+                            selfFile.handler.setSync(selfFile.handler.isSync());
                         }
                         selfFile.modes = modes;
                     }
@@ -531,12 +536,12 @@ public class RubyIO extends RubyObject {
                 // a particular way?)
 
                 // keep original fileno
-                filePointer.handler.setFileno(keepFileno);
+                selfFile.handler.setFileno(keepFileno);
                 
                 // TODO: set our metaclass to target's class (i.e. scary!)
 
                 // Update fileno list with our new handler
-                registerIOHandler(filePointer.handler);
+                registerIOHandler(selfFile.handler);
 
                 // TODO: restore binary mode
     //            if (fptr->mode & FMODE_BINMODE) {
@@ -549,38 +554,68 @@ public class RubyIO extends RubyObject {
             } catch (PipeException ex) {
                 throw getRuntime().newIOError("could not reopen: " + ex.getMessage());
             }
-        } else if (getRuntime().getString().isInstance(args[0])) {
-            String path = ((RubyString) args[0]).toString();
-            IOModes newModes = null;
-
-            if (args.length > 1) {
-                if (!getRuntime().getString().isInstance(args[1])) {
-                    throw getRuntime().newTypeError(args[1], getRuntime().getString());
-                }
-                    
-                newModes = new IOModes(getRuntime(), ((RubyString) args[1]).toString());
+        } else {
+            IRubyObject pathString = args[0].convertToString();
+            
+            // TODO: check safe, taint on incoming string
+            
+            int oldFileno = 0;
+            
+            if (filePointer == null) {
+                filePointer = new OpenFile();
+                filePointer.modes = new IOModes(getRuntime());
+            } else {
+                oldFileno = filePointer.handler.getFileno();
             }
-
-            try {
-                if (filePointer.handler != null && filePointer.handler.isOpen()) {
-                    close();
-                }
-
-                if (newModes != null) {
-                	filePointer.modes = newModes;
-                }
-                if ("/dev/null".equals(path)) {
-                        Channel nullChannel = new NullWritableChannel();
-                        filePointer.handler = new IOHandlerNio(getRuntime(), nullChannel, getNewFileno(), filePointer.modes);
-                } else {
-                	filePointer.handler = new IOHandlerNioBuffered(getRuntime(), path, filePointer.modes);
-                }
+            
+            if (args.length > 1) {
+                IRubyObject modeString = args[1].convertToString();
                 
-                registerIOHandler(filePointer.handler);
+                filePointer.modes = new IOModes(getRuntime(), modeString.toString());
+            }
+            
+            String path = pathString.toString();
+            filePointer.path = path;
+            
+            try {
+                if (filePointer.handler == null) {
+                    if ("/dev/null".equals(path)) {
+                            Channel nullChannel = new NullWritableChannel();
+                            filePointer.handler = new IOHandlerNio(getRuntime(), nullChannel, getNewFileno(), filePointer.modes);
+                    } else {
+                            filePointer.handler = new IOHandlerNioBuffered(getRuntime(), path, filePointer.modes);
+                    }
+                    registerIOHandler(filePointer.handler);
+                    if (filePointer.pipeHandler != null) {
+                        filePointer.pipeHandler.close();
+                        unregisterIOHandler(filePointer.pipeHandler.getFileno());
+                        filePointer.pipeHandler = null;
+                    }
+                    return this;
+                } else {
+                    // TODO: This is an freopen in MRI, I don't think this is the same
+                    if ("/dev/null".equals(path)) {
+                            Channel nullChannel = new NullWritableChannel();
+                            filePointer.handler = new IOHandlerNio(getRuntime(), nullChannel, getNewFileno(), filePointer.modes);
+                    } else {
+                            filePointer.handler = new IOHandlerNioBuffered(getRuntime(), path, filePointer.modes);
+                    }
+                    // restore original fileno
+                    filePointer.handler.setFileno(oldFileno);
+
+                    // re-register
+                    registerIOHandler(filePointer.handler);
+
+                    if (filePointer.pipeHandler != null) {
+                        // TODO: pipe handler to be reopened with path and "w" mode
+                    }
+                }
+            } catch (IOException ex) {
+                throw getRuntime().newIOErrorFromException(ex);
+            } catch (BadDescriptorException ex) {
+                throw getRuntime().newErrnoEBADFError();
             } catch (IOHandler.InvalidValueException e) {
             	throw getRuntime().newErrnoEINVALError();
-            } catch (IOException e) {
-                throw getRuntime().newIOError(e.toString());
             }
         }
         
@@ -1006,7 +1041,7 @@ public class RubyIO extends RubyObject {
      */
     @JRubyMethod(name = "sync=", required = 1)
     public IRubyObject sync_set(IRubyObject newSync) {
-        filePointer.handler.setIsSync(newSync.isTrue());
+        filePointer.handler.setSync(newSync.isTrue());
 
         return this;
     }

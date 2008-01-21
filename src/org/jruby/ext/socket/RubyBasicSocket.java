@@ -80,7 +80,7 @@ public class RubyBasicSocket extends RubyIO {
         this.socketChannel = c;
         try {
             filePointer.handler = new IOHandlerNio(getRuntime(), socketChannel);
-            filePointer.handler.setIsSync(true);
+            filePointer.handler.setSync(true);
     	} catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
         }

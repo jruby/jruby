@@ -538,7 +538,7 @@ public class RubyGlobal {
                 
                 // HACK: in order to have stdout/err act like ttys and flush always,
                 // we set anything assigned to stdout/stderr to sync
-                io.getHandler().setIsSync(true);
+                io.getHandler().setSync(true);
             }
             if (! value.respondsTo("write")) {
                 throw runtime.newTypeError(name() + " must have write method, " +
