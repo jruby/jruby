@@ -106,6 +106,10 @@ public class IOHandlerNio extends AbstractIOHandler {
     public Channel getChannel() {
         return channel;
     }
+    
+    public void setChannel(Channel channel) {
+        this.channel = channel;
+    }
 
     // this seems wrong...
     public AbstractIOHandler cloneIOHandler() throws IOException {

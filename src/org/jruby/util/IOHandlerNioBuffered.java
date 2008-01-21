@@ -706,4 +706,11 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     public Channel getChannel() {
         return channel;
     }
+    
+    public void setChannel(Channel channel) {
+        if (!(channel instanceof FileChannel)) {
+            throw new RuntimeException("tried to set a non-filechannel into a filechannel-only IOHandler");
+        }
+        this.channel = (FileChannel)channel;
+    }
 }

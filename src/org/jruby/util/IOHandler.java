@@ -173,6 +173,8 @@ public interface IOHandler {
     
     public Channel getChannel();
     
+    public void setChannel(Channel channel);
+    
     public class PipeException extends Exception {
 		private static final long serialVersionUID = 1L;
     }

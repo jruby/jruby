@@ -21,6 +21,7 @@ public class NullWritableChannel implements WritableByteChannel {
         if (!isOpen) {
             throw new EOFException();
         }
+        buffer.position(buffer.position() + buffer.remaining());
         return buffer.remaining();
     }
 

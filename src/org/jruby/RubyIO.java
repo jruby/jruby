@@ -478,6 +478,7 @@ public class RubyIO extends RubyObject {
                         // TODO: this should turn self's channel (backed by stdio) into target using same fileno
                         // and dup the target channel.
                         //selfFile.handler.setChannel(originalFile.handler.getChannel();
+                        selfFile.handler.setChannel(originalFile.handler.getChannel());
                     } else {
                         IOHandler pipeFile = selfFile.pipeHandler;
                         IOModes modes = selfFile.modes;
@@ -531,6 +532,8 @@ public class RubyIO extends RubyObject {
 
                 // keep original fileno
                 filePointer.handler.setFileno(keepFileno);
+                
+                // TODO: set our metaclass to target's class (i.e. scary!)
 
                 // Update fileno list with our new handler
                 registerIOHandler(filePointer.handler);
