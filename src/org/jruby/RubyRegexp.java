@@ -161,19 +161,22 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         super(runtime, runtime.getRegexp());
     }
 
-    // used only by the compiler
+    // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newRegexp(Ruby runtime, String pattern, int options) {
         return newRegexp(runtime, ByteList.create(pattern), options);
     }
 
+    // used only by the compiler/interpreter (will set the literal flag)
+    public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, int options) {
+        RubyRegexp regexp = newRegexp(runtime, pattern, options, false);
+        regexp.setLiteral();
+        return regexp;
+    }
+    
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, int options, boolean quote) {
         RubyRegexp regexp = new RubyRegexp(runtime);
         regexp.initialize(pattern, options, quote);
         return regexp;
-    }
-
-    public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, int options) {
-        return newRegexp(runtime, pattern, options, false);
     }
 
     public void warn(String message) {
@@ -1075,14 +1078,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     @JRubyMethod(name = "union", rest = true, meta = true)
     public static IRubyObject union(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
-            return newRegexp(recv.getRuntime(), ByteList.create("(?!)"), 0);
+            return newRegexp(recv.getRuntime(), ByteList.create("(?!)"), 0, false);
         } else if (args.length == 1) {
             IRubyObject v = TypeConverter.convertToTypeWithCheck(args[0], recv.getRuntime().getRegexp(), 0, "to_regexp");
             if(!v.isNil()) {
                 return v;
             } else {
                 // newInstance here
-                return newRegexp(recv.getRuntime(), quote(recv,args).getByteList(), 0);
+                return newRegexp(recv.getRuntime(), quote(recv,args).getByteList(), 0, false);
             }
         } else {
             KCode kcode = null;
@@ -1131,7 +1134,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     }
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubyRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), input.unmarshalInt());
+        RubyRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), input.unmarshalInt(), false);
         input.registerLinkTarget(result);
         return result;
     }

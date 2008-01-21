@@ -196,3 +196,8 @@ test_equal nil, /[^a-c]/i =~ "b"
 test_equal nil, /[^a-c]/i =~ "B"
 test_equal nil, /[^A-C]/i =~ "b"
 test_equal nil, /[^A-C]/i =~ "B"
+
+test_ok Regexp.new("foo").send(:initialize, "bar")
+test_ok Regexp.new("foo").send(:initialize_copy, Regexp.new("bar"))
+test_exception(SecurityError){/foo/.send(:initialize, "bar")}
+test_exception(SecurityError){/foo/.send(:initialize_copy, Regexp.new("bar"))}

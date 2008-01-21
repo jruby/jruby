@@ -690,7 +690,7 @@ public class RubyString extends RubyObject {
      */
     @JRubyMethod(name = "~")
     public IRubyObject op_match2() {
-        return RubyRegexp.newRegexp(getRuntime(), value, 0).op_match2();
+        return RubyRegexp.newRegexp(getRuntime(), value, 0, false).op_match2();
     }
 
     /**
