@@ -85,12 +85,17 @@ public class Main {
     public int run(String[] args) {
         try {
             config.processArguments(args);
+            return run();
         } catch (MainExitException mee) {
-            config.getOutput().println(mee.getMessage());
+            if (!mee.isAborted()) {
+                if (mee.isUsageError()) {
+                    printUsage();
+                } else {
+                    config.getOutput().println(mee.getMessage());
+                }
+            }
             return mee.getStatus();
         }
-        
-        return run();
     }
 
     public int run() {
@@ -158,19 +163,8 @@ public class Main {
                     runtime.printError(raisedException);
                     return 1;
                 }
-            } catch (MainExitException mee) {
-                if (mee.isAborted()) {
-                    return mee.getStatus();
-                } else {
-                    config.getOutput().println(mee.getMessage());
-                    if (mee.isUsageError()) {
-                        printUsage();
-                    }
-                    return mee.getStatus();
-                }
             }
         }
-        
         return 0;
     }
 

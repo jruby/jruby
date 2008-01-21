@@ -735,7 +735,8 @@ public class RubyInstanceConfig {
 
         private void runBinScript() {
             requiredLibraries.add("jruby/commands");
-            inlineScript.append("JRuby::Commands." + grabValue("jruby: provide a bin script to execute"));
+            scriptFileName = grabValue("jruby: provide a bin script to execute");
+            inlineScript.append("JRuby::Commands." + scriptFileName);
             inlineScript.append("\n");
             hasInlineScript = true;
             endOfArguments = true;
@@ -810,11 +811,6 @@ public class RubyInstanceConfig {
             // KCode.NONE is used because KCODE does not affect parse in Ruby 1.8
             // if Ruby 2.0 encoding pragmas are implemented, this will need to change
             if (hasInlineScript) {
-                if (scriptFileName != null) {
-                    File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
-                    return new FileInputStream(file);
-                }
-                
                 return new ByteArrayInputStream(inlineScript());
             } else if (isSourceFromStdin()) {
                 // can't use -v and stdin
