@@ -29,6 +29,8 @@ package org.jruby.yaml;
 
 import java.io.IOException;
 
+import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.RubyHash;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
@@ -102,9 +104,11 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
 
     public static class IRubyObjectYAMLNodeCreator implements YAMLNodeCreator {
         private final IRubyObject data;
+        private final RubyClass outClass;
 
         public IRubyObjectYAMLNodeCreator(final Object data) {
             this.data = (IRubyObject)data;
+            this.outClass = ((RubyClass)(((RubyModule)this.data.getRuntime().getModule("YAML").getConstant("JvYAML"))).getConstant("Node"));
         }
 
         public String taguri() {
@@ -122,6 +126,11 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
                 }
             } else {
                 IRubyObject val = data.callMethod(data.getRuntime().getCurrentContext(), "to_yaml", JavaEmbedUtils.javaToRuby(data.getRuntime(),representer));
+
+                if(!outClass.isInstance(val)) {
+                    throw val.getRuntime().newTypeError("wrong argument type " + val.getMetaClass().getRealClass() + " (expected YAML::JvYAML::Node)");
+                }
+
                 IRubyObject value = val.callMethod(data.getRuntime().getCurrentContext(),"value");
                 IRubyObject style = val.callMethod(data.getRuntime().getCurrentContext(),"style");
                 IRubyObject type_id = val.callMethod(data.getRuntime().getCurrentContext(),"type_id");

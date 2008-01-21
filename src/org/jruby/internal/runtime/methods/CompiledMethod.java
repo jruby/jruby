@@ -58,4 +58,9 @@ public abstract class CompiledMethod extends JavaMethod implements JumpTarget, C
     public Arity getArity() {
         return arity;
     }
+
+    @Override
+    public boolean isNative() {
+        return false;
+    }
 }// SimpleInvocationMethod

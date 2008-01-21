@@ -350,3 +350,15 @@ end
 
 # JRUBY-1978, scalars can start with , if it's not ambigous
 test_equal(",a", YAML.load("--- \n,a"))
+
+# Make sure that overriding to_yaml always throws an exception unless it returns the correct thing
+
+class TestYamlFoo
+  def to_yaml(*args)
+    "foo"
+  end
+end
+
+test_exception(TypeError) do 
+  { :foo => TestYamlFoo.new }.to_yaml
+end
