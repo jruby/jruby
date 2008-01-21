@@ -132,6 +132,8 @@ public class RubyYAML {
 
         nilClass.defineAnnotatedMethods(YAMLNilMethods.class);
 
+        runtime.setObjectToYamlMethod(runtime.getObject().searchMethod("to_yaml"));
+
         return result;
     }
 

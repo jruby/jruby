@@ -1122,6 +1122,14 @@ public final class Ruby {
         this.respondToMethod = rtm;
     }
 
+    public Object getObjectToYamlMethod() {
+        return objectToYamlMethod;
+    }
+
+    void setObjectToYamlMethod(Object otym) {
+        this.objectToYamlMethod = otym;
+    }
+
     /**
      * Retrieve mappings of cached methods to where they have been cached.  When a cached
      * method needs to be invalidated this map can be used to remove all places it has been
@@ -2621,6 +2629,7 @@ public final class Ruby {
     private AtomicInteger moduleLastId = new AtomicInteger(0);
 
     private Object respondToMethod;
+    private Object objectToYamlMethod;
 
     /**
      * A list of "external" finalizers (the ones, registered via ObjectSpace),

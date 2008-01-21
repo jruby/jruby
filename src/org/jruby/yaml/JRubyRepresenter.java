@@ -116,7 +116,9 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
         }
 
         public Node toYamlNode(final Representer representer) throws IOException {
-            if(data.getMetaClass().searchMethod("to_yaml").isNative()) {
+            if(data.getMetaClass().searchMethod("to_yaml") == data.getRuntime().getObjectToYamlMethod() ||
+               data.getMetaClass().searchMethod("to_yaml").isUndefined() // In this case, hope that it works out correctly when calling to_yaml_node. Rails does this.
+               ) {
                 // to_yaml have not been overridden
                 Object val = data.callMethod(data.getRuntime().getCurrentContext(), "to_yaml_node", JavaEmbedUtils.javaToRuby(data.getRuntime(),representer));
                 if(val instanceof Node) {

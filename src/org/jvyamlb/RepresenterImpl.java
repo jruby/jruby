@@ -96,7 +96,7 @@ public class RepresenterImpl implements Representer {
         }
 
         node = getNodeCreatorFor(data).toYamlNode(this);
-
+        
         if(!ignoreAlias) {
             this.representedObjects.put(data,node);
             List ll = (List)this.links.remove(data);
