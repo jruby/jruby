@@ -79,20 +79,20 @@ public class RubyBasicSocket extends RubyIO {
     protected void setChannel(Channel c) {
         this.socketChannel = c;
         try {
-            handler = new IOHandlerNio(getRuntime(), socketChannel);
-            handler.setIsSync(true);
+            filePointer.handler = new IOHandlerNio(getRuntime(), socketChannel);
+            filePointer.handler.setIsSync(true);
     	} catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
         }
-        registerIOHandler(handler);
-        modes = handler.getModes();
+        registerIOHandler(filePointer.handler);
+        filePointer.modes = filePointer.handler.getModes();
     }
 
     @Override
     public IRubyObject close_write() {
         try {
             ((SocketChannel)this.socketChannel).socket().shutdownOutput();
-            handler.closeWrite();
+            filePointer.handler.closeWrite();
     	} catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
         }
@@ -105,7 +105,7 @@ public class RubyBasicSocket extends RubyIO {
     
     public IRubyObject recv(IRubyObject[] args) {
         try {
-            return RubyString.newString(getRuntime(), ((IOHandlerNio) handler).recv(RubyNumeric.fix2int(args[0])));
+            return RubyString.newString(getRuntime(), ((IOHandlerNio) filePointer.handler).recv(RubyNumeric.fix2int(args[0])));
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {

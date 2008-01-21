@@ -58,15 +58,6 @@ public class IOModes implements Cloneable {
         this.runtime = runtime;
     }
     
-    public Object clone() {
-        try {	
-    	    return super.clone();
-    	} catch (CloneNotSupportedException cnse) {
-    	    //won't happen
-    	    return null;
-    	}
-    }
-    
     public IOModes(Ruby runtime, String modesString) {
     	this(runtime, convertModesStringToModesInt(runtime, modesString));
     }
