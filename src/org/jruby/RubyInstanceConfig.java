@@ -742,7 +742,7 @@ public class RubyInstanceConfig {
             inlineScript.append("JRuby::Commands." + scriptName);
             inlineScript.append("\n");
             hasInlineScript = true;
-            String jrubyHome = JRubyFile.getFileProperty("jruby.home");
+            String jrubyHome = JRubyFile.create(System.getProperty("user.dir"), JRubyFile.getFileProperty("jruby.home")).getAbsolutePath();
             scriptFileName = JRubyFile.create(jrubyHome + JRubyFile.separator + "bin", scriptName).getAbsolutePath();
             endOfArguments = true;
         }
