@@ -735,10 +735,15 @@ public class RubyInstanceConfig {
 
         private void runBinScript() {
             requiredLibraries.add("jruby/commands");
-            scriptFileName = grabValue("jruby: provide a bin script to execute");
-            inlineScript.append("JRuby::Commands." + scriptFileName);
+            String scriptName = grabValue("jruby: provide a bin script to execute");
+            if (scriptName.equals("irb")) {
+                scriptName = "jirb";
+            }
+            inlineScript.append("JRuby::Commands." + scriptName);
             inlineScript.append("\n");
             hasInlineScript = true;
+            String jrubyHome = JRubyFile.getFileProperty("jruby.home");
+            scriptFileName = JRubyFile.create(jrubyHome + JRubyFile.separator + "bin", scriptName).getAbsolutePath();
             endOfArguments = true;
         }
 
