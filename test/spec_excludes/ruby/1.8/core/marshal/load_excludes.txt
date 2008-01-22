@@ -1,0 +1,1 @@
+Marshal.load with serialized array and proc returns a construction of the argument
