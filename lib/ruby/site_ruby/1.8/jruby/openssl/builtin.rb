@@ -173,5 +173,6 @@ module OpenSSL
       @mac.init(javax.crypto.spec.SecretKeySpec.new(@key.to_java_bytes, @name))
     end
   end
-
+  warn %{JRuby limited openssl loaded. gem install jruby-openssl for full support.
+http://wiki.jruby.org/wiki/JRuby_Builtin_OpenSSL}
 end unless defined?(OpenSSL::OPENSSL_VERSION)
