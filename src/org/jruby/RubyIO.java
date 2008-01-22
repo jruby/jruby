@@ -342,14 +342,23 @@ public class RubyIO extends RubyObject {
         try {
             switch (stdio) {
             case IN:
-                openFile.handler = new IOHandlerNioBuffered(runtime, new DescriptorLike(Channels.newChannel(runtime.getIn()), 0), FileDescriptor.in);
+                openFile.handler = new IOHandlerNioBuffered(runtime,
+                        new DescriptorLike(Channels.newChannel(runtime.getIn()), 0),
+                        new IOModes(runtime, IOModes.RDONLY),
+                        FileDescriptor.in);
                 break;
             case OUT:
-                openFile.handler = new IOHandlerNioBuffered(runtime, new DescriptorLike(Channels.newChannel(runtime.getOut()), 1), FileDescriptor.out);
+                openFile.handler = new IOHandlerNioBuffered(runtime,
+                        new DescriptorLike(Channels.newChannel(runtime.getOut()), 1),
+                        new IOModes(runtime, IOModes.WRONLY | IOModes.APPEND),
+                        FileDescriptor.out);
                 openFile.handler.setSync(true);
                 break;
             case ERR:
-                openFile.handler = new IOHandlerNioBuffered(runtime, new DescriptorLike(Channels.newChannel(runtime.getErr()), 2), FileDescriptor.err);
+                openFile.handler = new IOHandlerNioBuffered(runtime,
+                        new DescriptorLike(Channels.newChannel(runtime.getErr()), 2),
+                        new IOModes(runtime, IOModes.WRONLY | IOModes.APPEND),
+                        FileDescriptor.err);
                 openFile.handler.setSync(true);
                 break;
             }
