@@ -51,7 +51,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
 
 public class IOHandlerNio extends AbstractIOHandler {
-    private RubyIO.DescriptorLike descriptor;
+    private RubyIO.ChannelDescriptor descriptor;
 
     private static final int BLOCK_SIZE = 1024 * 16;
     private ByteBuffer outBuffer;
@@ -59,11 +59,11 @@ public class IOHandlerNio extends AbstractIOHandler {
     private boolean blocking = true;
     private boolean bufferedIO = false;
 
-    public IOHandlerNio(Ruby runtime, RubyIO.DescriptorLike descriptor) throws IOException {
+    public IOHandlerNio(Ruby runtime, RubyIO.ChannelDescriptor descriptor) throws IOException {
         this(runtime, descriptor, (FileDescriptor) null);
     }
 
-    public IOHandlerNio(Ruby runtime, RubyIO.DescriptorLike descriptor, FileDescriptor fileDescriptor) throws IOException {
+    public IOHandlerNio(Ruby runtime, RubyIO.ChannelDescriptor descriptor, FileDescriptor fileDescriptor) throws IOException {
         super(runtime);
         String mode = "";
         this.descriptor = descriptor;
@@ -92,7 +92,7 @@ public class IOHandlerNio extends AbstractIOHandler {
         outBuffer = ByteBuffer.allocate(BLOCK_SIZE);
     }
 
-    public IOHandlerNio(Ruby runtime, RubyIO.DescriptorLike descriptor, IOModes modes) throws IOException {
+    public IOHandlerNio(Ruby runtime, RubyIO.ChannelDescriptor descriptor, IOModes modes) throws IOException {
         super(runtime);
         this.descriptor = descriptor;
         this.isOpen = true;
@@ -101,7 +101,7 @@ public class IOHandlerNio extends AbstractIOHandler {
         outBuffer = ByteBuffer.allocate(BLOCK_SIZE);
     }
 
-    public IOHandlerNio(Ruby runtime, RubyIO.DescriptorLike descriptor, IOModes modes, FileDescriptor fileDescriptor) throws IOException {
+    public IOHandlerNio(Ruby runtime, RubyIO.ChannelDescriptor descriptor, IOModes modes, FileDescriptor fileDescriptor) throws IOException {
         super(runtime);
         this.descriptor = descriptor;
         this.isOpen = true;
@@ -111,11 +111,11 @@ public class IOHandlerNio extends AbstractIOHandler {
         this.fileDescriptor = fileDescriptor;
     }
     
-    public RubyIO.DescriptorLike getDescriptor() {
+    public RubyIO.ChannelDescriptor getDescriptor() {
         return descriptor;
     }
     
-    public void setDescriptor(RubyIO.DescriptorLike descriptor) {
+    public void setDescriptor(RubyIO.ChannelDescriptor descriptor) {
         this.descriptor = descriptor;
     }
 

@@ -81,7 +81,7 @@ public class RubyBasicSocket extends RubyIO {
         this.socketChannel = c;
         try {
             openFile.handler = new IOHandlerNioBuffered(getRuntime(), 
-                    new DescriptorLike(socketChannel, getNewFileno()));
+                    new ChannelDescriptor(socketChannel, getNewFileno()));
             openFile.handler.setSync(true);
     	} catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());

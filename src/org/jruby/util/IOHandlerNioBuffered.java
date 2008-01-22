@@ -65,10 +65,10 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     
     protected ByteBuffer buffer; // r/w buffer
     protected boolean reading; // are we reading or writing?
-    private RubyIO.DescriptorLike descriptor;
+    private RubyIO.ChannelDescriptor descriptor;
     protected int ungotc = -1;
 
-    public IOHandlerNioBuffered(Ruby runtime, RubyIO.DescriptorLike descriptor, IOModes modes, FileDescriptor fileDescriptor) throws IOException {
+    public IOHandlerNioBuffered(Ruby runtime, RubyIO.ChannelDescriptor descriptor, IOModes modes, FileDescriptor fileDescriptor) throws IOException {
         super(runtime);
         this.descriptor = descriptor;
         this.isOpen = true;
@@ -80,11 +80,11 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         this.fileDescriptor = fileDescriptor;
     }
 
-    public IOHandlerNioBuffered(Ruby runtime, RubyIO.DescriptorLike descriptor) throws IOException {
+    public IOHandlerNioBuffered(Ruby runtime, RubyIO.ChannelDescriptor descriptor) throws IOException {
         this(runtime, descriptor, (FileDescriptor) null);
     }
 
-    public IOHandlerNioBuffered(Ruby runtime, RubyIO.DescriptorLike descriptor, FileDescriptor fileDescriptor) throws IOException {
+    public IOHandlerNioBuffered(Ruby runtime, RubyIO.ChannelDescriptor descriptor, FileDescriptor fileDescriptor) throws IOException {
         super(runtime);
         String mode = "";
         this.descriptor = descriptor;
@@ -115,7 +115,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         this.reading = true;
     }
 
-    public IOHandlerNioBuffered(Ruby runtime, RubyIO.DescriptorLike descriptor, IOModes modes) throws IOException {
+    public IOHandlerNioBuffered(Ruby runtime, RubyIO.ChannelDescriptor descriptor, IOModes modes) throws IOException {
         super(runtime);
         this.descriptor = descriptor;
         this.isOpen = true;
@@ -747,7 +747,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         }
     }
     
-    public RubyIO.DescriptorLike getDescriptor() {
+    public RubyIO.ChannelDescriptor getDescriptor() {
         return descriptor;
     }
 

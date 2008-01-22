@@ -109,7 +109,7 @@ public class RubyFile extends RubyIO {
         this.path = path;
         try {
             this.openFile.handler = new IOHandlerNioBuffered(runtime, 
-                    new DescriptorLike(Channels.newChannel(in), getNewFileno()));
+                    new ChannelDescriptor(Channels.newChannel(in), getNewFileno()));
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
@@ -224,7 +224,7 @@ public class RubyFile extends RubyIO {
         try {
             if (newPath.equals("/dev/null")) {
                 Channel nullChannel = new NullWritableChannel();
-                openFile.handler = new IOHandlerNioBuffered(getRuntime(), new DescriptorLike(nullChannel, getNewFileno()), newModes);
+                openFile.handler = new IOHandlerNioBuffered(getRuntime(), new ChannelDescriptor(nullChannel, getNewFileno()), newModes);
             } else if(newPath.startsWith("file:")) {
                 String filePath = path.substring(5, path.indexOf("!"));
                 String internalPath = path.substring(path.indexOf("!") + 2);
@@ -246,7 +246,7 @@ public class RubyFile extends RubyIO {
 
                 InputStream is = jf.getInputStream(zf);
                 openFile.handler = new IOHandlerNioBuffered(getRuntime(), 
-                        new DescriptorLike(Channels.newChannel(is), getNewFileno()));
+                        new ChannelDescriptor(Channels.newChannel(is), getNewFileno()));
             } else {
                 openFile.handler = fopen(newPath, newModes);
             }

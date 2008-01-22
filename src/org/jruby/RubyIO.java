@@ -113,11 +113,11 @@ public class RubyIO extends RubyObject {
         public Finalizer finalizer;
     }
     
-    public static class DescriptorLike {
+    public static class ChannelDescriptor {
         private Channel channel;
         private int fileno;
         
-        public DescriptorLike(Channel channel, int fileno) {
+        public ChannelDescriptor(Channel channel, int fileno) {
             this.channel = channel;
             this.fileno = fileno;
         }
@@ -263,7 +263,7 @@ public class RubyIO extends RubyObject {
         
         try {
             openFile.handler = new IOHandlerNioBuffered(runtime,
-                    new DescriptorLike(Channels.newChannel(outputStream), getNewFileno()));
+                    new ChannelDescriptor(Channels.newChannel(outputStream), getNewFileno()));
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
@@ -283,7 +283,7 @@ public class RubyIO extends RubyObject {
         
         try {
             openFile.handler = new IOHandlerNioBuffered(runtime, 
-                    new DescriptorLike(Channels.newChannel(inputStream), getNewFileno()));
+                    new ChannelDescriptor(Channels.newChannel(inputStream), getNewFileno()));
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
@@ -305,7 +305,7 @@ public class RubyIO extends RubyObject {
         
         try {
             openFile.handler = new IOHandlerNioBuffered(runtime, 
-                    new DescriptorLike(channel, getNewFileno()));
+                    new ChannelDescriptor(channel, getNewFileno()));
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
@@ -325,7 +325,7 @@ public class RubyIO extends RubyObject {
             SplitChannel channel = new SplitChannel(
                     Channels.newChannel(process.getInputStream()),
                     Channels.newChannel(process.getOutputStream()));
-    	    openFile.handler = new IOHandlerNioBuffered(runtime, new DescriptorLike(channel, getNewFileno()), openFile.modes);
+    	    openFile.handler = new IOHandlerNioBuffered(runtime, new ChannelDescriptor(channel, getNewFileno()), openFile.modes);
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
@@ -343,20 +343,20 @@ public class RubyIO extends RubyObject {
             switch (stdio) {
             case IN:
                 openFile.handler = new IOHandlerNioBuffered(runtime,
-                        new DescriptorLike(Channels.newChannel(runtime.getIn()), 0),
+                        new ChannelDescriptor(Channels.newChannel(runtime.getIn()), 0),
                         new IOModes(runtime, IOModes.RDONLY),
                         FileDescriptor.in);
                 break;
             case OUT:
                 openFile.handler = new IOHandlerNioBuffered(runtime,
-                        new DescriptorLike(Channels.newChannel(runtime.getOut()), 1),
+                        new ChannelDescriptor(Channels.newChannel(runtime.getOut()), 1),
                         new IOModes(runtime, IOModes.WRONLY | IOModes.APPEND),
                         FileDescriptor.out);
                 openFile.handler.setSync(true);
                 break;
             case ERR:
                 openFile.handler = new IOHandlerNioBuffered(runtime,
-                        new DescriptorLike(Channels.newChannel(runtime.getErr()), 2),
+                        new ChannelDescriptor(Channels.newChannel(runtime.getErr()), 2),
                         new IOModes(runtime, IOModes.WRONLY | IOModes.APPEND),
                         FileDescriptor.err);
                 openFile.handler.setSync(true);
@@ -374,11 +374,11 @@ public class RubyIO extends RubyObject {
     public static IOHandler handlerForFileno(Ruby runtime, int fileno) throws BadDescriptorException, IOException {
         switch (fileno) {
         case 0:
-            return new IOHandlerNioBuffered(runtime, new DescriptorLike(Channels.newChannel(runtime.getIn()), fileno), FileDescriptor.in);
+            return new IOHandlerNioBuffered(runtime, new ChannelDescriptor(Channels.newChannel(runtime.getIn()), fileno), FileDescriptor.in);
         case 1:
-            return new IOHandlerNioBuffered(runtime, new DescriptorLike(Channels.newChannel(runtime.getOut()), fileno), FileDescriptor.out);
+            return new IOHandlerNioBuffered(runtime, new ChannelDescriptor(Channels.newChannel(runtime.getOut()), fileno), FileDescriptor.out);
         case 2:
-            return new IOHandlerNioBuffered(runtime, new DescriptorLike(Channels.newChannel(runtime.getErr()), fileno), FileDescriptor.err);
+            return new IOHandlerNioBuffered(runtime, new ChannelDescriptor(Channels.newChannel(runtime.getErr()), fileno), FileDescriptor.err);
         default:
             throw new BadDescriptorException();
         }
@@ -488,7 +488,7 @@ public class RubyIO extends RubyObject {
 
         if (modes.shouldTruncate()) file.setLength(0L);
 
-        DescriptorLike descriptor = new DescriptorLike(file.getChannel(), getNewFileno());
+        ChannelDescriptor descriptor = new ChannelDescriptor(file.getChannel(), getNewFileno());
         
         isOpen = true;
         
@@ -543,8 +543,8 @@ public class RubyIO extends RubyObject {
                 selfFile.path = originalFile.path;
                 selfFile.finalizer = originalFile.finalizer;
 
-                DescriptorLike selfDescriptor = selfFile.handler.getDescriptor();
-                DescriptorLike originalDescriptor = originalFile.handler.getDescriptor();
+                ChannelDescriptor selfDescriptor = selfFile.handler.getDescriptor();
+                ChannelDescriptor originalDescriptor = originalFile.handler.getDescriptor();
 
                 // confirm we're not reopening self's channel
                 if (selfDescriptor.getChannel() != originalDescriptor.getChannel()) {
@@ -572,7 +572,7 @@ public class RubyIO extends RubyObject {
                             selfFile.pipeHandler = pipeFile;
                         } else {
                             selfFile.handler = new IOHandlerNioBuffered(getRuntime(),
-                                    new DescriptorLike(originalDescriptor.getChannel(), selfDescriptor.getFileno()));
+                                    new ChannelDescriptor(originalDescriptor.getChannel(), selfDescriptor.getFileno()));
                             
                             // since we're not actually duping the incoming channel into our handler, we need to
                             // copy the original sync behavior from the other handler
@@ -1208,7 +1208,7 @@ public class RubyIO extends RubyObject {
             // at least one platform appears to share position between the two
             
             openFile.handler = new IOHandlerNioBuffered(getRuntime(),
-                    new DescriptorLike(originalFile.handler.getDescriptor().getChannel(), getNewFileno()), openFile.modes);
+                    new ChannelDescriptor(originalFile.handler.getDescriptor().getChannel(), getNewFileno()), openFile.modes);
             registerIOHandler(openFile.handler);
         } catch (IOException ex) {
             throw getRuntime().newIOError("could not init copy: " + ex);

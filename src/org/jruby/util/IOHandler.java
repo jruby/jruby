@@ -35,7 +35,7 @@ import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 
 import org.jruby.Ruby;
-import org.jruby.RubyIO.DescriptorLike;
+import org.jruby.RubyIO.ChannelDescriptor;
 
 /**
  */
@@ -51,7 +51,7 @@ public interface IOHandler {
 
     public FileDescriptor getFD();
     
-    public DescriptorLike getDescriptor();
+    public ChannelDescriptor getDescriptor();
 
     public Ruby getRuntime();
     
