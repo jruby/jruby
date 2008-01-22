@@ -788,6 +788,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
 
     public void closeWrite() throws IOException, BadDescriptorException {
         checkOpen();
+        flushWrite();
         
         if (descriptor.getChannel() instanceof SplitChannel) {
             // split channels have separate read/write, so we *can* close write
