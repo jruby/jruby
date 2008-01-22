@@ -1485,7 +1485,8 @@ public class RubyIO extends RubyObject {
     
     @JRubyMethod(name = "read", rest = true)
     public IRubyObject read(IRubyObject[] args) {
-               
+        checkReadable();
+
         int argCount = args.length;
         RubyString callerBuffer = null;
         boolean readEntireStream = (argCount == 0 || args[0].isNil());
