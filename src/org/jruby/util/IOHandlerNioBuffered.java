@@ -36,19 +36,26 @@ package org.jruby.util;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.EOFException;
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.WritableByteChannel;
+import java.nio.channels.spi.SelectorProvider;
 import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
+import org.jruby.util.IOHandler.BadDescriptorException;
+import org.jruby.util.io.SplitChannel;
 
 /**
  * <p>This file implements a seekable IO file.</p>
@@ -56,86 +63,67 @@ import org.jruby.RubyIO;
 public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizable {
     private final static int BUFSIZE = 16 * 1024;
     
-    protected String path;
-    protected String cwd;
     protected ByteBuffer buffer; // r/w buffer
     protected boolean reading; // are we reading or writing?
-    protected FileChannel channel;
-    private final JRubyFile theFile;
+    private RubyIO.DescriptorLike descriptor;
     protected int ungotc = -1;
-    
-    public IOHandlerNioBuffered(Ruby runtime, String path, IOModes modes) 
-        throws IOException, InvalidValueException {
+
+    public IOHandlerNioBuffered(Ruby runtime, RubyIO.DescriptorLike descriptor, IOModes modes, FileDescriptor fileDescriptor) throws IOException {
         super(runtime);
-        
-        this.path = path;
+        this.descriptor = descriptor;
+        this.isOpen = true;
+        // TODO: Confirm modes correspond to the available modes on the channel
         this.modes = modes;
-        this.cwd = runtime.getCurrentDirectory();
-        theFile = JRubyFile.create(cwd,path);
+        this.buffer = ByteBuffer.allocate(BUFSIZE);
+        buffer.flip();
+        this.reading = true;
+        this.fileDescriptor = fileDescriptor;
+    }
 
-        if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();
-        
-        if (modes.isCreate()) {
-            if (theFile.exists() && modes.isExclusive()) {
-                throw runtime.newErrnoEEXISTError("File exists - " + path);
-            }
-            theFile.createNewFile();
-        } else {
-            if (!theFile.exists()) {
-                throw runtime.newErrnoENOENTError("file not found - " + path);
-            }
+    public IOHandlerNioBuffered(Ruby runtime, RubyIO.DescriptorLike descriptor) throws IOException {
+        this(runtime, descriptor, (FileDescriptor) null);
+    }
+
+    public IOHandlerNioBuffered(Ruby runtime, RubyIO.DescriptorLike descriptor, FileDescriptor fileDescriptor) throws IOException {
+        super(runtime);
+        String mode = "";
+        this.descriptor = descriptor;
+        if (descriptor.getChannel() instanceof ReadableByteChannel) {
+            mode += "r";
+            isOpen = true;
         }
-
-        // We always open this rw since we can only open it r or rw.
-        RandomAccessFile file = new RandomAccessFile(theFile, javaMode());
-
-        if (modes.shouldTruncate()) file.setLength(0L);
-
-        channel = file.getChannel();
-        isOpen = true;
+        if (descriptor.getChannel() instanceof WritableByteChannel) {
+            mode += "w";
+            isOpen = true;
+        }
+        if ("rw".equals(mode)) {
+            modes = new IOModes(runtime, IOModes.RDWR);
+            isOpen = true;
+        } else {
+            if (!isOpen) {
+                // Neither stream exists?
+                // throw new IOException("Opening nothing?");
+	        // Hack to cover the ServerSocketChannel case
+                mode = "r";
+                isOpen = true;
+            }
+            modes = new IOModes(runtime, mode);
+        }
+        this.fileDescriptor = fileDescriptor;
         buffer = ByteBuffer.allocate(BUFSIZE);
         buffer.flip();
-        reading = true;
-        fileDescriptor = file.getFD();
-        
-        if (modes.isAppendable()) seek(0, SEEK_END);
-
-        // Give a fileno last so that we do not consume then when we have a problem opening a file.
-        fileno = RubyIO.getNewFileno();
-        
-        // Ensure we clean up after ourselves ... eventually
-        runtime.addInternalFinalizer(this);
+        this.reading = true;
     }
-    
-    // The copying constructor, needed for cloneIOHandler().
-    private IOHandlerNioBuffered(IOHandlerNioBuffered other) throws IOException, InvalidValueException{
-        super(other.getRuntime());
 
-        Ruby runtime = other.getRuntime();
-
-        // copy stuff
-        this.path = other.path;
-        this.modes = other.modes;
-        this.cwd = other.cwd;
-        this.reading = other.reading;
-        this.fileno = other.fileno;
-        this.isOpen = other.isOpen;
-        this.theFile = other.theFile;
-        this.fileDescriptor = other.fileDescriptor;
-
-        // create stuff
-        RandomAccessFile file = new RandomAccessFile(theFile, javaMode());
-        channel = file.getChannel();
+    public IOHandlerNioBuffered(Ruby runtime, RubyIO.DescriptorLike descriptor, IOModes modes) throws IOException {
+        super(runtime);
+        this.descriptor = descriptor;
+        this.isOpen = true;
+        // TODO: Confirm modes correspond to the available modes on the channel
+        this.modes = modes;
         buffer = ByteBuffer.allocate(BUFSIZE);
         buffer.flip();
-
-        // Ensure we clean up after ourselves ... eventually
-        runtime.addInternalFinalizer(this);
-    }
-    
-    private String javaMode() {
-        // Do not open as 'rw' by default since a file with read-only permissions will fail on 'rw'
-        return (modes.isWritable() || modes.shouldTruncate()) ? "rw" : "r";
+        this.reading = true;
     }
 
     public ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException {
@@ -148,10 +136,12 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         final ByteList separator = (separatorString == PARAGRAPH_DELIMETER) ?
             PARAGRAPH_SEPARATOR : separatorString;
 
-        byte c = (byte)read();
+        int c = read();
+        
         if (c == -1) {
             return null;
         }
+        
         // unread back
         buffer.position(buffer.position() - 1);
 
@@ -183,7 +173,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
                 // no match, append remainder of buffer and continue with next block
                 buf.append(bytes, offset, buffer.remaining());
                 buffer.clear();
-                int read = channel.read(buffer);
+                int read = ((ReadableByteChannel)descriptor.getChannel()).read(buffer);
                 buffer.flip();
                 if (read == -1) break LineLoop;
             }
@@ -198,7 +188,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
                 }
                 buf.append(c);
                 if (i < separator.realSize - 1) {
-                    c = (byte)read();
+                    c = read();
                 }
             }
             break;
@@ -206,49 +196,43 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
 
         if (separatorString == PARAGRAPH_DELIMETER) {
             while (c == separator.bytes[separator.begin]) {
-                c = (byte)read();
+                c = read();
             }
             ungetc(c);
         }
 
         return buf;
     }
-
-    private void reopen() throws IOException {
-        long pos = pos();
-
-        JRubyFile theFile = JRubyFile.create(cwd,path);
-        RandomAccessFile file = new RandomAccessFile(theFile, javaMode());
-        channel = file.getChannel();
-        isOpen = true;
-        buffer.clear();
-        buffer.flip();
-        reading = true;
-        
-        try {
-            seek(pos,SEEK_SET);
-        } catch(Exception e) {
-            throw new IOException();
-        }
-    }
     
-    public ByteList getsEntireStream() throws IOException {
-        invalidateBuffer();
-        long left = channel.size() - channel.position();
-        if (left == 0) return null;
-        
-        try {
-            return sysread((int) left);
-        } catch (BadDescriptorException e) {
-            throw new IOException(e.getMessage()); // Ugh! But why rewrite the same code?
-        }
-    }
+    public ByteList getsEntireStream() throws IOException, BadDescriptorException {
+        if (descriptor.isSeekable()) {
+            invalidateBuffer();
+            FileChannel channel = (FileChannel)descriptor.getChannel();
+            long left = channel.size() - channel.position();
+            if (left == 0) return null;
 
+            try {
+                return sysread((int) left);
+            } catch (BadDescriptorException e) {
+                throw new IOException(e.getMessage()); // Ugh! But why rewrite the same code?
+            }
+        } else {
+            try {
+                checkReadable();
+            } catch (BadDescriptorException bde) {
+                throw new IOException(bde.getMessage());
+            }
 
-    public AbstractIOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException {
-        AbstractIOHandler newHandler = new IOHandlerNioBuffered(this); 
-        newHandler.seek(pos(), SEEK_CUR);
-        return newHandler;
+            ByteList byteList = new ByteList();
+            ByteList read = read(BUFSIZE);
+
+            while (read != null) {
+                byteList.append(read);
+                read = read(BUFSIZE);
+            }
+
+            return byteList;
+        } 
     }
     
     /**
@@ -269,12 +253,20 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws BadDescriptorException
      */
     private void close(boolean finalizing) throws IOException, BadDescriptorException {
-        if (!isOpen()) throw new BadDescriptorException();
-        
-        isOpen = false;
-        flushWrite();
-        channel.close();
-        if (!finalizing) getRuntime().removeInternalFinalizer(this);
+        if (descriptor.isSeekable()) {
+            checkOpen();
+            flushWrite();
+
+            isOpen = false;
+            descriptor.getChannel().close();
+        } else {
+            if (!isOpen()) throw new BadDescriptorException();
+
+            isOpen = false;
+            flushWrite();
+            descriptor.getChannel().close();
+            if (!finalizing) getRuntime().removeInternalFinalizer(this);
+        }
     }
 
     /**
@@ -295,7 +287,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         if (reading || !modes.isWritable() || buffer.position() == 0) return; // Don't bother
             
         buffer.flip();
-        channel.write(buffer);
+        ((WritableByteChannel)descriptor.getChannel()).write(buffer);
         buffer.clear();
     }
 
@@ -303,14 +295,14 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @see org.jruby.util.IOHandler#getInputStream()
      */
     public InputStream getInputStream() {
-        return new BufferedInputStream(Channels.newInputStream(channel));
+        return new BufferedInputStream(Channels.newInputStream((ReadableByteChannel)descriptor.getChannel()));
     }
 
     /**
      * @see org.jruby.util.IOHandler#getOutputStream()
      */
     public OutputStream getOutputStream() {
-        return new BufferedOutputStream(Channels.newOutputStream(channel));
+        return new BufferedOutputStream(Channels.newOutputStream((WritableByteChannel)descriptor.getChannel()));
     }
     
     /**
@@ -323,7 +315,27 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         
         if (reading && buffer.hasRemaining()) return false;
         
-        return (channel.size() == channel.position());
+        if (descriptor.isSeekable()) {
+            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+            return (fileChannel.size() == fileChannel.position());
+        } else {
+            checkReadable();
+            ensureRead();
+
+            if (ungotc > 0) {
+                return false;
+            }
+            // TODO: this is new to replace what's below
+            ungotc = read();
+            if (ungotc == -1) {
+                return true;
+            }
+            // FIXME: this was here before; need a better way?
+//            if (fillInBuffer() < 0) {
+//                return true;
+//            }
+            return false;
+        }
     }
     
     /**
@@ -338,18 +350,23 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws IOException 
      * @see org.jruby.util.IOHandler#pos()
      */
-    public long pos() throws IOException {
-        checkOpen("not open");
+    public long pos() throws IOException, BadDescriptorException {
+        checkOpen();
         // Correct position for read / write buffering (we could invalidate, but expensive)
         int offset = (reading) ? - buffer.remaining() : buffer.position();
-        return channel.position() + offset;
+        FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+        return fileChannel.position() + offset;
     }
     
-    public void resetByModes(IOModes newModes) throws IOException, InvalidValueException {
-        if (newModes.isAppendable()) {
-            seek(0L, SEEK_END);
-        } else if (newModes.isWritable()) {
-            rewind();
+    public void resetByModes(IOModes newModes) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
+        if (descriptor.getChannel() instanceof FileChannel) {
+            if (newModes.isAppendable()) {
+                seek(0L, SEEK_END);
+            } else if (newModes.isWritable()) {
+                try {
+                    rewind();
+                } catch(PipeException e) {} // don't throw
+            }
         }
     }
 
@@ -358,7 +375,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws InvalidValueException 
      * @see org.jruby.util.IOHandler#rewind()
      */
-    public void rewind() throws IOException, InvalidValueException {
+    public void rewind() throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         seek(0, SEEK_SET);
     }
     
@@ -367,23 +384,28 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws InvalidValueException 
      * @see org.jruby.util.IOHandler#seek(long, int)
      */
-    public void seek(long offset, int type) throws IOException, InvalidValueException {
-        checkOpen("not open");
-        invalidateBuffer();
-        try {
-            switch (type) {
-            case SEEK_SET:
-                channel.position(offset);
-                break;
-            case SEEK_CUR:
-                channel.position(channel.position() + offset);
-                break;
-            case SEEK_END:
-                channel.position(channel.size() + offset);
-                break;
+    public void seek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
+        checkOpen();
+        if (descriptor.getChannel() instanceof FileChannel) {
+            invalidateBuffer();
+            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+            try {
+                switch (type) {
+                case SEEK_SET:
+                    fileChannel.position(offset);
+                    break;
+                case SEEK_CUR:
+                    fileChannel.position(fileChannel.position() + offset);
+                    break;
+                case SEEK_END:
+                    fileChannel.position(fileChannel.size() + offset);
+                    break;
+                }
+            } catch (IllegalArgumentException e) {
+                throw new InvalidValueException();
             }
-        } catch (IllegalArgumentException e) {
-            throw new InvalidValueException();
+        } else {
+            throw new AbstractIOHandler.PipeException();
         }
     }
 
@@ -444,9 +466,13 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     }
     
     private void resetForWrite() throws IOException {
-        if (buffer.hasRemaining()) { // we have read ahead, and need to back up
-            channel.position(channel.position() - buffer.remaining());
+        if (descriptor.isSeekable()) {
+            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+            if (buffer.hasRemaining()) { // we have read ahead, and need to back up
+                fileChannel.position(fileChannel.position() - buffer.remaining());
+            }
         }
+        // FIXME: Clearing read buffer here...is this appropriate?
         buffer.clear();
         reading = false;
     }
@@ -471,11 +497,11 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     }
 
     public ByteList sysread(int number) throws IOException, BadDescriptorException {
-        checkOpen("File not open");
+        checkOpen();
         checkReadable();
         ensureReadNonBuffered();
         
-        return sysread(number, channel);
+        return sysread(number, (ReadableByteChannel)descriptor.getChannel());
     }
     
     /**
@@ -488,7 +514,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         checkWritable();
         ensureWriteNonBuffered();
         
-        return syswrite(buf, channel);
+        return syswrite(buf, (WritableByteChannel)descriptor.getChannel());
     }
     
     /**
@@ -501,11 +527,11 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         checkWritable();
         ensureWriteNonBuffered();
         
-        return syswrite(c, channel);
+        return syswrite(c, (WritableByteChannel)descriptor.getChannel());
     }
 
     public ByteList bufferedRead(int number) throws IOException, BadDescriptorException {
-        checkOpen("File not open");
+        checkOpen();
         checkReadable();
         ensureRead();
         
@@ -514,12 +540,13 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
             putInto(buf, buffer);
         }
         
+        ReadableByteChannel readChannel = (ReadableByteChannel)descriptor.getChannel();
         if (buf.position() != buf.capacity()) { // not complete. try to read more
             if (buf.capacity() > buffer.capacity()) // big read. just do it.
-                channel.read(buf);
+                readChannel.read(buf);
             else { // buffer it
                 buffer.clear();
-                channel.read(buffer);
+                readChannel.read(buffer);
                 buffer.flip();
                 putInto(buf, buffer); // get what we need
             }
@@ -537,7 +564,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         
         if (!buffer.hasRemaining()) {
             buffer.clear();
-            int read = channel.read(buffer);
+            int read = ((ReadableByteChannel)descriptor.getChannel()).read(buffer);
             buffer.flip();
             
             if (read == -1) return -1;
@@ -561,7 +588,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         if (buf.length() > buffer.capacity()) { // Doesn't fit in buffer. Write immediately.
             flushWrite(); // ensure nothing left to write
             
-            channel.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+            ((WritableByteChannel)descriptor.getChannel()).write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
         } else {
             if (buf.length() > buffer.remaining()) flushWrite();
             
@@ -594,22 +621,23 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     
     public void truncate(long newLength) throws IOException {
         invalidateBuffer();
-        if (newLength > channel.size()) {
+        FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+        if (newLength > fileChannel.size()) {
             // truncate can't lengthen files, so we save position, seek/write, and go back
-            long position = channel.position();
-            int difference = (int)(newLength - channel.size());
+            long position = fileChannel.position();
+            int difference = (int)(newLength - fileChannel.size());
             
-            channel.position(channel.size());
+            fileChannel.position(fileChannel.size());
             // FIXME: This worries me a bit, since it could allocate a lot with a large newLength
-            channel.write(ByteBuffer.allocate(difference));
-            channel.position(position);
+            fileChannel.write(ByteBuffer.allocate(difference));
+            fileChannel.position(position);
         } else {
-            channel.truncate(newLength);
+            fileChannel.truncate(newLength);
         }        
     }
     
     public FileChannel getFileChannel() {
-        return channel;
+        return (FileChannel)descriptor.getChannel();
     }
     
     /**
@@ -624,7 +652,8 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         if (reading) {
             buffer.flip();
             // if the read buffer is ahead, back up
-            if (posOverrun != 0) channel.position(channel.position() - posOverrun);
+            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+            if (posOverrun != 0) fileChannel.position(fileChannel.position() - posOverrun);
         }
     }
     
@@ -633,7 +662,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      */
     public void finalize() {
         try {
-            if (isOpen) close(true); // close without removing from finalizers
+            if (descriptor.isSeekable() && isOpen) close(true); // close without removing from finalizers
         } catch (Exception e) { // What else could we do?
             e.printStackTrace();
         }
@@ -689,6 +718,21 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         }
     }
 
+    public ByteList readpartial(int number) throws IOException, BadDescriptorException, EOFException {
+        if (descriptor.getChannel() instanceof SelectableChannel) {
+            if (ungotc >= 0) {
+                ByteList buf2 = bufferedRead(number - 1);
+                buf2.prepend((byte)ungotc);
+                ungotc = -1;
+                return buf2;
+            } else {
+                return bufferedRead(number);
+            }
+        } else {
+            return null;
+        }
+    }
+
     public int read() throws IOException {
         try {
             if (ungotc >= 0) {
@@ -698,19 +742,56 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
             }
 
             return bufferedRead();
-        } catch (EOFException e) {
+        } catch (EOFException eof) {
             return -1;
         }
     }
-
-    public Channel getChannel() {
-        return channel;
-    }
     
-    public void setChannel(Channel channel) {
-        if (!(channel instanceof FileChannel)) {
-            throw new RuntimeException("tried to set a non-filechannel into a filechannel-only IOHandler");
+    public RubyIO.DescriptorLike getDescriptor() {
+        return descriptor;
+    }
+
+    public void freopen(String path, IOModes modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException {
+        // flush first
+        flushWrite();
+        
+        this.modes = modes;
+        String cwd = getRuntime().getCurrentDirectory();
+        JRubyFile theFile = JRubyFile.create(cwd,path);
+
+        if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();
+        
+        if (modes.isCreate()) {
+            if (theFile.exists() && modes.isExclusive()) {
+                throw getRuntime().newErrnoEEXISTError("File exists - " + path);
+            }
+            theFile.createNewFile();
+        } else {
+            if (!theFile.exists()) {
+                throw getRuntime().newErrnoENOENTError("file not found - " + path);
+            }
         }
-        this.channel = (FileChannel)channel;
+
+        // We always open this rw since we can only open it r or rw.
+        RandomAccessFile file = new RandomAccessFile(theFile, modes.javaMode());
+
+        if (modes.shouldTruncate()) file.setLength(0L);
+
+        descriptor.setChannel(file.getChannel());
+        
+        isOpen = true;
+        
+        fileDescriptor = file.getFD();
+        
+        if (modes.isAppendable()) seek(0, SEEK_END);
+    }
+
+    public void closeWrite() throws IOException, BadDescriptorException {
+        checkOpen();
+        
+        if (descriptor.getChannel() instanceof SplitChannel) {
+            // split channels have separate read/write, so we *can* close write
+            ((SplitChannel)descriptor.getChannel()).closeWrite();
+        }
     }
 }

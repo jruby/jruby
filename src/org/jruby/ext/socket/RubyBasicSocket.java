@@ -44,6 +44,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandlerNio;
 import org.jruby.util.IOHandler;
+import org.jruby.util.IOHandlerNioBuffered;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -79,20 +80,23 @@ public class RubyBasicSocket extends RubyIO {
     protected void setChannel(Channel c) {
         this.socketChannel = c;
         try {
-            filePointer.handler = new IOHandlerNio(getRuntime(), socketChannel);
-            filePointer.handler.setSync(true);
+            openFile.handler = new IOHandlerNioBuffered(getRuntime(), 
+                    new DescriptorLike(socketChannel, getNewFileno()));
+            openFile.handler.setSync(true);
     	} catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
         }
-        registerIOHandler(filePointer.handler);
-        filePointer.modes = filePointer.handler.getModes();
+        registerIOHandler(openFile.handler);
+        openFile.modes = openFile.handler.getModes();
     }
 
     @Override
     public IRubyObject close_write() {
         try {
             ((SocketChannel)this.socketChannel).socket().shutdownOutput();
-            filePointer.handler.closeWrite();
+            openFile.handler.closeWrite();
+        } catch (IOHandler.BadDescriptorException bde) {
+            throw getRuntime().newErrnoEBADFError();
     	} catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
         }
@@ -105,7 +109,7 @@ public class RubyBasicSocket extends RubyIO {
     
     public IRubyObject recv(IRubyObject[] args) {
         try {
-            return RubyString.newString(getRuntime(), ((IOHandlerNio) filePointer.handler).recv(RubyNumeric.fix2int(args[0])));
+            return RubyString.newString(getRuntime(), ((IOHandlerNio) openFile.handler).recv(RubyNumeric.fix2int(args[0])));
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {

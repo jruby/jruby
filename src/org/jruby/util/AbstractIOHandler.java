@@ -47,21 +47,12 @@ import org.jruby.Ruby;
 public abstract class AbstractIOHandler implements IOHandler {
     private Ruby runtime;
     protected IOModes modes;
-    protected int fileno;
     protected FileDescriptor fileDescriptor = null;
     protected boolean isOpen = false;
     protected boolean sync = false;
     
     protected AbstractIOHandler(Ruby runtime) {
         this.runtime = runtime;
-    }
-
-    public int getFileno() {
-        return fileno;
-    }
-    
-    public void setFileno(int fileno) {
-        this.fileno = fileno;
     }
     
     public FileDescriptor getFD() {
@@ -86,8 +77,8 @@ public abstract class AbstractIOHandler implements IOHandler {
         return modes.isWritable();
     }
 
-    public void checkOpen(String message) throws IOException {
-        if (!isOpen) throw new IOException(message);
+    public void checkOpen() throws BadDescriptorException {
+        if (!isOpen) throw new BadDescriptorException();
     }
     
     public void checkReadable() throws IOException, BadDescriptorException {
@@ -116,17 +107,10 @@ public abstract class AbstractIOHandler implements IOHandler {
         this.sync = sync;
     }
 
-    public void reset(IOModes subsetModes) throws IOException, InvalidValueException {
+    public void reset(IOModes subsetModes) throws IOException, InvalidValueException, BadDescriptorException, PipeException {
         checkPermissionsSubsetOf(subsetModes);
         
         resetByModes(subsetModes);
-    }
-
-    // TODO: We overflow on large files...We could increase to long to limit
-    // this, but then the impl gets more involved since java io APIs based on
-    // int (means we have to chunk up a long into a series of int ops).
-
-    public void closeWrite() throws IOException {
     }
 
     /**

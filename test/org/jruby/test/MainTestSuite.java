@@ -63,7 +63,6 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestJavaUtil.class);
         suite.addTestSuite(TestJavaClass.class);
         suite.addTestSuite(TestKernel.class);
-        suite.addTestSuite(TestKernel.class);
         suite.addTestSuite(TestRubyCollect.class);
         suite.addTestSuite(TestObjectSpace.class);
         suite.addTestSuite(TestRubySymbol.class);

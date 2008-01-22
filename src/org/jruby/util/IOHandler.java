@@ -32,10 +32,10 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 
 import org.jruby.Ruby;
+import org.jruby.RubyIO.DescriptorLike;
 
 /**
  */
@@ -49,11 +49,9 @@ public interface IOHandler {
     
     public static final ByteList PARAGRAPH_SEPARATOR = ByteList.create("\n\n");
 
-    public int getFileno();
-    
-    public void setFileno(int fileno);
-
     public FileDescriptor getFD();
+    
+    public DescriptorLike getDescriptor();
 
     public Ruby getRuntime();
     
@@ -65,7 +63,7 @@ public interface IOHandler {
 
     public boolean isWritable();
 
-    public void checkOpen(String message) throws IOException;
+    public void checkOpen() throws IOException, BadDescriptorException;
     
     public void checkReadable() throws IOException, BadDescriptorException;
 
@@ -79,7 +77,7 @@ public interface IOHandler {
 
     public void setSync(boolean isSync);
 
-    public void reset(IOModes subsetModes) throws IOException, InvalidValueException;
+    public void reset(IOModes subsetModes) throws IOException, InvalidValueException, BadDescriptorException, PipeException;
 
     public abstract ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException, EOFException;
     public abstract ByteList getsEntireStream() throws IOException, BadDescriptorException, EOFException;
@@ -99,11 +97,10 @@ public interface IOHandler {
     public abstract int syswrite(ByteList buf) throws IOException, BadDescriptorException;
     public abstract int syswrite(int ch) throws IOException, BadDescriptorException;
     
-    public abstract IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException;
     public abstract void close() throws IOException, BadDescriptorException;
     public abstract void flush() throws IOException, BadDescriptorException;
 
-    public void closeWrite() throws IOException;
+    public void closeWrite() throws IOException, BadDescriptorException;
     
     /**
      * <p>Flush and sync all writes to the filesystem.</p>
@@ -137,10 +134,10 @@ public interface IOHandler {
      * @throws PipeException ESPIPE (illegal seek) when not a file 
      * 
      */
-    public long pos() throws IOException, PipeException;
+    public long pos() throws IOException, PipeException, BadDescriptorException;
     
-    public void resetByModes(IOModes newModes) throws IOException, InvalidValueException;
-    public void rewind() throws IOException, PipeException, InvalidValueException;
+    public void resetByModes(IOModes newModes) throws IOException, InvalidValueException, PipeException, BadDescriptorException;
+    public void rewind() throws IOException, PipeException, InvalidValueException, BadDescriptorException;
     
     /**
      * <p>Perform a seek based on pos().  </p> 
@@ -148,7 +145,7 @@ public interface IOHandler {
      * @throws PipeException 
      * @throws InvalidValueException 
      */
-    public void seek(long offset, int type) throws IOException, PipeException, InvalidValueException;
+    public void seek(long offset, int type) throws IOException, PipeException, InvalidValueException, BadDescriptorException;
     public void truncate(long newLength) throws IOException, PipeException;
     
     /**
@@ -171,9 +168,7 @@ public interface IOHandler {
     
     public OutputStream getOutputStream();
     
-    public Channel getChannel();
-    
-    public void setChannel(Channel channel);
+    public void freopen(String path, IOModes modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException;
     
     public class PipeException extends Exception {
 		private static final long serialVersionUID = 1L;
