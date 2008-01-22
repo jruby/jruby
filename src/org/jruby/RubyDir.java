@@ -39,7 +39,6 @@ import java.util.List;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -251,6 +250,7 @@ public class RubyDir extends RubyObject {
             try {
                 result = block.yield(recv.getRuntime().getCurrentContext(), path);
             } finally {
+                dir = getDir(recv.getRuntime(), oldCwd, true);
                 recv.getRuntime().setCurrentDirectory(oldCwd);
             }
         } else {
@@ -451,6 +451,9 @@ public class RubyDir extends RubyObject {
      */
     protected static JRubyFile getDir(final Ruby runtime, final String path, final boolean mustExist) {
         JRubyFile result = JRubyFile.create(runtime.getCurrentDirectory(),path);
+        if (mustExist && !result.exists()) {
+            throw runtime.newErrnoENOENTError("No such file or directory - " + path);
+        }
         boolean isDirectory = result.isDirectory();
         
         if (mustExist && !isDirectory) {
