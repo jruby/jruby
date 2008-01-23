@@ -73,6 +73,30 @@ public abstract class DynamicMethod {
         return call(context, self, klazz, name, IRubyObject.NULL_ARRAY, block);
     }
     
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
+        return call(context, self, klazz, name, new IRubyObject[] {arg}, Block.NULL_BLOCK);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg, Block block) {
+        return call(context, self, klazz, name, new IRubyObject[] {arg}, block);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
+        return call(context, self, klazz, name, new IRubyObject[] {arg1,arg2}, Block.NULL_BLOCK);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return call(context, self, klazz, name, new IRubyObject[] {arg1,arg2}, block);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return call(context, self, klazz, name, new IRubyObject[] {arg1,arg2,arg3}, Block.NULL_BLOCK);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        return call(context, self, klazz, name, new IRubyObject[] {arg1,arg2,arg3}, block);
+    }
+    
     public abstract DynamicMethod dup();
 
     public boolean isCallableFrom(IRubyObject caller, CallType callType) {

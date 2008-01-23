@@ -195,20 +195,100 @@ public abstract class CallSite {
 
             return method.call(context, self, selfType, methodName, block);
         }
+
+        protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+
+            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+            }
+
+            cachedMethod = method;
+            cachedType = selfType;
+
+            selfType.getRuntime().getCacheMap().add(method, this);
+
+            return method.call(context, self, selfType, methodName, arg);
+        }
+
+        protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+
+            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg}, context.getFrameSelf(), callType, block);
+            }
+
+            cachedMethod = method;
+            cachedType = selfType;
+
+            selfType.getRuntime().getCacheMap().add(method, this);
+
+            return method.call(context, self, selfType, methodName, arg, block);
+        }
+
+        protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+
+            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg1,arg2}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+            }
+
+            cachedMethod = method;
+            cachedType = selfType;
+
+            selfType.getRuntime().getCacheMap().add(method, this);
+
+            return method.call(context, self, selfType, methodName, arg1, arg2);
+        }
+
+        protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+
+            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg1,arg2}, context.getFrameSelf(), callType, block);
+            }
+
+            cachedMethod = method;
+            cachedType = selfType;
+
+            selfType.getRuntime().getCacheMap().add(method, this);
+
+            return method.call(context, self, selfType, methodName, arg1, arg2, block);
+        }
+
+        protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+
+            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg1,arg2,arg3}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+            }
+
+            cachedMethod = method;
+            cachedType = selfType;
+
+            selfType.getRuntime().getCacheMap().add(method, this);
+
+            return method.call(context, self, selfType, methodName, arg1, arg2, arg3);
+        }
+
+        protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+
+            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg1,arg2,arg3}, context.getFrameSelf(), callType, block);
+            }
+
+            cachedMethod = method;
+            cachedType = selfType;
+
+            selfType.getRuntime().getCacheMap().add(method, this);
+
+            return method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+        }
         
         public void removeCachedMethod() {
             cachedType = null;
             cachedMethod = null;
-        }
-        
-        public IRubyObject call(ThreadContext context, IRubyObject self) {
-            RubyClass selfType = self.getMetaClass();
-
-            if (cachedType == selfType && cachedMethod != null) {
-                return cachedMethod.call(context, self, selfType, methodName);
-            }
-
-            return cacheAndCall(selfType, context, self);
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args) {
@@ -219,6 +299,36 @@ public abstract class CallSite {
             }
 
             return cacheAndCall(selfType, args, context, self);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+            while (true) {
+                try {
+                    RubyClass selfType = self.getMetaClass();
+
+                    if (cachedType == selfType && cachedMethod != null) {
+                        return cachedMethod.call(context, self, selfType, methodName, args, block);
+                    }
+
+                    return cacheAndCall(selfType, block, args, context, self);
+                } catch (JumpException.BreakJump bj) {
+                    return handleBreakJump(bj, block);
+                } catch (JumpException.RetryJump rj) {
+                    throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+                } catch (StackOverflowError soe) {
+                    throw context.getRuntime().newSystemStackError("stack level too deep");
+                }
+            }
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self) {
+            RubyClass selfType = self.getMetaClass();
+
+            if (cachedType == selfType && cachedMethod != null) {
+                return cachedMethod.call(context, self, selfType, methodName);
+            }
+
+            return cacheAndCall(selfType, context, self);
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, Block block) {
@@ -241,16 +351,86 @@ public abstract class CallSite {
             }
         }
         
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1) {
+            RubyClass selfType = self.getMetaClass();
+
+            if (cachedType == selfType && cachedMethod != null) {
+                return cachedMethod.call(context, self, selfType, methodName, arg1);
+            }
+
+            return cacheAndCall(selfType, context, self, arg1);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
             while (true) {
                 try {
                     RubyClass selfType = self.getMetaClass();
 
                     if (cachedType == selfType && cachedMethod != null) {
-                        return cachedMethod.call(context, self, selfType, methodName, args, block);
+                        return cachedMethod.call(context, self, selfType, methodName, arg1, block);
                     }
 
-                    return cacheAndCall(selfType, block, args, context, self);
+                    return cacheAndCall(selfType, block, context, self, arg1);
+                } catch (JumpException.BreakJump bj) {
+                    return handleBreakJump(bj, block);
+                } catch (JumpException.RetryJump rj) {
+                    throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+                } catch (StackOverflowError soe) {
+                    throw context.getRuntime().newSystemStackError("stack level too deep");
+                }
+            }
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+            RubyClass selfType = self.getMetaClass();
+
+            if (cachedType == selfType && cachedMethod != null) {
+                return cachedMethod.call(context, self, selfType, methodName, arg1, arg2);
+            }
+
+            return cacheAndCall(selfType, context, self, arg1, arg2);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
+            while (true) {
+                try {
+                    RubyClass selfType = self.getMetaClass();
+
+                    if (cachedType == selfType && cachedMethod != null) {
+                        return cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
+                    }
+
+                    return cacheAndCall(selfType, block, context, self, arg1, arg2);
+                } catch (JumpException.BreakJump bj) {
+                    return handleBreakJump(bj, block);
+                } catch (JumpException.RetryJump rj) {
+                    throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+                } catch (StackOverflowError soe) {
+                    throw context.getRuntime().newSystemStackError("stack level too deep");
+                }
+            }
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+            RubyClass selfType = self.getMetaClass();
+
+            if (cachedType == selfType && cachedMethod != null) {
+                return cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3);
+            }
+
+            return cacheAndCall(selfType, context, self, arg1, arg2, arg3);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+            while (true) {
+                try {
+                    RubyClass selfType = self.getMetaClass();
+
+                    if (cachedType == selfType && cachedMethod != null) {
+                        return cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+                    }
+
+                    return cacheAndCall(selfType, block, context, self, arg1, arg2, arg3);
                 } catch (JumpException.BreakJump bj) {
                     return handleBreakJump(bj, block);
                 } catch (JumpException.RetryJump rj) {

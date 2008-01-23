@@ -46,6 +46,7 @@ import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
@@ -90,6 +91,30 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_ZERO = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
+    
+    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    private final static String COMPILED_CALL_SIG_ONE_BLOCK = sig(IRubyObject.class,
+            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, Block.class));
+    
+    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    private final static String COMPILED_CALL_SIG_ONE = sig(IRubyObject.class,
+            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
+    
+    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    private final static String COMPILED_CALL_SIG_TWO_BLOCK = sig(IRubyObject.class,
+            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+    
+    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    private final static String COMPILED_CALL_SIG_TWO = sig(IRubyObject.class,
+            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
+    
+    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    private final static String COMPILED_CALL_SIG_THREE_BLOCK = sig(IRubyObject.class,
+            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+    
+    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    private final static String COMPILED_CALL_SIG_THREE = sig(IRubyObject.class,
+            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
     
     /** The super constructor signature for compile Ruby method handles. */
     private final static String COMPILED_SUPER_SIG = 
@@ -260,8 +285,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         try {
             if (c == null) {
                 int specificArity = -1;
-                if (jrubyMethod.required() == 0 && jrubyMethod.optional() == 0 && jrubyMethod.rest() == false) {
-                    specificArity = 0;
+                if (jrubyMethod.optional() == 0 && jrubyMethod.rest() == false) {
+                    if (jrubyMethod.required() >= 0 && jrubyMethod.required() <= 3) {
+                        specificArity = jrubyMethod.required();
+                    }
                 }
                 
                 Class[] parameterTypes = method.getParameterTypes();
@@ -429,54 +456,58 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Label arityError = new Label();
         Label noArityError = new Label();
         
-        if (specificArity == 0) {
-            // for zero arity, JavaMethod.JavaMethodZero*.call with args will check
+        switch (specificArity) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+            // for zero, one, two, three arities, JavaMethod.JavaMethod*.call(...IRubyObject[] args...) will check
             return;
-        }
+        default:
+            if (jrubyMethod.rest()) {
+                if (jrubyMethod.required() > 0) {
+                    // just confirm minimum args provided
+                    method.aload(ARGS_INDEX);
+                    method.arraylength();
+                    method.ldc(jrubyMethod.required());
+                    method.if_icmplt(arityError);
+                }
+            } else if (jrubyMethod.optional() > 0) {
+                if (jrubyMethod.required() > 0) {
+                    // confirm minimum args provided
+                    method.aload(ARGS_INDEX);
+                    method.arraylength();
+                    method.ldc(jrubyMethod.required());
+                    method.if_icmplt(arityError);
+                }
 
-        if (jrubyMethod.rest()) {
-            if (jrubyMethod.required() > 0) {
-                // just confirm minimum args provided
+                // confirm maximum not greater than optional
+                method.aload(ARGS_INDEX);
+                method.arraylength();
+                method.ldc(jrubyMethod.required() + jrubyMethod.optional());
+                method.if_icmpgt(arityError);
+            } else {
+                // just confirm args length == required
                 method.aload(ARGS_INDEX);
                 method.arraylength();
                 method.ldc(jrubyMethod.required());
-                method.if_icmplt(arityError);
-            }
-        } else if (jrubyMethod.optional() > 0) {
-            if (jrubyMethod.required() > 0) {
-                // confirm minimum args provided
-                method.aload(ARGS_INDEX);
-                method.arraylength();
-                method.ldc(jrubyMethod.required());
-                method.if_icmplt(arityError);
+                method.if_icmpne(arityError);
             }
 
-            // confirm maximum not greater than optional
+            method.go_to(noArityError);
+
+            // Raise an error if arity does not match requirements
+            method.label(arityError);
+            method.aload(THREADCONTEXT_INDEX);
+            method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
             method.aload(ARGS_INDEX);
-            method.arraylength();
-            method.ldc(jrubyMethod.required() + jrubyMethod.optional());
-            method.if_icmpgt(arityError);
-        } else {
-            // just confirm args length == required
-            method.aload(ARGS_INDEX);
-            method.arraylength();
             method.ldc(jrubyMethod.required());
-            method.if_icmpne(arityError);
+            method.ldc(jrubyMethod.required() + jrubyMethod.optional());
+            method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+            method.pop();
+
+            method.label(noArityError);
         }
-
-        method.go_to(noArityError);
-
-        // Raise an error if arity does not match requirements
-        method.label(arityError);
-        method.aload(THREADCONTEXT_INDEX);
-        method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-        method.aload(ARGS_INDEX);
-        method.ldc(jrubyMethod.required());
-        method.ldc(jrubyMethod.required() + jrubyMethod.optional());
-        method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
-        method.pop();
-
-        method.label(noArityError);
     }
 
     private ClassWriter createCompiledCtor(String namePath, String sup) throws Exception {
@@ -581,39 +612,61 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
     
     private void loadArgumentsForPre(SkinnyMethodAdapter mv, int specificArity) {
-        if (specificArity == 0) {
+        switch (specificArity) {
+        default:
+        case -1:
+            mv.aload(ARGS_INDEX); // args
+            break;
+        case 0:
             // zero arity but we have pre/post; use NULL_ARRAY
             mv.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
-        } else {
-            mv.aload(ARGS_INDEX); // args
+            break;
+        case 1:
+            mv.aload(ARGS_INDEX);
+            mv.invokestatic(p(RuntimeHelpers.class), "constructObjectArray", sig(IRubyObject[].class, IRubyObject.class));
+            break;
+        case 2:
+            mv.aload(ARGS_INDEX);
+            mv.aload(ARGS_INDEX + 1);
+            mv.invokestatic(p(RuntimeHelpers.class), "constructObjectArray", sig(IRubyObject[].class, IRubyObject.class, IRubyObject.class));
+            break;
+        case 3:
+            mv.aload(ARGS_INDEX);
+            mv.aload(ARGS_INDEX + 1);
+            mv.aload(ARGS_INDEX + 2);
+            mv.invokestatic(p(RuntimeHelpers.class), "constructObjectArray", sig(IRubyObject[].class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            break;
         }
     }
 
     private void loadArguments(SkinnyMethodAdapter mv, JRubyMethod jrubyMethod, int specificArity) {
-        if (specificArity == -1 || specificArity > 0) {
-            // load args
-            if (jrubyMethod.optional() == 0 && !jrubyMethod.rest()) {
-                // only required args
-                loadArguments(mv, ARGS_INDEX, jrubyMethod.required());
-            } else {
-                // load args as-is
-                mv.visitVarInsn(ALOAD, ARGS_INDEX);
-            }
+        switch (specificArity) {
+        default:
+        case -1:
+            mv.aload(ARGS_INDEX);
+            break;
+        case 0:
+            // no args
+            break;
+        case 1:
+            mv.aload(ARGS_INDEX);
+            break;
+        case 2:
+            mv.aload(ARGS_INDEX);
+            mv.aload(ARGS_INDEX + 1);
+            break;
+        case 3:
+            mv.aload(ARGS_INDEX);
+            mv.aload(ARGS_INDEX + 1);
+            mv.aload(ARGS_INDEX + 2);
+            break;
         }
     }
 
     private void loadBlockForPre(SkinnyMethodAdapter mv, int specificArity, boolean getsBlock) {
-        // load block if it accepts block
-        if (specificArity == 0) {
-            if (getsBlock) {
-                // zero args with block
-                // FIXME: omit args index; UGLY GROSS
-                mv.visitVarInsn(ALOAD, BLOCK_INDEX - 1);
-            } else {
-                // zero args, no block; load NULL_BLOCK
-                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-            }
-        } else {
+        switch (specificArity) {
+        default:
+        case -1:
             if (getsBlock) {
                 // variable args with block
                 mv.visitVarInsn(ALOAD, BLOCK_INDEX);
@@ -621,26 +674,87 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 // variable args no block, load null block
                 mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
             }
+            break;
+        case 0:
+            if (getsBlock) {
+                // zero args with block
+                // FIXME: omit args index; subtract one from normal block index
+                mv.visitVarInsn(ALOAD, BLOCK_INDEX - 1);
+            } else {
+                // zero args, no block; load NULL_BLOCK
+                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+            }
+            break;
+        case 1:
+            if (getsBlock) {
+                // one arg with block
+                mv.visitVarInsn(ALOAD, BLOCK_INDEX);
+            } else {
+                // one arg, no block; load NULL_BLOCK
+                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+            }
+            break;
+        case 2:
+            if (getsBlock) {
+                // two args with block
+                mv.visitVarInsn(ALOAD, BLOCK_INDEX + 1);
+            } else {
+                // two args, no block; load NULL_BLOCK
+                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+            }
+            break;
+        case 3:
+            if (getsBlock) {
+                // three args with block
+                mv.visitVarInsn(ALOAD, BLOCK_INDEX + 2);
+            } else {
+                // three args, no block; load NULL_BLOCK
+                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+            }
+            break;
         }
     }
 
     private void loadBlock(SkinnyMethodAdapter mv, int specificArity, boolean getsBlock) {
         // load block if it accepts block
-        if (specificArity == 0) {
-            if (getsBlock) {
-                // zero args with block
-                // FIXME: omit args index; UGLY GROSS
-                mv.visitVarInsn(ALOAD, BLOCK_INDEX - 1);
-            } else {
-                // zero args, no block; do nothing
-            }
-        } else {
+        switch (specificArity) {
+        default:
+        case -1:
             if (getsBlock) {
                 // all other arg cases with block
                 mv.visitVarInsn(ALOAD, BLOCK_INDEX);
             } else {
                 // all other arg cases without block
             }
+            break;
+        case 0:
+            if (getsBlock) {
+                mv.visitVarInsn(ALOAD, BLOCK_INDEX - 1);
+            } else {
+                // zero args, no block; do nothing
+            }
+            break;
+        case 1:
+            if (getsBlock) {
+                mv.visitVarInsn(ALOAD, BLOCK_INDEX);
+            } else {
+                // one arg, no block; do nothing
+            }
+            break;
+        case 2:
+            if (getsBlock) {
+                mv.visitVarInsn(ALOAD, BLOCK_INDEX + 1);
+            } else {
+                // two args, no block; do nothing
+            }
+            break;
+        case 3:
+            if (getsBlock) {
+                mv.visitVarInsn(ALOAD, BLOCK_INDEX + 2);
+            } else {
+                // three args, no block; do nothing
+            }
+            break;
         }
     }
 
@@ -700,33 +814,73 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
     
     private SkinnyMethodAdapter beginMethod(ClassWriter cw, String methodName, int specificArity, boolean block) {
-        if (specificArity == 0) {
-            if (block) {
-                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_ZERO_BLOCK, null, null));
-            } else {
-                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_ZERO, null, null));
-            }
-        } else {
+        switch (specificArity) {
+        default:
+        case -1:
             if (block) {
                 return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_BLOCK, null, null));
             } else {
                 return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG, null, null));
             }
+        case 0:
+            if (block) {
+                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_ZERO_BLOCK, null, null));
+            } else {
+                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_ZERO, null, null));
+            }
+        case 1:
+            if (block) {
+                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_ONE_BLOCK, null, null));
+            } else {
+                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_ONE, null, null));
+            }
+        case 2:
+            if (block) {
+                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_TWO_BLOCK, null, null));
+            } else {
+                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_TWO, null, null));
+            }
+        case 3:
+            if (block) {
+                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_THREE_BLOCK, null, null));
+            } else {
+                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_THREE, null, null));
+            }
         }
     }
     
     private Class selectSuperClass(int specificArity, boolean block) {
-        if (specificArity == 0) {
+        switch (specificArity) {
+        default:
+        case -1:
+            if (block) {
+                return JavaMethod.class;
+            } else {
+                return JavaMethod.JavaMethodNoBlock.class;
+            }
+        case 0:
             if (block) {
                 return JavaMethod.JavaMethodZeroBlock.class;
             } else {
                 return JavaMethod.JavaMethodZero.class;
             }
-        } else {
+        case 1:
             if (block) {
-                return JavaMethod.class;
+                return JavaMethod.JavaMethodOneBlock.class;
             } else {
-                return JavaMethod.JavaMethodNoBlock.class;
+                return JavaMethod.JavaMethodOne.class;
+            }
+        case 2:
+            if (block) {
+                return JavaMethod.JavaMethodTwoBlock.class;
+            } else {
+                return JavaMethod.JavaMethodTwo.class;
+            }
+        case 3:
+            if (block) {
+                return JavaMethod.JavaMethodThreeBlock.class;
+            } else {
+                return JavaMethod.JavaMethodThree.class;
             }
         }
     }

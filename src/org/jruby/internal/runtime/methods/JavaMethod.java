@@ -46,6 +46,24 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
     protected final int methodIndex;
     protected final StaticScope staticScope;
     
+    public static abstract class JavaMethodNoBlock extends JavaMethod {
+        public JavaMethodNoBlock(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodNoBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodNoBlock(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            return call(context, self, clazz, name, args);
+        }
+    }
+    
     public static abstract class JavaMethodZero extends JavaMethod {
         public JavaMethodZero(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
@@ -84,21 +102,117 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
     }
     
-    public static abstract class JavaMethodNoBlock extends JavaMethod {
-        public JavaMethodNoBlock(RubyModule implementationClass, Visibility visibility) {
+    public static abstract class JavaMethodOne extends JavaMethod {
+        public JavaMethodOne(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        public JavaMethodNoBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+        public JavaMethodOne(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
             super(implementationClass, visibility, callConfig, staticScope, arity);
         }
-        public JavaMethodNoBlock(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+        public JavaMethodOne(RubyModule implementationClass, Visibility visibility, int methodIndex) {
             super(implementationClass, visibility, methodIndex);
         }
         
-        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args);
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            return call(context, self, clazz, name, args);
+            if (args.length != 1) throw context.getRuntime().newArgumentError(args.length, 1);
+            return call(context, self, clazz, name, args[0]);
+        }
+    }
+    
+    public static abstract class JavaMethodOneBlock extends JavaMethod {
+        public JavaMethodOneBlock(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodOneBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodOneBlock(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            if (args.length != 1) throw context.getRuntime().newArgumentError(args.length, 1);
+            return call(context, self, clazz, name, args[0], block);
+        }
+    }
+    
+    public static abstract class JavaMethodTwo extends JavaMethod {
+        public JavaMethodTwo(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodTwo(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodTwo(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            if (args.length != 2) throw context.getRuntime().newArgumentError(args.length, 2);
+            return call(context, self, clazz, name, args[0], args[1]);
+        }
+    }
+    
+    public static abstract class JavaMethodTwoBlock extends JavaMethod {
+        public JavaMethodTwoBlock(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodTwoBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodTwoBlock(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2, Block block);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            if (args.length != 2) throw context.getRuntime().newArgumentError(args.length, 2);
+            return call(context, self, clazz, name, args[0], args[1], block);
+        }
+    }
+    
+    public static abstract class JavaMethodThree extends JavaMethod {
+        public JavaMethodThree(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodThree(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodThree(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            if (args.length != 3) throw context.getRuntime().newArgumentError(args.length, 3);
+            return call(context, self, clazz, name, args[0], args[1], args[2]);
+        }
+    }
+    
+    public static abstract class JavaMethodThreeBlock extends JavaMethod {
+        public JavaMethodThreeBlock(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodThreeBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodThreeBlock(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            if (args.length != 3) throw context.getRuntime().newArgumentError(args.length, 3);
+            return call(context, self, clazz, name, args[0], args[1], args[2], block);
         }
     }
 
