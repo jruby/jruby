@@ -748,6 +748,11 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "initialize", required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
+        if (unusedBlock.isGiven()) {
+            getRuntime().getWarnings().warn(
+                    "IO::new() does not take block; use IO::open() instead");
+        }
+
         int count = args.length;
         int newFileno = RubyNumeric.fix2int(args[0]);
         String mode = null;
