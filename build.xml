@@ -148,6 +148,7 @@
       <arg value="${build.dir}/__empty.rb"/>
     </java>
     <!-- indexed invokers -->
+    <!--
     <java classname="org.jruby.Main" fork="true" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
@@ -156,6 +157,7 @@
       <arg value="-rjava"/>
       <arg value="${build.dir}/__empty.rb"/>
     </java>
+    -->
     <delete file="${build.dir}/__empty.rb" quiet="true"/>
   </target>
 

@@ -46,7 +46,6 @@ import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
@@ -78,7 +77,19 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     
     /** The outward call signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG = sig(IRubyObject.class,
+            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class));
+    
+    /** The outward call signature for compiled Ruby method handles. */
+    private final static String COMPILED_CALL_SIG_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
+    
+    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    private final static String COMPILED_CALL_SIG_ZERO_BLOCK = sig(IRubyObject.class,
+            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
+    
+    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    private final static String COMPILED_CALL_SIG_ZERO = sig(IRubyObject.class,
+            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
     
     /** The super constructor signature for compile Ruby method handles. */
     private final static String COMPILED_SUPER_SIG = 
@@ -148,7 +159,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 String typePath = p(scriptClass);
                 String mnamePath = typePath + "Invoker" + method + arity;
                 ClassWriter cw = createCompiledCtor(mnamePath,sup);
-                SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
+                SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_BLOCK, null, null));
                 
                 mv.visitCode();
                 Label line = new Label();
@@ -156,7 +167,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 
                 // invoke pre method stuff
                 if (!callConfig.isNoop()) {
-                    invokeCallConfigPre(mv, COMPILED_SUPER_CLASS);
+                    invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, -1, true);
                 }
                 
                 // store null for result var
@@ -239,7 +250,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class type = method.getDeclaringClass();
         JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
         String typePath = p(type);
-        String superClass = p(JavaMethod.class);
         String javaMethodName = method.getName();
         
         String generatedClassName = type.getName() + "Invoker$" + javaMethodName + "_method_" + jrubyMethod.required() + "_" + jrubyMethod.optional();
@@ -249,17 +259,38 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         try {
             if (c == null) {
+                int specificArity = -1;
+                if (jrubyMethod.required() == 0 && jrubyMethod.optional() == 0 && jrubyMethod.rest() == false) {
+                    specificArity = 0;
+                }
+                
+                Class[] parameterTypes = method.getParameterTypes();
+                boolean block;
+                if (parameterTypes.length == 0) {
+                    block = false;
+                } else {
+                    if (parameterTypes[parameterTypes.length - 1] == Block.class) {
+                        block = true;
+                    } else {
+                        block = false;
+                    }
+                }
+                
+                String superClass = p(selectSuperClass(specificArity, block));
+                
                 ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClass);
                 SkinnyMethodAdapter mv = null;
                 
-                mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
+                mv = beginMethod(cw, "call", specificArity, block);
                 mv.visitCode();
                 Label line = new Label();
                 mv.visitLineNumber(0, line);
                 
-                createAnnotatedMethodInvocation(method, mv, superClass);
+                createAnnotatedMethodInvocation(method, mv, superClass, specificArity, block);
                 
-                c = endCall(implementationClass.getRuntime(), cw, mv, generatedClassName);
+                endMethod(mv);
+                
+                c = endClass(implementationClass.getRuntime(), cw, generatedClassName);
             }
                 
             JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, jrubyMethod.visibility()});
@@ -318,7 +349,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 ClassWriter cw = createIndexedJavaMethodCtor(generatedClassPath, superClass);
                 SkinnyMethodAdapter mv = null;
                 
-                mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null));
+                mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_BLOCK, null, null));
                 mv.visitCode();
                 Label line = new Label();
                 mv.visitLineNumber(0, line);
@@ -346,7 +377,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.aload(ARGS_INDEX);
                     mv.aload(BLOCK_INDEX);
                     
-                    mv.invokevirtual(generatedClassPath, callName, COMPILED_CALL_SIG);
+                    mv.invokevirtual(generatedClassPath, callName, COMPILED_CALL_SIG_BLOCK);
                     mv.areturn();
                 }
                 
@@ -394,9 +425,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * @param jrubyMethod The annotation of the called method
      * @param method The code generator for the handle being created
      */
-    private void checkArity(JRubyMethod jrubyMethod, SkinnyMethodAdapter method) {
+    private void checkArity(JRubyMethod jrubyMethod, SkinnyMethodAdapter method, int specificArity) {
         Label arityError = new Label();
         Label noArityError = new Label();
+        
+        if (specificArity == 0) {
+            // for zero arity, JavaMethod.JavaMethodZero*.call with args will check
+            return;
+        }
 
         if (jrubyMethod.rest()) {
             if (jrubyMethod.required() > 0) {
@@ -530,32 +566,81 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.invokevirtual(superClass, "post", sig(void.class, params(ThreadContext.class)));
     }
 
-    private void invokeCallConfigPre(SkinnyMethodAdapter mv, String superClass) {
+    private void invokeCallConfigPre(SkinnyMethodAdapter mv, String superClass, int specificArity, boolean block) {
         // invoke pre method stuff
         mv.aload(0); 
         mv.aload(THREADCONTEXT_INDEX); // tc
         mv.aload(RECEIVER_INDEX); // self
         mv.aload(NAME_INDEX); // name
-        mv.aload(ARGS_INDEX); // args
-        mv.aload(BLOCK_INDEX); // block
+        
+        loadArgumentsForPre(mv, specificArity);
+        
+        loadBlockForPre(mv, specificArity, block);
+        
         mv.invokevirtual(superClass, "pre", sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class)));
     }
-
-    private void loadArguments(SkinnyMethodAdapter mv, JRubyMethod jrubyMethod) {
-        // load args
-        if (jrubyMethod.optional() == 0 && !jrubyMethod.rest()) {
-            // only required args
-            loadArguments(mv, ARGS_INDEX, jrubyMethod.required());
+    
+    private void loadArgumentsForPre(SkinnyMethodAdapter mv, int specificArity) {
+        if (specificArity == 0) {
+            // zero arity but we have pre/post; use NULL_ARRAY
+            mv.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
         } else {
-            // load args as-is
-            mv.visitVarInsn(ALOAD, ARGS_INDEX);
+            mv.aload(ARGS_INDEX); // args
         }
     }
 
-    private void loadBlock(boolean getsBlock, SkinnyMethodAdapter mv) {
+    private void loadArguments(SkinnyMethodAdapter mv, JRubyMethod jrubyMethod, int specificArity) {
+        if (specificArity == -1 || specificArity > 0) {
+            // load args
+            if (jrubyMethod.optional() == 0 && !jrubyMethod.rest()) {
+                // only required args
+                loadArguments(mv, ARGS_INDEX, jrubyMethod.required());
+            } else {
+                // load args as-is
+                mv.visitVarInsn(ALOAD, ARGS_INDEX);
+            }
+        }
+    }
+
+    private void loadBlockForPre(SkinnyMethodAdapter mv, int specificArity, boolean getsBlock) {
         // load block if it accepts block
-        if (getsBlock) {
-            mv.visitVarInsn(ALOAD, BLOCK_INDEX);
+        if (specificArity == 0) {
+            if (getsBlock) {
+                // zero args with block
+                // FIXME: omit args index; UGLY GROSS
+                mv.visitVarInsn(ALOAD, BLOCK_INDEX - 1);
+            } else {
+                // zero args, no block; load NULL_BLOCK
+                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+            }
+        } else {
+            if (getsBlock) {
+                // variable args with block
+                mv.visitVarInsn(ALOAD, BLOCK_INDEX);
+            } else {
+                // variable args no block, load null block
+                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+            }
+        }
+    }
+
+    private void loadBlock(SkinnyMethodAdapter mv, int specificArity, boolean getsBlock) {
+        // load block if it accepts block
+        if (specificArity == 0) {
+            if (getsBlock) {
+                // zero args with block
+                // FIXME: omit args index; UGLY GROSS
+                mv.visitVarInsn(ALOAD, BLOCK_INDEX - 1);
+            } else {
+                // zero args, no block; do nothing
+            }
+        } else {
+            if (getsBlock) {
+                // all other arg cases with block
+                mv.visitVarInsn(ALOAD, BLOCK_INDEX);
+            } else {
+                // all other arg cases without block
+            }
         }
     }
 
@@ -613,34 +698,65 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.visitLdcInsn(new Integer(argIndex));
         mv.visitInsn(AALOAD);
     }
+    
+    private SkinnyMethodAdapter beginMethod(ClassWriter cw, String methodName, int specificArity, boolean block) {
+        if (specificArity == 0) {
+            if (block) {
+                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_ZERO_BLOCK, null, null));
+            } else {
+                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_ZERO, null, null));
+            }
+        } else {
+            if (block) {
+                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_BLOCK, null, null));
+            } else {
+                return new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG, null, null));
+            }
+        }
+    }
+    
+    private Class selectSuperClass(int specificArity, boolean block) {
+        if (specificArity == 0) {
+            if (block) {
+                return JavaMethod.JavaMethodZeroBlock.class;
+            } else {
+                return JavaMethod.JavaMethodZero.class;
+            }
+        } else {
+            if (block) {
+                return JavaMethod.class;
+            } else {
+                return JavaMethod.JavaMethodNoBlock.class;
+            }
+        }
+    }
 
     private String getAnnotatedMethodForIndex(ClassWriter cw, Method method, int index, String superClass) {
         String methodName = "call" + index + "_" + method.getName();
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG, null, null));
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_BLOCK, null, null));
         mv.visitCode();
         Label line = new Label();
         mv.visitLineNumber(0, line);
-        createAnnotatedMethodInvocation(method, mv, superClass);
+        // TODO: indexed methods do not use specific arity yet
+        createAnnotatedMethodInvocation(method, mv, superClass, -1, true);
         endMethod(mv);
         
         return methodName;
     }
 
-    private void createAnnotatedMethodInvocation(Method javaMethod, SkinnyMethodAdapter method, String superClass) {
+    private void createAnnotatedMethodInvocation(Method javaMethod, SkinnyMethodAdapter method, String superClass, int specificArity, boolean block) {
         JRubyMethod jrubyMethod = javaMethod.getAnnotation(JRubyMethod.class);
         String typePath = p(javaMethod.getDeclaringClass());
         String javaMethodName = javaMethod.getName();
         Class[] signature = javaMethod.getParameterTypes();
         Class ret = javaMethod.getReturnType();
 
-        checkArity(jrubyMethod,method);
+        checkArity(jrubyMethod, method, specificArity);
         
         CallConfiguration callConfig = CallConfiguration.getCallConfigByAnno(jrubyMethod);
         if (!callConfig.isNoop()) {
-            invokeCallConfigPre(method, superClass);
+            invokeCallConfigPre(method, superClass, specificArity, block);
         }
-
-        boolean getsBlock = signature.length > 0 && signature[signature.length - 1] == Block.class;
 
         Label tryBegin = new Label();
         Label tryEnd = new Label();
@@ -657,8 +773,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         method.label(tryBegin);
         {
             loadReceiver(typePath, javaMethod, method);
-            loadArguments(method, jrubyMethod);
-            loadBlock(getsBlock, method);
+            
+            loadArguments(method, jrubyMethod, specificArity);
+            
+            loadBlock(method, specificArity, block);
 
             if (Modifier.isStatic(javaMethod.getModifiers())) {
                 // static invocation
