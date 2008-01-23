@@ -51,23 +51,15 @@ public class InheritedCacheCompiler implements CacheCompiler {
         SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
         initMethod.aload(StandardASMCompiler.THIS);
         initMethod.ldc(name);
-        if (block) {
-            if (callType.equals(CallType.NORMAL)) {
-                initMethod.invokestatic(p(MethodIndex.class), "getCallSite", sig(CallSite.class, params(String.class)));
-            } else if (callType.equals(CallType.FUNCTIONAL)) {
-                initMethod.invokestatic(p(MethodIndex.class), "getFunctionalCallSite", sig(CallSite.class, params(String.class)));
-            } else if (callType.equals(CallType.VARIABLE)) {
-                initMethod.invokestatic(p(MethodIndex.class), "getVariableCallSite", sig(CallSite.class, params(String.class)));
-            }
-        } else {
-            if (callType.equals(CallType.NORMAL)) {
-                initMethod.invokestatic(p(MethodIndex.class), "getNonBlockCallSite", sig(CallSite.class, params(String.class)));
-            } else if (callType.equals(CallType.FUNCTIONAL)) {
-                initMethod.invokestatic(p(MethodIndex.class), "getNonBlockFunctionalCallSite", sig(CallSite.class, params(String.class)));
-            } else if (callType.equals(CallType.VARIABLE)) {
-                initMethod.invokestatic(p(MethodIndex.class), "getNonBlockVariableCallSite", sig(CallSite.class, params(String.class)));
-            }
+        
+        if (callType.equals(CallType.NORMAL)) {
+            initMethod.invokestatic(p(MethodIndex.class), "getCallSite", sig(CallSite.class, params(String.class)));
+        } else if (callType.equals(CallType.FUNCTIONAL)) {
+            initMethod.invokestatic(p(MethodIndex.class), "getFunctionalCallSite", sig(CallSite.class, params(String.class)));
+        } else if (callType.equals(CallType.VARIABLE)) {
+            initMethod.invokestatic(p(MethodIndex.class), "getVariableCallSite", sig(CallSite.class, params(String.class)));
         }
+
         if (callSiteCount >= MAX_INHERITED_CALL_SITES) {
             scriptCompiler.getNewField(ci(CallSite.class), fieldName, null);
             initMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));

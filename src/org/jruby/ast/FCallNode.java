@@ -56,11 +56,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         super(position, NodeType.FCALLNODE);
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        if (iterNode == null) {
-            this.callAdapter = new CallSite.ICNonBlockCallSite(name, CallType.FUNCTIONAL);
-        } else {
-            this.callAdapter = new CallSite.ICBlockCallSite(name, CallType.FUNCTIONAL);
-        }
+        this.callAdapter = new CallSite.InlineCachingCallSite(name, CallType.FUNCTIONAL);
     }
     
     /**
@@ -80,12 +76,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     
     public void setIterNode(Node iterNode) {
         this.iterNode = iterNode;
-        // refresh call adapter, since it matters if this is iter-based or not
-        if (iterNode == null) {
-            callAdapter = new CallSite.ICNonBlockCallSite(callAdapter.methodName, CallType.FUNCTIONAL);
-        } else {
-            callAdapter = new CallSite.ICBlockCallSite(callAdapter.methodName, CallType.FUNCTIONAL);
-        }
+        callAdapter = new CallSite.InlineCachingCallSite(callAdapter.methodName, CallType.FUNCTIONAL);
     }
 
     /**

@@ -59,6 +59,20 @@ public abstract class DynamicMethod {
      */
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, 
             String name, IRubyObject[] args, Block block);
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, 
+            String name, IRubyObject[] args) {
+        return call(context, self, clazz, name, args, Block.NULL_BLOCK);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+        return call(context, self, klazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
+        return call(context, self, klazz, name, IRubyObject.NULL_ARRAY, block);
+    }
+    
     public abstract DynamicMethod dup();
 
     public boolean isCallableFrom(IRubyObject caller, CallType callType) {

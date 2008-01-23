@@ -587,7 +587,7 @@ public class ASTInterpreter {
             return RuntimeHelpers.callMethodMissing(context, receiver, method, name, args, self, callType, Block.NULL_BLOCK);
         }
 
-        method.call(context, receiver, module, name, args, Block.NULL_BLOCK);
+        method.call(context, receiver, module, name, args);
 
         return args[args.length - 1];
     }
