@@ -35,9 +35,4 @@ public class WindowsPOSIX extends BaseNativePOSIX {
     public FileStat lstat(String path) {
         return stat(path);
     }
-
-    @Override
-    public boolean isatty(FileDescriptor fd) {
-       return false;
-    }
 }
