@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 
 
 /**
@@ -142,6 +143,12 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
         
         realSize += read;
         return this;
+    }
+
+    public void append(ByteBuffer buffer, int len) {
+        grow(len);
+        buffer.get(bytes, realSize, len);
+        realSize += len;
     }
 
     @Override

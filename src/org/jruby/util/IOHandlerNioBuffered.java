@@ -535,25 +535,27 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         checkReadable();
         ensureRead();
         
-        ByteBuffer buf = ByteBuffer.allocate(number);
-        if (buffer.hasRemaining()) {// already have some bytes buffered
-            putInto(buf, buffer);
+        ByteList result = new ByteList();
+        int len = -1;
+        if (buffer.hasRemaining()) { // already have some bytes buffered
+            len = (number <= buffer.remaining()) ? number : buffer.remaining();
+            result.append(buffer, len);
         }
         
         ReadableByteChannel readChannel = (ReadableByteChannel)descriptor.getChannel();
-        if (buf.position() != buf.capacity()) { // not complete. try to read more
-            if (buf.capacity() > buffer.capacity()) // big read. just do it.
-                readChannel.read(buf);
-            else { // buffer it
-                buffer.clear();
-                readChannel.read(buffer);
-                buffer.flip();
-                putInto(buf, buffer); // get what we need
-            }
+        int read = BUFSIZE;
+        while (read == BUFSIZE && result.length() != number) { // not complete. try to read more
+            buffer.clear(); 
+            read = readChannel.read(buffer);
+            buffer.flip();
+            if (read == -1) break;
+            int desired = number - result.length();
+            len = (desired < read) ? desired : read;
+            result.append(buffer, len);
         }
         
-        if (buf.position() == 0 && number != 0) throw new java.io.EOFException();
-        return new ByteList(buf.array(),0,buf.position(),false);
+        if (result.length() == 0 && number != 0) throw new java.io.EOFException();
+        return result;
     }
     
     /**

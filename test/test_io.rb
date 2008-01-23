@@ -288,6 +288,14 @@ class TestIO < Test::Unit::TestCase
     assert_equal "..", out
   end
   
+  # JRUBY-1698
+  def test_very_big_read
+    # See JRUBY-1686: this caused OOM
+    ensure_files @file
+    f = File.open(@file)
+    assert_nothing_raised { f.read(1000000000) }
+  end
+  
   private
   def ensure_files(*files)
     files.each {|f| File.open(f, "w") {|g| g << " " } }
