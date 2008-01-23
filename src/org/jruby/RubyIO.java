@@ -814,7 +814,9 @@ public class RubyIO extends RubyObject {
             try {
                 return block.yield(runtime.getCurrentContext(), io);
             } finally {
-                io.close();
+                if (io.isOpen()) {
+                    io.close();
+                }
             }
         }
 
@@ -1869,7 +1871,9 @@ public class RubyIO extends RubyObject {
                try {
                    return block.yield(runtime.getCurrentContext(), io);
                } finally {
-                   io.close();
+                   if (io.isOpen()) {
+                       io.close();
+                   }
                    runtime.getGlobalVariables().set("$?",  RubyProcess.RubyStatus.newProcessStatus(runtime, (process.waitFor() * 256)));
                }
            }

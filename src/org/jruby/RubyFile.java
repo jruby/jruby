@@ -1125,7 +1125,9 @@ public class RubyFile extends RubyIO {
             try {
                 return block.yield(tc, file);
             } finally {
-                file.close();
+                if (file.isOpen()) {
+                    file.close();
+                }
             }
         }
         
