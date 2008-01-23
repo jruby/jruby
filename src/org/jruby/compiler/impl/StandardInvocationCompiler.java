@@ -28,6 +28,7 @@
 package org.jruby.compiler.impl;
 
 import org.jruby.RubyModule;
+import org.jruby.compiler.ArgumentsCallback;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.exceptions.JumpException;
@@ -184,10 +185,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.invokeinterface(p(IRubyObject.class), "callSuper", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, Block.class));
     }
 
-    public void invokeDynamic(String name, CompilerCallback receiverCallback, CompilerCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
-        String classname = methodCompiler.getScriptCompiler().getClassname();
-        
-        
+    public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
         if (receiverCallback != null) {
             receiverCallback.call(methodCompiler);
         } else {
@@ -220,12 +218,109 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             // block
             if (closureArg == null) {
                 // with args, no block
-                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject[].class));
+                switch (argsCallback.getArity()) {
+                case 1:
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
+                    break;
+                case 2:
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+                    break;
+                case 3:
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+                    break;
+                default:
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject[].class));
+                }
             } else {
                 // with args, with block
                 closureArg.call(methodCompiler);
-                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
+                
+                switch (argsCallback.getArity()) {
+                case 1:
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
+                    break;
+                case 2:
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+                    break;
+                case 3:
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+                    break;
+                default:
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
+                }
             }
+        }
+        
+        // adapter, tc, recv, args{0,1}, block{0,1}]
+
+        method.invokevirtual(p(CallSite.class), "call", signature);
+    }
+
+    public void invokeDynamicArity1(String name, CompilerCallback receiverCallback, CompilerCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
+        assert argsCallback != null;
+        
+        if (receiverCallback != null) {
+            receiverCallback.call(methodCompiler);
+        } else {
+            methodCompiler.loadSelf();
+        }
+        
+        // load call adapter
+        // FIXME: These swaps suck, but OpAsgn breaks if it can't dup receiver in the middle of making this call :(
+        method.aload(THIS);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, name, callType, closureArg != null);
+        method.swap();
+
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+        method.swap();
+        
+        String signature;
+        // args
+        argsCallback.call(methodCompiler);
+        // block
+        if (closureArg == null) {
+            // with args, no block
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
+        } else {
+            // with args, with block
+            closureArg.call(methodCompiler);
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
+        }
+        
+        // adapter, tc, recv, args{0,1}, block{0,1}]
+
+        method.invokevirtual(p(CallSite.class), "call", signature);
+    }
+
+    public void invokeDynamicSpecificArity(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
+        assert argsCallback != null;
+        
+        if (receiverCallback != null) {
+            receiverCallback.call(methodCompiler);
+        } else {
+            methodCompiler.loadSelf();
+        }
+        
+        // load call adapter
+        // FIXME: These swaps suck, but OpAsgn breaks if it can't dup receiver in the middle of making this call :(
+        method.aload(THIS);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, name, callType, closureArg != null);
+        method.swap();
+
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+        method.swap();
+        
+        String signature;
+        // args
+        argsCallback.call(methodCompiler);
+        // block
+        if (closureArg == null) {
+            // with args, no block
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
+        } else {
+            // with args, with block
+            closureArg.call(methodCompiler);
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
         }
         
         // adapter, tc, recv, args{0,1}, block{0,1}]

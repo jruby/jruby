@@ -436,6 +436,86 @@ public class ASTCompiler {
                 context.convertToJavaArray();
         }
     }
+    
+    public class VariableArityArguments implements ArgumentsCallback {
+        private Node node;
+        
+        public VariableArityArguments(Node node) {
+            this.node = node;
+        }
+        
+        public int getArity() {
+            return -1;
+        }
+        
+        public void call(MethodCompiler context) {
+            compileArguments(node, context);
+        }
+    }
+    
+    public class SpecificArityArguments implements ArgumentsCallback {
+        private int arity;
+        private Node node;
+        
+        public SpecificArityArguments(Node node) {
+            if (node.nodeId == NodeType.ARRAYNODE && ((ArrayNode)node).isLightweight()) {
+                // only arrays that are "lightweight" are being used as args arrays
+                this.arity = ((ArrayNode)node).size();
+            } else {
+                // otherwise, it's a literal array
+                this.arity = 1;
+            }
+            this.node = node;
+        }
+        
+        public int getArity() {
+            return arity;
+        }
+        
+        public void call(MethodCompiler context) {
+            if (node.nodeId == NodeType.ARRAYNODE) {
+                ArrayNode arrayNode = (ArrayNode)node;
+                if (arrayNode.isLightweight()) {
+                    // explode array, it's an internal "args" array
+                    for (Node n : arrayNode.childNodes()) {
+                        compile(n, context);
+                    }
+                } else {
+                    // use array as-is, it's a literal array
+                    compile(arrayNode, context);
+                }
+            } else {
+                compile(node, context);
+            }
+        }
+    }
+
+    public ArgumentsCallback getArgsCallback(Node node) {
+        if (node == null) {
+            return null;
+        }
+        // unwrap newline nodes to get their actual type
+        while (node.nodeId == NodeType.NEWLINENODE) {
+            node = ((NewlineNode)node).getNextNode();
+        }
+        switch (node.nodeId) {
+            case ARGSCATNODE:
+            case ARGSPUSHNODE:
+            case SPLATNODE:
+                return new VariableArityArguments(node);
+            case ARRAYNODE:
+                ArrayNode arrayNode = (ArrayNode)node;
+                if (arrayNode.size() == 0) {
+                    return null;
+                } else if (arrayNode.size() > 3) {
+                    return new VariableArityArguments(node);
+                } else {
+                    return new SpecificArityArguments(node);
+                }
+            default:
+                return new SpecificArityArguments(node);
+        }
+    }
 
     public void compileAssignment(Node node, MethodCompiler context) {
         switch (node.nodeId) {
@@ -633,35 +713,15 @@ public class ASTCompiler {
         final CallNode callNode = (CallNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
-
-                    public void call(MethodCompiler context) {
-                        compile(callNode.getReceiverNode(), context);
-                    }
-                };
-
-        CompilerCallback argsCallback = new CompilerCallback() {
-
-                    public void call(MethodCompiler context) {
-                        compileArguments(callNode.getArgsNode(), context);
-                    }
-                };
-
-        if (callNode.getIterNode() == null) {
-            // no block, go for simple version
-            if (callNode.getArgsNode() != null) {
-                context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, null, false);
-            } else {
-                context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, null, false);
+            public void call(MethodCompiler context) {
+                compile(callNode.getReceiverNode(), context);
             }
-        } else {
-            CompilerCallback closureArg = getBlock(callNode.getIterNode());
+        };
 
-            if (callNode.getArgsNode() != null) {
-                context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, closureArg, false);
-            } else {
-                context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, null, CallType.NORMAL, closureArg, false);
-            }
-        }
+        ArgumentsCallback argsCallback = getArgsCallback(callNode.getArgsNode());
+        CompilerCallback closureArg = getBlock(callNode.getIterNode());
+
+        context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, closureArg, false);
     }
 
     public void compileCase(Node node, MethodCompiler context) {
@@ -1785,11 +1845,13 @@ public class ASTCompiler {
                     }
                 };
 
-        CompilerCallback argsCallback = new CompilerCallback() {
-
+        ArgumentsCallback argsCallback = new ArgumentsCallback() {
+                    public int getArity() {
+                        return 1;
+                    }
+                    
                     public void call(MethodCompiler context) {
                         context.createNewString(dstrCallback, dxstrNode.size());
-                        context.createObjectArray(1);
                     }
                 };
 
@@ -1850,29 +1912,11 @@ public class ASTCompiler {
 
         final FCallNode fcallNode = (FCallNode) node;
 
-        CompilerCallback argsCallback = new CompilerCallback() {
+        ArgumentsCallback argsCallback = getArgsCallback(fcallNode.getArgsNode());
+        
+        CompilerCallback closureArg = getBlock(fcallNode.getIterNode());
 
-                    public void call(MethodCompiler context) {
-                        compileArguments(fcallNode.getArgsNode(), context);
-                    }
-                };
-
-        if (fcallNode.getIterNode() == null) {
-            // no block, go for simple version
-            if (fcallNode.getArgsNode() != null) {
-                context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, null, false);
-            } else {
-                context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, null, false);
-            }
-        } else {
-            CompilerCallback closureArg = getBlock(fcallNode.getIterNode());
-
-            if (fcallNode.getArgsNode() != null) {
-                context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, false);
-            } else {
-                context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, null, CallType.FUNCTIONAL, closureArg, false);
-            }
-        }
+        context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, false);
     }
 
     private CompilerCallback getBlock(Node node) {
@@ -2627,12 +2671,15 @@ public class ASTCompiler {
             context.performBooleanBranch(assignBranch, doneBranch);
         } else {
             // eval new value, call operator on old value, and assign
-            CompilerCallback argsCallback = new CompilerCallback() {
+            ArgumentsCallback argsCallback = new ArgumentsCallback() {
+                public int getArity() {
+                    return 1;
+                }
 
-                        public void call(MethodCompiler context) {
-                            context.createObjectArray(new Node[]{opAsgnNode.getValueNode()}, justEvalValue);
-                        }
-                    };
+                public void call(MethodCompiler context) {
+                    compile(opAsgnNode.getValueNode(), context);
+                }
+            };
             context.getInvocationCompiler().invokeDynamic(opAsgnNode.getOperatorName(), receiver2Callback, argsCallback, CallType.FUNCTIONAL, null, false);
             context.createObjectArray(1);
             context.getInvocationCompiler().invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
@@ -3045,13 +3092,15 @@ public class ASTCompiler {
 
         final XStrNode xstrNode = (XStrNode) node;
 
-        CompilerCallback argsCallback = new CompilerCallback() {
+        ArgumentsCallback argsCallback = new ArgumentsCallback() {
+            public int getArity() {
+                return 1;
+            }
 
-                    public void call(MethodCompiler context) {
-                        context.createNewString(xstrNode.getValue());
-                        context.createObjectArray(1);
-                    }
-                };
+            public void call(MethodCompiler context) {
+                context.createNewString(xstrNode.getValue());
+            }
+        };
         context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
     }
 

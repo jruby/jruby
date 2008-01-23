@@ -44,8 +44,7 @@ public interface InvocationCompiler {
      * to the compiler has prepared the exact number of argument values necessary for this
      * call. Those values will be consumed, and the result of the call will be generated.
      */
-    //public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg, boolean attrAssign);
-    public void invokeDynamic(String name, CompilerCallback receiverCallback, CompilerCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean attrAssign);
+    public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean attrAssign);
     
     public void invokeSuper(CompilerCallback argsCallback, CompilerCallback closureCallback);
     
