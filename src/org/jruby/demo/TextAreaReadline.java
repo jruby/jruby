@@ -108,6 +108,10 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
         runtime.getLoadService().require("readline");
         RubyModule readlineM = runtime.fastGetModule("Readline");
         
+        RubyIO out = new RubyIO(runtime, this);
+        runtime.getGlobalVariables().set("$stdout", out);
+        runtime.getGlobalVariables().set("$stderr", out);
+
         readlineM.defineModuleFunction("readline", new Callback() {
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
                 return runtime.newString(readLine(args[0].toString()));

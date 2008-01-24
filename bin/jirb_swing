@@ -47,4 +47,4 @@ else
     IRB.setup(__FILE__)
   end
 end
-exit(0)
+frame.dispose
