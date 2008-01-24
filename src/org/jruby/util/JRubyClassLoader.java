@@ -14,6 +14,6 @@ public class JRubyClassLoader extends URLClassLoader {
     }
     
     public Class<?> defineClass(String name, byte[] bytes) {
-       return super.defineClass(name, bytes, 0, bytes.length);
+       return super.defineClass(name, bytes, 0, bytes.length, JRubyClassLoader.class.getProtectionDomain());
     }
 }
