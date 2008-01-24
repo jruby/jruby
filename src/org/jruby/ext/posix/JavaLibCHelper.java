@@ -61,8 +61,7 @@ public class JavaLibCHelper {
             field = FileDescriptor.class.getDeclaredField("fd");
             field.setAccessible(true);
         } catch (SecurityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            // ignore
         } catch (NoSuchFieldException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

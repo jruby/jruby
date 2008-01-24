@@ -196,23 +196,6 @@ public final class Ruby {
         this.kcode              = config.getKCode();
     }
     
-    static {
-        if (SafePropertyAccessor.isSecurityProtected("jruby.reflection")) {
-            // can't read non-standard properties
-            securityRestricted = true;
-        } else {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                try {
-                    sm.checkCreateClassLoader();
-                } catch (SecurityException se) {
-                    // can't create custom classloaders
-                    securityRestricted = true;
-                }
-            }
-        }
-    }
-    
     /**
      * Evaluates a script under the current scope (perhaps the top-level
      * scope) and returns the result (generally the last value calculated).
@@ -2606,7 +2589,25 @@ public final class Ruby {
     private JavaSupport javaSupport;
     private JRubyClassLoader jrubyClassLoader;
 
-    private static boolean securityRestricted = false;
+    // Note: this field and the following static initializer
+    // must be located be in this order!
+    private volatile static boolean securityRestricted = false;
+    static {
+        if (SafePropertyAccessor.isSecurityProtected("jruby.reflection")) {
+            // can't read non-standard properties
+            securityRestricted = true;
+        } else {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                try {
+                    sm.checkCreateClassLoader();
+                } catch (SecurityException se) {
+                    // can't create custom classloaders
+                    securityRestricted = true;
+                }
+            }
+        }
+    }
 
     private Parser parser = new Parser(this);
 

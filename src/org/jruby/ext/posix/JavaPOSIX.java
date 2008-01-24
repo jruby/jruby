@@ -76,9 +76,11 @@ public class JavaPOSIX implements POSIX {
     }
 
     public boolean isatty(FileDescriptor fd) {
-        return helper.isatty(helper.getfd(fd)) != 0;
+        return (fd == FileDescriptor.in
+                || fd == FileDescriptor.out
+                || fd == FileDescriptor.err);
     }
-    
+
     public int kill(int pid, int signal) {
         return unimplementedInt("kill");    // FIXME: Can be implemented
     }
