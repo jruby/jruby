@@ -1277,9 +1277,7 @@ public final class Ruby {
             throw newIOErrorFromException(ioExcptn);
         } finally {
             try {
-                if (source == null) {
-                    source.close();
-                }
+                if (source != null) source.close();
             } catch (IOException ioe) {}
         }
     }
