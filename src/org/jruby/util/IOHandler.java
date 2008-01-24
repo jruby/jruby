@@ -168,6 +168,10 @@ public interface IOHandler {
     
     public OutputStream getOutputStream();
     
+    public boolean getBlocking();
+    
+    public void setBlocking(boolean blocking) throws IOException;
+    
     public void freopen(String path, IOModes modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException;
     
     public class PipeException extends Exception {

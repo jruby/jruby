@@ -36,7 +36,6 @@
 package org.jruby;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,7 +60,6 @@ import org.jruby.util.IOHandlerNioBuffered;
 import org.jruby.util.IOModes;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.IOHandler.InvalidValueException;
-import org.jruby.util.IOHandlerNio;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.NullWritableChannel;
 
@@ -248,7 +246,7 @@ public class RubyFile extends RubyIO {
                 openFile.handler = new IOHandlerNioBuffered(getRuntime(), 
                         new ChannelDescriptor(Channels.newChannel(is), getNewFileno()));
             } else {
-                openFile.handler = fopen(newPath, newModes);
+                openFile.handler = IOHandlerNioBuffered.fopen(getRuntime(), newPath, newModes);
             }
             
             registerIOHandler(openFile.handler);

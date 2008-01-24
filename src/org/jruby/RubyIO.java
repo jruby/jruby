@@ -40,7 +40,6 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
@@ -65,19 +64,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.DirectoryAsFileException;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandler.InvalidValueException;
 import org.jruby.util.IOHandler.PipeException;
-import org.jruby.util.IOHandlerNio;
 import org.jruby.util.IOModes;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.IOHandler.BadDescriptorException;
 import org.jruby.util.IOHandlerNioBuffered;
-import org.jruby.util.JRubyFile;
 import org.jruby.util.io.SplitChannel;
-import org.jruby.util.io.NullWritableChannel;
 
 /**
  * 
@@ -465,39 +460,6 @@ public class RubyIO extends RubyObject {
     public IOHandler getHandler() {
         return openFile.handler;
     }
-    
-    public IOHandler fopen(String path, IOModes modes) throws DirectoryAsFileException, IOException, PipeException, InvalidValueException, BadDescriptorException {
-        String cwd = getRuntime().getCurrentDirectory();
-        JRubyFile theFile = JRubyFile.create(cwd,path);
-
-        if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();
-        
-        if (modes.isCreate()) {
-            if (theFile.exists() && modes.isExclusive()) {
-                throw getRuntime().newErrnoEEXISTError("File exists - " + path);
-            }
-            theFile.createNewFile();
-        } else {
-            if (!theFile.exists()) {
-                throw getRuntime().newErrnoENOENTError("file not found - " + path);
-            }
-        }
-
-        // We always open this rw since we can only open it r or rw.
-        RandomAccessFile file = new RandomAccessFile(theFile, modes.javaMode());
-
-        if (modes.shouldTruncate()) file.setLength(0L);
-
-        ChannelDescriptor descriptor = new ChannelDescriptor(file.getChannel(), getNewFileno());
-        
-        isOpen = true;
-        
-        IOHandler handler = new IOHandlerNioBuffered(getRuntime(), descriptor, modes, file.getFD());
-        
-        if (modes.isAppendable()) handler.seek(0, IOHandler.SEEK_END);
-        
-        return handler;
-    }
 
     @JRubyMethod(name = "reopen", required = 1, optional = 1)
     public IRubyObject reopen(IRubyObject[] args) {
@@ -650,7 +612,9 @@ public class RubyIO extends RubyObject {
                     if ("/dev/null".equals(path) && System.getProperty("os.name").contains("Windows")) {
                         path = "NUL:";
                     }
-                    openFile.handler = fopen(path, openFile.modes);
+                    openFile.handler = IOHandlerNioBuffered.fopen(getRuntime(), path, openFile.modes);
+                    isOpen = true;
+                    
                     registerIOHandler(openFile.handler);
                     if (openFile.pipeHandler != null) {
                         openFile.pipeHandler.close();
@@ -1304,9 +1268,7 @@ public class RubyIO extends RubyObject {
     }
 
     public boolean getBlocking() {
-        if (!(openFile.handler instanceof IOHandlerNio)) return true;
-
-        return ((IOHandlerNio) openFile.handler).getBlocking();
+        return ((IOHandlerNioBuffered) openFile.handler).getBlocking();
      }
 
     @JRubyMethod(name = "fcntl", required = 2)
@@ -1326,14 +1288,9 @@ public class RubyIO extends RubyObject {
             if ((realArg & IOModes.NONBLOCK) == IOModes.NONBLOCK) {
                 block = false;
             }
-            
-            if (!(openFile.handler instanceof IOHandlerNio)) {
-                // cryptic for the uninitiated...
-                throw getRuntime().newNotImplementedError("FCNTL only works with Nio based handlers");
-            }
 
             try {
-                ((IOHandlerNio) openFile.handler).setBlocking(block);
+                openFile.handler.setBlocking(block);
             } catch (IOException e) {
                 throw getRuntime().newIOError(e.getMessage());
             }

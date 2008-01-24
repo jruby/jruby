@@ -45,12 +45,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 
+import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.channels.WritableByteChannel;
-import java.nio.channels.spi.SelectorProvider;
 import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
@@ -66,6 +64,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     protected ByteBuffer buffer; // r/w buffer
     protected boolean reading; // are we reading or writing?
     private RubyIO.ChannelDescriptor descriptor;
+    private boolean blocking = true;
     protected int ungotc = -1;
 
     public IOHandlerNioBuffered(Ruby runtime, RubyIO.ChannelDescriptor descriptor, IOModes modes, FileDescriptor fileDescriptor) throws IOException {
@@ -752,6 +751,24 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     public RubyIO.ChannelDescriptor getDescriptor() {
         return descriptor;
     }
+    
+    public void setBlocking(boolean block) throws IOException {
+        if (!(descriptor.getChannel() instanceof SelectableChannel)) {
+            return;
+        }
+        synchronized (((SelectableChannel) descriptor.getChannel()).blockingLock()) {
+            blocking = block;
+            try {
+                ((SelectableChannel) descriptor.getChannel()).configureBlocking(block);
+            } catch (IllegalBlockingModeException e) {
+                // ignore this; select() will set the correct mode when it is finished
+            }
+        }
+    }
+
+    public boolean getBlocking() {
+        return blocking;
+    }
 
     public void freopen(String path, IOModes modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException {
         // flush first
@@ -786,6 +803,37 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         fileDescriptor = file.getFD();
         
         if (modes.isAppendable()) seek(0, SEEK_END);
+    }
+    
+    public static IOHandler fopen(Ruby runtime, String path, IOModes modes) throws DirectoryAsFileException, IOException, PipeException, InvalidValueException, BadDescriptorException {
+        String cwd = runtime.getCurrentDirectory();
+        JRubyFile theFile = JRubyFile.create(cwd,path);
+
+        if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();
+        
+        if (modes.isCreate()) {
+            if (theFile.exists() && modes.isExclusive()) {
+                throw runtime.newErrnoEEXISTError("File exists - " + path);
+            }
+            theFile.createNewFile();
+        } else {
+            if (!theFile.exists()) {
+                throw runtime.newErrnoENOENTError("file not found - " + path);
+            }
+        }
+
+        // We always open this rw since we can only open it r or rw.
+        RandomAccessFile file = new RandomAccessFile(theFile, modes.javaMode());
+
+        if (modes.shouldTruncate()) file.setLength(0L);
+
+        RubyIO.ChannelDescriptor descriptor = new RubyIO.ChannelDescriptor(file.getChannel(), RubyIO.getNewFileno());
+        
+        IOHandler handler = new IOHandlerNioBuffered(runtime, descriptor, modes, file.getFD());
+        
+        if (modes.isAppendable()) handler.seek(0, IOHandler.SEEK_END);
+        
+        return handler;
     }
 
     public void closeWrite() throws IOException, BadDescriptorException {
