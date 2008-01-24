@@ -38,6 +38,8 @@ public class WindowsPOSIX extends BaseNativePOSIX {
 
     @Override
     public boolean isatty(FileDescriptor fd) {
-       return helper.isatty(helper.getfd(fd)) != 0;
+        return (fd == FileDescriptor.in
+                || fd == FileDescriptor.out
+                || fd == FileDescriptor.err);
     }
 }
