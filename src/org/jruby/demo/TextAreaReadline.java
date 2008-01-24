@@ -114,12 +114,6 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
             }
             public Arity getArity() { return Arity.twoArguments(); }
         });
-        
-        /* Redirect output to me */
-        RubyIO out = new RubyIO(runtime, this);
-        runtime.defineVariable(new GlobalVariable(runtime, "$stderr", out));
-        runtime.defineVariable(new GlobalVariable(runtime, "$stdout", out));
-        runtime.defineVariable(new GlobalVariable(runtime, "$>", out));
     }
     
     protected void completeAction(KeyEvent event) {
