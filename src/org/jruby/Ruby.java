@@ -2257,7 +2257,15 @@ public final class Ruby {
     }
 
     public RaiseException newNameError(String message, String name) {
-        return new RaiseException(new RubyNameError(this, this.fastGetClass("NameError"), message, name), true);
+        return newNameError(message, name, null);
+    }
+
+    public RaiseException newNameError(String message, String name, Throwable origException) {
+        if (origException != null && this.getVerbose().isTrue()) {
+            origException.printStackTrace(getErrorStream());
+        }
+        return new RaiseException(new RubyNameError(
+                this, this.fastGetClass("NameError"), message, name), true);
     }
 
     public RaiseException newLocalJumpError(String reason, IRubyObject exitValue, String message) {

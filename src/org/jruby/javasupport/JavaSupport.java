@@ -121,9 +121,13 @@ public class JavaSupport {
             }
             return result;
         } catch (ClassNotFoundException cnfExcptn) {
-            throw runtime.newNameError("cannot load Java class " + className, className);
+            throw runtime.newNameError("cannot load Java class " + className, className, cnfExcptn);
+        } catch (ExceptionInInitializerError eiie) {
+            throw runtime.newNameError("cannot initialize Java class " + className, className, eiie);
+        } catch (LinkageError le) {
+            throw runtime.newNameError("cannot link Java class " + className, className, le);
         } catch (SecurityException se) {
-            throw runtime.newNameError("security: cannot load Java class " + className, className);
+            throw runtime.newNameError("security: cannot load Java class " + className, className, se);
         }
     }
 
