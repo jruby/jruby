@@ -762,6 +762,9 @@ public class RubyNumeric extends RubyObject {
         public InvalidIntegerException(String message) {
             super(message);
         }
+        public Throwable fillInStackTrace() {
+            return this;
+        }
     }
     
     public static class NumberTooLargeException extends NumberFormatException {
@@ -772,7 +775,9 @@ public class RubyNumeric extends RubyObject {
         public NumberTooLargeException(String message) {
             super(message);
         }
-        
+        public Throwable fillInStackTrace() {
+            return this;
+        }
     }
     
 }
