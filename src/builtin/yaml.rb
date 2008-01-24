@@ -313,6 +313,39 @@ class Module
     end
 end
 
+  Hash::yaml_as "tag:ruby.yaml.org,2002:hash"
+  Hash::yaml_as "tag:yaml.org,2002:map"
+
+  Array::yaml_as "tag:ruby.yaml.org,2002:array"
+  Array::yaml_as "tag:yaml.org,2002:seq"
+
+  String::yaml_as "tag:ruby.yaml.org,2002:string"
+  String::yaml_as "tag:yaml.org,2002:binary"
+  String::yaml_as "tag:yaml.org,2002:str"
+
+  Range::yaml_as "tag:ruby.yaml.org,2002:range"
+  
+  Regexp::yaml_as "tag:ruby.yaml.org,2002:regexp"
+
+  Integer::yaml_as "tag:yaml.org,2002:int", false
+
+  Time::yaml_as "tag:ruby.yaml.org,2002:time"
+  Time::yaml_as "tag:yaml.org,2002:timestamp"
+
+  Date::yaml_as "tag:yaml.org,2002:timestamp#ymd"
+
+  Float::yaml_as "tag:yaml.org,2002:float"
+
+  NilClass::yaml_as "tag:yaml.org,2002:null"
+
+  YAML::tag_class "tag:yaml.org,2002:bool#yes", TrueClass
+  YAML::tag_class "tag:yaml.org,2002:bool#no", FalseClass
+  YAML::tag_class "tag:ruby.yaml.org,2002:object", Object
+  YAML::tag_class "tag:ruby.yaml.org,2002:exception", Exception
+  YAML::tag_class "tag:ruby.yaml.org,2002:struct", Struct
+  YAML::tag_class "tag:ruby.yaml.org,2002:symbol", Symbol
+  YAML::tag_class "tag:ruby.yaml.org,2002:sym", Symbol
+
 # From yaml/types.rb
 module YAML
     #

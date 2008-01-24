@@ -118,13 +118,10 @@ public class RubyYAML {
         date.defineAnnotatedMethods(YAMLDateMethods.class);
 
         bignum.defineAnnotatedMethods(YAMLNumericMethods.class);
-        bignum.defineAnnotatedMethods(YAMLFixnumMethods.class);
 
         fixnum.defineAnnotatedMethods(YAMLNumericMethods.class);
-        fixnum.defineAnnotatedMethods(YAMLFixnumMethods.class);
 
         flt.defineAnnotatedMethods(YAMLNumericMethods.class);
-        flt.defineAnnotatedMethods(YAMLFloatMethods.class);
 
         trueClass.defineAnnotatedMethods(YAMLTrueMethods.class);
 
@@ -333,17 +330,8 @@ public class RubyYAML {
             ThreadContext context = self.getRuntime().getCurrentContext();
             return arg.callMethod(context,"map", new IRubyObject[]{self.callMethod(context, "taguri"),self,self.callMethod(context, "to_yaml_style")});
         }
-        @JRubyMethod(name = "taguri")
-        public static IRubyObject hash_taguri(IRubyObject self) {
-            String className = self.getType().getName();
-            if("Hash".equals(className)) {
-                return self.getRuntime().newString("tag:yaml.org,2002:map");
-            } else {
-                return self.getRuntime().newString("tag:yaml.org,2002:map:" + className);
-            }
-        }
-    }
-    
+    }   
+
     public static class YAMLObjectMethods {
         @JRubyMethod(name = "to_yaml_properties")
         public static IRubyObject obj_to_yaml_properties(IRubyObject self) {
@@ -388,15 +376,6 @@ public class RubyYAML {
         public static IRubyObject array_to_yaml_node(IRubyObject self, IRubyObject arg) {
             ThreadContext context = self.getRuntime().getCurrentContext();
             return arg.callMethod(context,"seq", new IRubyObject[]{self.callMethod(context, "taguri"),self,self.callMethod(context, "to_yaml_style")});
-        }
-        @JRubyMethod(name = "taguri")
-        public static IRubyObject array_taguri(IRubyObject self) {
-            String className = self.getType().getName();
-            if("Array".equals(className)) {
-                return self.getRuntime().newString("tag:yaml.org,2002:seq");
-            } else {
-                return self.getRuntime().newString("tag:yaml.org,2002:seq:" + className);
-            }
         }
     }
 
@@ -491,10 +470,6 @@ public class RubyYAML {
             }
             return arg.callMethod(context,"map", new IRubyObject[]{self.callMethod(context, "taguri"),(IRubyObject)mep,self.callMethod(context, "to_yaml_style")});
         }
-        @JRubyMethod(name = "taguri")
-        public static IRubyObject string_taguri(IRubyObject self) {
-            return self.getRuntime().newString("tag:yaml.org,2002:str");
-        }
     }
     
     public static class YAMLSymbolMethods {
@@ -539,10 +514,6 @@ public class RubyYAML {
             }
             return arg.callMethod(context,"map", new IRubyObject[]{self.callMethod(context, "taguri"),(IRubyObject)mep,self.callMethod(context, "to_yaml_style")});
         }
-        @JRubyMethod(name = "taguri")
-        public static IRubyObject range_taguri(IRubyObject self) {
-            return self.getRuntime().newString("!ruby/range");
-        }
     }
     
     public static class YAMLRegexpMethods {
@@ -550,10 +521,6 @@ public class RubyYAML {
         public static IRubyObject regexp_to_yaml_node(IRubyObject self, IRubyObject arg) {
             ThreadContext context = self.getRuntime().getCurrentContext();
             return arg.callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),self.callMethod(context, "inspect"),self.callMethod(context, "to_yaml_style")});
-        }
-        @JRubyMethod(name = "taguri")
-        public static IRubyObject regexp_taguri(IRubyObject self) {
-            return self.getRuntime().newString("!ruby/regexp");
         }
     }
     
@@ -588,10 +555,6 @@ public class RubyYAML {
             standard = standard.callMethod(context,MethodIndex.OP_PLUS, "+", self.getRuntime().newString(" %s").callMethod(context,"%", self.getRuntime().newArray(tz)));
             return arg.callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),standard,self.callMethod(context, "to_yaml_style")});
         }
-        @JRubyMethod(name = "taguri")
-        public static IRubyObject time_taguri(IRubyObject self) {
-            return self.getRuntime().newString("tag:yaml.org,2002:timestamp");
-        }
     }
     
     public static class YAMLDateMethods {
@@ -600,26 +563,8 @@ public class RubyYAML {
             ThreadContext context = self.getRuntime().getCurrentContext();
             return arg.callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),self.callMethod(context, MethodIndex.TO_S, "to_s"),self.callMethod(context, "to_yaml_style")});
         }
-        @JRubyMethod(name = "taguri")
-        public static IRubyObject date_taguri(IRubyObject self) {
-            return self.getRuntime().newString("tag:yaml.org,2002:timestamp#ymd");
-        }
     }
     
-    public static class YAMLFixnumMethods {
-        @JRubyMethod(name = "taguri")
-        public static IRubyObject fixnum_taguri(IRubyObject self) {
-            return self.getRuntime().newString("tag:yaml.org,2002:int");
-        }
-    }
-    
-    public static class YAMLFloatMethods {
-        @JRubyMethod(name = "taguri")
-        public static IRubyObject float_taguri(IRubyObject self) {
-            return self.getRuntime().newString("tag:yaml.org,2002:float");
-        }
-    }
-
     public static class YAMLTrueMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject true_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -649,10 +594,6 @@ public class RubyYAML {
         public static IRubyObject nil_to_yaml_node(IRubyObject self, IRubyObject arg) {
             ThreadContext context = self.getRuntime().getCurrentContext();
             return arg.callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),self.getRuntime().newString(""),self.callMethod(context, "to_yaml_style")});
-        }
-        @JRubyMethod(name = "taguri")
-        public static IRubyObject nil_taguri(IRubyObject self) {
-            return self.getRuntime().newString("tag:yaml.org,2002:null");
         }
     }
 }// RubyYAML

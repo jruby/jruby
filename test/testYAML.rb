@@ -362,3 +362,36 @@ end
 test_exception(TypeError) do 
   { :foo => TestYamlFoo.new }.to_yaml
 end
+
+# JRUBY-2019, handle tagged_classes, yaml_as and so on a bit better
+
+test_equal({
+             "tag:yaml.org,2002:omap"=>YAML::Omap, 
+             "tag:yaml.org,2002:pairs"=>YAML::Pairs, 
+             "tag:yaml.org,2002:set"=>YAML::Set, 
+             "tag:yaml.org,2002:timestamp#ymd"=>Date, 
+             "tag:yaml.org,2002:bool#yes"=>TrueClass, 
+             "tag:yaml.org,2002:int"=>Integer, 
+             "tag:yaml.org,2002:timestamp"=>Time, 
+             "tag:yaml.org,2002:binary"=>String, 
+             "tag:yaml.org,2002:str"=>String, 
+             "tag:yaml.org,2002:map"=>Hash, 
+             "tag:yaml.org,2002:null"=>NilClass, 
+             "tag:yaml.org,2002:bool#no"=>FalseClass, 
+             "tag:yaml.org,2002:seq"=>Array, 
+             "tag:yaml.org,2002:float"=>Float,
+             "tag:ruby.yaml.org,2002:sym"=>Symbol, 
+             "tag:ruby.yaml.org,2002:object"=>Object, 
+             "tag:ruby.yaml.org,2002:hash"=>Hash, 
+             "tag:ruby.yaml.org,2002:time"=>Time, 
+             "tag:ruby.yaml.org,2002:symbol"=>Symbol, 
+             "tag:ruby.yaml.org,2002:string"=>String, 
+             "tag:ruby.yaml.org,2002:regexp"=>Regexp, 
+             "tag:ruby.yaml.org,2002:range"=>Range, 
+             "tag:ruby.yaml.org,2002:array"=>Array, 
+             "tag:ruby.yaml.org,2002:exception"=>Exception, 
+             "tag:ruby.yaml.org,2002:struct"=>Struct, 
+           },
+           YAML::tagged_classes)
+
+
