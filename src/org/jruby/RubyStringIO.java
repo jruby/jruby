@@ -587,7 +587,7 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "seek", required = 1, optional = 1)
     public IRubyObject seek(IRubyObject[] args) {
-        long amount = RubyNumeric.fix2long(args[0]);
+        long amount = RubyNumeric.num2long(args[0]);
         int whence = Stream.SEEK_SET;
         long newPosition = pos;
 

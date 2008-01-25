@@ -978,7 +978,7 @@ public class RubyIO extends RubyObject {
     
     @JRubyMethod(name = "pos=", required = 1)
     public RubyFixnum pos_set(IRubyObject newPosition) {
-        long offset = RubyNumeric.fix2long(newPosition);
+        long offset = RubyNumeric.num2long(newPosition);
 
         if (offset < 0) {
             throw getRuntime().newSystemCallError("Negative seek offset");
@@ -1072,7 +1072,7 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newArgumentError("wrong number of arguments");
         }
         
-        long offset = RubyNumeric.fix2long(args[0]);
+        long offset = RubyNumeric.num2long(args[0]);
         int type = Stream.SEEK_SET;
         
         if (args.length > 1) {
