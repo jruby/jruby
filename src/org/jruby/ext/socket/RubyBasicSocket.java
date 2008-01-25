@@ -63,10 +63,6 @@ public class RubyBasicSocket extends RubyIO {
     static void createBasicSocket(Ruby runtime) {
         RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), BASICSOCKET_ALLOCATOR);
 
-        // These are empty implementations and shouldn't be used
-        RubyClass rb_cUnixSocket = runtime.defineClass("UNIXSocket", rb_cBasicSocket, BASICSOCKET_ALLOCATOR);
-        RubyClass rb_cUnixServer = runtime.defineClass("UNIXServer", rb_cUnixSocket, BASICSOCKET_ALLOCATOR);
-
         CallbackFactory cfact = runtime.callbackFactory(RubyBasicSocket.class);
         rb_cBasicSocket.defineFastMethod("send", cfact.getFastOptMethod("write_send"));
         rb_cBasicSocket.defineFastMethod("recv", cfact.getFastOptMethod("recv"));
