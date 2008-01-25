@@ -412,6 +412,11 @@ public class RubySocket extends RubyBasicSocket {
             Ruby r = recv.getRuntime();
             IRubyObject host = args[0];
             IRubyObject port = args[1];
+
+            if(port instanceof RubyString) {
+                port = getservbyname(recv, new IRubyObject[]{port});
+            }
+
             //IRubyObject family = args[2];
             IRubyObject socktype = args[3];
             //IRubyObject protocol = args[4];
@@ -430,26 +435,26 @@ public class RubySocket extends RubyBasicSocket {
             List<IRubyObject> l = new ArrayList<IRubyObject>();
             for(int i=0;i<addrs.length;i++) {
                 IRubyObject[] c;
-                if(sock_stream) {
-                    c = new IRubyObject[7];
-                    c[0] = r.newString("AF_INET");
-                    c[1] = port;
-                    c[2] = r.newString(addrs[i].getCanonicalHostName());
-                    c[3] = r.newString(addrs[i].getHostAddress());
-                    c[4] = r.newFixnum(2); // PF_INET
-                    c[5] = r.newFixnum(1); // SOCK_STREAM
-                    c[6] = r.newFixnum(6); // Protocol TCP
-                    l.add(r.newArrayNoCopy(c));
-                }
                 if(sock_dgram) {
                     c = new IRubyObject[7];
                     c[0] = r.newString("AF_INET");
                     c[1] = port;
                     c[2] = r.newString(addrs[i].getCanonicalHostName());
                     c[3] = r.newString(addrs[i].getHostAddress());
-                    c[4] = r.newFixnum(2); // PF_INET
-                    c[5] = r.newFixnum(2); // SOCK_DRGRAM
-                    c[6] = r.newFixnum(17); // Protocol UDP
+                    c[4] = r.newFixnum(PF_INET);
+                    c[5] = r.newFixnum(SOCK_DGRAM);
+                    c[6] = r.newFixnum(IPPROTO_UDP);
+                    l.add(r.newArrayNoCopy(c));
+                }
+                if(sock_stream) {
+                    c = new IRubyObject[7];
+                    c[0] = r.newString("AF_INET");
+                    c[1] = port;
+                    c[2] = r.newString(addrs[i].getCanonicalHostName());
+                    c[3] = r.newString(addrs[i].getHostAddress());
+                    c[4] = r.newFixnum(PF_INET);
+                    c[5] = r.newFixnum(SOCK_STREAM);
+                    c[6] = r.newFixnum(IPPROTO_TCP);
                     l.add(r.newArrayNoCopy(c));
                 }
             }
