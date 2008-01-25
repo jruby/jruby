@@ -29,6 +29,7 @@ package org.jruby.common;
 
 import org.jruby.Ruby;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
@@ -42,15 +43,15 @@ public class RubyWarnings implements IRubyWarnings {
     }
 
     public void warn(ISourcePosition position, String message) {
-    	assert position != null;
+        warn(position.getFile(), position.getEndLine(), message);
+    }
 
-        if(runtime.getVerbose().isNil()) {
-            return;
-        }
+    public void warn(String fileName, int lineNumber, String message) {
+        if (runtime.getVerbose().isNil()) return;
     	
         StringBuffer buffer = new StringBuffer(100);
 
-        buffer.append(position.getFile()).append(':').append(position.getEndLine() + 1).append(' ');
+        buffer.append(fileName).append(':').append(lineNumber + 1).append(' ');
         buffer.append("warning: ").append(message).append('\n');
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
         errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
@@ -61,16 +62,22 @@ public class RubyWarnings implements IRubyWarnings {
     }
 
     public void warn(String message) {
-        warn(runtime.getCurrentContext().getPosition(), message);
+        ThreadContext context = runtime.getCurrentContext();
+        
+        warn(context.getFile(), context.getLine(), message);
     }
 
     public void warning(String message) {
-        warning(runtime.getCurrentContext().getPosition(), message);
+        ThreadContext context = runtime.getCurrentContext();
+
+        warning(context.getFile(), context.getLine(), message);
     }
     
     public void warning(ISourcePosition position, String message) {
-        if (isVerbose()) {
-            warn(position, message);
-        }
+        warning(position.getFile(), position.getEndLine(), message);
+    }
+
+    public void warning(String fileName, int lineNumber, String message) {
+        if (isVerbose()) warn(fileName, lineNumber, message);
     }
 }

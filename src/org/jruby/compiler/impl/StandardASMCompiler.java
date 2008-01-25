@@ -2281,13 +2281,21 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(EXCEPTION_INDEX);
         }
         
-        public void setPosition(ISourcePosition position) {
+        public void setFilePosition(ISourcePosition position) {
             if (!RubyInstanceConfig.POSITIONLESS_COMPILE_ENABLED) {
-                // FIXME I'm still not happy with this additional overhead per line,
-                // nor about the extra script construction cost, but it will have to do for now.
                 loadThreadContext();
-                getCacheCompiler().cachePosition(method, position.getFile(), position.getEndLine());
-                invokeThreadContext("setPosition", sig(void.class, ISourcePosition.class));
+                method.ldc(position.getFile());
+                invokeThreadContext("setFile", sig(void.class, params(String.class)));
+            }
+        }
+
+        public void setLinePosition(ISourcePosition position) {
+            if (!RubyInstanceConfig.POSITIONLESS_COMPILE_ENABLED) {
+                // TODO: Put these in appropriate places to reduce the number of file sets
+                setFilePosition(position);
+                loadThreadContext();
+                method.ldc(position.getStartLine());
+                invokeThreadContext("setLine", sig(void.class, params(int.class)));
             }
         }
         

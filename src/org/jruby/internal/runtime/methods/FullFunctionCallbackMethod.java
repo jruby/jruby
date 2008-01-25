@@ -35,7 +35,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.JumpTarget;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.EventHook;
@@ -60,13 +59,10 @@ public class FullFunctionCallbackMethod extends DynamicMethod implements JumpTar
             
             assert args != null;
             Ruby runtime = context.getRuntime();
-            ISourcePosition position = null;
             boolean isTrace = runtime.hasEventHooks();
 
             if (isTrace) {
-                position = context.getPosition();
-
-                runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
+                runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
             }
 
             try {
@@ -77,7 +73,7 @@ public class FullFunctionCallbackMethod extends DynamicMethod implements JumpTar
                 throw rj;
             } finally {
                 if (isTrace) {
-                    runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
+                    runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, context.getFile(), context.getLine(), name, getImplementationClass());
                 }
             }
         } finally {

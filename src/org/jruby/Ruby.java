@@ -92,6 +92,7 @@ import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.EventHook;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ObjectAllocator;
@@ -239,8 +240,10 @@ public final class Ruby {
         }
 
         Node node = parseInline(new ByteArrayInputStream(bytes), filename, null);
+        Frame frame = getCurrentContext().getCurrentFrame(); 
         
-        getCurrentContext().getCurrentFrame().setPosition(node.getPosition());
+        frame.setFile(node.getPosition().getFile());
+        frame.setLine(node.getPosition().getStartLine());
         return runNormally(node, false);
     }
     
@@ -274,8 +277,10 @@ public final class Ruby {
             new RubiniusRunner(this, inputStream, filename).run();
         } else {
             Node scriptNode = parseFromMain(inputStream, filename);
+            Frame frame = getCurrentContext().getCurrentFrame(); 
             
-            getCurrentContext().getCurrentFrame().setPosition(scriptNode.getPosition());
+            frame.setFile(scriptNode.getPosition().getFile());
+            frame.setLine(scriptNode.getPosition().getStartLine());
 
             if (config.isAssumePrinting() || config.isAssumeLoop()) {
                 runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
@@ -1693,10 +1698,10 @@ public final class Ruby {
 
         PrintStream errorStream = getErrorStream();
         if (backtrace.isNil() || !(backtrace instanceof RubyArray)) {
-            if (tc.getSourceFile() != null) {
-                errorStream.print(tc.getPosition());
+            if (tc.getFile() != null) {
+                errorStream.print(tc.getFile() + ":" + tc.getLine());
             } else {
-                errorStream.print(tc.getSourceLine());
+                errorStream.print(tc.getLine());
             }
         } else if (((RubyArray) backtrace).getLength() == 0) {
             printErrorPos(errorStream);
@@ -1748,14 +1753,14 @@ public final class Ruby {
 
     private void printErrorPos(PrintStream errorStream) {
         ThreadContext tc = getCurrentContext();
-        if (tc.getSourceFile() != null) {
+        if (tc.getFile() != null) {
             if (tc.getFrameName() != null) {
-                errorStream.print(tc.getPosition());
+                errorStream.print(tc.getFile() + ":" + tc.getLine());
                 errorStream.print(":in '" + tc.getFrameName() + '\'');
-            } else if (tc.getSourceLine() != 0) {
-                errorStream.print(tc.getPosition());
+            } else if (tc.getLine() != 0) {
+                errorStream.print(tc.getFile() + ":" + tc.getLine());
             } else {
-                errorStream.print(tc.getSourceFile());
+                errorStream.print(tc.getFile());
             }
         }
     }

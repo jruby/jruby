@@ -56,7 +56,9 @@ public class CompiledBlockLight extends BlockBody {
     public static Block newCompiledClosureLight(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         Frame f = context.getCurrentFrame();
-        f.setPosition(context.getPosition());
+        f.setFile(context.getFile());
+        f.setLine(context.getLine());
+
         return newCompiledClosureLight(
                 self,
                 f,

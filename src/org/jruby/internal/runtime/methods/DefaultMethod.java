@@ -50,6 +50,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.EventHook;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -260,8 +261,9 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     }
 
     private void traceReturn(ThreadContext context, Ruby runtime, String name) {
-        ISourcePosition position = context.getPreviousFramePosition();
-        runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
+        Frame frame = context.getPreviousFrame();
+
+        runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, frame.getFile(), frame.getLine(), name, getImplementationClass());
     }
     
     private void traceCall(ThreadContext context, Ruby runtime, String name) {

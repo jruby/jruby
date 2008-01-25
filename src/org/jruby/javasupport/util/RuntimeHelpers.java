@@ -23,8 +23,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
@@ -685,10 +683,6 @@ public class RuntimeHelpers {
     
     public static IRubyObject nextLocalJumpError(Ruby runtime, IRubyObject value) {
         throw runtime.newLocalJumpError("next", value, "unexpected next");
-    }
-    
-    public static ISourcePosition constructPosition(String file, int line) {
-        return new SimpleSourcePosition(file, line);
     }
     
     public static final int MAX_SPECIFIC_ARITY_OBJECT_ARRAY = 5;

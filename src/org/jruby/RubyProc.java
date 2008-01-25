@@ -37,8 +37,6 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.JumpTarget;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
@@ -166,11 +164,10 @@ public class RubyProc extends RubyObject implements JumpTarget {
     public IRubyObject to_s() {
         Binding binding = block.getBinding();
         Frame frame = binding.getFrame();
-        ISourcePosition pos = frame.getPosition();
         
         return RubyString.newString(getRuntime(), 
                 "#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" + 
-                pos.getFile() + ":" + (pos.getStartLine() + 1) + ">");
+                frame.getFile() + ":" + (frame.getLine() + 1) + ">");
     }
 
     @JRubyMethod(name = "binding")

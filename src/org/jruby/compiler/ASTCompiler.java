@@ -826,7 +826,7 @@ public class ASTCompiler {
 
         Node tag = expressionsNode.get(conditionIndex);
 
-        context.setPosition(tag.getPosition());
+        context.setLinePosition(tag.getPosition());
 
         // reduce the when cases to a true or false ruby value for the branch below
         if (tag instanceof WhenNode) {
@@ -2505,7 +2505,7 @@ public class ASTCompiler {
         // TODO: add trace call?
         context.lineNumber(node.getPosition());
 
-        context.setPosition(node.getPosition());
+        context.setLinePosition(node.getPosition());
 
         NewlineNode newlineNode = (NewlineNode) node;
 
@@ -3173,7 +3173,7 @@ public class ASTCompiler {
                     }
                 };
 
-        context.setPosition(arrayNode.getPosition());
+        context.setLinePosition(arrayNode.getPosition());
         context.createObjectArray(arrayNode.childNodes().toArray(), callback);
     // leave as a normal array
     }

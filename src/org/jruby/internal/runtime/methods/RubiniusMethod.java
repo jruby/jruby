@@ -33,6 +33,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -90,8 +91,9 @@ public class RubiniusMethod extends DynamicMethod implements JumpTarget {
             return;
         }
         
-        ISourcePosition position = context.getPreviousFramePosition();
-        runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
+        Frame frame = context.getPreviousFrame();
+
+        runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, frame.getFile(), frame.getLine(), name, getImplementationClass());
     }
     
     private void traceCall(ThreadContext context, Ruby runtime, String name) {
@@ -99,9 +101,7 @@ public class RubiniusMethod extends DynamicMethod implements JumpTarget {
             return;
         }
         
-        ISourcePosition position = context.getPosition();
-        
-        runtime.callEventHooks(context, EventHook.RUBY_EVENT_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
+        runtime.callEventHooks(context, EventHook.RUBY_EVENT_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
     }
     
     public Arity getArity() {

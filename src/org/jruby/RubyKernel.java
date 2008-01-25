@@ -54,8 +54,6 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -719,49 +717,11 @@ public class RubyKernel {
         RubyString src = args[0].convertToString();
         runtime.checkSafeString(src);
         
-        IRubyObject scope = null;
-        String file = "(eval)";
-        int line = 0;
-        
-        // determine scope and position
-        if (args.length > 1 && !args[1].isNil()) {
-            scope = args[1];
+        IRubyObject scope = args.length > 1 && !args[1].isNil() ? args[1] : RubyBinding.newBindingForEval(runtime);  
+        String file = args.length > 2 ? args[2].convertToString().toString() : "(eval)"; 
+        int line = args.length > 3 ? (int) args[3].convertToInteger().getLongValue() : 0; 
 
-            Binding binding;
-            if (scope instanceof RubyBinding) {
-                binding = ((RubyBinding)scope).getBinding();
-            } else if (scope instanceof RubyProc) {
-                RubyProc proc = (RubyProc)scope;
-                binding = proc.getBlock().getBinding();
-            } else {
-                throw runtime.newTypeError("Wrong argument type " + scope.getMetaClass() + "(expected Proc/Binding)");
-            }
-
-            Frame frame = binding.getFrame();
-            ISourcePosition pos = frame.getPosition();
-
-            file = pos.getFile();
-            line = pos.getEndLine();
-        } else {
-            scope = RubyBinding.newBindingForEval(runtime);
-        }
-            
-        // if we have additional args, use them for file and line number
-        if (args.length > 2) {
-            file = args[2].convertToString().toString();
-        } else {
-            file = "(eval)";
-        }
-
-        if (args.length > 3) {
-            line = (int)args[3].convertToInteger().getLongValue();
-        } else {
-            line = 0;
-        }
-        
-        ThreadContext context = runtime.getCurrentContext();
-        
-        return ASTInterpreter.evalWithBinding(context, src, scope, file, line);
+        return ASTInterpreter.evalWithBinding(runtime.getCurrentContext(), src, scope, file, line);
     }
 
     @JRubyMethod(name = "callcc", frame = true, module = true, visibility = Visibility.PRIVATE)

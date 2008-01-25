@@ -145,7 +145,6 @@ import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -189,7 +188,8 @@ public class ASTInterpreter {
         assert file != null;
 
         Ruby runtime = src.getRuntime();
-        ISourcePosition savedPosition = context.getPosition();
+        String savedFile = context.getFile();
+        int savedLine = context.getLine();
 
         if (!(scope instanceof RubyBinding)) {
             if (scope instanceof RubyProc) {
@@ -223,7 +223,8 @@ public class ASTInterpreter {
             context.postEvalWithBinding(binding);
 
             // restore position
-            context.setPosition(savedPosition);
+            context.setFile(savedFile);
+            context.setLine(savedLine);
         }
     }
 
@@ -240,7 +241,8 @@ public class ASTInterpreter {
         assert file != null;
 
         Ruby runtime = src.getRuntime();
-        ISourcePosition savedPosition = context.getPosition();
+        String savedFile = context.getFile();
+        int savedLine = context.getLine();
 
         // no binding, just eval in "current" frame (caller's frame)
         RubyString source = src.convertToString();
@@ -256,7 +258,8 @@ public class ASTInterpreter {
             throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
         } finally {
             // restore position
-            context.setPosition(savedPosition);
+            context.setFile(savedFile);
+            context.setLine(savedLine);
         }
     }
 
@@ -393,7 +396,8 @@ public class ASTInterpreter {
                 NewlineNode iVisited = (NewlineNode) node;
         
                 // something in here is used to build up ruby stack trace...
-                context.setPosition(iVisited.getPosition());
+                context.setFile(iVisited.getPosition().getFile());
+                context.setLine(iVisited.getPosition().getStartLine());
 
                 if (isTrace(runtime)) {
                     callTraceFunction(runtime, context, EventHook.RUBY_EVENT_LINE);
@@ -686,10 +690,13 @@ public class ASTInterpreter {
 
             if (whenNode.getExpressionNodes() instanceof ArrayNode) {
                 ArrayNode arrayNode = (ArrayNode)whenNode.getExpressionNodes();
+                // All expressions in a while are in same file
+                context.setFile(arrayNode.getPosition().getFile());
                 for (int i = 0; i < arrayNode.size(); i++) {
                     Node tag = arrayNode.get(i);
 
-                    context.setPosition(tag.getPosition());
+                    context.setLine(tag.getPosition().getStartLine());
+                    
                     if (isTrace(runtime)) {
                         callTraceFunction(runtime, context, EventHook.RUBY_EVENT_LINE);
                     }
@@ -1158,13 +1165,15 @@ public class ASTInterpreter {
         try {
             while (true) {
                 try {
-                    ISourcePosition position = context.getPosition();
+                    String savedFile = context.getFile();
+                    int savedLine = context.getLine();
    
                     IRubyObject recv = null;
                     try {
                         recv = evalInternal(runtime,context, iVisited.getIterNode(), self, aBlock);
                     } finally {
-                        context.setPosition(position);
+                        context.setFile(savedFile);
+                        context.setLine(savedLine);
                     }
    
                     return ForNode.callAdapter.call(context, recv, block);
@@ -1825,7 +1834,7 @@ public class ASTInterpreter {
     private static void callTraceFunction(Ruby runtime, ThreadContext context, int event) {
         String name = context.getFrameName();
         RubyModule type = context.getFrameKlazz();
-        runtime.callEventHooks(context, event, context.getPosition().getFile(), context.getPosition().getStartLine(), name, type);
+        runtime.callEventHooks(context, event, context.getFile(), context.getLine(), name, type);
     }
 
     /** Evaluates the body in a class or module definition statement.
@@ -2132,7 +2141,8 @@ public class ASTInterpreter {
 
         if (node instanceof ArrayNode) {
             ArrayNode argsArrayNode = (ArrayNode) node;
-            ISourcePosition position = context.getPosition();
+            String savedFile = context.getFile();
+            int savedLine = context.getLine();
             int size = argsArrayNode.size();
             IRubyObject[] argsArray = new IRubyObject[size];
 
@@ -2140,7 +2150,8 @@ public class ASTInterpreter {
                 argsArray[i] = evalInternal(runtime,context, argsArrayNode.get(i), self, aBlock);
             }
 
-            context.setPosition(position);
+            context.setFile(savedFile);
+            context.setLine(savedLine);
 
             return argsArray;
         }

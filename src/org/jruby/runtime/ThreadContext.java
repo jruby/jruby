@@ -36,7 +36,6 @@
 package org.jruby.runtime;
 
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import java.util.Collection;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -44,7 +43,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyKernel.CatchTarget;
 import org.jruby.RubyModule;
 import org.jruby.RubyThread;
-import org.jruby.ast.CommentNode;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.FiberLibrary.Fiber;
@@ -98,17 +96,11 @@ public final class ThreadContext {
     private CatchTarget[] catchStack = new CatchTarget[INITIAL_SIZE];
     private int catchIndex = -1;
     
-    private ISourcePosition sourcePosition = new ISourcePosition() {
-        public void adjustStartOffset(int relativeValue) {}
-        public int getEndLine() { return 0; }
-        public int getEndOffset() { return 0; }
-        public String getFile() { return ""; }
-        public int getStartLine() { return 0; }
-        public int getStartOffset() { return 0; }
-        public ISourcePosition union(ISourcePosition position) { return this; }
-        public Collection<CommentNode> getComments() { return null; }
-        public void setComments(Collection<CommentNode> comments) { }
-    };
+    // File where current executing unit is being evaluated
+    private String file = "";
+    
+    // Line where current executing unit is being evaluated
+    private int line = 0;
     
     /**
      * Constructor for Context.
@@ -314,39 +306,34 @@ public final class ThreadContext {
     }
 
     private void pushFrame(String name) {
-        frameStack[++frameIndex].updateFrame(name, getPosition());
+        frameStack[++frameIndex].updateFrame(name, file, line);
         expandFramesIfNecessary(frameIndex + 1);
     }
 
     private void pushFrame(RubyModule clazz, String name, 
                                IRubyObject self, Block block, JumpTarget jumpTarget) {
-        frameStack[++frameIndex].updateFrame(clazz, self, name, block, getPosition(), jumpTarget);
+        frameStack[++frameIndex].updateFrame(clazz, self, name, block, file, line, jumpTarget);
         expandFramesIfNecessary(frameIndex + 1);
     }
     
     private void pushFrame() {
-        frameStack[++frameIndex].updateFrame(getPosition());
+        frameStack[++frameIndex].updateFrame(file, line);
         expandFramesIfNecessary(frameIndex + 1);
     }
     
     private void popFrame() {
         Frame frame = frameStack[frameIndex];
         frameIndex--;
-        setPosition(frame.getPosition());
-    }
-        
-    private void popFrameReal(Frame oldFrame) {
-        Frame frame = frameStack[frameIndex];
-        frameStack[frameIndex] = oldFrame;
-        frameIndex--;
-        setPosition(frame.getPosition());
+        setFile(frame.getFile());
+        setLine(frame.getLine());
     }
         
     private void popFrameReal() {
         Frame frame = frameStack[frameIndex];
         frameStack[frameIndex] = new Frame();
         frameIndex--;
-        setPosition(frame.getPosition());
+        setFile(frame.getFile());
+        setLine(frame.getLine());
     }
     
     public Frame getCurrentFrame() {
@@ -391,28 +378,20 @@ public final class ThreadContext {
         return getCurrentFrame().getBlock();
     }
     
-    public ISourcePosition getFramePosition() {
-        return getCurrentFrame().getPosition();
+    public String getFile() {
+        return file;
     }
     
-    public ISourcePosition getPreviousFramePosition() {
-        return getPreviousFrame().getPosition();
+    public int getLine() {
+        return line;
     }
     
-    public ISourcePosition getPosition() {
-        return sourcePosition;
+    public void setFile(String file) {
+        this.file = file;
     }
     
-    public String getSourceFile() {
-        return sourcePosition.getFile();
-    }
-    
-    public int getSourceLine() {
-        return sourcePosition.getEndLine();
-    }
-    
-    public void setPosition(ISourcePosition position) {
-        sourcePosition = position;
+    public void setLine(int line) {
+        this.line = line;
     }
     
     public Visibility getCurrentVisibility() {
@@ -549,13 +528,13 @@ public final class ThreadContext {
     private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
         if (frame.getName() != null && 
                 frame.getName().equals(previousFrame.getName()) &&
-                frame.getPosition().getFile().equals(previousFrame.getPosition().getFile()) &&
-                frame.getPosition().getEndLine() == previousFrame.getPosition().getEndLine()) {
+                frame.getFile().equals(previousFrame.getFile()) &&
+                frame.getLine() == previousFrame.getLine()) {
             return;
         }
         
         StringBuffer buf = new StringBuffer(60);
-        buf.append(frame.getPosition().getFile()).append(':').append(frame.getPosition().getEndLine() + 1);
+        buf.append(frame.getFile()).append(':').append(frame.getLine() + 1);
         
         if (previousFrame.getName() != null) {
             buf.append(":in `").append(previousFrame.getName()).append('\'');

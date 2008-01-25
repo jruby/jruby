@@ -56,7 +56,9 @@ public class CompiledBlock extends BlockBody {
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         Frame f = context.getCurrentFrame();
-        f.setPosition(context.getPosition());
+        f.setFile(context.getFile());
+        f.setLine(context.getLine());
+
         return newCompiledClosure(
                 self,
                 f,

@@ -37,8 +37,10 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public interface IRubyWarnings {
     public abstract void warn(ISourcePosition position, String message);
+    public abstract void warn(String fileName, int lineNumber, String message);
     public abstract boolean isVerbose();
     public abstract void warn(String message);
     public abstract void warning(String message);
     public abstract void warning(ISourcePosition position, String message);
+    public abstract void warning(String fileName, int lineNumber, String message);
 }

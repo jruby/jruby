@@ -467,7 +467,8 @@ public interface MethodCompiler {
     public void loadClass(String name);
     public void unwrapRaiseException();
     public void loadException();
-    public void setPosition(ISourcePosition position);
+    public void setFilePosition(ISourcePosition position);
+    public void setLinePosition(ISourcePosition position);
     public void checkWhenWithSplat();
     public void createNewEndBlock(CompilerCallback body);
     public void runBeginBlock(StaticScope scope, CompilerCallback body);

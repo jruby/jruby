@@ -28,7 +28,6 @@
 package org.jruby.ast.executable;
 
 import java.io.InputStream;
-import java.io.Reader;
 import java.io.IOException;
 
 import java.util.Iterator;
@@ -85,7 +84,8 @@ public class YARVCompiledRunner {
         ThreadContext context = runtime.getCurrentContext();
         StaticScope scope = new LocalStaticScope(null);
         scope.setVariables(iseq.locals);
-        context.setPosition(new ISeqPosition(iseq));
+        context.setFile(iseq.filename);
+        context.setLine(-1);
         return ym.exec(context, scope, iseq.body);
     }
 

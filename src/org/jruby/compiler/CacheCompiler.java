@@ -15,8 +15,6 @@ import org.jruby.runtime.CallType;
 public interface CacheCompiler {
     public void cacheCallSite(SkinnyMethodAdapter method, String name, CallType callType);
     
-    public void cachePosition(SkinnyMethodAdapter method, String file, int line);
-    
     public void cacheByteList(SkinnyMethodAdapter method, String contents);
     
     public void cacheSymbol(SkinnyMethodAdapter method, String symbol);

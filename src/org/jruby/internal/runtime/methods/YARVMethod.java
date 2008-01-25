@@ -32,16 +32,15 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ast.executable.YARVMachine;
-import org.jruby.ast.executable.ISeqPosition;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.EventHook;
 
@@ -103,7 +102,8 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
     }
 
     private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject[] args) {
-        context.setPosition(new ISeqPosition(iseq));
+        context.setFile(iseq.filename);
+        context.setLine(-1);
 
         int expectedArgsCount = iseq.args_argc;
         int restArg = iseq.args_rest;
@@ -161,9 +161,10 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
         if (!runtime.hasEventHooks()) {
             return;
         }
-        
-        ISourcePosition position = context.getPreviousFramePosition();
-        runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
+
+        Frame frame = context.getPreviousFrame();
+
+        runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, frame.getFile(), frame.getLine(), name, getImplementationClass());
     }
     
     private void traceCall(ThreadContext context, Ruby runtime, String name) {
@@ -171,9 +172,7 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
             return;
         }
         
-        ISourcePosition position = context.getPosition();
-        
-        runtime.callEventHooks(context, EventHook.RUBY_EVENT_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
+        runtime.callEventHooks(context, EventHook.RUBY_EVENT_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
     }
     
     public Arity getArity() {

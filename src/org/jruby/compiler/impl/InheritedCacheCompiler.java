@@ -10,13 +10,10 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.CacheCompiler;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.util.ByteList;
-import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
@@ -36,7 +33,6 @@ public class InheritedCacheCompiler implements CacheCompiler {
 //    int sourcePositionsCount = 0;
 //    int symbolCount = 0;
     
-    Map<String, String> sourcePositions = new HashMap<String, String>();
     Map<String, String> byteLists = new HashMap<String, String>();
     Map<String, String> symbols = new HashMap<String, String>();
     
@@ -70,23 +66,6 @@ public class InheritedCacheCompiler implements CacheCompiler {
             method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
         }
         callSiteCount++;
-    }
-    
-    public void cachePosition(SkinnyMethodAdapter method, String file, int line) {
-        String cleanName = JavaNameMangler.mangleStringForCleanJavaIdentifier(file + "$" + line);
-        String fieldName = sourcePositions.get(cleanName);
-        if (fieldName == null) {
-            SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
-            fieldName = scriptCompiler.getNewStaticConstant(ci(ISourcePosition.class), cleanName);
-            sourcePositions.put(JavaNameMangler.mangleStringForCleanJavaIdentifier(file + "$" + line), fieldName);
-
-            clinitMethod.ldc(file);
-            clinitMethod.ldc(line);
-            clinitMethod.invokestatic(p(RuntimeHelpers.class), "constructPosition", sig(ISourcePosition.class, String.class, int.class));
-            clinitMethod.putstatic(scriptCompiler.getClassname(), fieldName, ci(ISourcePosition.class));
-        }
-        
-        method.getstatic(scriptCompiler.getClassname(), fieldName, ci(ISourcePosition.class));
     }
     
     public void cacheByteList(SkinnyMethodAdapter method, String contents) {

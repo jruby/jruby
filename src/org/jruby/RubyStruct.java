@@ -37,6 +37,7 @@ import java.util.List;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -219,7 +220,8 @@ public class RubyStruct extends RubyObject {
 
             IRubyObject type = superClass.getConstantAt(name);
             if (type != null) {
-                runtime.getWarnings().warn(runtime.getCurrentContext().getFramePosition(), "redefining constant Struct::" + name);
+                Frame frame = runtime.getCurrentContext().getCurrentFrame();
+                runtime.getWarnings().warn(frame.getFile(), frame.getLine(), "redefining constant Struct::" + name);
                 superClass.remove_const(runtime.newString(name));
             }
             newStruct = superClass.defineClassUnder(name, superClass, STRUCT_INSTANCE_ALLOCATOR);

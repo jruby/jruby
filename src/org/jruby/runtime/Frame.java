@@ -34,7 +34,6 @@ package org.jruby.runtime;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.JumpTarget;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -103,10 +102,12 @@ public final class Frame implements JumpTarget {
     /**
      * The location in source where this block/method invocation is happening
      */
-    private ISourcePosition position;
+    
+    private String fileName;
+    private int line;
 
-    public void updateFrame(ISourcePosition position) {
-        updateFrame(null, null, null, Block.NULL_BLOCK, position, null); 
+    public void updateFrame(String fileName, int line) {
+        updateFrame(null, null, null, Block.NULL_BLOCK, fileName, line, null); 
     }
 
     public void updateFrame(Frame frame) {
@@ -115,7 +116,8 @@ public final class Frame implements JumpTarget {
         this.self = frame.self;
         this.name = frame.name;
         this.klazz = frame.klazz;
-        this.position = frame.position;
+        this.fileName = frame.fileName;
+        this.line = frame.line;
         this.block = frame.block;
         this.jumpTarget = frame.jumpTarget;
         this.visibility = frame.visibility;
@@ -125,13 +127,14 @@ public final class Frame implements JumpTarget {
     }
 
     public void updateFrame(RubyModule klazz, IRubyObject self, String name,
-                 Block block, ISourcePosition position, JumpTarget jumpTarget) {
+                 Block block, String fileName, int line, JumpTarget jumpTarget) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
 
         this.self = self;
         this.name = name;
         this.klazz = klazz;
-        this.position = position;
+        this.fileName = fileName;
+        this.line = line;
         this.block = block;
         this.jumpTarget = jumpTarget;
         this.visibility = Visibility.PUBLIC;
@@ -140,9 +143,10 @@ public final class Frame implements JumpTarget {
         this.lastline = null;
     }
 
-    public void updateFrame(String name, ISourcePosition position) {
+    public void updateFrame(String name, String fileName, int line) {
         this.name = name;
-        this.position = position;
+        this.fileName = fileName;
+        this.line = line;
     }
     
     public Frame duplicate() {
@@ -169,15 +173,20 @@ public final class Frame implements JumpTarget {
         this.lastline = lastline;
     }
 
-    /**
-     * @return the frames current position
-     */
-    public ISourcePosition getPosition() {
-        return position;
+    public String getFile() {
+        return fileName;
+    }
+    
+    public int getLine() {
+        return line;
     }
 
-    public void setPosition(ISourcePosition pos) {
-        this.position = pos;
+    public void setFile(String fileName) {
+        this.fileName = fileName;
+    }
+    
+    public void setLine(int line) {
+        this.line = line;
     }
 
     /** 
@@ -285,7 +294,7 @@ public final class Frame implements JumpTarget {
      */
     public String toString() {
         StringBuffer sb = new StringBuffer(50);
-        sb.append(position != null ? position.toString() : "-1");
+        sb.append(fileName + ":" + line);
         sb.append(':');
         sb.append(klazz + " " + name);
         if (name != null) {

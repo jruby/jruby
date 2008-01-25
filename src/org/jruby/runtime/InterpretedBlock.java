@@ -35,7 +35,6 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
@@ -60,7 +59,9 @@ public class InterpretedBlock extends BlockBody {
 
     public static Block newInterpretedClosure(ThreadContext context, IterNode iterNode, IRubyObject self) {
         Frame f = context.getCurrentFrame();
-        f.setPosition(context.getPosition());
+        f.setFile(context.getFile());
+        f.setLine(context.getLine());
+
         return newInterpretedClosure(iterNode,
                          self,
                          Arity.procArityOf(iterNode.getVarNode()),
@@ -72,7 +73,9 @@ public class InterpretedBlock extends BlockBody {
 
     public static Block newInterpretedClosure(ThreadContext context, InterpretedBlock body, IRubyObject self) {
         Frame f = context.getCurrentFrame();
-        f.setPosition(context.getPosition());
+        f.setFile(context.getFile());
+        f.setLine(context.getLine());
+
         Binding binding = new Binding(self,
                          f,
                          f.getVisibility(),

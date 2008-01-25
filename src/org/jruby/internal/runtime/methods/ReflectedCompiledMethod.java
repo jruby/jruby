@@ -39,6 +39,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.EventHook;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -71,14 +72,14 @@ public class ReflectedCompiledMethod extends CompiledMethod {
             try {
                 if (isTrace) {
                     // XXX Wrong, but will have to do for now
-                    ISourcePosition position = context.getPosition();
-                    runtime.callEventHooks(context, EventHook.RUBY_EVENT_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
+                    runtime.callEventHooks(context, EventHook.RUBY_EVENT_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
                 }
                 return (IRubyObject)method.invoke($scriptObject, context, self, args, block);
             } finally {
                 if (isTrace) {
-                    ISourcePosition position = context.getPreviousFramePosition();
-                    runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
+                    Frame frame = context.getPreviousFrame();
+
+                    runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, frame.getFile(), frame.getLine(), name, getImplementationClass());
                 }
             }
             
