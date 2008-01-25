@@ -36,16 +36,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.lang.ref.SoftReference;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jruby.anno.JRubyMethod;
 
-import org.jruby.runtime.Arity;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -82,11 +82,10 @@ public class RubyTime extends RubyObject {
             = Pattern.compile("(\\D+?)([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
     
     private static final ByteList TZ_STRING = ByteList.create("TZ");
-    private static final ThreadLocal<Map<String, DateTimeZone>> LOCAL_ZONES_CACHE
-            = new ThreadLocal<Map<String,DateTimeZone>>();
+    private static SoftReference<Map<String, DateTimeZone>> LOCAL_ZONES_CACHE
+            = new SoftReference<Map<String,DateTimeZone>>(new HashMap<String,DateTimeZone>());
      
     public static DateTimeZone getLocalTimeZone(Ruby runtime) {
-        // TODO: cache the RubyString "TZ" so it doesn't need to be recreated for each call?
         RubyString tzVar = runtime.newString(TZ_STRING);
         RubyHash h = ((RubyHash)runtime.getObject().fastGetConstant("ENV"));
         IRubyObject tz = h.op_aref(tzVar);
@@ -101,8 +100,8 @@ public class RubyTime extends RubyObject {
                     return cachedZone;
                 }
             } else {
-                zonesCache = new WeakHashMap<String, DateTimeZone>();
-                LOCAL_ZONES_CACHE.set(zonesCache);
+                zonesCache = new HashMap<String, DateTimeZone>();
+                LOCAL_ZONES_CACHE = new SoftReference<Map<String,DateTimeZone>>(zonesCache);
             }
             String originalZone = zone;
 
