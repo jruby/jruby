@@ -150,7 +150,7 @@ public abstract class BaseNativePOSIX implements POSIX {
     
     public String readlink(String oldpath) {
         // TODO: this should not be hardcoded to 256 bytes
-        ByteBuffer buffer = ByteBuffer.allocateDirect(256);
+        ByteBuffer buffer = ByteBuffer.allocate(256);
         int result = libc.readlink(oldpath, buffer, buffer.capacity());
         
         if (result == -1) return null;
