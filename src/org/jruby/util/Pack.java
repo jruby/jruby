@@ -250,8 +250,8 @@ public class Pack {
         tmp = new Converter(8) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 long l = decodeLongLittleEndian(enc);
-                return RubyBignum.newBignum(runtime,
-                    BigInteger.valueOf(l).and(new BigInteger("FFFFFFFFFFFFFFFF", 16)));
+                return RubyBignum.bignorm(runtime,BigInteger.valueOf(l).and(
+                        new BigInteger("FFFFFFFFFFFFFFFF", 16)));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
                 long l = num2quad(o);
@@ -262,7 +262,7 @@ public class Pack {
 
         tmp = new Converter(8) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
-                return RubyBignum.newBignum(runtime, decodeLongLittleEndian(enc));
+                return runtime.newFixnum(decodeLongLittleEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
                 long l = num2quad(o);
