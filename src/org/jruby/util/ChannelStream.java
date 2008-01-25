@@ -52,14 +52,20 @@ import java.nio.channels.WritableByteChannel;
 import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
-import org.jruby.util.IOHandler.BadDescriptorException;
+import org.jruby.util.Stream.BadDescriptorException;
 import org.jruby.util.io.SplitChannel;
 
 /**
  * <p>This file implements a seekable IO file.</p>
  */
-public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizable {
+public class ChannelStream implements Stream, Finalizable {
     private final static int BUFSIZE = 16 * 1024;
+    
+    private Ruby runtime;
+    protected IOModes modes;
+    protected FileDescriptor fileDescriptor = null;
+    protected boolean isOpen = false;
+    protected boolean sync = false;
     
     protected ByteBuffer buffer; // r/w buffer
     protected boolean reading; // are we reading or writing?
@@ -67,8 +73,8 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     private boolean blocking = true;
     protected int ungotc = -1;
 
-    public IOHandlerNioBuffered(Ruby runtime, RubyIO.ChannelDescriptor descriptor, IOModes modes, FileDescriptor fileDescriptor) throws IOException {
-        super(runtime);
+    public ChannelStream(Ruby runtime, RubyIO.ChannelDescriptor descriptor, IOModes modes, FileDescriptor fileDescriptor) throws IOException {
+        this.runtime = runtime;
         this.descriptor = descriptor;
         this.isOpen = true;
         // TODO: Confirm modes correspond to the available modes on the channel
@@ -79,12 +85,12 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         this.fileDescriptor = fileDescriptor;
     }
 
-    public IOHandlerNioBuffered(Ruby runtime, RubyIO.ChannelDescriptor descriptor) throws IOException {
+    public ChannelStream(Ruby runtime, RubyIO.ChannelDescriptor descriptor) throws IOException {
         this(runtime, descriptor, (FileDescriptor) null);
     }
 
-    public IOHandlerNioBuffered(Ruby runtime, RubyIO.ChannelDescriptor descriptor, FileDescriptor fileDescriptor) throws IOException {
-        super(runtime);
+    public ChannelStream(Ruby runtime, RubyIO.ChannelDescriptor descriptor, FileDescriptor fileDescriptor) throws IOException {
+        this.runtime = runtime;
         String mode = "";
         this.descriptor = descriptor;
         if (descriptor.getChannel() instanceof ReadableByteChannel) {
@@ -114,8 +120,8 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         this.reading = true;
     }
 
-    public IOHandlerNioBuffered(Ruby runtime, RubyIO.ChannelDescriptor descriptor, IOModes modes) throws IOException {
-        super(runtime);
+    public ChannelStream(Ruby runtime, RubyIO.ChannelDescriptor descriptor, IOModes modes) throws IOException {
+        this.runtime = runtime;
         this.descriptor = descriptor;
         this.isOpen = true;
         // TODO: Confirm modes correspond to the available modes on the channel
@@ -124,12 +130,118 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         buffer.flip();
         this.reading = true;
     }
+    
+    public FileDescriptor getFD() {
+        return fileDescriptor;
+    }
 
-    public ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException {
+    public Ruby getRuntime() {
+        return runtime;
+    }
+    
+    public boolean isOpen() {
+        return isOpen;
+    }
+
+    public boolean isReadable() {
+        return modes.isReadable();
+    }
+
+    public boolean isWritable() {
+        return modes.isWritable();
+    }
+
+    public void checkOpen() throws BadDescriptorException {
+        if (!isOpen) throw new BadDescriptorException();
+    }
+    
+    public void checkReadable() throws IOException, BadDescriptorException {
+        if (!isOpen) throw new BadDescriptorException();
+        if (!modes.isReadable()) throw new IOException("not opened for reading");
+    }
+
+    public void checkWritable() throws IOException, BadDescriptorException {
+        if (!isOpen) throw new BadDescriptorException();
+        if (!modes.isWritable()) throw new IOException("not opened for writing");
+    }
+
+    public void checkPermissionsSubsetOf(IOModes subsetModes) {
+        subsetModes.checkSubsetOf(modes);
+    }
+    
+    public IOModes getModes() {
+    	return modes;
+    }
+    
+    public boolean isSync() {
+        return sync;
+    }
+
+    public void setSync(boolean sync) {
+        this.sync = sync;
+    }
+
+    public void reset(IOModes subsetModes) throws IOException, InvalidValueException, BadDescriptorException, PipeException {
+        checkPermissionsSubsetOf(subsetModes);
+        
+        resetByModes(subsetModes);
+    }
+
+    /**
+     * Implement IO#wait as per io/wait in MRI.
+     * waits until input available or timed out and returns self, or nil when EOF reached.
+     *
+     * The default implementation loops while ready returns 0.
+     */
+    public void waitUntilReady() throws IOException, InterruptedException {
+        while (ready() == 0) {
+            Thread.sleep(10);
+        }
+    }
+
+    public boolean hasPendingBuffered() {
+        return false;
+    }
+    
+    public static ByteList sysread(int number, ReadableByteChannel channel) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(number);
+        int bytes_read = 0;
+        bytes_read = channel.read(buffer);
+        if (bytes_read < 0) {
+            throw new EOFException();
+        }
+
+        byte[] ret;
+        if (buffer.hasRemaining()) {
+            buffer.flip();
+            ret = new byte[buffer.remaining()];
+            buffer.get(ret);
+        } else {
+            ret = buffer.array();
+        }
+        return new ByteList(ret,false);
+    }
+    
+    public static int syswrite(ByteList buf, WritableByteChannel channel) throws IOException {
+        // Ruby ignores empty syswrites
+        if (buf == null || buf.length() == 0) return 0;
+        
+        return channel.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+    }
+    
+    public static int syswrite(int c, WritableByteChannel channel) throws IOException {
+        ByteBuffer buf = ByteBuffer.allocate(1);
+        buf.put((byte)c);
+        buf.flip();
+        
+        return channel.write(buf);
+    }
+
+    public synchronized ByteList fgets(ByteList separatorString) throws IOException, BadDescriptorException {
         checkReadable();
 
         if (separatorString == null) {
-            return getsEntireStream();
+            return readall();
         }
 
         final ByteList separator = (separatorString == PARAGRAPH_DELIMETER) ?
@@ -203,7 +315,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         return buf;
     }
     
-    public ByteList getsEntireStream() throws IOException, BadDescriptorException {
+    public synchronized ByteList readall() throws IOException, BadDescriptorException {
         if (descriptor.isSeekable()) {
             invalidateBuffer();
             FileChannel channel = (FileChannel)descriptor.getChannel();
@@ -211,7 +323,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
             if (left == 0) return null;
 
             try {
-                return sysread((int) left);
+                return read((int) left);
             } catch (BadDescriptorException e) {
                 throw new IOException(e.getMessage()); // Ugh! But why rewrite the same code?
             }
@@ -223,11 +335,11 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
             }
 
             ByteList byteList = new ByteList();
-            ByteList read = read(BUFSIZE);
+            ByteList read = fread(BUFSIZE);
 
             while (read != null) {
                 byteList.append(read);
-                read = read(BUFSIZE);
+                read = fread(BUFSIZE);
             }
 
             return byteList;
@@ -241,7 +353,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * 
      * @see org.jruby.util.IOHandler#close()
      */
-    public void close() throws IOException, BadDescriptorException {
+    public synchronized void fclose() throws IOException, BadDescriptorException {
         close(false); // not closing from finalise
     }
     
@@ -273,7 +385,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#flush()
      */
-    public void flush() throws IOException, BadDescriptorException {
+    public synchronized void fflush() throws IOException, BadDescriptorException {
         checkWritable();
         flushWrite();
     }
@@ -293,14 +405,14 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     /**
      * @see org.jruby.util.IOHandler#getInputStream()
      */
-    public InputStream getInputStream() {
+    public InputStream newInputStream() {
         return new BufferedInputStream(Channels.newInputStream((ReadableByteChannel)descriptor.getChannel()));
     }
 
     /**
      * @see org.jruby.util.IOHandler#getOutputStream()
      */
-    public OutputStream getOutputStream() {
+    public OutputStream newOutputStream() {
         return new BufferedOutputStream(Channels.newOutputStream((WritableByteChannel)descriptor.getChannel()));
     }
     
@@ -309,7 +421,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#isEOF()
      */
-    public boolean isEOF() throws IOException, BadDescriptorException {
+    public synchronized boolean feof() throws IOException, BadDescriptorException {
         checkReadable();
         
         if (reading && buffer.hasRemaining()) return false;
@@ -338,18 +450,10 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     }
     
     /**
-     * @see org.jruby.util.IOHandler#pid()
-     */
-    public int pid() {
-        // A file is not a process.
-        return -1;
-    }
-    
-    /**
      * @throws IOException 
      * @see org.jruby.util.IOHandler#pos()
      */
-    public long pos() throws IOException, BadDescriptorException {
+    public synchronized long fgetpos() throws IOException, BadDescriptorException {
         checkOpen();
         // Correct position for read / write buffering (we could invalidate, but expensive)
         int offset = (reading) ? - buffer.remaining() : buffer.position();
@@ -357,10 +461,10 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         return fileChannel.position() + offset;
     }
     
-    public void resetByModes(IOModes newModes) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
+    public synchronized void resetByModes(IOModes newModes) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         if (descriptor.getChannel() instanceof FileChannel) {
             if (newModes.isAppendable()) {
-                seek(0L, SEEK_END);
+                fseek(0L, SEEK_END);
             } else if (newModes.isWritable()) {
                 try {
                     rewind();
@@ -375,7 +479,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @see org.jruby.util.IOHandler#rewind()
      */
     public void rewind() throws IOException, InvalidValueException, PipeException, BadDescriptorException {
-        seek(0, SEEK_SET);
+        fseek(0, SEEK_SET);
     }
     
     /**
@@ -383,7 +487,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws InvalidValueException 
      * @see org.jruby.util.IOHandler#seek(long, int)
      */
-    public void seek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
+    public synchronized void fseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         checkOpen();
         if (descriptor.getChannel() instanceof FileChannel) {
             invalidateBuffer();
@@ -404,7 +508,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
                 throw new InvalidValueException();
             }
         } else {
-            throw new AbstractIOHandler.PipeException();
+            throw new Stream.PipeException();
         }
     }
 
@@ -413,25 +517,6 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      */
     public void sync() throws IOException {
         flushWrite();
-    }
-
-    /**
-     * Put one buffer into another, truncating the put (rather than throwing an exception)
-     * if src doesn't fit into dest. Shame this doesn't exist already.
-     * @param dest The destination buffer which will receive bytes
-     * @param src The buffer to read bytes from
-     */
-    private static void putInto(ByteBuffer dest, ByteBuffer src) {
-        int destAvail = dest.capacity() - dest.position();
-        if (src.remaining() > destAvail) { // already have more than enough bytes available
-            // ByteBuffer seems to be missing a useful method here
-            int oldLimit = src.limit();
-            src.limit(src.position() + destAvail);
-            dest.put(src);
-            src.limit(oldLimit);
-        } else {
-            dest.put(src);
-        }
     }
 
     /**
@@ -495,7 +580,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         resetForWrite();
     }
 
-    public ByteList sysread(int number) throws IOException, BadDescriptorException {
+    public synchronized ByteList read(int number) throws IOException, BadDescriptorException {
         checkOpen();
         checkReadable();
         ensureReadNonBuffered();
@@ -508,7 +593,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int syswrite(ByteList buf) throws IOException, BadDescriptorException {
+    public synchronized int write(ByteList buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWritable();
         ensureWriteNonBuffered();
@@ -521,7 +606,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int syswrite(int c) throws IOException, BadDescriptorException {
+    public synchronized int write(int c) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWritable();
         ensureWriteNonBuffered();
@@ -529,7 +614,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         return syswrite(c, (WritableByteChannel)descriptor.getChannel());
     }
 
-    public ByteList bufferedRead(int number) throws IOException, BadDescriptorException {
+    private ByteList bufferedRead(int number) throws IOException, BadDescriptorException {
         checkOpen();
         checkReadable();
         ensureRead();
@@ -557,10 +642,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         return result;
     }
     
-    /**
-     * @see org.jruby.util.IOHandler#sysread()
-     */
-    public int bufferedRead() throws IOException {
+    private int bufferedRead() throws IOException {
         ensureRead();
         
         if (!buffer.hasRemaining()) {
@@ -578,7 +660,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int bufferedWrite(ByteList buf) throws IOException, BadDescriptorException {
+    private int bufferedWrite(ByteList buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWritable();
         ensureWrite();
@@ -606,7 +688,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int bufferedWrite(int c) throws IOException, BadDescriptorException {
+    private int bufferedWrite(int c) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWritable();
         ensureWrite();
@@ -620,7 +702,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         return 1;
     }
     
-    public void truncate(long newLength) throws IOException {
+    public synchronized void ftruncate(long newLength) throws IOException {
         invalidateBuffer();
         FileChannel fileChannel = (FileChannel)descriptor.getChannel();
         if (newLength > fileChannel.size()) {
@@ -670,13 +752,13 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
     }
     
     public int ready() throws IOException {
-        return getInputStream().available();
+        return newInputStream().available();
     }
 
-    public void putc(int c) throws IOException, BadDescriptorException {
+    public synchronized void fputc(int c) throws IOException, BadDescriptorException {
         try {
             bufferedWrite(c);
-            flush();
+            fflush();
         } catch (IOException e) {
         }
     }
@@ -688,7 +770,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         }
     }
 
-    public int getc() throws IOException, BadDescriptorException {
+    public synchronized int fgetc() throws IOException, BadDescriptorException {
         checkReadable();
 
         int c = read();
@@ -699,11 +781,11 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         return c & 0xff;
     }
 
-    public int write(ByteList string) throws IOException, BadDescriptorException {
+    public synchronized int fwrite(ByteList string) throws IOException, BadDescriptorException {
         return bufferedWrite(string);
     }
 
-    public ByteList read(int number) throws IOException, BadDescriptorException {
+    public synchronized ByteList fread(int number) throws IOException, BadDescriptorException {
         try {
 
             if (ungotc >= 0) {
@@ -719,7 +801,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         }
     }
 
-    public ByteList readpartial(int number) throws IOException, BadDescriptorException, EOFException {
+    public synchronized ByteList readpartial(int number) throws IOException, BadDescriptorException, EOFException {
         if (descriptor.getChannel() instanceof SelectableChannel) {
             if (ungotc >= 0) {
                 ByteList buf2 = bufferedRead(number - 1);
@@ -734,7 +816,7 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         }
     }
 
-    public int read() throws IOException {
+    public synchronized int read() throws IOException {
         try {
             if (ungotc >= 0) {
                 int c = ungotc;
@@ -766,11 +848,11 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         }
     }
 
-    public boolean getBlocking() {
+    public boolean isBlocking() {
         return blocking;
     }
 
-    public void freopen(String path, IOModes modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException {
+    public synchronized void freopen(String path, IOModes modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException {
         // flush first
         flushWrite();
         
@@ -802,10 +884,10 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
         
         fileDescriptor = file.getFD();
         
-        if (modes.isAppendable()) seek(0, SEEK_END);
+        if (modes.isAppendable()) fseek(0, SEEK_END);
     }
     
-    public static IOHandler fopen(Ruby runtime, String path, IOModes modes) throws DirectoryAsFileException, IOException, PipeException, InvalidValueException, BadDescriptorException {
+    public static Stream fopen(Ruby runtime, String path, IOModes modes) throws DirectoryAsFileException, IOException, PipeException, InvalidValueException, BadDescriptorException {
         String cwd = runtime.getCurrentDirectory();
         JRubyFile theFile = JRubyFile.create(cwd,path);
 
@@ -829,14 +911,14 @@ public class IOHandlerNioBuffered extends AbstractIOHandler implements Finalizab
 
         RubyIO.ChannelDescriptor descriptor = new RubyIO.ChannelDescriptor(file.getChannel(), RubyIO.getNewFileno());
         
-        IOHandler handler = new IOHandlerNioBuffered(runtime, descriptor, modes, file.getFD());
+        Stream handler = new ChannelStream(runtime, descriptor, modes, file.getFD());
         
-        if (modes.isAppendable()) handler.seek(0, IOHandler.SEEK_END);
+        if (modes.isAppendable()) handler.fseek(0, Stream.SEEK_END);
         
         return handler;
     }
 
-    public void closeWrite() throws IOException, BadDescriptorException {
+    public synchronized void closeWrite() throws IOException, BadDescriptorException {
         checkOpen();
         flushWrite();
         

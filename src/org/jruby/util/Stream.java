@@ -39,7 +39,7 @@ import org.jruby.RubyIO.ChannelDescriptor;
 
 /**
  */
-public interface IOHandler {
+public interface Stream {
     public static final int SEEK_SET = 0;
     public static final int SEEK_CUR = 1;
     public static final int SEEK_END = 2;
@@ -52,8 +52,6 @@ public interface IOHandler {
     public FileDescriptor getFD();
     
     public ChannelDescriptor getDescriptor();
-
-    public Ruby getRuntime();
     
     public abstract FileChannel getFileChannel();
     
@@ -62,43 +60,34 @@ public interface IOHandler {
     public boolean isReadable();
 
     public boolean isWritable();
-
-    public void checkOpen() throws IOException, BadDescriptorException;
-    
-    public void checkReadable() throws IOException, BadDescriptorException;
-
-    public void checkWritable() throws IOException, BadDescriptorException;
-
-    public void checkPermissionsSubsetOf(IOModes subsetModes);
     
     public IOModes getModes();
     
     public boolean isSync();
 
-    public void setSync(boolean isSync);
+    public void setSync(boolean sync);
 
     public void reset(IOModes subsetModes) throws IOException, InvalidValueException, BadDescriptorException, PipeException;
 
-    public abstract ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException, EOFException;
-    public abstract ByteList getsEntireStream() throws IOException, BadDescriptorException, EOFException;
+    public abstract ByteList fgets(ByteList separatorString) throws IOException, BadDescriptorException, EOFException;
+    public abstract ByteList readall() throws IOException, BadDescriptorException, EOFException;
 
     // TODO: We overflow on large files...We could increase to long to limit
     // this, but then the impl gets more involved since java io APIs based on
     // int (means we have to chunk up a long into a series of int ops).
 
-    public abstract ByteList read(int number) throws IOException, BadDescriptorException, EOFException;
-    public abstract int write(ByteList string) throws IOException, BadDescriptorException;
+    public abstract ByteList fread(int number) throws IOException, BadDescriptorException, EOFException;
+    public abstract int fwrite(ByteList string) throws IOException, BadDescriptorException;
 
-    public abstract int getc() throws IOException, BadDescriptorException, EOFException;
+    public abstract int fgetc() throws IOException, BadDescriptorException, EOFException;
     public abstract void ungetc(int c);
-    public abstract void putc(int c) throws IOException, BadDescriptorException;
+    public abstract void fputc(int c) throws IOException, BadDescriptorException;
     
-    public abstract ByteList sysread(int number) throws IOException, BadDescriptorException, EOFException;
-    public abstract int syswrite(ByteList buf) throws IOException, BadDescriptorException;
-    public abstract int syswrite(int ch) throws IOException, BadDescriptorException;
+    public abstract ByteList read(int number) throws IOException, BadDescriptorException, EOFException;
+    public abstract int write(ByteList buf) throws IOException, BadDescriptorException;
     
-    public abstract void close() throws IOException, BadDescriptorException;
-    public abstract void flush() throws IOException, BadDescriptorException;
+    public abstract void fclose() throws IOException, BadDescriptorException;
+    public abstract void fflush() throws IOException, BadDescriptorException;
 
     public void closeWrite() throws IOException, BadDescriptorException;
     
@@ -116,14 +105,7 @@ public interface IOHandler {
      * @throws IOException 
      * @throws BadDescriptorException 
      */
-    public boolean isEOF() throws IOException, BadDescriptorException;
-    
-    /**
-     * <p>Get the process ID associated with this handler.</p>
-     * 
-     * @return the pid if the IOHandler represents a process; otherwise -1
-     */
-    public int pid();
+    public boolean feof() throws IOException, BadDescriptorException;
     
     /**
      * <p>Get the current position within the file associated with this
@@ -134,9 +116,8 @@ public interface IOHandler {
      * @throws PipeException ESPIPE (illegal seek) when not a file 
      * 
      */
-    public long pos() throws IOException, PipeException, BadDescriptorException;
+    public long fgetpos() throws IOException, PipeException, BadDescriptorException;
     
-    public void resetByModes(IOModes newModes) throws IOException, InvalidValueException, PipeException, BadDescriptorException;
     public void rewind() throws IOException, PipeException, InvalidValueException, BadDescriptorException;
     
     /**
@@ -145,8 +126,8 @@ public interface IOHandler {
      * @throws PipeException 
      * @throws InvalidValueException 
      */
-    public void seek(long offset, int type) throws IOException, PipeException, InvalidValueException, BadDescriptorException;
-    public void truncate(long newLength) throws IOException, PipeException;
+    public void fseek(long offset, int type) throws IOException, PipeException, InvalidValueException, BadDescriptorException;
+    public void ftruncate(long newLength) throws IOException, PipeException;
     
     /**
      * Implement IO#ready? as per io/wait in MRI.
@@ -164,11 +145,11 @@ public interface IOHandler {
 
     public boolean hasPendingBuffered();
     
-    public InputStream getInputStream();
+    public InputStream newInputStream();
     
-    public OutputStream getOutputStream();
+    public OutputStream newOutputStream();
     
-    public boolean getBlocking();
+    public boolean isBlocking();
     
     public void setBlocking(boolean blocking) throws IOException;
     

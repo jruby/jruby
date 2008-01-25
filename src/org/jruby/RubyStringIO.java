@@ -40,7 +40,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import org.jruby.util.IOHandler;
+import org.jruby.util.Stream;
 import org.jruby.util.ByteList;
 
 public class RubyStringIO extends RubyObject {
@@ -588,14 +588,14 @@ public class RubyStringIO extends RubyObject {
     @JRubyMethod(name = "seek", required = 1, optional = 1)
     public IRubyObject seek(IRubyObject[] args) {
         long amount = RubyNumeric.fix2long(args[0]);
-        int whence = IOHandler.SEEK_SET;
+        int whence = Stream.SEEK_SET;
         long newPosition = pos;
 
         if (args.length > 1 && !args[0].isNil()) whence = RubyNumeric.fix2int(args[1]);
 
-        if (whence == IOHandler.SEEK_CUR) {
+        if (whence == Stream.SEEK_CUR) {
             newPosition += amount;
-        } else if (whence == IOHandler.SEEK_END) {
+        } else if (whence == Stream.SEEK_END) {
             newPosition = internal.getByteList().length() + amount;
         } else {
             newPosition = amount;

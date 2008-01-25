@@ -42,8 +42,8 @@ import org.jruby.RubyString;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.IOHandler;
-import org.jruby.util.IOHandlerNioBuffered;
+import org.jruby.util.Stream;
+import org.jruby.util.ChannelStream;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -79,22 +79,21 @@ public class RubyBasicSocket extends RubyIO {
     protected void setChannel(Channel c) {
         this.socketChannel = c;
         try {
-            openFile.handler = new IOHandlerNioBuffered(getRuntime(), 
-                    new ChannelDescriptor(socketChannel, getNewFileno()));
-            openFile.handler.setSync(true);
+            openFile.setMainStream(new ChannelStream(getRuntime(), new ChannelDescriptor(socketChannel, getNewFileno())));
+            openFile.getMainStream().setSync(true);
     	} catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
         }
-        registerIOHandler(openFile.handler);
-        openFile.modes = openFile.handler.getModes();
+        registerIOHandler(openFile.getMainStream());
+        openFile.setModes(openFile.getMainStream().getModes());
     }
 
     @Override
     public IRubyObject close_write() {
         try {
             ((SocketChannel)this.socketChannel).socket().shutdownOutput();
-            openFile.handler.closeWrite();
-        } catch (IOHandler.BadDescriptorException bde) {
+            openFile.getMainStream().closeWrite();
+        } catch (Stream.BadDescriptorException bde) {
             throw getRuntime().newErrnoEBADFError();
     	} catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
@@ -108,8 +107,8 @@ public class RubyBasicSocket extends RubyIO {
     
     public IRubyObject recv(IRubyObject[] args) {
         try {
-            return RubyString.newString(getRuntime(), openFile.handler.sysread(RubyNumeric.fix2int(args[0])));
-        } catch (IOHandler.BadDescriptorException e) {
+            return RubyString.newString(getRuntime(), openFile.getMainStream().read(RubyNumeric.fix2int(args[0])));
+        } catch (Stream.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {
             // recv returns nil on EOF
