@@ -1,2 +1,0 @@
-BasicSocket#getsockopt gets a socket option
-BasicSocket#getsockopt raises a SystemCallError with an invalid socket option

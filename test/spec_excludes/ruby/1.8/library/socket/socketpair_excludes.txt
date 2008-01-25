@@ -1,1 +1,0 @@
-Socket#socketpair ensures the returned sockets are connected
