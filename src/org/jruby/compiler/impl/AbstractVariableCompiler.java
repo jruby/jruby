@@ -48,17 +48,20 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
     protected StandardASMCompiler.AbstractMethodCompiler methodCompiler;
     protected int argsIndex;
     protected int closureIndex;
+    protected int tempVariableIndex;
     protected Arity arity;
 
     public AbstractVariableCompiler(
             StandardASMCompiler.AbstractMethodCompiler methodCompiler,
             SkinnyMethodAdapter method,
             int argsIndex,
-            int closureIndex) {
+            int closureIndex,
+            int firstTempIndex) {
         this.methodCompiler = methodCompiler;
         this.method = method;
         this.argsIndex = argsIndex;
         this.closureIndex = closureIndex;
+        this.tempVariableIndex = firstTempIndex;
     }
     
     public SkinnyMethodAdapter getMethodAdapter() {
@@ -235,5 +238,21 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             blockAssignment.call(methodCompiler);
             method.pop();
         }
+    }
+        
+    public int grabTempLocal() {
+        return tempVariableIndex++;
+    }
+
+    public void setTempLocal(int index) {
+        method.astore(index);
+    }
+
+    public void getTempLocal(int index) {
+        method.aload(index);
+    }
+
+    public void releaseTempLocal() {
+        tempVariableIndex--;
     }
 }

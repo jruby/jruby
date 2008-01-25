@@ -82,7 +82,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.pop(); // [val]
     }
 
-    public void invokeAttrAssignSimple(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+    public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
         Label variableCallType = new Label();
         Label readyForCall = new Label();
         
@@ -103,21 +103,57 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // call site under receiver
         method.swap();
         
-        // load single argument and dup it under  call site
-        argsCallback.call(methodCompiler);
-        method.dup_x2();
-        
         // load thread context under receiver
         methodCompiler.loadThreadContext();
-        method.dup_x2();
-        method.pop();
+        method.swap();
+        
+        String signature = null;
+        switch (argsCallback.getArity()) {
+        case 1:
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
+            break;
+        case 2:
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            break;
+        case 3:
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            break;
+        default:
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject[].class));
+        }
+        
+        argsCallback.call(methodCompiler);
+        
+        
+        // store in temp variable
+        int tempLocal = methodCompiler.variableCompiler.grabTempLocal();
+        switch (argsCallback.getArity()) {
+        case 1:
+        case 2:
+        case 3:
+            // specific-arity args, just save off top of stack
+            method.dup();
+            break;
+        default:
+            // variable-arity args, peel off and save the last argument in the array
+            method.dup(); // [args, args]
+            method.dup(); // [args, args, args]
+            method.arraylength(); // [args, args, len]
+            method.iconst_1(); // [args, args, len, 1]
+            method.isub(); // [args, args, len-1]
+            // load from array
+            method.arrayload(); // [args, val]
+        }
+        methodCompiler.variableCompiler.setTempLocal(tempLocal);
         
         // invoke call site
-        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
         method.invokevirtual(p(CallSite.class), "call", signature);
         
-        // pop the return value leaving the dup'ed args on the stack
+        // pop the return value and restore the dup'ed arg on the stack
         method.pop();
+        
+        methodCompiler.variableCompiler.getTempLocal(tempLocal);
+        methodCompiler.variableCompiler.releaseTempLocal();
     }
     
     public void opElementAsgn(CompilerCallback valueCallback, String operator) {

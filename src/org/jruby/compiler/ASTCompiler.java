@@ -621,24 +621,7 @@ public class ASTCompiler {
         context.concatArrays();
     }
 
-    public void compileAttrAssign(Node node, MethodCompiler context) {
-        context.lineNumber(node.getPosition());
-
-        AttrAssignNode attrAssignNode = (AttrAssignNode) node;
-        
-        // if one arg, it's a simple attr assign
-        if (attrAssignNode.getArgsNode().childNodes().size() == 1) {
-            compileAttrAssignSimple(attrAssignNode, context);
-        } else {
-            // more complex attr assign, as in a[1,2] = 3
-            compile(attrAssignNode.getReceiverNode(), context);
-            compileArguments(attrAssignNode.getArgsNode(), context);
-
-            context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName());
-        }
-    }
-
-    private void compileAttrAssignSimple(Node node, MethodCompiler context) {
+    private void compileAttrAssign(Node node, MethodCompiler context) {
         context.lineNumber(node.getPosition());
 
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
@@ -649,20 +632,9 @@ public class ASTCompiler {
             }
         };
         
-        assert attrAssignNode.getArgsNode() instanceof ArrayNode : "attr assign with non-array args node";
-        ArrayNode arrayNode = (ArrayNode)attrAssignNode.getArgsNode();
-        
-        ArgumentsCallback argsCallback = null;
-        if (arrayNode.get(0) == null) {
-            argsCallback = new ArgumentsCallback() {
-                public int getArity() { return 1; }
-                public void call(MethodCompiler context) { context.loadNil(); }
-            };
-        } else {
-            argsCallback = getArgsCallback(arrayNode.get(0));
-        }
+        ArgumentsCallback argsCallback = getArgsCallback(attrAssignNode.getArgsNode());
 
-        context.getInvocationCompiler().invokeAttrAssignSimple(attrAssignNode.getName(), receiverCallback, argsCallback);
+        context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName(), receiverCallback, argsCallback);
     }
 
     public void compileAttrAssignAssignment(Node node, MethodCompiler context) {

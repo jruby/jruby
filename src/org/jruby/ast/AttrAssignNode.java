@@ -49,6 +49,9 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         this.receiverNode = receiverNode;
         this.name = name;
         this.argsNode = argsNode;
+        if (argsNode instanceof ArrayNode) {
+            ((ArrayNode)argsNode).setLightweight(true);
+        }
     }
 
     /**
@@ -93,6 +96,9 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
      */
     public void setArgsNode(Node argsNode) {
         this.argsNode = argsNode;
+        if (argsNode instanceof ArrayNode) {
+            ((ArrayNode)argsNode).setLightweight(true);
+        }
     }
 
     public List<Node> childNodes() {

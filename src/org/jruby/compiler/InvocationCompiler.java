@@ -52,7 +52,7 @@ public interface InvocationCompiler {
      * Attr assign calls have slightly different semantics that normal calls, so this method handles those additional semantics.
      */
     public void invokeAttrAssign(String name);
-    public void invokeAttrAssignSimple(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback);
+    public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback);
     
     public void opElementAsgn(CompilerCallback valueCallback, String operator);
     

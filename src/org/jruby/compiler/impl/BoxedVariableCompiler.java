@@ -43,8 +43,9 @@ public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
             int scopeIndex,
             int varsIndex,
             int argsIndex,
-            int closureIndex) {
-        super(methodCompiler, method,scopeIndex, varsIndex, argsIndex, closureIndex);
+            int closureIndex,
+            int firstTempIndex) {
+        super(methodCompiler, method,scopeIndex, varsIndex, argsIndex, closureIndex, firstTempIndex);
         
         this.scopeIndex = scopeIndex;
         this.varsIndex = varsIndex;
@@ -60,6 +61,9 @@ public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
                 if (scope.isCaptured(i)) continue;
                 
                 assignLocalVariable(i);
+                
+                // move the first temp index up for each stack-based var
+                tempVariableIndex++;
             }
             method.pop();
         }

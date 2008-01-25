@@ -77,8 +77,8 @@ foo = Foo.new
 
 (ARGV[0] || 10).to_i.times {
   Benchmark.bm(20) {|bm|
-    bm.report("control") { 10000.times { foo.control } }
-    bm.report("100 asgns") { 10000.times { foo.hundred_assigns } }
-    bm.report("100 array asgns") { 10000.times { foo.hundred_array_assigns } }
+    bm.report("control") { 100000.times { foo.control } }
+    bm.report("100 asgns") { 100000.times { foo.hundred_assigns } }
+    bm.report("100 array asgns") { 100000.times { foo.hundred_array_assigns } }
   }
 }

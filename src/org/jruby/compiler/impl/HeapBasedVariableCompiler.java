@@ -48,8 +48,9 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             int scopeIndex,
             int varsIndex,
             int argsIndex,
-            int closureIndex) {
-        super(methodCompiler, method, argsIndex, closureIndex);
+            int closureIndex,
+            int firstTempIndex) {
+        super(methodCompiler, method, argsIndex, closureIndex, firstTempIndex);
         
         this.scopeIndex = scopeIndex;
         this.varsIndex = varsIndex;
@@ -72,6 +73,8 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         if (argsCallback != null) {
             argsCallback.call(methodCompiler);
         }
+        
+        // default for starting tempVariableIndex is ok
     }
 
     public void beginClass(CompilerCallback bodyPrep, StaticScope scope) {

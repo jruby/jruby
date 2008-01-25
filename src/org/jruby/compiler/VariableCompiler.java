@@ -61,4 +61,8 @@ public interface VariableCompiler {
             ArrayCallback optNotGivenAssignment,
             CompilerCallback restAssignment,
             CompilerCallback blockAssignment);
+    public int grabTempLocal();
+    public void setTempLocal(int index);
+    public void getTempLocal(int index);
+    public void releaseTempLocal();
 }

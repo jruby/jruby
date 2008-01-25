@@ -42,8 +42,14 @@ import static org.jruby.util.CodegenUtils.*;
 public class StackBasedVariableCompiler extends AbstractVariableCompiler {
     private int scopeIndex; // the index of the dynamic scope for higher scopes
 
-    public StackBasedVariableCompiler(StandardASMCompiler.AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method, int scopeIndex, int argsIndex, int closureIndex) {
-        super(methodCompiler, method, argsIndex, closureIndex);
+    public StackBasedVariableCompiler(
+            StandardASMCompiler.AbstractMethodCompiler methodCompiler,
+            SkinnyMethodAdapter method,
+            int scopeIndex,
+            int argsIndex,
+            int closureIndex,
+            int firstTempIndex) {
+        super(methodCompiler, method, argsIndex, closureIndex, firstTempIndex);
         this.scopeIndex = scopeIndex;
     }
 
@@ -54,6 +60,9 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
             assignLocalVariable(i);
         }
         method.pop();
+        
+        // temp locals must start after last real local
+        tempVariableIndex += scope.getNumberOfVariables();
         
         if (argsCallback != null) {
             argsCallback.call(methodCompiler);
