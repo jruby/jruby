@@ -2142,6 +2142,10 @@ public final class Ruby {
         return newRaiseException(fastGetModule("Errno").fastGetClass("EBADF"), "Bad file descriptor");
     }
 
+    public RaiseException newErrnoENOPROTOOPTError() {
+        return newRaiseException(fastGetModule("Errno").fastGetClass("ENOPROTOOPT"), "Protocol not available");
+    }
+
     public RaiseException newErrnoEPIPEError() {
         return newRaiseException(fastGetModule("Errno").fastGetClass("EPIPE"), "Broken pipe");
     }

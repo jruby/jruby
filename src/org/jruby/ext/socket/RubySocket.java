@@ -80,6 +80,28 @@ public class RubySocket extends RubyBasicSocket {
     public static final int NI_NUMERICHOST = 2;
     public static final int NI_NUMERICSERV = 8;
 
+    public static final int SOL_IP = 0;
+    public static final int SOL_SOCKET = 1;
+    public static final int SOL_TCP = 6;
+    public static final int SOL_UDP = 17;
+
+    public static final int SO_BROADCAST = 32;
+    public static final int SO_DEBUG = 1;
+    public static final int SO_DONTROUTE = 16;
+    public static final int SO_ERROR = 4103;
+    public static final int SO_KEEPALIVE = 8;
+    public static final int SO_LINGER = 128;
+    public static final int SO_OOBINLINE = 256;
+    public static final int SO_RCVBUF = 4098;
+    public static final int SO_RCVLOWAT = 4100;
+    public static final int SO_RCVTIMEO = 4102;
+    public static final int SO_REUSEADDR = 4;
+    public static final int SO_SNDBUF = 4097;
+    public static final int SO_SNDLOWAT = 4099;
+    public static final int SO_SNDTIMEO = 4101;
+    public static final int SO_TIMESTAMP = 1024;
+    public static final int SO_TYPE = 4104;
+
     static void createSocket(Ruby runtime) {
         RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.fastGetClass("BasicSocket"), SOCKET_ALLOCATOR);
         CallbackFactory cfact = runtime.callbackFactory(RubySocket.class);
@@ -95,10 +117,10 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.fastSetConstant("AF_INET", runtime.newFixnum(2));
         // mandatory constants we haven't implemented
         rb_mConstants.fastSetConstant("MSG_OOB", runtime.newFixnum(0x01));
-        rb_mConstants.fastSetConstant("SOL_SOCKET", runtime.newFixnum(1));
-        rb_mConstants.fastSetConstant("SOL_IP", runtime.newFixnum(0));
-        rb_mConstants.fastSetConstant("SOL_TCP", runtime.newFixnum(6));
-        rb_mConstants.fastSetConstant("SOL_UDP", runtime.newFixnum(17));
+        rb_mConstants.fastSetConstant("SOL_SOCKET", runtime.newFixnum(SOL_SOCKET));
+        rb_mConstants.fastSetConstant("SOL_IP", runtime.newFixnum(SOL_IP));
+        rb_mConstants.fastSetConstant("SOL_TCP", runtime.newFixnum(SOL_TCP));
+        rb_mConstants.fastSetConstant("SOL_UDP", runtime.newFixnum(SOL_UDP));
         rb_mConstants.fastSetConstant("IPPROTO_IP", runtime.newFixnum(0));
         rb_mConstants.fastSetConstant("IPPROTO_ICMP", runtime.newFixnum(1));
         rb_mConstants.fastSetConstant("IPPROTO_TCP", runtime.newFixnum(6));
@@ -120,23 +142,22 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.fastSetConstant("AI_PASSIVE", runtime.newFixnum(1));
 
         // constants from MacOS X 10.4
-
-        rb_mConstants.fastSetConstant("SO_BROADCAST", runtime.newFixnum(32));
-        rb_mConstants.fastSetConstant("SO_DEBUG", runtime.newFixnum(1));
-        rb_mConstants.fastSetConstant("SO_DONTROUTE", runtime.newFixnum(16));
-        rb_mConstants.fastSetConstant("SO_ERROR", runtime.newFixnum(4103));
-        rb_mConstants.fastSetConstant("SO_KEEPALIVE", runtime.newFixnum(8));
-        rb_mConstants.fastSetConstant("SO_LINGER", runtime.newFixnum(128));
-        rb_mConstants.fastSetConstant("SO_OOBINLINE", runtime.newFixnum(256));
-        rb_mConstants.fastSetConstant("SO_RCVBUF", runtime.newFixnum(4098));
-        rb_mConstants.fastSetConstant("SO_RCVLOWAT", runtime.newFixnum(4100));
-        rb_mConstants.fastSetConstant("SO_RCVTIMEO", runtime.newFixnum(4102));
-        rb_mConstants.fastSetConstant("SO_REUSEADDR", runtime.newFixnum(4));
-        rb_mConstants.fastSetConstant("SO_SNDBUF", runtime.newFixnum(4097));
-        rb_mConstants.fastSetConstant("SO_SNDLOWAT", runtime.newFixnum(4099));
-        rb_mConstants.fastSetConstant("SO_SNDTIMEO", runtime.newFixnum(4101));
-        rb_mConstants.fastSetConstant("SO_TIMESTAMP", runtime.newFixnum(1024));
-        rb_mConstants.fastSetConstant("SO_TYPE", runtime.newFixnum(4104));
+        rb_mConstants.fastSetConstant("SO_BROADCAST", runtime.newFixnum(SO_BROADCAST));
+        rb_mConstants.fastSetConstant("SO_DEBUG", runtime.newFixnum(SO_DEBUG));
+        rb_mConstants.fastSetConstant("SO_DONTROUTE", runtime.newFixnum(SO_DONTROUTE));
+        rb_mConstants.fastSetConstant("SO_ERROR", runtime.newFixnum(SO_ERROR));
+        rb_mConstants.fastSetConstant("SO_KEEPALIVE", runtime.newFixnum(SO_KEEPALIVE));
+        rb_mConstants.fastSetConstant("SO_LINGER", runtime.newFixnum(SO_LINGER));
+        rb_mConstants.fastSetConstant("SO_OOBINLINE", runtime.newFixnum(SO_OOBINLINE));
+        rb_mConstants.fastSetConstant("SO_RCVBUF", runtime.newFixnum(SO_RCVBUF));
+        rb_mConstants.fastSetConstant("SO_RCVLOWAT", runtime.newFixnum(SO_RCVLOWAT));
+        rb_mConstants.fastSetConstant("SO_RCVTIMEO", runtime.newFixnum(SO_RCVTIMEO));
+        rb_mConstants.fastSetConstant("SO_REUSEADDR", runtime.newFixnum(SO_REUSEADDR));
+        rb_mConstants.fastSetConstant("SO_SNDBUF", runtime.newFixnum(SO_SNDBUF));
+        rb_mConstants.fastSetConstant("SO_SNDLOWAT", runtime.newFixnum(SO_SNDLOWAT));
+        rb_mConstants.fastSetConstant("SO_SNDTIMEO", runtime.newFixnum(SO_SNDTIMEO));
+        rb_mConstants.fastSetConstant("SO_TIMESTAMP", runtime.newFixnum(SO_TIMESTAMP));
+        rb_mConstants.fastSetConstant("SO_TYPE", runtime.newFixnum(SO_TYPE));
 
         // drb needs defined
         rb_mConstants.fastSetConstant("TCP_NODELAY", runtime.newFixnum(1));
