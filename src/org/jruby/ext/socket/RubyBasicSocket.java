@@ -32,6 +32,10 @@ import java.io.IOException;
 import java.nio.channels.Channel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.DatagramChannel;
+import java.net.Socket;
+import java.net.ServerSocket;
+import java.net.DatagramSocket;
 import java.net.SocketAddress;
 import java.net.InetSocketAddress;
 import org.jruby.Ruby;
@@ -148,56 +152,154 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
-    public IRubyObject getsockopt(IRubyObject lev, IRubyObject optname) {
-        int level = RubyNumeric.fix2int(lev);
-        int opt = RubyNumeric.fix2int(optname);
-        switch(level) {
-        case RubySocket.SOL_IP:
-        case RubySocket.SOL_SOCKET:
-        case RubySocket.SOL_TCP:
-        case RubySocket.SOL_UDP:
-            switch(opt) {
-            case RubySocket.SO_BROADCAST:
-                break;
-            case RubySocket.SO_DEBUG:
-                break;
-            case RubySocket.SO_DONTROUTE:
-                break;
-            case RubySocket.SO_ERROR:
-                break;
-            case RubySocket.SO_KEEPALIVE:
-                break;
-            case RubySocket.SO_LINGER:
-                break;
-            case RubySocket.SO_OOBINLINE:
-                break;
-            case RubySocket.SO_RCVBUF:
-                break;
-            case RubySocket.SO_RCVLOWAT:
-                break;
-            case RubySocket.SO_RCVTIMEO:
-                break;
-            case RubySocket.SO_REUSEADDR:
-                break;
-            case RubySocket.SO_SNDBUF:
-                break;
-            case RubySocket.SO_SNDLOWAT:
-                break;
-            case RubySocket.SO_SNDTIMEO:
-                break;
-            case RubySocket.SO_TIMESTAMP:
-                break;
-            case RubySocket.SO_TYPE:
-                break;
-            default:
-                throw getRuntime().newErrnoENOPROTOOPTError();
-            }
-            break;
-        default:
+    private Socket asSocket() {
+        if(!(socketChannel instanceof SocketChannel)) {
             throw getRuntime().newErrnoENOPROTOOPTError();
         }
 
-        return getRuntime().getNil();
+        return ((SocketChannel)socketChannel).socket();
+    }
+
+    private ServerSocket asServerSocket() {
+        if(!(socketChannel instanceof ServerSocketChannel)) {
+            throw getRuntime().newErrnoENOPROTOOPTError();
+        }
+
+        return ((ServerSocketChannel)socketChannel).socket();
+    }
+
+    private DatagramSocket asDatagramSocket() {
+        if(!(socketChannel instanceof DatagramChannel)) {
+            throw getRuntime().newErrnoENOPROTOOPTError();
+        }
+
+        return ((DatagramChannel)socketChannel).socket();
+    }
+
+    private IRubyObject getBroadcast() throws IOException {
+        return trueFalse((socketChannel instanceof DatagramChannel) ? asDatagramSocket().getBroadcast() : false);
+    }
+
+    private IRubyObject getKeepAlive() throws IOException {
+        return trueFalse(
+                         (socketChannel instanceof SocketChannel) ? asSocket().getKeepAlive() : false
+                         );
+    }
+
+    private IRubyObject getLinger() throws IOException {
+        return number(
+                      (socketChannel instanceof SocketChannel) ? asSocket().getSoLinger() : 0
+                      );
+    }
+
+    private IRubyObject getOOBInline() throws IOException {
+        return trueFalse(
+                         (socketChannel instanceof SocketChannel) ? asSocket().getOOBInline() : false
+                         );
+    }
+
+    private IRubyObject getRcvBuf() throws IOException {
+        return number(
+                      (socketChannel instanceof SocketChannel) ? asSocket().getReceiveBufferSize() : 
+                      ((socketChannel instanceof ServerSocketChannel) ? asServerSocket().getReceiveBufferSize() : 
+                       asDatagramSocket().getReceiveBufferSize())
+                      );
+    }
+
+    private IRubyObject getSndBuf() throws IOException {
+        return number(
+                      (socketChannel instanceof SocketChannel) ? asSocket().getSendBufferSize() : 
+                      ((socketChannel instanceof DatagramChannel) ? asDatagramSocket().getSendBufferSize() : 0)
+                      );
+    }
+
+    private IRubyObject getReuseAddr() throws IOException {
+        return trueFalse(
+                         (socketChannel instanceof ServerSocketChannel) ? asServerSocket().getReuseAddress() : false
+                         );
+    }
+
+    private IRubyObject getTimeout() throws IOException {
+        return number(
+                      (socketChannel instanceof SocketChannel) ? asSocket().getSoTimeout() : 
+                      ((socketChannel instanceof ServerSocketChannel) ? asServerSocket().getSoTimeout() : 
+                       ((socketChannel instanceof DatagramChannel) ? asDatagramSocket().getSoTimeout() : 0))
+                      );
+    }
+
+    protected int getSoTypeDefault() {
+        return 0;
+    }
+
+    private IRubyObject getSoType() throws IOException {
+        return number(
+                      (socketChannel instanceof SocketChannel) ? RubySocket.SOCK_STREAM : 
+                      ((socketChannel instanceof ServerSocketChannel) ? RubySocket.SOCK_STREAM : 
+                       ((socketChannel instanceof DatagramChannel) ? RubySocket.SOCK_DGRAM : getSoTypeDefault()))
+                      );
+    }
+
+    private IRubyObject trueFalse(boolean val) {
+        return getRuntime().newString( val ? " \u0000\u0000\u0000" : "\u0000\u0000\u0000\u0000" );
+    }
+
+    private IRubyObject number(long s) {
+        StringBuffer result = new StringBuffer();
+        result.append((char) ((s>>24) &0xff)).append((char) ((s>>16) &0xff));
+        result.append((char) ((s >> 8) & 0xff)).append((char) (s & 0xff));
+        return getRuntime().newString(result.toString());
+    }
+
+    public IRubyObject getsockopt(IRubyObject lev, IRubyObject optname) {
+        int level = RubyNumeric.fix2int(lev);
+        int opt = RubyNumeric.fix2int(optname);
+
+        try {
+            switch(level) {
+            case RubySocket.SOL_IP:
+            case RubySocket.SOL_SOCKET:
+            case RubySocket.SOL_TCP:
+            case RubySocket.SOL_UDP:
+                switch(opt) {
+                case RubySocket.SO_BROADCAST:
+                    return getBroadcast();
+                case RubySocket.SO_KEEPALIVE:
+                    return getKeepAlive();
+                case RubySocket.SO_LINGER:
+                    return getLinger();
+                case RubySocket.SO_OOBINLINE:
+                    return getOOBInline();
+                case RubySocket.SO_RCVBUF:
+                    return getRcvBuf();
+                case RubySocket.SO_REUSEADDR:
+                    return getReuseAddr();
+                case RubySocket.SO_SNDBUF:
+                    return getSndBuf();
+                case RubySocket.SO_RCVTIMEO:
+                case RubySocket.SO_SNDTIMEO:
+                    return getTimeout();
+                case RubySocket.SO_TYPE:
+                    return getSoType();
+
+                    // Can't support the rest with Java
+                case RubySocket.SO_RCVLOWAT:
+                    return number(1);
+                case RubySocket.SO_SNDLOWAT:
+                    return number(2048);
+                case RubySocket.SO_DEBUG:
+                case RubySocket.SO_ERROR:
+                case RubySocket.SO_DONTROUTE:
+                case RubySocket.SO_TIMESTAMP:
+                    return trueFalse(false);
+                default:
+                    throw getRuntime().newErrnoENOPROTOOPTError();
+                }
+            default:
+                throw getRuntime().newErrnoENOPROTOOPTError();
+            }
+        } catch(IOException e) {
+            throw getRuntime().newErrnoENOPROTOOPTError();
+        }
     }
 
     public IRubyObject setsockopt(IRubyObject lev, IRubyObject optname, IRubyObject val) {

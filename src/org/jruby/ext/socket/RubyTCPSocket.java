@@ -57,7 +57,6 @@ public class RubyTCPSocket extends RubyIPSocket {
         rb_cTCPSocket.includeModule(runtime.fastGetClass("Socket").fastGetConstant("Constants"));
 
         rb_cTCPSocket.defineFastMethod("initialize", cfact.getFastOptMethod("initialize"));
-        rb_cTCPSocket.defineFastMethod("setsockopt", cfact.getFastOptMethod("setsockopt"));
         rb_cTCPSocket.getMetaClass().defineFastMethod("gethostbyname", cfact.getFastSingletonMethod("gethostbyname", IRubyObject.class));
         rb_cTCPSocket.getMetaClass().defineMethod("open", cfact.getOptSingletonMethod("open"));
 
@@ -108,11 +107,6 @@ public class RubyTCPSocket extends RubyIPSocket {
             throw sockerr(this, "initialize: name or service not known");
         }
         return this;
-    }
-
-    public IRubyObject setsockopt(IRubyObject[] args) {
-        // Stubbed out
-        return getRuntime().getNil();
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {

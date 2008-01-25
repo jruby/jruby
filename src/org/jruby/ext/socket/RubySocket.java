@@ -30,6 +30,8 @@ package org.jruby.ext.socket;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -102,6 +104,19 @@ public class RubySocket extends RubyBasicSocket {
     public static final int SO_TIMESTAMP = 1024;
     public static final int SO_TYPE = 4104;
 
+    public static final int SOCK_STREAM = 1;
+    public static final int SOCK_DGRAM = 2;
+
+    public static final int AF_UNSPEC = 0;
+    public static final int PF_UNSPEC = 0;
+    public static final int AF_INET = 2;
+    public static final int PF_INET = 2;
+
+    public static final int IPPROTO_IP = 0;
+    public static final int IPPROTO_ICMP = 1;
+    public static final int IPPROTO_TCP = 6;
+    public static final int IPPROTO_UDP = 17;
+
     static void createSocket(Ruby runtime) {
         RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.fastGetClass("BasicSocket"), SOCKET_ALLOCATOR);
         CallbackFactory cfact = runtime.callbackFactory(RubySocket.class);
@@ -109,12 +124,12 @@ public class RubySocket extends RubyBasicSocket {
         RubyModule rb_mConstants = rb_cSocket.defineModuleUnder("Constants");
         // we don't have to define any that we don't support; see socket.c
         
-        rb_mConstants.fastSetConstant("SOCK_STREAM", runtime.newFixnum(1));
-        rb_mConstants.fastSetConstant("SOCK_DGRAM", runtime.newFixnum(2));
-        rb_mConstants.fastSetConstant("PF_UNSPEC", runtime.newFixnum(0));
-        rb_mConstants.fastSetConstant("AF_UNSPEC", runtime.newFixnum(0));
-        rb_mConstants.fastSetConstant("PF_INET", runtime.newFixnum(2));
-        rb_mConstants.fastSetConstant("AF_INET", runtime.newFixnum(2));
+        rb_mConstants.fastSetConstant("SOCK_STREAM", runtime.newFixnum(SOCK_STREAM));
+        rb_mConstants.fastSetConstant("SOCK_DGRAM", runtime.newFixnum(SOCK_DGRAM));
+        rb_mConstants.fastSetConstant("PF_UNSPEC", runtime.newFixnum(PF_UNSPEC));
+        rb_mConstants.fastSetConstant("AF_UNSPEC", runtime.newFixnum(AF_UNSPEC));
+        rb_mConstants.fastSetConstant("PF_INET", runtime.newFixnum(PF_INET));
+        rb_mConstants.fastSetConstant("AF_INET", runtime.newFixnum(AF_INET));
         // mandatory constants we haven't implemented
         rb_mConstants.fastSetConstant("MSG_OOB", runtime.newFixnum(0x01));
         rb_mConstants.fastSetConstant("SOL_SOCKET", runtime.newFixnum(SOL_SOCKET));
@@ -133,7 +148,6 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.fastSetConstant("INADDR_ALLHOSTS_GROUP", runtime.newFixnum(0xe0000001));
         rb_mConstants.fastSetConstant("INADDR_MAX_LOCAL_GROUP", runtime.newFixnum(0xe00000ff));
         rb_mConstants.fastSetConstant("INADDR_NONE", runtime.newFixnum(0xffffffff));
-        rb_mConstants.fastSetConstant("SO_REUSEADDR", runtime.newFixnum(2));
         rb_mConstants.fastSetConstant("SHUT_RD", runtime.newFixnum(0));
         rb_mConstants.fastSetConstant("SHUT_WR", runtime.newFixnum(1));
         rb_mConstants.fastSetConstant("SHUT_RDWR", runtime.newFixnum(2));
@@ -186,8 +200,56 @@ public class RubySocket extends RubyBasicSocket {
         super(runtime, type);
     }
 
+    protected int getSoTypeDefault() {
+        return soType;
+    }
+
+    private int soDomain;
+    private int soType;
+    private int soProtocol;
+
     public IRubyObject initialize(IRubyObject domain, IRubyObject type, IRubyObject protocol) {
-        //This doesn't really work as it should currently.
+        try {
+            if(domain instanceof RubyString) {
+                String domainString = domain.toString();
+                if(domainString.equals("AF_INET")) {
+                    soDomain = AF_INET;
+                } else if(domainString.equals("PF_INET")) {
+                    soDomain = PF_INET;
+                } else {
+                    throw sockerr(this, "unknown socket domain " + domainString);
+                }
+            } else {
+                soDomain = RubyNumeric.fix2int(domain);
+            }
+        
+            if(type instanceof RubyString) {
+                String typeString = type.toString();
+                if(typeString.equals("SOCK_STREAM")) {
+                    soType = SOCK_STREAM;
+                } else if(typeString.equals("SOCK_DGRAM")) {
+                    soType = SOCK_DGRAM;
+                } else {
+                    throw sockerr(this, "unknown socket type " + typeString);
+                }
+            } else {
+                soType = RubyNumeric.fix2int(type);
+            }
+
+            soProtocol = RubyNumeric.fix2int(protocol);
+        
+            if(soType == SOCK_STREAM) {
+                SocketChannel channel = SocketChannel.open();
+                setChannel(channel);
+            } else if(soType == SOCK_DGRAM) {
+                DatagramChannel channel = DatagramChannel.open();
+                setChannel(channel);
+            }
+
+        } catch(IOException e) {
+            throw sockerr(this, "initialize: " + e.toString());
+        }
+
         return this;
     }
 
