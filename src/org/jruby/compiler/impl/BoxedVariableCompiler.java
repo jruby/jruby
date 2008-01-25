@@ -86,6 +86,9 @@ public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
                 if (scope.isCaptured(i)) continue;
                 
                 assignLocalVariable(i);
+                
+                // move the first temp index up for each stack-based var
+                tempVariableIndex++;
             }
             method.pop();
         }
@@ -99,7 +102,7 @@ public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
         } else {
             // non-captured var, just use locals
             method.dup();
-            method.astore(10 + index);
+            method.astore(baseVariableIndex + index);
         }
     }
 
@@ -108,7 +111,7 @@ public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
             super.retrieveLocalVariable(index);
         } else {
             // non-captured, use java local vars
-            method.aload(10 + index);
+            method.aload(baseVariableIndex + index);
         }
     }
 }

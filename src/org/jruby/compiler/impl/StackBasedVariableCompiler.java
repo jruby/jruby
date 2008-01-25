@@ -87,6 +87,9 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
                 assignLocalVariable(i);
             }
             method.pop();
+            
+            // temp locals must start after last real local
+            tempVariableIndex += scope.getNumberOfVariables();
         }
         
         if (argsCallback != null) {
