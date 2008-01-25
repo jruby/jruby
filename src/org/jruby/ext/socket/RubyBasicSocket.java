@@ -201,6 +201,54 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     public IRubyObject setsockopt(IRubyObject lev, IRubyObject optname, IRubyObject val) {
+        int level = RubyNumeric.fix2int(lev);
+        int opt = RubyNumeric.fix2int(optname);
+        switch(level) {
+        case RubySocket.SOL_IP:
+        case RubySocket.SOL_SOCKET:
+        case RubySocket.SOL_TCP:
+        case RubySocket.SOL_UDP:
+            switch(opt) {
+            case RubySocket.SO_BROADCAST:
+                break;
+            case RubySocket.SO_DEBUG:
+                break;
+            case RubySocket.SO_DONTROUTE:
+                break;
+            case RubySocket.SO_ERROR:
+                break;
+            case RubySocket.SO_KEEPALIVE:
+                break;
+            case RubySocket.SO_LINGER:
+                break;
+            case RubySocket.SO_OOBINLINE:
+                break;
+            case RubySocket.SO_RCVBUF:
+                break;
+            case RubySocket.SO_RCVLOWAT:
+                break;
+            case RubySocket.SO_RCVTIMEO:
+                break;
+            case RubySocket.SO_REUSEADDR:
+                break;
+            case RubySocket.SO_SNDBUF:
+                break;
+            case RubySocket.SO_SNDLOWAT:
+                break;
+            case RubySocket.SO_SNDTIMEO:
+                break;
+            case RubySocket.SO_TIMESTAMP:
+                break;
+            case RubySocket.SO_TYPE:
+                break;
+            default:
+                throw getRuntime().newErrnoENOPROTOOPTError();
+            }
+            break;
+        default:
+            throw getRuntime().newErrnoENOPROTOOPTError();
+        }
+
         return getRuntime().getNil();
     }
 
