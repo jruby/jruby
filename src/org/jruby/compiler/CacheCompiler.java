@@ -13,7 +13,7 @@ import org.jruby.runtime.CallType;
  * @author headius
  */
 public interface CacheCompiler {
-    public void cacheCallSite(SkinnyMethodAdapter method, String name, CallType callType, boolean block);
+    public void cacheCallSite(SkinnyMethodAdapter method, String name, CallType callType);
     
     public void cachePosition(SkinnyMethodAdapter method, String file, int line);
     

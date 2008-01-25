@@ -208,11 +208,7 @@ public class RuntimeHelpers {
             ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
         if (receiver == caller) callType = CallType.VARIABLE;
         
-        try {
-            return compilerCallMethod(context, receiver, name, args, caller, callType, block);
-        } catch (StackOverflowError sfe) {
-            throw context.getRuntime().newSystemStackError("stack level too deep");
-        }
+        return compilerCallMethod(context, receiver, name, args, caller, callType, block);
     }
     
     public static IRubyObject doAttrAssignIndexed(IRubyObject receiver, IRubyObject[] args, 
@@ -220,32 +216,20 @@ public class RuntimeHelpers {
             CallType callType, Block block) {
         if (receiver == caller) callType = CallType.VARIABLE;
         
-        try {
-            return compilerCallMethodWithIndex(context, receiver, methodIndex, name, args, caller, 
-                    callType, block);
-        } catch (StackOverflowError sfe) {
-            throw context.getRuntime().newSystemStackError("stack level too deep");
-        }
+        return compilerCallMethodWithIndex(context, receiver, methodIndex, name, args, caller, 
+                callType, block);
     }
     
     public static IRubyObject doInvokeDynamic(IRubyObject receiver, IRubyObject[] args, 
             ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
-        try {
-            return compilerCallMethod(context, receiver, name, args, caller, callType, block);
-        } catch (StackOverflowError sfe) {
-            throw context.getRuntime().newSystemStackError("stack level too deep");
-        }
+        return compilerCallMethod(context, receiver, name, args, caller, callType, block);
     }
     
     public static IRubyObject doInvokeDynamicIndexed(IRubyObject receiver, IRubyObject[] args, 
             ThreadContext context, byte methodIndex, String name, IRubyObject caller, 
             CallType callType, Block block) {
-        try {
-            return compilerCallMethodWithIndex(context, receiver, methodIndex, name, args, caller, 
-                    callType, block);
-        } catch (StackOverflowError sfe) {
-            throw context.getRuntime().newSystemStackError("stack level too deep");
-        }
+        return compilerCallMethodWithIndex(context, receiver, methodIndex, name, args, caller, 
+                callType, block);
     }
 
     /**

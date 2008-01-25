@@ -81,6 +81,44 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // pop result, use args[length - 1] captured above
         method.pop(); // [val]
     }
+
+    public void invokeAttrAssignSimple(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+        Label variableCallType = new Label();
+        Label readyForCall = new Label();
+        
+        // receiver first, so we know which call site to use
+        receiverCallback.call(methodCompiler);
+        
+        // select appropriate call site
+        method.dup(); // dup receiver
+        methodCompiler.loadSelf(); // load self
+        method.if_acmpeq(variableCallType); // compare
+        
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, name, CallType.NORMAL);
+        method.go_to(readyForCall);
+        method.label(variableCallType);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, name, CallType.VARIABLE);
+        method.label(readyForCall);
+        
+        // call site under receiver
+        method.swap();
+        
+        // load single argument and dup it under  call site
+        argsCallback.call(methodCompiler);
+        method.dup_x2();
+        
+        // load thread context under receiver
+        methodCompiler.loadThreadContext();
+        method.dup_x2();
+        method.pop();
+        
+        // invoke call site
+        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
+        method.invokevirtual(p(CallSite.class), "call", signature);
+        
+        // pop the return value leaving the dup'ed args on the stack
+        method.pop();
+    }
     
     public void opElementAsgn(CompilerCallback valueCallback, String operator) {
         // FIXME: op element asgn is not yet using CallAdapter. Boo hoo.
@@ -194,8 +232,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         
         // load call adapter
         // FIXME: These swaps suck, but OpAsgn breaks if it can't dup receiver in the middle of making this call :(
-        method.aload(THIS);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, name, callType, closureArg != null);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, name, callType);
         method.swap();
 
         methodCompiler.loadThreadContext(); // [adapter, tc]
@@ -249,78 +286,6 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                     signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
                 }
             }
-        }
-        
-        // adapter, tc, recv, args{0,1}, block{0,1}]
-
-        method.invokevirtual(p(CallSite.class), "call", signature);
-    }
-
-    public void invokeDynamicArity1(String name, CompilerCallback receiverCallback, CompilerCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
-        assert argsCallback != null;
-        
-        if (receiverCallback != null) {
-            receiverCallback.call(methodCompiler);
-        } else {
-            methodCompiler.loadSelf();
-        }
-        
-        // load call adapter
-        // FIXME: These swaps suck, but OpAsgn breaks if it can't dup receiver in the middle of making this call :(
-        method.aload(THIS);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, name, callType, closureArg != null);
-        method.swap();
-
-        methodCompiler.loadThreadContext(); // [adapter, tc]
-        method.swap();
-        
-        String signature;
-        // args
-        argsCallback.call(methodCompiler);
-        // block
-        if (closureArg == null) {
-            // with args, no block
-            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
-        } else {
-            // with args, with block
-            closureArg.call(methodCompiler);
-            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
-        }
-        
-        // adapter, tc, recv, args{0,1}, block{0,1}]
-
-        method.invokevirtual(p(CallSite.class), "call", signature);
-    }
-
-    public void invokeDynamicSpecificArity(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
-        assert argsCallback != null;
-        
-        if (receiverCallback != null) {
-            receiverCallback.call(methodCompiler);
-        } else {
-            methodCompiler.loadSelf();
-        }
-        
-        // load call adapter
-        // FIXME: These swaps suck, but OpAsgn breaks if it can't dup receiver in the middle of making this call :(
-        method.aload(THIS);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, name, callType, closureArg != null);
-        method.swap();
-
-        methodCompiler.loadThreadContext(); // [adapter, tc]
-        method.swap();
-        
-        String signature;
-        // args
-        argsCallback.call(methodCompiler);
-        // block
-        if (closureArg == null) {
-            // with args, no block
-            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
-        } else {
-            // with args, with block
-            closureArg.call(methodCompiler);
-            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
         }
         
         // adapter, tc, recv, args{0,1}, block{0,1}]

@@ -44,12 +44,13 @@ public class InheritedCacheCompiler implements CacheCompiler {
         this.scriptCompiler = scriptCompiler;
     }
     
-    public void cacheCallSite(SkinnyMethodAdapter method, String name, CallType callType, boolean block) {
+    public void cacheCallSite(SkinnyMethodAdapter method, String name, CallType callType) {
         String fieldName = "site" + callSiteCount;
         
         // retrieve call adapter
         SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
         initMethod.aload(StandardASMCompiler.THIS);
+        method.aload(StandardASMCompiler.THIS);
         initMethod.ldc(name);
         
         if (callType.equals(CallType.NORMAL)) {

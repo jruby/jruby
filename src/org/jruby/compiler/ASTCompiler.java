@@ -625,11 +625,44 @@ public class ASTCompiler {
         context.lineNumber(node.getPosition());
 
         AttrAssignNode attrAssignNode = (AttrAssignNode) node;
+        
+        // if one arg, it's a simple attr assign
+        if (attrAssignNode.getArgsNode().childNodes().size() == 1) {
+            compileAttrAssignSimple(attrAssignNode, context);
+        } else {
+            // more complex attr assign, as in a[1,2] = 3
+            compile(attrAssignNode.getReceiverNode(), context);
+            compileArguments(attrAssignNode.getArgsNode(), context);
 
-        compile(attrAssignNode.getReceiverNode(), context);
-        compileArguments(attrAssignNode.getArgsNode(), context);
+            context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName());
+        }
+    }
 
-        context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName());
+    private void compileAttrAssignSimple(Node node, MethodCompiler context) {
+        context.lineNumber(node.getPosition());
+
+        final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
+
+        CompilerCallback receiverCallback = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(attrAssignNode.getReceiverNode(), context);
+            }
+        };
+        
+        assert attrAssignNode.getArgsNode() instanceof ArrayNode : "attr assign with non-array args node";
+        ArrayNode arrayNode = (ArrayNode)attrAssignNode.getArgsNode();
+        
+        ArgumentsCallback argsCallback = null;
+        if (arrayNode.get(0) == null) {
+            argsCallback = new ArgumentsCallback() {
+                public int getArity() { return 1; }
+                public void call(MethodCompiler context) { context.loadNil(); }
+            };
+        } else {
+            argsCallback = getArgsCallback(arrayNode.get(0));
+        }
+
+        context.getInvocationCompiler().invokeAttrAssignSimple(attrAssignNode.getName(), receiverCallback, argsCallback);
     }
 
     public void compileAttrAssignAssignment(Node node, MethodCompiler context) {
@@ -2659,12 +2692,12 @@ public class ASTCompiler {
                     }
                 };
 
-        if (opAsgnNode.getOperatorName() == "||") {
+        if (opAsgnNode.getOperatorName().equals("||")) {
             // if lhs is true, don't eval rhs and assign
             receiver2Callback.call(context);
             context.duplicateCurrentValue();
             context.performBooleanBranch(doneBranch, assignBranch);
-        } else if (opAsgnNode.getOperatorName() == "&&") {
+        } else if (opAsgnNode.getOperatorName().equals("&&")) {
             // if lhs is true, eval rhs and assign
             receiver2Callback.call(context);
             context.duplicateCurrentValue();
