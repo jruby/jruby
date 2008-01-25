@@ -37,30 +37,22 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         this.scriptCompiler = scriptCompiler;
     }
     
-    public void cacheCallSite(SkinnyMethodAdapter method, String name, CallType callType, boolean block) {
+    public void cacheCallSite(SkinnyMethodAdapter method, String name, CallType callType) {
         String fieldName = scriptCompiler.getNewConstant(ci(CallSite.class), JavaNameMangler.mangleStringForCleanJavaIdentifier(name));
         
         // retrieve call adapter
         SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
         initMethod.aload(StandardASMCompiler.THIS);
         initMethod.ldc(name);
-        if (block) {
-            if (callType.equals(CallType.NORMAL)) {
-                initMethod.invokestatic(p(MethodIndex.class), "getCallSite", sig(CallSite.class, params(String.class)));
-            } else if (callType.equals(CallType.FUNCTIONAL)) {
-                initMethod.invokestatic(p(MethodIndex.class), "getFunctionalCallSite", sig(CallSite.class, params(String.class)));
-            } else if (callType.equals(CallType.VARIABLE)) {
-                initMethod.invokestatic(p(MethodIndex.class), "getVariableCallSite", sig(CallSite.class, params(String.class)));
-            }
-        } else {
-            if (callType.equals(CallType.NORMAL)) {
-                initMethod.invokestatic(p(MethodIndex.class), "getNonBlockCallSite", sig(CallSite.class, params(String.class)));
-            } else if (callType.equals(CallType.FUNCTIONAL)) {
-                initMethod.invokestatic(p(MethodIndex.class), "getNonBlockFunctionalCallSite", sig(CallSite.class, params(String.class)));
-            } else if (callType.equals(CallType.VARIABLE)) {
-                initMethod.invokestatic(p(MethodIndex.class), "getNonBlockVariableCallSite", sig(CallSite.class, params(String.class)));
-            }
+        
+        if (callType.equals(CallType.NORMAL)) {
+            initMethod.invokestatic(p(MethodIndex.class), "getCallSite", sig(CallSite.class, params(String.class)));
+        } else if (callType.equals(CallType.FUNCTIONAL)) {
+            initMethod.invokestatic(p(MethodIndex.class), "getFunctionalCallSite", sig(CallSite.class, params(String.class)));
+        } else if (callType.equals(CallType.VARIABLE)) {
+            initMethod.invokestatic(p(MethodIndex.class), "getVariableCallSite", sig(CallSite.class, params(String.class)));
         }
+
         initMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
         
         method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
