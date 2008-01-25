@@ -259,7 +259,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.invokeinterface(p(IRubyObject.class), "callSuper", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, Block.class));
     }
 
-    public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
+    public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg) {
         if (receiverCallback != null) {
             receiverCallback.call(methodCompiler);
         } else {
@@ -448,6 +448,19 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
 
     public void invokeEqq() {
-        invokeDynamic("===", true, true, CallType.NORMAL, null, false); // [val, result]
+        // receiver and args already present on the stack
+        
+        // load call adapter under receiver
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "===", CallType.NORMAL);
+        method.dup_x2();
+        method.pop();
+
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+        method.dup_x2();
+        method.pop();
+        
+        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
+        
+        method.invokevirtual(p(CallSite.class), "call", signature);
     }
 }
