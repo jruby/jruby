@@ -337,12 +337,20 @@ public class RubySocket extends RubyBasicSocket {
         sb.append((char)((iport & 0xFF)));
 
         try {
-            InetAddress[] addrs = InetAddress.getAllByName(host.isNil() ? null : host.convertToString().toString());
-            byte[] addr = addrs[0].getAddress();
-            sb.append((char)addr[0]);
-            sb.append((char)addr[1]);
-            sb.append((char)addr[2]);
-            sb.append((char)addr[3]);
+            String str = host.isNil() ? null : host.convertToString().toString();
+            if(str != null && "".equals(str)) {
+                sb.append((char)0);
+                sb.append((char)0);
+                sb.append((char)0);
+                sb.append((char)0);
+            } else {
+                InetAddress[] addrs = InetAddress.getAllByName(str);
+                byte[] addr = addrs[0].getAddress();
+                sb.append((char)addr[0]);
+                sb.append((char)addr[1]);
+                sb.append((char)addr[2]);
+                sb.append((char)addr[3]);
+            }
         } catch(UnknownHostException e) {
             throw sockerr(recv, "getaddrinfo: No address associated with nodename");
         }
