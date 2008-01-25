@@ -90,10 +90,6 @@ public abstract class CallConfiguration {
         public String name() {
             return "BACKTRACE_ONLY";
         }
-        
-        public boolean isNoop() {
-            return true;
-        }
     };
     public static final CallConfiguration BACKTRACE_AND_SCOPE = new CallConfiguration() {
         public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, IRubyObject[] args, Block block, StaticScope scope, JumpTarget jumpTarget) {
