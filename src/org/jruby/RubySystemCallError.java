@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
@@ -17,7 +18,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 public class RubySystemCallError extends RubyException {
-    private IRubyObject errno;
+    private IRubyObject errno = getRuntime().getNil();
 
     private final static Map<String, String> defaultMessages = new HashMap<String, String>();
     static {
@@ -109,12 +110,11 @@ public class RubySystemCallError extends RubyException {
     }
 
     protected RubySystemCallError(Ruby runtime, RubyClass rubyClass) {
-        this(runtime, rubyClass, null, 0);
+        super(runtime, rubyClass, null);
     }
 
     public RubySystemCallError(Ruby runtime, RubyClass rubyClass, String message, int errno) {
         super(runtime, rubyClass, message);
-        
         this.errno = runtime.newFixnum(errno);
     }
 
@@ -170,21 +170,54 @@ public class RubySystemCallError extends RubyException {
     
     @JRubyMethod(optional = 2, required=0, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        String name = getMetaClass().getRealClass().getName();
-        if (args.length >= 1) message = args[0];
-        if (args.length == 2) {
-            errno = args[1].convertToInteger();
+        RubyClass sCallErorrClass = getRuntime().fastGetClass("SystemCallError");
+        RubyClass klass = getMetaClass().getRealClass();
+
+        IRubyObject msg = getRuntime().getNil();
+        IRubyObject err = getRuntime().getNil();
+        
+        boolean isErrnoClass = !klass.equals(sCallErorrClass);
+        
+        if (!isErrnoClass) {
+            // one optional, one required args
+            Arity.checkArgumentCount(getRuntime(), args, 1, 2);
+            msg = args[0];
+            if (args.length == 2) {
+                err = args[1];
+            }
+            if (args.length == 1 && (msg instanceof RubyFixnum)) {
+                err = msg;
+                msg = getRuntime().getNil();
+            }
+        } else {
+            // one optional and no required args
+            Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+            if (args.length == 1) {
+                msg = args[0];
+            }
+            // try to get errno out of the class 
+            err = klass.fastGetConstant("Errno");
+        }
+        
+        if (!err.isNil()) {
+            errno = err.convertToInteger();
         }
 
-        if(args.length == 0) {
-            String val = defaultMessages.get(name);
-            if(null == val) {
-                val = name;
-            } 
-
-            message = getRuntime().newString(val);
+        String val = defaultMessages.get(klass.getName());
+        if (val == null) {
+            val = "Unknown error";
         }
 
+        // MRI behavior: we don't print errno for actual Errno errors
+        if (!errno.isNil() && !isErrnoClass) {
+            val += " " + errno.toString();
+        }
+
+        if (!msg.isNil()) {
+            val += " - " + msg.convertToString();
+        }
+
+        message = getRuntime().newString(val);        
         return this;
     }
 
