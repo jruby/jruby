@@ -124,7 +124,6 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         
         argsCallback.call(methodCompiler);
         
-        
         // store in temp variable
         int tempLocal = methodCompiler.variableCompiler.grabTempLocal();
         switch (argsCallback.getArity()) {

@@ -36,6 +36,7 @@ import org.jruby.parser.StaticScope;
  */
 public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
     private StaticScope scope; // the static scope for the currently compiling method
+    private int baseVariableIndex;
 
     public BoxedVariableCompiler(
             StandardASMCompiler.AbstractMethodCompiler methodCompiler,
@@ -46,7 +47,7 @@ public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
             int closureIndex,
             int firstTempIndex) {
         super(methodCompiler, method,scopeIndex, varsIndex, argsIndex, closureIndex, firstTempIndex);
-        
+        this.baseVariableIndex = firstTempIndex;
         this.scopeIndex = scopeIndex;
         this.varsIndex = varsIndex;
     }

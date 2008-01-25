@@ -467,3 +467,6 @@ test_equal(5, compile_and_run("BEGIN { $begin = 5 }; $begin"))
 test_no_exception {
   test_equal(nil, compile_and_run(""))
 }
+
+# JRUBY-2043
+test_equal(5, compile_and_run("def foo; 1.times { a, b = [], 5; a[1] = []; return b; }; end; foo"))
