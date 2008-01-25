@@ -192,7 +192,6 @@ public final class Ruby {
         this.objectSpaceEnabled = config.isObjectSpaceEnabled();
         this.profile            = config.getProfile();
         this.currentDirectory   = config.getCurrentDirectory();
-        this.jrubyClassLoader   = config.getJRubyClassLoader();
         this.kcode              = config.getKCode();
     }
     
@@ -1535,7 +1534,7 @@ public final class Ruby {
         return javaSupport;
     }
 
-    public JRubyClassLoader getJRubyClassLoader() {
+    public synchronized JRubyClassLoader getJRubyClassLoader() {
         // FIXME: Get rid of laziness and handle restricted access elsewhere
         if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null) {
             jrubyClassLoader = new JRubyClassLoader(config.getLoader());

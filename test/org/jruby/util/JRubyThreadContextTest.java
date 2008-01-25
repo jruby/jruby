@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007 Robert Egglestone <robert@cs.auckland.ac.nz>
+ * Copyright (C) 2007, 2008 Robert Egglestone <robert@cs.auckland.ac.nz>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -46,6 +46,7 @@ import org.jruby.RubyInstanceConfig;
  */
 public class JRubyThreadContextTest extends TestCase {
 
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         // start off with a neutral parent
@@ -67,12 +68,9 @@ public class JRubyThreadContextTest extends TestCase {
 
         // change the thread context to include the class
         SimpleClassLoader simpleLoader = new SimpleClassLoader();
-        final JRubyClassLoader myLoader = new JRubyClassLoader(simpleLoader);
-        ruby = Ruby.newInstance(new RubyInstanceConfig() {
-            public JRubyClassLoader getJRubyClassLoader() {
-                return myLoader;
-            }
-        });
+        RubyInstanceConfig config = new RubyInstanceConfig();
+        config.setLoader(simpleLoader);
+        ruby = Ruby.newInstance(config);
 
         try {
             ruby.getJRubyClassLoader().loadClass("org.jruby.GiveMeAString");
@@ -81,28 +79,6 @@ public class JRubyThreadContextTest extends TestCase {
         }
     }
 
-//    /**
-//     * Check that the thread context can be different between requests on the same Ruby instance
-//     */
-//    public void testThreadContextPerRequest() {
-//        Ruby ruby = Ruby.newInstance();
-//        try {
-//            ruby.getJRubyClassLoader().loadClass("org.jruby.GiveMeAString");
-//            fail("org.jruby.GiveMeAString is on the classpath!?");
-//        } catch (ClassNotFoundException e) {
-//            // expected
-//        }
-//
-//        SimpleClassLoader simpleLoader = new SimpleClassLoader();
-//        Thread.currentThread().setContextClassLoader(simpleLoader);
-//
-//        try {
-//            ruby.getJRubyClassLoader().loadClass("org.jruby.GiveMeAString");
-//        } catch (ClassNotFoundException e) {
-//            fail("Classloader change unnoticed");
-//        }
-//    }
-
     /**
      * Checks if a class can be redefined between different Ruby instances.
      */
@@ -110,40 +86,17 @@ public class JRubyThreadContextTest extends TestCase {
         ClassLoader v1 = new VersionedClassLoader("First");
         ClassLoader v2 = new VersionedClassLoader("Second");
 
-        final JRubyClassLoader myLoader1 = new JRubyClassLoader(v1);
-        Ruby ruby1 = Ruby.newInstance(new RubyInstanceConfig() {
-            public JRubyClassLoader getJRubyClassLoader() {
-                return myLoader1;
-            }
-        });
-        final JRubyClassLoader myLoader2 = new JRubyClassLoader(v2);
-        Ruby ruby2 = Ruby.newInstance(new RubyInstanceConfig() {
-            public JRubyClassLoader getJRubyClassLoader() {
-                return myLoader2;
-            }
-        });
+        RubyInstanceConfig config1 = new RubyInstanceConfig();
+        config1.setLoader(v1);
+        RubyInstanceConfig config2 = new RubyInstanceConfig();
+        config2.setLoader(v2);
+        Ruby ruby1 = Ruby.newInstance(config1);
+        Ruby ruby2 = Ruby.newInstance(config2);
 
         assertEquals("First", getMessage(ruby1));
         assertEquals("Second", getMessage(ruby2));
         assertEquals("First", getMessage(ruby1));
     }
-
-//    /**
-//     * Checks if a class can be redefined between requests on the same Ruby instance.
-//     */
-//    public void testRedefineClassPerRequest() throws Exception {
-//        ClassLoader v1 = new VersionedClassLoader("First");
-//        ClassLoader v2 = new VersionedClassLoader("Second");
-//
-//        Ruby ruby = Ruby.newInstance();
-//
-//        Thread.currentThread().setContextClassLoader(v1);
-//        assertEquals("First", getMessage(ruby));
-//        Thread.currentThread().setContextClassLoader(v2);
-//        assertEquals("Second", getMessage(ruby));
-//        Thread.currentThread().setContextClassLoader(v1);
-//        assertEquals("First", getMessage(ruby));
-//    }
 
     private String getMessage(Ruby ruby) throws Exception {
         JRubyClassLoader loader = ruby.getJRubyClassLoader();

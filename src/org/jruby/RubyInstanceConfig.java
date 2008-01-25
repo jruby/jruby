@@ -40,7 +40,6 @@ import java.util.Map;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 
@@ -89,8 +88,6 @@ public class RubyInstanceConfig {
     private final int jitMax;
     private final boolean samplingEnabled;
     private CompatVersion compatVersion;
-
-    private final JRubyClassLoader defaultJRubyClassLoader;
 
     private ClassLoader loader = Thread.currentThread().getContextClassLoader();
     
@@ -203,8 +200,6 @@ public class RubyInstanceConfig {
             jitThreshold = threshold == null ? 20 : Integer.parseInt(threshold); 
             jitMax = max == null ? 2048 : Integer.parseInt(max);
         }
-
-        defaultJRubyClassLoader = null;
         
         if (FORK_ENABLED) {
             error.print("WARNING: fork is highly unlikely to be safe or stable on the JVM. Have fun!\n");
@@ -439,10 +434,6 @@ public class RubyInstanceConfig {
 
     public Map getEnvironment() {
         return environment;
-    }
-    
-    public JRubyClassLoader getJRubyClassLoader() {
-        return defaultJRubyClassLoader;
     }
 
     public ClassLoader getLoader() {
