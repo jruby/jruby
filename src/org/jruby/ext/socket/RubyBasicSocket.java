@@ -70,6 +70,8 @@ public class RubyBasicSocket extends RubyIO {
         rb_cBasicSocket.defineFastMethod("__getpeername", cfact.getFastMethod("getpeername"));
         rb_cBasicSocket.defineFastMethod("getsockname", cfact.getFastMethod("getsockname"));
         rb_cBasicSocket.defineFastMethod("getpeername", cfact.getFastMethod("getpeername"));
+        rb_cBasicSocket.defineFastMethod("getsockopt", cfact.getFastMethod("getsockopt", IRubyObject.class, IRubyObject.class));
+        rb_cBasicSocket.defineFastMethod("setsockopt", cfact.getFastMethod("setsockopt", IRubyObject.class, IRubyObject.class, IRubyObject.class));
         rb_cBasicSocket.getMetaClass().defineFastMethod("do_not_reverse_lookup", cfact.getFastSingletonMethod("do_not_reverse_lookup"));
         rb_cBasicSocket.getMetaClass().defineFastMethod("do_not_reverse_lookup=", cfact.getFastSingletonMethod("set_do_not_reverse_lookup", IRubyObject.class));
     }
@@ -144,6 +146,14 @@ public class RubyBasicSocket extends RubyIO {
         } else {
             return null;
         }
+    }
+
+    public IRubyObject getsockopt(IRubyObject lev, IRubyObject optname) {
+        return getRuntime().getNil();
+    }
+
+    public IRubyObject setsockopt(IRubyObject lev, IRubyObject optname, IRubyObject val) {
+        return getRuntime().getNil();
     }
 
     public IRubyObject getsockname() {

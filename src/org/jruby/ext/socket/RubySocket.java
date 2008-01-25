@@ -119,9 +119,25 @@ public class RubySocket extends RubyBasicSocket {
         // constants webrick crashes without
         rb_mConstants.fastSetConstant("AI_PASSIVE", runtime.newFixnum(1));
 
-        // constants Rails > 1.1.4 ActiveRecord's default mysql adapter dies without during scaffold generation
-        rb_mConstants.fastSetConstant("SO_KEEPALIVE", runtime.newFixnum(9));
-    
+        // constants from MacOS X 10.4
+
+        rb_mConstants.fastSetConstant("SO_BROADCAST", runtime.newFixnum(32));
+        rb_mConstants.fastSetConstant("SO_DEBUG", runtime.newFixnum(1));
+        rb_mConstants.fastSetConstant("SO_DONTROUTE", runtime.newFixnum(16));
+        rb_mConstants.fastSetConstant("SO_ERROR", runtime.newFixnum(4103));
+        rb_mConstants.fastSetConstant("SO_KEEPALIVE", runtime.newFixnum(8));
+        rb_mConstants.fastSetConstant("SO_LINGER", runtime.newFixnum(128));
+        rb_mConstants.fastSetConstant("SO_OOBINLINE", runtime.newFixnum(256));
+        rb_mConstants.fastSetConstant("SO_RCVBUF", runtime.newFixnum(4098));
+        rb_mConstants.fastSetConstant("SO_RCVLOWAT", runtime.newFixnum(4100));
+        rb_mConstants.fastSetConstant("SO_RCVTIMEO", runtime.newFixnum(4102));
+        rb_mConstants.fastSetConstant("SO_REUSEADDR", runtime.newFixnum(4));
+        rb_mConstants.fastSetConstant("SO_SNDBUF", runtime.newFixnum(4097));
+        rb_mConstants.fastSetConstant("SO_SNDLOWAT", runtime.newFixnum(4099));
+        rb_mConstants.fastSetConstant("SO_SNDTIMEO", runtime.newFixnum(4101));
+        rb_mConstants.fastSetConstant("SO_TIMESTAMP", runtime.newFixnum(1024));
+        rb_mConstants.fastSetConstant("SO_TYPE", runtime.newFixnum(4104));
+
         // drb needs defined
         rb_mConstants.fastSetConstant("TCP_NODELAY", runtime.newFixnum(1));
 
@@ -137,6 +153,7 @@ public class RubySocket extends RubyBasicSocket {
         
         rb_cSocket.includeModule(rb_mConstants);
 
+        rb_cSocket.defineFastMethod("initialize", cfact.getFastMethod("initialize", IRubyObject.class, IRubyObject.class, IRubyObject.class));
         rb_cSocket.getMetaClass().defineFastMethod("gethostname", cfact.getFastSingletonMethod("gethostname"));
         rb_cSocket.getMetaClass().defineFastMethod("gethostbyaddr", cfact.getFastOptSingletonMethod("gethostbyaddr"));
         rb_cSocket.getMetaClass().defineFastMethod("gethostbyname", cfact.getFastSingletonMethod("gethostbyname", IRubyObject.class));
@@ -146,6 +163,11 @@ public class RubySocket extends RubyBasicSocket {
     
     public RubySocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
+    }
+
+    public IRubyObject initialize(IRubyObject domain, IRubyObject type, IRubyObject protocol) {
+        //This doesn't really work as it should currently.
+        return this;
     }
 
     private static RuntimeException sockerr(IRubyObject recv, String msg) {
