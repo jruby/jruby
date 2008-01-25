@@ -194,6 +194,7 @@ public class RubySocket extends RubyBasicSocket {
         rb_cSocket.getMetaClass().defineFastMethod("gethostbyname", cfact.getFastSingletonMethod("gethostbyname", IRubyObject.class));
         rb_cSocket.getMetaClass().defineFastMethod("getaddrinfo", cfact.getFastOptSingletonMethod("getaddrinfo"));
         rb_cSocket.getMetaClass().defineFastMethod("getnameinfo", cfact.getFastOptSingletonMethod("getnameinfo"));
+        rb_cSocket.getMetaClass().defineFastMethod("getservbyname", cfact.getFastOptSingletonMethod("getservbyname"));
     }
     
     public RubySocket(Ruby runtime, RubyClass type) {
@@ -293,6 +294,18 @@ public class RubySocket extends RubyBasicSocket {
         ret[2] = runtime.newFixnum(2); // AF_INET
         ret[3] = args[0];
         return runtime.newArrayNoCopy(ret);
+    }
+
+    public static IRubyObject getservbyname(IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = recv.getRuntime();
+        int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
+        String name = args[0].convertToString().toString();
+        String service = argc == 1 ? "tcp" : args[1].convertToString().toString();
+        Integer port = IANA.serviceToPort.get(name + "/" + service);
+        if(port == null) {
+            throw sockerr(recv, "no such service " + name + "/" + service);
+        }
+        return runtime.newFixnum(port.intValue());
     }
 
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
