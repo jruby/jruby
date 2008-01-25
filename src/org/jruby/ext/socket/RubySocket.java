@@ -195,6 +195,12 @@ public class RubySocket extends RubyBasicSocket {
         rb_cSocket.getMetaClass().defineFastMethod("getaddrinfo", cfact.getFastOptSingletonMethod("getaddrinfo"));
         rb_cSocket.getMetaClass().defineFastMethod("getnameinfo", cfact.getFastOptSingletonMethod("getnameinfo"));
         rb_cSocket.getMetaClass().defineFastMethod("getservbyname", cfact.getFastOptSingletonMethod("getservbyname"));
+
+        rb_cSocket.getMetaClass().defineFastMethod("sockaddr_in", cfact.getFastSingletonMethod("pack_sockaddr_in", IRubyObject.class, IRubyObject.class));
+        rb_cSocket.getMetaClass().defineFastMethod("pack_sockaddr_in", cfact.getFastSingletonMethod("pack_sockaddr_in", IRubyObject.class, IRubyObject.class));
+        rb_cSocket.getMetaClass().defineFastMethod("sockaddr_un", cfact.getFastSingletonMethod("pack_sockaddr_un", IRubyObject.class));
+        rb_cSocket.getMetaClass().defineFastMethod("pack_sockaddr_un", cfact.getFastSingletonMethod("pack_sockaddr_un", IRubyObject.class));
+        rb_cSocket.getMetaClass().defineFastMethod("unpack_sockaddr_in", cfact.getFastSingletonMethod("unpack_sockaddr_in", IRubyObject.class));
     }
     
     public RubySocket(Ruby runtime, RubyClass type) {
@@ -306,6 +312,74 @@ public class RubySocket extends RubyBasicSocket {
             throw sockerr(recv, "no such service " + name + "/" + service);
         }
         return runtime.newFixnum(port.intValue());
+    }
+
+    public static IRubyObject pack_sockaddr_un(IRubyObject recv, IRubyObject filename) {
+        StringBuffer sb = new StringBuffer();
+        sb.append((char)0);
+        sb.append((char)1);
+        String str = filename.convertToString().toString();
+        sb.append(str);
+        for(int i=str.length();i<104;i++) {
+            sb.append((char)0);
+        }
+        return recv.getRuntime().newString(sb.toString());
+    }
+
+    public static IRubyObject pack_sockaddr_in(IRubyObject recv, IRubyObject port, IRubyObject host) {
+        StringBuffer sb = new StringBuffer();
+        sb.append((char)16);
+        sb.append((char)2);
+
+        int iport = RubyNumeric.fix2int(port);
+
+        sb.append((char)((iport >> 8) & 0xFF));
+        sb.append((char)((iport & 0xFF)));
+
+        try {
+            InetAddress[] addrs = InetAddress.getAllByName(host.isNil() ? null : host.convertToString().toString());
+            byte[] addr = addrs[0].getAddress();
+            sb.append((char)addr[0]);
+            sb.append((char)addr[1]);
+            sb.append((char)addr[2]);
+            sb.append((char)addr[3]);
+        } catch(UnknownHostException e) {
+            throw sockerr(recv, "getaddrinfo: No address associated with nodename");
+        }
+
+        sb.append((char)0);
+        sb.append((char)0);
+        sb.append((char)0);
+        sb.append((char)0);
+        sb.append((char)0);
+        sb.append((char)0);
+        sb.append((char)0);
+        sb.append((char)0);
+
+        return recv.getRuntime().newString(sb.toString());
+    }
+
+    public static IRubyObject unpack_sockaddr_in(IRubyObject recv, IRubyObject addr) {
+        String val = addr.convertToString().toString();
+        if(val.charAt(0) != 16 || val.charAt(1) != 2) {
+            throw recv.getRuntime().newArgumentError("can't resolve socket address of wrong type");
+        }
+        
+        int port = (val.charAt(2) << 8) + (val.charAt(3));
+        StringBuffer sb = new StringBuffer();
+        sb.append((int)val.charAt(4));
+        sb.append(".");
+        sb.append((int)val.charAt(5));
+        sb.append(".");
+        sb.append((int)val.charAt(6));
+        sb.append(".");
+        sb.append((int)val.charAt(7));
+
+        IRubyObject[] result = new IRubyObject[]{
+            recv.getRuntime().newFixnum(port),
+            recv.getRuntime().newString(sb.toString())};
+
+        return recv.getRuntime().newArrayNoCopy(result);
     }
 
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
