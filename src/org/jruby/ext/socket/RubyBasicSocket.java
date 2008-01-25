@@ -39,6 +39,7 @@ import java.net.DatagramSocket;
 import java.net.SocketAddress;
 import java.net.InetSocketAddress;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyIO;
@@ -180,6 +181,101 @@ public class RubyBasicSocket extends RubyIO {
         return trueFalse((socketChannel instanceof DatagramChannel) ? asDatagramSocket().getBroadcast() : false);
     }
 
+    private void setBroadcast(IRubyObject val) throws IOException {
+        if(socketChannel instanceof DatagramChannel) {
+            asDatagramSocket().setBroadcast(asBoolean(val));
+        }
+    }
+
+    private void setKeepAlive(IRubyObject val) throws IOException {
+        if(socketChannel instanceof SocketChannel) {
+            asSocket().setKeepAlive(asBoolean(val));
+        }
+    }
+
+    private void setReuseAddr(IRubyObject val) throws IOException {
+        if(socketChannel instanceof ServerSocketChannel) {
+            asServerSocket().setReuseAddress(asBoolean(val));
+        }
+    }
+
+    private void setRcvBuf(IRubyObject val) throws IOException {
+        if(socketChannel instanceof SocketChannel) {
+            asSocket().setReceiveBufferSize(asNumber(val));
+        } else if(socketChannel instanceof ServerSocketChannel) {
+            asServerSocket().setReceiveBufferSize(asNumber(val));
+        } else if(socketChannel instanceof DatagramChannel) {
+            asDatagramSocket().setReceiveBufferSize(asNumber(val));
+        }
+    }
+
+    private void setTimeout(IRubyObject val) throws IOException {
+        if(socketChannel instanceof SocketChannel) {
+            asSocket().setSoTimeout(asNumber(val));
+        } else if(socketChannel instanceof ServerSocketChannel) {
+            asServerSocket().setSoTimeout(asNumber(val));
+        } else if(socketChannel instanceof DatagramChannel) {
+            asDatagramSocket().setSoTimeout(asNumber(val));
+        }
+    }
+
+    private void setSndBuf(IRubyObject val) throws IOException {
+        if(socketChannel instanceof SocketChannel) {
+            asSocket().setSendBufferSize(asNumber(val));
+        } else if(socketChannel instanceof DatagramChannel) {
+            asDatagramSocket().setSendBufferSize(asNumber(val));
+        }
+    }
+
+    private void setLinger(IRubyObject val) throws IOException {
+        if(socketChannel instanceof SocketChannel) {
+            if(val instanceof RubyBoolean && !val.isTrue()) {
+                asSocket().setSoLinger(false, 0);
+            } else {
+                int num = asNumber(val);
+                if(num == -1) {
+                    asSocket().setSoLinger(false, 0);
+                } else {
+                    asSocket().setSoLinger(true, num);
+                }
+            }
+        }
+    }
+
+    private void setOOBInline(IRubyObject val) throws IOException {
+        if(socketChannel instanceof SocketChannel) {
+            asSocket().setOOBInline(asBoolean(val));
+        }
+    }
+
+    private int asNumber(IRubyObject val) {
+        if(val instanceof RubyNumeric) {
+            return RubyNumeric.fix2int(val);
+        } else {
+            return stringAsNumber(val);
+        }
+    }
+
+    private int stringAsNumber(IRubyObject val) {
+        String str = val.convertToString().toString();
+        int res = 0;
+        res += (str.charAt(0)<<24);
+        res += (str.charAt(1)<<16);
+        res += (str.charAt(2)<<8);
+        res += (str.charAt(3));
+        return res;
+    }
+
+    private boolean asBoolean(IRubyObject val) {
+        if(val instanceof RubyString) {
+            return stringAsNumber(val) != 0;
+        } else if(val instanceof RubyNumeric) {
+            return RubyNumeric.fix2int(val) != 0;
+        } else {
+            return val.isTrue();
+        }
+    }
+
     private IRubyObject getKeepAlive() throws IOException {
         return trueFalse(
                          (socketChannel instanceof SocketChannel) ? asSocket().getKeepAlive() : false
@@ -305,53 +401,59 @@ public class RubyBasicSocket extends RubyIO {
     public IRubyObject setsockopt(IRubyObject lev, IRubyObject optname, IRubyObject val) {
         int level = RubyNumeric.fix2int(lev);
         int opt = RubyNumeric.fix2int(optname);
-        switch(level) {
-        case RubySocket.SOL_IP:
-        case RubySocket.SOL_SOCKET:
-        case RubySocket.SOL_TCP:
-        case RubySocket.SOL_UDP:
-            switch(opt) {
-            case RubySocket.SO_BROADCAST:
-                break;
-            case RubySocket.SO_DEBUG:
-                break;
-            case RubySocket.SO_DONTROUTE:
-                break;
-            case RubySocket.SO_ERROR:
-                break;
-            case RubySocket.SO_KEEPALIVE:
-                break;
-            case RubySocket.SO_LINGER:
-                break;
-            case RubySocket.SO_OOBINLINE:
-                break;
-            case RubySocket.SO_RCVBUF:
-                break;
-            case RubySocket.SO_RCVLOWAT:
-                break;
-            case RubySocket.SO_RCVTIMEO:
-                break;
-            case RubySocket.SO_REUSEADDR:
-                break;
-            case RubySocket.SO_SNDBUF:
-                break;
-            case RubySocket.SO_SNDLOWAT:
-                break;
-            case RubySocket.SO_SNDTIMEO:
-                break;
-            case RubySocket.SO_TIMESTAMP:
-                break;
-            case RubySocket.SO_TYPE:
+
+        try {
+            switch(level) {
+            case RubySocket.SOL_IP:
+            case RubySocket.SOL_SOCKET:
+            case RubySocket.SOL_TCP:
+            case RubySocket.SOL_UDP:
+                switch(opt) {
+                case RubySocket.SO_BROADCAST:
+                    setBroadcast(val);
+                    break;
+                case RubySocket.SO_KEEPALIVE:
+                    setKeepAlive(val);
+                    break;
+                case RubySocket.SO_LINGER:
+                    setLinger(val);
+                    break;
+                case RubySocket.SO_OOBINLINE:
+                    setOOBInline(val);
+                    break;
+                case RubySocket.SO_RCVBUF:
+                    setRcvBuf(val);
+                    break;
+                case RubySocket.SO_REUSEADDR:
+                    setReuseAddr(val);
+                    break;
+                case RubySocket.SO_SNDBUF:
+                    setSndBuf(val);
+                    break;
+                case RubySocket.SO_RCVTIMEO:
+                case RubySocket.SO_SNDTIMEO:
+                    setTimeout(val);
+                    break;
+                    // Can't support the rest with Java
+                case RubySocket.SO_TYPE:
+                case RubySocket.SO_RCVLOWAT:
+                case RubySocket.SO_SNDLOWAT:
+                case RubySocket.SO_DEBUG:
+                case RubySocket.SO_ERROR:
+                case RubySocket.SO_DONTROUTE:
+                case RubySocket.SO_TIMESTAMP:
+                    break;
+                default:
+                    throw getRuntime().newErrnoENOPROTOOPTError();
+                }
                 break;
             default:
                 throw getRuntime().newErrnoENOPROTOOPTError();
             }
-            break;
-        default:
+        } catch(IOException e) {
             throw getRuntime().newErrnoENOPROTOOPTError();
         }
-
-        return getRuntime().getNil();
+        return getRuntime().newFixnum(0);
     }
 
     public IRubyObject getsockname() {

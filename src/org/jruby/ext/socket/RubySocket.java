@@ -245,7 +245,6 @@ public class RubySocket extends RubyBasicSocket {
                 DatagramChannel channel = DatagramChannel.open();
                 setChannel(channel);
             }
-
         } catch(IOException e) {
             throw sockerr(this, "initialize: " + e.toString());
         }
