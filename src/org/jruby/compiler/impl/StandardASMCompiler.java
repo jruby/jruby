@@ -389,6 +389,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         protected Label scopeEnd;
         protected Label redoJump;
         protected boolean withinProtection = false;
+        private int lastLine = -1;
 
         public abstract void beginMethod(CompilerCallback args, StaticScope scope);
 
@@ -420,9 +421,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void lineNumber(ISourcePosition position) {
+            int thisLine = position.getStartLine();
+            
+            // No point in updating number if last number was same value.
+            if (thisLine != lastLine) {
+                lastLine = thisLine;
+            } else {
+                return;
+            }
+            
             Label line = new Label();
             method.label(line);
-            method.visitLineNumber(position.getStartLine() + 1, line);
+            method.visitLineNumber(thisLine + 1, line);
         }
 
         public void loadThreadContext() {
