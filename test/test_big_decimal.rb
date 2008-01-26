@@ -7,6 +7,7 @@ class TestBigDecimal < Test::Unit::TestCase
     bd = BigDecimal.new("1")
     assert_equal("0.1E1", bd.to_s)
     assert_equal("+0.1E1", bd.to_s("+-2"))
+    assert_equal("0.23", BigDecimal.new("0.23").to_s("F"))
   end
 
   def test_no_singleton_methods_on_bigdecimal

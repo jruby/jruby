@@ -641,13 +641,6 @@ public class RubyBigDecimal extends RubyNumeric {
         }
         return in;
     }
-
-    private String toSpecialString(BigDecimal abs) {
-      if (abs.compareTo(BigDecimal.valueOf(0))== 0) {
-        return "0.0";
-      }
-      return null;
-    }
   
     public static boolean formatHasLeadingPlus(String format) {
         return format.startsWith("+");
@@ -670,106 +663,147 @@ public class RubyBigDecimal extends RubyNumeric {
         }
         return groups;
     }
+    
+    private boolean hasArg(IRubyObject[] args) {
+        return args.length != 0 && !args[0].isNil();
+    }
 
+    private String format(IRubyObject[] args) {
+        return args[0].toString();
+    }
+
+    private String firstArgument(IRubyObject[] args) {
+        if (hasArg(args)) {
+            return format(args);
+        }
+        return null;
+    }
+
+    private boolean posSpace(String arg) {
+        if (null != arg) {
+            return formatHasLeadingSpace(arg);
+        }
+        return false;
+    }
+
+    private boolean posSign(String arg) {
+        if (null != arg) {
+            return formatHasLeadingPlus(arg) || posSpace(arg);
+        }
+        return false;
+    }
+
+    private boolean asEngineering(String arg) {
+        if (null != arg) {
+            return !formatHasFloatingPointNotation(arg);
+        }
+        return true;
+    }
+
+    private int groups(String arg) {
+        if (null != arg) {
+            return formatFractionalDigitGroups(arg);
+        }
+        return 0;
+    }
+
+    private boolean isZero() {
+        return value.abs().compareTo(BigDecimal.ZERO) == 0;
+    }
+
+    private String unscaledValue() {
+        return value.abs().unscaledValue().toString();
+    }
+
+    private IRubyObject engineeringValue(String arg) {
+        int exponent = exp();
+        int signum = value.signum();
+        StringBuffer build = new StringBuffer();
+        build.append(signum == -1 ? "-" : (signum == 1 ? (posSign(arg) ? (posSpace(arg) ? " " : "+") : "") : ""));
+        build.append("0.");
+        if (0 == groups(arg)) {
+            String s = removeTrailingZeroes(unscaledValue());
+            if ("".equals(s)) {
+                build.append("0");
+            } else {
+                build.append(s);
+            }
+        } else {
+            int index = 0;
+            String sep = "";
+            while (index < unscaledValue().length()) {
+                int next = index + groups(arg);
+                if (next > unscaledValue().length()) {
+                    next = unscaledValue().length();
+                }
+                build.append(sep).append(unscaledValue().substring(index, next));
+                sep = " ";
+                index += groups(arg);
+            }
+        }
+        build.append("E").append(exponent);
+        return getRuntime().newString(build.toString());
+    }
+
+    private IRubyObject floatingPointValue(String arg) {
+        String values[] = value.abs().toString().split("\\.");
+        String whole = "0";
+        if (values.length > 0) {
+            whole = values[0];
+        }
+        String after = "0";
+        if (values.length > 1) {
+            after = values[1];
+        }
+        int signum = value.signum();
+        StringBuffer build = new StringBuffer();
+        build.append(signum == -1 ? "-" : (signum == 1 ? (posSign(arg) ? (posSpace(arg) ? " " : "+") : "") : ""));
+        if (groups(arg) == 0) {
+            build.append(whole);
+            if (null != after) {
+                build.append(".").append(after);
+            }
+        } else {
+            int index = 0;
+            String sep = "";
+            while (index < whole.length()) {
+                int next = index + groups(arg);
+                if (next > whole.length()) {
+                    next = whole.length();
+                }
+                build.append(sep).append(whole.substring(index, next));
+                sep = " ";
+                index += groups(arg);
+            }
+            if (null != after) {
+                build.append(".");
+                index = 0;
+                sep = "";
+                while (index < after.length()) {
+                    int next = index + groups(arg);
+                    if (next > after.length()) {
+                        next = after.length();
+                    }
+                    build.append(sep).append(after.substring(index, next));
+                    sep = " ";
+                    index += groups(arg);
+                }
+            }
+        }
+        return getRuntime().newString(build.toString());
+    }
+            
     @JRubyMethod(name = "to_s", optional = 1)
     public IRubyObject to_s(IRubyObject[] args) {
-        boolean engineering = true;
-        boolean pos_sign = false;
-        boolean pos_space = false;
-        int groups = 0;
-
-        if(args.length != 0 && !args[0].isNil()) {
-            String format = args[0].toString();
-            pos_space = formatHasLeadingSpace(format);
-            //pos_sign true for pos_space in order to make ternary expression work later -- yuck
-            pos_sign = formatHasLeadingPlus(format) || pos_space;
-            engineering = !formatHasFloatingPointNotation(format);
-            groups = formatFractionalDigitGroups(format);
-        }
-
-        String out = null;
-        BigDecimal abs = value.abs();
-        String unscaled = abs.unscaledValue().toString();
-
-        //not beautiful, but parallel to MRI's VpToSpecialString
-        if (null != (out = toSpecialString(abs))) {
-          return getRuntime().newString(out);
-        }
-        if(engineering) {
-            int exponent = exp();
-            int signum = value.signum();
-            StringBuffer build = new StringBuffer();
-            build.append(signum == -1 ? "-" : (signum == 1 ? (pos_sign ? (pos_space ? " " : "+" ) : "") : ""));
-            build.append("0.");
-            if(0 == groups) {
-                String s = removeTrailingZeroes(unscaled);
-                if("".equals(s)) {
-                    build.append("0");
-            } else {
-                    build.append(s);
-                }
-            } else {
-                int index = 0;
-                String sep = "";
-                while(index < unscaled.length()) {
-                    int next = index+groups;
-                    if(next > unscaled.length()) {
-                        next = unscaled.length();
-                    }
-                    build.append(sep).append(unscaled.substring(index,next));
-                    sep = " ";
-                    index += groups;
-                }
-            }
-            build.append("E").append(exponent);
-            out = build.toString();
+        String arg = firstArgument(args);
+        if (isZero()) {
+          return getRuntime().newString("0.0");
+        }        
+        if(asEngineering(arg)) {
+            return engineeringValue(arg);
         } else {
-            int ix = abs.toString().indexOf('.');
-            String whole = unscaled;
-            String after = null;
-            if(ix != -1) {
-                whole = unscaled.substring(0,ix);
-                after = unscaled.substring(ix);
-            }
-            int signum = value.signum();
-            StringBuffer build = new StringBuffer();
-            build.append(signum == -1 ? "-" : (signum == 1 ? (pos_sign ? (pos_space ? " " : "+" ) : "") : ""));
-            if(0 == groups) {
-                build.append(whole);
-                if(null != after) {
-                    build.append(".").append(after);
-                }
-            } else {
-                int index = 0;
-                String sep = "";
-                while(index < whole.length()) {
-                    int next = index+groups;
-                    if(next > whole.length()) {
-                        next = whole.length();
-                    }
-                    build.append(sep).append(whole.substring(index,next));
-                    sep = " ";
-                    index += groups;
-                }
-                if(null != after) {
-                    build.append(".");
-                    index = 0;
-                    sep = "";
-                    while(index < after.length()) {
-                        int next = index+groups;
-                        if(next > after.length()) {
-                            next = after.length();
-                        }
-                        build.append(sep).append(after.substring(index,next));
-                        sep = " ";
-                        index += groups;
-                    }
-                }
-            }
-            out = build.toString();
+            return floatingPointValue(arg);
         }
-
-        return getRuntime().newString(out);
     }
 
     @JRubyMethod(name = "truncate", optional = 1)
