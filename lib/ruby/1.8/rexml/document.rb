@@ -183,8 +183,8 @@ module REXML
         output = Output.new( output, xml_decl.encoding )
       end
       formatter = if indent > -1
-          if transitive
-            REXML::Formatters::Transitive.new( indent, ie_hack )
+          if trans
+            REXML::Formatters::Transitive.new( indent )
           else
             REXML::Formatters::Pretty.new( indent, ie_hack )
           end
