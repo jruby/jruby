@@ -284,8 +284,9 @@ class TestIO < Test::Unit::TestCase
     f.print "."
     f.close
     out = File.read("__temp1")
-    File.unlink("__temp1")
     assert_equal "..", out
+  ensure
+    File.unlink("__temp1") rescue nil
   end
   
   # JRUBY-1698
@@ -294,6 +295,20 @@ class TestIO < Test::Unit::TestCase
     ensure_files @file
     f = File.open(@file)
     assert_nothing_raised { f.read(1000000000) }
+  end
+  
+  # JRUBY-2023, multithreaded writes
+  def test_multithreaded_writes
+    f = File.open("__temp1", "w")
+    threads = []
+    100.times {
+      threads << Thread.new { 100.times { f.print('.') } }
+    }
+    threads.each {|thread| thread.join}
+    f.close
+    assert File.size("__temp1") == 100*100
+  ensure
+    File.unlink("__temp1")
   end
   
   private
