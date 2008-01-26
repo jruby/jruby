@@ -169,4 +169,20 @@ class TestThread < Test::Unit::TestCase
     assert_nothing_raised { Thread.abort_on_exception }
     assert_nothing_raised { Thread.abort_on_exception = Thread.abort_on_exception}
   end
+
+  # JRUBY-2021
+  def test_multithreaded_method_definition
+    def run_me
+      sleep 0.1
+      def do_stuff
+        sleep 0.1
+      end
+    end
+
+    threads = []
+    100.times {
+      threads << Thread.new { run_me }
+    }
+    threads.each { |t| t.join }
+  end
 end
