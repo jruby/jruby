@@ -113,8 +113,8 @@ JAVA_STACK=-Xss1024k
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
-java_args=()
-ruby_args=()
+declare -a java_args
+declare -a ruby_args
     while [ $# -gt 0 ]
 do
     case "$1" in
