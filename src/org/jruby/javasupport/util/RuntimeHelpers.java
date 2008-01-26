@@ -662,7 +662,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject setConstantInModule(IRubyObject module, IRubyObject value, String name, ThreadContext context) {
-        return context.setConstantInModule(name, (RubyModule)module, value);
+        return context.setConstantInModule(name, module, value);
     }
     
     public static IRubyObject retryJump() {

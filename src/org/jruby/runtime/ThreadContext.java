@@ -509,7 +509,11 @@ public final class ThreadContext {
      * Used by the evaluator and the compiler to set a constant by name.
      * This is for a Colon2 const decl
      */
-    public IRubyObject setConstantInModule(String internedName, RubyModule module, IRubyObject result) {
+    public IRubyObject setConstantInModule(String internedName, IRubyObject target, IRubyObject result) {
+        if (!(target instanceof RubyModule)) {
+            throw runtime.newTypeError(target.toString() + " is not a class/module");
+        }
+        RubyModule module = (RubyModule)target;
         module.fastSetConstant(internedName, result);
         
         return result;

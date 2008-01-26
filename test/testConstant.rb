@@ -221,3 +221,9 @@ test_equal(Outer::Inner, const_from_name("Inner"))
 test_equal("constant", defined?Inner)
 
 # End test fix for JRUBY-1339
+
+# JRUBY-2004
+test_exception(TypeError) {
+  JRuby2004 = 5
+  JRuby2004::X = 5
+}
