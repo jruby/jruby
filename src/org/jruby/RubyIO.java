@@ -864,16 +864,14 @@ public class RubyIO extends RubyObject {
      */
     @JRubyMethod(name = "write", required = 1)
     public IRubyObject write(IRubyObject obj) {
-        checkWriteable();
-
         try {
-            if (obj instanceof RubyString) {
-                return getRuntime().newFixnum(openFile.getMainStream().fwrite(((RubyString)obj).getByteList()));
+            ByteList objBytes = obj.asString().getByteList();
+            if (objBytes.length() == 0) {
+                // nothing to write, just return
+                return RubyFixnum.zero(getRuntime());
             } else {
-                // FIXME: unlikely to be efficient, but probably correct
-                return getRuntime().newFixnum(
-                        openFile.getMainStream().fwrite(
-                                obj.asString().getByteList()));
+                checkWriteable();
+                return getRuntime().newFixnum(openFile.getMainStream().fwrite(objBytes));
             }
         } catch (Stream.BadDescriptorException e) {
             return RubyFixnum.zero(getRuntime());
