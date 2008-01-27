@@ -873,8 +873,7 @@ public class RubyIO extends RubyObject {
                 // FIXME: unlikely to be efficient, but probably correct
                 return getRuntime().newFixnum(
                         openFile.getMainStream().fwrite(
-                        ((RubyString)obj.callMethod(
-                            obj.getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s")).getByteList()));
+                                obj.asString().getByteList()));
             }
         } catch (Stream.BadDescriptorException e) {
             return RubyFixnum.zero(getRuntime());
