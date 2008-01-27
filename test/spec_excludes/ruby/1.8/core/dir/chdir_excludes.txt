@@ -1,1 +1,0 @@
-Dir.chdir raises a SystemCallError if the original directory no longer exists

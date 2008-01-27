@@ -1,1 +1,2 @@
-File.open open the file when call with mode, num and permissions
+File.open opens the file when call with mode, num and permissions
+File.open opens a file with a file descriptor d and a block

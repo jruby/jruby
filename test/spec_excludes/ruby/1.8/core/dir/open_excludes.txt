@@ -1,1 +1,0 @@
-Dir.open takes a block which yields the Dir instance and closes it after

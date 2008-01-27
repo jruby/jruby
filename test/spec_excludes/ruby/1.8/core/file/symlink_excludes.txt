@@ -1,1 +1,0 @@
-File.symlink raises an Errno::EEXIST if the target already exists
