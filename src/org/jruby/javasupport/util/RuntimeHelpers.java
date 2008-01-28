@@ -39,6 +39,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.TypeConverter;
 
 /**
@@ -774,7 +775,7 @@ public class RuntimeHelpers {
     public static void preLoad(ThreadContext context, String[] varNames) {
         StaticScope staticScope = new LocalStaticScope(null, varNames);
         staticScope.setModule(context.getRuntime().getObject());
-        DynamicScope scope = DynamicScope.newDynamicScope(staticScope);
+        DynamicScope scope = new ManyVarsDynamicScope(staticScope);
         
         // Each root node has a top-level scope that we need to push
         context.preScopedBody(scope);

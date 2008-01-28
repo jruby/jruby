@@ -56,4 +56,34 @@ class FlipTest < Test::Unit::TestCase
           [57, 58, 59, 60, 61, 62, 63, 64]]
     assert_equal(expected, a)
   end
+  
+  def test_flip_in_conditional
+    assert_equal(0, (true..false) ? 0 : 1)
+    assert_equal(1, (false..true) ? 0 : 1)
+    assert_equal(0, (5..8) ? 0 : 1)
+    assert_equal(0, (Object.new..Object.new) ? 0 : 1)
+  end
+  
+  # JRUBY-2046
+  def test_flip_in_conditional_in_eval
+    # We need at least 2 vars, or 0,
+    # in order to trigger the bug.
+    extra_var = nil
+
+    expected = nil
+    eval("expected = (true..false) ? 0 : 1")
+    assert_equal(0, expected)
+
+    expected = nil
+    eval("expected = (false..true) ? 0 : 1")
+    assert_equal(1, expected)
+
+    expected = nil
+    eval("expected = (5..8) ? 0 : 1")
+    assert_equal(0, expected)
+    
+    expected = nil
+    eval("expected = (Object.new..Object.new) ? 0 : 1")
+    assert_equal(0, expected)
+  end
 end
