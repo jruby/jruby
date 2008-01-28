@@ -76,9 +76,6 @@ import org.jruby.util.Sprintf;
 public class RubyString extends RubyObject {
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     
-    private static final int TMPLOCK_STR_F = 1 << 11;
-    private static final int TMPLOCK_OR_FROZEN_STR_F = TMPLOCK_STR_F | FROZEN_F;
-
     // string has it's own ByteList, but it's pointing to a shared buffer (byte[])
     private volatile boolean shared_buffer = false;
 
@@ -197,10 +194,8 @@ public class RubyString extends RubyObject {
     }
 
     private final void modifyCheck() {
-        if ((flags & TMPLOCK_OR_FROZEN_STR_F) != 0) {
-            if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("string" + getMetaClass().getName());           
-            if ((flags & TMPLOCK_STR_F) != 0) throw getRuntime().newTypeError("can't modify string; temporarily locked");
-        }
+        if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("string" + getMetaClass().getName());           
+
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw getRuntime().newSecurityError("Insecure: can't modify string");
         }
