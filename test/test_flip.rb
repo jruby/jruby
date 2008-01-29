@@ -112,4 +112,10 @@ class FlipTest < Test::Unit::TestCase
     }
     assert_equal(1, res)
   end
+  
+  # JRUBY-2046
+  def test_flip_in_eval_in_module
+    res = eval("module M; eval('(true..false) ? 1 : 0'); end")
+    assert_equal(1, res)
+  end
 end
