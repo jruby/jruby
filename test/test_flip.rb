@@ -86,4 +86,30 @@ class FlipTest < Test::Unit::TestCase
     eval("expected = (Object.new..Object.new) ? 0 : 1")
     assert_equal(0, expected)
   end
+
+  # JRUBY-2046
+  def test_flip_in_eval_in_method
+    def method
+      eval("(true..false) ? 1 : 0")
+    end
+    assert_equal(1, method)
+  end
+
+  # JRUBY-2046
+  def test_flip_in_class_eval
+    assert_equal(1, Object.class.class_eval("(true..false) ? 1 : 0"))
+  end
+
+  # JRUBY-2046
+  def test_flip_in_instance_eval
+    assert_equal(1, Object.new.instance_eval("(true..false) ? 1 : 0"))
+  end
+
+  # JRUBY-2046
+  def test_flip_in_eval_in_instance_eval
+    res = Object.new.instance_eval {
+      eval("(true..false) ? 1 : 0")
+    }
+    assert_equal(1, res)
+  end
 end
