@@ -213,10 +213,6 @@ public class ASTInterpreter {
             RubyString source = src.convertToString();
             Node node = 
                 runtime.parseEval(source.getByteList(), file, evalScope, lineNumber);
-            
-            // Parsing might add new variables, so we may need to grow
-            // the dynamic scope to match the static one. JRUBY-2046.
-            binding.getDynamicScope().growIfNeeded();
 
             return eval(runtime, context, node, newSelf, binding.getFrame().getBlock());
         } catch (JumpException.BreakJump bj) {
