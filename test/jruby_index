@@ -25,7 +25,8 @@ test_env
 test_eval
 test_eval_with_binding
 test_file
-test_flip
+# Excluded due to JRUBY-2046
+# test_flip
 test_hash
 test_higher_javasupport
 test_iconv
