@@ -723,13 +723,13 @@
       <delete file="${build.dir}/rubyspecs.current.revision"/>
   </target>
   
-  <target name="run-specs">
+  <target name="run-specs" depends="jar">
       <antcall target="run-specs-precompiled"/>
       <antcall target="run-specs-compiled"/>
       <antcall target="run-specs-interpreted"/>
   </target>
   
-  <target name="run-specs-all">
+  <target name="run-specs-all" depends="jar">
       <antcall target="run-specs-all-precompiled"/>
   </target>
   
