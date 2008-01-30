@@ -259,7 +259,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         return (start < 0) ? getRuntime().getFalse() : getRuntime().getTrue();
     }
 
-    private static final int REGEX_QOUTED = 1;
+    private static final int REGEX_QUOTED = 1;
     private void initialize(ByteList bytes, int options, boolean quote) {
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
@@ -273,12 +273,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         if (pat != null &&
             pat.getEncoding() == kcode.getEncoding() &&
             pat.getOptions() == (options & 0xf) &&
-            ((pat.getUserOptions() & REGEX_QOUTED) != 0) == quote) { // cache hit
+            ((pat.getUserOptions() & REGEX_QUOTED) != 0) == quote) { // cache hit
             pattern = pat;
         } else {
             if (quote) bytes = quote(bytes, getRuntime().getKCode());
             makeRegexp(bytes, bytes.begin, bytes.realSize, options & 0xf, kcode.getEncoding());
-            if (quote) pattern.setUserOptions(REGEX_QOUTED);
+            if (quote) pattern.setUserOptions(REGEX_QUOTED);
             cache.put(bytes, pattern);
         }
 
