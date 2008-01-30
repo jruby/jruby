@@ -636,18 +636,26 @@ public class RubyFile extends RubyIO {
         RubyString filename = RubyString.stringValue(arg);
         String jfilename = filename.toString();
         String name = jfilename.replace('\\', '/');
+        int minPathLength = 1;
         boolean trimmedSlashes = false;
 
-        while (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
+        boolean sttartsWithDriveLetterOnWindows = IS_WINDOWS && name.length() > 1
+                && isWindowsDriveLetter(name.charAt(0))
+                && name.charAt(1) == ':';
+
+        if (sttartsWithDriveLetterOnWindows) {
+            minPathLength = 3;
+        }
+
+        while (name.length() > minPathLength && name.charAt(name.length() - 1) == '/') {
             trimmedSlashes = true;
             name = name.substring(0, name.length() - 1);
         }
 
         String result;
-        if (IS_WINDOWS && name.length() == 2 &&
-                isWindowsDriveLetter(name.charAt(0)) && name.charAt(1) == ':') {
-            // C:\ is returned unchanged (after slash trimming)
+        if (sttartsWithDriveLetterOnWindows && name.length() == 2) {
             if (trimmedSlashes) {
+                // C:\ is returned unchanged
                 result = jfilename.substring(0, 3);
             } else {
                 result = jfilename.substring(0, 2) + '.';
@@ -655,24 +663,37 @@ public class RubyFile extends RubyIO {
         } else {
             //TODO deal with UNC names
             int index = name.lastIndexOf('/');
-            if (index == -1) return recv.getRuntime().newString(".");
+            if (index == -1) {
+                if (sttartsWithDriveLetterOnWindows) {
+                    return recv.getRuntime().newString(
+                            jfilename.substring(0, 2) + ".");
+                } else {
+                    return recv.getRuntime().newString(".");
+                }
+            }
             if (index == 0) return recv.getRuntime().newString("/");
 
-            // Include additional path separator (e.g. C:\myfile.txt becomes C:\, not C:)
-            if (IS_WINDOWS && index == 2 && 
-                    isWindowsDriveLetter(name.charAt(0)) && name.charAt(1) == ':') {
+            if (sttartsWithDriveLetterOnWindows && index == 2) {
+                // Include additional path separator
+                // (so that dirname of "C:\file.txt" is  "C:\", not "C:")
                 index++;
             }
-            
-            result = jfilename.substring(0, index);
-       }
 
-        while (result.length() > 1 && result.charAt(result.length() - 1) == '/') {
-            result = result.substring(0, result.length() - 1);
+            result = jfilename.substring(0, index);
         }
 
-       return recv.getRuntime().newString(result).infectBy(filename);
+        char endChar;
+        // trim trailing slashes
+        while (result.length() > minPathLength) {
+            endChar = result.charAt(result.length() - 1);
+            if (endChar == '/' || endChar == '\\') {
+                result = result.substring(0, result.length() - 1);
+            } else {
+                break;
+            }
+        }
 
+        return recv.getRuntime().newString(result).infectBy(filename);
     }
 
     private static boolean isWindowsDriveLetter(char c) {

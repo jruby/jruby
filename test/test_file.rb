@@ -35,6 +35,17 @@ class TestFile < Test::Unit::TestCase
       assert_equal "\\", File.basename("c:\\")
       assert_equal "abc", File.basename("c:abc")
     end
+
+    # JRUBY-2052: this is important for fileutils
+    def test_windows_dirname
+      assert_equal("C:/", File.dirname("C:/"))
+      assert_equal("C:\\", File.dirname("C:\\"))
+      assert_equal("C:/", File.dirname("C:///////"))
+      assert_equal("C:\\", File.dirname("C:\\\\\\\\"))
+      assert_equal("C:/", File.dirname("C:///////blah"))
+      assert_equal("C:\\", File.dirname("C:\\\\\\\\blah"))
+      assert_equal("C:.", File.dirname("C:blah"))
+    end
   else
     def test_expand_path
       assert_equal("/bin", File.expand_path("../../bin", "/foo/bar"))
