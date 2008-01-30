@@ -294,7 +294,9 @@ class TestFile < Test::Unit::TestCase
     time = File.mtime(filename)
     
     FileUtils.touch(filename)
-    assert_equal(time, File.mtime(filename))
+    # File mtime resolution may not be sub-second on all platforms (e.g., windows)
+    # allow for some slop
+    assert((time.to_i - File.mtime(filename).to_i).abs < 2)
   end
 
   def test_file_stat # File::Stat tests
