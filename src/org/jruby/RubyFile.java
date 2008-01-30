@@ -639,11 +639,11 @@ public class RubyFile extends RubyIO {
         int minPathLength = 1;
         boolean trimmedSlashes = false;
 
-        boolean sttartsWithDriveLetterOnWindows = IS_WINDOWS && name.length() > 1
+        boolean startsWithDriveLetterOnWindows = IS_WINDOWS && name.length() > 1
                 && isWindowsDriveLetter(name.charAt(0))
                 && name.charAt(1) == ':';
 
-        if (sttartsWithDriveLetterOnWindows) {
+        if (startsWithDriveLetterOnWindows) {
             minPathLength = 3;
         }
 
@@ -653,7 +653,7 @@ public class RubyFile extends RubyIO {
         }
 
         String result;
-        if (sttartsWithDriveLetterOnWindows && name.length() == 2) {
+        if (startsWithDriveLetterOnWindows && name.length() == 2) {
             if (trimmedSlashes) {
                 // C:\ is returned unchanged
                 result = jfilename.substring(0, 3);
@@ -664,7 +664,7 @@ public class RubyFile extends RubyIO {
             //TODO deal with UNC names
             int index = name.lastIndexOf('/');
             if (index == -1) {
-                if (sttartsWithDriveLetterOnWindows) {
+                if (startsWithDriveLetterOnWindows) {
                     return recv.getRuntime().newString(
                             jfilename.substring(0, 2) + ".");
                 } else {
@@ -673,7 +673,7 @@ public class RubyFile extends RubyIO {
             }
             if (index == 0) return recv.getRuntime().newString("/");
 
-            if (sttartsWithDriveLetterOnWindows && index == 2) {
+            if (startsWithDriveLetterOnWindows && index == 2) {
                 // Include additional path separator
                 // (so that dirname of "C:\file.txt" is  "C:\", not "C:")
                 index++;
