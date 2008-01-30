@@ -5,6 +5,9 @@
 
   <!-- First try to load machine-specific properties. -->
   <property file="build.properties"/>
+  <!-- Load revision number for the ruby specs, in a known good state.
+       There should be no spec failures with such revision. -->
+  <property file="rubyspecs.revision"/>
 
   <!-- And then load the defaults. It seems backwards to set defaults AFTER 
        setting local overrides, but that's how Ant works. -->
@@ -42,7 +45,8 @@
   
   <import file="netbeans-ant.xml" optional="true"/>
 
-  <target name="init" description="initialize the build">
+  <!-- Initializes the build -->
+  <target name="init">
     <xmlproperty file="build-config.xml" keepRoot="false" collapseAttributes="true"/>
     <tstamp><format property="build.date" pattern="yyyy-MM-dd"/></tstamp>
     <property environment="env"/>
@@ -53,8 +57,8 @@
     </condition>
   </target>
 
-  <target name="prepare" depends="init" 
-    description="Creates the directories needed for building">
+  <!-- Creates the directories needed for building -->
+  <target name="prepare" depends="init">
     <mkdir dir="${build.dir}"/>
     <mkdir dir="${classes.dir}"/>
     <mkdir dir="${jruby.classes.dir}"/>
@@ -76,8 +80,8 @@
     <delete file="__ragel_out" quiet="true"/>
   </target>
 
+  <!-- Checks if specific libs and versions are avaiable -->
   <target name="check-for-optional-java4-packages"
-          description="check if specific libs and versions are avaiable"
           depends="init">
     <available property="jdk1.4+" classname="java.lang.CharSequence"/>
     <available property="jdk1.5+" classname="java.lang.StringBuilder"/>
@@ -90,13 +94,13 @@
                classpathref="build.classpath"/>
   </target>
 
+  <!-- Checks if specific libs and versions are avaiable -->
   <target name="check-for-optional-packages" if="jdk1.5+"
-          description="check if specific libs and versions are avaiable"
           depends="check-for-optional-java4-packages">
   </target>
 
-  <target name="compile.tasks" depends="prepare"
-    description="Builds the Ant tasks that we need later on in the build">
+  <!-- Builds the Ant tasks that we need later on in the build -->
+  <target name="compile.tasks" depends="prepare">
     <copy todir="${jruby.classes.dir}">
         <fileset dir="${src.dir}">
             <include name="**/*.rb"/>
@@ -354,7 +358,8 @@
     instrument,
     run-junit-compiled,
     run-junit-compiled-1.9,
-    coverage-report">
+    coverage-report"
+  	description="Runs unit tests.">
   </target>
 
   <target name="test-compiled" depends="copy-test-files,run-junit-compiled,run-junit-precompiled"/>
@@ -381,44 +386,44 @@
       run-junit-interpreted-threadpool,
       run-junit-object-persistence,
       compile-stdlib,
-      coverage-report
-  "/>
+      coverage-report"
+	  description="Runs unit tests in all modes."/>
   
-  <target name="run-junit-interpreted" description="runs junit tests">
+  <target name="run-junit-interpreted">
       <antcall target="run-junit-1.8" inheritall="false"/>
   </target>
   
-  <target name="run-junit-interpreted-1.9" description="runs junit tests">
+  <target name="run-junit-interpreted-1.9">
       <antcall target="run-junit-1.9" inheritall="false"/>
   </target>
   
-  <target name="run-junit-reflected-interpreted" description="runs junit tests">
+  <target name="run-junit-reflected-interpreted">
       <antcall target="run-junit-1.8" inheritall="false">
           <param name="reflection " value="true"/>
       </antcall>
   </target>
   
-  <target name="run-junit-reflected-interpreted-1.9" description="runs junit tests">
+  <target name="run-junit-reflected-interpreted-1.9">
       <antcall target="run-junit-1.9" inheritall="false">
           <param name="reflection " value="true"/>
       </antcall>
   </target>
   
-  <target name="run-junit-compiled" description="runs junit tests">
+  <target name="run-junit-compiled">
       <antcall target="run-junit-1.8" inheritall="false">
           <param name="compile.mode" value="JIT"/>
           <param name="jit.threshold" value="0"/>
       </antcall>
   </target>
   
-  <target name="run-junit-compiled-1.9" description="runs junit tests">
+  <target name="run-junit-compiled-1.9">
       <antcall target="run-junit-1.9" inheritall="false">
           <param name="compile.mode" value="JIT"/>
           <param name="jit.threshold" value="0"/>
       </antcall>
   </target>
   
-  <target name="run-junit-reflected-compiled" description="runs junit tests">
+  <target name="run-junit-reflected-compiled">
       <antcall target="run-junit-1.8" inheritall="false">
           <param name="compile.mode" value="JIT"/>
           <param name="jit.threshold" value="0"/>
@@ -426,7 +431,7 @@
       </antcall>
   </target>
   
-  <target name="run-junit-reflected-compiled-1.9" description="runs junit tests">
+  <target name="run-junit-reflected-compiled-1.9">
       <antcall target="run-junit-1.9" inheritall="false">
           <param name="compile.mode" value="JIT"/>
           <param name="jit.threshold" value="0"/>
@@ -434,21 +439,21 @@
       </antcall>
   </target>
   
-  <target name="run-junit-precompiled" description="runs junit tests">
+  <target name="run-junit-precompiled">
       <antcall target="run-junit-1.8" inheritall="false">
           <param name="compile.mode" value="FORCE"/>
           <param name="jit.threshold" value="0"/>
       </antcall>
   </target>
   
-  <target name="run-junit-precompiled-1.9" description="runs junit tests">
+  <target name="run-junit-precompiled-1.9">
       <antcall target="run-junit-1.9" inheritall="false">
           <param name="compile.mode" value="FORCE"/>
           <param name="jit.threshold" value="0"/>
       </antcall>
   </target>
   
-  <target name="run-junit-reflected-precompiled" description="runs junit tests">
+  <target name="run-junit-reflected-precompiled">
       <antcall target="run-junit-1.8" inheritall="false">
           <param name="compile.mode" value="FORCE"/>
           <param name="jit.threshold" value="0"/>
@@ -456,7 +461,7 @@
       </antcall>
   </target>
   
-  <target name="run-junit-reflected-precompiled-1.9" description="runs junit tests">
+  <target name="run-junit-reflected-precompiled-1.9">
       <antcall target="run-junit-1.9" inheritall="false">
           <param name="compile.mode" value="FORCE"/>
           <param name="jit.threshold" value="0"/>
@@ -466,13 +471,13 @@
   
   <target name="run-junit-threadpool" depends="run-junit-interpreted-threadpool,run-junit-compiled-threadpool"/>
   
-  <target name="run-junit-interpreted-threadpool" description="runs junit tests">
+  <target name="run-junit-interpreted-threadpool">
       <antcall target="run-junit-1.8" inheritall="false">
           <param name="thread.pooling" value="true"/>
       </antcall>
   </target>
   
-  <target name="run-junit-compiled-threadpool" description="runs junit tests">
+  <target name="run-junit-compiled-threadpool">
       <antcall target="run-junit-1.8" inheritall="false">
           <param name="compile.mode" value="JIT"/>
           <param name="jit.threshold" value="0"/>
@@ -480,7 +485,7 @@
       </antcall>
   </target>
   
-  <target name="run-junit-precompiled-threadpool" description="runs junit tests">
+  <target name="run-junit-precompiled-threadpool">
       <antcall target="run-junit-1.8" inheritall="false">
           <param name="compile.mode" value="FORCE"/>
           <param name="jit.threshold" value="0"/>
@@ -498,7 +503,8 @@
     <pathelement location="${test.dir}"/>
   </path>
   
-  <target name="run-junit-1.8" description="runs junit tests for 1.8 functionality">
+  <!-- runs junit tests for 1.8 functionality -->
+  <target name="run-junit-1.8">
     <!-- set up properties that haven't been assigned -->
     <property name="compile.mode" value="OFF"/>
     <property name="jit.threshold" value="20"/>
@@ -549,7 +555,7 @@
     </junitreport>
   </target>
   
-  <target name="run-junit-1.9" description="runs junit tests">
+  <target name="run-junit-1.9">
     <!-- set up properties that haven't been assigned -->
     <property name="compile.mode" value="OFF"/>
     <property name="jit.threshold" value="20"/>
@@ -593,7 +599,8 @@
     </junitreport>
   </target>
   
-  <target name="run-junit-object-persistence" description="runs junit tests for object persistence support">
+  <!-- Runs junit tests for object persistence support -->
+  <target name="run-junit-object-persistence">
     <!-- set up properties that haven't been assigned -->
     <property name="compile.mode" value="OFF"/>
     <property name="jit.threshold" value="20"/>
@@ -628,14 +635,58 @@
       <report format="frames" todir="${html.test.results.dir}"/>
     </junitreport>
   </target>
-  
-  <target name="spec" depends="fetch-specs, run-specs"/>
-  
-  <target name="spec-all" depends="fetch-specs, run-specs-all"/>
+
+  <target name="detect-stable-specs-need-update">
+    <property file="${build.dir}/rubyspecs.current.revision"/>
+    <condition property="stable-specs-need-update">
+      <or>
+        <not><available file="${build.dir}/rubyspec"/></not>
+        <not>
+          <equals
+            arg1="${rubyspecs.revision}"
+            arg2="${rubyspecs.current.revision}"/>
+        </not>
+      </or>
+    </condition>
+  </target>
+
+  <target name="fetch-stable-specs" depends="prepare, detect-stable-specs-need-update" if="stable-specs-need-update">
+  	<echo message="Downlodaing stable rubyspecs..."/>
+  	<get src="http://git.rubini.us/?p=code;a=snapshot;h=${rubyspecs.revision};sf=tgz" dest="${build.dir}/rubyspec.tgz"/>
+  	<!-- Wipe the old specs, if any -->
+  	<delete dir="${build.dir}/rubyspec"/>
+  	<mkdir dir="${build.dir}/rubyspec"/>
+  	<untar src="${build.dir}/rubyspec.tgz" dest="${build.dir}/rubyspec" compression="gzip"/>
+  	
+  	<!-- Write down the revision of downloaded specs -->
+    <propertyfile file="${build.dir}/rubyspecs.current.revision" comment="Revision of downloaded specs.">
+      <entry key="rubyspecs.current.revision" value="${rubyspecs.revision}"/>
+    </propertyfile>
+  </target>
+
+  <!-- NOTE: There are two different rubyspecs versions: stable and unstable.
+       Stable ones are in known good state, and all known JRuby failures are excluded.
+       The idea is that the stable specs runs must be clean, no failures.
+       Unstable specs are the very latest, and might have new failures.
+
+       Stable specs are downloaded as a snapshot of particular revision.
+       Unstable specs are downloaded as a git repo. -->
+
+  <!-- stable specs -->
+  <target name="spec" depends="fetch-stable-specs, run-specs"
+      description="Runs known good version of rubyspecs."/>
+  <target name="spec-all" depends="fetch-stable-specs, run-specs-all"
+      description="Runs known good version of rubyspecs without exclusions."/>
+
+  <!-- latest, unstable specs -->
+  <target name="spec-latest" depends="fetch-specs, run-specs"
+      description="Runs the very latest rubyspecs."/>
+  <target name="spec-latest-all" depends="fetch-specs, run-specs-all"
+	  description="Runs the very latest rubyspecs without exclusions."/>
   
   <target name="fetch-specs">
       <condition property="rubyspec-repo-exists">
-          <available file="${build.dir}/rubyspec"/>
+          <available file="${build.dir}/rubyspec/code/.git"/>
       </condition>
       
       <antcall target="do-fetch-specs"/>
@@ -650,6 +701,8 @@
   </target>
   
   <target name="do-fetch-specs" unless="rubyspec-repo-exists">
+      <!-- Stable specs might exist, so delete them -->
+      <antcall target="clear-specs" inheritall="false"/>
       <exec dir="${build.dir}" executable="git">
           <arg value="clone"/>
           <arg value="--depth"/><arg value="1"/>
@@ -665,7 +718,9 @@
   </target>
   
   <target name="clear-specs">
-      <delete dir="${build.dir}/rubyspec/code"/>
+      <delete dir="${build.dir}/rubyspec"/>
+      <delete file="${build.dir}/rubyspec.tgz"/>
+      <delete file="${build.dir}/rubyspecs.current.revision"/>
   </target>
   
   <target name="run-specs">
@@ -974,14 +1029,18 @@
     </delete>
   </target>
 
-  <target name="clean" depends="init" description="clean almost everything">
-    <delete dir="${build.dir}"/>
+  <target name="clean" depends="init" description="Cleans almost everything, leaves downloaded specs">
+    <delete dir="${build.dir}" excludes="rubyspec**" includeemptydirs="true"/>
     <delete dir="${dist.dir}"/>
     <delete quiet="false">
         <fileset dir="${lib.dir}" includes="jruby*.jar"/>
     </delete>
     <delete dir="${api.docs.dir}"/>
-  </target>  
+  </target>
+
+  <target name="clean-all" depends="clean" description="Cleans everything, including downloaded specs">
+  	<delete dir="${build.dir}"/>
+  </target>
 
   <property name="nailgun.home" value="${basedir}/tool/nailgun"/>
 
