@@ -30,6 +30,13 @@ public abstract class DynamicScope {
     }
     
     public static DynamicScope newDynamicScope(StaticScope staticScope, DynamicScope parent) {
+        // Dynamic scopes with local static scopes must always
+        // be ManyVarsDynamicScopes, since local scopes might grow
+        // (e.g., when evaling the flip). See JRUBY-2046.
+        if (staticScope.getLocalScope() == staticScope) {
+            return new ManyVarsDynamicScope(staticScope, parent);
+        }
+
         switch (staticScope.getNumberOfVariables()) {
         case 0:
             return new NoVarsDynamicScope(staticScope, parent);
@@ -39,7 +46,25 @@ public abstract class DynamicScope {
             return new ManyVarsDynamicScope(staticScope, parent);
         }
     }
-    
+
+    /**
+     * Returns the n-th parent scope of this scope.
+     * May return <code>null</code>.
+     * @param n - number of levels above to look.
+     * @return The n-th parent scope or <code>null</code>.
+     */
+    public DynamicScope getNthParentScope(int n) {
+        DynamicScope scope = this;
+        for (int i = 0; i < n; i++) {
+            if (scope != null) {
+                scope = scope.getNextCapturedScope();
+            } else {
+                break;
+            }
+        }
+        return scope;
+    }
+
     public static DynamicScope newDynamicScope(StaticScope staticScope) {
         return newDynamicScope(staticScope, null);
     }

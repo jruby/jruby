@@ -1116,6 +1116,13 @@ public class ASTInterpreter {
     private static IRubyObject flipNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         FlipNode iVisited = (FlipNode) node;
         DynamicScope scope = context.getCurrentScope();
+
+        // Make sure the appropriate scope has proper size. See JRUBY-2046.
+        DynamicScope nthParent = scope.getNthParentScope(iVisited.getDepth());
+        if (nthParent != null) {
+            nthParent.growIfNeeded();
+        }
+
         IRubyObject result = scope.getValue(iVisited.getIndex(), iVisited.getDepth());
    
         if (iVisited.isExclusive()) {
