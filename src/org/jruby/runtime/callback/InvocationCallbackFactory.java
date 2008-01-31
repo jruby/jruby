@@ -27,6 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -63,6 +66,7 @@ import org.jruby.util.JRubyClassLoader;
 
 public class InvocationCallbackFactory extends CallbackFactory implements Opcodes {
     private final Class type;
+    final ProtectionDomain protectionDomain;
     protected final JRubyClassLoader classLoader;
     private final String typePath;
     protected final Ruby runtime;
@@ -90,7 +94,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private static final int METHOD_ARGS_INDEX = 2;
 
-    public InvocationCallbackFactory(Ruby runtime, Class type, ClassLoader classLoader) {
+    public InvocationCallbackFactory(Ruby runtime, final Class type, ClassLoader classLoader) {
         this.type = type;
         if (classLoader instanceof JRubyClassLoader) {
             this.classLoader = (JRubyClassLoader)classLoader;
@@ -99,6 +103,18 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
         this.typePath = p(type);
         this.runtime = runtime;
+        
+        SecurityManager sm = System.getSecurityManager();
+        if (sm == null) {
+            this.protectionDomain = type.getProtectionDomain();
+        } else {
+            this.protectionDomain = AccessController.doPrivileged(
+                    new PrivilegedAction<ProtectionDomain>() {
+                        public ProtectionDomain run() {
+                            return type.getProtectionDomain();
+                        }
+                    });
+        }
     }
 
     private Class getReturnClass(String method, Class[] args) throws Exception {
@@ -274,7 +290,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.visitEnd();
         cw.visitEnd();
         byte[] code = cw.toByteArray();
-        return classLoader.defineClass(name, code);
+        return classLoader.defineClass(name, code, protectionDomain);
     }
 
     public Callback getMethod(String method) {

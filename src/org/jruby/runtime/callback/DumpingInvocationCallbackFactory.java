@@ -41,6 +41,6 @@ public class DumpingInvocationCallbackFactory extends InvocationCallbackFactory 
         cw.visitEnd();
         byte[] code = cw.toByteArray();
 
-        return classLoader.defineClass(name, code);
+        return classLoader.defineClass(name, code, protectionDomain);
     }
 } //DumpingInvocationCallbackFactory
