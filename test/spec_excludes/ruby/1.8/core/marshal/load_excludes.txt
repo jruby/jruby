@@ -1,3 +1,2 @@
-Marshal.load with serialized array containing objects having _dump method, and with proc returns a construction of the argument
-Marshal.load with serialized array containing objects having marshal_dump method, and with proc returns a construction of the argument
-Marshal.load with serialized array and proc returns a construction of the argument
+Marshal::load loads a user_regexp having option Regexp::IGNORECASE
+Marshal::load loads an Array with proc
