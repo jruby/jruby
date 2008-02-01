@@ -382,33 +382,7 @@ public class RubyTime extends RubyObject {
         if (other instanceof RubyTime) {
             return getRuntime().newFixnum(cmp((RubyTime) other));
         }
-        
-        long millis = getTimeInMillis();
 
-        if(other instanceof RubyNumeric) {
-            if (other instanceof RubyFloat || other instanceof RubyBignum) {
-                double time = millis / 1000.0;
-
-                double time_other = ((RubyNumeric) other).getDoubleValue();
-
-                if (time > time_other) {
-                    return RubyFixnum.one(getRuntime());
-                } else if (time < time_other) {
-                    return RubyFixnum.minus_one(getRuntime());
-                }
-
-                return RubyFixnum.zero(getRuntime());
-            }
-            long millis_other = RubyNumeric.num2long(other) * 1000;
-
-            if (millis > millis_other || (millis == millis_other && usec > 0)) {
-                return RubyFixnum.one(getRuntime());
-            } else if (millis < millis_other || (millis == millis_other && usec < 0)) {
-                return RubyFixnum.minus_one(getRuntime());
-            }
-
-            return RubyFixnum.zero(getRuntime());
-        }
         return getRuntime().getNil();
     }
     
