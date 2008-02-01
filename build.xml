@@ -255,7 +255,7 @@
 
 
     <target name="jar-console" depends="generate-method-classes" description="Create the jruby graphical console jar">
-          <antcall target="jar-light">
+          <antcall target="jar-complete">
               <param name="mainclass" value="org.jruby.demo.IRBConsole"/>
               <param name="filename" value="jruby-console.jar"/>
           </antcall>
