@@ -960,14 +960,27 @@ public class RubyFile extends RubyIO {
         return recv.getRuntime().newFileStat(filename.convertToString().toString(), true).ftype();
     }
 
-    /*
-     * Fixme:  This does not have exact same semantics as RubyArray.join, but they
-     * probably could be consolidated (perhaps as join(args[], sep, doChomp)).
-     */
-    @JRubyMethod(rest = true, meta = true)
-    public static RubyString join(IRubyObject recv, IRubyObject[] args) {
+    private static String inspectJoin(IRubyObject recv, RubyArray parent, RubyArray array) {
+        Ruby runtime = recv.getRuntime();
+
+        // If already inspecting, there is no need to register/unregister again.
+        if (runtime.isInspecting(parent)) {
+            return join(recv, array).toString();
+        }
+
+        try {
+            runtime.registerInspecting(parent);
+            return join(recv, array).toString();
+        } finally {
+            runtime.unregisterInspecting(parent);
+        }
+    }
+
+    private static RubyString join(IRubyObject recv, RubyArray ary) {
+        IRubyObject[] args = ary.toJavaArray();
         boolean isTainted = false;
         StringBuffer buffer = new StringBuffer();
+        Ruby runtime = recv.getRuntime();
         
         for (int i = 0; i < args.length; i++) {
             if (args[i].isTaint()) {
@@ -977,8 +990,11 @@ public class RubyFile extends RubyIO {
             if (args[i] instanceof RubyString) {
                 element = args[i].toString();
             } else if (args[i] instanceof RubyArray) {
-                // Fixme: Need infinite recursion check to put [...] and not go into a loop
-                element = join(recv, ((RubyArray) args[i]).toJavaArray()).toString();
+                if (runtime.isInspecting(args[i])) {
+                    element = "[...]";
+                } else {
+                    element = inspectJoin(recv, ary, ((RubyArray)args[i]));
+                }
             } else {
                 element = args[i].convertToString().toString();
             }
@@ -995,6 +1011,15 @@ public class RubyFile extends RubyIO {
         return fixedStr;
     }
     
+    /*
+     * Fixme:  This does not have exact same semantics as RubyArray.join, but they
+     * probably could be consolidated (perhaps as join(args[], sep, doChomp)).
+     */
+    @JRubyMethod(rest = true, meta = true)
+    public static RubyString join(IRubyObject recv, IRubyObject[] args) {
+        return join(recv, RubyArray.newArrayNoCopyLight(recv.getRuntime(), args));
+    }
+
     private static void chomp(StringBuffer buffer) {
         int lastIndex = buffer.length() - 1;
         
