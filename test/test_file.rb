@@ -45,6 +45,10 @@ class TestFile < Test::Unit::TestCase
       assert_equal("C:/", File.dirname("C:///////blah"))
       assert_equal("C:\\", File.dirname("C:\\\\\\\\blah"))
       assert_equal("C:.", File.dirname("C:blah"))
+      assert_equal "C:/", File.dirname("C:/temp/")
+      assert_equal "c:\\", File.dirname('c:\\temp')
+      assert_equal "C:.", File.dirname("C:")
+      assert_equal "C:/temp", File.dirname("C:/temp/foobar.txt")
     end
   else
     def test_expand_path
