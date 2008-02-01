@@ -1216,11 +1216,18 @@ public class RubyArray extends RubyObject implements List {
     }
 
     private IRubyObject inspectJoin(RubyArray tmp, IRubyObject sep) {
+        Ruby runtime = getRuntime();
+
+        // If already inspecting, there is no need to register/unregister again.
+        if (runtime.isInspecting(this)) {
+            return tmp.join(sep);
+        }
+
         try {
-            getRuntime().registerInspecting(this);
+            runtime.registerInspecting(this);
             return tmp.join(sep);
         } finally {
-            getRuntime().unregisterInspecting(this);
+            runtime.unregisterInspecting(this);
         }
     }
 
