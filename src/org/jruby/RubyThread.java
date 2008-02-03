@@ -34,6 +34,8 @@ package org.jruby;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.internal.runtime.FutureThread;
@@ -51,7 +53,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.SafePropertyAccessor;
@@ -290,7 +291,7 @@ public class RubyThread extends RubyObject {
         } else if (originalKey instanceof RubyString) {
             return getRuntime().fastNewSymbol(originalKey.asJavaString().intern());
         } else if (originalKey instanceof RubyFixnum) {
-            getRuntime().getWarnings().warn("Do not use Fixnums as Symbols");
+            getRuntime().getWarnings().warn(ID.FIXNUMS_NOT_SYMBOLS, "Do not use Fixnums as Symbols");
             throw getRuntime().newArgumentError(originalKey + " is not a symbol");
         } else {
             throw getRuntime().newTypeError(originalKey + " is not a symbol");

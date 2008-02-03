@@ -119,7 +119,7 @@ t
 .    */
 .  public void yyerror (String message, String[] expected, String found) {
 .    String text = ", unexpected " + found + "\n"; 
-.    throw new SyntaxException(getPosition(null), text);
+.    throw new SyntaxException(PID.GRAMMAR_ERROR, getPosition(null), text, found);
 .  }
 .
 .  /** computes list of expected tokens on error by tracing the tables.

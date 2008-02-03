@@ -29,6 +29,7 @@
 package org.jruby.internal.runtime;
 
 import org.jruby.Ruby;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -39,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class UndefinedAccessor implements IAccessor {
     private final Ruby runtime;
     private final GlobalVariable globalVariable;
-    private final String notInitializedWarning;
+    private final String name;
 
     /**
      * Constructor for UndefinedAccessor.
@@ -51,14 +52,14 @@ public class UndefinedAccessor implements IAccessor {
 
         this.runtime = runtime;
         this.globalVariable = globalVariable;
-        this.notInitializedWarning = "global variable `" + name + "' not initialized";
+        this.name = name;
     }
 
     /**
      * @see org.jruby.runtime.IAccessor#getValue()
      */
     public IRubyObject getValue() {
-        runtime.getWarnings().warning(notInitializedWarning);
+        runtime.getWarnings().warning(ID.ACCESSOR_NOT_INITIALIZED, "global variable `" + name + "' not initialized", name);
         return runtime.getNil();
     }
 

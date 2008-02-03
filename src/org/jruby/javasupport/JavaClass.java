@@ -58,6 +58,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -853,7 +854,7 @@ public class JavaClass extends JavaObject {
                 }
                 proxyExtenders.add(extender);
             } else {
-                getRuntime().getWarnings().warn(" proxy extender added after proxy class created for " + this);
+                getRuntime().getWarnings().warn(ID.PROXY_EXTENDED_LATE, " proxy extender added after proxy class created for " + this);
                 extendProxy(extender);
             }
         } finally {

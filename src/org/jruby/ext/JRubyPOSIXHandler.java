@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.posix.POSIXHandler;
 import org.jruby.ext.posix.POSIX.ERRORS;
 
@@ -30,8 +31,14 @@ public class JRubyPOSIXHandler implements POSIXHandler {
         throw runtime.newNotImplementedError(method + " unsupported on this platform");
     }
 
-    public void warn(String message) {
-        runtime.getWarnings().warn(message);
+    public void warn(WARNING_ID id, String message, Object... data) {
+        ID ourID;
+        if (id == WARNING_ID.DUMMY_VALUE_USED) {
+            ourID = ID.DUMMY_VALUE_USED;
+        } else {
+            ourID = ID.MISCELLANEOUS;
+        }
+        runtime.getWarnings().warn(ourID, message, data);
     }
     
     public File getCurrentWorkingDirectory() {

@@ -46,6 +46,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -409,7 +410,7 @@ public class RubyArray extends RubyObject implements List {
         if (argc == 0) {
             modifyCheck();
             realLength = 0;
-            if (block.isGiven()) runtime.getWarnings().warn("given block not used");
+            if (block.isGiven()) runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
 
     	    return this;
     	}
@@ -436,7 +437,7 @@ public class RubyArray extends RubyObject implements List {
 
         if (block.isGiven()) {
             if (argc == 2) {
-                runtime.getWarnings().warn("block supersedes default value argument");
+                runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
             }
 
             ThreadContext context = runtime.getCurrentContext();
@@ -619,7 +620,7 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "fetch", required = 1, optional = 1, frame = true)
     public IRubyObject fetch(IRubyObject[] args, Block block) {
         if (args.length == 2 && block.isGiven()) {
-            getRuntime().getWarnings().warn("block supersedes default value argument");
+            getRuntime().getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
         }
 
         long index = RubyNumeric.num2long(args[0]);
@@ -1554,7 +1555,7 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = {"indexes", "indices"}, required = 1, rest = true)
     public IRubyObject indexes(IRubyObject[] args) {
-        getRuntime().getWarnings().warn("Array#indexes is deprecated; use Array#values_at");
+        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Array#indexes is deprecated; use Array#values_at", "Array#indexes", "Array#values_at");
 
         RubyArray ary = new RubyArray(getRuntime(), args.length);
 

@@ -3,6 +3,8 @@ package org.jruby.ext.posix;
 import java.io.File;
 import java.io.IOException;
 
+import org.jruby.ext.posix.POSIXHandler.WARNING_ID;
+
 public class JavaFileStat implements FileStat {
     private POSIXHandler handler;
     short st_mode;
@@ -161,14 +163,14 @@ public class JavaFileStat implements FileStat {
 
     // At least one major library depends on this method existing.
     public boolean isExecutable() {
-        handler.warn("executable? does not in this environment and will return a dummy value");
+        handler.warn(WARNING_ID.DUMMY_VALUE_USED, "executable? does not in this environment and will return a dummy value", "executable");
         
         return true;
     }
 
     // At least one major library depends on this method existing.
     public boolean isExecutableReal() {
-        handler.warn("executable_real? does not work in this environmnt and will return a dummy value");
+        handler.warn(WARNING_ID.DUMMY_VALUE_USED, "executable_real? does not work in this environmnt and will return a dummy value", "executable_real");
         
         return true;
     }

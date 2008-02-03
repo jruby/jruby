@@ -11,9 +11,18 @@ import java.io.PrintStream;
  *
  */
 public interface POSIXHandler {
+    public enum WARNING_ID {
+        DUMMY_VALUE_USED("DUMMY_VALUE_USED");
+        
+        private String messageID;
+
+        WARNING_ID(String messageID) {
+            this.messageID = messageID;
+        }
+    }
     public void error(POSIX.ERRORS error, String extraData);
     public void unimplementedError(String message);
-    public void warn(String message);
+    public void warn(WARNING_ID id, String message, Object... data);
 
     /**
      * Get current working directory of your runtime.

@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.Ruby;
+import org.jruby.common.IRubyWarnings.ID;
 
 public class OSEnvironment {
 
@@ -91,7 +92,7 @@ public class OSEnvironment {
                 }
             } else {
                 // get environment from jruby command line property supplied class
-                runtime.getWarnings().warn("Getting environment variables using command line defined method: " + jrubyEnvMethod);
+                runtime.getWarnings().warn(ID.ENV_VARS_FROM_CLI_METHOD, "Getting environment variables using command line defined method: " + jrubyEnvMethod, jrubyEnvMethod);
                 reader = getAccessibleOSEnvironment(runtime, jrubyEnvMethod);
             }
 
@@ -126,7 +127,7 @@ public class OSEnvironment {
             osenvironment = (IOSEnvironmentReader)Class.forName(classname).newInstance();
         } catch (Exception e) {
         	// This should only happen for a command line supplied IOSEnvironmentReader implementation
-            runtime.getWarnings().warn(e.getMessage());
+            runtime.getWarnings().warn(ID.MISCELLANEOUS, e.getMessage());
         }
 
         if (osenvironment != null && osenvironment.isAccessible(runtime)) {

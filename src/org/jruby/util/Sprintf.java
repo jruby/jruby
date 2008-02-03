@@ -41,6 +41,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -123,12 +124,12 @@ public class Sprintf {
             throw runtime.newArgumentError(message);
         }
         
-        final void warn(String message) {
-            runtime.getWarnings().warn(message);
+        final void warn(ID id, String message) {
+            runtime.getWarnings().warn(id, message);
         }
         
-        final void warning(String message) {
-            runtime.getWarnings().warning(message);
+        final void warning(ID id, String message) {
+            runtime.getWarnings().warning(id, message);
         }
         
         final IRubyObject next() {
@@ -691,7 +692,7 @@ public class Sprintf {
                         }
                     } else if (negative) {
                         if (base == 10) {
-                            warning(args,"negative number for %u specifier");
+                            warning(ID.NEGATIVE_NUMBER_FOR_U, args,"negative number for %u specifier");
                             leadChar = '.';
                             len += 2;
                         } else {
@@ -1312,7 +1313,7 @@ public class Sprintf {
             if (args.runtime.getDebug().isTrue()) {
                 args.raiseArgumentError("too many arguments for format string");
             } else if (args.runtime.getVerbose().isTrue()) {
-                args.warn("too many arguments for format string");
+                args.warn(ID.TOO_MANY_ARGUMENTS, "too many arguments for format string");
             }
         }
 
@@ -1369,8 +1370,8 @@ public class Sprintf {
         args.raiseArgumentError(message);
     }
     
-    private static final void warning(Args args, String message) {
-        args.warning(message);
+    private static final void warning(ID id, Args args, String message) {
+        args.warning(id, message);
     }
     
     private static final void checkOffset(Args args, int offset, int length, String message) {

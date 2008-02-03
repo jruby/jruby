@@ -39,6 +39,7 @@ package org.jruby;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -136,7 +137,7 @@ public class RubySymbol extends RubyObject {
     @JRubyMethod(name = "to_int")
     public RubyFixnum to_int() {
         if (getRuntime().getVerbose().isTrue()) {
-            getRuntime().getWarnings().warn("treating Symbol as an integer");
+            getRuntime().getWarnings().warn(ID.SYMBOL_AS_INTEGER, "treating Symbol as an integer");
 	}
         return to_i();
     }

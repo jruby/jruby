@@ -68,6 +68,7 @@ import org.jruby.ast.executable.RubiniusRunner;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.YARVCompiledRunner;
 import org.jruby.common.RubyWarnings;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.NotCompilableException;
@@ -625,11 +626,8 @@ public final class Ruby {
         boolean parentIsObject = parent == objectClass;
 
         if (superClass == null) {
-            if (parentIsObject) {
-                warnings.warn("no super class for `" + name + "', Object assumed");
-            } else {
-                warnings.warn("no super class for `" + parent.getName() + "::" + name + "', Object assumed");
-            }
+            String className = parentIsObject ? name : parent.getName() + "::" + name;  
+            warnings.warn(ID.NO_SUPER_CLASS, "no super class for `" + className + "', Object assumed", className);
             
             superClass = objectClass;
         }

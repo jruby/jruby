@@ -17,6 +17,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -110,11 +111,11 @@ public class RuntimeHelpers {
         }
         
         if (containingClass == runtime.getObject() && name == "initialize") {
-            runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop", "Object#initialize");
         }
 
         if (name == "__id__" || name == "__send__") {
-            runtime.getWarnings().warn("redefining `" + name + "' may cause serious problem"); 
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem", name); 
         }
 
         StaticScope scope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), scopeNames);
@@ -747,7 +748,7 @@ public class RuntimeHelpers {
         
         if (result != null) return result;
         
-        runtime.getWarnings().warning("instance variable " + name + " not initialized");
+        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + name + " not initialized");
         
         return runtime.getNil();
     }
@@ -756,7 +757,7 @@ public class RuntimeHelpers {
         IRubyObject result;
         if ((result = self.getInstanceVariables().fastGetInstanceVariable(internedName)) != null) return result;
         
-        runtime.getWarnings().warning("instance variable " + internedName + " not initialized");
+        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + internedName + " not initialized");
         
         return runtime.getNil();
     }

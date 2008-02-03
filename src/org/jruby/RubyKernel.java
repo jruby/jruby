@@ -48,17 +48,16 @@ import java.util.ArrayList;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -264,7 +263,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "getc", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject getc(IRubyObject recv) {
-        recv.getRuntime().getWarnings().warn("getc is obsolete; use STDIN.getc instead");
+        recv.getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "getc is obsolete; use STDIN.getc instead", "getc", "STDIN.getc");
         IRubyObject defin = recv.getRuntime().getGlobalVariables().get("$stdin");
         return defin.callMethod(recv.getRuntime().getCurrentContext(), "getc");
     }
@@ -727,7 +726,7 @@ public class RubyKernel {
     @JRubyMethod(name = "callcc", frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject callcc(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
-        runtime.getWarnings().warn("Kernel#callcc: Continuations are not implemented in JRuby and will not work");
+        runtime.getWarnings().warn(ID.EMPTY_IMPLEMENTATION, "Kernel#callcc: Continuations are not implemented in JRuby and will not work", "Kernel#callcc");
         IRubyObject cc = runtime.getContinuation().callMethod(runtime.getCurrentContext(),"new");
         cc.dataWrapStruct(block);
         return block.yield(runtime.getCurrentContext(),cc);

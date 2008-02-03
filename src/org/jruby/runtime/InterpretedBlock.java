@@ -40,6 +40,7 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
@@ -189,7 +190,7 @@ public class InterpretedBlock extends BlockBody {
                 value = ((RubyArray)value).eltInternal(0);
                 break;
             default:
-                runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
+                runtime.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + length + " for 1)");
             }
             AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
         }
@@ -207,7 +208,7 @@ public class InterpretedBlock extends BlockBody {
             break;
         default:
             if (value == null) {
-                runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
+                runtime.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
             }
             AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
         }

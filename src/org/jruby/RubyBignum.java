@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -145,7 +146,7 @@ public class RubyBignum extends RubyInteger {
         BigInteger big = value.getValue();
         double dbl = big.doubleValue();
         if (dbl == Double.NEGATIVE_INFINITY || dbl == Double.POSITIVE_INFINITY) {
-            value.getRuntime().getWarnings().warn("Bignum out of Float range");
+            value.getRuntime().getWarnings().warn(ID.BIGNUM_FROM_FLOAT_RANGE, "Bignum out of Float range");
     }
         return dbl;
     }
@@ -367,7 +368,7 @@ public class RubyBignum extends RubyInteger {
             long fixValue = fix.getLongValue();
             // MRI issuses warning here on (RBIGNUM(x)->len * SIZEOF_BDIGITS * yy > 1024*1024)
             if (((value.bitLength() + 7) / 8) * 4 * Math.abs(fixValue) > 1024 * 1024) {
-                getRuntime().getWarnings().warn("in a**b, b may be too big");
+                getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", fixValue);
     	}
             if (fixValue >= 0) {
                 return bignorm(getRuntime(), value.pow((int) fixValue)); // num2int is also implemented
@@ -375,8 +376,8 @@ public class RubyBignum extends RubyInteger {
                 return RubyFloat.newFloat(getRuntime(), Math.pow(big2dbl(this), (double)fixValue));
             }
         } else if (other instanceof RubyBignum) {
-            getRuntime().getWarnings().warn("in a**b, b may be too big");
             d = ((RubyBignum) other).getDoubleValue();
+            getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", d);
         } else if (other instanceof RubyFloat) {
             d = ((RubyFloat) other).getDoubleValue();
         } else {

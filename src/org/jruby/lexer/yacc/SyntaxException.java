@@ -28,11 +28,46 @@
 package org.jruby.lexer.yacc;
 
 public class SyntaxException extends RuntimeException {
+    public enum PID {
+        BAD_HEX_NUMBER("BAD_HEX_NUMBER"),
+        BAD_IDENTIFIER("BAD_IDENTIFIER"),
+        BAD_OCTAL_DIGIT("BAD_OCTAL_DIGIT"),
+        BLOCK_ARG_UNEXPECTED("BLOCK_ARG_UNEXPECTED"), 
+        BLOCK_ARG_AND_BLOCK_GIVEN("BLOCK_ARG_AND_BLOCK_GIVEN"),
+        CHARACTER_BAD("CHARACTER_BAD"),
+        CANNOT_CHANGE_SELF("CANNOT_CHANGE_SELF"),
+        CVAR_BAD_NAME("CVAR_BAD_NAME"),
+        DYNAMIC_CONSTANT_ASSIGNMENT("DYNAMIC_CONSTANT_ASSIGNMENT"),
+        EMPTY_BINARY_NUMBER("EMPTY_BINARY_NUMBER"),
+        FLOAT_MISSING_ZERO("FLOAT_MISSING_ZERO"),
+        GRAMMAR_ERROR("GRAMMAR_ERROR"),
+        INCOMPLETE_CHAR_SYNTAX("INCOMPLETE_CHAR_SYNTAX"), 
+        INVALID_ASSIGNMENT("INVALID_ASSIGNMENT"),
+        INVALID_ESCAPE_SYNTAX("INVALID_ESCAPE_SYNTAX"),
+        IVAR_BAD_NAME("IVAR_BAD_NAME"),
+        MULTIPLE_ASSIGNMENT_IN_CONDITIONAL("MULTIPLE_ASSIGNMENT_IN_CONDITIONAL"),
+        REGEXP_UNKNOWN_OPTION("REGEXP_UNKNOWN_OPTION"),
+        STRING_HITS_EOF("STRING_HITS_EOF"),
+        STRING_MARKER_MISSING("STRING_MARKER_MISSING"), 
+        STRING_UNKNOWN_TYPE("STRING_UNKNOWN_TYPE"), 
+        TRAILING_UNDERSCORE_IN_NUMBER("TRAILING_UNDERSCORE_IN_NUMBER");
+        
+        private String id;
+        
+        PID(String id) {
+            this.id = id;
+        }
+        
+        public String getID() {
+            return id;
+        }
+    }
+    
 	private static final long serialVersionUID = -2130930815167932274L;
 	
     private ISourcePosition position;
 
-    public SyntaxException(ISourcePosition position, String message) {
+    public SyntaxException(PID id, ISourcePosition position, String message, Object... data) {
         super(message);
 
         this.position = position;

@@ -47,9 +47,12 @@ import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.NthRefNode;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
+
 
 /** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.
  */
@@ -404,11 +407,11 @@ public class RubyYaccLexer {
             shortHand = false;
             begin = src.read();
             if (Character.isLetterOrDigit(begin) /* no mb || ismbchar(term)*/) {
-                throw new SyntaxException(getPosition(), "unknown type of %string");
+                throw new SyntaxException(PID.STRING_UNKNOWN_TYPE, getPosition(), "unknown type of %string");
             }
         }
         if (c == EOF || begin == EOF) {
-            throw new SyntaxException(getPosition(), "unterminated quoted string meets end of file");
+            throw new SyntaxException(PID.STRING_HITS_EOF, getPosition(), "unterminated quoted string meets end of file");
         }
         
         // Figure end-char.  '\0' is special to indicate begin=end and that no nesting?
@@ -464,7 +467,8 @@ public class RubyYaccLexer {
             return Tokens.tSYMBEG;
 
         default:
-            throw new SyntaxException(getPosition(), "Unknown type of %string. Expected 'Q', 'q', 'w', 'x', 'r' or any non letter character, but found '" + c + "'.");
+            throw new SyntaxException(PID.STRING_UNKNOWN_TYPE, getPosition(), 
+                    "Unknown type of %string. Expected 'Q', 'q', 'w', 'x', 'r' or any non letter character, but found '" + c + "'.");
         }
     }
     
@@ -494,7 +498,7 @@ public class RubyYaccLexer {
                 markerValue.append(c);
             }
             if (c == EOF) {
-                throw new SyntaxException(getPosition(), "unterminated here document identifier");
+                throw new SyntaxException(PID.STRING_MARKER_MISSING, getPosition(), "unterminated here document identifier");
             }	
         } else {
             if (!isIdentifierChar(c)) {
@@ -530,7 +534,7 @@ public class RubyYaccLexer {
     }
     
     private void arg_ambiguous() {
-        warnings.warning(getPosition(), "Ambiguous first argument; make sure.");
+        warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
     }
 
     /**
@@ -772,7 +776,7 @@ public class RubyYaccLexer {
                                     if (doComments) tokenBuffer.append((char) c);
                                 }
                                 if (c == EOF) {
-                                    throw new SyntaxException(getPosition(), "embedded document meets end of file");
+                                    throw new SyntaxException(PID.STRING_HITS_EOF, getPosition(), "embedded document meets end of file");
                                 }
                                 if (c != '=') continue;
                                 if (src.wasBeginOfLine() && src.matchMarker(END_DOC_MARKER, false, false)) {
@@ -949,7 +953,7 @@ public class RubyYaccLexer {
         ISourcePosition tmpPosition = getPosition();
         if ((lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) && 
                 spaceSeen && !Character.isWhitespace(c)) {
-            warnings.warning(tmpPosition, "`&' interpreted as argument prefix");
+            warnings.warning(ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix", "&");
             c = Tokens.tAMPER;
         } else if (lex_state == LexState.EXPR_BEG || 
                 lex_state == LexState.EXPR_MID) {
@@ -979,9 +983,9 @@ public class RubyYaccLexer {
         
         if (Character.isDigit(c)) {
             if (tokenBuffer.length() == 1) {
-                throw new SyntaxException(getPosition(), "`@" + c + "' is not allowed as an instance variable name");
+                throw new SyntaxException(PID.IVAR_BAD_NAME, getPosition(), "`@" + c + "' is not allowed as an instance variable name");
             }
-            throw new SyntaxException(getPosition(), "`@@" + c + "' is not allowed as a class variable name");
+            throw new SyntaxException(PID.CVAR_BAD_NAME, getPosition(), "`@@" + c + "' is not allowed as a class variable name");
         }
         
         if (!isIdentifierChar(c)) {
@@ -1226,7 +1230,7 @@ public class RubyYaccLexer {
         
         src.unread(c);
         if (Character.isDigit(c)) {
-            throw new SyntaxException(getPosition(), "no .<digit> floating literal anymore; put 0 before dot"); 
+            throw new SyntaxException(PID.FLOAT_MISSING_ZERO, getPosition(), "no .<digit> floating literal anymore; put 0 before dot"); 
         }
         
         lex_state = LexState.EXPR_DOT;
@@ -1270,7 +1274,9 @@ public class RubyYaccLexer {
     
     private int identifier(int c, boolean commandState) throws IOException {
         if (!isIdentifierChar(c)) {
-            throw new SyntaxException(getPosition(), "Invalid char `\\" + Integer.toOctalString(c & 0xff) + "' ('" + (char) c + "')  in expression");
+            String badChar = "\\" + Integer.toOctalString(c & 0xff);
+            throw new SyntaxException(PID.CHARACTER_BAD, getPosition(), "Invalid char `" + badChar +
+                    "' ('" + (char) c + "') in expression", badChar);
         }
     
         tokenBuffer.setLength(0);
@@ -1435,7 +1441,7 @@ public class RubyYaccLexer {
             break;
         case EXPR_ARG:
             if (spaceSeen) {
-                warnings.warn(getPosition(), "don't put space before argument parentheses");
+                warnings.warn(ID.ARGUMENT_EXTRA_SPACE, getPosition(), "don't put space before argument parentheses");
             }
         default:
             result = Tokens.tLPAREN2;
@@ -1622,7 +1628,7 @@ public class RubyYaccLexer {
         }
         
         c = src.read();
-        if (c == EOF) throw new SyntaxException(getPosition(), "incomplete character syntax");
+        if (c == EOF) throw new SyntaxException(PID.INCOMPLETE_CHAR_SYNTAX, getPosition(), "incomplete character syntax");
 
         if (Character.isWhitespace(c)){
             if (lex_state != LexState.EXPR_ARG && lex_state != LexState.EXPR_CMDARG) {
@@ -1650,7 +1656,7 @@ public class RubyYaccLexer {
                     break;
                 }
                 if (c2 != 0) {
-                    warnings.warn(getPosition(), "invalid character syntax; use ?\\" + c2);
+                    warnings.warn(ID.INVALID_CHAR_SEQUENCE, getPosition(), "invalid character syntax; use ?\\" + c2);
                 }
             }
             src.unread(c);
@@ -1760,7 +1766,7 @@ public class RubyYaccLexer {
             src.unread(c);
             if ((lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) && 
                     spaceSeen && !Character.isWhitespace(c)) {
-                warnings.warning(getPosition(), "`*' interpreted as argument prefix");
+                warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix", "*");
                 c = Tokens.tSTAR;
             } else if (lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID) {
                 c = Tokens.tSTAR;
@@ -1831,9 +1837,9 @@ public class RubyYaccLexer {
                     src.unread(c);
 
                     if (tokenBuffer.length() == startLen) {
-                        throw new SyntaxException(getPosition(), "Hexadecimal number without hex-digits.");
+                        throw new SyntaxException(PID.BAD_HEX_NUMBER, getPosition(), "Hexadecimal number without hex-digits.");
                     } else if (nondigit != '\0') {
-                        throw new SyntaxException(getPosition(), "Trailing '_' in number.");
+                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(), "Trailing '_' in number.");
                     }
                     yaccValue = getInteger(tokenBuffer.toString(), 16);
                     return Tokens.tINTEGER;
@@ -1856,9 +1862,9 @@ public class RubyYaccLexer {
                     src.unread(c);
 
                     if (tokenBuffer.length() == startLen) {
-                        throw new SyntaxException(getPosition(), "Binary number without digits.");
+                        throw new SyntaxException(PID.EMPTY_BINARY_NUMBER, getPosition(), "Binary number without digits.");
                     } else if (nondigit != '\0') {
-                        throw new SyntaxException(getPosition(), "Trailing '_' in number.");
+                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(), "Trailing '_' in number.");
                     }
                     yaccValue = getInteger(tokenBuffer.toString(), 2);
                     return Tokens.tINTEGER;
@@ -1881,9 +1887,9 @@ public class RubyYaccLexer {
                     src.unread(c);
 
                     if (tokenBuffer.length() == startLen) {
-                        throw new SyntaxException(getPosition(), "Binary number without digits.");
+                        throw new SyntaxException(PID.EMPTY_BINARY_NUMBER, getPosition(), "Binary number without digits.");
                     } else if (nondigit != '\0') {
-                        throw new SyntaxException(getPosition(), "Trailing '_' in number.");
+                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(), "Trailing '_' in number.");
                     }
                     yaccValue = getInteger(tokenBuffer.toString(), 10);
                     return Tokens.tINTEGER;
@@ -1907,7 +1913,7 @@ public class RubyYaccLexer {
                         src.unread(c);
 
                         if (nondigit != '\0') {
-                            throw new SyntaxException(getPosition(), "Trailing '_' in number.");
+                            throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(), "Trailing '_' in number.");
                         }
 
                         yaccValue = getInteger(tokenBuffer.toString(), 8);
@@ -1915,7 +1921,7 @@ public class RubyYaccLexer {
                     }
                 case '8' :
                 case '9' :
-                    throw new SyntaxException(getPosition(), "Illegal octal digit.");
+                    throw new SyntaxException(PID.BAD_OCTAL_DIGIT, getPosition(), "Illegal octal digit.");
                 case '.' :
                 case 'e' :
                 case 'E' :
@@ -1949,7 +1955,7 @@ public class RubyYaccLexer {
                 case '.' :
                     if (nondigit != '\0') {
                         src.unread(c);
-                        throw new SyntaxException(getPosition(), "Trailing '_' in number.");
+                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(), "Trailing '_' in number.");
                     } else if (seen_point || seen_e) {
                         src.unread(c);
                         return getNumberToken(tokenBuffer.toString(), true, nondigit);
@@ -1976,7 +1982,7 @@ public class RubyYaccLexer {
                 case 'e' :
                 case 'E' :
                     if (nondigit != '\0') {
-                        throw new SyntaxException(getPosition(), "Trailing '_' in number.");
+                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(), "Trailing '_' in number.");
                     } else if (seen_e) {
                         src.unread(c);
                         return getNumberToken(tokenBuffer.toString(), true, nondigit);
@@ -1995,7 +2001,7 @@ public class RubyYaccLexer {
                     break;
                 case '_' : //  '_' in number just ignored
                     if (nondigit != '\0') {
-                        throw new SyntaxException(getPosition(), "Trailing '_' in number.");
+                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(), "Trailing '_' in number.");
                     }
                     nondigit = c;
                     break;
@@ -2008,14 +2014,14 @@ public class RubyYaccLexer {
 
     private int getNumberToken(String number, boolean isFloat, int nondigit) {
         if (nondigit != '\0') {
-            throw new SyntaxException(getPosition(), "Trailing '_' in number.");
+            throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(), "Trailing '_' in number.");
         }
         if (isFloat) {
             double d;
             try {
                 d = Double.parseDouble(number);
             } catch (NumberFormatException e) {
-                warnings.warn(getPosition(), "Float " + number + " out of range.");
+                warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.", number);
                 
                 d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
             }
@@ -2070,7 +2076,7 @@ public class RubyYaccLexer {
                 
                 // No hex value after the 'x'.
                 if (i == 0) {
-                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(), "Invalid escape character syntax");
                 }
                 return hexValue;
             case 'b' : // backspace
@@ -2079,16 +2085,16 @@ public class RubyYaccLexer {
                 return ' ';
             case 'M' :
                 if ((c = src.read()) != '-') {
-                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(), "Invalid escape character syntax");
                 } else if ((c = src.read()) == '\\') {
                     return (char) (readEscape() | 0x80);
                 } else if (c == EOF) {
-                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(), "Invalid escape character syntax");
                 } 
                 return (char) ((c & 0xff) | 0x80);
             case 'C' :
                 if ((c = src.read()) != '-') {
-                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(), "Invalid escape character syntax");
                 }
             case 'c' :
                 if ((c = src.read()) == '\\') {
@@ -2096,11 +2102,11 @@ public class RubyYaccLexer {
                 } else if (c == '?') {
                     return '\u0177';
                 } else if (c == EOF) {
-                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(), "Invalid escape character syntax");
                 }
                 return (char) (c & 0x9f);
             case EOF :
-                throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(), "Invalid escape character syntax");
             default :
                 return c;
         }

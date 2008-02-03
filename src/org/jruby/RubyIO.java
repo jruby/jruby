@@ -55,6 +55,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -756,8 +757,8 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "initialize", required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         if (unusedBlock.isGiven()) {
-            getRuntime().getWarnings().warn(
-                    "IO::new() does not take block; use IO::open() instead");
+            getRuntime().getWarnings().warn(ID.BLOCK_NOT_ACCEPTED,
+                    "IO::new() does not take block; use IO::open() instead", "IO::new()");
         }
 
         int count = args.length;
@@ -886,7 +887,7 @@ public class RubyIO extends RubyObject {
             }
 
             if(getRuntime().getDebug().isTrue()) {
-                getRuntime().getWarnings().warn("swallowed IO exception: " + e.toString());
+                getRuntime().getWarnings().warn(ID.SWALLOWED_IO_EXCEPTION, "swallowed IO exception: " + e.toString());
                 e.printStackTrace();
             }
 

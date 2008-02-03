@@ -31,6 +31,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -65,13 +66,13 @@ public class RubyGC {
 
     @JRubyMethod(meta = true)
     public static IRubyObject enable(IRubyObject recv) {
-        recv.getRuntime().getWarnings().warn("GC.enable will not work on JRuby");
+        recv.getRuntime().getWarnings().warn(ID.EMPTY_IMPLEMENTATION, "GC.enable will not work on JRuby", "GC.enable");
         return recv.getRuntime().getNil();
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject disable(IRubyObject recv) {
-        recv.getRuntime().getWarnings().warn("GC.disable will not work on JRuby");
+        recv.getRuntime().getWarnings().warn(ID.EMPTY_IMPLEMENTATION, "GC.disable will not work on JRuby", "GC.disable");
         return recv.getRuntime().getNil();
     }
 }

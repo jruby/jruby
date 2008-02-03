@@ -46,6 +46,7 @@ import org.joni.Syntax;
 import org.joni.WarnCallback;
 import org.joni.encoding.Encoding;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -180,7 +181,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     }
 
     public void warn(String message) {
-        getRuntime().getWarnings().warn(message);
+        getRuntime().getWarnings().warn(ID.MISCELLANEOUS, message);
     }
 
     @JRubyMethod(name = "kcode")
@@ -437,7 +438,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
 
         if(args[0] instanceof RubyRegexp) {
             if(args.length > 1) {
-                getRuntime().getWarnings().warn("flags" + (args.length == 3 ? " and encoding" : "") + " ignored");
+                getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags" + (args.length == 3 ? " and encoding" : "") + " ignored");
             }
             RubyRegexp regexp = (RubyRegexp)args[0];
             regexp.check();

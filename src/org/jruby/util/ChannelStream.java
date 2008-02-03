@@ -52,7 +52,7 @@ import java.nio.channels.WritableByteChannel;
 import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
-import org.jruby.util.Stream.BadDescriptorException;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.util.io.SplitChannel;
 
 /**
@@ -573,7 +573,7 @@ public class ChannelStream implements Stream, Finalizable {
     private void ensureWriteNonBuffered() throws IOException {
         if (!reading) {
             if (buffer.position() > 0) {
-                getRuntime().getWarnings().warn("syswrite for buffered IO");
+                getRuntime().getWarnings().warn(ID.SYSWRITE_BUFFERED_IO, "syswrite for buffered IO");
             }
             return;
         }

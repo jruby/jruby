@@ -38,6 +38,7 @@ package org.jruby;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.environment.OSEnvironmentReaderExcepton;
 import org.jruby.environment.OSEnvironment;
 import org.jruby.internal.runtime.ValueAccessor;
@@ -236,7 +237,7 @@ public class RubyGlobal {
     		environmentVariableMap = environment.getEnvironmentVariableMap(runtime);
     	} catch (OSEnvironmentReaderExcepton e) {
     		// If the environment variables are not accessible shouldn't terminate 
-    		runtime.getWarnings().warn(e.getMessage());
+    		runtime.getWarnings().warn(ID.MISCELLANEOUS, e.getMessage());
     	}
 		
     	if (environmentVariableMap == null) {
@@ -263,12 +264,12 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            runtime.getWarnings().warn("warning: variable " + name + " is no longer effective; ignored");
+            runtime.getWarnings().warn(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective; ignored", name);
             return value;
         }
 
         public IRubyObject get() {
-            runtime.getWarnings().warn("warning: variable " + name + " is no longer effective");
+            runtime.getWarnings().warn(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective", name);
             return runtime.getFalse();
         }
     }

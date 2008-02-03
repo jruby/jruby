@@ -30,6 +30,7 @@
 package org.jruby.lexer.yacc;
 
 import org.jruby.ast.StrNode;
+import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 
@@ -128,7 +129,7 @@ public class HeredocTerm extends StrTerm {
     }
     
     private void syntaxError(LexerSource src) {
-        throw new SyntaxException(src.getPosition(), "can't find string \"" + marker
-                + "\" anywhere before EOF");
+        throw new SyntaxException(PID.STRING_MARKER_MISSING, src.getPosition(), "can't find string \"" + marker
+                + "\" anywhere before EOF", marker);
     }
 }

@@ -42,11 +42,11 @@ public class RubyWarnings implements IRubyWarnings {
         this.runtime = runtime;
     }
 
-    public void warn(ISourcePosition position, String message) {
-        warn(position.getFile(), position.getEndLine(), message);
+    public void warn(ID id, ISourcePosition position, String message, Object... data) {
+        warn(id, position.getFile(), position.getEndLine(), message, data);
     }
 
-    public void warn(String fileName, int lineNumber, String message) {
+    public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {
         if (runtime.getVerbose().isNil()) return;
     	
         StringBuffer buffer = new StringBuffer(100);
@@ -61,23 +61,23 @@ public class RubyWarnings implements IRubyWarnings {
         return runtime.getVerbose().isTrue();
     }
 
-    public void warn(String message) {
+    public void warn(ID id, String message, Object... data) {
         ThreadContext context = runtime.getCurrentContext();
         
-        warn(context.getFile(), context.getLine(), message);
+        warn(id, context.getFile(), context.getLine(), message, data);
     }
 
-    public void warning(String message) {
+    public void warning(ID id, String message, Object... data) {
         ThreadContext context = runtime.getCurrentContext();
 
-        warning(context.getFile(), context.getLine(), message);
+        warning(id, context.getFile(), context.getLine(), message, data);
     }
     
-    public void warning(ISourcePosition position, String message) {
-        warning(position.getFile(), position.getEndLine(), message);
+    public void warning(ID id, ISourcePosition position, String message, Object... data) {
+        warning(id, position.getFile(), position.getEndLine(), message, data);
     }
 
-    public void warning(String fileName, int lineNumber, String message) {
-        if (isVerbose()) warn(fileName, lineNumber, message);
+    public void warning(ID id, String fileName, int lineNumber, String message, Object... data) {
+        if (isVerbose()) warn(id, fileName, lineNumber, message, data);
     }
 }

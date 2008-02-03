@@ -46,6 +46,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.IdUtil;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
 
@@ -221,7 +222,7 @@ public class RubyStruct extends RubyObject {
             IRubyObject type = superClass.getConstantAt(name);
             if (type != null) {
                 Frame frame = runtime.getCurrentContext().getCurrentFrame();
-                runtime.getWarnings().warn(frame.getFile(), frame.getLine(), "redefining constant Struct::" + name);
+                runtime.getWarnings().warn(ID.STRUCT_CONSTANT_REDEFINED, frame.getFile(), frame.getLine(), "redefining constant Struct::" + name, name);
                 superClass.remove_const(runtime.newString(name));
             }
             newStruct = superClass.defineClassUnder(name, superClass, STRUCT_INSTANCE_ALLOCATOR);

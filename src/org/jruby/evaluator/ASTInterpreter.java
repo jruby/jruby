@@ -139,6 +139,7 @@ import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DefaultMethod;
@@ -885,11 +886,11 @@ public class ASTInterpreter {
         String name = iVisited.getName();
 
         if (containingClass == runtime.getObject() && name == "initialize") {
-            runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop", "Object#initialize");
         }
 
         if (name == "__id__" || name == "__send__") {
-            runtime.getWarnings().warn("redefining `" + name + "' may cause serious problem"); 
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem", name); 
         }
 
         Visibility visibility = context.getCurrentVisibility();
@@ -1245,7 +1246,8 @@ public class ASTInterpreter {
    
         if (variable != null) return variable;
         
-        runtime.getWarnings().warning(iVisited.getPosition(), "instance variable " + iVisited.getName() + " not initialized");
+        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, iVisited.getPosition(), 
+                "instance variable " + iVisited.getName() + " not initialized", iVisited.getName());
         
         return runtime.getNil();
     }
@@ -1518,7 +1520,7 @@ public class ASTInterpreter {
                 // If no exception is thrown execute else block
                 if (iVisited.getElseNode() != null) {
                     if (iVisited.getRescueNode() == null) {
-                        runtime.getWarnings().warn(iVisited.getElseNode().getPosition(), "else without rescue is useless");
+                        runtime.getWarnings().warn(ID.ELSE_WITHOUT_RESCUE, iVisited.getElseNode().getPosition(), "else without rescue is useless");
                     }
                     result = evalInternal(runtime,context, iVisited.getElseNode(), self, aBlock);
                 }
@@ -1910,7 +1912,7 @@ public class ASTInterpreter {
             scope = scope.getPreviousCRefScope();
             rubyClass = scope.getModule();
             if (scope.getPreviousCRefScope() == null) {
-                runtime.getWarnings().warn("class variable access from toplevel singleton method");
+                runtime.getWarnings().warn(ID.CVAR_FROM_TOPLEVEL_SINGLETON_METHOD, "class variable access from toplevel singleton method");
             }            
         }
         return rubyClass;

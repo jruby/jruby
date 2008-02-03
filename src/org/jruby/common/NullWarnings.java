@@ -39,10 +39,10 @@ public class NullWarnings implements IRubyWarnings {
         return false;
     }
 
-    public void warn(String message) {}
-    public void warning(String message) {}
-    public void warn(ISourcePosition position, String message) {}
-    public void warn(String fileName, int lineNumber, String message) {}
-    public void warning(ISourcePosition position, String message) {}
-    public void warning(String fileName, int lineNumber, String message) {}
+    public void warn(ID id, String message, Object... data) {}
+    public void warning(ID id, String message, Object... data) {}
+    public void warn(ID id, ISourcePosition position, String message, Object... data) {}
+    public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {}
+    public void warning(ID id, ISourcePosition position, String message, Object... data) {}
+    public void warning(ID id, String fileName, int lineNumber, String message, Object...data) {}
 }

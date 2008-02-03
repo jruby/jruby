@@ -59,6 +59,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.util.ByteList;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
 /**
@@ -347,7 +348,7 @@ public class MarshalStream extends FilterOutputStream {
      */
     public void dumpInstanceVars(Map instanceVars) throws IOException {
 
-        runtime.getWarnings().warn("internal: deprecated dumpInstanceVars() called");
+        runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "internal: deprecated dumpInstanceVars() called", "dumpInstanceVars");
 
         writeInt(instanceVars.size());
         for (Iterator iter = instanceVars.keySet().iterator(); iter.hasNext();) {

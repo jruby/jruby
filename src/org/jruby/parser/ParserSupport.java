@@ -94,11 +94,13 @@ import org.jruby.ast.YieldNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.IDESourcePosition;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
+import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
 
@@ -179,7 +181,8 @@ public class ParserSupport {
             return new GlobalVarNode(node.getPosition(), ((INameNode) node).getName());
         }
         
-        throw new SyntaxException(node.getPosition(), "identifier " + ((INameNode) node).getName() + " is not valid");
+        throw new SyntaxException(PID.BAD_IDENTIFIER, node.getPosition(), "identifier " + 
+                ((INameNode) node).getName() + " is not valid", ((INameNode) node).getName());
     }
     
     /**
@@ -214,7 +217,8 @@ public class ParserSupport {
             return new GlobalVarNode(token.getPosition(), (String) token.getValue());
         }
 
-        throw new SyntaxException(token.getPosition(), "identifier " + (String) token.getValue() + " is not valid");
+        throw new SyntaxException(PID.BAD_IDENTIFIER, token.getPosition(), "identifier " + 
+                (String) token.getValue() + " is not valid", token.getValue());
     }
     
     public AssignableNode assignable(Token lhs, Node value) {
@@ -222,22 +226,22 @@ public class ParserSupport {
 
         switch (lhs.getType()) {
             case Tokens.kSELF:
-                throw new SyntaxException(lhs.getPosition(), "Can't change the value of self");
+                throw new SyntaxException(PID.CANNOT_CHANGE_SELF, lhs.getPosition(), "Can't change the value of self");
             case Tokens.kNIL:
-                throw new SyntaxException(lhs.getPosition(), "Can't assign to nil");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to nil", "nil");
             case Tokens.kTRUE:
-                throw new SyntaxException(lhs.getPosition(), "Can't assign to true");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to true", "true");
             case Tokens.kFALSE:
-                throw new SyntaxException(lhs.getPosition(), "Can't assign to false");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to false", "false");
             case Tokens.k__FILE__:
-                throw new SyntaxException(lhs.getPosition(), "Can't assign to __FILE__");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to __FILE__", "__FILE__");
             case Tokens.k__LINE__:
-                throw new SyntaxException(lhs.getPosition(), "Can't assign to __LINE__");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to __LINE__", "__LINE__");
             case Tokens.tIDENTIFIER:
                 return currentScope.assign(value != null ? union(lhs, value) : lhs.getPosition(), (String) lhs.getValue(), value);
             case Tokens.tCONSTANT:
                 if (isInDef() || isInSingle()) {
-                    throw new SyntaxException(lhs.getPosition(), "dynamic constant assignment");
+                    throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, lhs.getPosition(), "dynamic constant assignment");
                 }
                 return new ConstDeclNode(lhs.getPosition(), (String) lhs.getValue(), null, value);
             case Tokens.tIVAR:
@@ -251,7 +255,8 @@ public class ParserSupport {
                 return new GlobalAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
         }
 
-        throw new SyntaxException(lhs.getPosition(), "identifier " + (String) lhs.getValue() + " is not valid");
+        throw new SyntaxException(PID.BAD_IDENTIFIER, lhs.getPosition(), "identifier " + 
+                (String) lhs.getValue() + " is not valid", lhs.getValue());
     }
 
     /**
@@ -324,7 +329,7 @@ public class ParserSupport {
         }
 
         if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast())) {
-            warnings.warning(tail.getPosition(), "Statement not reached.");
+            warnings.warning(ID.STATEMENT_NOT_REACHED, tail.getPosition(), "Statement not reached.");
         }
 
         // Assumption: tail is never a list node
@@ -393,9 +398,12 @@ public class ParserSupport {
 
     public void backrefAssignError(Node node) {
         if (node instanceof NthRefNode) {
-            throw new SyntaxException(node.getPosition(), "Can't set variable $" + ((NthRefNode) node).getMatchNumber() + '.');
+            String varName = "$" + ((NthRefNode) node).getMatchNumber();
+            throw new SyntaxException(PID.INVALID_ASSIGNMENT, node.getPosition(), 
+                    "Can't set variable " + varName + '.', varName);
         } else if (node instanceof BackRefNode) {
-            throw new SyntaxException(node.getPosition(), "Can't set variable $" + ((BackRefNode) node).getType() + '.');
+            String varName = "$" + ((BackRefNode) node).getType();
+            throw new SyntaxException(PID.INVALID_ASSIGNMENT, node.getPosition(), "Can't set variable " + varName + '.', varName);
         }
     }
 
@@ -430,7 +438,7 @@ public class ParserSupport {
     public Node ret_args(Node node, ISourcePosition position) {
         if (node != null) {
             if (node instanceof BlockPassNode) {
-                throw new SyntaxException(position, "Dynamic constant assignment.");
+                throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, position, "Dynamic constant assignment.");
             } else if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
                 node = ((ArrayNode)node).get(0);
             } else if (node instanceof SplatNode) {
@@ -464,15 +472,15 @@ public class ParserSupport {
         } while (true);                    
     }
     
-    public void warnUnlessEOption(Node node, String message) {
+    public void warnUnlessEOption(ID id, Node node, String message) {
         if (!configuration.isInlineSource()) {
-            warnings.warn(node.getPosition(), message);
+            warnings.warn(id, node.getPosition(), message);
         }
     }
 
-    public void warningUnlessEOption(Node node, String message) {
+    public void warningUnlessEOption(ID id, Node node, String message) {
         if (!configuration.isInlineSource()) {
-            warnings.warning(node.getPosition(), message);
+            warnings.warning(id, node.getPosition(), message);
         }
     }
 
@@ -483,7 +491,7 @@ public class ParserSupport {
      */
     public void checkExpression(Node node) {
         if (!isExpression(node)) {
-            warnings.warning(node.getPosition(), "void value expression");
+            warnings.warning(ID.VOID_VALUE_EXPRESSION, node.getPosition(), "void value expression");
         }
     }
     
@@ -532,7 +540,7 @@ public class ParserSupport {
     }
 
     private void handleUselessWarn(Node node, String useless) {
-        warnings.warn(node.getPosition(), "Useless use of " + useless + " in void context.");
+        warnings.warn(ID.USELESS_EXPRESSION, node.getPosition(), "Useless use of " + useless + " in void context.", useless);
     }
 
     /**
@@ -617,11 +625,11 @@ public class ParserSupport {
 	 **/
     private boolean checkAssignmentInCondition(Node node) {
         if (node instanceof MultipleAsgnNode) {
-            throw new SyntaxException(node.getPosition(), "Multiple assignment in conditional.");
+            throw new SyntaxException(PID.MULTIPLE_ASSIGNMENT_IN_CONDITIONAL, node.getPosition(), "Multiple assignment in conditional.");
         } else if (node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (valueNode instanceof ILiteralNode || valueNode instanceof NilNode || valueNode instanceof TrueNode || valueNode instanceof FalseNode) {
-                warnings.warn(node.getPosition(), "Found '=' in conditional, should be '=='.");
+                warnings.warn(ID.ASSIGNMENT_IN_CONDITIONAL, node.getPosition(), "Found '=' in conditional, should be '=='.");
             }
             return true;
         } 
@@ -658,7 +666,7 @@ public class ParserSupport {
                     dotNode.isExclusive(), slot);
         }
         case REGEXPNODE:
-            warningUnlessEOption(node, "regex literal in condition");
+            warningUnlessEOption(ID.REGEXP_LITERAL_IN_CONDITION, node, "regex literal in condition");
             
             return new MatchNode(node.getPosition(), node);
         } 
@@ -685,7 +693,7 @@ public class ParserSupport {
         if (node instanceof NewlineNode) return ((NewlineNode) node).getNextNode();
         
         if (node instanceof FixnumNode) {
-            warnUnlessEOption(node, "integer literal in conditional range");
+            warnUnlessEOption(ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in conditional range");
             return getOperatorCallNode(node, "==", new GlobalVarNode(node.getPosition(), "$."));
         } 
 
@@ -708,7 +716,7 @@ public class ParserSupport {
         if (node instanceof ArrayNode && ((ArrayNode) node).size() == 1) { 
             return ((ListNode) node).get(0);
         } else if (node instanceof BlockPassNode) {
-            throw new SyntaxException(node.getPosition(), "Block argument should not be given.");
+            throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(), "Block argument should not be given.");
         }
         return node;
     }
@@ -721,7 +729,7 @@ public class ParserSupport {
         if (args instanceof BlockPassNode) {
             // Block and block pass passed in at same time....uh oh
             if (iter != null) {
-                throw new SyntaxException(iter.getPosition(), "Both block arg and actual block given.");
+                throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(), "Both block arg and actual block given.");
             }
                 
             return new CallNode(union(receiver, args), receiver, (String) name.getValue(), 
@@ -738,7 +746,7 @@ public class ParserSupport {
 
         if (args instanceof BlockPassNode) {
             if (iter != null) {
-                throw new SyntaxException(iter.getPosition(), "Both block arg and actual block given.");
+                throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(), "Both block arg and actual block given.");
             }
             return new FCallNode(union(operation, args), name, ((BlockPassNode) args).getArgsNode(), args);
         }
@@ -881,7 +889,7 @@ public class ParserSupport {
         
         if (node != null) {
             if (node instanceof BlockPassNode) {
-                throw new SyntaxException(node.getPosition(), "Block argument should not be given.");
+                throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(), "Block argument should not be given.");
             }
             
             if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {

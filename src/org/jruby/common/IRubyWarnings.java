@@ -36,11 +36,70 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  */
 public interface IRubyWarnings {
-    public abstract void warn(ISourcePosition position, String message);
-    public abstract void warn(String fileName, int lineNumber, String message);
+    public enum ID {
+        AMBIGUOUS_ARGUMENT("AMBIGUOUS_ARGUMENT"),
+        ACCESSOR_NOT_INITIALIZED("ACCESSOR_NOT_INITIALIZED"),
+        ARGUMENT_AS_PREFIX("ARGUMENT_AS_PREFIX"),
+        ARGUMENT_EXTRA_SPACE("ARGUMENT_EXTRA_SPACE"),
+        ASSIGNMENT_IN_CONDITIONAL("ASSIGNMENT_IN_CONDITIONAL"),
+        BIGNUM_FROM_FLOAT_RANGE("BIGNUM_FROM_FLOAT_RANGE"),
+        BLOCK_BEATS_DEFAULT_VALUE("BLOCK_BEATS_DEFAULT_VALUE"),
+        BLOCK_NOT_ACCEPTED("BLOCK_NOT_ACCEPTED"),
+        BLOCK_UNUSED("BLOCK_UNUSED"),
+        CONSTANT_ALREADY_INITIALIZED("CONSTANT_ALREADY_INITIALIZED"),
+        CONSTANT_BAD_REFERENCE("CONSTANT_BAD_REFERENCE"),
+        CVAR_FROM_TOPLEVEL_SINGLETON_METHOD("CVAR_FROM_TOPLEVEL_SINGLETON_METHOD"),
+        DECLARING_SCLASS_VARIABLE("DECLARING_SCLASS_VARIABLE"),
+        DEPRECATED_METHOD("DEPRECATED_METHOD"),
+        DUMMY_VALUE_USED("DUMMY_VALUE_USED"),
+        END_IN_METHOD("END_IN_METHOD"),
+        ELSE_WITHOUT_RESCUE("ELSE_WITHOUT_RESCUE"),
+        EMPTY_IMPLEMENTATION("EMPTY_IMPLEMENTATION"),
+        ENV_VARS_FROM_CLI_METHOD("ENV_VARS_FROM_CLI_METHOD"),
+        FIXNUMS_NOT_SYMBOLS("FIXNUMS_NOT_SYMBOLS"),
+        FLOAT_OUT_OF_RANGE("FLOAT_OUT_OF_RANGE"),
+        GLOBAL_NOT_INITIALIZED("GLOBAL_NOT_INITIALIZED"),
+        GROUPED_EXPRESSION("GROUPED_EXPRESSION"),
+        INEFFECTIVE_GLOBAL("INNEFFECTIVE_GLOBAL"),
+        INVALID_CHAR_SEQUENCE("INVALID_CHAR_SEQUENCE"),
+        IVAR_NOT_INITIALIZED("IVAR_NOT_INITIALIZED"),
+        MAY_BE_TOO_BIG("MAY_BE_TOO_BIG"),
+        MISCELLANEOUS("MISCELLANEOUS"),
+        MULTIPLE_VALUES_FOR_BLOCK("MULTIPLE_VALUES_FOR_BLOCK"),
+        NEGATIVE_NUMBER_FOR_U("NEGATIVE_NUMBER_FOR_U"),
+        NO_SUPER_CLASS("NO_SUPER_CLASS"),
+        PARENTHISE_ARGUMENTS("PARENTHISE_ARGUMENTS"),
+        PROXY_EXTENDED_LATE("PROXY_EXTENDED_LATE"),
+        STATEMENT_NOT_REACHED("STATEMENT_NOT_REACHED"), 
+        LITERAL_IN_CONDITIONAL_RANGE("LITERAL_IN_CONDITIONAL_RANGE"),
+        REDEFINING_DANGEROUS("REDEFINING_DANGEROUS"),
+        REGEXP_IGNORED_FLAGS("REGEXP_IGNORED_FLAGS"),
+        REGEXP_LITERAL_IN_CONDITION("REGEXP_LITERAL_IN_CONDITION"),
+        STRUCT_CONSTANT_REDEFINED("STRUCT_CONSTANT_REDEFINED"),
+        SYMBOL_AS_INTEGER("SYMBOL_AS_INTEGER"),
+        SYSWRITE_BUFFERED_IO("SYSWRITE_BUFFERED_IO"),
+        SWALLOWED_IO_EXCEPTION("SWALLOWED_IO_EXCEPTION"),
+        TOO_MANY_ARGUMENTS("TOO_MANY_ARGUMENTS"),
+        UNDEFINING_BAD("UNDEFINING_BAD"),
+        USELESS_EXPRESSION("USELESS_EXPRESSION"),
+        VOID_VALUE_EXPRESSION("VOID_VALUE_EXPRESSION");
+        
+        private String id;
+        
+        ID(String id) {
+            this.id = id;
+        }
+        
+        public String getID() {
+            return id;
+        }
+    }
+
+    public abstract void warn(ID id, ISourcePosition position, String message, Object... data);
+    public abstract void warn(ID id, String fileName, int lineNumber, String message, Object... data);
     public abstract boolean isVerbose();
-    public abstract void warn(String message);
-    public abstract void warning(String message);
-    public abstract void warning(ISourcePosition position, String message);
-    public abstract void warning(String fileName, int lineNumber, String message);
+    public abstract void warn(ID id, String message, Object... data);
+    public abstract void warning(ID id, String message, Object... data);
+    public abstract void warning(ID id, ISourcePosition position, String message, Object... data);
+    public abstract void warning(ID id, String fileName, int lineNumber, String message, Object... data);
 }

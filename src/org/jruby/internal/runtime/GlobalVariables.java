@@ -37,6 +37,7 @@ import java.util.Set;
 
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -110,7 +111,7 @@ public class GlobalVariables {
 	    if (variable != null) {
 	        return variable.getAccessor().getValue();
 	    }
-		runtime.getWarnings().warning("global variable `" + name + "' not initialized");
+		runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable `" + name + "' not initialized", name);
 		return runtime.getNil();
 	}
 

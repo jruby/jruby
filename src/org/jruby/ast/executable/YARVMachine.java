@@ -16,6 +16,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.methods.YARVMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -408,7 +409,7 @@ public class YARVMachine {
 
                 String mname = bytecodes[ip].iseq_op.name;
                 if (containingClass == runtime.getObject() && mname == "initialize") {
-                    runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
+                    runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop", "Object#initialize");
                 }
     
                 Visibility visibility = context.getCurrentVisibility();

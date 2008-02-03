@@ -30,6 +30,7 @@ package org.jruby.runtime;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -147,7 +148,7 @@ public class CompiledBlock extends BlockBody {
                 value = ((RubyArray)value).eltInternal(0);
                 break;
             default:
-                context.getRuntime().getWarnings().warn("multiple values for a block parameter (" +
+                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
                         length + " for 1)");
             }
             return new IRubyObject[] {value};
@@ -163,7 +164,7 @@ public class CompiledBlock extends BlockBody {
             return new IRubyObject[] {ArgsUtil.convertToRubyArray(context.getRuntime(), value, hasMultipleArgsHead)};
         default:
             if (value == null) {
-                context.getRuntime().getWarnings().warn("multiple values for a block parameter (0 for 1)");
+                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
                 return new IRubyObject[] {context.getRuntime().getNil()};
             }
             return new IRubyObject[] {value};

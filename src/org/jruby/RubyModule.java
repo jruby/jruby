@@ -50,6 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -602,7 +603,7 @@ public class RubyModule extends RubyObject {
         }
         testFrozen("module");
         if (name.equals("__id__") || name.equals("__send__")) {
-            getRuntime().getWarnings().warn("undefining `"+ name +"' may cause serious problem");
+            getRuntime().getWarnings().warn(ID.UNDEFINING_BAD, "undefining `"+ name +"' may cause serious problem");
         }
         DynamicMethod method = searchMethod(name);
         if (method.isUndefined()) {
@@ -2153,8 +2154,9 @@ public class RubyModule extends RubyObject {
             if ((value = p.constantTableFastFetch(internedName)) != null) {
                 if (value != undef) {
                     if (p == objectClass && this != objectClass) {
-                        getRuntime().getWarnings().warn("toplevel constant " + internedName +
-                                " referenced by " + getName() + "::" + internedName);
+                        String badCName = getName() + "::" + internedName;
+                        getRuntime().getWarnings().warn(ID.CONSTANT_BAD_REFERENCE, "toplevel constant " + 
+                                internedName + " referenced by " + badCName, badCName);
                     }
                     return value;
                 }
@@ -2185,7 +2187,7 @@ public class RubyModule extends RubyObject {
             if (oldValue == getRuntime().getUndef()) {
                 getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + name);
             } else {
-                getRuntime().getWarnings().warn("already initialized constant " + name);
+                getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name, name);
             }
         }
 
@@ -2212,7 +2214,7 @@ public class RubyModule extends RubyObject {
             if (oldValue == getRuntime().getUndef()) {
                 getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + internedName);
             } else {
-                getRuntime().getWarnings().warn("already initialized constant " + internedName);
+                getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + internedName, internedName);
             }
         }
 

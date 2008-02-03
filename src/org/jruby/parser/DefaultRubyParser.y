@@ -116,6 +116,7 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.LexerSource;
@@ -123,6 +124,7 @@ import org.jruby.lexer.yacc.RubyYaccLexer;
 import org.jruby.lexer.yacc.RubyYaccLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.lexer.yacc.SyntaxException;
+import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
@@ -278,7 +280,7 @@ bodystmt      : compstmt opt_rescue opt_else opt_ensure {
 		  if ($2 != null) {
 		      node = new RescueNode(getPosition($1, true), $1, $2, $3);
 		  } else if ($3 != null) {
-		      warnings.warn(getPosition($1), "else without rescue is useless");
+		      warnings.warn(ID.ELSE_WITHOUT_RESCUE, getPosition($1), "else without rescue is useless");
                       node = support.appendToBlock($1, $3);
 		  }
 		  if ($4 != null) {
@@ -358,7 +360,7 @@ stmt          : kALIAS fitem {
               }
               | klEND tLCURLY compstmt tRCURLY {
                   if (support.isInDef() || support.isInSingle()) {
-                      warnings.warn(getPosition($1), "END in method; use at_exit");
+                      warnings.warn(ID.END_IN_METHOD, getPosition($1), "END in method; use at_exit");
                   }
                   $$ = new PostExeNode(getPosition($3), $3);
               }
@@ -833,7 +835,7 @@ arg_value     : arg {
 
 aref_args     : none
               | command opt_nl {
-                  warnings.warn(getPosition($1), "parenthesize argument(s) for future version");
+                  warnings.warn(ID.PARENTHISE_ARGUMENTS, getPosition($1), "parenthesize argument(s) for future version");
                   $$ = new ArrayNode(getPosition($1), $1);
               }
               | args trailer {
@@ -859,11 +861,11 @@ paren_args    : tLPAREN2 none tRPAREN {
 		  $<Node>$.setPosition(support.union($1, $4));
               }
               | tLPAREN2 block_call opt_nl tRPAREN {
-                  warnings.warn(getPosition($1), "parenthesize argument(s) for future version");
+                  warnings.warn(ID.PARENTHISE_ARGUMENTS, getPosition($1), "parenthesize argument(s) for future version");
                   $$ = new ArrayNode(getPosition($1), $2);
               }
               | tLPAREN2 args ',' block_call opt_nl tRPAREN {
-                  warnings.warn(getPosition($1), "parenthesize argument(s) for future version");
+                  warnings.warn(ID.PARENTHISE_ARGUMENTS, getPosition($1), "parenthesize argument(s) for future version");
                   $$ = $2.add($4);
               }
 
@@ -871,7 +873,7 @@ opt_paren_args: none | paren_args
 
 // Node:call_args - Arguments for a function call
 call_args     : command {
-                  warnings.warn($1.getPosition(), "parenthesize argument(s) for future version");
+                  warnings.warn(ID.PARENTHISE_ARGUMENTS, $1.getPosition(), "parenthesize argument(s) for future version");
                   $$ = new ArrayNode(getPosition($1), $1);
               }
               | args opt_block_arg {
@@ -957,13 +959,13 @@ command_args  : /* none */ {
 	      | tLPAREN_ARG  {                    
 		  lexer.setState(LexState.EXPR_ENDARG);
 	      } tRPAREN {
-                  warnings.warn(getPosition($1), "don't put space before argument parentheses");
+                  warnings.warn(ID.ARGUMENT_EXTRA_SPACE, getPosition($1), "don't put space before argument parentheses");
 	          $$ = null;
 	      }
 	      | tLPAREN_ARG call_args2 {
 		  lexer.setState(LexState.EXPR_ENDARG);
 	      } tRPAREN {
-                  warnings.warn(getPosition($1), "don't put space before argument parentheses");
+                  warnings.warn(ID.ARGUMENT_EXTRA_SPACE, getPosition($1), "don't put space before argument parentheses");
 		  $$ = $2;
 	      }
 
@@ -1011,7 +1013,7 @@ primary       : literal
               | tLPAREN_ARG expr { 
                   lexer.setState(LexState.EXPR_ENDARG); 
               } opt_nl tRPAREN {
-		  warnings.warning(getPosition($1), "(...) interpreted as grouped expression");
+		  warnings.warning(ID.GROUPED_EXPRESSION, getPosition($1), "(...) interpreted as grouped expression");
                   $$ = $2;
 	      }
               | tLPAREN compstmt tRPAREN {
@@ -1068,7 +1070,7 @@ primary       : literal
               | method_call brace_block {
 	          if ($1 != null && 
                       $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                      throw new SyntaxException(getPosition($1), "Both block arg and actual block given.");
+                      throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, getPosition($1), "Both block arg and actual block given.");
 		  }
 		  $<BlockAcceptingNode>1.setIterNode($2);
 		  $<Node>1.setPosition(support.union($1, $2));
@@ -1227,7 +1229,7 @@ do_block      : kDO_BLOCK {
 block_call    : command do_block {
 	          if ($1 != null && 
                       $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                      throw new SyntaxException(getPosition($1), "Both block arg and actual block given.");
+                      throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, getPosition($1), "Both block arg and actual block given.");
                   }
 		  $<BlockAcceptingNode>1.setIterNode($2);
 		  $<Node>1.setPosition(support.union($1, $2));

@@ -37,6 +37,7 @@ import org.jruby.RubyModule;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NodeType;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block.Type;
@@ -158,7 +159,7 @@ public abstract class BlockBody implements JumpTarget {
         }
         case LAMBDA:
             if (argumentType == ARRAY && args.length != 1) {
-                context.getRuntime().getWarnings().warn("multiple values for a block parameter (" + args.length + " for " + arity().getValue() + ")");
+                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + arity().getValue() + ")");
                 if (args.length == 0) {
                     args = new IRubyObject[] {context.getRuntime().getNil()};
                 } else {

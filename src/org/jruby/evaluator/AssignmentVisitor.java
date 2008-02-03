@@ -47,6 +47,7 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -140,7 +141,7 @@ public class AssignmentVisitor {
         ClassVarDeclNode iVisited = (ClassVarDeclNode)node;
         if (runtime.getVerbose().isTrue()
                 && context.getRubyClass().isSingleton()) {
-            runtime.getWarnings().warn(iVisited.getPosition(),
+            runtime.getWarnings().warn(ID.DECLARING_SCLASS_VARIABLE, iVisited.getPosition(),
                     "Declaring singleton class variable.");
         }
         RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, context.getRuntime());

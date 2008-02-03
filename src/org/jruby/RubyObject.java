@@ -44,6 +44,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -742,7 +744,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     @JRubyMethod(name = "id")
     public synchronized IRubyObject id_deprecated() {
-        getRuntime().getWarnings().warn("Object#id will be deprecated; use Object#object_id");
+        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Object#id will be deprecated; use Object#object_id", "Object#id", "Object#object_id");
         return id();
     }
     
@@ -769,7 +771,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
     @JRubyMethod(name = "type")
     public RubyClass type_deprecated() {
-        getRuntime().getWarnings().warn("Object#type is deprecated; use Object#class");
+        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Object#type is deprecated; use Object#class", "Object#type", "Object#class");
         return type();
     }
 
@@ -1077,7 +1079,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     
     @JRubyMethod(name = "to_a", visibility = Visibility.PUBLIC)
     public RubyArray to_a() {
-        getRuntime().getWarnings().warn("default 'to_a' will be obsolete");
+        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete", "to_a");
         return getRuntime().newArray(this);
     }
 

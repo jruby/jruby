@@ -38,6 +38,7 @@ package org.jruby;
 
 import java.math.BigInteger;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -689,7 +690,7 @@ public class RubyFixnum extends RubyInteger {
     
     // Piece of mri rb_to_id
     public String asJavaString() {
-        getRuntime().getWarnings().warn("do not use Fixnums as Symbols");
+        getRuntime().getWarnings().warn(ID.FIXNUMS_NOT_SYMBOLS, "do not use Fixnums as Symbols");
         
         // FIXME: I think this chunk is equivalent to MRI id2name (and not our public method 
         // id2name).  Make into method if used more than once.  
