@@ -716,10 +716,25 @@ public class RubyKernel {
         RubyString src = args[0].convertToString();
         runtime.checkSafeString(src);
         
-        IRubyObject scope = args.length > 1 && !args[1].isNil() ? args[1] : RubyBinding.newBindingForEval(runtime);  
-        String file = args.length > 2 ? args[2].convertToString().toString() : "(eval)"; 
-        int line = args.length > 3 ? (int) args[3].convertToInteger().getLongValue() : 0; 
-
+        IRubyObject scope = args.length > 1 && !args[1].isNil() ? args[1] : null;
+        String file;
+        if (args.length > 2) {
+            file = args[2].convertToString().toString();
+        } else if (scope == null) {
+            file = "(eval)";
+        } else {
+            file = null;
+        }
+        int line;
+        if (args.length > 3) {
+            line = (int) args[3].convertToInteger().getLongValue();
+        } else if (scope == null) {
+            line = 0;
+        } else {
+            line = -1;
+        }
+        if (scope == null) scope = RubyBinding.newBindingForEval(runtime);
+        
         return ASTInterpreter.evalWithBinding(runtime.getCurrentContext(), src, scope, file, line);
     }
 

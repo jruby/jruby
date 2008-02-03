@@ -186,7 +186,7 @@ public class ASTInterpreter {
             String file, int lineNumber) {
         // both of these are ensured by the (very few) callers
         assert !scope.isNil();
-        assert file != null;
+        //assert file != null;
 
         Ruby runtime = src.getRuntime();
         String savedFile = context.getFile();
@@ -203,6 +203,10 @@ public class ASTInterpreter {
 
         Binding binding = ((RubyBinding)scope).getBinding();
         DynamicScope evalScope = binding.getDynamicScope().getEvalScope();
+
+        // If no explicit file passed in we will use the bindings location
+        if (file == null) file = binding.getFrame().getFile();
+        if (lineNumber == -1) lineNumber = binding.getFrame().getLine();
         
         // FIXME:  This determine module is in a strange location and should somehow be in block
         evalScope.getStaticScope().determineModule();
