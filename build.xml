@@ -388,110 +388,24 @@
       compile-stdlib,
       coverage-report"
 	  description="Runs unit tests in all modes."/>
-  
-  <target name="run-junit-interpreted">
-      <antcall target="run-junit-1.8" inheritall="false"/>
-  </target>
-  
-  <target name="run-junit-interpreted-1.9">
-      <antcall target="run-junit-1.9" inheritall="false"/>
-  </target>
-  
-  <target name="run-junit-reflected-interpreted">
-      <antcall target="run-junit-1.8" inheritall="false">
-          <param name="reflection " value="true"/>
-      </antcall>
-  </target>
-  
-  <target name="run-junit-reflected-interpreted-1.9">
-      <antcall target="run-junit-1.9" inheritall="false">
-          <param name="reflection " value="true"/>
-      </antcall>
-  </target>
-  
-  <target name="run-junit-compiled">
-      <antcall target="run-junit-1.8" inheritall="false">
-          <param name="compile.mode" value="JIT"/>
-          <param name="jit.threshold" value="0"/>
-      </antcall>
-  </target>
-  
-  <target name="run-junit-compiled-1.9">
-      <antcall target="run-junit-1.9" inheritall="false">
-          <param name="compile.mode" value="JIT"/>
-          <param name="jit.threshold" value="0"/>
-      </antcall>
-  </target>
-  
-  <target name="run-junit-reflected-compiled">
-      <antcall target="run-junit-1.8" inheritall="false">
-          <param name="compile.mode" value="JIT"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="reflection" value="true"/>
-      </antcall>
-  </target>
-  
-  <target name="run-junit-reflected-compiled-1.9">
-      <antcall target="run-junit-1.9" inheritall="false">
-          <param name="compile.mode" value="JIT"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="reflection" value="true"/>
-      </antcall>
-  </target>
-  
-  <target name="run-junit-precompiled">
-      <antcall target="run-junit-1.8" inheritall="false">
-          <param name="compile.mode" value="FORCE"/>
-          <param name="jit.threshold" value="0"/>
-      </antcall>
-  </target>
-  
-  <target name="run-junit-precompiled-1.9">
-      <antcall target="run-junit-1.9" inheritall="false">
-          <param name="compile.mode" value="FORCE"/>
-          <param name="jit.threshold" value="0"/>
-      </antcall>
-  </target>
-  
-  <target name="run-junit-reflected-precompiled">
-      <antcall target="run-junit-1.8" inheritall="false">
-          <param name="compile.mode" value="FORCE"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="reflection" value="true"/>
-      </antcall>
-  </target>
-  
-  <target name="run-junit-reflected-precompiled-1.9">
-      <antcall target="run-junit-1.9" inheritall="false">
-          <param name="compile.mode" value="FORCE"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="reflection" value="true"/>
-      </antcall>
-  </target>
-  
+
+  <!-- All junit permutations for 1.8 and 1.9 support -->
+  <target name="run-junit-interpreted"><run-junit-1.8/></target>
+  <target name="run-junit-interpreted-1.9"><run-junit-1.9/></target>
+  <target name="run-junit-reflected-interpreted"><run-junit-1.8 reflection="true"/></target>
+  <target name="run-junit-reflected-interpreted-1.9"><run-junit-1.9 reflection="true"/></target>
+  <target name="run-junit-compiled"><run-junit-1.8 compile.mode="JIT" jit.threshold="0"/></target>
+  <target name="run-junit-compiled-1.9"><run-junit-1.9 compile.mode="JIT" jit.threshold="0"/></target>
+  <target name="run-junit-reflected-compiled"><run-junit-1.8 compile.mode="JIT" jit.threshold="0" reflection="true"/></target>
+  <target name="run-junit-reflected-compiled-1.9"><run-junit-1.9 compile.mode="JIT" jit.threshold="0" reflection="true"/></target>
+  <target name="run-junit-precompiled"><run-junit-1.8 compile.mode="FORCE" jit.threshold="0"/></target>
+  <target name="run-junit-precompiled-1.9"><run-junit-1.9 compile.mode="FORCE" jit.threshold="0"/></target>
+  <target name="run-junit-reflected-precompiled"><run-junit-1.8 compile.mode="FORCE" jit.threshold="0" reflection="true"/></target>
+  <target name="run-junit-reflected-precompiled-1.9"><run-junit-1.9 compile.mode="FORCE" jit.threshold="0" reflection="true"/></target>
   <target name="run-junit-threadpool" depends="run-junit-interpreted-threadpool,run-junit-compiled-threadpool"/>
-  
-  <target name="run-junit-interpreted-threadpool">
-      <antcall target="run-junit-1.8" inheritall="false">
-          <param name="thread.pooling" value="true"/>
-      </antcall>
-  </target>
-  
-  <target name="run-junit-compiled-threadpool">
-      <antcall target="run-junit-1.8" inheritall="false">
-          <param name="compile.mode" value="JIT"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="thread.pooling" value="true"/>
-      </antcall>
-  </target>
-  
-  <target name="run-junit-precompiled-threadpool">
-      <antcall target="run-junit-1.8" inheritall="false">
-          <param name="compile.mode" value="FORCE"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="thread.pooling" value="true"/>
-      </antcall>
-  </target>
+  <target name="run-junit-interpreted-threadpool"><run-junit-1.8 thread.pooling="true"/></target>
+  <target name="run-junit-compiled-threadpool"><run-junit-1.8 compile.mode="JIT" jit.threshold="0" thread.pooling="true"/></target>
+  <target name="run-junit-precompiled-threadpool"><run-junit-1.8 compile.mode="FORCE" jit.threshold="0" thread.pooling="true"/></target>
   
   <path id="test.class.path">
     <pathelement location="${jruby.instrumented.classes.dir}" />
@@ -502,138 +416,104 @@
     <pathelement path="${test.dir}/requireTest.jar"/>
     <pathelement location="${test.dir}"/>
   </path>
+
+  <macrodef name="run-junit">
+    <attribute name="jruby.version" default="ruby1_8"/>
+    <attribute name="compile.mode" default="OFF"/>
+    <attribute name="jit.threshold" default="20"/>
+    <attribute name="jit.max" default="-1"/>
+    <attribute name="objectspace.enabled" default="true"/>
+    <attribute name="thread.pooling" default="false"/>
+    <attribute name="reflection" default="false"/>
+    <attribute name="threadlocal" default="false"/>
+    <element name="junit-tests"/>
+    <sequential>
+      <echo message="compile=@{compile.mode}, jit.threshold=@{jit.threshold}, jit.max=@{jit.max}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection} version=@{jruby.version}"/>
+      <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
+
+      <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="1200000">
+	<classpath refid="test.class.path"/>
+      
+	<sysproperty key="java.awt.headless" value="true"/>
+	<sysproperty key="jruby.base" value="${basedir}"/>
+	<sysproperty key="jruby.home" value="${basedir}"/>
+	<sysproperty key="jruby.lib" value="${lib.dir}"/>
+	<sysproperty key="jruby.compile.mode" value="@{compile.mode}"/>
+	<sysproperty key="jruby.jit.threshold" value="@{jit.threshold}"/>
+	<sysproperty key="jruby.jit.max" value="@{jit.max}"/>
+	<sysproperty key="jruby.compat.version" value="@{jruby.version}"/>
+	<sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
+	<sysproperty key="jruby.runtime.threadlocal" value="@{threadlocal}"/>
+	<sysproperty key="jruby.thread.pooling" value="@{thread.pooling}"/>
+	<sysproperty key="jruby.reflection" value="@{reflection}"/>
+	<sysproperty key="jruby.jit.logging.verbose" value="true"/>
+	<sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
+	<sysproperty key="emma.coverage.out.merge" value="true" />
+
+	<jvmarg value="-ea"/>
+
+	<formatter type="xml"/>
+	<formatter type="brief" usefile="false" />
+
+	<junit-tests/>
+      </junit>
+
+      <junitreport todir="${test.results.dir}">
+	<fileset dir="${test.results.dir}" includes="TEST-*.xml"/>
+	<report format="frames" todir="${html.test.results.dir}"/>
+      </junitreport>
+    </sequential>
+  </macrodef>
   
   <!-- runs junit tests for 1.8 functionality -->
-  <target name="run-junit-1.8">
-    <!-- set up properties that haven't been assigned -->
-    <property name="compile.mode" value="OFF"/>
-    <property name="jit.threshold" value="20"/>
-    <property name="jit.max" value="-1"/>
-    <property name="objectspace.enabled" value="true"/>
-    <property name="thread.pooling" value="false"/>
-    <property name="reflection" value="false"/>
-    <echo message="compile=${compile.mode}, jit.threshold=${jit.threshold}, jit.max=${jit.max}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
-    
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="1200000">
-      <classpath refid="test.class.path"/>
-      
-      <sysproperty key="java.awt.headless" value="true"/>
-      <sysproperty key="jruby.base" value="${basedir}"/>
-      <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.compile.mode" value="${compile.mode}"/>
-      <sysproperty key="jruby.jit.threshold" value="${jit.threshold}"/>
-      <sysproperty key="jruby.jit.max" value="${jit.max}"/>
-      <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
-      <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
-      <sysproperty key="jruby.reflection" value="${reflection}"/>
-      <sysproperty key="jruby.jit.logging.verbose" value="true"/>
-      <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
-      <sysproperty key="emma.coverage.out.merge" value="true" />
+  <macrodef name="run-junit-1.8">
+    <attribute name="compile.mode" default="OFF"/>
+    <attribute name="jit.threshold" default="20"/>
+    <attribute name="reflection" default="false"/>
+    <attribute name="thread.pooling" default="false"/>
 
-      <jvmarg value="-ea"/>
+    <sequential>
+      <run-junit compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}" reflection="@{reflection}" thread.pooling="@{thread.pooling}">
+	<junit-tests>
+	  <test name="${test}" if="test"/>
+	  <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
+	  <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}" unless="test"/>
+	  <test name="org.jruby.test.BFTSTestSuite" todir="${test.results.dir}" unless="test"/>
+	  <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" unless="test"/>
+	  <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" unless="test"/>
+	  <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" unless="test"/>
+	  <test name="org.jruby.test.RubyTestTestSuite" todir="${test.results.dir}" unless="test"/>
+	  <test name="org.jvyamlb.YAMLLoadTest" todir="${test.results.dir}" unless="test"/>
+	  <test name="org.jvyamlb.YAMLDumpTest" todir="${test.results.dir}" unless="test"/>
+	</junit-tests>
+      </run-junit>
+    </sequential>
+  </macrodef>
 
-      <formatter type="xml"/>
-      <formatter type="brief" usefile="false" />
+  <macrodef name="run-junit-1.9">
+    <attribute name="compile.mode" default="OFF"/>
+    <attribute name="jit.threshold" default="20"/>
+    <attribute name="reflection" default="false"/>
+    <attribute name="thread.pooling" default="false"/>
 
-      <test name="${test}" if="test"/>
-      <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
-      <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}" unless="test"/>
-      <test name="org.jruby.test.BFTSTestSuite" todir="${test.results.dir}" unless="test"/>
-      <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" unless="test"/>
-      <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" unless="test"/>
-      <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" unless="test"/>
-      <test name="org.jruby.test.RubyTestTestSuite" todir="${test.results.dir}" unless="test"/>
-      <test name="org.jvyamlb.YAMLLoadTest" todir="${test.results.dir}" unless="test"/>
-      <test name="org.jvyamlb.YAMLDumpTest" todir="${test.results.dir}" unless="test"/>
-    </junit>
-
-    <junitreport todir="${test.results.dir}">
-      <fileset dir="${test.results.dir}" includes="TEST-*.xml"/>
-      <report format="frames" todir="${html.test.results.dir}"/>
-    </junitreport>
-  </target>
-  
-  <target name="run-junit-1.9">
-    <!-- set up properties that haven't been assigned -->
-    <property name="compile.mode" value="OFF"/>
-    <property name="jit.threshold" value="20"/>
-    <property name="jit.max" value="-1"/>
-    <property name="objectspace.enabled" value="false"/>
-    <property name="thread.pooling" value="false"/>
-    <property name="reflection" value="false"/>
-    <echo message="compile=${compile.mode}, jit.threshold=${jit.threshold}, jit.max=${jit.max}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
-    
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="600000">
-      <classpath refid="test.class.path"/>
-      
-      <sysproperty key="java.awt.headless" value="true"/>
-      <sysproperty key="jruby.base" value="${basedir}"/>
-      <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.compile.mode" value="${compile.mode}"/>
-      <sysproperty key="jruby.jit.threshold" value="${jit.threshold}"/>
-      <sysproperty key="jruby.jit.max" value="${jit.max}"/>
-      <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
-      <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
-      <sysproperty key="jruby.reflection" value="${reflection}"/>
-      <sysproperty key="jruby.compat.version" value="ruby1_9"/>
-      <sysproperty key="jruby.jit.logging.verbose" value="true"/>
-      <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
-      <sysproperty key="emma.coverage.out.merge" value="true" />
-
-      <jvmarg value="-ea"/>
-
-      <formatter type="xml"/>
-      <formatter type="brief" usefile="false"/>
-
-      <test name="${test}" if="test"/>
-      <test name="org.jruby.test.Ruby1_9TestSuite" todir="${test.results.dir}"  unless="test"/>
-    </junit>
-
-    <junitreport todir="${test.results.dir}">
-      <fileset dir="${test.results.dir}" includes="TEST-*.xml"/>
-      <report format="frames" todir="${html.test.results.dir}"/>
-    </junitreport>
-  </target>
+    <sequential>
+      <run-junit objectspace.enabled="false" jruby.version="ruby1_9" compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}" reflection="@{reflection}" thread.pooling="@{thread.pooling}">
+	<junit-tests>
+	  <test name="${test}" if="test"/>
+	  <test name="org.jruby.test.Ruby1_9TestSuite" todir="${test.results.dir}"  unless="test"/>
+	</junit-tests>
+      </run-junit>
+    </sequential>
+  </macrodef>
   
   <!-- Runs junit tests for object persistence support -->
   <target name="run-junit-object-persistence">
-    <!-- set up properties that haven't been assigned -->
-    <property name="compile.mode" value="OFF"/>
-    <property name="jit.threshold" value="20"/>
-    <property name="objectspace.enabled" value="false"/>
-    <property name="thread.pooling" value="false"/>
-    <property name="reflection" value="false"/>
-    <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
-    
-    <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-    <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="600000">
-      <classpath refid="test.class.path"/>
-      
-      <sysproperty key="java.awt.headless" value="true"/>
-      <sysproperty key="jruby.base" value="${basedir}"/>
-      <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <sysproperty key="jruby.runtime.threadlocal" value="true"/>
-      <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
-      <sysproperty key="emma.coverage.out.merge" value="true" />
-
-      <jvmarg value="-ea"/>
-
-      <formatter type="xml"/>
-      <formatter type="brief" usefile="false"/>
-
-      <test name="${test}" if="test"/>
-      <test name="org.jruby.test.ObjectPersistenceTestSuite" todir="${test.results.dir}" unless="test"/>
-    </junit>
-
-    <junitreport todir="${test.results.dir}">
-      <fileset dir="${test.results.dir}" includes="TEST-*.xml"/>
-      <report format="frames" todir="${html.test.results.dir}"/>
-    </junitreport>
+    <run-junit objectspace.enabled="false" threadlocal="true">
+      <junit-tests>
+	<test name="${test}" if="test"/>
+	<test name="org.jruby.test.ObjectPersistenceTestSuite" todir="${test.results.dir}" unless="test"/>
+      </junit-tests>
+    </run-junit>
   </target>
 
   <target name="detect-stable-specs-need-update">
@@ -728,42 +608,11 @@
       <antcall target="run-specs-compiled"/>
       <antcall target="run-specs-interpreted"/>
   </target>
-  
-  <target name="run-specs-all" depends="jar">
-      <antcall target="run-specs-all-precompiled"/>
-  </target>
-  
-  <target name="run-specs-compiled">
-      <antcall target="_run_specs_internal_" inheritall="false">
-          <param name="compile.mode" value="JIT"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="SPEC" value="${working.rubinius.specs}"/>
-      </antcall>
-  </target>
-  
-  <target name="run-specs-precompiled">
-      <antcall target="_run_specs_internal_" inheritall="false">
-          <param name="compile.mode" value="FORCE"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="SPEC" value="${working.rubinius.specs}"/>
-      </antcall>
-  </target>
-  
-  <target name="run-specs-all-precompiled">
-      <antcall target="_run_specs_all_internal_" inheritall="false">
-          <param name="compile.mode" value="FORCE"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="SPEC" value="${working.rubinius.specs}"/>
-      </antcall>
-  </target>
-  
-  <target name="run-specs-interpreted">
-      <antcall target="_run_specs_internal_" inheritall="false">
-          <param name="compile.mode" value="OFF"/>
-          <param name="jit.threshold" value="0"/>
-          <param name="SPEC" value="${working.rubinius.specs}"/>
-      </antcall>
-  </target>
+  <target name="run-specs-all" depends="jar"><antcall target="run-specs-all-precompiled"/></target>
+  <target name="run-specs-compiled"><_run_specs_internal compile.mode="JIT" jit.threshold="0"/></target>
+  <target name="run-specs-precompiled"><_run_specs_internal compile.mode="FORCE" jit.threshold="0"/></target>
+  <target name="run-specs-all-precompiled"><_run_specs_all_internal compile.mode="FORCE" jit.threshold="0"/></target>
+  <target name="run-specs-interpreted"><_run_specs_internal/></target>
   
   <target name="update-excludes">
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${build.dir}/rubyspec/code">
@@ -779,78 +628,68 @@
       <arg value="spec/ruby/1.8"/>
     </java>
   </target>
-  
-  <target name="_run_specs_internal_">
-    <!-- set up properties that haven't been assigned -->
-    <property name="compile.mode" value="OFF"/>
-    <property name="jit.threshold" value="20"/>
-    <property name="jit.max" value="-1"/>
-    <property name="objectspace.enabled" value="true"/>
-    <property name="thread.pooling" value="false"/>
-    <property name="reflection" value="false"/>
-    <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
+
+  <macrodef name="run-specs">
+    <attribute name="compile.mode" default="OFF"/>
+    <attribute name="jit.threshold" default="20"/>
+    <attribute name="jit.max" default="-1"/>
+    <attribute name="objectspace.enabled" default="true"/>
+    <attribute name="thread.pooling" default="false"/>
+    <attribute name="reflection" default="false"/>
+    <element name="extra-args" optional="true"/>
+
+    <sequential>
+      <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
     
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubyspec/code">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
+      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubyspec/code">
+	<classpath refid="build.classpath"/>
+	<classpath path="${jruby.classes.dir}"/>
       
-      <jvmarg value="-ea"/>
+	<jvmarg value="-ea"/>
       
-      <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.launch.inproc" value="false"/>
+	<sysproperty key="jruby.home" value="${basedir}"/>
+	<sysproperty key="jruby.launch.inproc" value="false"/>
       
-      <!-- properties tweaked for individual runs -->
-      <sysproperty key="jruby.compile.mode" value="${compile.mode}"/>
-      <sysproperty key="jruby.jit.threshold" value="${jit.threshold}"/>
-      <sysproperty key="jruby.jit.max" value="${jit.max}"/>
-      <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
-      <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
-      <sysproperty key="jruby.reflection" value="${reflection}"/>
-      <sysproperty key="jruby.compat.version" value="ruby1_8"/>
+	<!-- properties tweaked for individual runs -->
+	<sysproperty key="jruby.compile.mode" value="@{compile.mode}"/>
+	<sysproperty key="jruby.jit.threshold" value="@{jit.threshold}"/>
+	<sysproperty key="jruby.jit.max" value="@{jit.max}"/>
+	<sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
+	<sysproperty key="jruby.thread.pooling" value="@{thread.pooling}"/>
+	<sysproperty key="jruby.reflection" value="@{reflection}"/>
       
-      <arg value="bin/ci"/>
-      <arg value="-t"/><arg value="${basedir}/bin/jruby"/>
-      <arg line="-T -J-ea"/>
-      <arg value="-f"/><arg value="m"/>
-      <arg value="-E"/><arg value="${basedir}/test/spec_excludes"/>
-      <arg value="spec/ruby/1.8"/>
-    </java>
-  </target>
-  
-  <target name="_run_specs_all_internal_">
-    <!-- set up properties that haven't been assigned -->
-    <property name="compile.mode" value="OFF"/>
-    <property name="jit.threshold" value="20"/>
-    <property name="jit.max" value="-1"/>
-    <property name="objectspace.enabled" value="true"/>
-    <property name="thread.pooling" value="false"/>
-    <property name="reflection" value="false"/>
-    <echo message="compile=${compile.mode}, threshold=${jit.threshold}, objectspace=${objectspace.enabled} threadpool=${thread.pooling} reflection=${reflection}"/>
-    
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubyspec/code">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
-      
-      <jvmarg value="-ea"/>
-      
-      <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.launch.inproc" value="false"/>
-      
-      <!-- properties tweaked for individual runs -->
-      <sysproperty key="jruby.compile.mode" value="${compile.mode}"/>
-      <sysproperty key="jruby.jit.threshold" value="${jit.threshold}"/>
-      <sysproperty key="jruby.jit.max" value="${jit.max}"/>
-      <sysproperty key="jruby.objectspace.enabled" value="${objectspace.enabled}"/>
-      <sysproperty key="jruby.thread.pooling" value="${thread.pooling}"/>
-      <sysproperty key="jruby.reflection" value="${reflection}"/>
-      <sysproperty key="jruby.compat.version" value="ruby1_8"/>
-      
-      <arg value="bin/mspec"/>
-      <arg value="-t"/><arg value="${basedir}/bin/jruby"/>
-      <arg value="-V"/>
-      <arg value="spec/ruby/1.8"/>
-    </java>
-  </target>
+	<arg value="bin/ci"/>
+	<arg value="-t"/><arg value="${basedir}/bin/jruby"/>
+	<arg line="-T -J-ea"/>
+	<arg value="-f"/><arg value="m"/>
+	<extra-args/>
+
+	<arg value="spec/ruby/1.8"/>
+      </java>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="_run_specs_internal">
+    <attribute name="compile.mode" default="OFF"/>
+    <attribute name="jit.threshold" default="20"/>
+
+    <sequential>
+      <run-specs compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}">
+	<extra-args>
+	  <arg value="-E"/><arg value="${basedir}/test/spec_excludes"/>
+	</extra-args>
+      </run-specs>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="_run_specs_all_internal">
+    <attribute name="compile.mode" default="OFF"/>
+    <attribute name="jit.threshold" default="20"/>
+
+    <sequential>
+      <run-specs compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"/>
+    </sequential>
+  </macrodef>
 
   <target name="create-apidocs" depends="prepare" 
           description="Creates the Java API docs">
