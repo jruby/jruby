@@ -535,17 +535,17 @@ public class RubyArray extends RubyObject implements List {
         modify();
 
         if (index >= realLength) {
-        if (index >= values.length) {
+            if (index >= values.length) {
                 long newLength = values.length >> 1;
 
-            if (newLength < ARRAY_DEFAULT_SIZE) newLength = ARRAY_DEFAULT_SIZE;
+                if (newLength < ARRAY_DEFAULT_SIZE) newLength = ARRAY_DEFAULT_SIZE;
 
-            newLength += index;
-            if (newLength >= Integer.MAX_VALUE) {
-                throw getRuntime().newArgumentError("index too big");
+                newLength += index;
+                if (newLength >= Integer.MAX_VALUE) {
+                    throw getRuntime().newArgumentError("index too big");
+                }
+                realloc((int) newLength);
             }
-            realloc((int) newLength);
-        }
             if(index != realLength) Arrays.fill(values, realLength, (int) index + 1, getRuntime().getNil());
             
             realLength = (int) index + 1;
@@ -930,11 +930,12 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "shift")
     public IRubyObject shift() {
-        modifyCheck();
+        modify();
 
         if (realLength == 0) return getRuntime().getNil();
 
         IRubyObject obj = values[begin];
+        values[begin] = null;
 
         isShared = true;
 
