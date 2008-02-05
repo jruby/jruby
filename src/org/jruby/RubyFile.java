@@ -593,6 +593,7 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod
     public IRubyObject stat() {
+        openFile.checkClosed(getRuntime());
         return getRuntime().newFileStat(path, false);
     }
 

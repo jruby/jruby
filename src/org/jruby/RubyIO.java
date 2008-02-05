@@ -2196,6 +2196,7 @@ public class RubyIO extends RubyObject {
     
     @JRubyMethod
     public IRubyObject stat() {
+        openFile.checkClosed(getRuntime());
         return getRuntime().newFileStat(getOpenFileChecked().getMainStream().getDescriptor().getFileDescriptor());
     }
 
