@@ -51,6 +51,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -1015,6 +1016,12 @@ public final class Ruby {
         return null;
     }
 
+    private Map<Integer, RubyClass> errnos = new HashMap<Integer, RubyClass>();
+
+    public RubyClass getErrno(int n) {
+        return errnos.get(n);
+    }
+
     /**
      * Create module Errno's Variables.  We have this method since Errno does not have it's
      * own java class.
@@ -1024,6 +1031,7 @@ public final class Ruby {
             errnoModule = defineModule("Errno");
 
             Field[] fields = IErrno.class.getFields();
+
             for (int i = 0; i < fields.length; i++) {
                 try {
                     createSysErr(fields[i].getInt(IErrno.class), fields[i].getName());
@@ -1041,7 +1049,9 @@ public final class Ruby {
      **/
     private void createSysErr(int i, String name) {
         if(profile.allowClass(name)) {
-            errnoModule.defineClassUnder(name, systemCallError, systemCallError.getAllocator()).defineConstant("Errno", newFixnum(i));
+            RubyClass errno = errnoModule.defineClassUnder(name, systemCallError, systemCallError.getAllocator());
+            errnos.put(i, errno);
+            errno.defineConstant("Errno", newFixnum(i));
         }
     }
 

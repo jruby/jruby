@@ -57,7 +57,7 @@ public class RubySystemCallError extends RubyException {
         defaultMessages.put("Errno::EDOM", "Numerical argument out of domain");
         defaultMessages.put("Errno::ERANGE", "Result too large");
         defaultMessages.put("Errno::EAGAIN", "Resource temporarily unavailable");
-        defaultMessages.put("Errno::EAGAIN", "Resource temporarily unavailable");
+        defaultMessages.put("Errno::EWOULDBLOCK", "Resource temporarily unavailable");
         defaultMessages.put("Errno::EINPROGRESS", "Operation now in progress");
         defaultMessages.put("Errno::EALREADY", "Operation already in progress");
         defaultMessages.put("Errno::ENOTSOCK", "Socket operation on non-socket");

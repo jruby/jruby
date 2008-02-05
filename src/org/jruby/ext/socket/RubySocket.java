@@ -66,6 +66,12 @@ public class RubySocket extends RubyBasicSocket {
             runtime.defineClass("SocketError",runtime.fastGetClass("StandardError"), runtime.fastGetClass("StandardError").getAllocator());
             RubyBasicSocket.createBasicSocket(runtime);
             RubySocket.createSocket(runtime);
+
+            if(RubyUNIXSocket.tryUnixDomainSocket()) {
+                RubyUNIXSocket.createUNIXSocket(runtime);
+                RubyUNIXServer.createUNIXServer(runtime);
+            }
+
             RubyIPSocket.createIPSocket(runtime);
             RubyTCPSocket.createTCPSocket(runtime);
             RubyTCPServer.createTCPServer(runtime);
@@ -111,9 +117,12 @@ public class RubySocket extends RubyBasicSocket {
 
     public static final int SOCK_STREAM = 1;
     public static final int SOCK_DGRAM = 2;
+    public static final int SOCK_RAW = 3;
 
     public static final int AF_UNSPEC = 0;
     public static final int PF_UNSPEC = 0;
+    public static final int AF_UNIX = 1;
+    public static final int PF_UNIX = 1;
     public static final int AF_INET = 2;
     public static final int PF_INET = 2;
 
@@ -131,6 +140,7 @@ public class RubySocket extends RubyBasicSocket {
         
         rb_mConstants.fastSetConstant("SOCK_STREAM", runtime.newFixnum(SOCK_STREAM));
         rb_mConstants.fastSetConstant("SOCK_DGRAM", runtime.newFixnum(SOCK_DGRAM));
+        rb_mConstants.fastSetConstant("SOCK_RAW", runtime.newFixnum(SOCK_RAW));
         rb_mConstants.fastSetConstant("PF_UNSPEC", runtime.newFixnum(PF_UNSPEC));
         rb_mConstants.fastSetConstant("AF_UNSPEC", runtime.newFixnum(AF_UNSPEC));
         rb_mConstants.fastSetConstant("PF_INET", runtime.newFixnum(PF_INET));
