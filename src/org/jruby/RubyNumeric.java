@@ -185,7 +185,7 @@ public class RubyNumeric extends RubyObject {
             throw runtime.newFloatDomainError("NaN");
         }
 
-        if (val > (double) RubyFixnum.MAX || val < (double) RubyFixnum.MIN) {
+        if (val >= (double) RubyFixnum.MAX || val < (double) RubyFixnum.MIN) {
             return RubyBignum.newBignum(runtime, val);
         }
         return RubyFixnum.newFixnum(runtime, (long) val);
