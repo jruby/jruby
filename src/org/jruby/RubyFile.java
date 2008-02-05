@@ -632,7 +632,7 @@ public class RubyFile extends RubyIO {
     public IRubyObject inspect() {
         StringBuffer val = new StringBuffer();
         val.append("#<File:").append(path);
-        if(openFile.isOpen()) {
+        if(!openFile.isOpen()) {
             val.append(" (closed)");
         }
         val.append(">");
