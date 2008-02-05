@@ -313,7 +313,7 @@ public class RubyEnumerable {
         return self;
     }
 
-    @JRubyMethod(name = {"include?", "member?"}, required = 1)
+    @JRubyMethod(name = {"include?", "member?"}, required = 1, frame = true)
     public static IRubyObject include_p(IRubyObject self, final IRubyObject arg) {
         final Ruby runtime = self.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
