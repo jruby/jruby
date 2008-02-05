@@ -29,6 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 
 import java.net.ConnectException;
@@ -41,6 +42,7 @@ import java.nio.channels.SocketChannel;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.runtime.Arity;
@@ -48,6 +50,9 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.InvalidValueException;
 
 public class RubyTCPSocket extends RubyIPSocket {
     static void createTCPSocket(Ruby runtime) {
@@ -98,7 +103,9 @@ public class RubyTCPSocket extends RubyIPSocket {
                 socket.connect(new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort));
             }
             channel.finishConnect();
-            setChannel(channel);
+            initSocket(new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+        } catch (InvalidValueException ex) {
+            throw getRuntime().newErrnoEINVALError();
         } catch(ConnectException e) {
             throw getRuntime().newErrnoECONNREFUSEDError();
         } catch(UnknownHostException e) {
@@ -116,7 +123,7 @@ public class RubyTCPSocket extends RubyIPSocket {
         try {
             return block.yield(recv.getRuntime().getCurrentContext(), sock);
         } finally {
-            if (sock.isOpen()) sock.close();
+            if (sock.openFile.isOpen()) sock.close();
         }
     }
 

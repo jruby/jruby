@@ -40,7 +40,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import org.jruby.util.Stream;
+import org.jruby.util.io.Stream;
 import org.jruby.util.ByteList;
 
 public class RubyStringIO extends RubyObject {

@@ -64,6 +64,7 @@ public class MethodIndex {
     public static final int TO_INT = getIndex("to_int");
     public static final int TO_F = getIndex("to_f");
     public static final int TO_A = getIndex("to_a");
+    public static final int TO_IO = getIndex("to_io");
     public static final int HASH = getIndex("hash");
     public static final int OP_GT = getIndex(">");
     public static final int OP_TIMES = getIndex("*");

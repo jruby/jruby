@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.util.io.STDIO;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -174,9 +175,9 @@ public class RubyGlobal {
 
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"));
 
-        IRubyObject stdin = new RubyIO(runtime, RubyIO.STDIO.IN);
-        IRubyObject stdout = new RubyIO(runtime, RubyIO.STDIO.OUT);
-        IRubyObject stderr = new RubyIO(runtime, RubyIO.STDIO.ERR);
+        IRubyObject stdin = new RubyIO(runtime, STDIO.IN);
+        IRubyObject stdout = new RubyIO(runtime, STDIO.OUT);
+        IRubyObject stderr = new RubyIO(runtime, STDIO.ERR);
 
         runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin));
 
@@ -517,9 +518,7 @@ public class RubyGlobal {
             if (value == get()) {
                 return value;
             }
-            if (value instanceof RubyIO) {
-                ((RubyIO) value).checkReadable();
-            }
+            
             return super.set(value);
         }
     }
@@ -535,7 +534,6 @@ public class RubyGlobal {
             }
             if (value instanceof RubyIO) {
                 RubyIO io = (RubyIO)value;
-                io.checkWriteable();
                 
                 // HACK: in order to have stdout/err act like ttys and flush always,
                 // we set anything assigned to stdout/stderr to sync

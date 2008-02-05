@@ -39,7 +39,7 @@ test_no_exception {
   TCPServer.open('localhost', 2204) {}
 }
 
-serv.close
+test_exception { serv.close }
 
 ### UDP ###
 
@@ -80,7 +80,7 @@ test_equal("AF_INET", received[1][1][0])
 #test_ok(/^localhost/ =~ received[1][1][2])
 test_equal("127.0.0.1", received[1][1][3])
 
-test_ok(sock.close)
+test_equal(nil, sock.close)
 
 # test_exception(SocketError) { UDPSocket.open.send("BANG!", -1, 'invalid.', port) }
 
@@ -103,7 +103,7 @@ server_thread.join
 received = client_socket.recv(64)
 
 test_equal("udp recv", received)
-test_ok(client_socket.close)
+test_equal(nil, client_socket.close)
 
 # JRUBY-2005: test a large write that causes the buffer to flush
 # make sure the result is not corrupted

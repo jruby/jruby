@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -40,6 +41,7 @@ import java.util.regex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -50,6 +52,9 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.InvalidValueException;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -247,11 +252,13 @@ public class RubySocket extends RubyBasicSocket {
         
             if(soType == SOCK_STREAM) {
                 SocketChannel channel = SocketChannel.open();
-                setChannel(channel);
+                initSocket(new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
             } else if(soType == SOCK_DGRAM) {
                 DatagramChannel channel = DatagramChannel.open();
-                setChannel(channel);
+                initSocket(new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
             }
+        } catch (InvalidValueException ex) {
+            throw getRuntime().newErrnoEINVALError();
         } catch(IOException e) {
             throw sockerr(this, "initialize: " + e.toString());
         }

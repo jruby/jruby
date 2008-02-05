@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 
 import java.net.BindException;
@@ -41,6 +42,7 @@ import java.nio.channels.ServerSocketChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -48,6 +50,9 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.InvalidValueException;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -93,7 +98,9 @@ public class RubyTCPServer extends RubyTCPSocket {
             ssc = ServerSocketChannel.open();
             socket_address = new InetSocketAddress(addr, RubyNumeric.fix2int(port));
             ssc.socket().bind(socket_address);
-            setChannel(ssc);
+            initSocket(new ChannelDescriptor(ssc, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+        } catch (InvalidValueException ex) {
+            throw getRuntime().newErrnoEINVALError();
         } catch(UnknownHostException e) {
             throw sockerr(this, "initialize: name or service not known");
         } catch(BindException e) {
@@ -123,8 +130,12 @@ public class RubyTCPServer extends RubyTCPSocket {
                     // we were woken up without being selected...poll for thread events and go back to sleep
                     getRuntime().getCurrentContext().pollThreadEvents();
                 } else {
-                    // otherwise one key has been selected (ours) so we get the channel and hand it off
-                    socket.setChannel(ssc.accept());
+                    try {
+                        // otherwise one key has been selected (ours) so we get the channel and hand it off
+                        socket.initSocket(new ChannelDescriptor(ssc.accept(), RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+                    } catch (InvalidValueException ex) {
+                        throw getRuntime().newErrnoEINVALError();
+                    }
                     return socket;
                 }
             }
@@ -153,8 +164,12 @@ public class RubyTCPServer extends RubyTCPSocket {
                 // no connection immediately accepted, let them try again
                 throw getRuntime().newErrnoEAGAINError("Resource temporarily unavailable");
             } else {
-                // otherwise one key has been selected (ours) so we get the channel and hand it off
-                socket.setChannel(ssc.accept());
+                try {
+                    // otherwise one key has been selected (ours) so we get the channel and hand it off
+                    socket.initSocket(new ChannelDescriptor(ssc.accept(), RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+                } catch (InvalidValueException ex) {
+                    throw getRuntime().newErrnoEINVALError();
+                }
                 return socket;
             }
         } catch(IOException e) {
@@ -165,16 +180,6 @@ public class RubyTCPServer extends RubyTCPSocket {
             } catch (IOException ioe) {
             }
         }
-    }
-
-    @JRubyMethod(name = "close")
-    public IRubyObject close() {
-        try {
-            ssc.close();
-        } catch(IOException e) {
-            throw sockerr(this, "problem when closing");
-        }
-        return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "listen", required = 1)

@@ -47,6 +47,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RaiseException extends JumpException {
+    public static final boolean DEBUG = false;
     private static final long serialVersionUID = -7612079169559973951L;
     
     private RubyException exception;
@@ -60,11 +61,17 @@ public class RaiseException extends JumpException {
         if (msg == null) {
             msg = "No message available";
         }
+        if (DEBUG) {
+            Thread.dumpStack();
+        }
         setException((RubyException) excptnClass.callMethod(runtime.getCurrentContext(), "new", new IRubyObject[] {excptnClass.getRuntime().newString(msg)}, Block.NULL_BLOCK), nativeException);
     }
 
     public RaiseException(RubyException exception, boolean isNativeException) {
         super();
+        if (DEBUG) {
+            Thread.dumpStack();
+        }
         setException(exception, isNativeException);
     }
 

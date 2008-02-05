@@ -239,23 +239,7 @@ public class RubyKernel {
         if (arg.startsWith("|")) {
             String command = arg.substring(1);
             // exec process, create IO with process
-            try {
-                Process p = new ShellLauncher(runtime).run(RubyString.newString(runtime,command));
-                RubyIO io = new RubyIO(runtime, p);
-                
-                if (block.isGiven()) {
-                    try {
-                        block.yield(recv.getRuntime().getCurrentContext(), io);
-                        return runtime.getNil();
-                    } finally {
-                        io.close();
-                    }
-                }
-
-                return io;
-            } catch (IOException ioe) {
-                throw runtime.newIOErrorFromException(ioe);
-            }
+            return RubyIO.popen(runtime.getIO(), new IRubyObject[] {runtime.newString(command)}, block);
         } 
 
         return RubyFile.open(runtime.getFile(), args, block);

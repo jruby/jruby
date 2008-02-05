@@ -147,19 +147,19 @@ class TestIO < Test::Unit::TestCase
 
   def test_reopen
     ensure_files @file, @file2    
-    f = File.open(@file)
-    f.gets
-    i = File.open(@file2)
-    t = i.fileno;
-    i = i.reopen(f)
-    assert_equal(f.pos, i.pos)
-    assert_equal(t, i.fileno);
-    assert(f.fileno != i.fileno);
-    i.close
-    f.close
+    file = File.open(@file)
+    file.gets
+    file2 = File.open(@file2)
+    file2_fileno = file2.fileno;
+    file2 = file2.reopen(file)
+    assert_equal(file.pos, file2.pos)
+    assert_equal(file2_fileno, file2.fileno);
+    assert(file.fileno != file2.fileno);
+    file2.close
+    file.close
     
     # reopen of a filename after a close should succeed (JRUBY-1885)
-    assert_nothing_raised { f.reopen(@file) }
+    assert_nothing_raised { file.reopen(@file) }
   end
 
   def test_file_puts_gets_readline

@@ -25,23 +25,66 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-
 package org.jruby.libraries;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.OpenFile;
 
 /**
  * @author Nick Sieger
  */
 public class IOWaitLibrary implements Library {
+
     public void load(Ruby runtime, boolean wrap) {
         RubyClass ioClass = runtime.getIO();
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyIO.class);
-        ioClass.defineFastMethod("ready?", callbackFactory.getFastMethod("ready"));
-        ioClass.defineFastMethod("wait", callbackFactory.getFastMethod("io_wait"));
+        CallbackFactory callbackFactory = runtime.callbackFactory(IOWaitLibrary.class);
+        ioClass.defineFastMethod("ready?", callbackFactory.getFastSingletonMethod("ready"));
+        ioClass.defineFastMethod("wait", callbackFactory.getFastSingletonMethod("io_wait"));
+    }
+
+    /**
+     * returns non-nil if input available without blocking, false if EOF or not open/readable, otherwise nil.
+     */
+    public static IRubyObject ready(IRubyObject obj) {
+        RubyIO io = (RubyIO)obj;
+        try {
+            OpenFile openFile = io.getOpenFile();
+            ChannelDescriptor descriptor = openFile.getMainStream().getDescriptor();
+            if (!descriptor.isOpen() || !openFile.getMainStream().getModes().isReadable() || openFile.getMainStream().feof()) {
+                return obj.getRuntime().getFalse();
+            }
+
+            int avail = openFile.getMainStream().ready();
+            if (avail > 0) {
+                return obj.getRuntime().newFixnum(avail);
+            }
+        } catch (Exception anyEx) {
+            return obj.getRuntime().getFalse();
+        }
+        return obj.getRuntime().getNil();
+    }
+
+    /**
+     * waits until input available or timed out and returns self, or nil when EOF reached.
+     */
+    public static IRubyObject io_wait(IRubyObject obj) {
+        RubyIO io = (RubyIO)obj;
+        try {
+            OpenFile openFile = io.getOpenFile();
+            ChannelDescriptor descriptor = openFile.getMainStream().getDescriptor();
+            if (openFile.getMainStream().feof()) {
+                return obj.getRuntime().getNil();
+            }
+            openFile.getMainStream().waitUntilReady();
+        } catch (Exception anyEx) {
+            return obj.getRuntime().getNil();
+        }
+        return obj;
     }
 }
