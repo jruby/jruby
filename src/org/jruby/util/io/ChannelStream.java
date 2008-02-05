@@ -61,7 +61,7 @@ import org.jruby.util.JRubyFile;
  */
 public class ChannelStream implements Stream, Finalizable {
     private final static boolean DEBUG = false;
-    private final static int BUFSIZE = 16 * 1024;
+    private final static int BUFSIZE = 16;
     
     private Ruby runtime;
     protected ModeFlags modes;
@@ -253,7 +253,7 @@ public class ChannelStream implements Stream, Finalizable {
                 return null;
             }
 
-            return read((int) left);
+            return fread((int) left);
         } else {
             checkReadable();
 
