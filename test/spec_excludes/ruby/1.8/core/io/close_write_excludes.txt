@@ -1,3 +1,0 @@
-IO#close_write closes the write end of a duplex I/O stream
-IO#close_write raises an IOError on subsequent invocations
-IO#close_write raises an IOError if the stream is not duplexed.

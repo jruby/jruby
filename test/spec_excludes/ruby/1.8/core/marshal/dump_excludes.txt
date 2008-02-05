@@ -1,7 +1,5 @@
-Marshal.dump with module returns a string-serialized version of the given argument
-Marshal.dump with user_regexp having option Regexp::IGNORECASE returns a string-serialized version of the given argument
-Marshal.dump with float 0.0 returns a string-serialized version of the given argument
-Marshal.dump with float -0.0 returns a string-serialized version of the given argument
-Marshal.dump with float 1.0 returns a string-serialized version of the given argument
-Marshal.dump with float 1.3 returns a string-serialized version of the given argument
-Marshal.dump with float 1.1867345e+22 returns a string-serialized version of the given argument
+Marshal.dump dumps a Module Marshal
+Marshal.dump dumps a Regexp subclass /i
+Marshal.dump dumps a Float 0.0
+Marshal.dump dumps a Float -0.0
+Marshal.dump dumps a Float 1.0

@@ -1,2 +1,0 @@
-IO#dup allows closing the new IO without affecting the original
-IO#dup allows closing the original IO without affecting the new one

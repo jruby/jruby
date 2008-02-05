@@ -1,2 +1,3 @@
-Marshal::load loads a user_regexp having option Regexp::IGNORECASE
 Marshal::load loads an Array with proc
+Marshal::load raises a TypeError with bad Marshal version
+Marshal::load loads a Regexp subclass /i

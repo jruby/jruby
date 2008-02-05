@@ -1,2 +1,1 @@
 File.new return a new File with modus num and permissions
-File.new can't alter mode or permissions when opening a file

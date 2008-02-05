@@ -1,3 +1,1 @@
-IO#close makes the stream unavailable for any further data operations
-IO#close raises an IOError on subsequent invocations
 IO#close sets $? if the stream is opened by IO.popen

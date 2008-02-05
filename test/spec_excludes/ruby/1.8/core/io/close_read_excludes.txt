@@ -1,4 +1,0 @@
-IO#close_read closes the read end of a duplex I/O stream
-IO#close_read raises an IOError on subsequent invocations
-IO#close_read allows subsequent invocation of close
-IO#close_read raises an IOError if the stream is not duplexed.
