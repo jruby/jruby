@@ -1859,11 +1859,12 @@ public class RubyArray extends RubyObject implements List {
 
         for (int i = begin; i < begin + realLength; i++) {
             IRubyObject v = values[i];
-            if (v instanceof RubyArray && ((RubyArray) v).realLength > 0
-                && equalInternal(context, ((RubyArray) v).values[0], key).isTrue()) {
-                return v;
+            if (v instanceof RubyArray) {
+                RubyArray arr = (RubyArray)v;
+                if (arr.realLength > 0 && equalInternal(context, arr.values[arr.begin], key).isTrue()) return arr;
             }
         }
+
         return runtime.getNil();
     }
 
@@ -1877,9 +1878,9 @@ public class RubyArray extends RubyObject implements List {
 
         for (int i = begin; i < begin + realLength; i++) {
             IRubyObject v = values[i];
-            if (v instanceof RubyArray && ((RubyArray) v).realLength > 1
-                    && equalInternal(context, ((RubyArray) v).values[1], value).isTrue()) {
-                return v;
+            if (v instanceof RubyArray) {
+                RubyArray arr = (RubyArray)v;
+                if (arr.realLength > 1 && equalInternal(context, arr.values[arr.begin + 1], value).isTrue()) return arr;
             }
         }
 
