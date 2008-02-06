@@ -818,7 +818,7 @@ public class ChannelStream implements Stream, Finalizable {
     public static Stream fopen(Ruby runtime, String path, ModeFlags modes) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException, InvalidValueException, PipeException, BadDescriptorException {
         String cwd = runtime.getCurrentDirectory();
         
-        ChannelDescriptor descriptor = ChannelDescriptor.open(cwd, path, modes, -1);
+        ChannelDescriptor descriptor = ChannelDescriptor.open(cwd, path, modes);
         
         Stream stream = fdopen(runtime, descriptor, modes);
         

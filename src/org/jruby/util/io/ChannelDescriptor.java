@@ -45,6 +45,7 @@ import java.util.jar.JarFile;
 import static java.util.logging.Logger.getLogger;
 import java.util.zip.ZipEntry;
 import org.jruby.RubyIO;
+import org.jruby.ext.posix.POSIX;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
 import static org.jruby.util.io.ModeFlags.*;
@@ -461,13 +462,12 @@ public class ChannelDescriptor {
     /**
      * Open a new descriptor using the given working directory, file path,
      * mode flags, and file permission. This is equivalent to the open(2)
-     * POSIX function.
+     * POSIX function. See org.jruby.util.io.ChannelDescriptor.open(String, String, ModeFlags, int, POSIX)
+     * for the version that also sets file permissions.
      * 
      * @param cwd the "current working directory" to use when opening the file
      * @param path the file path to open
      * @param flags the mode flags to use for opening the file
-     * @param perm the file permissions to use when creating a new file (currently
-     * unobserved)
      * @return a new ChannelDescriptor based on the specified parameters
      * @throws java.io.FileNotFoundException if the target file could not be found
      * and the create flag was not specified
@@ -477,9 +477,31 @@ public class ChannelDescriptor {
      * be created anew, but already exists
      * @throws java.io.IOException if there is an exception during IO
      */
-    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
-        // FIXME: Do something with permissions
-        
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+        return open(cwd, path, flags, 0, null);
+    }
+    
+    /**
+     * Open a new descriptor using the given working directory, file path,
+     * mode flags, and file permission. This is equivalent to the open(2)
+     * POSIX function.
+     * 
+     * @param cwd the "current working directory" to use when opening the file
+     * @param path the file path to open
+     * @param flags the mode flags to use for opening the file
+     * @param perm the file permissions to use when creating a new file (currently
+     * unobserved)
+     * @param posix a POSIX api implementation, used for setting permissions; if null, permissions are ignored
+     * @return a new ChannelDescriptor based on the specified parameters
+     * @throws java.io.FileNotFoundException if the target file could not be found
+     * and the create flag was not specified
+     * @throws org.jruby.util.io.DirectoryAsFileException if the target file is
+     * a directory being opened as a file
+     * @throws org.jruby.util.io.FileExistsException if the target file should
+     * be created anew, but already exists
+     * @throws java.io.IOException if there is an exception during IO
+     */
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
         if (path.equals("/dev/null")) {
             Channel nullChannel = new NullWritableChannel();
             // FIXME: don't use RubyIO for this
@@ -514,6 +536,11 @@ public class ChannelDescriptor {
                     throw new FileExistsException(path);
                 }
                 theFile.createNewFile();
+                
+                // attempt to set the permissions, if we have been passed a POSIX instance
+                if (posix != null && perm != -1) {
+                    posix.chmod(theFile.getPath(), perm);
+                }
             } else {
                 if (!theFile.exists()) {
                     throw new FileNotFoundException(path);

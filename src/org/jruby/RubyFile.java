@@ -465,7 +465,8 @@ public class RubyFile extends RubyIO {
                     getRuntime().getCurrentDirectory(),
                     path,
                     modes,
-                    perm);
+                    perm,
+                    getRuntime().getPosix());
 
             // TODO: check if too many open files, GC and try again
 
