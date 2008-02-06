@@ -674,11 +674,18 @@ public class ChannelStream implements Stream, Finalizable {
         }
     }
 
-    public void ungetc(int c) {
-        // Ruby silently ignores negative ints for some reason?
-        if (c >= 0) {
-            ungotc = c;
+    public int ungetc(int c) {
+        if (c == -1) {
+            return -1;
         }
+        
+        // putting a bit back, so we're not at EOF anymore
+        eof = false;
+
+        // save the ungot
+        ungotc = c;
+        
+        return c;
     }
 
     public synchronized int fgetc() throws IOException, BadDescriptorException {

@@ -36,6 +36,8 @@
 package org.jruby;
 
 import static java.lang.System.out;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
@@ -893,7 +895,8 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "syswrite", required = 1)
     public IRubyObject syswrite(IRubyObject obj) {
         try {
-            RubyString string = obj.convertToString();
+            RubyString string =
+                    (RubyString)TypeConverter.convertToTypeWithCheck(obj, getRuntime().getString(), MethodIndex.TO_S, "to_s");
             
             OpenFile myOpenFile = getOpenFileChecked();
             
@@ -1835,7 +1838,31 @@ public class RubyIO extends RubyObject {
      */
     @JRubyMethod(name = "ungetc", required = 1)
     public IRubyObject ungetc(IRubyObject number) {
-        getOpenFileChecked().getMainStream().ungetc(RubyNumeric.fix2int(number));
+        int ch = RubyNumeric.fix2int(number);
+        
+        OpenFile myOpenFile = getOpenFileChecked();
+        
+        if (!myOpenFile.isReadBuffered()) {
+            throw getRuntime().newIOError("unread stream");
+        }
+        
+        try {
+            myOpenFile.checkReadable(getRuntime());
+        
+            if (myOpenFile.getMainStream().ungetc(ch) == -1 && ch != -1) {
+                throw getRuntime().newIOError("ungetc failed");
+            }
+        } catch (PipeException ex) {
+            throw getRuntime().newErrnoEPIPEError();
+        } catch (InvalidValueException ex) {
+            throw getRuntime().newErrnoEINVALError();
+        } catch (BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (EOFException e) {
+            throw getRuntime().newEOFError();
+        } catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
 
         return getRuntime().getNil();
     }

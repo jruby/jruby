@@ -66,7 +66,7 @@ public interface Stream {
     public abstract int fwrite(ByteList string) throws IOException, BadDescriptorException;
 
     public abstract int fgetc() throws IOException, BadDescriptorException, EOFException;
-    public abstract void ungetc(int c);
+    public abstract int ungetc(int c);
     public abstract void fputc(int c) throws IOException, BadDescriptorException;
     
     public abstract ByteList read(int number) throws IOException, BadDescriptorException, EOFException;
