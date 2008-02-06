@@ -123,4 +123,5 @@ public interface IErrno
     int ENOSTR = 99;
     int EPROTO = 100;
     int ETIME = 101;
+    int EOPNOTSUPP_DARWIN = 102;
 }

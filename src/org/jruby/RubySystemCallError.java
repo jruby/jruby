@@ -107,6 +107,7 @@ public class RubySystemCallError extends RubyException {
         defaultMessages.put("Errno::EPROTO", "Protocol error");
         defaultMessages.put("Errno::ETIME", "STREAM ioctl timeout");
         defaultMessages.put("Errno::EOPNOTSUPP", "Operation not supported");
+        defaultMessages.put("Errno::EOPNOTSUPP_DARWIN", "Operation not supported");
     }
 
     protected RubySystemCallError(Ruby runtime, RubyClass rubyClass) {

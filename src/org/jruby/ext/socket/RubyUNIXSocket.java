@@ -67,31 +67,40 @@ public class RubyUNIXSocket extends RubyBasicSocket {
      */
     private static class UnixDomainSocketChannel implements ReadableByteChannel, WritableByteChannel {
         private final int fd;
+        private boolean open = true;
+
         public UnixDomainSocketChannel(int fd) {
             this.fd = fd;
         }
 
         public void close() throws IOException {
-            // Do nothing, since this socket channel can't be closed from the inside
+            open = false;
         }
 
         public boolean isOpen() {
-            // Always return true since it can't be closed
-            return true;
+            return open;
         }
 
         public int read(ByteBuffer dst) throws IOException {
             int max = dst.remaining();
 
             int v = INSTANCE.recv(fd, dst, max, 0);
-            dst.position(dst.position()+v);
+
+            if(v != -1) {
+                dst.position(dst.position()+v);
+            }
+
             return v;
         }
 
         public int write(ByteBuffer src) throws IOException {
             int max = src.remaining();
             int v = INSTANCE.send(fd, src, max, 0);
-            src.position(src.position()+v);
+
+            if(v != -1) {
+                src.position(src.position()+v);
+            }
+
             return v;
         }
     }
@@ -124,6 +133,9 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         int getsockname(int s, sockaddr_un addr, IntByReference addrlen);
         int getpeername(int s, sockaddr_un addr, IntByReference addrlen);
+
+        int getsockopt(int s, int level, int optname, byte[] optval, IntByReference optlen);
+        int setsockopt(int s, int level, int optname, byte[] optval, int optlen);
 
         int recv(int s, Buffer buf, int len, int flags);
         int recvfrom(int s, Buffer buf, int len, int flags, sockaddr_un from, IntByReference fromlen);
@@ -186,7 +198,13 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         IRubyObject arg = (message != null) ? runtime.newString(message) : runtime.getNil();
 
-        throw new RaiseException((RubyException)(runtime.getErrno(n).newInstance(new IRubyObject[]{arg}, Block.NULL_BLOCK)));
+        RubyClass instance = runtime.getErrno(n);
+        if(instance == null) {
+            instance = runtime.fastGetClass("SystemCallError");
+            throw new RaiseException((RubyException)(instance.newInstance(new IRubyObject[]{arg, runtime.newFixnum(n)}, Block.NULL_BLOCK)));
+        } else {
+            throw new RaiseException((RubyException)(instance.newInstance(new IRubyObject[]{arg}, Block.NULL_BLOCK)));
+        }
     }
 
     protected final static int F_GETFL = 3;
@@ -217,8 +235,6 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             status = INSTANCE.bind(fd, sockaddr, LibCSocket.sockaddr_un.LENGTH);
         } else {
             try {
-                int flags = INSTANCE.fcntl(fd, F_GETFL ,0);
-                INSTANCE.fcntl(fd, F_SETFL, flags | O_NONBLOCK);
                 status = INSTANCE.connect(fd, sockaddr, LibCSocket.sockaddr_un.LENGTH);
             } catch(RuntimeException e) {
                 INSTANCE.close(fd);
@@ -240,6 +256,32 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         if(server) {
             openFile.setPath(fpath);
         }
+    }
+
+    @Override
+    public IRubyObject setsockopt(IRubyObject lev, IRubyObject optname, IRubyObject val) {
+        int level = RubyNumeric.fix2int(lev);
+        int opt = RubyNumeric.fix2int(optname);
+
+        switch(level) {
+        case RubySocket.SOL_SOCKET:
+            switch(opt) {
+            case RubySocket.SO_KEEPALIVE: {
+                int res = INSTANCE.setsockopt(fd, level, opt, asBoolean(val) ? new byte[]{32,0,0,0} : new byte[]{0,0,0,0}, 4);
+                if(res == -1) {
+                    rb_sys_fail(openFile.getPath());
+                }
+            }
+                break;
+            default:
+                throw getRuntime().newErrnoENOPROTOOPTError();
+            }
+            break;
+        default:
+            throw getRuntime().newErrnoENOPROTOOPTError();
+        }
+
+        return getRuntime().newFixnum(0);
     }
 
     protected void init_sock() throws Exception {
@@ -356,6 +398,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @Override
     public IRubyObject close() {
+        super.close();
         INSTANCE.close(fd);
         return getRuntime().getNil();
     }

@@ -94,7 +94,7 @@ public class RubySocket extends RubyBasicSocket {
     public static final int NI_NUMERICSERV = 8;
 
     public static final int SOL_IP = 0;
-    public static final int SOL_SOCKET = 1;
+    public static final int SOL_SOCKET = 65535;
     public static final int SOL_TCP = 6;
     public static final int SOL_UDP = 17;
 

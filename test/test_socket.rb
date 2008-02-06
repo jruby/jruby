@@ -247,5 +247,21 @@ if defined?(UNIXSocket)
       sock2.close
       sock1.close
     end
+    
+    def test_can_read_and_get_minus_one
+      sock1, sock2 = UNIXSocket.socketpair
+      
+      sock2.send("hello", 0)
+      assert_equal "hell", sock1.recv(4)
+      assert_equal "", sock1.recv(0)
+      assert_equal "o", sock1.recv(1)
+
+      sock2.close
+      sock1.close
+      
+      assert_raises(IOError) do 
+        sock1.recv(1)
+      end
+    end
   end
 end

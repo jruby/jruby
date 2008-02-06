@@ -115,6 +115,7 @@ public class RubyBasicSocket extends RubyIO {
     }
     
     public IRubyObject recv(IRubyObject[] args) {
+        openFile.checkClosed(getRuntime());
         try {
             return RubyString.newString(getRuntime(), openFile.getMainStream().read(RubyNumeric.fix2int(args[0])));
         } catch (BadDescriptorException e) {
@@ -278,7 +279,7 @@ public class RubyBasicSocket extends RubyIO {
         return res;
     }
 
-    private boolean asBoolean(IRubyObject val) {
+    protected boolean asBoolean(IRubyObject val) {
         if(val instanceof RubyString) {
             return stringAsNumber(val) != 0;
         } else if(val instanceof RubyNumeric) {
