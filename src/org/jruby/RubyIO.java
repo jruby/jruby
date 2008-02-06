@@ -1158,6 +1158,8 @@ public class RubyIO extends RubyObject {
         
         try {
             myOpenFile.getMainStream().fseek(offset, Stream.SEEK_SET);
+        } catch (BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         } catch (PipeException e) {
@@ -1319,6 +1321,8 @@ public class RubyIO extends RubyObject {
 //            if (io == current_file) {
 //                gets_lineno -= fptr->lineno;
 //            }
+        } catch (BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         } catch (PipeException e) {

@@ -107,8 +107,8 @@ public interface Stream {
      * @throws PipeException 
      * @throws InvalidValueException 
      */
-    public void fseek(long offset, int type) throws IOException, InvalidValueException, PipeException;
-    public void ftruncate(long newLength) throws IOException, PipeException;
+    public void fseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException;
+    public void ftruncate(long newLength) throws IOException, PipeException, BadDescriptorException;
     
     /**
      * Implement IO#ready? as per io/wait in MRI.

@@ -338,11 +338,11 @@ public class ChannelStream implements Stream, Finalizable {
      * Flush the write buffer to the channel (if needed)
      * @throws IOException
      */
-    private void flushWrite() throws IOException {
+    private void flushWrite() throws IOException, BadDescriptorException {
         if (reading || !modes.isWritable() || buffer.position() == 0) return; // Don't bother
             
         buffer.flip();
-        ((WritableByteChannel)descriptor.getChannel()).write(buffer);
+        descriptor.write(buffer);
         buffer.clear();
     }
 
@@ -428,7 +428,7 @@ public class ChannelStream implements Stream, Finalizable {
      * @throws InvalidValueException 
      * @see org.jruby.util.IOHandler#seek(long, int)
      */
-    public synchronized void fseek(long offset, int type) throws IOException, InvalidValueException, PipeException {
+    public synchronized void fseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         if (descriptor.getChannel() instanceof FileChannel) {
             FileChannel fileChannel = (FileChannel)descriptor.getChannel();
             if (reading) {
@@ -463,7 +463,7 @@ public class ChannelStream implements Stream, Finalizable {
     /**
      * @see org.jruby.util.IOHandler#sync()
      */
-    public void sync() throws IOException {
+    public void sync() throws IOException, BadDescriptorException {
         flushWrite();
     }
 
@@ -471,7 +471,7 @@ public class ChannelStream implements Stream, Finalizable {
      * Ensure buffer is ready for reading, flushing remaining writes if required
      * @throws IOException
      */
-    private void ensureRead() throws IOException {
+    private void ensureRead() throws IOException, BadDescriptorException {
         if (reading) return;
         flushWrite();
         buffer.clear();
@@ -483,7 +483,7 @@ public class ChannelStream implements Stream, Finalizable {
      * Ensure buffer is ready for reading, flushing remaining writes if required
      * @throws IOException
      */
-    private void ensureReadNonBuffered() throws IOException {
+    private void ensureReadNonBuffered() throws IOException, BadDescriptorException {
         if (reading) {
             if (buffer.hasRemaining()) {
                 throw getRuntime().newIOError("sysread for buffered IO");
@@ -530,7 +530,7 @@ public class ChannelStream implements Stream, Finalizable {
         return byteList;
     }
 
-    private ByteList bufferedRead(int number) throws IOException {
+    private ByteList bufferedRead(int number) throws IOException, BadDescriptorException {
         checkReadable();
         ensureRead();
         
@@ -589,7 +589,7 @@ public class ChannelStream implements Stream, Finalizable {
         if (buf.length() > buffer.capacity()) { // Doesn't fit in buffer. Write immediately.
             flushWrite(); // ensure nothing left to write
             
-            ((WritableByteChannel)descriptor.getChannel()).write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+            descriptor.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
         } else {
             if (buf.length() > buffer.remaining()) flushWrite();
             
@@ -620,7 +620,7 @@ public class ChannelStream implements Stream, Finalizable {
         return 1;
     }
     
-    public synchronized void ftruncate(long newLength) throws IOException {
+    public synchronized void ftruncate(long newLength) throws IOException, BadDescriptorException {
         invalidateBuffer();
         FileChannel fileChannel = (FileChannel)descriptor.getChannel();
         if (newLength > fileChannel.size()) {
@@ -642,7 +642,7 @@ public class ChannelStream implements Stream, Finalizable {
      * flushing writes if required, and correcting file position if reading
      * @throws IOException 
      */
-    private void invalidateBuffer() throws IOException {
+    private void invalidateBuffer() throws IOException, BadDescriptorException {
         if (!reading) flushWrite();
         int posOverrun = buffer.remaining(); // how far ahead we are when reading
         buffer.clear();
@@ -815,7 +815,7 @@ public class ChannelStream implements Stream, Finalizable {
         if (modes.isAppendable()) fseek(0, SEEK_END);
     }
     
-    public static Stream fopen(Ruby runtime, String path, ModeFlags modes) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException, InvalidValueException, PipeException {
+    public static Stream fopen(Ruby runtime, String path, ModeFlags modes) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException, InvalidValueException, PipeException, BadDescriptorException {
         String cwd = runtime.getCurrentDirectory();
         
         ChannelDescriptor descriptor = ChannelDescriptor.open(cwd, path, modes, -1);

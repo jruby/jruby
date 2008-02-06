@@ -395,12 +395,47 @@ public class ChannelDescriptor {
      * @throws org.jruby.util.io.BadDescriptorException if the associated
      * channel is already closed
      */
-    public int write(ByteList buf) throws IOException, BadDescriptorException {
+    public int internalWrite(ByteBuffer buffer) throws IOException, BadDescriptorException {
         checkOpen();
         
         WritableByteChannel writeChannel = (WritableByteChannel)channel;
         
-        return writeChannel.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+        if (isSeekable() && originalModes.isAppendable()) {
+            FileChannel fileChannel = (FileChannel)channel;
+            fileChannel.position(fileChannel.size());
+        }
+        
+        return writeChannel.write(buffer);
+    }
+    
+    /**
+     * Write the bytes in the specified byte list to the associated channel.
+     * 
+     * @param buf the byte list containing the bytes to be written
+     * @return the number of bytes actually written
+     * @throws java.io.IOException if there is an exception during IO
+     * @throws org.jruby.util.io.BadDescriptorException if the associated
+     * channel is already closed
+     */
+    public int write(ByteBuffer buffer) throws IOException, BadDescriptorException {
+        checkOpen();
+        
+        return internalWrite(buffer);
+    }
+    
+    /**
+     * Write the bytes in the specified byte list to the associated channel.
+     * 
+     * @param buf the byte list containing the bytes to be written
+     * @return the number of bytes actually written
+     * @throws java.io.IOException if there is an exception during IO
+     * @throws org.jruby.util.io.BadDescriptorException if the associated
+     * channel is already closed
+     */
+    public int write(ByteList buf) throws IOException, BadDescriptorException {
+        checkOpen();
+        
+        return internalWrite(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
     }
     
     /**
@@ -416,12 +451,11 @@ public class ChannelDescriptor {
     public int write(int c) throws IOException, BadDescriptorException {
         checkOpen();
         
-        WritableByteChannel writeChannel = (WritableByteChannel)channel;
-        
         ByteBuffer buf = ByteBuffer.allocate(1);
-        buf.put(0, (byte)c);
+        buf.put((byte)c);
+        buf.flip();
         
-        return writeChannel.write(buf);
+        return internalWrite(buf);
     }
     
     /**

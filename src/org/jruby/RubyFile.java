@@ -63,6 +63,7 @@ import org.jruby.util.io.ModeFlags;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.PipeException;
@@ -254,6 +255,8 @@ public class RubyFile extends RubyIO {
             } else {
                 try {
                     openFile.setMainStream(ChannelStream.fopen(getRuntime(), newPath, newModes));
+                } catch (BadDescriptorException e) {
+                    throw getRuntime().newErrnoEBADFError();
                 } catch (FileExistsException fee) {
                     throw getRuntime().newErrnoEEXISTError(fee.getMessage());
                 }
@@ -505,6 +508,8 @@ public class RubyFile extends RubyIO {
     //        fmode(file, _IOTEXT);
     //    #endif
             return stream;
+        } catch (BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
         } catch (FileNotFoundException ex) {
             throw getRuntime().newErrnoENOENTError();
         } catch (DirectoryAsFileException ex) {
@@ -605,6 +610,8 @@ public class RubyFile extends RubyIO {
         }
         try {
             openFile.getMainStream().ftruncate(newLength.getLongValue());
+        } catch (BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
         } catch (PipeException e) {
             throw getRuntime().newErrnoESPIPEError();
         } catch (IOException e) {
