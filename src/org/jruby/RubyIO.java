@@ -63,6 +63,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -855,16 +856,14 @@ public class RubyIO extends RubyObject {
             try {
                 return block.yield(runtime.getCurrentContext(), io);
             } finally {
-                if (io.openFile.isOpen()) {
-                    try {
-                        io.close();
-                    } catch (RaiseException re) {
-                        RubyException rubyEx = re.getException();
-                        if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
-                            // MRI behavior: swallow StandardErorrs
-                        } else {
-                            throw re;
-                        }
+                try {
+                    io.getMetaClass().invoke(runtime.getCurrentContext(), io, "close", IRubyObject.NULL_ARRAY, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+                } catch (RaiseException re) {
+                    RubyException rubyEx = re.getException();
+                    if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
+                        // MRI behavior: swallow StandardErorrs
+                    } else {
+                        throw re;
                     }
                 }
             }
