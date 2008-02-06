@@ -628,5 +628,9 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_marsal_java_object_fails
     assert_raises(TypeError) { Marshal.dump(java::lang::Object.new) }
   end
+
+  def test_string_from_bytes
+    assert_equal('foo', String.from_java_bytes('foo'.to_java_bytes))
+  end
 end
 

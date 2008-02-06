@@ -124,10 +124,25 @@ public class Java implements Library {
         RubyClass javaProxy = runtime.defineClass("JavaProxy", runtime.getObject(), runtime.getObject().getAllocator());
         javaProxy.getMetaClass().defineFastMethod("new_instance_for", callbackFactory.getFastSingletonMethod("new_instance_for", IRubyObject.class));
         javaProxy.getMetaClass().defineFastMethod("to_java_object", callbackFactory.getFastSingletonMethod("to_java_object"));
+        
+        RubyClass string = runtime.getString();
+        string.getMetaClass().defineMethod("from_java_bytes", callbackFactory.getSingletonMethod("stringFromJavaBytes", IRubyObject.class));
 
         return javaModule;
     }
-
+    
+    public static IRubyObject stringFromJavaBytes(IRubyObject recv, IRubyObject bytes, Block block) {
+        if (bytes instanceof JavaObject) {
+            Object obj = ((JavaObject)bytes).getValue();
+            if (obj instanceof byte[]) {
+                byte[] byteArray = (byte[])obj;
+                
+                return recv.getRuntime().newString(new ByteList(byteArray));
+            }
+        }
+        
+        throw recv.getRuntime().newTypeError("Expected Java byte[]");
+    }
 
     private static final ClassProvider JAVA_PACKAGE_CLASS_PROVIDER = new ClassProvider() {
         public RubyClass defineClassUnder(final RubyModule pkg, final String name, final RubyClass superClazz) {
