@@ -412,11 +412,15 @@ public class ChannelStream implements Stream, Finalizable {
      * @throws IOException 
      * @see org.jruby.util.IOHandler#pos()
      */
-    public synchronized long fgetpos() throws IOException {
+    public synchronized long fgetpos() throws IOException, PipeException {
         // Correct position for read / write buffering (we could invalidate, but expensive)
-        int offset = (reading) ? - buffer.remaining() : buffer.position();
-        FileChannel fileChannel = (FileChannel)descriptor.getChannel();
-        return fileChannel.position() + offset;
+        if (descriptor.isSeekable()) {
+            int offset = (reading) ? - buffer.remaining() : buffer.position();
+            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+            return fileChannel.position() + offset;
+        } else {
+            throw new PipeException();
+        }
     }
     
     /**
