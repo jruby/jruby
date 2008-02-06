@@ -615,7 +615,14 @@ public class RubyIO extends RubyObject {
             } else {
                 Stream readStream = myOpenFile.getMainStream();
                 int c = -1;
-                int newline = separator.get(separator.length() - 1);
+                int newline;
+                if (separator.length() < 1) {
+                    // We'll never match this one.
+                    // This is our way of saying that separator is empty string.
+                    newline = 256;
+                } else {
+                    newline = separator.get(separator.length() - 1) & 0xFF;
+                }
 
                 ByteList buf = new ByteList(1024);
                 boolean update = false;
@@ -2345,7 +2352,11 @@ public class RubyIO extends RubyObject {
        
         RubyString separator;
         if (count == 2) {
-            separator = args[1].convertToString();
+            if (args[1].isNil()) {
+                separator = runtime.newString();
+            } else {
+                separator = args[1].convertToString();
+            }
         } else {
             separator = runtime.getGlobalVariables().get("$/").convertToString();
         }
