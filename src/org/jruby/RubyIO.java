@@ -895,9 +895,8 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "syswrite", required = 1)
     public IRubyObject syswrite(IRubyObject obj) {
         try {
-            RubyString string =
-                    (RubyString)TypeConverter.convertToTypeWithCheck(obj, getRuntime().getString(), MethodIndex.TO_S, "to_s");
-            
+            RubyString string = obj.asString();
+
             OpenFile myOpenFile = getOpenFileChecked();
             
             myOpenFile.checkWritable(getRuntime());
@@ -947,13 +946,8 @@ public class RubyIO extends RubyObject {
     public IRubyObject write(IRubyObject obj) {
         getRuntime().secure(4);
         
-        RubyString str;
-        if (obj instanceof RubyString) {
-            str = (RubyString)obj;
-        } else {
-            str = (RubyString)obj.asString();
-        }
-        
+        RubyString str = obj.asString();
+
         // TODO: Ruby reuses this logic for other "write" behavior by checking if it's an IO and calling write again
         
         if (str.getByteList().length() == 0) {
