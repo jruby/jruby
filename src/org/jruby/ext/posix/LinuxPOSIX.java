@@ -1,5 +1,7 @@
 package org.jruby.ext.posix;
 
+import java.io.FileDescriptor;
+
 public class LinuxPOSIX extends BaseNativePOSIX {
     private static int STAT_VERSION = 3;
     
@@ -10,6 +12,16 @@ public class LinuxPOSIX extends BaseNativePOSIX {
     @Override
     public FileStat allocateStat() {
         return new LinuxFileStat(this);
+    }
+
+    @Override
+    public FileStat fstat(FileDescriptor fileDescriptor) {
+        FileStat stat = allocateStat();
+        int fd = helper.getfd(fileDescriptor);
+        
+        if (((LinuxLibC) libc).__fxstat(STAT_VERSION, fd, stat) < 0) handler.error(ERRORS.ENOENT, "" + fd);
+        
+        return stat;
     }
 
     @Override
