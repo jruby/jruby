@@ -1091,7 +1091,7 @@ public class RubyIO extends RubyObject {
     public RubyFixnum lineno_set(IRubyObject newLineNumber) {
         getOpenFileChecked().setLineNumber(RubyNumeric.fix2int(newLineNumber));
 
-        return (RubyFixnum) newLineNumber;
+        return getRuntime().newFixnum(getOpenFileChecked().getLineNumber());
     }
 
     /** Returns the current sync mode.
