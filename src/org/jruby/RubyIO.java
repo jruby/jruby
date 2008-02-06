@@ -2552,6 +2552,14 @@ public class RubyIO extends RubyObject {
         Ruby runtime = recv.getRuntime();
         int mode;
 
+        IRubyObject cmdObj = args[0].convertToString();
+        runtime.checkSafeString(cmdObj);
+
+        if ("-".equals(cmdObj.toString())) {
+            throw recv.getRuntime().newNotImplementedError(
+                    "popen(\"-\") is unimplemented");
+        }
+
         try {
             if (args.length == 1) {
                 mode = ModeFlags.RDONLY;
@@ -2562,8 +2570,6 @@ public class RubyIO extends RubyObject {
             }
 
             ModeFlags modes = new ModeFlags(mode);
-            IRubyObject cmdObj = args[0].convertToString();
-            runtime.checkSafeString(cmdObj);
         
             Process process = new ShellLauncher(runtime).run(cmdObj);
             RubyIO io = new RubyIO(runtime, process, modes);
