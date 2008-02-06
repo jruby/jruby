@@ -109,7 +109,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
                 INSTANCE = (LibCSocket)Native.loadLibrary("c", LibCSocket.class);
                 return true;
             }
-        } catch(Exception e) {
+        } catch(Throwable e) {
             return false;
         }
     }
