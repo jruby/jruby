@@ -572,23 +572,27 @@ public class RubyIO extends RubyObject {
 
         return modes;
     }
-    
-    private ByteList getSeparatorForGets(IRubyObject[] args) {
+
+    private static ByteList getSeparatorFromArgs(Ruby runtime, IRubyObject[] args, int idx) {
         IRubyObject sepVal;
 
-        if (args.length > 0) {
-            sepVal = args[0];
+        if (args.length > idx) {
+            sepVal = args[idx];
         } else {
-            sepVal = getRuntime().getRecordSeparatorVar().get();
+            sepVal = runtime.getRecordSeparatorVar().get();
         }
-        
-        ByteList separator = sepVal.isNil() ? null : ((RubyString) sepVal).getByteList();
+
+        ByteList separator = sepVal.isNil() ? null : sepVal.convertToString().getByteList();
 
         if (separator != null && separator.realSize == 0) {
             separator = Stream.PARAGRAPH_DELIMETER;
         }
-        
+
         return separator;
+    }
+
+    private ByteList getSeparatorForGets(IRubyObject[] args) {
+        return getSeparatorFromArgs(getRuntime(), args, 0);
     }
 
     public IRubyObject getline(ByteList separator) {
@@ -615,14 +619,7 @@ public class RubyIO extends RubyObject {
             } else {
                 Stream readStream = myOpenFile.getMainStream();
                 int c = -1;
-                int newline;
-                if (separator.length() < 1) {
-                    // We'll never match this one.
-                    // This is our way of saying that separator is empty string.
-                    newline = 256;
-                } else {
-                    newline = separator.get(separator.length() - 1) & 0xFF;
-                }
+                int newline = separator.get(separator.length() - 1) & 0xFF;
 
                 ByteList buf = new ByteList(1024);
                 boolean update = false;
@@ -2350,27 +2347,17 @@ public class RubyIO extends RubyObject {
         IRubyObject filename = args[0].convertToString();
         runtime.checkSafeString(filename);
        
-        RubyString separator;
-        if (count == 2) {
-            if (args[1].isNil()) {
-                separator = runtime.newString();
-            } else {
-                separator = args[1].convertToString();
-            }
-        } else {
-            separator = runtime.getGlobalVariables().get("$/").convertToString();
-        }
-        
+        ByteList separator = getSeparatorFromArgs(runtime, args, 1);
+
         RubyIO io = (RubyIO)RubyFile.open(runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
         
         if (!io.isNil()) {
             try {
-                ByteList sep = separator.getByteList();
-                IRubyObject str = io.getline(sep);
+                IRubyObject str = io.getline(separator);
                 ThreadContext context = runtime.getCurrentContext();
                 while (!str.isNil()) {
                     block.yield(context, str);
-                    str = io.getline(sep);
+                    str = io.getline(separator);
                 }
             } finally {
                 io.close();
