@@ -156,6 +156,13 @@ if $cygwin; then
   JRUBY_BASE=`cygpath --mixed "$JRUBY_BASE"`
   JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
   JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
+  
+  if [[ ( "${1:0:1}" = "/" ) && ( ( -f "$1" ) || ( -d "$1" )) ]]; then
+    win_arg=`cygpath -w "$1"`
+    shift
+    win_args=("$win_arg" "$@")
+    set -- "${win_args[@]}"
+  fi
 fi
 
 exec "$JAVA_CMD" $JAVA_OPTS -classpath "$CP"	\
