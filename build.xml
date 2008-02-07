@@ -190,7 +190,7 @@
   </target>
 
   <path id="lib.classpath">
-    <pathelement location="${build.lib.dir}/retroweaver-rt-2.0.jar"/>
+    <pathelement location="${build.lib.dir}/retroweaver-rt-2.0.4.jar"/>
     <pathelement location="${build.lib.dir}/backport-util-concurrent.jar"/>
     <pathelement location="/usr/java/j2sdk1.4.2_16/jre/lib/rt.jar" />
     <pathelement location="${lib.dir}/bsf.jar" />
@@ -198,7 +198,7 @@
 
   <target name="jar-1.4" depends="jar-jruby">
     <copy file="${lib.dir}/jruby.jar" tofile="${lib.dir}/jruby1.5.jar"/>
-    <retro inputjar="${lib.dir}/jruby1.5.jar" outputjar="${lib.dir}/jruby.jar" target="1.4" failonerror="false" verify="true">
+    <retro inputjar="${lib.dir}/jruby1.5.jar" outputjar="${lib.dir}/jruby.jar" target="1.4" failonerror="true" verify="true">
       <classpath>
         <path refid="lib.classpath"/>
         <pathelement location="${lib.dir}/jruby.jar" />
