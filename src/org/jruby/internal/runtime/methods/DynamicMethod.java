@@ -29,6 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import org.jruby.MetaClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -104,17 +105,17 @@ public abstract class DynamicMethod {
         case PUBLIC:
             return true;
         case PRIVATE:
-            if (callType == CallType.NORMAL) {
-                return false;
-            }
-            break;
+            return callType != CallType.NORMAL;
         case PROTECTED:
             RubyModule defined = getImplementationClass();
             while (defined.isIncluded()) {
                 defined = defined.getMetaClass();
             }
+            
+            // For visibility we need real meta class and not anonymous one from class << self
+            if (defined instanceof MetaClass) defined = ((MetaClass) defined).getRealClass();
 
-            if (!defined.isInstance(caller)) return false;
+            return defined.isInstance(caller);
         }
         
         return true;
