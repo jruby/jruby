@@ -691,6 +691,13 @@
     </sequential>
   </macrodef>
 
+  <macrodef name="fixEOLs">
+    <sequential>
+      <fixcrlf srcdir="dist/bin" excludes="*.bat" eol="lf"/>
+      <fixcrlf srcdir="dist/bin" includes="*.bat" eol="crlf"/>
+    </sequential>
+  </macrodef>
+
   <target name="create-apidocs" depends="prepare" 
           description="Creates the Java API docs">
     <javadoc destdir="${api.docs.dir}" author="true" version="true" use="true" 
@@ -761,6 +768,7 @@
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
+    <fixEOLs/>
     <antcall target="install-gems">
       <param name="jruby.home" value="dist"/>
     </antcall>
@@ -799,6 +807,7 @@
     <antcall target="install-gems">
       <param name="jruby.home" value="dist"/>
     </antcall>
+    <fixEOLs/>
     <tar destfile="jruby-src-${version.jruby}.tar.gz" compression="gzip">
       <tarfileset dir="dist" mode="755" prefix="jruby-${version.jruby}">
         <include name="bin/**"/>
