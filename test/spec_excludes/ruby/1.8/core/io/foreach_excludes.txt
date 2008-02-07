@@ -1,0 +1,1 @@
+IO::foreach updates $. with each yield
