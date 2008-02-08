@@ -502,6 +502,7 @@ public class ChannelDescriptor {
      * @throws java.io.IOException if there is an exception during IO
      */
     public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+        boolean fileCreated = false;
         if (path.equals("/dev/null")) {
             Channel nullChannel = new NullWritableChannel();
             // FIXME: don't use RubyIO for this
@@ -535,8 +536,7 @@ public class ChannelDescriptor {
                 if (theFile.exists() && flags.isExclusive()) {
                     throw new FileExistsException(path);
                 }
-                theFile.createNewFile();
-                
+                fileCreated = theFile.createNewFile();
             } else {
                 if (!theFile.exists()) {
                     throw new FileNotFoundException(path);
@@ -548,8 +548,9 @@ public class ChannelDescriptor {
 
             // call chmod after we created the RandomAccesFile
             // because otherwise, the file could be read-only
-            if (flags.isCreate()) {
-                // attempt to set the permissions, if we have been passed a POSIX instance
+            if (fileCreated) {
+                // attempt to set the permissions, if we have been passed a POSIX instance,
+                // and only if the file was created in this call.
                 if (posix != null && perm != -1) {
                     posix.chmod(theFile.getPath(), perm);
                 }
