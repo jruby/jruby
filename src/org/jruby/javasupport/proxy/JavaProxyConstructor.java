@@ -121,6 +121,15 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
     public RubyFixnum arity() {
         return getRuntime().newFixnum(getParameterTypes().length);
     }
+    
+    public boolean equals(Object other) {
+        return other instanceof JavaProxyConstructor &&
+            this.proxyConstructor == ((JavaProxyConstructor)other).proxyConstructor;
+    }
+    
+    public int hashCode() {
+        return proxyConstructor.hashCode();
+    }
 
     protected String nameOnInspection() {
         return getDeclaringClass().nameOnInspection();

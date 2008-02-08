@@ -48,6 +48,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.javasupport.proxy.JavaProxyClass;
+import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -92,7 +93,7 @@ public class JavaMethod extends JavaCallable {
         if (Modifier.isPublic(method.getModifiers()) &&
             Modifier.isPublic(method.getClass().getModifiers()) &&
             !Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
-            accesibleObject().setAccessible(true);
+            accessibleObject().setAccessible(true);
         }
         
         returnConverter = JavaUtil.getJavaConverter(method.getReturnType());
@@ -120,6 +121,15 @@ public class JavaMethod extends JavaCallable {
             throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'",
                     methodName);
         }
+    }
+
+    public boolean equals(Object other) {
+        return other instanceof JavaMethod &&
+            this.method == ((JavaMethod)other).method;
+    }
+    
+    public int hashCode() {
+        return method.hashCode();
     }
 
     public RubyString name() {
@@ -254,7 +264,7 @@ public class JavaMethod extends JavaCallable {
         return method.getModifiers();
     }
 
-    protected AccessibleObject accesibleObject() {
+    protected AccessibleObject accessibleObject() {
         return method;
     }
 }

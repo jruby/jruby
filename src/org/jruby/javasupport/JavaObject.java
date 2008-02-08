@@ -39,6 +39,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -114,8 +115,18 @@ public class JavaObject extends RubyObject {
         result.defineFastMethod("fill", callbackFactory.getFastMethod("afill", IRubyObject.class, IRubyObject.class, IRubyObject.class));
 	}
 
+    public boolean equals(Object other) {
+        return other instanceof JavaObject &&
+            this.value == ((JavaObject)other).value;
+    }
+    
+    public int hashCode() {
+        if (value != null) return value.hashCode();
+        return 0;
+    }
+
 	public RubyFixnum hash() {
-        return getRuntime().newFixnum(value == null ? 0 : value.hashCode());
+        return getRuntime().newFixnum(hashCode());
     }
 
     public IRubyObject to_s() {

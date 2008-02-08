@@ -55,26 +55,35 @@ public abstract class JavaAccessibleObject extends RubyObject {
         result.defineFastMethod("accessible?", callbackFactory.getFastMethod("isAccessible"));
         result.defineFastMethod("accessible=", callbackFactory.getFastMethod("setAccessible", IRubyObject.class));
 	}
-	protected abstract AccessibleObject accesibleObject();
+	protected abstract AccessibleObject accessibleObject();
+
+    public boolean equals(Object other) {
+        return other instanceof JavaAccessibleObject &&
+            this.accessibleObject() == ((JavaAccessibleObject)other).accessibleObject();
+    }
+    
+    public int hashCode() {
+        return this.accessibleObject().hashCode();
+    }
 
 	public RubyFixnum hash() {
-		return getRuntime().newFixnum(accesibleObject().hashCode());
+		return getRuntime().newFixnum(hashCode());
     }
 
     public IRubyObject op_equal(IRubyObject other) {
-		return other instanceof JavaAccessibleObject && accesibleObject().equals(((JavaAccessibleObject)other).accesibleObject()) ? getRuntime().getTrue() : getRuntime().getFalse();
+		return other instanceof JavaAccessibleObject && accessibleObject().equals(((JavaAccessibleObject)other).accessibleObject()) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
    
 	public IRubyObject same(IRubyObject other) {
-		return other instanceof JavaAccessibleObject && accesibleObject() == ((JavaAccessibleObject)other).accesibleObject() ? getRuntime().getTrue() : getRuntime().getFalse();
+        return getRuntime().newBoolean(equals(other));
 	}
        
 	public RubyBoolean isAccessible() {
-		return new RubyBoolean(getRuntime(),accesibleObject().isAccessible());
+		return new RubyBoolean(getRuntime(),accessibleObject().isAccessible());
 	}
 
 	public IRubyObject setAccessible(IRubyObject object) {
-	    accesibleObject().setAccessible(object.isTrue());
+	    accessibleObject().setAccessible(object.isTrue());
 		return object;
 	}
 

@@ -455,7 +455,7 @@ public class JavaClass extends JavaObject {
     private Map instanceCallbacks;
     private List<ConstantField> constantFields;
     // caching constructors, as they're accessed for each new instance
-    private RubyArray constructors;
+    private volatile RubyArray constructors;
     
     private volatile ArrayList<IRubyObject> proxyExtenders;
 
@@ -528,6 +528,11 @@ public class JavaClass extends JavaObject {
             // TODO: public only?
             initializeClass(javaClass);
         }
+    }
+    
+    public boolean equals(Object other) {
+        return other instanceof JavaClass &&
+            this.getValue() == ((JavaClass)other).getValue();
     }
     
     private void initializeInterface(Class javaClass) {

@@ -37,6 +37,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
+import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -61,6 +62,11 @@ public class JavaArray extends JavaObject {
         return Array.getLength(getValue());
     }
 
+    public boolean equals(Object other) {
+        return other instanceof JavaArray &&
+            this.getValue() == ((JavaArray)other).getValue();
+    }
+    
     public IRubyObject aref(IRubyObject index) {
         if (! (index instanceof RubyInteger)) {
             throw getRuntime().newTypeError(index, getRuntime().getInteger());

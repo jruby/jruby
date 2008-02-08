@@ -82,8 +82,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaProxyClass extends JavaProxyReflectionObject {
     static ThreadLocal<Ruby> runtimeTLS = new ThreadLocal<Ruby>();
     private final Class proxyClass;
-    private ArrayList<JavaProxyMethod> methods = new ArrayList<JavaProxyMethod>();
-    private HashMap<String, List<JavaProxyMethod>> methodMap = new HashMap<String, List<JavaProxyMethod>>();
+    private final ArrayList<JavaProxyMethod> methods = new ArrayList<JavaProxyMethod>();
+    private final HashMap<String, List<JavaProxyMethod>> methodMap = new HashMap<String, List<JavaProxyMethod>>();
+    private final RubyArray constructors;
 
     /* package scope */
     JavaProxyClass(Class proxyClass) {
@@ -91,6 +92,16 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 (RubyClass) getThreadLocalRuntime().fastGetModule("Java").fastGetClass("JavaProxyClass"));
         
         this.proxyClass = proxyClass;
+        this.constructors = buildRubyArray(getConstructors());
+    }
+
+    public boolean equals(Object other) {
+        return other instanceof JavaProxyClass &&
+            this.proxyClass == ((JavaProxyClass)other).proxyClass;
+    }
+    
+    public int hashCode() {
+        return proxyClass.hashCode();
     }
 
     public Object getValue() {
@@ -207,6 +218,15 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             this.parameterTypes = m.getParameterTypes();
             this.sm = sm;
             this.clazz = clazz;
+        }
+
+        public boolean equals(Object other) {
+            return other instanceof ProxyMethodImpl &&
+                this.m == ((ProxyMethodImpl)other).m;
+        }
+        
+        public int hashCode() {
+            return m.hashCode();
         }
 
         public Method getMethod() {
@@ -687,7 +707,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     public RubyArray constructors() {
-        return buildRubyArray(getConstructors());
+        return this.constructors;
     }
 
     public static void createJavaProxyModule(Ruby runtime) {
