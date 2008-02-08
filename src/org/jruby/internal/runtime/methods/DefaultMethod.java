@@ -259,6 +259,10 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             }
         }
     }
+    
+    public ISourcePosition getPosition() {
+        return position;
+    }
 
     private void traceReturn(ThreadContext context, Ruby runtime, String name) {
         Frame frame = context.getPreviousFrame();

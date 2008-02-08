@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
+import org.jruby.util.ClassCache;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
@@ -90,6 +91,8 @@ public class RubyInstanceConfig {
     private CompatVersion compatVersion;
 
     private ClassLoader loader = Thread.currentThread().getContextClassLoader();
+    
+    private ClassCache classCache = new ClassCache();
     
     // from CommandlineParser
     private List<String> loadPaths = new ArrayList<String>();
@@ -936,5 +939,13 @@ public class RubyInstanceConfig {
     
     public void setRecordSeparator(String recordSeparator) {
         this.recordSeparator = recordSeparator;
+    }
+    
+    public ClassCache getClassCache() {
+        return classCache;
+    }
+    
+    public void setClassCache(ClassCache classCache) {
+        this.classCache = classCache;
     }
 }

@@ -41,13 +41,17 @@ import org.jruby.ast.executable.Script;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.util.ClassCache;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JavaNameMangler;
 
 public class JITCompiler {
-    public static void runJIT(DefaultMethod method, Ruby runtime, ThreadContext context, String name) {
+    public static final boolean USE_CACHE = false;
+    
+    public static void runJIT(final DefaultMethod method, final Ruby runtime, ThreadContext context, final String name) {
         Set jittedMethods = runtime.getJittedMethods();
         RubyInstanceConfig instanceConfig = runtime.getInstanceConfig();
         int jitMax = instanceConfig.getJitMax();
@@ -69,7 +73,7 @@ public class JITCompiler {
                     } else if (argsNode != null) {
                         filename = argsNode.getPosition().getFile();
                     }
-                    StandardASMCompiler asmCompiler = new StandardASMCompiler(cleanName + method.hashCode() + "_" + context.hashCode(), filename);
+                    final StandardASMCompiler asmCompiler = new StandardASMCompiler(cleanName + method.hashCode() + "_" + context.hashCode(), filename);
                     asmCompiler.startScript(staticScope);
                     final ASTCompiler compiler = new ASTCompiler();
         
@@ -105,7 +109,35 @@ public class JITCompiler {
                     }
                     methodCompiler.endMethod();
                     asmCompiler.endScript(false, false, false);
-                    Class sourceClass = asmCompiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
+                    
+                    ClassCache classCache = instanceConfig.getClassCache();
+                    ISourcePosition position = method.getPosition();
+                    String key = position.getFile() + ":" + position.getStartLine() + "." + name;
+                    
+                    ClassCache.ClassGenerator classGenerator = new ClassCache.ClassGenerator() {
+                        public Class generate() throws ClassNotFoundException {
+                            Class result = asmCompiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
+
+                            // log this as a new compile
+                            if (runtime.getInstanceConfig().isJitLogging()) {
+                                String className = method.getImplementationClass().getBaseName();
+                                if (className == null) {
+                                    className = "<anon class>";
+                                }
+                                System.err.println("compiled anew: " + className + "." + name);
+                            }
+
+                            return result;
+                        }
+                    };
+                    Class sourceClass;
+                    if (USE_CACHE) {
+                        sourceClass = classCache.cacheClassByKey(
+                                key, 
+                                classGenerator);
+                    } else {
+                        sourceClass = classGenerator.generate();
+                    }
                     
                     // if we haven't already decided on a do-nothing call
                     if (jitCallConfig == null) {
@@ -138,7 +170,7 @@ public class JITCompiler {
                         if (className == null) {
                             className = "<anon class>";
                         }
-                        System.err.println("compiled: " + className + "." + name);
+                        System.err.println("done jitting: " + className + "." + name);
                     }
                     method.setJITCallConfig(jitCallConfig);
                     method.setJITCompiledScript(jitCompiledScript);
