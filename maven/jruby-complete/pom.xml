@@ -18,7 +18,7 @@
     <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
-      <version>0.9.91</version>
+      <version>0.9.93</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -113,7 +113,7 @@
                 <artifactItem>
                   <groupId>jline</groupId>
                   <artifactId>jline</artifactId>
-                  <version>0.9.91</version>
+                  <version>0.9.93</version>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.jruby.joni</groupId>
