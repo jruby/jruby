@@ -68,3 +68,17 @@ test_exception { self.foo }
 # check a few kernel methods to ensure their visibilities are being checked
 test_exception(NoMethodError) { nil.chomp }
 test_exception(NoMethodError) { 'foo'.puts }
+
+# JRUBY-2085
+str1 = "str1"
+str2 = "str2"
+class << str1
+  protected
+  def foo; end
+end
+class << str2
+  def bar(x); x.foo; end
+end
+
+test_exception(NoMethodError) { str1.foo }
+test_no_exception { str2.bar(str1) }
