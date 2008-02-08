@@ -124,8 +124,18 @@ public class JavaObject extends RubyObject {
         result.defineFastMethod("fill", callbackFactory.getFastMethod("afill", IRubyObject.class, IRubyObject.class, IRubyObject.class));
 	}
 
-	public RubyFixnum hash() {
-        return getRuntime().newFixnum(value == null ? 0 : value.hashCode());
+    public boolean equals(Object other) {
+        return other instanceof JavaObject &&
+            this.value == ((JavaObject)other).value;
+    }
+    
+    public int hashCode() {
+        if (value != null) return value.hashCode();
+        return 0;
+    }
+
+    public RubyFixnum hash() {
+        return getRuntime().newFixnum(hashCode());
     }
 
     public IRubyObject to_s() {

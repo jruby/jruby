@@ -91,7 +91,7 @@ public class JavaMethod extends JavaCallable {
         if (Modifier.isPublic(method.getModifiers()) &&
             Modifier.isPublic(method.getClass().getModifiers()) &&
             !Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
-            accesibleObject().setAccessible(true);
+            accessibleObject().setAccessible(true);
         }
     }
 
@@ -117,6 +117,15 @@ public class JavaMethod extends JavaCallable {
             throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'",
                     methodName);
         }
+    }
+
+    public boolean equals(Object other) {
+        return other instanceof JavaMethod &&
+            this.method == ((JavaMethod)other).method;
+    }
+    
+    public int hashCode() {
+        return method.hashCode();
     }
 
     public RubyString name() {
@@ -251,7 +260,7 @@ public class JavaMethod extends JavaCallable {
         return method.getModifiers();
     }
 
-    protected AccessibleObject accesibleObject() {
+    protected AccessibleObject accessibleObject() {
         return method;
     }
 }

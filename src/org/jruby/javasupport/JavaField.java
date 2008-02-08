@@ -76,6 +76,15 @@ public class JavaField extends JavaAccessibleObject {
         this.field = field;
     }
 
+    public boolean equals(Object other) {
+        return other instanceof JavaField &&
+            this.field == ((JavaField)other).field;
+    }
+    
+    public int hashCode() {
+        return field.hashCode();
+    }
+
     public RubyString value_type() {
         return getRuntime().newString(field.getType().getName());
     }
@@ -184,7 +193,7 @@ public class JavaField extends JavaAccessibleObject {
         return getRuntime().newString(field.getName());
     }
     
-    protected AccessibleObject accesibleObject() {
+    protected AccessibleObject accessibleObject() {
         return field;
     }
 }

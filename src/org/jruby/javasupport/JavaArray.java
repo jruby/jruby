@@ -61,6 +61,11 @@ public class JavaArray extends JavaObject {
         return Array.getLength(getValue());
     }
 
+    public boolean equals(Object other) {
+        return other instanceof JavaArray &&
+            this.getValue() == ((JavaArray)other).getValue();
+    }
+    
     public IRubyObject aref(IRubyObject index) {
         if (! (index instanceof RubyInteger)) {
             throw getRuntime().newTypeError(index, getRuntime().getClass("Integer"));

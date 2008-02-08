@@ -71,6 +71,15 @@ public class JavaConstructor extends JavaCallable {
         this.parameterTypes = constructor.getParameterTypes();
     }
 
+    public boolean equals(Object other) {
+        return other instanceof JavaConstructor &&
+            this.constructor == ((JavaConstructor)other).constructor;
+    }
+    
+    public int hashCode() {
+        return constructor.hashCode();
+    }
+
     public int getArity() {
         return parameterTypes.length;
     }
@@ -116,7 +125,7 @@ public class JavaConstructor extends JavaCallable {
         return constructor.getModifiers();
     }
 
-    protected AccessibleObject accesibleObject() {
+    protected AccessibleObject accessibleObject() {
         return constructor;
     }
 }

@@ -79,8 +79,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaProxyClass extends JavaProxyReflectionObject {
     static ThreadLocal runtimeTLS = new ThreadLocal();
     private final Class proxyClass;
-    private ArrayList methods = new ArrayList();
-    private HashMap methodMap = new HashMap();
+    private final ArrayList methods = new ArrayList();
+    private final HashMap methodMap = new HashMap();
+    private final RubyArray constructors;
 
     /* package scope */
     JavaProxyClass(Class proxyClass) {
@@ -88,6 +89,16 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 (RubyClass) getThreadLocalRuntime().getModule("Java").getClass("JavaProxyClass"));
         
         this.proxyClass = proxyClass;
+        this.constructors = buildRubyArray(getConstructors());
+    }
+
+    public boolean equals(Object other) {
+        return other instanceof JavaProxyClass &&
+            this.proxyClass == ((JavaProxyClass)other).proxyClass;
+    }
+    
+    public int hashCode() {
+        return proxyClass.hashCode();
     }
 
     public Object getValue() {
@@ -204,6 +215,15 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             this.parameterTypes = m.getParameterTypes();
             this.sm = sm;
             this.clazz = clazz;
+        }
+
+        public boolean equals(Object other) {
+            return other instanceof ProxyMethodImpl &&
+                this.m == ((ProxyMethodImpl)other).m;
+        }
+
+        public int hashCode() {
+            return m.hashCode();
         }
 
         public Method getMethod() {
@@ -688,7 +708,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     public RubyArray constructors() {
-        return buildRubyArray(getConstructors());
+        return this.constructors;
     }
 
     public static void createJavaProxyModule(Ruby runtime) {

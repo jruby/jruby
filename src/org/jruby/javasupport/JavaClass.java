@@ -490,6 +490,11 @@ public class JavaClass extends JavaObject {
         }
     }
     
+    public boolean equals(Object other) {
+        return other instanceof JavaClass &&
+            this.getValue() == ((JavaClass)other).getValue();
+    }
+    
     private void initializeInterface(Class javaClass) {
         Map staticNames  = new HashMap(STATIC_RESERVED_NAMES);
         List constantFields = new ArrayList(); 
