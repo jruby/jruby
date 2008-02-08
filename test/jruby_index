@@ -67,3 +67,4 @@ test_system_error
 # these tests are last because they pull in libraries that can affect others
 test_base64_strangeness
 test_loading_builtin_libraries
+test_rewriter
