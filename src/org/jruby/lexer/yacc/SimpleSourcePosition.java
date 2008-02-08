@@ -31,6 +31,7 @@ package org.jruby.lexer.yacc;
 import java.util.Collection;
 
 import org.jruby.ast.CommentNode;
+import org.jruby.ast.Node;
 
 public class SimpleSourcePosition implements ISourcePosition {
     String filename;
@@ -72,7 +73,7 @@ public class SimpleSourcePosition implements ISourcePosition {
     }
 
     public Collection<CommentNode> getComments() {
-        return null;
+        return Node.EMPTY_COMMENT_LIST;
     }
 
     public void setComments(Collection<CommentNode> comments) {
