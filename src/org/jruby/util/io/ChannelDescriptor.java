@@ -537,10 +537,6 @@ public class ChannelDescriptor {
                 }
                 theFile.createNewFile();
                 
-                // attempt to set the permissions, if we have been passed a POSIX instance
-                if (posix != null && perm != -1) {
-                    posix.chmod(theFile.getPath(), perm);
-                }
             } else {
                 if (!theFile.exists()) {
                     throw new FileNotFoundException(path);
@@ -549,6 +545,15 @@ public class ChannelDescriptor {
 
             // We always open this rw since we can only open it r or rw.
             RandomAccessFile file = new RandomAccessFile(theFile, flags.toJavaModeString());
+
+            // call chmod after we created the RandomAccesFile
+            // because otherwise, the file could be read-only
+            if (flags.isCreate()) {
+                // attempt to set the permissions, if we have been passed a POSIX instance
+                if (posix != null && perm != -1) {
+                    posix.chmod(theFile.getPath(), perm);
+                }
+            }
 
             if (flags.isTruncate()) file.setLength(0L);
 
