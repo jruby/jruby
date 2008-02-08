@@ -121,12 +121,17 @@ public class RubyInstanceConfig {
     
     private int safeLevel = 0;
 
+    public static final boolean FASTEST_COMPILE_ENABLED
+            = SafePropertyAccessor.getBoolean("jruby.compile.fastest");
     public static final boolean FRAMELESS_COMPILE_ENABLED
-            = SafePropertyAccessor.getBoolean("jruby.compile.frameless");
+            = FASTEST_COMPILE_ENABLED
+            || SafePropertyAccessor.getBoolean("jruby.compile.frameless");
     public static final boolean POSITIONLESS_COMPILE_ENABLED
-            = SafePropertyAccessor.getBoolean("jruby.compile.positionless");
+            = FASTEST_COMPILE_ENABLED
+            || SafePropertyAccessor.getBoolean("jruby.compile.positionless");
     public static final boolean THREADLESS_COMPILE_ENABLED
-            = SafePropertyAccessor.getBoolean("jruby.compile.threadless");
+            = FASTEST_COMPILE_ENABLED
+            || SafePropertyAccessor.getBoolean("jruby.compile.threadless");
     public static final boolean INDEXED_METHODS
             = SafePropertyAccessor.getBoolean("jruby.indexed.methods");
     public static final boolean FORK_ENABLED

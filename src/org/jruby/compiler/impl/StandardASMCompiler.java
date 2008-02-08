@@ -2370,9 +2370,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             } else {
                 if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                     // TODO: call config with scope but no frame
-                    method.getstatic(p(CallConfiguration.class), CallConfiguration.BACKTRACE_AND_SCOPE.name(), ci(CallConfiguration.class));
+                    if (RubyInstanceConfig.FASTEST_COMPILE_ENABLED) {
+                        method.getstatic(p(CallConfiguration.class), CallConfiguration.SCOPE_ONLY.name(), ci(CallConfiguration.class));
+                    } else {
+                        method.getstatic(p(CallConfiguration.class), CallConfiguration.BACKTRACE_AND_SCOPE.name(), ci(CallConfiguration.class));
+                    }
                 } else {
-                    method.getstatic(p(CallConfiguration.class), CallConfiguration.BACKTRACE_ONLY.name(), ci(CallConfiguration.class));
+                    if (RubyInstanceConfig.FASTEST_COMPILE_ENABLED) {
+                        method.getstatic(p(CallConfiguration.class), CallConfiguration.NO_FRAME_NO_SCOPE.name(), ci(CallConfiguration.class));
+                    } else {
+                        method.getstatic(p(CallConfiguration.class), CallConfiguration.BACKTRACE_ONLY.name(), ci(CallConfiguration.class));
+                    }
                 }
             }
             

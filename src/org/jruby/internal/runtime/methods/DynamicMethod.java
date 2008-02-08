@@ -107,10 +107,13 @@ public abstract class DynamicMethod {
         case PRIVATE:
             return callType != CallType.NORMAL;
         case PROTECTED:
+            // TODO: Determine whether we should perhaps store non-singleton class instead
             RubyModule defined = getImplementationClass();
-            while (defined.isIncluded()) {
-                defined = defined.getMetaClass();
-            }
+            
+            // singleton classes don't get their own visibility domain
+            if (defined.isSingleton()) defined = defined.getSuperClass();
+            
+            while (defined.isIncluded()) defined = defined.getMetaClass();
             
             // For visibility we need real meta class and not anonymous one from class << self
             if (defined instanceof MetaClass) defined = ((MetaClass) defined).getRealClass();
