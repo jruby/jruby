@@ -227,7 +227,7 @@ public class RubyGlobal {
                 new ValueAccessor(runtime.getInstanceConfig().isProcessLineEnds() ? runtime.getTrue() : runtime.getNil()));
 
         // ARGF, $< object
-        new RubyArgsFile(runtime).initArgsFile();
+        RubyArgsFile.initArgsFile(runtime);
     }
 
     private static void defineGlobalEnvConstants(Ruby runtime) {
@@ -354,7 +354,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            ((RubyArgsFile) runtime.getGlobalVariables().get("$<")).setCurrentLineNumber(RubyNumeric.fix2int(value));
+            RubyArgsFile.setCurrentLineNumber(runtime.getGlobalVariables().get("$<"),RubyNumeric.fix2int(value));
             return super.set(value);
         }
     }

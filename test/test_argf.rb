@@ -55,4 +55,7 @@ class TestArgf < Test::Unit::TestCase
     end
   end
 
+  def test_argf_cloning
+    assert_equal "ARGF", ARGF.clone.to_s
+  end
 end

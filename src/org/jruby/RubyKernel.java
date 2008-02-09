@@ -254,7 +254,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "gets", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject gets(IRubyObject recv, IRubyObject[] args) {
-        return ((RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<")).gets(args);
+        return RubyArgsFile.gets(recv.getRuntime().getGlobalVariables().get("$<"), args);
     }
 
     @JRubyMethod(name = "abort", optional = 1, module = true, visibility = Visibility.PRIVATE)
@@ -404,7 +404,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "readlines", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyArray readlines(IRubyObject recv, IRubyObject[] args) {
-        return ((RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<")).readlines(args);
+        return RubyArgsFile.readlines(recv.getRuntime().getGlobalVariables().get("$<"), args);
     }
 
     /** Returns value of $_.
