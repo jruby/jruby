@@ -5,10 +5,32 @@ import org.jruby.ast.*;
 public class SexpMaker {
     private StringBuffer sb;
     
-    public SexpMaker(Node top) {
-        sb = new StringBuffer();
+    public static String create(Node node) {
+        SexpMaker maker = new SexpMaker();
         
-        process(top);
+        maker.process(node);
+        
+        return maker.toString();
+    }
+    
+    public static String create(String methodName, Node argsNode, Node body) {
+        SexpMaker maker = new SexpMaker();
+        
+        maker.processMethod(methodName, argsNode, body);
+        
+        return maker.toString();
+    }
+    
+    protected SexpMaker() {
+        sb = new StringBuffer();
+    }
+    
+    private void processMethod(String methodName, Node argsNode, Node body) {
+        sb.append("(method ").append(methodName).append(' ');
+        process(argsNode);
+        sb.append(" ");
+        process(body);
+        sb.append(")");
     }
     
     public String toString() {
@@ -45,7 +67,7 @@ public class SexpMaker {
             }
         }
         
-        sb.append(className);
+        sb.append(className.toLowerCase());
     }
     
     private void leafInfo(Node node) {
@@ -149,7 +171,7 @@ public class SexpMaker {
     }
 
     private void xStrNode(XStrNode node) {
-        sb.append(" ").append(node.getValue());
+        sb.append(" '").append(node.getValue()).append("'");
     }
 
     private void vcallNode(VCallNode node) {
@@ -165,7 +187,7 @@ public class SexpMaker {
     }
 
     private void strNode(StrNode node) {
-        sb.append(" ").append(node.getValue());
+        sb.append(" '").append(node.getValue()).append("'");
     }
 
     private void regexpNode(RegexpNode node) {

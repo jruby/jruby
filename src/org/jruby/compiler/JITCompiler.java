@@ -38,6 +38,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
+import org.jruby.ast.util.SexpMaker;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DefaultMethod;
@@ -110,14 +111,10 @@ public class JITCompiler {
                     methodCompiler.endMethod();
                     asmCompiler.endScript(false, false, false);
                     
-                    ClassCache classCache = instanceConfig.getClassCache();
-                    ISourcePosition position = method.getPosition();
-                    String key = position.getFile() + ":" + position.getStartLine() + "." + name;
-                    
                     ClassCache.ClassGenerator classGenerator = new ClassCache.ClassGenerator() {
                         public Class generate() throws ClassNotFoundException {
                             Class result = asmCompiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
-
+                            
                             // log this as a new compile
                             if (runtime.getInstanceConfig().isJitLogging()) {
                                 String className = method.getImplementationClass().getBaseName();
@@ -130,11 +127,15 @@ public class JITCompiler {
                             return result;
                         }
                     };
+                    
                     Class sourceClass;
                     if (USE_CACHE) {
-                        sourceClass = classCache.cacheClassByKey(
-                                key, 
-                                classGenerator);
+                        ClassCache classCache = instanceConfig.getClassCache();
+                        ISourcePosition position = method.getPosition();
+                        String key = position.getFile() + ":" + position.getStartLine() + "=" + 
+                            SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());
+                    
+                        sourceClass = classCache.cacheClassByKey(key, classGenerator);
                     } else {
                         sourceClass = classGenerator.generate();
                     }
