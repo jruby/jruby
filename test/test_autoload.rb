@@ -4,6 +4,7 @@ class TestAutoload < Test::Unit::TestCase
   def test_basic_autoload
     assert_equal(nil, Object.autoload("Autoloaded", "#{File.dirname(__FILE__)}/autoloaded.rb"))
     assert(Object.const_defined?("Autoloaded"))
+    assert_nil(Object.autoload?("Object::Autoloaded"))
     assert_equal("#{File.dirname(__FILE__)}/autoloaded.rb", Object.autoload?("Autoloaded"))
     assert_equal(Class, Object::Autoloaded.class)
     # This should not really autoload since it is set for real
