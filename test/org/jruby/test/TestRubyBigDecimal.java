@@ -1,7 +1,10 @@
 package org.jruby.test;
 
+import java.math.BigDecimal;
+
 import junit.framework.TestCase;
 import org.jruby.RubyBigDecimal;
+import org.jruby.Ruby;
 
 public class TestRubyBigDecimal extends TestCase {
   public void testFormatWithLeadingPlus() {
@@ -29,4 +32,9 @@ public class TestRubyBigDecimal extends TestCase {
     assertEquals(2, RubyBigDecimal.formatFractionalDigitGroups("2"));
     assertEquals(0, RubyBigDecimal.formatFractionalDigitGroups("-5"));
   }
+
+    public void testBigDecimalHasGetValue() {
+        BigDecimal bd = new BigDecimal("12333333333333333333334323535353");
+        assertEquals(bd, RubyBigDecimal.newBigDecimal(Ruby.newInstance(), bd).getValue());
+    }
 }

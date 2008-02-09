@@ -92,6 +92,10 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private BigDecimal value;
 
+    public BigDecimal getValue() {
+        return value;
+    }
+
     public RubyBigDecimal(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
     }
