@@ -9,12 +9,16 @@ module Java
    end
 
    def method_missing(sym, *args)
-     if JavaUtilities.is_primitive_type(sym) 
-       JavaUtilities.get_proxy_class sym.to_s
-     elsif sym.to_s.downcase[0] == sym.to_s[0]
-       JavaUtilities.get_package_module_dot_format(sym)
+     if args.empty?
+       if JavaUtilities.is_primitive_type(sym) 
+         JavaUtilities.get_proxy_class sym.to_s
+       elsif sym.to_s.downcase[0] == sym.to_s[0]
+         JavaUtilities.get_package_module_dot_format(sym)
+       else
+         JavaUtilities.get_proxy_class "#{sym}"
+       end
      else
-       JavaUtilities.get_proxy_class "#{sym}"
+       super
      end
    end
  end
@@ -48,12 +52,16 @@ module JavaPackageModuleTemplate
     private :const_missing
     
     def method_missing(sym, *args)
-      if JavaUtilities.is_primitive_type(sym)
-        raise ArgumentError.new("illegal package name component: #{sym}")
-      elsif (s = sym.to_s[0,1]) == s.downcase
-        JavaUtilities.get_package_module_dot_format(@package_name + sym.to_s)
+      if args.empty?
+        if JavaUtilities.is_primitive_type(sym)
+          raise ArgumentError.new("illegal package name component: #{sym}")
+        elsif (s = sym.to_s[0,1]) == s.downcase
+          JavaUtilities.get_package_module_dot_format(@package_name + sym.to_s)
+        else
+          c = JavaUtilities.get_proxy_class(@package_name + sym.to_s)
+        end
       else
-        c = JavaUtilities.get_proxy_class(@package_name + sym.to_s)
+        super
       end
     end
     private :method_missing

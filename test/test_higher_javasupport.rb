@@ -632,5 +632,20 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_string_from_bytes
     assert_equal('foo', String.from_java_bytes('foo'.to_java_bytes))
   end
+  
+  # JRUBY-2088
+  def test_package_notation_with_arguments
+    assert_raises(NoMethodError) do 
+      java.lang("ABC").String
+    end
+
+    assert_raises(NoMethodError) do 
+      java.lang.String(123)
+    end
+    
+    assert_raises(NoMethodError) do 
+      Java::se("foobar").com.Foobar
+    end
+  end
 end
 
