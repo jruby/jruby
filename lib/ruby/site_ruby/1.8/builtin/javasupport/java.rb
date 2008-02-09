@@ -56,7 +56,11 @@ module JavaPackageModuleTemplate
         if JavaUtilities.is_primitive_type(sym)
           raise ArgumentError.new("illegal package name component: #{sym}")
         elsif (s = sym.to_s[0,1]) == s.downcase
-          JavaUtilities.get_package_module_dot_format(@package_name + sym.to_s)
+          begin 
+            JavaUtilities.get_proxy_class(@package_name + sym.to_s)
+          rescue Exception 
+            JavaUtilities.get_package_module_dot_format(@package_name + sym.to_s)
+          end
         else
           c = JavaUtilities.get_proxy_class(@package_name + sym.to_s)
         end

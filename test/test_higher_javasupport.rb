@@ -657,5 +657,11 @@ end
 CLASSDEF
     end
   end
+
+  # JRUBY-781
+  def test_that_classes_beginning_with_small_letter_can_be_referenced 
+    assert_equal Module, org.jruby.test.smallLetterClazz.class
+    assert_equal Class, org.jruby.test.smallLetterClass.class
+  end
 end
 
