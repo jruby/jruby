@@ -762,7 +762,7 @@ public class RubyIO extends RubyObject {
     }
     // IO class methods.
 
-    @JRubyMethod(name = {"new"}, rest = true, frame = true, meta = true)
+    @JRubyMethod(name = {"new", "for_fd"}, rest = true, frame = true, meta = true)
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass)recv;
         
