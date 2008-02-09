@@ -593,10 +593,10 @@ public class ASTInterpreter {
         DynamicMethod method = module.searchMethod(name);
 
         if (method.isUndefined() || (!method.isCallableFrom(self, callType))) {
-            return RuntimeHelpers.callMethodMissing(context, receiver, method, name, args, self, callType, Block.NULL_BLOCK);
+            RuntimeHelpers.callMethodMissing(context, receiver, method, name, args, self, callType, Block.NULL_BLOCK);
+        } else {
+            method.call(context, receiver, module, name, args);
         }
-
-        method.call(context, receiver, module, name, args);
 
         return args[args.length - 1];
     }

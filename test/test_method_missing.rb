@@ -13,6 +13,12 @@ class TestMethodMissing < Test::Unit::TestCase
         end
     end
     
+    class AMethodMissingClass
+        def method_missing name, *args
+            2
+        end
+    end
+    
     class AClassWithProtectedAndPrivateMethod
         private
         def a_private_method
@@ -73,5 +79,10 @@ class TestMethodMissing < Test::Unit::TestCase
         end
         assert_raise(NoMethodError){s.clone.length}
         assert_nothing_raised{s.dup.length}
+    end
+    
+    def test_attr_assign_missing_returns_rhs
+        assert_equal(AMethodMissingClass.new.foo=2,2 )
+        assert_equal(eval("AMethodMissingClass.new.foo=2"), 2)
     end
 end
