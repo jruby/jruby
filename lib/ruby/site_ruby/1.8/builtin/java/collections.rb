@@ -69,15 +69,22 @@ module java::util::Iterator
 end
 
 module java::util::List
-  def [](ix)
-    if ix < size
-      get(ix)
+  def [](ix1, ix2 = nil)
+    if (ix2)
+      sub_list(ix1, ix1 + ix2)
+    elsif (ix1.is_a?(Range))
+      sub_list(ix1.first, ix1.last)
+    elsif ix1 < size
+      get(ix1)
     else
       nil
     end
   end
   def []=(ix,val)
-    if size < ix
+    if (ix.is_a?(Range))
+      ix.each { |i| remove(i) }
+      add_all(ix.first, val)
+    elsif size < ix
       ((ix-size)+1).times { self << nil }
     end
     set(ix,val)
