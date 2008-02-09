@@ -647,5 +647,15 @@ class TestHigherJavasupport < Test::Unit::TestCase
       Java::se("foobar").com.Foobar
     end
   end
+  
+  # JRUBY-1545
+  def test_creating_subclass_to_java_interface_raises_type_error 
+    assert_raises(TypeError) do 
+      eval(<<CLASSDEF)
+class FooXBarBarBar < Java::JavaLang::Runnable
+end
+CLASSDEF
+    end
+  end
 end
 

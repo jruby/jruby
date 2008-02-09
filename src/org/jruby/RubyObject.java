@@ -421,6 +421,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
        ((MetaClass)clone.getMetaClass()).setAttached(clone);
 
+       ((MetaClass)clone).setAttached(((MetaClass)klass).getAttached());
+
        return clone;
     }
 
