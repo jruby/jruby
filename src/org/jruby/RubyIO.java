@@ -293,6 +293,7 @@ public class RubyIO extends RubyObject {
         ioMetaClass.defineMethod("popen", callbackFactory.getOptSingletonMethod("popen"));
         ioMetaClass.defineFastMethod("select", callbackFactory.getFastOptSingletonMethod("select"));
         ioMetaClass.defineFastMethod("pipe", callbackFactory.getFastSingletonMethod("pipe"));
+        ioMetaClass.defineAlias("for_fd", "new");
         
         ioClass.defineFastMethod("<<", callbackFactory.getFastMethod("addString", IRubyObject.class));
         ioClass.defineFastMethod("binmode", callbackFactory.getFastMethod("binmode"));
