@@ -83,8 +83,25 @@ public class ScannerImpl implements Scanner {
     private final static byte[] ESCAPE_REPLACEMENTS = new byte[256];
     private final static boolean[] IS_ESCAPE_REPLACEMENT = new boolean[256];
     private final static Map ESCAPE_CODES = new HashMap();
+    private final static boolean[] CHOMPING = new boolean[256];
 
     static {
+        CHOMPING['+'] = true;
+        CHOMPING['-'] = true;
+        CHOMPING['\n'] = true;
+        CHOMPING['\r'] = true;
+        CHOMPING['0'] = true;
+        CHOMPING['1'] = true;
+        CHOMPING['2'] = true;
+        CHOMPING['3'] = true;
+        CHOMPING['4'] = true;
+        CHOMPING['5'] = true;
+        CHOMPING['6'] = true;
+        CHOMPING['7'] = true;
+        CHOMPING['8'] = true;
+        CHOMPING['9'] = true;
+        CHOMPING['#'] = true;
+        CHOMPING[' '] = true;
         Arrays.fill(ALL_TRUE,true);
         LINEBR['\n'] = true;
         NULL_BL_LINEBR['\0'] = true;
@@ -238,7 +255,6 @@ public class ScannerImpl implements Scanner {
         STUPID_CHAR['*'] = false;
         STUPID_CHAR['!'] = false;
         STUPID_CHAR['|'] = false;
-        STUPID_CHAR['>'] = false;
         STUPID_CHAR['\''] = false;
         STUPID_CHAR['"'] = false;
         STUPID_CHAR['@'] = false;
@@ -526,8 +542,8 @@ public class ScannerImpl implements Scanner {
         case '*': return fetchAlias();
         case '&': return fetchAnchor();
         case '!': return fetchTag();
-        case '|': if(this.flowLevel == 0) { return fetchLiteral(); } break;
-        case '>': if(this.flowLevel == 0) { return fetchFolded(); } break;
+        case '|': if(this.flowLevel == 0 && CHOMPING[this.buffer.bytes[this.pointer+1]&0xFF]) { return fetchLiteral(); } break;
+        case '>': if(this.flowLevel == 0 && CHOMPING[this.buffer.bytes[this.pointer+1]&0xFF]) { return fetchFolded(); } break;
         }
 
         //TODO: this is probably incorrect...

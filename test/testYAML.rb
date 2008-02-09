@@ -395,3 +395,6 @@ test_equal({
            YAML::tagged_classes)
 
 
+# JRUBY-2083
+
+test_equal({'foobar' => '>= 123'}, YAML.load("foobar: >= 123"))
