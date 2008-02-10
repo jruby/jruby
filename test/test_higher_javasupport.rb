@@ -663,5 +663,14 @@ CLASSDEF
     assert_equal Module, org.jruby.test.smallLetterClazz.class
     assert_equal Class, org.jruby.test.smallLetterClass.class
   end
+  
+  # JRUBY-1076
+  def test_package_module_aliased_methods
+    assert java.lang.respond_to?(:__constants__)
+    assert java.lang.respond_to?(:__methods__)
+
+    java.lang.String # ensure java.lang.String has been loaded
+    assert java.lang.__constants__.include?('String')
+  end
 end
 
