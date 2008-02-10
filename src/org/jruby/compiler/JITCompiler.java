@@ -45,7 +45,7 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JavaNameMangler;
 
 public class JITCompiler {
-    public static final boolean USE_CACHE = true;
+    public static final boolean USE_CACHE = false;
     
     public static void runJIT(final DefaultMethod method, final Ruby runtime, ThreadContext context, final String name) {
         Set<Script> jittedMethods = runtime.getJittedMethods();
