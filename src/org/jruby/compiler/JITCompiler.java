@@ -45,7 +45,7 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JavaNameMangler;
 
 public class JITCompiler {
-    public static final boolean USE_CACHE = false;
+    public static final boolean USE_CACHE = true;
     
     public static void runJIT(final DefaultMethod method, final Ruby runtime, ThreadContext context, final String name) {
         Set<Script> jittedMethods = runtime.getJittedMethods();
@@ -53,7 +53,7 @@ public class JITCompiler {
         int jitMax = instanceConfig.getJitMax();
         
         // We either are not JIT'ing, or we have already JIT'd too much.  Go no further.
-        if (method.getCallCount() < 0 || jitMax == 0 || (jitMax == -1 && jittedMethods.size() >= jitMax)) return;
+        if (method.getCallCount() < 0 || jitMax == 0 || (jitMax != -1 && jittedMethods.size() >= jitMax)) return;
         
         try {
             method.setCallCount(method.getCallCount() + 1);
