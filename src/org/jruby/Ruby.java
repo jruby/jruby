@@ -105,7 +105,6 @@ import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.Stream;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.JRubyClassLoader;
@@ -2521,7 +2520,7 @@ public final class Ruby {
         return recordSeparatorVar;
     }
     
-    public Set getJittedMethods() {
+    public Set<Script> getJittedMethods() {
         return jittedMethods;
     }
 

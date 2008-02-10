@@ -17,7 +17,7 @@ import org.jruby.ast.executable.Script;
  */
 public class ClassCache {
     public interface ClassGenerator {
-        Class generate() throws ClassNotFoundException;
+        Class<Script> generate() throws ClassNotFoundException;
     }
     
     public interface ScriptGenerator {
@@ -60,7 +60,7 @@ public class ClassCache {
         return contents;
     }
     
-    public Class cacheClassByKey(Object key, ClassGenerator classGenerator) throws ClassNotFoundException {
+    public Class<Script> cacheClassByKey(Object key, ClassGenerator classGenerator) throws ClassNotFoundException {
         WeakReference weakRef = (WeakReference)cache.get(key);
         Class contents = null;
         if (weakRef != null) {
