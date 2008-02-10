@@ -118,4 +118,8 @@ class TestGlobals < Test::Unit::TestCase
   def test_that_last_exit_status_is_nil
     assert_nil $?
   end
+  
+  def test_backref_set_checks_for_matchdata
+    assert_raises(TypeError){$~ = 1}
+  end
 end

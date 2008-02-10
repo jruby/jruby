@@ -605,11 +605,6 @@ public class ASTInterpreter {
         BackRefNode iVisited = (BackRefNode) node;
         IRubyObject backref = context.getCurrentFrame().getBackRef();
         switch (iVisited.getType()) {
-        case '~':
-            if(backref instanceof RubyMatchData) {
-                ((RubyMatchData)backref).use();
-            }
-            return backref;
         case '&':
             return RubyRegexp.last_match(backref);
         case '`':

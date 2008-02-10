@@ -339,10 +339,13 @@ public class RubyGlobal {
         
         public IRubyObject get() {
             IRubyObject ret = runtime.getCurrentContext().getCurrentFrame().getBackRef();
-            if(ret instanceof RubyMatchData) {
-                ((RubyMatchData)ret).use();
-            }
+            if (ret instanceof RubyMatchData) ((RubyMatchData)ret).use();
             return ret;
+        }
+
+        public IRubyObject set(IRubyObject value) {
+            if (!(value instanceof RubyMatchData)) throw runtime.newTypeError(value, runtime.getMatchData());
+            return super.set(value);
         }
     }
 
