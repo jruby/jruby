@@ -15,7 +15,7 @@ class TestMethodMissing < Test::Unit::TestCase
     
     class AMethodMissingClass
         def method_missing name, *args
-            2
+            1
         end
     end
     
@@ -82,7 +82,7 @@ class TestMethodMissing < Test::Unit::TestCase
     end
     
     def test_attr_assign_missing_returns_rhs
-        assert_equal(AMethodMissingClass.new.foo=2,2 )
+        assert_equal(AMethodMissingClass.new.foo=2, 2)
         assert_equal(eval("AMethodMissingClass.new.foo=2"), 2)
     end
 end
