@@ -636,5 +636,15 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_marsal_java_object_fails
     assert_raises(TypeError) { Marshal.dump(java::lang::Object.new) }
   end
+
+  # JRUBY-1076
+  def test_package_module_aliased_methods
+    assert java.lang.respond_to?(:__constants__)
+    assert java.lang.respond_to?(:__methods__)
+
+    java.lang.String # ensure java.lang.String has been loaded
+    assert java.lang.__constants__.include?('String')
+  end
+
 end
 
