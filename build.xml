@@ -878,7 +878,9 @@
   </target>
 
   <target name="clean" depends="init" description="Cleans almost everything, leaves downloaded specs">
-    <delete dir="${build.dir}" excludes="rubyspec**" includeemptydirs="true"/>
+    <delete includeemptydirs="true">
+        <fileset dir="${build.dir}" excludes="rubyspec**"/>
+    </delete>
     <delete dir="${dist.dir}"/>
     <delete quiet="false">
         <fileset dir="${lib.dir}" includes="jruby*.jar"/>
