@@ -62,7 +62,7 @@ module JavaPackageModuleTemplate
             JavaUtilities.get_package_module_dot_format(@package_name + sym.to_s)
           end
         else
-          c = JavaUtilities.get_proxy_class(@package_name + sym.to_s)
+          JavaUtilities.get_proxy_class(@package_name + sym.to_s)
         end
       else
         super
