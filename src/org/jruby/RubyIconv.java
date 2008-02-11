@@ -211,7 +211,7 @@ public class RubyIconv extends RubyObject {
         Ruby runtime = getRuntime();
         args = Arity.scanArgs(runtime, args, 1, 2);
         int start = 0;
-        int length = -1;
+        int end = -1;
 
         if (args[0].isNil()) {
             fromEncoding.reset();
@@ -222,20 +222,33 @@ public class RubyIconv extends RubyObject {
             throw runtime.newTypeError("can't convert " + args[0].getMetaClass() + " into String");
         }
         if (!args[1].isNil()) start = RubyNumeric.fix2int(args[1]);
-        if (!args[2].isNil()) length = RubyNumeric.fix2int(args[2]);
+        if (!args[2].isNil()) end = RubyNumeric.fix2int(args[2]);
         
-        IRubyObject result = _iconv(args[0].convertToString(), start, length);
+        IRubyObject result = _iconv(args[0].convertToString(), start, end);
         return result;
     }
 
     // FIXME: We are assuming that original string will be raw bytes.  If -Ku is provided
     // this will not be true, but that is ok for now.  Deal with that when someone needs it.
-    private IRubyObject _iconv(RubyString str, int start, int length) {
+    private IRubyObject _iconv(RubyString str, int start, int end) {
         ByteList bytes = str.getByteList();
         
-        if (length < 0) length = bytes.length() - start;
+        // treat start and end as start...end for end >= 0, start..end for end < 0
+        if (start < 0) {
+            start += bytes.length();
+        }
         
-        ByteBuffer buf = ByteBuffer.wrap(bytes.unsafeBytes(), start, length);
+        if (end < 0) {
+            end += 1 + bytes.length();
+        } else if (end > bytes.length()) {
+            end = bytes.length();
+        }
+        
+        if (start < 0 || end < start) { // invalid ranges result in an empty string
+            return getRuntime().newString();
+        }
+        
+        ByteBuffer buf = ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin() + start, end - start);
         
         try {
             CharBuffer cbuf = fromEncoding.decode(buf);

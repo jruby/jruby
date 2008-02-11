@@ -90,4 +90,35 @@ class TestIconv < Test::Unit::TestCase
   def test_unknown_encoding
   	assert_raise(Iconv::InvalidEncoding) { Iconv.iconv("utf-8", "X-UKNOWN", "heh") }
   end
+  
+  def test_string_offset
+    # it should respect the internal offset of substrings
+    iconv = Iconv.new("utf-16be", "utf-8")
+    orig1 = "test"
+    orig2 = "###test###"[3, 4]
+    str1 = iconv.iconv(orig1)
+    str2 = iconv.iconv(orig2)
+    assert_equal( str1, str2 )
+  end
+  
+  def test_iconv_range
+    iconv = Iconv.new("us-ascii", "us-ascii")
+    assert_equal( "", iconv.iconv("", 0, 0) )
+    assert_equal( "", iconv.iconv("", 0, 2) )
+    assert_equal( "", iconv.iconv("", 3, 4) )
+    assert_equal( "", iconv.iconv("hello", 3, 0) )
+    assert_equal( "o", iconv.iconv("hello", -1) )
+    assert_equal( "o", iconv.iconv("hello", -1, -1) )
+    assert_equal( "", iconv.iconv("hello", -1, -2) )
+    assert_equal( "lo", iconv.iconv("hello", -2, -1) )
+    assert_equal( "l", iconv.iconv("hello", -2, -2) )
+    assert_equal( "ll", iconv.iconv("hello", -3, 4) )
+    assert_equal( "he", iconv.iconv("hello", 0, -4) )
+    assert_equal( "ell", iconv.iconv("hello", -4, -2) )
+    assert_equal( "", iconv.iconv("hello", -4, 0) )
+    assert_equal( "", iconv.iconv("hello", -2, -4) )
+    assert_equal( "ell", iconv.iconv("hello", 1, -2) )
+    assert_equal( "hello", iconv.iconv("hello", -5, 100) )
+    assert_equal( "", iconv.iconv("hello", -6, 100) )
+  end
 end

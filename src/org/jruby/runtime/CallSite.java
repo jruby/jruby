@@ -135,7 +135,7 @@ public abstract class CallSite {
         public InlineCachingCallSite(String methodName, CallType callType) {
             super(MethodIndex.getIndex(methodName), methodName, callType);
         }
-
+        
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, IRubyObject[] args, ThreadContext context, IRubyObject self) {
             DynamicMethod method = selfType.searchMethod(methodName);
 
@@ -302,22 +302,20 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            while (true) {
-                try {
-                    RubyClass selfType = self.getMetaClass();
+            try {
+                RubyClass selfType = self.getMetaClass();
 
-                    if (cachedType == selfType && cachedMethod != null) {
-                        return cachedMethod.call(context, self, selfType, methodName, args, block);
-                    }
-
-                    return cacheAndCall(selfType, block, args, context, self);
-                } catch (JumpException.BreakJump bj) {
-                    return handleBreakJump(bj, block);
-                } catch (JumpException.RetryJump rj) {
-                    throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
-                } catch (StackOverflowError soe) {
-                    throw context.getRuntime().newSystemStackError("stack level too deep");
+                if (cachedType == selfType && cachedMethod != null) {
+                    return cachedMethod.call(context, self, selfType, methodName, args, block);
                 }
+
+                return cacheAndCall(selfType, block, args, context, self);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(bj, block);
+            } catch (JumpException.RetryJump rj) {
+                throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+            } catch (StackOverflowError soe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep");
             }
         }
         
@@ -332,22 +330,20 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, Block block) {
-            while (true) {
-                try {
-                    RubyClass selfType = self.getMetaClass();
+            try {
+                RubyClass selfType = self.getMetaClass();
 
-                    if (cachedType == selfType && cachedMethod != null) {
-                        return cachedMethod.call(context, self, selfType, methodName, block);
-                    }
-
-                    return cacheAndCall(selfType, block, context, self);
-                } catch (JumpException.BreakJump bj) {
-                    return handleBreakJump(bj, block);
-                } catch (JumpException.RetryJump rj) {
-                    throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
-                } catch (StackOverflowError soe) {
-                    throw context.getRuntime().newSystemStackError("stack level too deep");
+                if (cachedType == selfType && cachedMethod != null) {
+                    return cachedMethod.call(context, self, selfType, methodName, block);
                 }
+
+                return cacheAndCall(selfType, block, context, self);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(bj, block);
+            } catch (JumpException.RetryJump rj) {
+                throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+            } catch (StackOverflowError soe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep");
             }
         }
         
@@ -362,22 +358,20 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
-            while (true) {
-                try {
-                    RubyClass selfType = self.getMetaClass();
+            try {
+                RubyClass selfType = self.getMetaClass();
 
-                    if (cachedType == selfType && cachedMethod != null) {
-                        return cachedMethod.call(context, self, selfType, methodName, arg1, block);
-                    }
-
-                    return cacheAndCall(selfType, block, context, self, arg1);
-                } catch (JumpException.BreakJump bj) {
-                    return handleBreakJump(bj, block);
-                } catch (JumpException.RetryJump rj) {
-                    throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
-                } catch (StackOverflowError soe) {
-                    throw context.getRuntime().newSystemStackError("stack level too deep");
+                if (cachedType == selfType && cachedMethod != null) {
+                    return cachedMethod.call(context, self, selfType, methodName, arg1, block);
                 }
+
+                return cacheAndCall(selfType, block, context, self, arg1);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(bj, block);
+            } catch (JumpException.RetryJump rj) {
+                throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+            } catch (StackOverflowError soe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep");
             }
         }
         
@@ -392,22 +386,20 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
-            while (true) {
-                try {
-                    RubyClass selfType = self.getMetaClass();
+            try {
+                RubyClass selfType = self.getMetaClass();
 
-                    if (cachedType == selfType && cachedMethod != null) {
-                        return cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
-                    }
-
-                    return cacheAndCall(selfType, block, context, self, arg1, arg2);
-                } catch (JumpException.BreakJump bj) {
-                    return handleBreakJump(bj, block);
-                } catch (JumpException.RetryJump rj) {
-                    throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
-                } catch (StackOverflowError soe) {
-                    throw context.getRuntime().newSystemStackError("stack level too deep");
+                if (cachedType == selfType && cachedMethod != null) {
+                    return cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
                 }
+
+                return cacheAndCall(selfType, block, context, self, arg1, arg2);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(bj, block);
+            } catch (JumpException.RetryJump rj) {
+                throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+            } catch (StackOverflowError soe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep");
             }
         }
         
@@ -422,22 +414,20 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-            while (true) {
-                try {
-                    RubyClass selfType = self.getMetaClass();
+            try {
+                RubyClass selfType = self.getMetaClass();
 
-                    if (cachedType == selfType && cachedMethod != null) {
-                        return cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
-                    }
-
-                    return cacheAndCall(selfType, block, context, self, arg1, arg2, arg3);
-                } catch (JumpException.BreakJump bj) {
-                    return handleBreakJump(bj, block);
-                } catch (JumpException.RetryJump rj) {
-                    throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
-                } catch (StackOverflowError soe) {
-                    throw context.getRuntime().newSystemStackError("stack level too deep");
+                if (cachedType == selfType && cachedMethod != null) {
+                    return cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
                 }
+
+                return cacheAndCall(selfType, block, context, self, arg1, arg2, arg3);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(bj, block);
+            } catch (JumpException.RetryJump rj) {
+                throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+            } catch (StackOverflowError soe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep");
             }
         }
 
