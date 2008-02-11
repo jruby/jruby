@@ -25,15 +25,12 @@ public class TestCodeCache extends TestCase {
 
         System.setProperty("jruby.compile.mode", "JIT");
         System.setProperty("jruby.jit.threshold", "0");
-        
-        runtime1 = JavaEmbedUtils.initialize(new ArrayList<Object>());
-        runtime2 = JavaEmbedUtils.initialize(new ArrayList<Object>());
-        evaler = JavaEmbedUtils.newRuntimeAdapter();
-        
+
         ClassCache classCache = new ClassCache(Thread.currentThread().getContextClassLoader());
-        
-        runtime1.getInstanceConfig().setClassCache(classCache);
-        runtime2.getInstanceConfig().setClassCache(classCache);
+
+        runtime1 = JavaEmbedUtils.initialize(new ArrayList<Object>(), classCache);
+        runtime2 = JavaEmbedUtils.initialize(new ArrayList<Object>(), classCache);
+        evaler = JavaEmbedUtils.newRuntimeAdapter();
         
         super.setUp();
     }

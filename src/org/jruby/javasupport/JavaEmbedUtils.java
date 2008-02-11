@@ -32,6 +32,7 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyObjectAdapter;
@@ -40,6 +41,7 @@ import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ClassCache;
 
 /**
  * Utility functions to help embedders out.   These function consolidate logic that is
@@ -55,7 +57,14 @@ public class JavaEmbedUtils {
      * @return an instance
      */
     public static Ruby initialize(List loadPaths) {
-        Ruby runtime = Ruby.newInstance();
+        return initialize(loadPaths, null);
+    }
+    
+    public static Ruby initialize(List loadPaths, ClassCache classCache) {
+        RubyInstanceConfig config = new RubyInstanceConfig();
+        
+        if (classCache != null) config.setClassCache(classCache);
+        Ruby runtime = Ruby.newInstance(config);
         runtime.getLoadService().init(loadPaths);
         runtime.getLoadService().require("java");
 
