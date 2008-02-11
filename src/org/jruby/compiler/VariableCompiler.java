@@ -47,6 +47,7 @@ public interface VariableCompiler {
     public void retrieveLocalVariable(int index);
     public void assignLastLine();
     public void retrieveLastLine();
+    public void assignBackRef();
     public void retrieveBackRef();
     public void assignLocalVariable(int index, int depth);
     public void retrieveLocalVariable(int index, int depth);

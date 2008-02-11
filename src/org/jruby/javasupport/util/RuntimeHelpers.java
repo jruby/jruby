@@ -804,4 +804,23 @@ public class RuntimeHelpers {
     public static void setErrorInfo(Ruby runtime, IRubyObject error) {
         runtime.getGlobalVariables().set("$!", error);
     }
+
+    public static void setLastLine(Ruby runtime, IRubyObject value) {
+        runtime.getCurrentContext().getCurrentFrame().setLastLine(value);
+    }
+
+    public static IRubyObject getLastLine(Ruby runtime) {
+        return runtime.getCurrentContext().getCurrentFrame().getLastLine();
+    }
+
+    public static void setBackref(Ruby runtime, IRubyObject value) {
+        if (!(value instanceof RubyMatchData)) throw runtime.newTypeError(value, runtime.getMatchData());
+        runtime.getCurrentContext().getCurrentFrame().setBackRef(value);
+    }
+
+    public static IRubyObject getBackref(Ruby runtime) {
+        IRubyObject backref = runtime.getCurrentContext().getCurrentFrame().getBackRef();
+        if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
+        return backref;
+    }
 }

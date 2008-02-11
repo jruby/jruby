@@ -32,11 +32,14 @@ import org.jruby.RubyArray;
 import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.VariableCompiler;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.CodegenUtils.*;
+
 import org.objectweb.asm.Label;
 
 /**
@@ -74,23 +77,26 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
 
     public void assignLastLine() {
         method.dup();
-
-        methodCompiler.loadThreadContext();
-        methodCompiler.invokeThreadContext("getCurrentFrame", sig(Frame.class));
+        methodCompiler.loadRuntime();
         method.swap();
-        method.invokevirtual(p(Frame.class), "setLastLine", sig(Void.TYPE, params(IRubyObject.class)));
+        method.invokestatic(p(RuntimeHelpers.class), "setLastLine", sig(void.class, Ruby.class, IRubyObject.class));
     }
 
     public void retrieveLastLine() {
-        methodCompiler.loadThreadContext();
-        methodCompiler.invokeThreadContext("getCurrentFrame", sig(Frame.class));
-        method.invokevirtual(p(Frame.class), "getLastLine", sig(IRubyObject.class));
+        methodCompiler.loadRuntime();
+        method.invokestatic(p(RuntimeHelpers.class), "getLastLine", sig(IRubyObject.class, Ruby.class));
     }
 
+    public void assignBackRef() {
+        method.dup();
+        methodCompiler.loadRuntime();
+        method.swap();
+        method.invokestatic(p(RuntimeHelpers.class), "setBackref", sig(void.class, Ruby.class, IRubyObject.class));
+    }    
+
     public void retrieveBackRef() {
-        methodCompiler.loadThreadContext();
-        methodCompiler.invokeThreadContext("getCurrentFrame", sig(Frame.class));
-        method.invokevirtual(p(Frame.class), "getBackRef", sig(IRubyObject.class));
+        methodCompiler.loadRuntime();
+        method.invokestatic(p(RuntimeHelpers.class), "getBackref", sig(IRubyObject.class, Ruby.class));
     }
 
     public void checkMethodArity(int requiredArgs, int optArgs, int restArg) {

@@ -2067,7 +2067,7 @@ public class ASTCompiler {
                     context.getVariableCompiler().assignLastLine();
                     return;
                 case '~':
-                    assert false : "Parser shouldn't allow assigning to $~";
+                    context.getVariableCompiler().assignBackRef();
                     return;
                 default:
                 // fall off the end, handle it as a normal global
@@ -2086,7 +2086,7 @@ public class ASTCompiler {
                     context.getVariableCompiler().assignLastLine();
                     return;
                 case '~':
-                    assert false : "Parser shouldn't allow assigning to $~";
+                    context.getVariableCompiler().assignBackRef();
                     return;
                 default:
                 // fall off the end, handle it as a normal global

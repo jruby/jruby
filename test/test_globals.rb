@@ -122,4 +122,14 @@ class TestGlobals < Test::Unit::TestCase
   def test_backref_set_checks_for_matchdata
     assert_raises(TypeError){$~ = 1}
   end
+  
+  def test_backref_assignment
+    "ac" =~ /a/
+    m = $~
+    "ab" =~ /a/
+
+    assert_equal(m.post_match, "c")
+    $~ = m
+    assert_equal($~.post_match, "c")
+  end
 end
