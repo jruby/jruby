@@ -433,23 +433,6 @@ e.printStackTrace();
             } catch(Exception e) {}
         }
 
-        if (checkCWD) {
-            // check current directory; if file exists, retrieve URL and return resource
-            try {
-                JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), name);
-                if (file.isFile() && file.isAbsolute()) {
-                    try {
-                        return new LoadServiceResource(file.toURI().toURL(), name);
-                    } catch (MalformedURLException e) {
-                        throw runtime.newIOErrorFromException(e);
-                    }
-                }
-            } catch (IllegalArgumentException illArgEx) {
-            } catch (SecurityException secEx) {
-            }
-        }
-        
-
         for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
             // TODO this is really ineffient, ant potentially a problem everytime anyone require's something.
             // we should try to make LoadPath a special array object.
@@ -505,6 +488,23 @@ e.printStackTrace();
                 }
             } catch (SecurityException secEx) { }
         }
+
+        if (checkCWD) {
+            // check current directory; if file exists, retrieve URL and return resource
+            try {
+                JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), name);
+                if (file.isFile() && file.isAbsolute()) {
+                    try {
+                        return new LoadServiceResource(file.toURI().toURL(), name);
+                    } catch (MalformedURLException e) {
+                        throw runtime.newIOErrorFromException(e);
+                    }
+                }
+            } catch (IllegalArgumentException illArgEx) {
+            } catch (SecurityException secEx) {
+            }
+        }
+
 
         return null;
     }

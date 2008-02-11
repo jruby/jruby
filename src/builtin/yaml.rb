@@ -1,4 +1,5 @@
 require 'java' #needed for the module JavaUtilities, which JavaEmbedUtils have a dependency on
+require 'date'
 require 'yaml_internal'
 
 module YAML

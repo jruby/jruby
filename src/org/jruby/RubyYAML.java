@@ -69,7 +69,6 @@ import org.jvyamlb.YAML;
  */
 public class RubyYAML {
     public static RubyModule createYAMLModule(Ruby runtime) {
-        runtime.getKernel().callMethod(runtime.getCurrentContext(),"require", runtime.newString("date"));
         RubyModule result = runtime.defineModule("YAML");
 
         result.defineAnnotatedMethods(RubyYAML.class);
