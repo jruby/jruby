@@ -84,7 +84,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestRubyBigDecimal.class);
         suite.addTestSuite(JRubyThreadContextTest.class);
         suite.addTestSuite(JavaFileStatTest.class);
-        //suite.addTestSuite(TestCodeCache.class);
+        suite.addTestSuite(TestCodeCache.class);
         return suite;
     }
 }

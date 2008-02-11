@@ -71,7 +71,7 @@ public class SuperNode extends Node implements BlockAcceptingNode {
     }
     
     public List<Node> childNodes() {
-        return createList(argsNode);
+        return iterNode != null ? createList(argsNode, iterNode) : createList(argsNode); 
     }
 
     public Node getIterNode() {
