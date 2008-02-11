@@ -350,7 +350,12 @@ public class ChannelStream implements Stream, Finalizable {
      * @see org.jruby.util.IOHandler#getInputStream()
      */
     public InputStream newInputStream() {
-        return new BufferedInputStream(Channels.newInputStream((ReadableByteChannel)descriptor.getChannel()));
+        InputStream in = descriptor.getBaseInputStream();
+        if (in == null) {
+            return new BufferedInputStream(Channels.newInputStream((ReadableByteChannel)descriptor.getChannel()));
+        } else {
+            return in;
+        }
     }
 
     /**

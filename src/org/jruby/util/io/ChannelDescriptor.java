@@ -91,6 +91,13 @@ public class ChannelDescriptor {
      * Only counts references through ChannelDescriptor instances.
      */
     private final AtomicInteger refCounter;
+
+    /**
+     * Used to work-around blocking problems with STDIN. In most cases <code>null</code>.
+     * See {@link #ChannelDescriptor(InputStream, int, ModeFlags, FileDescriptor)}
+     * for more details. You probably should not use it.
+     */
+    private InputStream baseInputStream;
     
     /**
      * Construct a new ChannelDescriptor with the specified channel, file number,
@@ -114,7 +121,7 @@ public class ChannelDescriptor {
     }
 
     /**
-     * Construct a new ChannelDescriptor with the given channel, fil enumber, mode flags,
+     * Construct a new ChannelDescriptor with the given channel, file number, mode flags,
      * and file descriptor object. The channel will be kept open until all ChannelDescriptor
      * references to it have been closed.
      * 
@@ -126,9 +133,31 @@ public class ChannelDescriptor {
     public ChannelDescriptor(Channel channel, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor) {
         this(channel, fileno, originalModes, fileDescriptor, new AtomicInteger(1));
     }
-    
+
     /**
-     * Construct a new ChannelDescriptor with the given channel, fil enumber,
+     * Special constructor to create the ChannelDescriptor out of the stream, file number,
+     * mode flags, and file descriptor object. The channel will be created from the
+     * provided stream. The channel will be kept open until all ChannelDescriptor
+     * references to it have been closed. <b>Note:</b> in most cases, you should not
+     * use this constructor, it's reserved mostly for STDIN.
+     *
+     * @param baseInputStream The stream to create the channel for the new descriptor
+     * @param fileno The file number for the new descriptor
+     * @param originalModes The mode flags for the new descriptor
+     * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
+     */
+    public ChannelDescriptor(InputStream baseInputStream, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor) {
+        // The reason why we need the stream is to be able to invoke available() on it.
+        // STDIN in Java is non-interruptible, non-selectable, and attempt to read
+        // on such stream might lead to thread being blocked without *any* way to unblock it.
+        // That's where available() comes it, so at least we could check whether
+        // anything is available to be read without blocking.
+        this(Channels.newChannel(baseInputStream), fileno, originalModes, fileDescriptor, new AtomicInteger(1));
+        this.baseInputStream = baseInputStream;
+    }
+
+    /**
+     * Construct a new ChannelDescriptor with the given channel, file number,
      * and file descriptor object. The channel will be kept open until all ChannelDescriptor
      * references to it have been closed. The channel's capabilities will be used
      * to determine the "original" set of mode flags.
@@ -172,6 +201,16 @@ public class ChannelDescriptor {
      */
     public Channel getChannel() {
         return channel;
+    }
+
+    /**
+     * This is intentionally non-public, since it should not be really
+     * used outside of very limited use case (handling of STDIN).
+     * See {@link #ChannelDescriptor(InputStream, int, ModeFlags, FileDescriptor)}
+     * for more info.
+     */
+    /*package-protected*/ InputStream getBaseInputStream() {
+        return baseInputStream;
     }
 
     /**

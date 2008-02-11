@@ -286,7 +286,12 @@ public class ShellLauncher {
 
         StreamPumper t1 = new StreamPumper(pOut, out, false);
         StreamPumper t2 = new StreamPumper(pErr, err, false);
+
+        // The assumption here is that the 'in' stream provides
+        // proper available() support. If available() always
+        // returns 0, we'll hang!
         StreamPumper t3 = new StreamPumper(in, pIn, true);
+
         t1.start();
         t2.start();
         t3.start();

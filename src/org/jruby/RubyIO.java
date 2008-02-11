@@ -245,7 +245,8 @@ public class RubyIO extends RubyObject {
                 openFile.setMainStream(
                         new ChannelStream(
                             runtime, 
-                            new ChannelDescriptor(Channels.newChannel(runtime.getIn()), 0, new ModeFlags(ModeFlags.RDONLY), FileDescriptor.in),
+                            // special constructor that accepts stream, not channel
+                            new ChannelDescriptor(runtime.getIn(), 0, new ModeFlags(ModeFlags.RDONLY), FileDescriptor.in),
                             FileDescriptor.in));
                 break;
             case OUT:
