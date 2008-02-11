@@ -38,11 +38,14 @@ rem now unescape -q and -d
 set _CMP=%_CMP:-q="%
 set _CMP=%_CMP:-d=-%
 set _CMP1=%_CMP:~0,1%
+set _CMP2=%_CMP:~0,2%
 
 rem detect first character is a quote; skip directly to rubyarg
 rem this avoids a batch syntax error
 if "%_CMP1:"=\\%" == "\\" goto rubyarg
-if "%_CMP:~0,2%" == "-J" goto jvmarg
+
+rem removing quote avoids a batch syntax error
+if "%_CMP2:"=\\%" == "-J" goto jvmarg
 
 :rubyarg
 set _RUBY_OPTS=%_RUBY_OPTS% %_CMP%
