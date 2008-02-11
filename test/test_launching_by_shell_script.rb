@@ -31,12 +31,12 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     assert_equal 0, $?.exitstatus
   end
 
-  def test_system_call_without_stdin_data_doesnt_hang
-    out = jruby("-e 'system \"dir\"'")
-    assert(out =~ /COPYING.LGPL/)
-  end
-
   if !WINDOWS
+    def test_system_call_without_stdin_data_doesnt_hang
+      out = jruby("-e 'system \"dir\"'")
+      assert(out =~ /COPYING.LGPL/)
+    end
+
     def test_system_call_with_stdin_data_doesnt_hang
       out = jruby_with_pipe("echo 'vvs'", "-e 'system \"cat\"'")
       assert_equal("vvs\n", out)
