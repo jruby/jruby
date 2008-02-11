@@ -964,9 +964,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         }
         b1.realSize = tix;
         return b1;
-//        RubyString tmp = RubyString.newString(str.getRuntime(),b1);
-//        tmp.infectBy(str);
-//        return tmp;
     }
 
 
