@@ -338,11 +338,11 @@ public class RubyGlobal {
         }
         
         public IRubyObject get() {
-            return RuntimeHelpers.getBackref(runtime);
+            return RuntimeHelpers.getBackref(runtime, runtime.getCurrentContext());
         }
 
         public IRubyObject set(IRubyObject value) {
-            RuntimeHelpers.setBackref(runtime, value);
+            RuntimeHelpers.setBackref(runtime, runtime.getCurrentContext(), value);
             return value;
         }
     }
@@ -501,11 +501,11 @@ public class RubyGlobal {
         }
 
         public IRubyObject get() {
-            return RuntimeHelpers.getLastLine(runtime);
+            return RuntimeHelpers.getLastLine(runtime, runtime.getCurrentContext());
         }
 
         public IRubyObject set(IRubyObject value) {
-            RuntimeHelpers.setLastLine(runtime, value);
+            RuntimeHelpers.setLastLine(runtime, runtime.getCurrentContext(), value);
             return value;
         }
     }

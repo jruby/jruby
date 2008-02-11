@@ -805,21 +805,21 @@ public class RuntimeHelpers {
         runtime.getGlobalVariables().set("$!", error);
     }
 
-    public static void setLastLine(Ruby runtime, IRubyObject value) {
-        runtime.getCurrentContext().getCurrentFrame().setLastLine(value);
+    public static void setLastLine(Ruby runtime, ThreadContext context, IRubyObject value) {
+        context.getCurrentFrame().setLastLine(value);
     }
 
-    public static IRubyObject getLastLine(Ruby runtime) {
-        return runtime.getCurrentContext().getCurrentFrame().getLastLine();
+    public static IRubyObject getLastLine(Ruby runtime, ThreadContext context) {
+        return context.getCurrentFrame().getLastLine();
     }
 
-    public static void setBackref(Ruby runtime, IRubyObject value) {
+    public static void setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
         if (!value.isNil() && !(value instanceof RubyMatchData)) throw runtime.newTypeError(value, runtime.getMatchData());
-        runtime.getCurrentContext().getCurrentFrame().setBackRef(value);
+        context.getCurrentFrame().setBackRef(value);
     }
 
-    public static IRubyObject getBackref(Ruby runtime) {
-        IRubyObject backref = runtime.getCurrentContext().getCurrentFrame().getBackRef();
+    public static IRubyObject getBackref(Ruby runtime, ThreadContext context) {
+        IRubyObject backref = context.getCurrentFrame().getBackRef();
         if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
         return backref;
     }
