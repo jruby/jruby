@@ -814,7 +814,7 @@ public class RuntimeHelpers {
     }
 
     public static void setBackref(Ruby runtime, IRubyObject value) {
-        if (!(value instanceof RubyMatchData)) throw runtime.newTypeError(value, runtime.getMatchData());
+        if (!value.isNil() && !(value instanceof RubyMatchData)) throw runtime.newTypeError(value, runtime.getMatchData());
         runtime.getCurrentContext().getCurrentFrame().setBackRef(value);
     }
 
