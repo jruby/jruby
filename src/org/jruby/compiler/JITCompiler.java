@@ -120,7 +120,7 @@ public class JITCompiler {
 
                     sourceClass = instanceConfig.getClassCache().cacheClassByKey(key, classGenerator);
                 } else {
-                    sourceClass = classGenerator.generate(runtime.getJRubyClassLoader());
+                    sourceClass = classGenerator.generate(new JRubyClassLoader(runtime.getJRubyClassLoader()));
                 }
 
                 // if we haven't already decided on a do-nothing call
