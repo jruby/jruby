@@ -48,6 +48,22 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
 public class JavaSupport {
+    private static final Map<String,Class> PRIMITIVE_CLASSES = new HashMap<String,Class>();
+    static {
+        PRIMITIVE_CLASSES.put("boolean", Boolean.TYPE);
+        PRIMITIVE_CLASSES.put("byte", Byte.TYPE);
+        PRIMITIVE_CLASSES.put("char", Character.TYPE);
+        PRIMITIVE_CLASSES.put("short", Short.TYPE);
+        PRIMITIVE_CLASSES.put("int", Integer.TYPE);
+        PRIMITIVE_CLASSES.put("long", Long.TYPE);
+        PRIMITIVE_CLASSES.put("float", Float.TYPE);
+        PRIMITIVE_CLASSES.put("double", Double.TYPE);
+    }
+    
+    public static Class getPrimitiveClass(String primitiveType) {
+        return PRIMITIVE_CLASSES.get(primitiveType);
+    }
+
     private final Ruby runtime;
 
     private final Map<String, RubyProc> exceptionHandlers = new HashMap<String, RubyProc>();
@@ -114,12 +130,14 @@ public class JavaSupport {
     
     public Class loadJavaClass(String className) {
         try {
-            Class result = primitiveClass(className);
-            if(result == null) {
-                return (Ruby.isSecurityRestricted()) ? Class.forName(className) :
-                   Class.forName(className, true, runtime.getJRubyClassLoader());
+            Class primitiveClass;
+            if ((primitiveClass = PRIMITIVE_CLASSES.get(className)) == null) {
+                if (!Ruby.isSecurityRestricted()) {
+                    return Class.forName(className, true, runtime.getJRubyClassLoader());
+                }
+                return Class.forName(className);
             }
-            return result;
+            return primitiveClass;
         } catch (ClassNotFoundException cnfExcptn) {
             throw runtime.newNameError("cannot load Java class " + className, className, cnfExcptn);
         } catch (ExceptionInInitializerError eiie) {
@@ -166,27 +184,6 @@ public class JavaSupport {
         return re;
     }
 
-    private static Class primitiveClass(String name) {
-        if (name.equals("long")) {
-            return Long.TYPE;
-        } else if (name.equals("int")) {
-            return Integer.TYPE;
-        } else if (name.equals("boolean")) {
-            return Boolean.TYPE;
-        } else if (name.equals("char")) {
-            return Character.TYPE;
-        } else if (name.equals("short")) {
-            return Short.TYPE;
-        } else if (name.equals("byte")) {
-            return Byte.TYPE;
-        } else if (name.equals("float")) {
-            return Float.TYPE;
-        } else if (name.equals("double")) {
-            return Double.TYPE;
-        }
-        return null;
-    }
-    
     public ObjectProxyCache<IRubyObject,RubyClass> getObjectProxyCache() {
         return objectProxyCache;
     }

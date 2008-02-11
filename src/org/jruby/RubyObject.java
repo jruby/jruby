@@ -289,7 +289,9 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      */
     public final RubyClass getMetaClass() {
-        if (Ruby.RUNTIME_THREADLOCAL && metaClass == null && metaClassName != null) {
+        RubyClass mc;
+        if ((mc = metaClass) != null) return mc;
+        if (Ruby.RUNTIME_THREADLOCAL && metaClassName != null) {
             // this should only happen when we're persisting objects, so go after getCurrentInstance directly
             metaClass = Ruby.getCurrentInstance().getClass(metaClassName);
         }

@@ -26,18 +26,6 @@ module JavaUtilities
     }
   end
 
-  def JavaUtilities.get_java_class(name)
-    begin
-      return Java::JavaClass.for_name(name)
-    rescue NameError
-      return nil
-    end
-  end
-  
-  def JavaUtilities.create_proxy_class(constant, java_class, mod)
-    mod.const_set(constant.to_s, get_proxy_class(java_class))
-  end
-  
   def JavaUtilities.print_class(java_type, indent="")
      while (!java_type.nil? && java_type.name != "java.lang.Class")
         puts "#{indent}Name:  #{java_type.name}, access: #{ JavaUtilities.access(java_type) }  Interfaces: "
@@ -48,17 +36,4 @@ module JavaUtilities
      end
   end
 
-  @primitives = {
-    :boolean => true,
-    :byte => true,
-    :char => true,
-    :short => true,
-    :int => true,
-    :long => true,
-    :float => true,
-    :double => true  
-  }
-  def JavaUtilities.is_primitive_type(sym)
-    @primitives[sym]  
-  end
 end

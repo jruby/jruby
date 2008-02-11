@@ -635,15 +635,15 @@ class TestHigherJavasupport < Test::Unit::TestCase
   
   # JRUBY-2088
   def test_package_notation_with_arguments
-    assert_raises(NoMethodError) do 
+    assert_raises(ArgumentError) do 
       java.lang("ABC").String
     end
 
-    assert_raises(NoMethodError) do 
+    assert_raises(ArgumentError) do 
       java.lang.String(123)
     end
     
-    assert_raises(NoMethodError) do 
+    assert_raises(ArgumentError) do 
       Java::se("foobar").com.Foobar
     end
   end
