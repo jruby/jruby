@@ -30,7 +30,7 @@ public class TestCodeCache extends TestCase {
         runtime2 = JavaEmbedUtils.initialize(new ArrayList<Object>());
         evaler = JavaEmbedUtils.newRuntimeAdapter();
         
-        ClassCache classCache = new ClassCache();
+        ClassCache classCache = new ClassCache(Thread.currentThread().getContextClassLoader());
         
         runtime1.getInstanceConfig().setClassCache(classCache);
         runtime2.getInstanceConfig().setClassCache(classCache);

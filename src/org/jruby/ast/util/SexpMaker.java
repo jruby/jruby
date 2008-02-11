@@ -1,6 +1,43 @@
 package org.jruby.ast.util;
 
-import org.jruby.ast.*;
+import org.jruby.ast.AliasNode;
+import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.AttrAssignNode;
+import org.jruby.ast.BackRefNode;
+import org.jruby.ast.BignumNode;
+import org.jruby.ast.BlockArgNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.ClassVarAsgnNode;
+import org.jruby.ast.ClassVarDeclNode;
+import org.jruby.ast.ClassVarNode;
+import org.jruby.ast.Colon2Node;
+import org.jruby.ast.Colon3Node;
+import org.jruby.ast.ConstDeclNode;
+import org.jruby.ast.ConstNode;
+import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.DRegexpNode;
+import org.jruby.ast.DVarNode;
+import org.jruby.ast.DotNode;
+import org.jruby.ast.FCallNode;
+import org.jruby.ast.FixnumNode;
+import org.jruby.ast.FlipNode;
+import org.jruby.ast.FloatNode;
+import org.jruby.ast.GlobalAsgnNode;
+import org.jruby.ast.GlobalVarNode;
+import org.jruby.ast.InstAsgnNode;
+import org.jruby.ast.InstVarNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.LocalVarNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.NthRefNode;
+import org.jruby.ast.OpElementAsgnNode;
+import org.jruby.ast.RegexpNode;
+import org.jruby.ast.StrNode;
+import org.jruby.ast.SymbolNode;
+import org.jruby.ast.UndefNode;
+import org.jruby.ast.VAliasNode;
+import org.jruby.ast.VCallNode;
+import org.jruby.ast.XStrNode;
 
 public class SexpMaker {
     private StringBuffer sb;

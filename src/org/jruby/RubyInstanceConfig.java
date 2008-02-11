@@ -92,7 +92,7 @@ public class RubyInstanceConfig {
 
     private ClassLoader loader = Thread.currentThread().getContextClassLoader();
     
-    private ClassCache classCache = new ClassCache();
+    private ClassCache classCache = new ClassCache(loader);
     
     // from CommandlineParser
     private List<String> loadPaths = new ArrayList<String>();

@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.jruby.util;
 
 import java.lang.ref.WeakReference;
@@ -12,80 +7,40 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.ast.executable.Script;
 
 /**
- *
- * @author headius
+ * A Simple cache which maintains a collection of classes that can potentially be shared among
+ * multiple runtimes (or whole JVM).
  */
 public class ClassCache {
     public interface ClassGenerator {
-        Class<Script> generate() throws ClassNotFoundException;
+        Class<Script> generate(ClassLoader classLoader) throws ClassNotFoundException;
     }
     
-    public interface ScriptGenerator {
-        Script generate() throws ClassNotFoundException;
+    /**
+     * The ClassLoader this class cache will use for any classes generated through it.  It is 
+     * assumed that the classloader provided will be a parent loader of any runtime using it.
+     * @param classLoader to use to generate shared classes
+     */
+    public ClassCache(ClassLoader classLoader) {
+        this.classLoader = classLoader;
     }
     
-    private Map cache = new ConcurrentHashMap();
+    private Map<Object, WeakReference<Class<Script>>> cache = 
+        new ConcurrentHashMap<Object, WeakReference<Class<Script>>>();
+    private ClassLoader classLoader;
     
-    public Class cacheClassByBytes(byte[] bytecode, ClassGenerator classGenerator) throws ClassNotFoundException {
-        int hashcode = Arrays.hashCode(bytecode);
-        
-        WeakReference weakRef = (WeakReference)cache.get(hashcode);
-        Class contents = null;
-        if (weakRef != null) {
-            contents = (Class)weakRef.get();
-        }
+    public ClassLoader getClassLoader() {
+        return classLoader;
+    }
+    
+    public Class<Script> cacheClassByKey(Object key, ClassGenerator classGenerator) 
+        throws ClassNotFoundException {
+        WeakReference<Class<Script>> weakRef = cache.get(key);
+        Class<Script> contents = null;
+        if (weakRef != null) contents = weakRef.get();
         
         if (weakRef == null || contents == null) {
-            contents = classGenerator.generate();
-            cache.put(hashcode, new WeakReference(contents));
-        }
-        
-        return contents;
-    }
-    
-    public Script cacheScriptByBytes(byte[] bytecode, ScriptGenerator scriptGenerator) throws ClassNotFoundException {
-        int hashcode = Arrays.hashCode(bytecode);
-        
-        WeakReference weakRef = (WeakReference)cache.get(hashcode);
-        Script contents = null;
-        if (weakRef != null) {
-            contents = (Script)weakRef.get();
-        }
-        
-        if (weakRef == null || contents == null) {
-            contents = scriptGenerator.generate();
-            cache.put(hashcode, new WeakReference(contents));
-        }
-        
-        return contents;
-    }
-    
-    public Class<Script> cacheClassByKey(Object key, ClassGenerator classGenerator) throws ClassNotFoundException {
-        WeakReference weakRef = (WeakReference)cache.get(key);
-        Class contents = null;
-        if (weakRef != null) {
-            contents = (Class)weakRef.get();
-        }
-        
-        if (weakRef == null || contents == null) {
-            contents = classGenerator.generate();
-            cache.put(key, new WeakReference(contents));
-        }
-        
-        return contents;
-        
-    }
-    
-    public Script cacheScriptByKey(Object key, ScriptGenerator scriptGenerator) throws ClassNotFoundException {
-        WeakReference weakRef = (WeakReference)cache.get(key);
-        Script contents = null;
-        if (weakRef != null) {
-            contents = (Script)weakRef.get();
-        }
-        
-        if (weakRef == null || contents == null) {
-            contents = scriptGenerator.generate();
-            cache.put(key, new WeakReference(contents));
+            contents = classGenerator.generate(getClassLoader());
+            cache.put(key, new WeakReference<Class<Script>>(contents));
         }
         
         return contents;

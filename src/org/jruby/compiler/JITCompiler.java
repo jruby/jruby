@@ -105,8 +105,8 @@ public class JITCompiler {
 
                 ClassCache.ClassGenerator classGenerator = new ClassCache.ClassGenerator() {
                     @SuppressWarnings("unchecked")
-                    public Class<Script> generate() throws ClassNotFoundException {
-                        Class<?> result = asmCompiler.loadClass(new JRubyClassLoader(runtime.getJRubyClassLoader()));
+                    public Class<Script> generate(ClassLoader classLoader) throws ClassNotFoundException {
+                        Class<?> result = asmCompiler.loadClass(new JRubyClassLoader(classLoader));
 
                         if (instanceConfig.isJitLogging()) log(method, name, "compiled anew");
 
@@ -120,7 +120,7 @@ public class JITCompiler {
 
                     sourceClass = instanceConfig.getClassCache().cacheClassByKey(key, classGenerator);
                 } else {
-                    sourceClass = classGenerator.generate();
+                    sourceClass = classGenerator.generate(runtime.getJRubyClassLoader());
                 }
 
                 // if we haven't already decided on a do-nothing call
