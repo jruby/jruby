@@ -614,6 +614,7 @@ public class RubyIO extends RubyObject {
                 if (((RubyString)str).getByteList().length() == 0) {
                     return getRuntime().getNil();
                 }
+                incrementLineno(myOpenFile);
                 return str;
             } else if (separator.length() == 1) {
                 return getlineFast(separator.get(0));
@@ -638,12 +639,7 @@ public class RubyIO extends RubyObject {
 
                         if (c == -1) {
                             // TODO: clear error, wait for it to become readable
-                            if (c == -1) {
-                                if (update) {
-                                    return RubyString.newString(getRuntime(), buf);
-                                }
-                                break;
-                            }
+                            break;
                         }
                         
                         buf.append(c);
@@ -674,9 +670,7 @@ public class RubyIO extends RubyObject {
                 if (!update) {
                     return getRuntime().getNil();
                 } else {
-                    myOpenFile.setLineNumber(myOpenFile.getLineNumber() + 1);
-                    // this is for a range check, near as I can tell
-                    RubyNumeric.int2fix(getRuntime(), myOpenFile.getLineNumber());
+                    incrementLineno(myOpenFile);
                     RubyString str = RubyString.newString(getRuntime(), buf);
                     str.setTaint(true);
 
@@ -695,7 +689,16 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newIOError(e.getMessage());
         }
     }
-    
+
+    private void incrementLineno(OpenFile myOpenFile) {
+        Ruby runtime = getRuntime();
+        int lineno = myOpenFile.getLineNumber() + 1;
+        myOpenFile.setLineNumber(lineno);
+        runtime.getGlobalVariables().set("$.", runtime.newFixnum(lineno));
+        // this is for a range check, near as I can tell
+        RubyNumeric.int2fix(getRuntime(), myOpenFile.getLineNumber());
+    }
+
     protected boolean swallow(int term) throws IOException, BadDescriptorException {
         Stream readStream = openFile.getMainStream();
         int c;
@@ -736,12 +739,7 @@ public class RubyIO extends RubyObject {
 
             if (c == -1) {
                 // TODO: clear error, wait for it to become readable
-                if (c == -1) {
-                    if (update) {
-                        return RubyString.newString(getRuntime(), buf);
-                    }
-                    break;
-                }
+                break;
             }
             
             buf.append(c);
@@ -752,9 +750,7 @@ public class RubyIO extends RubyObject {
         if (!update) {
             return getRuntime().getNil();
         } else {
-            openFile.setLineNumber(openFile.getLineNumber() + 1);
-            // this is for a range check, near as I can tell
-            RubyNumeric.int2fix(getRuntime(), openFile.getLineNumber());
+            incrementLineno(openFile);
             RubyString str = RubyString.newString(getRuntime(), buf);
             str.setTaint(true);
 

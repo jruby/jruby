@@ -1,3 +1,0 @@
-IO#gets returns tainted strings
-IO#gets updates lineno with each invocation
-IO#gets updates $. with each invocation
