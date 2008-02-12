@@ -16,7 +16,7 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
   def jruby_with_pipe(pipe, *args)
     prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process
     JRuby.runtime.instance_config.run_ruby_in_process = false
-    `#{pipe} | #{RUBY} #{args.join(' ')}`
+    `#{pipe} | "#{RUBY}" #{args.join(' ')}`
    ensure
     JRuby.runtime.instance_config.run_ruby_in_process = prev_in_process
   end
@@ -31,14 +31,19 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     assert_equal 0, $?.exitstatus
   end
 
-  if !WINDOWS
-    def test_system_call_without_stdin_data_doesnt_hang
-      out = jruby("-e 'system \"dir\"'")
-      assert(out =~ /COPYING.LGPL/)
-    end
+  def test_system_call_without_stdin_data_doesnt_hang
+    out = jruby(%q{-e "system 'dir'"})
+    assert(out =~ /COPYING.LGPL/)
+  end
 
+  if WINDOWS
+    def test_system_call_with_stdin_data_doesnt_hang_on_windows
+      out = jruby_with_pipe("echo echo 'one_two_three_test'", %q{-e "system 'cmd'"})
+      assert(out =~ /one_two_three_test/)
+    end
+  else
     def test_system_call_with_stdin_data_doesnt_hang
-      out = jruby_with_pipe("echo 'vvs'", "-e 'system \"cat\"'")
+      out = jruby_with_pipe("echo 'vvs'", %q{-e "system 'cat'"})
       assert_equal("vvs\n", out)
     end
   end
