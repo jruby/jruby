@@ -53,6 +53,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyClassPathVariable;
+import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
@@ -60,6 +61,7 @@ import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.javasupport.proxy.JavaProxyMethod;
@@ -561,6 +563,11 @@ public class Java implements Library {
             // package name. (and seriously, folks, look into best practices...)
             try {
                 return getProxyClass(runtime, JavaClass.forName(runtime, fullName));
+            } catch (RaiseException re) { /* expected */
+                RubyException rubyEx = re.getException();
+                if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
+                    RuntimeHelpers.setErrorInfo(runtime, runtime.getNil());
+                }
             } catch (Exception e) { /* expected */ }
             
             RubyModule packageModule;

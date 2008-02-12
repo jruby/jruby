@@ -672,5 +672,11 @@ CLASSDEF
     java.lang.String # ensure java.lang.String has been loaded
     assert java.lang.__constants__.include?('String')
   end
-end
 
+  # JRUBY-2106
+  def test_package_load_doesn_set_error
+    $! = nil
+    undo = javax.swing.undo
+    assert_nil($!)
+  end
+end
