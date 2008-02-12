@@ -1,0 +1,2 @@
+ERB#filename is reported when error raised
+ERB#filename use '(erb)' as filename when filename is not set
