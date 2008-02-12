@@ -17,7 +17,14 @@ public class JavaNameMangler {
     
     public static String mangleFilenameForClasspath(String filename) {
         try {
-            String classPath = new JRubyFile(filename).getCanonicalPath().toString();
+            String classPath = "";
+            if(filename.indexOf("!") != -1) {
+                String before = filename.substring(6, filename.indexOf("!"));
+                classPath = new JRubyFile(before + filename.substring(filename.indexOf("!")+1)).getCanonicalPath().toString();
+            } else {
+                classPath = new JRubyFile(filename).getCanonicalPath().toString();
+            }
+
             String[] pathElements = PATH_SPLIT.split(classPath);
             StringBuffer newPath = new StringBuffer("ruby");
             
