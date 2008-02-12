@@ -26,7 +26,7 @@ class TestArraySubclassBehavior < Test::Unit::TestCase
     assert_equal(MyArray, (@arr*2).class)
     assert_equal(MyArray, @arr.replace([1,2,3]).class)
     assert_equal(Array, @arr.last(2).class)
-    assert_equal(Array, @arr.first(2).class)
+    assert_equal(MyArray, @arr.first(2).class)
     assert_equal(Array, @arr.collect.class)
     assert_equal(Array, @arr.collect{true}.class)
     assert_equal(Array, @arr.zip([1,2,3]).class)
