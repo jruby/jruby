@@ -39,7 +39,7 @@ test_equal(MyString, str.clone.class)
 test_equal(MyString, str.center(20).class)
 test_equal(MyString, str.ljust(20).class)
 test_equal(MyString, str.rjust(20).class)
-# test_equal(MyString, str.scan(/.*/).first.class) # depends on RubyMatchData
+test_equal(MyString, str.scan(/.*/).first.class)
 test_equal(MyString, str.slice(2,4).class)
 test_equal(MyString, str.gsub('ab','dc').class)
 test_equal(MyString, str.sub('sb','cd').class)
