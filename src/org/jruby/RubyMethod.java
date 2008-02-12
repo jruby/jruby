@@ -123,7 +123,10 @@ public class RubyMethod extends RubyObject {
     public RubyBoolean op_equal(IRubyObject other) {
         if (!(other instanceof RubyMethod)) return getRuntime().getFalse();
         RubyMethod otherMethod = (RubyMethod)other;
-        return getRuntime().newBoolean(method.getRealMethod() == otherMethod.method.getRealMethod() && receiver == otherMethod.receiver);
+        return getRuntime().newBoolean(implementationModule == otherMethod.implementationModule &&
+                                       originModule == otherMethod.originModule &&
+                                       receiver == otherMethod.receiver &&
+                                       method.getRealMethod() == otherMethod.method.getRealMethod());
     }
 
     @JRubyMethod(name = "clone")
@@ -204,10 +207,10 @@ public class RubyMethod extends RubyObject {
         
         buf.append(getMetaClass().getRealClass().getName()).append(": ");
         
-        if (originModule.isSingleton()) {
+        if (implementationModule.isSingleton()) {
             IRubyObject attached = ((MetaClass) originModule).getAttached();
-            if (receiver == getRuntime().getNil()) {
-                buf.append(implementationModule.getName());
+            if (receiver == null) {
+                buf.append(implementationModule.inspect().toString());
             } else if (receiver == attached) {
                 buf.append(attached.inspect().toString());
                 delimeter = '.';

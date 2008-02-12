@@ -993,11 +993,17 @@ public class RubyModule extends RubyObject {
                 "' for class `" + this.getName() + "'", name);
         }
 
+        RubyModule implementationModule = method.getImplementationClass();
+        RubyModule originModule = this;
+        while (originModule != implementationModule && originModule.isSingleton()) {
+            originModule = ((MetaClass)originModule).getRealClass();
+        }
+
         RubyMethod newMethod = null;
         if (bound) {
-            newMethod = RubyMethod.newMethod(method.getImplementationClass(), name, this, name, method, receiver);
+            newMethod = RubyMethod.newMethod(implementationModule, name, originModule, name, method, receiver);
         } else {
-            newMethod = RubyUnboundMethod.newUnboundMethod(method.getImplementationClass(), name, this, name, method);
+            newMethod = RubyUnboundMethod.newUnboundMethod(implementationModule, name, originModule, name, method);
         }
         newMethod.infectBy(this);
 
