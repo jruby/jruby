@@ -1150,7 +1150,7 @@ public class RubyArray extends RubyObject implements List {
             throw getRuntime().newArgumentError("negative array size (or size too big)");
     	}
     	
-        return makeShared(begin, (int) n, getMetaClass());
+        return makeShared(begin, (int) n, getRuntime().getArray());
     }
 
     /** rb_ary_last
