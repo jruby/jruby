@@ -635,6 +635,11 @@ public class Java implements Library {
             // this covers primitives and (unlikely) lower-case class names
             try {
                 return getProxyClass(runtime, JavaClass.forName(runtime, name));
+            } catch (RaiseException re) { /* not primitive or lc class */
+                RubyException rubyEx = re.getException();
+                if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
+                    RuntimeHelpers.setErrorInfo(runtime, runtime.getNil());
+                }
             } catch (Exception e) { /* not primitive or lc class */ }
             
             // TODO: check for Java reserved names and raise exception if encountered
@@ -667,9 +672,18 @@ public class Java implements Library {
         }  else {
             try {
                 return getProxyClass(runtime, JavaClass.forName(runtime, name));
-            } catch (Exception e) {
-                return getPackageModule(runtime, name);
-            }
+            } catch (RaiseException re) { /* not a class */
+                RubyException rubyEx = re.getException();
+                if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
+                    RuntimeHelpers.setErrorInfo(runtime, runtime.getNil());
+                }
+            } catch (Exception e) { /* not a class */ }
+
+            // upper-case package name
+            // TODO: top-level upper-case package was supported in the previous (Ruby-based)
+            // implementation, so leaving as is.  see note at #getProxyOrPackageUnderPackage
+            // re: future approach below the top-level.
+            return getPackageModule(runtime, name);
         }
     }
     
