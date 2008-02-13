@@ -795,7 +795,13 @@ public class ChannelStream implements Stream, Finalizable {
     public synchronized void freopen(String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException {
         // flush first
         flushWrite();
-        
+
+        // reset buffer
+        buffer.clear();
+        if (reading) {
+            buffer.flip();
+        }
+
         this.modes = modes;
         String cwd = getRuntime().getCurrentDirectory();
         JRubyFile theFile = JRubyFile.create(cwd,path);
