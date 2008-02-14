@@ -305,6 +305,16 @@ public class RubyFile extends RubyIO {
         FileChannel fileChannel = (FileChannel)openFile.getMainStream().getDescriptor().getChannel();
         int lockMode = RubyNumeric.num2int(lockingConstant);
 
+        // Exclusive locks in Java require the channel to be writable, otherwise
+        // an exception is thrown (terminating JRuby execution).
+        // But flock behavior of MRI is that it allows
+        // exclusive locks even on non-writable file. So we convert exclusive
+        // lock to shared lock if the channel is not writable, to better match
+        // the MRI behavior.
+        if (!openFile.isWritable() && (lockMode & LOCK_EX) > 0) {
+            lockMode = (lockMode ^ LOCK_EX) | LOCK_SH;
+        }
+
         try {
             switch (lockMode) {
                 case LOCK_UN:

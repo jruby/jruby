@@ -407,7 +407,22 @@ class TestFile < Test::Unit::TestCase
     file.close
     File.delete(filename)
   end
-  
+
+  # JRUBY-1214
+  def test_flock_exclusive_on_readonly
+    filename = '__lock_test_2_'
+    File.open(filename, "w+") { }
+    File.open(filename, "r") do |file|
+      begin
+        assert_nothing_raised {
+          file.flock(File::LOCK_EX)
+        }
+      ensure
+        file.flock(File::LOCK_UN)
+      end
+    end
+  end
+
   def test_truncate_doesnt_create_file
     name = "___foo_bar___"
     assert(!File.exists?(name))
