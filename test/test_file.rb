@@ -421,6 +421,7 @@ class TestFile < Test::Unit::TestCase
         file.flock(File::LOCK_UN)
       end
     end
+    File.delete(filename)
   end
 
   def test_truncate_doesnt_create_file
