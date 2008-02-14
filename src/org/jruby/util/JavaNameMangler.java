@@ -5,6 +5,7 @@
 
 package org.jruby.util;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
@@ -15,7 +16,19 @@ import java.util.regex.Pattern;
 public class JavaNameMangler {
     public static final Pattern PATH_SPLIT = Pattern.compile("[/\\\\]");
     
+    public static String mangledFilenameForStartupClasspath(String filename) {
+        if (filename.equals("-e")) {
+            return "__dash_e__";
+        }
+        
+        return mangleFilenameForClasspath(filename, null, "ruby");
+    }
+    
     public static String mangleFilenameForClasspath(String filename) {
+        return mangleFilenameForClasspath(filename, null, "ruby");
+    }
+    
+    public static String mangleFilenameForClasspath(String filename, String parent, String prefix) {
         try {
             String classPath = "";
             if(filename.indexOf("!") != -1) {
@@ -25,19 +38,38 @@ public class JavaNameMangler {
                 classPath = new JRubyFile(filename).getCanonicalPath().toString();
             }
 
+            if (parent != null && parent.length() > 0) {
+                String parentPath = new JRubyFile(parent).getCanonicalPath().toString();
+                if (!classPath.startsWith(parentPath)) {
+                    throw new FileNotFoundException("File path " + classPath +
+                            " does not start with parent path " + parentPath);
+                }
+                int parentLength = parentPath.length();
+                classPath = classPath.substring(parentLength);
+            }
+            
             String[] pathElements = PATH_SPLIT.split(classPath);
-            StringBuffer newPath = new StringBuffer("ruby");
+            StringBuffer newPath = new StringBuffer(prefix);
             
             for (String element : pathElements) {
                 if (element.length() <= 0) {
                     continue;
                 }
                 
-                newPath.append("/");
+                if (newPath.length() > 0) {
+                    newPath.append("/");
+                }
+                
                 if (!Character.isJavaIdentifierStart(element.charAt(0))) {
                     newPath.append("$");
                 }
                 newPath.append(mangleStringForCleanJavaIdentifier(element));
+            }
+            
+            // strip off "_dot_rb" for .rb files
+            int dotRbIndex = newPath.indexOf("_dot_rb");
+            if (dotRbIndex != -1 && dotRbIndex == newPath.length() - 7) {
+                newPath.delete(dotRbIndex, dotRbIndex + 7);
             }
 
             return newPath.toString();
@@ -47,20 +79,13 @@ public class JavaNameMangler {
         }
     }
     
-    public static String mangledFilenameForStartupClasspath(String filename) {
-        if (filename.equals("-e")) {
-            return "__dash_e__";
-        }
-        
-        return mangleFilenameForClasspath(filename);
-    }
-    
     public static String mangleStringForCleanJavaIdentifier(String name) {
         char[] characters = name.toCharArray();
         StringBuffer cleanBuffer = new StringBuffer();
         boolean prevWasReplaced = false;
         for (int i = 0; i < characters.length; i++) {
-            if (Character.isJavaIdentifierStart(characters[i])) {
+            if ((i == 0 && Character.isJavaIdentifierStart(characters[i]))
+                    || Character.isJavaIdentifierPart(characters[i])) {
                 cleanBuffer.append(characters[i]);
                 prevWasReplaced = false;
             } else {
@@ -89,12 +114,10 @@ public class JavaNameMangler {
                         cleanBuffer.append("aref_");
                         i++;
                     } else {
-                        // can this ever happen?
                         cleanBuffer.append("lbracket_");
                     }
                     continue;
                 case ']':
-                    // given [ logic above, can this ever happen?
                     cleanBuffer.append("rbracket_");
                     continue;
                 case '+':

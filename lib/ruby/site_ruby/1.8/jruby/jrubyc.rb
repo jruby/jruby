@@ -1,3 +1,4 @@
+require 'optparse'
 require 'jruby'
 
 module JRubyCompiler
@@ -8,22 +9,21 @@ module JRubyCompiler
   JavaFile = java.io.File
 
   module_function
-  def compile_args  
+  def compile_files(filenames, basedir = Dir.pwd, prefix = "ruby", target = Dir.pwd)
     runtime = JRuby.runtime
-
-    if ARGV.size < 1
-      puts "Usage: jrubyc <filename.rb> [<filename.rb> ...]"
-      exit
+    
+    unless File.exist? target
+      puts "Target dir not found: #{target}"
+      exit 1
     end
 
     # The compilation code
     compile_proc = proc do |filename|
       begin
         file = File.open(filename)
-        destdir = Dir.pwd
 
-        classpath = Mangler.mangle_filename_for_classpath(filename)
-        puts " Compiling #{filename} to class #{classpath}"
+        classpath = Mangler.mangle_filename_for_classpath(filename, basedir, prefix)
+        puts "Compiling #{filename} to class #{classpath}"
 
         inspector = org.jruby.compiler.ASTInspector.new
 
@@ -36,7 +36,7 @@ module JRubyCompiler
         compiler = ASTCompiler.new
         compiler.compile_root(node, asmCompiler, inspector)
 
-        asmCompiler.write_class(JavaFile.new(destdir))
+        asmCompiler.write_class(JavaFile.new(target))
       rescue Exception
         puts "Failure during compilation of file #{filename}:\n#{$!}"
       ensure
@@ -45,7 +45,7 @@ module JRubyCompiler
     end
 
     # Process all the file arguments
-    ARGV.each do |filename|
+    filenames.each do |filename|
       unless File.exists? filename
         puts "Error -- file not found: #{filename}"
         next

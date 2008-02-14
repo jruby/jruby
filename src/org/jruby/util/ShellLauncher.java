@@ -342,7 +342,7 @@ public class ShellLauncher {
         }
         String[] slashDelimitedTokens = command.split("/");
         String finalToken = slashDelimitedTokens[slashDelimitedTokens.length - 1];
-        return (finalToken.indexOf("ruby") != -1 || finalToken.endsWith(".rb") || finalToken.endsWith("irb"));
+        return (finalToken.indexOf("ruby") == (finalToken.length() - 4) || finalToken.endsWith(".rb") || finalToken.endsWith("irb"));
     }
 
     private boolean shouldRunInShell(String shell, String[] args) {
