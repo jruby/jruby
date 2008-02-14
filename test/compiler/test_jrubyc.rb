@@ -57,4 +57,24 @@ class TestJrubyc < Test::Unit::TestCase
       File.delete("ruby") rescue nil
     end
   end
+  
+  def test_require
+    $compile_test = false
+    File.open("test_file1.rb", "w") {|file| file.write("$compile_test = true")}
+    
+    begin
+      output = `#{@jruby_command} #{@jrubyc_command} test_file1.rb`
+      
+      assert_equal(
+        "Compiling test_file1.rb to class ruby/test_file1\n",
+        output)
+      
+      File.delete("test_file1.rb")
+      
+      assert_nothing_raised { require 'ruby/test_file1' }
+      assert($compile_test)
+    ensure
+      File.delete("ruby") rescue nil
+    end
+  end
 end
