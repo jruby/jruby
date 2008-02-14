@@ -610,11 +610,14 @@ public class RubyFile extends RubyIO {
             throw getRuntime().newErrnoEINVALError("invalid argument: " + path);
         }
         try {
+            openFile.checkWritable(getRuntime());
             openFile.getMainStream().ftruncate(newLength.getLongValue());
         } catch (BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (PipeException e) {
             throw getRuntime().newErrnoESPIPEError();
+        } catch (InvalidValueException ex) {
+            throw getRuntime().newErrnoEINVALError();
         } catch (IOException e) {
             // Should we do anything?
         }
