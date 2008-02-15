@@ -1,6 +1,7 @@
 require 'test/unit'
 require 'stringio'
 require 'tempfile'
+require 'fileutils'
 require 'java'
 require 'jruby/jrubyc'
 
@@ -13,6 +14,7 @@ class TestJrubyc < Test::Unit::TestCase
   end
 
   def teardown
+    FileUtils.rm_rf(["foo", "ruby"])
     $stdout.reopen(@old_stdout)
   end
 
@@ -32,18 +34,16 @@ class TestJrubyc < Test::Unit::TestCase
   end
   
   def test_target
-    begin
-      JRubyCompiler::compile_argv(["-t", File.dirname(@tempfile.path), __FILE__])
-      output = File.read(@tempfile.path)
+    tempdir = File.dirname(@tempfile.path)
+    JRubyCompiler::compile_argv(["-t", tempdir, __FILE__])
+    output = File.read(@tempfile.path)
 
-      assert_equal(
-        "Compiling #{__FILE__} to class ruby/test/compiler/test_jrubyc\n",
-        output)
+    assert_equal(
+      "Compiling #{__FILE__} to class ruby/test/compiler/test_jrubyc\n",
+      output)
 
-      assert(File.exist?("ruby/test/compiler/test_jrubyc.class"))
-    ensure
-      File.delete("ruby") rescue nil
-    end
+    assert(File.exist?(tempdir + "/ruby/test/compiler/test_jrubyc.class"))
+    FileUtils.rm_rf(tempdir + "/ruby")
   end
   
   def test_bad_target
@@ -59,38 +59,30 @@ class TestJrubyc < Test::Unit::TestCase
   end
   
   def test_prefix
-    begin
-      JRubyCompiler::compile_argv(["-p", "foo", __FILE__])
-      output = File.read(@tempfile.path)
+    JRubyCompiler::compile_argv(["-p", "foo", __FILE__])
+    output = File.read(@tempfile.path)
 
-      assert_equal(
-        "Compiling #{__FILE__} to class foo/test/compiler/test_jrubyc\n",
-        output)
+    assert_equal(
+      "Compiling #{__FILE__} to class foo/test/compiler/test_jrubyc\n",
+      output)
 
-      assert(File.exist?("foo/test/compiler/test_jrubyc.class"))
-    ensure
-      File.delete("ruby") rescue nil
-    end
+    assert(File.exist?("foo/test/compiler/test_jrubyc.class"))
   end
   
   def test_require
     $compile_test = false
     File.open("test_file1.rb", "w") {|file| file.write("$compile_test = true")}
     
-    begin
-      JRubyCompiler::compile_argv(["test_file1.rb"])
-      output = File.read(@tempfile.path)
-      
-      assert_equal(
-        "Compiling test_file1.rb to class ruby/test_file1\n",
-        output)
-      
-      File.delete("test_file1.rb")
-      
-      assert_nothing_raised { require 'ruby/test_file1' }
-      assert($compile_test)
-    ensure
-      File.delete("ruby") rescue nil
-    end
+    JRubyCompiler::compile_argv(["test_file1.rb"])
+    output = File.read(@tempfile.path)
+
+    assert_equal(
+      "Compiling test_file1.rb to class ruby/test_file1\n",
+      output)
+
+    File.delete("test_file1.rb")
+
+    assert_nothing_raised { require 'ruby/test_file1' }
+    assert($compile_test)
   end
 end
