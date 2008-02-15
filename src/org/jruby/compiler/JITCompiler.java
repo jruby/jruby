@@ -41,98 +41,41 @@ import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ClassCache;
-import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
 
 public class JITCompiler {
     public static final boolean USE_CACHE = true;
     
-    public static void runJIT(final DefaultMethod method, final Ruby runtime, ThreadContext context, final String name) {
+    public static void runJIT(final DefaultMethod method, final Ruby runtime, final ThreadContext context, final String name) {
         Set<Script> jittedMethods = runtime.getJittedMethods();
         final RubyInstanceConfig instanceConfig = runtime.getInstanceConfig();
-        int jitMax = instanceConfig.getJitMax();
+        ClassCache classCache = instanceConfig.getClassCache();
         
-        // We either are not JIT'ing, or we have already JIT'd too much.  Go no further.
-        if (method.getCallCount() < 0 || jitMax == 0 || (jitMax != -1 && jittedMethods.size() >= jitMax)) return;
+        // This method has JITed already or has been abandoned. Bail out.
+        if (method.getCallCount() < 0) return;
         
         try {
             method.setCallCount(method.getCallCount() + 1);
 
             if (method.getCallCount() >= instanceConfig.getJitThreshold()) {
-                String cleanName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
-                Node bodyNode = method.getBodyNode();
-                final ArgsNode argsNode = method.getArgsNode();
-                String filename = calculateFilename(argsNode, bodyNode);
-                StaticScope staticScope = method.getStaticScope();
-
-                final StandardASMCompiler asmCompiler = new StandardASMCompiler(cleanName + 
-                        method.hashCode() + "_" + context.hashCode(), filename);
-                asmCompiler.startScript(staticScope);
-                final ASTCompiler compiler = new ASTCompiler();
-
-                CompilerCallback args = new CompilerCallback() {
-                    public void call(MethodCompiler context) {
-                        compiler.compileArgs(argsNode, context);
-                    }
-                };
-
-                ASTInspector inspector = new ASTInspector();
-                inspector.inspect(bodyNode);
-                inspector.inspect(argsNode);
-
-                MethodCompiler methodCompiler;
-                CallConfiguration jitCallConfig = null;
-                if (bodyNode != null) {
-                    // we have a body, do a full-on method
-                    methodCompiler = asmCompiler.startMethod("__file__", args, staticScope, inspector);
-                    compiler.compile(bodyNode, methodCompiler);
-                } else {
-                    // If we don't have a body, check for required or opt args
-                    // if opt args, they could have side effects
-                    // if required args, need to raise errors if too few args passed
-                    // otherwise, method does nothing, make it a nop
-                    if (argsNode != null && (argsNode.getRequiredArgsCount() > 0 || argsNode.getOptionalArgsCount() > 0)) {
-                        methodCompiler = asmCompiler.startMethod("__file__", args, staticScope, inspector);
-                        methodCompiler.loadNil();
-                    } else {
-                        methodCompiler = asmCompiler.startMethod("__file__", null, staticScope, inspector);
-                        methodCompiler.loadNil();
-                        jitCallConfig = CallConfiguration.NO_FRAME_NO_SCOPE;
-                    }
-                }
-                methodCompiler.endMethod();
-                asmCompiler.endScript(false, false, false);
-
-                ClassCache.ClassGenerator classGenerator = new ClassCache.ClassGenerator() {
-                    @SuppressWarnings("unchecked")
-                    public Class<Script> generate(ClassLoader classLoader) throws ClassNotFoundException {
-                        Class<?> result = asmCompiler.loadClass(new JRubyClassLoader(classLoader));
-
-                        if (instanceConfig.isJitLogging()) log(method, name, "compiled anew");
-
-                        return (Class<Script>) result;
-                    }
-                };
-
-                Class<Script> sourceClass;
-                if (USE_CACHE) {
-                    String key = SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());
-
-                    sourceClass = instanceConfig.getClassCache().cacheClassByKey(key, classGenerator);
-                } else {
-                    sourceClass = classGenerator.generate(new JRubyClassLoader(runtime.getJRubyClassLoader()));
+        
+                // The cache is full. Abandon JIT for this method and bail out.
+                if (classCache.isFull()) {
+                    method.setCallCount(-1);
+                    return;
                 }
 
-                // if we haven't already decided on a do-nothing call
-                if (jitCallConfig == null) {
-                    // if we're not doing any of the operations that still need
-                    // a scope, use the scopeless config
-                    if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
-                        jitCallConfig = CallConfiguration.FRAME_AND_SCOPE;
-                    } else {
-                        // switch to a slightly faster call config
-                        jitCallConfig = CallConfiguration.FRAME_ONLY;
-                    }
+                JITClassGenerator generator = new JITClassGenerator(name, method, context);
+
+                String key = SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());
+
+                Class<Script> sourceClass = instanceConfig.getClassCache().cacheClassByKey(key, generator);
+                
+                if (sourceClass == null) {
+                    // class could not be found nor generated; give up on JIT and bail out
+                    method.setCallCount(-1);
+                    return;
                 }
 
                 // finally, grab the script
@@ -145,13 +88,13 @@ public class JITCompiler {
                 if (instanceConfig.getJitLogEvery() > 0) {
                     int methodCount = jittedMethods.size();
                     if (methodCount % instanceConfig.getJitLogEvery() == 0) {
-                        System.err.println("live compiled methods: " + methodCount);
+                        log(method, name, "live compiled methods: " + methodCount);
                     }
                 }
 
                 if (instanceConfig.isJitLogging()) log(method, name, "done jitting");
 
-                method.setJITCallConfig(jitCallConfig);
+                method.setJITCallConfig(generator.callConfig());
                 method.setJITCompiledScript(jitCompiledScript);
                 method.setCallCount(-1);
             }
@@ -159,6 +102,99 @@ public class JITCompiler {
             if (instanceConfig.isJitLoggingVerbose()) log(method, name, "could not compile", e.getMessage());
 
             method.setCallCount(-1);
+        }
+    }
+    
+    public static class JITClassGenerator implements ClassCache.ClassGenerator {
+        private StandardASMCompiler asmCompiler;
+        private DefaultMethod method;
+        private StaticScope staticScope;
+        private Node bodyNode;
+        private ArgsNode argsNode;
+        private CallConfiguration jitCallConfig;
+        
+        private byte[] bytecode;
+        private String name;
+        
+        public JITClassGenerator(String name, DefaultMethod method, ThreadContext context) {
+            this.method = method;
+            String cleanName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
+            this.bodyNode = method.getBodyNode();
+            this.argsNode = method.getArgsNode();
+            final String filename = calculateFilename(argsNode, bodyNode);
+            staticScope = method.getStaticScope();
+            asmCompiler = new StandardASMCompiler(cleanName + 
+                    method.hashCode() + "_" + context.hashCode(), filename);
+        }
+        
+        @SuppressWarnings("unchecked")
+        protected void compile() {
+            if (bytecode != null) return;
+            
+            asmCompiler.startScript(staticScope);
+            final ASTCompiler compiler = new ASTCompiler();
+
+            CompilerCallback args = new CompilerCallback() {
+                public void call(MethodCompiler context) {
+                    compiler.compileArgs(argsNode, context);
+                }
+            };
+
+            ASTInspector inspector = new ASTInspector();
+            inspector.inspect(bodyNode);
+            inspector.inspect(argsNode);
+
+            MethodCompiler methodCompiler;
+            if (bodyNode != null) {
+                // we have a body, do a full-on method
+                methodCompiler = asmCompiler.startMethod("__file__", args, staticScope, inspector);
+                compiler.compile(bodyNode, methodCompiler);
+            } else {
+                // If we don't have a body, check for required or opt args
+                // if opt args, they could have side effects
+                // if required args, need to raise errors if too few args passed
+                // otherwise, method does nothing, make it a nop
+                if (argsNode != null && (argsNode.getRequiredArgsCount() > 0 || argsNode.getOptionalArgsCount() > 0)) {
+                    methodCompiler = asmCompiler.startMethod("__file__", args, staticScope, inspector);
+                    methodCompiler.loadNil();
+                } else {
+                    methodCompiler = asmCompiler.startMethod("__file__", null, staticScope, inspector);
+                    methodCompiler.loadNil();
+                    jitCallConfig = CallConfiguration.NO_FRAME_NO_SCOPE;
+                }
+            }
+            methodCompiler.endMethod();
+            asmCompiler.endScript(false, false, false);
+            
+            // if we haven't already decided on a do-nothing call
+            if (jitCallConfig == null) {
+                // if we're not doing any of the operations that still need
+                // a scope, use the scopeless config
+                if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                    jitCallConfig = CallConfiguration.FRAME_AND_SCOPE;
+                } else {
+                    // switch to a slightly faster call config
+                    jitCallConfig = CallConfiguration.FRAME_ONLY;
+                }
+            }
+            
+            bytecode = asmCompiler.getClassByteArray();
+            name = CodegenUtils.c(asmCompiler.getClassname());
+        }
+        
+        public byte[] bytecode() {
+            compile();
+            return bytecode;
+        }
+
+        public String name() {
+            compile();
+            return name;
+        }
+        
+        public CallConfiguration callConfig() {
+            compile();
+            return jitCallConfig;
         }
     }
     

@@ -26,6 +26,7 @@ public class TestCodeCache extends TestCase {
         System.setProperty("jruby.compile.mode", "JIT");
         System.setProperty("jruby.jit.threshold", "0");
 
+        // construct a new cache with thread's classloader and no limit
         ClassCache classCache = new ClassCache(Thread.currentThread().getContextClassLoader());
 
         runtime1 = JavaEmbedUtils.initialize(new ArrayList<Object>(), classCache);

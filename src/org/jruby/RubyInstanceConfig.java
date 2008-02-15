@@ -37,6 +37,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
 import org.jruby.util.ClassCache;
@@ -92,7 +93,7 @@ public class RubyInstanceConfig {
 
     private ClassLoader loader = Thread.currentThread().getContextClassLoader();
     
-    private ClassCache classCache = new ClassCache(loader);
+    private ClassCache<Script> classCache;
     
     // from CommandlineParser
     private List<String> loadPaths = new ArrayList<String>();
@@ -208,6 +209,9 @@ public class RubyInstanceConfig {
             jitThreshold = threshold == null ? 20 : Integer.parseInt(threshold); 
             jitMax = max == null ? 2048 : Integer.parseInt(max);
         }
+        
+        // default ClassCache using jitMax as a soft upper bound
+        classCache = new ClassCache<Script>(loader, jitMax);
         
         if (FORK_ENABLED) {
             error.print("WARNING: fork is highly unlikely to be safe or stable on the JVM. Have fun!\n");
