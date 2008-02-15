@@ -9,6 +9,38 @@ module JRubyCompiler
   JavaFile = java.io.File
 
   module_function
+  def compile_argv(argv)
+    basedir = Dir.pwd
+    prefix = "ruby"
+    target = Dir.pwd
+
+    opt_parser = OptionParser.new("", 24, '  ') do |opts|
+      opts.banner = "jrubyc [options] (FILE|DIRECTORY)"
+      opts.separator ""
+
+      opts.on("-d", "--dir DIR", "Use DIR as the root of the compiled package and filename") do |dir|
+        basedir = dir
+      end
+
+      opts.on("-p", "--prefix PREFIX", "Prepend PREFIX to the file path and package. \"ruby\" is default") do |pre|
+        prefix = pre
+      end
+
+      opts.on("-t", "--target TARGET", "Output files to TARGET directory") do |tgt|
+        target = tgt
+      end
+
+      opts.parse!(argv)
+    end
+
+    if (argv.length == 0)
+      puts "No files or directories specified"
+      exit 1
+    end
+
+    compile_files(argv, basedir, prefix, target)
+  end
+
   def compile_files(filenames, basedir = Dir.pwd, prefix = "ruby", target = Dir.pwd)
     runtime = JRuby.runtime
     
