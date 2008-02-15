@@ -4,14 +4,14 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>shared</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1RC2</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jruby</groupId>
   <artifactId>jruby</artifactId>
   <packaging>jar</packaging>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.1RC2</version>
   <name>JRuby</name>
 
   <dependencies>
@@ -24,7 +24,7 @@
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>1.0</version>
+      <version>1.1RC2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -66,7 +66,7 @@
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jna</artifactId>
-      <version>3.0</version>
+      <version>1.1RC2</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
@@ -118,7 +118,7 @@
                 <artifactItem>
                   <groupId>org.jruby.joni</groupId>
                   <artifactId>joni</artifactId>
-                  <version>1.0</version>
+                  <version>1.1RC2</version>
                 </artifactItem>
                 <artifactItem>
                   <groupId>joda-time</groupId>
@@ -128,7 +128,7 @@
                 <artifactItem>
                   <groupId>org.jruby.extras</groupId>
                   <artifactId>jna</artifactId>
-                  <version>3.0</version>
+                  <version>1.1RC2</version>
                 </artifactItem>
               </artifactItems>
               <outputDirectory>${project.build.outputDirectory}</outputDirectory>
