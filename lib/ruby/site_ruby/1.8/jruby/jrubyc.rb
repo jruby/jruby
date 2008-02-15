@@ -34,8 +34,7 @@ module JRubyCompiler
     end
 
     if (argv.length == 0)
-      puts "No files or directories specified"
-      exit 1
+      raise "No files or directories specified"
     end
 
     compile_files(argv, basedir, prefix, target)
@@ -45,8 +44,7 @@ module JRubyCompiler
     runtime = JRuby.runtime
     
     unless File.exist? target
-      puts "Target dir not found: #{target}"
-      exit 1
+      raise "Target dir not found: #{target}"
     end
 
     # The compilation code
