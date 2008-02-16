@@ -43,6 +43,6 @@ public class NativePasswd extends Structure implements Passwd {
         return pw_uid;
     }
     public int getExpire() {
-        return pw_uid;
+        return pw_expire;
     }
 }

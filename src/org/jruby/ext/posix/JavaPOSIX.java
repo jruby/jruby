@@ -67,6 +67,16 @@ public class JavaPOSIX implements POSIX {
         return helper.getpwent();
     }
 
+    public Passwd getpwuid(int which) {
+        handler.unimplementedError("getpwuid unimplemented");
+        return null;
+    }
+
+    public Passwd getpwnam(String which) {
+        handler.unimplementedError("getpwnam unimplemented");
+        return null;
+    }
+
     public int setpwent() {
         return helper.setpwent();
     }

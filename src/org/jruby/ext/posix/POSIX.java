@@ -25,6 +25,8 @@ public interface POSIX {
     public int getppid();
     public int getpriority(int which, int who);
     public Passwd getpwent();
+    public Passwd getpwuid(int which);
+    public Passwd getpwnam(String which);
     public int endpwent();
     public int setpwent();
     public int getuid();

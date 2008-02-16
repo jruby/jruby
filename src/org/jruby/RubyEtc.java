@@ -2,7 +2,9 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.posix.Passwd;
+import org.jruby.ext.posix.POSIX;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyEtc {
@@ -54,10 +56,45 @@ public class RubyEtc {
         return RubyStruct.newStruct(runtime.getPasswdStruct(), args, Block.NULL_BLOCK);
     }
 
-    // "getgrnam", "setgrent", "group", "endgrent", "getpwuid", "passwd", "getgrent", "getpwnam", "getgrgid"
+    // "getgrnam", "setgrent", "group", "endgrent", "getgrent", "getgrgid"
 
+    @JRubyMethod(name = "getpwuid", optional=1, module = true)
+    public static IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = recv.getRuntime();
+        POSIX posix = runtime.getPosix();
+        int uid = args.length == 0 ? posix.getuid() : RubyNumeric.fix2int(args[0]);
+        Passwd pwd = posix.getpwuid(uid);
+        if(pwd == null) {
+            throw runtime.newArgumentError("can't find user for " + uid);
+        }
+        return setupPasswd(runtime, pwd);
+    }
 
+    @JRubyMethod(name = "getpwnam", required=1, module = true)
+    public static IRubyObject getpwnam(IRubyObject recv, IRubyObject name) {
+        String nam = name.convertToString().toString();
+        Passwd pwd = recv.getRuntime().getPosix().getpwnam(nam);
+        if(pwd == null) {
+            throw recv.getRuntime().newArgumentError("can't find user for " + nam);
+        }
+        return setupPasswd(recv.getRuntime(), pwd);
+    }
 
+    @JRubyMethod(name = "passwd", module = true, frame=true)
+    public static IRubyObject passwd(IRubyObject recv, Block block) {
+        Ruby runtime = recv.getRuntime();
+        POSIX posix = runtime.getPosix();
+        if(block.isGiven()) {
+            ThreadContext context = runtime.getCurrentContext();
+            posix.setpwent();
+            Passwd pw;
+            while((pw = posix.getpwent()) != null) {
+                block.yield(context, setupPasswd(runtime, pw));
+            }
+            posix.endpwent();
+        }
+        return setupPasswd(runtime, posix.getpwent());
+    }
 
     @JRubyMethod(name = "getlogin", module = true)
     public static IRubyObject getlogin(IRubyObject recv) {
