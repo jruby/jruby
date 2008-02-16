@@ -109,6 +109,14 @@ public class JavaLibCHelper {
     public Passwd getpwent() {
         return new JavaPasswd(handler);
     }
+
+    public int setpwent() {
+        return 0;
+    }
+
+    public int endpwent() {
+        return 0;
+    }
     
     public int isatty(int fd) {
         return (fd == STDOUT || fd == STDIN || fd == STDERR) ? 1 : 0;

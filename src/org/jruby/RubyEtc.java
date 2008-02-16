@@ -1,8 +1,8 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
-//import org.jruby.ext.posix.Passwd;
-//import org.jruby.runtime.Block;
+import org.jruby.ext.posix.Passwd;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyEtc {
@@ -13,12 +13,11 @@ public class RubyEtc {
         
         etcModule.defineAnnotatedMethods(RubyEtc.class);
         
-        //definePasswdStruct(runtime);
+        definePasswdStruct(runtime);
         
         return etcModule;
     }
     
-    /*
     private static void definePasswdStruct(Ruby runtime) {
         IRubyObject[] args = new IRubyObject[] {
                 runtime.newString("Passwd"),
@@ -28,12 +27,9 @@ public class RubyEtc {
                 runtime.newSymbol("gid"),
                 runtime.newSymbol("gecos"),
                 runtime.newSymbol("dir"),
-                runtime.newSymbol("shell")
+                runtime.newSymbol("shell"),
                 runtime.newSymbol("change"),
-                runtime.newSymbol("quota"),
-                runtime.newSymbol("age"),
                 runtime.newSymbol("uclass"),
-                runtime.newSymbol("comment"),
                 runtime.newSymbol("expire")
         };
         
@@ -45,15 +41,18 @@ public class RubyEtc {
                 runtime.newString(passwd.getLoginName()),
                 runtime.newString(passwd.getPassword()),
                 runtime.newFixnum(passwd.getUID()),
-                runtime.newFixnum(passwd.getGID())
-
+                runtime.newFixnum(passwd.getGID()),
                 runtime.newString(passwd.getGECOS()),
                 runtime.newString(passwd.getHome()),
-                runtime.newString(passwd.getShell())
+                runtime.newString(passwd.getShell()),
+                runtime.newFixnum(passwd.getPasswdChangeTime()),
+                runtime.newString(passwd.getAccessClass()),
+                runtime.newFixnum(passwd.getExpire())
+
         };
         
         return RubyStruct.newStruct(runtime.getPasswdStruct(), args, Block.NULL_BLOCK);
-    }*/
+    }
 
     @JRubyMethod(name = "getlogin", module = true)
     public static IRubyObject getlogin(IRubyObject recv) {
@@ -67,13 +66,26 @@ public class RubyEtc {
             return runtime.getNil();
         }
     }
-    
-    /*
+
+    @JRubyMethod(name = "endpwent", module = true)
+    public static IRubyObject endpwent(IRubyObject recv) {
+        Ruby runtime = recv.getRuntime();
+        runtime.getPosix().endpwent();
+        return runtime.getNil();
+    }
+
+    @JRubyMethod(name = "setpwent", module = true)
+    public static IRubyObject setpwent(IRubyObject recv) {
+        Ruby runtime = recv.getRuntime();
+        runtime.getPosix().setpwent();
+        return runtime.getNil();
+    }
+
     @JRubyMethod(name = "getpwent", module = true)
     public static IRubyObject getpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         Passwd passwd = runtime.getPosix().getpwent();
         
         return setupPasswd(recv.getRuntime(), passwd);
-    }*/
+    }
 }

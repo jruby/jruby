@@ -51,6 +51,8 @@ public interface LibC extends Library {
     public int getppid();
     public int getpid();
     public NativePasswd getpwent();
+    public int setpwent();
+    public int endpwent();
     public int getuid();
     public int setsid();
     public int setuid(int uid);

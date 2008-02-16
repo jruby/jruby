@@ -10,4 +10,5 @@ public interface Passwd {
     public String getGECOS();
     public String getHome();
     public String getShell();
+    public int getExpire();
 }

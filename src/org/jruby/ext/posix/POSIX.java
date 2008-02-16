@@ -25,6 +25,8 @@ public interface POSIX {
     public int getppid();
     public int getpriority(int which, int who);
     public Passwd getpwent();
+    public int endpwent();
+    public int setpwent();
     public int getuid();
     public boolean isatty(FileDescriptor descriptor);
     public int kill(int pid, int signal);

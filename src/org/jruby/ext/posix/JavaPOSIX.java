@@ -67,6 +67,14 @@ public class JavaPOSIX implements POSIX {
         return helper.getpwent();
     }
 
+    public int setpwent() {
+        return helper.setpwent();
+    }
+
+    public int endpwent() {
+        return helper.endpwent();
+    }
+
     public int getuid() {
         return unimplementedInt("getuid");
     }

@@ -56,4 +56,10 @@ public class JavaPasswd implements Passwd {
         
         return -1;
     }
+
+    public int getExpire() {
+        handler.unimplementedError("passwd.expire unimplemented");
+        
+        return -1;
+    }
 }

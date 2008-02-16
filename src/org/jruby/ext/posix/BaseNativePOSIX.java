@@ -68,6 +68,14 @@ public abstract class BaseNativePOSIX implements POSIX {
         return libc.getpwent();
     }
 
+    public int setpwent() {
+        return libc.setpwent();
+    }
+
+    public int endpwent() {
+        return libc.endpwent();
+    }
+
     public int getuid() {
         return libc.getuid();
     }

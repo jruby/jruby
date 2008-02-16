@@ -22,7 +22,7 @@ public class NativePasswd extends Structure implements Passwd {
         return pw_gecos;
     }
     public long getGID() {
-        return pw_gid & 0xffffffff;
+        return pw_gid;
     }
     public String getHome() {
         return pw_dir;
@@ -40,6 +40,9 @@ public class NativePasswd extends Structure implements Passwd {
         return pw_shell;
     }
     public long getUID() {
-        return pw_uid  & 0xffffffff;
+        return pw_uid;
+    }
+    public int getExpire() {
+        return pw_uid;
     }
 }
