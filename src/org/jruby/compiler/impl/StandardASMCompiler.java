@@ -2423,7 +2423,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                 // enable "boxed" variable compilation when only a closure present
                 // this breaks using a proc as a binding
-                if (Boolean.getBoolean("jruby.compile.boxed") && !inspector.hasScopeAwareMethods()) {
+                if (RubyInstanceConfig.BOXED_COMPILE_ENABLED && !inspector.hasScopeAwareMethods()) {
                     variableCompiler = new BoxedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX, FIRST_TEMP_INDEX);
                 } else {
                     variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX, FIRST_TEMP_INDEX);
@@ -2560,7 +2560,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                 // enable "boxed" variable compilation when only a closure present
                 // this breaks using a proc as a binding
-                if (Boolean.getBoolean("jruby.compile.boxed") && !inspector.hasScopeAwareMethods()) {
+                if (RubyInstanceConfig.BOXED_COMPILE_ENABLED && !inspector.hasScopeAwareMethods()) {
                     variableCompiler = new BoxedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX, FIRST_TEMP_INDEX);
                 } else {
                     variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX, FIRST_TEMP_INDEX);

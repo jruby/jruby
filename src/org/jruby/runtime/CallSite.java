@@ -29,6 +29,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.JumpException.BreakJump;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -61,72 +62,6 @@ public abstract class CallSite {
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
-
-    public static abstract class ArgumentBoxingCallSite extends CallSite {
-        public ArgumentBoxingCallSite(String methodName, CallType callType) {
-            super(MethodIndex.getIndex(methodName), methodName, callType);
-        }
-        
-        public IRubyObject call(ThreadContext context, IRubyObject self) {
-            IRubyObject[] args = IRubyObject.NULL_ARRAY;
-            Block block = Block.NULL_BLOCK;
-            
-            return call(context, self, args, block);
-        }
-
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1) {
-            IRubyObject[] args = new IRubyObject[] {arg1};
-            Block block = Block.NULL_BLOCK;
-            
-            return call(context, self, args, block);
-        }
-
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
-            IRubyObject[] args = new IRubyObject[] {arg1,arg2};
-            Block block = Block.NULL_BLOCK;
-            
-            return call(context, self, args, block);
-        }
-
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-            IRubyObject[] args = new IRubyObject[] {arg1,arg2,arg3};
-            Block block = Block.NULL_BLOCK;
-            
-            return call(context, self, args, block);
-        }
-
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            Block block = Block.NULL_BLOCK;
-            
-            return call(context, self, args, block);
-        }
-
-        public IRubyObject call(ThreadContext context, IRubyObject self, Block block) {
-            IRubyObject[] args = IRubyObject.NULL_ARRAY;
-            
-            return call(context, self, args, block);
-        }
-
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
-            IRubyObject[] args = new IRubyObject[] {arg1};
-            
-            return call(context, self, args, block);
-        }
-
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
-            IRubyObject[] args = new IRubyObject[] {arg1,arg2};
-            
-            return call(context, self, args, block);
-        }
-
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-            IRubyObject[] args = new IRubyObject[] {arg1,arg2,arg3};
-            
-            return call(context, self, args, block);
-        }
-
-        public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
-    }
 
     public static class InlineCachingCallSite extends CallSite implements CacheMap.CacheSite {
         DynamicMethod cachedMethod;
@@ -442,6 +377,118 @@ public abstract class CallSite {
             }
 
             return (IRubyObject) bj.getValue();
+        }
+    }
+    
+    public static class PlusCallSite extends InlineCachingCallSite {
+        public PlusCallSite() {
+            super("+", CallType.NORMAL);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
+            if (self instanceof RubyFixnum) {
+                return ((RubyFixnum)self).op_plus(arg);
+            }
+            
+            return super.call(context, self, arg);
+        }
+    }
+    
+    public static class MinusCallSite extends InlineCachingCallSite {
+        public MinusCallSite() {
+            super("-", CallType.NORMAL);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
+            if (self instanceof RubyFixnum) {
+                return ((RubyFixnum)self).op_minus(arg);
+            }
+            
+            return super.call(context, self, arg);
+        }
+    }
+    
+    public static class MulCallSite extends InlineCachingCallSite {
+        public MulCallSite() {
+            super("*", CallType.NORMAL);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
+            if (self instanceof RubyFixnum) {
+                return ((RubyFixnum)self).op_mul(arg);
+            }
+            
+            return super.call(context, self, arg);
+        }
+    }
+    
+    public static class DivCallSite extends InlineCachingCallSite {
+        public DivCallSite() {
+            super("/", CallType.NORMAL);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
+            if (self instanceof RubyFixnum) {
+                return ((RubyFixnum)self).op_div(arg);
+            }
+            
+            return super.call(context, self, arg);
+        }
+    }
+    
+    public static class LtCallSite extends InlineCachingCallSite {
+        public LtCallSite() {
+            super("<", CallType.NORMAL);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
+            if (self instanceof RubyFixnum) {
+                return ((RubyFixnum)self).op_lt(arg);
+            }
+            
+            return super.call(context, self, arg);
+        }
+    }
+    
+    public static class LeCallSite extends InlineCachingCallSite {
+        public LeCallSite() {
+            super("<=", CallType.NORMAL);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
+            if (self instanceof RubyFixnum) {
+                return ((RubyFixnum)self).op_le(arg);
+            }
+            
+            return super.call(context, self, arg);
+        }
+    }
+    
+    public static class GtCallSite extends InlineCachingCallSite {
+        public GtCallSite() {
+            super(">", CallType.NORMAL);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
+            if (self instanceof RubyFixnum) {
+                return ((RubyFixnum)self).op_gt(arg);
+            }
+            
+            return super.call(context, self, arg);
+        }
+    }
+    
+    public static class GeCallSite extends InlineCachingCallSite {
+        public GeCallSite() {
+            super(">=", CallType.NORMAL);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
+            if (self instanceof RubyFixnum) {
+                return ((RubyFixnum)self).op_ge(arg);
+            }
+            
+            return super.call(context, self, arg);
         }
     }
 }

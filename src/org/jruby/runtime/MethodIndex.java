@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jruby.RubyInstanceConfig;
 
 /**
  *
@@ -89,7 +90,29 @@ public class MethodIndex {
     }
     
     public synchronized static CallSite getCallSite(String name) {
-        return new CallSite.InlineCachingCallSite(name, CallType.NORMAL);
+        if (!RubyInstanceConfig.FASTOPS_COMPILE_ENABLED) {
+            return new CallSite.InlineCachingCallSite(name, CallType.NORMAL);
+        } else {
+            if (name.equals("+")) {
+                return new CallSite.PlusCallSite();
+            } else if (name.equals("-")) {
+                return new CallSite.MinusCallSite();
+            } else if (name.equals("*")) {
+                return new CallSite.MulCallSite();
+            } else if (name.equals("/")) {
+                return new CallSite.DivCallSite();
+            } else if (name.equals("<")) {
+                return new CallSite.LtCallSite();
+            } else if (name.equals("<-")) {
+                return new CallSite.LeCallSite();
+            } else if (name.equals(">")) {
+                return new CallSite.GtCallSite();
+            } else if (name.equals(">=")) {
+                return new CallSite.GeCallSite();
+            } else {
+                return new CallSite.InlineCachingCallSite(name, CallType.NORMAL);
+            }
+        }
     }
     
     public synchronized static CallSite getFunctionalCallSite(String name) {

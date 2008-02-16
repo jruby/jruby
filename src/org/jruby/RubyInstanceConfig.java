@@ -127,6 +127,12 @@ public class RubyInstanceConfig {
 
     public static final boolean FASTEST_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.fastest");
+    public static final boolean BOXED_COMPILE_ENABLED
+            = FASTEST_COMPILE_ENABLED
+            || SafePropertyAccessor.getBoolean("jruby.compile.boxed");
+    public static final boolean FASTOPS_COMPILE_ENABLED
+            = FASTEST_COMPILE_ENABLED
+            || SafePropertyAccessor.getBoolean("jruby.compile.fastops");
     public static final boolean FRAMELESS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.frameless");
@@ -278,6 +284,8 @@ public class RubyInstanceConfig {
                 .append("\nCOMPILER SETTINGS:\n")
                 .append("    jruby.compile.mode=JIT|FORCE|OFF\n")
                 .append("       Set compilation mode. JIT is default; FORCE compiles all, OFF disables\n")
+                .append("    jruby.compile.fastest=true|false\n")
+                .append("       (EXPERIMENTAL) Turn on all experimental compiler optimizations\n")
                 .append("    jruby.compile.boxed=true|false\n")
                 .append("       (EXPERIMENTAL) Use boxed variables; this can speed up some methods. Default is false\n")
                 .append("    jruby.compile.frameless=true|false\n")
@@ -286,6 +294,8 @@ public class RubyInstanceConfig {
                 .append("       (EXPERIMENTAL) Turn on compilation that avoids updating Ruby position info. Default is false\n")
                 .append("    jruby.compile.threadless=true|false\n")
                 .append("       (EXPERIMENTAL) Turn on compilation without polling for \"unsafe\" thread events. Default is false\n")
+                .append("    jruby.compile.fastops=true|false\n")
+                .append("       (EXPERIMENTAL) Turn on fast operators for Fixnum. Default is false\n")
                 .append("\nJIT SETTINGS:\n")
                 .append("    jruby.jit.threshold=<invocation count>\n")
                 .append("       Set the JIT threshold to the specified method invocation count. Default is 20\n")
