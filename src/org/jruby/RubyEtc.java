@@ -54,6 +54,11 @@ public class RubyEtc {
         return RubyStruct.newStruct(runtime.getPasswdStruct(), args, Block.NULL_BLOCK);
     }
 
+    // "getgrnam", "setgrent", "group", "endgrent", "getpwuid", "passwd", "getgrent", "getpwnam", "getgrgid"
+
+
+
+
     @JRubyMethod(name = "getlogin", module = true)
     public static IRubyObject getlogin(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
