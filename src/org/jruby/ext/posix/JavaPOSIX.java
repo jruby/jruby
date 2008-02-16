@@ -72,8 +72,17 @@ public class JavaPOSIX implements POSIX {
         return null;
     }
 
+    public Group getgrgid(int which) {
+        handler.unimplementedError("getgrgid unimplemented");
+        return null;
+    }
+
     public Passwd getpwnam(String which) {
         handler.unimplementedError("getpwnam unimplemented");
+        return null;
+    }
+    public Group getgrnam(String which) {
+        handler.unimplementedError("getgrnam unimplemented");
         return null;
     }
 
@@ -88,6 +97,14 @@ public class JavaPOSIX implements POSIX {
 
     public int endpwent() {
         return helper.endpwent();
+    }
+
+    public int setgrent() {
+        return unimplementedInt("setgrent");
+    }
+
+    public int endgrent() {
+        return unimplementedInt("endgrent");
     }
 
     public int getuid() {

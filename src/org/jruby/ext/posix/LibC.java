@@ -54,8 +54,12 @@ public interface LibC extends Library {
     public NativePasswd getpwuid(int which);
     public NativePasswd getpwnam(String which);
     public NativeGroup getgrent();
+    public NativeGroup getgrgid(int which);
+    public NativeGroup getgrnam(String which);
     public int setpwent();
     public int endpwent();
+    public int setgrent();
+    public int endgrent();
     public int getuid();
     public int setsid();
     public int setuid(int uid);

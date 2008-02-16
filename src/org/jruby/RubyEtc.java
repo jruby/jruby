@@ -90,9 +90,6 @@ public class RubyEtc {
         return runtime.newArrayNoCopy(arr);
     }
 
-    // "getgrnam", "setgrent", "group", "endgrent", "getgrent", "getgrgid"
-
-
 
     @JRubyMethod(name = "getpwuid", optional=1, module = true)
     public static IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
@@ -165,6 +162,58 @@ public class RubyEtc {
         Passwd passwd = runtime.getPosix().getpwent();
         
         return setupPasswd(recv.getRuntime(), passwd);
+    }
+
+    @JRubyMethod(name = "getgrnam", required=1, module = true)
+    public static IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
+        String nam = name.convertToString().toString();
+        Group grp = recv.getRuntime().getPosix().getgrnam(nam);
+        if(grp == null) {
+            throw recv.getRuntime().newArgumentError("can't find group for " + nam);
+        }
+        return setupGroup(recv.getRuntime(), grp);
+    }
+
+    @JRubyMethod(name = "getgrgid", optional=1, module = true)
+    public static IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = recv.getRuntime();
+        POSIX posix = runtime.getPosix();
+        int gid = args.length == 0 ? posix.getgid() : RubyNumeric.fix2int(args[0]);
+        Group gr = posix.getgrgid(gid);
+        if(gr == null) {
+            throw runtime.newArgumentError("can't find group for " + gid);
+        }
+        return setupGroup(runtime, gr);
+    }
+
+    @JRubyMethod(name = "endgrent", module = true)
+    public static IRubyObject endgrent(IRubyObject recv) {
+        Ruby runtime = recv.getRuntime();
+        runtime.getPosix().endgrent();
+        return runtime.getNil();
+    }
+
+    @JRubyMethod(name = "setgrent", module = true)
+    public static IRubyObject setgrent(IRubyObject recv) {
+        Ruby runtime = recv.getRuntime();
+        runtime.getPosix().setgrent();
+        return runtime.getNil();
+    }
+
+    @JRubyMethod(name = "group", module = true, frame=true)
+    public static IRubyObject group(IRubyObject recv, Block block) {
+        Ruby runtime = recv.getRuntime();
+        POSIX posix = runtime.getPosix();
+        if(block.isGiven()) {
+            ThreadContext context = runtime.getCurrentContext();
+            posix.setgrent();
+            Group gr;
+            while((gr = posix.getgrent()) != null) {
+                block.yield(context, setupGroup(runtime, gr));
+            }
+            posix.endgrent();
+        }
+        return setupGroup(runtime, posix.getgrent());
     }
 
     @JRubyMethod(name = "getgrent", module = true)

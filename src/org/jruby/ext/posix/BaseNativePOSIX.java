@@ -79,6 +79,12 @@ public abstract class BaseNativePOSIX implements POSIX {
     public Group getgrent() {
         return libc.getgrent();
     }
+    public Group getgrgid(int which) {
+        return libc.getgrgid(which);
+    }
+    public Group getgrnam(String which) {
+        return libc.getgrnam(which);
+    }
 
     public int setpwent() {
         return libc.setpwent();
@@ -86,6 +92,14 @@ public abstract class BaseNativePOSIX implements POSIX {
 
     public int endpwent() {
         return libc.endpwent();
+    }
+
+    public int setgrent() {
+        return libc.setgrent();
+    }
+
+    public int endgrent() {
+        return libc.endgrent();
     }
 
     public int getuid() {

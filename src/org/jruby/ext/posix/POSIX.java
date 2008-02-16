@@ -27,7 +27,11 @@ public interface POSIX {
     public Passwd getpwent();
     public Passwd getpwuid(int which);
     public Passwd getpwnam(String which);
+    public Group getgrgid(int which);
+    public Group getgrnam(String which);
     public Group getgrent();
+    public int endgrent();
+    public int setgrent();
     public int endpwent();
     public int setpwent();
     public int getuid();
