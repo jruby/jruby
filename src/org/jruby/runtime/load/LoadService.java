@@ -586,9 +586,10 @@ e.printStackTrace();
                     runtime.getJRubyClassLoader().addURL(((JarredScript)library).getResource().getURL());
                 }
 
-                Class theClass = runtime.getJavaSupport().loadJavaClass(className);
+                // quietly try to load the class
+                Class theClass = runtime.getJavaSupport().loadJavaClassQuiet(className);
                 library = new ClassExtensionLibrary(theClass);
-            } catch(Exception ee) {
+            } catch (Exception ee) {
                 library = null;
                 runtime.getGlobalVariables().set("$!", runtime.getNil());
             }

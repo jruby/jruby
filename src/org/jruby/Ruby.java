@@ -2277,7 +2277,11 @@ public final class Ruby {
     }
 
     public RaiseException newNameError(String message, String name, Throwable origException) {
-        if (origException != null && this.getVerbose().isTrue()) {
+        return newNameError(message, name, origException, true);
+    }
+
+    public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
+        if (printWhenVerbose && origException != null && this.getVerbose().isTrue()) {
             origException.printStackTrace(getErrorStream());
         }
         return new RaiseException(new RubyNameError(

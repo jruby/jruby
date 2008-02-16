@@ -126,18 +126,21 @@ public class JavaSupport {
     final Map getMatchCache() {
         return matchCache;
     }
-
     
-    public Class loadJavaClass(String className) {
-        try {
-            Class primitiveClass;
-            if ((primitiveClass = PRIMITIVE_CLASSES.get(className)) == null) {
-                if (!Ruby.isSecurityRestricted()) {
-                    return Class.forName(className, true, runtime.getJRubyClassLoader());
-                }
-                return Class.forName(className);
+    private Class loadJavaClass(String className) throws ClassNotFoundException {
+        Class primitiveClass;
+        if ((primitiveClass = PRIMITIVE_CLASSES.get(className)) == null) {
+            if (!Ruby.isSecurityRestricted()) {
+                return Class.forName(className, true, runtime.getJRubyClassLoader());
             }
-            return primitiveClass;
+            return Class.forName(className);
+        }
+        return primitiveClass;
+    }
+    
+    public Class loadJavaClassVerbose(String className) {
+        try {
+            return loadJavaClass(className);
         } catch (ClassNotFoundException cnfExcptn) {
             throw runtime.newNameError("cannot load Java class " + className, className, cnfExcptn);
         } catch (ExceptionInInitializerError eiie) {
@@ -146,6 +149,20 @@ public class JavaSupport {
             throw runtime.newNameError("cannot link Java class " + className, className, le);
         } catch (SecurityException se) {
             throw runtime.newNameError("security: cannot load Java class " + className, className, se);
+        }
+    }
+    
+    public Class loadJavaClassQuiet(String className) {
+        try {
+            return loadJavaClass(className);
+        } catch (ClassNotFoundException cnfExcptn) {
+            throw runtime.newNameError("cannot load Java class " + className, className, cnfExcptn, false);
+        } catch (ExceptionInInitializerError eiie) {
+            throw runtime.newNameError("cannot initialize Java class " + className, className, eiie, false);
+        } catch (LinkageError le) {
+            throw runtime.newNameError("cannot link Java class " + className, className, le, false);
+        } catch (SecurityException se) {
+            throw runtime.newNameError("security: cannot load Java class " + className, className, se, false);
         }
     }
 

@@ -997,7 +997,7 @@ public class JavaClass extends JavaObject {
     }
     
     public static synchronized JavaClass forName(Ruby runtime, String className) {
-        Class klass = runtime.getJavaSupport().loadJavaClass(className);
+        Class klass = runtime.getJavaSupport().loadJavaClassVerbose(className);
         return JavaClass.get(runtime, klass);
     }
 
@@ -1233,7 +1233,7 @@ public class JavaClass extends JavaObject {
         Class[] parameterTypes = new Class[args.length];
         for (int i = 0; i < args.length; i++) {
             String name = args[i].asJavaString();
-            parameterTypes[i] = getRuntime().getJavaSupport().loadJavaClass(name);
+            parameterTypes[i] = getRuntime().getJavaSupport().loadJavaClassVerbose(name);
         }
         return parameterTypes;
     }
