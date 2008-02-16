@@ -77,6 +77,11 @@ public class JavaPOSIX implements POSIX {
         return null;
     }
 
+    public Group getgrent() {
+        handler.unimplementedError("getgrent unimplemented");
+        return null;
+    }
+
     public int setpwent() {
         return helper.setpwent();
     }

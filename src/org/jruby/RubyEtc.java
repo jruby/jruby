@@ -2,6 +2,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.posix.Passwd;
+import org.jruby.ext.posix.Group;
 import org.jruby.ext.posix.POSIX;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -16,6 +17,7 @@ public class RubyEtc {
         etcModule.defineAnnotatedMethods(RubyEtc.class);
         
         definePasswdStruct(runtime);
+        defineGroupStruct(runtime);
         
         return etcModule;
     }
@@ -37,6 +39,18 @@ public class RubyEtc {
         
         runtime.setPasswdStruct(RubyStruct.newInstance(runtime.getStructClass(), args, Block.NULL_BLOCK));
     }
+
+    private static void defineGroupStruct(Ruby runtime) {
+        IRubyObject[] args = new IRubyObject[] {
+                runtime.newString("Group"),
+                runtime.newSymbol("name"),
+                runtime.newSymbol("passwd"),
+                runtime.newSymbol("gid"),
+                runtime.newSymbol("mem")
+        };
+        
+        runtime.setGroupStruct(RubyStruct.newInstance(runtime.getStructClass(), args, Block.NULL_BLOCK));
+    }
     
     private static IRubyObject setupPasswd(Ruby runtime, Passwd passwd) {
         IRubyObject[] args = new IRubyObject[] {
@@ -56,7 +70,29 @@ public class RubyEtc {
         return RubyStruct.newStruct(runtime.getPasswdStruct(), args, Block.NULL_BLOCK);
     }
 
+    
+    private static IRubyObject setupGroup(Ruby runtime, Group group) {
+        IRubyObject[] args = new IRubyObject[] {
+                runtime.newString(group.getName()),
+                runtime.newString(group.getPassword()),
+                runtime.newFixnum(group.getGID()),
+                intoStringArray(runtime, group.getMembers())
+        };
+        
+        return RubyStruct.newStruct(runtime.getGroupStruct(), args, Block.NULL_BLOCK);
+    }
+
+    private static IRubyObject intoStringArray(Ruby runtime, String[] members) {
+        IRubyObject[] arr = new IRubyObject[members.length];
+        for(int i = 0; i<arr.length; i++) {
+            arr[i] = runtime.newString(members[i]);
+        }
+        return runtime.newArrayNoCopy(arr);
+    }
+
     // "getgrnam", "setgrent", "group", "endgrent", "getgrent", "getgrgid"
+
+
 
     @JRubyMethod(name = "getpwuid", optional=1, module = true)
     public static IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
@@ -129,5 +165,13 @@ public class RubyEtc {
         Passwd passwd = runtime.getPosix().getpwent();
         
         return setupPasswd(recv.getRuntime(), passwd);
+    }
+
+    @JRubyMethod(name = "getgrent", module = true)
+    public static IRubyObject getgrent(IRubyObject recv) {
+        Ruby runtime = recv.getRuntime();
+        Group gr = runtime.getPosix().getgrent();
+        
+        return setupGroup(recv.getRuntime(), gr);
     }
 }

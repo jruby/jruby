@@ -1448,6 +1448,13 @@ public final class Ruby {
         this.passwdStruct = passwdStruct;
     }
 
+    public IRubyObject getGroupStruct() {
+        return groupStruct;
+    }
+    void setGroupStruct(RubyClass groupStruct) {
+        this.groupStruct = groupStruct;
+    }
+
     public RubyModule getGC() {
         return gcModule;
     }
@@ -2585,6 +2592,7 @@ public final class Ruby {
             matchDataClass, regexpClass, timeClass, bignumClass, dirClass,
             fileClass, fileStatClass, ioClass, threadClass, threadGroupClass,
             continuationClass, structClass, tmsStruct, passwdStruct,
+        groupStruct, 
             procStatusClass, exceptionClass, runtimeError, ioError,
             scriptError, nameError, signalException, standardError,
             systemCallError, rangeError;

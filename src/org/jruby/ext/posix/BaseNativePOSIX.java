@@ -76,6 +76,10 @@ public abstract class BaseNativePOSIX implements POSIX {
         return libc.getpwnam(which);
     }
 
+    public Group getgrent() {
+        return libc.getgrent();
+    }
+
     public int setpwent() {
         return libc.setpwent();
     }
