@@ -2,6 +2,9 @@ package org.jruby.util;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.security.ProtectionDomain;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -43,13 +46,25 @@ public class ClassCache<T> {
         }
     }
     
-    private static class OneShotClassLoader extends ClassLoader {
+    private static class OneShotClassLoader extends URLClassLoader {
+        private final static ProtectionDomain DEFAULT_DOMAIN = 
+            JRubyClassLoader.class.getProtectionDomain();
+        
         public OneShotClassLoader(ClassLoader parent) {
-            super(parent);
+            super(new URL[0], parent);
         }
         
-        public Class<?> defineClass(String name, byte[] bytecode) {
-            return super.defineClass(name, bytecode, 0, bytecode.length);
+        // Change visibility so others can see it
+        public void addURL(URL url) {
+            super.addURL(url);
+        }
+
+        public Class<?> defineClass(String name, byte[] bytes) {
+            return super.defineClass(name, bytes, 0, bytes.length, DEFAULT_DOMAIN);
+         }
+
+        public Class<?> defineClass(String name, byte[] bytes, ProtectionDomain domain) {
+           return super.defineClass(name, bytes, 0, bytes.length, domain);
         }
     }
     
