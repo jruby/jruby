@@ -71,14 +71,14 @@ import org.jruby.util.SafePropertyAccessor;
 public class RubyThread extends RubyObject {
     private ThreadLike threadImpl;
     private RubyFixnum priority;
-    private Map<IRubyObject, IRubyObject> threadLocalVariables = new HashMap<IRubyObject, IRubyObject>();
+    private final Map<IRubyObject, IRubyObject> threadLocalVariables = new HashMap<IRubyObject, IRubyObject>();
     private boolean abortOnException;
     private IRubyObject finalResult;
     private RaiseException exitingException;
     private IRubyObject receivedException;
     private RubyThreadGroup threadGroup;
 
-    private ThreadService threadService;
+    private final ThreadService threadService;
     private volatile boolean isStopped = false;
     public Object stopLock = new Object();
     
@@ -289,7 +289,7 @@ public class RubyThread extends RubyObject {
         if (originalKey instanceof RubySymbol) {
             return originalKey;
         } else if (originalKey instanceof RubyString) {
-            return getRuntime().fastNewSymbol(originalKey.asJavaString().intern());
+            return getRuntime().newSymbol(originalKey.asJavaString());
         } else if (originalKey instanceof RubyFixnum) {
             getRuntime().getWarnings().warn(ID.FIXNUMS_NOT_SYMBOLS, "Do not use Fixnums as Symbols");
             throw getRuntime().newArgumentError(originalKey + " is not a symbol");
@@ -300,12 +300,11 @@ public class RubyThread extends RubyObject {
 
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject op_aref(IRubyObject key) {
-        key = getSymbolKey(key);
-        
-        if (!threadLocalVariables.containsKey(key)) {
-            return getRuntime().getNil();
+        IRubyObject value;
+        if ((value = threadLocalVariables.get(getSymbolKey(key))) != null) {
+            return value;
         }
-        return (IRubyObject) threadLocalVariables.get(key);
+        return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "[]=", required = 2)
