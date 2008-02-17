@@ -45,13 +45,13 @@ public class BenchLongFibRecursive {
     public static void benchBoxedLongFib(long n) {
         long start = System.currentTimeMillis();
         Long result = boxedLongFib(Long.valueOf(n));
-        System.out.println("Took " + (System.currentTimeMillis() - start) + "ms for longegerFib(" + n + ") = " + result);
+        System.out.println("Took " + (System.currentTimeMillis() - start) + "ms for boxedLongFib(" + n + ") = " + result);
     }
     
     public static void benchFullyBoxedFib(long n) {
         long start = System.currentTimeMillis();
         BoxedLong result = fullyBoxedFib(new BoxedLong(n));
-        System.out.println("Took " + (System.currentTimeMillis() - start) + "ms for boxedFib(" + n + ") = " + result);
+        System.out.println("Took " + (System.currentTimeMillis() - start) + "ms for fullyBoxedFib(" + n + ") = " + result);
     }
     
     public static long longFib(long n) {
