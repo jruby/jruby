@@ -8,6 +8,8 @@ def fib_ruby(n)
   end
 end
 
-(ARGV[0] || '10').to_i.times {
-  puts Benchmark.measure { fib_ruby(30) }
+TIMES = (ARGV[0] || 5).to_i
+N = (ARGV[1] || 30).to_i
+TIMES.times {
+  puts Benchmark.measure { fib_ruby(N) }
 }
