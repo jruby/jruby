@@ -528,10 +528,14 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "&", required = 1)
     public IRubyObject op_and(IRubyObject other) {
+        if (other instanceof RubyFixnum) {
+            return newFixnum(value & ((RubyFixnum) other).value);
+        }
         if (other instanceof RubyBignum) {
             return ((RubyBignum) other).op_and(this);
-    }
-        return RubyFixnum.newFixnum(getRuntime(), value & num2long(other));
+        }
+
+        return newFixnum(value & num2long(other));
     }
 
     /** fix_or 
@@ -545,11 +549,8 @@ public class RubyFixnum extends RubyInteger {
         if (other instanceof RubyBignum) {
             return ((RubyBignum) other).op_or(this);
         }
-        if (other instanceof RubyNumeric) {
-            return newFixnum(value | ((RubyNumeric) other).getLongValue());
-        }
-        
-        return op_or(RubyFixnum.newFixnum(getRuntime(), num2long(other)));
+
+        return newFixnum(value | num2long(other));
     }
 
     /** fix_xor 
@@ -559,16 +560,13 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject op_xor(IRubyObject other) {
         if(other instanceof RubyFixnum) {
             return newFixnum(value ^ ((RubyFixnum) other).value);
-            }
+        }
         if (other instanceof RubyBignum) {
             return ((RubyBignum) other).op_xor(this);
         }
-        if (other instanceof RubyNumeric) {
-            return newFixnum(value ^ ((RubyNumeric) other).getLongValue());
-        }
 
-        return op_xor(RubyFixnum.newFixnum(getRuntime(), num2long(other)));
-        }
+        return newFixnum(value ^ num2long(other));
+    }
 
     /** fix_aref 
      * 

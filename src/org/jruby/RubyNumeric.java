@@ -166,7 +166,7 @@ public class RubyNumeric extends RubyObject {
                 return (long) aFloat;
             } else {
                 // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
-                throw arg.getRuntime().newTypeError("float " + aFloat + "out of range of integer");
+                throw arg.getRuntime().newRangeError("float " + aFloat + " out of range of integer");
             }
         } else if (arg instanceof RubyBignum) {
             return RubyBignum.big2long((RubyBignum) arg);
