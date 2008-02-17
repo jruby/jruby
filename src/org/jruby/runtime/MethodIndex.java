@@ -103,7 +103,7 @@ public class MethodIndex {
                 return new CallSite.DivCallSite();
             } else if (name.equals("<")) {
                 return new CallSite.LtCallSite();
-            } else if (name.equals("<-")) {
+            } else if (name.equals("<=")) {
                 return new CallSite.LeCallSite();
             } else if (name.equals(">")) {
                 return new CallSite.GtCallSite();
