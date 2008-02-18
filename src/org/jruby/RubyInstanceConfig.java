@@ -40,6 +40,7 @@ import java.util.Map;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.load.LoadService;
 import org.jruby.util.ClassCache;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
@@ -147,6 +148,19 @@ public class RubyInstanceConfig {
     public static final boolean FORK_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.fork.enabled");
     public static boolean nativeEnabled = true;
+
+    public static interface LoadServiceCreator {
+        LoadService create(Ruby runtime);
+
+        LoadServiceCreator DEFAULT = new LoadServiceCreator() {
+                public LoadService create(Ruby runtime) {
+                    return new LoadService(runtime);
+                }
+            };
+    }
+
+    private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
+
     
     static {
         try {
@@ -224,6 +238,18 @@ public class RubyInstanceConfig {
         }
     }
     
+    public LoadServiceCreator getLoadServiceCreator() {
+        return creator;
+    }
+
+    public void setLoadServiceCreator(LoadServiceCreator creator) {
+        this.creator = creator;
+    }
+
+    public LoadService createLoadService(Ruby runtime) {
+        return this.creator.create(runtime);
+    }
+
     public String getBasicUsageHelp() {
         StringBuffer sb = new StringBuffer();
         sb

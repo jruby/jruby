@@ -776,7 +776,7 @@ public final class Ruby {
         safeLevel = config.getSafeLevel();
         
         // Construct key services
-        loadService = new LoadService(this);
+        loadService = config.createLoadService(this);
         posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), RubyInstanceConfig.nativeEnabled);
         javaSupport = new JavaSupport(this);
 
