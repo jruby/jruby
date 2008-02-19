@@ -542,8 +542,8 @@ public class ScannerImpl implements Scanner {
         case '*': return fetchAlias();
         case '&': return fetchAnchor();
         case '!': return fetchTag();
-        case '|': if(this.flowLevel == 0 && CHOMPING[this.buffer.bytes[this.pointer+1]&0xFF]) { return fetchLiteral(); } break;
-        case '>': if(this.flowLevel == 0 && CHOMPING[this.buffer.bytes[this.pointer+1]&0xFF]) { return fetchFolded(); } break;
+        case '|': if(this.flowLevel == 0 && CHOMPING[peek(1)]) { return fetchLiteral(); } break;
+        case '>': if(this.flowLevel == 0 && CHOMPING[peek(1)]) { return fetchFolded(); } break;
         }
 
         //TODO: this is probably incorrect...
