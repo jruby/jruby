@@ -55,6 +55,7 @@ public class MainTestSuite extends TestSuite {
     public static Test suite() throws Throwable {
         TestSuite suite = new TestSuite();
         suite.addTestSuite(TestLoadService.class);
+        suite.addTestSuite(TestRubyInstanceConfig.class);
         suite.addTestSuite(TestRubyObject.class);
         suite.addTestSuite(TestRubyNil.class);
         suite.addTestSuite(TestRubyHash.class);
