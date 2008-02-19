@@ -44,26 +44,23 @@ class TestBacktraces < Test::Unit::TestCase
   end
 
   def test_simple_exception
-    ex = get_exception {
-      @offset = __LINE__
-      raise RuntimeError.new("Test")
-    }
+    @offset = __LINE__
+    raise RuntimeError.new("Test")
+  rescue Exception => ex
     expectation = "+1:in `test_simple_exception'"
     check(expectation, ex)
   end
 
   def test_exception_from_block
-    ex = get_exception {
-      @offset = __LINE__
-      def foo
-        yield
-      end
-      def bar
-        yield
-      end
-      foo { bar { raise TypeError.new("HEH") } }
-    }
-
+    @offset = __LINE__
+    def foo
+      yield
+    end
+    def bar
+      yield
+    end
+    foo { bar { raise TypeError.new("HEH") } }
+  rescue Exception => ex
     expectation = %q{
       +7:in `test_exception_from_block'
       +5:in `bar'
@@ -71,18 +68,16 @@ class TestBacktraces < Test::Unit::TestCase
       +2:in `foo'
       +7:in `test_exception_from_block'
     }
-
     check(expectation, ex)
   end
 
   def test_exception_from_proc
-    ex = get_exception {
-      p = Proc.new {
-        @offset = __LINE__
-        raise StandardError.new
-      }
-      p.call
+    p = Proc.new {
+      @offset = __LINE__
+      raise StandardError.new
     }
+    p.call
+  rescue Exception => ex
     expectation = %q{
       +1:in `test_exception_from_proc'
       +3:in `call'
@@ -92,13 +87,12 @@ class TestBacktraces < Test::Unit::TestCase
   end
 
   def test_exception_from_lambda
-    ex = get_exception {
-      l = lambda {
-        @offset = __LINE__
-        raise StandardError.new
-      }
-      l.call
+    l = lambda {
+      @offset = __LINE__
+      raise StandardError.new
     }
+    l.call
+  rescue Exception => ex
     expectation = %q{
       +1:in `test_exception_from_lambda'
       +3:in `call'
@@ -108,22 +102,32 @@ class TestBacktraces < Test::Unit::TestCase
   end
 
   def test_exception_from_array_plus
-    ex = get_exception {
-      @offset = __LINE__
-      [1,2,3] + 5
-    }
+    @offset = __LINE__
+    [1,2,3] + 5
+  rescue Exception => ex
     expectation = %q{
       +1:in `+'
       +1:in `test_exception_from_array_plus'
     }
     check(expectation, ex)
   end
+  
+  # JRUBY-2138
+  def test_exception_from_string_plus
+    @offset = __LINE__
+    "hello" + nil
+  rescue Exception => ex
+    expectation = %q{
+      +1:in `+'
+      +1:in `test_exception_from_string_plus'
+    }
+    check(expectation, ex)
+  end
 
   def test_exception_from_string_sub
-    ex = get_exception {
-      @offset = __LINE__
-      "hello".sub(/l/, 5)
-    }
+    @offset = __LINE__
+    "hello".sub(/l/, 5)
+  rescue Exception => ex
     expectation = %q{
       +1:in `sub'
       +1:in `test_exception_from_string_sub'
@@ -132,10 +136,9 @@ class TestBacktraces < Test::Unit::TestCase
   end
 
   def test_zero_devision_exception
-    ex = get_exception {
-      @offset = __LINE__
-      1/0
-    }
+    @offset = __LINE__
+    1/0
+  rescue Exception => ex
     expectation = %q{
       +1:in `/'
       +1:in `test_zero_devision_exception'
@@ -144,10 +147,9 @@ class TestBacktraces < Test::Unit::TestCase
   end
 
   def test_exeption_from_object_send
-    ex = get_exception {
-      @offset = __LINE__
-      "hello".__send__(:sub, /l/, 5)
-    }
+    @offset = __LINE__
+    "hello".__send__(:sub, /l/, 5)
+  rescue Exception => ex
     expectation = %q{
       +1:in `sub'
       +1:in `__send__'
@@ -157,10 +159,9 @@ class TestBacktraces < Test::Unit::TestCase
   end
 
   def test_arity_exception
-    ex = get_exception {
-      @offset = __LINE__
-      "hello".sub
-    }
+    @offset = __LINE__
+    "hello".sub
+  rescue Exception => ex
     expectation = "+1:in `sub'"
     check(expectation, ex)
   end
