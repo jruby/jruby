@@ -576,10 +576,11 @@ public class ScannerImpl implements Scanner {
 
     private void scanToNextToken() {
         for(;;) {
-            while(peek() == ' ') {
+            char ch;
+            while((ch=peek()) == ' ' || ch=='\t') {
                 forward();
             }
-            if(peek() == '#') {
+            if(ch == '#') {
                 forward();
                 while(!NULL_OR_LINEBR[peek()]) {
                     forward();
