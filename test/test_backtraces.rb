@@ -70,6 +70,21 @@ class TestBacktraces < Test::Unit::TestCase
     }
     check(expectation, ex)
   end
+  
+  def test_exception_from_for
+    array = [1,2,3,4,5]
+    @offset = __LINE__
+    for element in array
+      raise RuntimeError
+    end
+  rescue Exception => ex
+    expectation = %q{
+      +2:in `test_exception_from_for'
+      +1:in `each'
+      +1:in `test_exception_from_for'
+    }
+    check(expectation, ex)
+  end
 
   def test_exception_from_proc
     p = Proc.new {
