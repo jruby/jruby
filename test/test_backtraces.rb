@@ -51,6 +51,41 @@ class TestBacktraces < Test::Unit::TestCase
     check(expectation, ex)
   end
 
+  def test_simple_exception_recursive
+    @offset = __LINE__
+    def meth(n)
+      raise RuntimeError.new("Test") if n == 10
+      n += 1
+      meth(n)
+    end
+    meth(0)
+  rescue Exception => ex
+    expectation = %q{
+      +2:in `meth'
+      +4:in `meth'
+      +6:in `test_simple_exception_recursive'
+    }
+    check(expectation, ex)
+  end
+
+  def test_native_exception_recursive
+    @offset = __LINE__
+    def meth(n)
+      raise "hello".sub(/l/, 5) if n == 10
+      n += 1
+      meth(n)
+    end
+    meth(0)
+  rescue Exception => ex
+    expectation = %q{
+      +2:in `sub'
+      +2:in `meth'
+      +4:in `meth'
+      +6:in `test_native_exception_recursive'
+    }
+    check(expectation, ex)
+  end
+
   def test_exception_from_block
     @offset = __LINE__
     def foo

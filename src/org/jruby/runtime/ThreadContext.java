@@ -530,7 +530,8 @@ public final class ThreadContext {
     }
     
     private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
-        if (frame.getName() != null && 
+        if (frame != previousFrame && // happens with native exceptions, should not filter those out
+                frame.getName() != null && 
                 frame.getName().equals(previousFrame.getName()) &&
                 frame.getFile().equals(previousFrame.getFile()) &&
                 frame.getLine() == previousFrame.getLine()) {
