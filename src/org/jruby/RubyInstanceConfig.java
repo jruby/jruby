@@ -781,8 +781,14 @@ public class RubyInstanceConfig {
             inlineScript.append("JRuby::Commands." + scriptName);
             inlineScript.append("\n");
             hasInlineScript = true;
-            String jrubyHome = JRubyFile.create(System.getProperty("user.dir"), JRubyFile.getFileProperty("jruby.home")).getAbsolutePath();
-            scriptFileName = JRubyFile.create(jrubyHome + JRubyFile.separator + "bin", scriptName).getAbsolutePath();
+            try {
+                String jrubyHome = JRubyFile.create(System.getProperty("user.dir"), JRubyFile.getFileProperty("jruby.home")).getCanonicalPath();
+                scriptFileName = JRubyFile.create(jrubyHome + JRubyFile.separator + "bin", scriptName).getCanonicalPath();
+            } catch (IOException io) {
+                MainExitException mee = new MainExitException(1, "jruby: Can't determine script filename");
+                mee.setUsageError(true);
+                throw mee;
+            }
             endOfArguments = true;
         }
 
