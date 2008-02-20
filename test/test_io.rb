@@ -1,10 +1,17 @@
 require 'test/unit'
+require 'rbconfig'
 
 class TestIO < Test::Unit::TestCase
+  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
   def setup
     @file = "TestIO_tmp"
     @file2 = "Test2IO_tmp"
     @file3 = "Test3IO_tmp"
+    if (WINDOWS)
+      @devnull = 'NUL:'
+    else
+      @devnull = '/dev/null'
+    end
   end
 
   def teardown
@@ -310,7 +317,38 @@ class TestIO < Test::Unit::TestCase
   ensure
     File.unlink("__temp1")
   end
-  
+
+  #JRUBY-2145
+  def test_eof_on_dev_null
+    File.open(@devnull, 'rb') { |f|
+      assert(f.eof?)
+    }
+  end
+
+  #JRUBY-2145
+  def test_read_dev_null
+    File.open(@devnull, 'rb') { |f|
+      assert_equal("", f.read)
+      assert_equal(nil, f.read(1))
+      assert_equal([], f.readlines)
+      assert_raise EOFError do
+        f.readline
+      end
+    }
+  end
+
+  #JRUBY-2145
+  def test_copy_dev_null
+    require 'fileutils'
+    begin
+      FileUtils.cp(@devnull, 'somefile')
+      assert(File.exists?('somefile'))
+      assert_equal(0, File.size('somefile'))
+    ensure
+      File.delete('somefile') rescue nil
+    end
+  end
+
   private
   def ensure_files(*files)
     files.each {|f| File.open(f, "w") {|g| g << " " } }

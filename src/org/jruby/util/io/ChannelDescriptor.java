@@ -542,8 +542,8 @@ public class ChannelDescriptor {
      */
     public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
         boolean fileCreated = false;
-        if (path.equals("/dev/null")) {
-            Channel nullChannel = new NullWritableChannel();
+        if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:")) {
+            Channel nullChannel = new NullChannel();
             // FIXME: don't use RubyIO for this
             return new ChannelDescriptor(nullChannel, RubyIO.getNewFileno(), flags, new FileDescriptor());
         } else if(path.startsWith("file:")) {
