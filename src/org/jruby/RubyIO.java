@@ -2512,7 +2512,7 @@ public class RubyIO extends RubyObject {
        RubyIO file = (RubyIO) RubyKernel.open(recv, fileArguments, block);
        IRubyObject[] readArguments;
        
-       if (args.length >= 2) {
+       if (args.length >= 2 && !args[1].isNil()) {
            readArguments = new IRubyObject[] {args[1].convertToInteger()};
        } else {
            readArguments = new IRubyObject[] {};
@@ -2520,7 +2520,7 @@ public class RubyIO extends RubyObject {
        
        try {
            
-           if (args.length == 3) {
+           if (args.length == 3 && !args[2].isNil()) {
                file.seek(new IRubyObject[] {args[2].convertToInteger()});
            }
            
