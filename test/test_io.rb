@@ -349,6 +349,22 @@ class TestIO < Test::Unit::TestCase
     end
   end
 
+  if (WINDOWS)
+    #JRUBY-2158
+    def test_null_open_windows
+      null_names = ['NUL', 'NUL:', 'nul', 'nul:']
+      null_names.each { |name|
+        File.open(name) { |f|
+          assert_equal("", f.read)
+          assert(f.eof?)
+        }
+        File.open(name, 'r+') { |f|
+          assert_nil(f.puts("test"))
+        }
+      }
+    end
+  end
+
   private
   def ensure_files(*files)
     files.each {|f| File.open(f, "w") {|g| g << " " } }
