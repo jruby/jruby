@@ -2586,17 +2586,8 @@ public class ASTCompiler {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
-
                     public void call(MethodCompiler context) {
                         compile(opAsgnNode.getReceiverNode(), context); // [recv]
-                        context.duplicateCurrentValue(); // [recv, recv]
-                    }
-                };
-
-        CompilerCallback receiver2Callback = new CompilerCallback() {
-
-                    public void call(MethodCompiler context) {
-                        context.getInvocationCompiler().invokeDynamic(opAsgnNode.getVariableName(), receiverCallback, null, CallType.FUNCTIONAL, null);
                     }
                 };
 
@@ -2610,9 +2601,8 @@ public class ASTCompiler {
                 compile(opAsgnNode.getValueNode(), context);
             }
         };
-        context.getInvocationCompiler().invokeDynamic(opAsgnNode.getOperatorName(), receiver2Callback, argsCallback, CallType.FUNCTIONAL, null);
-        context.createObjectArray(1);
-        context.getInvocationCompiler().invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
+        
+        context.getInvocationCompiler().invokeOpAsgnWithMethod(opAsgnNode.getOperatorName(), opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
     }
 
     public void compileOpElementAsgn(Node node, MethodCompiler context) {

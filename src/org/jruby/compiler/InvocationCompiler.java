@@ -46,6 +46,8 @@ public interface InvocationCompiler {
      */
     public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg);
     
+    public void invokeOpAsgnWithMethod(String opName, String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback);
+    
     public void invokeSuper(CompilerCallback argsCallback, CompilerCallback closureCallback);
     
     /**

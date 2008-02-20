@@ -328,6 +328,18 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.invokevirtual(p(CallSite.class), "call", signature);
     }
 
+    public void invokeOpAsgnWithMethod(String operatorName, String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+        receiverCallback.call(methodCompiler);
+        argsCallback.call(methodCompiler);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrName, CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, operatorName, CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrAsgnName, CallType.NORMAL);
+        
+        methodCompiler.invokeUtilityMethod("opAsgnWithMethod",
+                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+    }
+
     private void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
         String callSig = sig(IRubyObject.class, params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class));
         String callSigIndexed = sig(IRubyObject.class, params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class));

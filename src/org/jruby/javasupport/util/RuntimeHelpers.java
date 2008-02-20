@@ -29,6 +29,7 @@ import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
@@ -822,5 +823,13 @@ public class RuntimeHelpers {
         IRubyObject backref = context.getCurrentFrame().getBackRef();
         if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
         return backref;
+    }
+    
+    public static IRubyObject opAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg, CallSite varSite, CallSite opSite, CallSite opAsgnSite) {
+        IRubyObject var = varSite.call(context, receiver);
+        IRubyObject result = opSite.call(context, var, arg);
+        opAsgnSite.call(context, receiver, result);
+
+        return result;
     }
 }
