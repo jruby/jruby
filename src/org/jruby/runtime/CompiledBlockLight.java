@@ -56,13 +56,9 @@ public class CompiledBlockLight extends BlockBody {
     
     public static Block newCompiledClosureLight(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        Frame f = context.getCurrentFrame();
-        f.setFile(context.getFile());
-        f.setLine(context.getLine());
-
         return newCompiledClosureLight(
                 self,
-                f,
+                context.getCurrentFrame(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
                 context.getCurrentScope(),

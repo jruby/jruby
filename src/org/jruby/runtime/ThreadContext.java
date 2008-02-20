@@ -291,6 +291,12 @@ public final class ThreadContext {
         expandFramesIfNecessary(frameIndex + 1);
     }
     
+    private Frame pushFrameCopy(Frame frame) {
+        frameStack[++frameIndex].updateFrame(frame);
+        expandFramesIfNecessary(frameIndex + 1);
+        return frameStack[frameIndex];
+    }
+    
     private void pushFrame(Frame frame) {
         frameStack[++frameIndex] = frame;
         expandFramesIfNecessary(frameIndex + 1);
@@ -304,7 +310,7 @@ public final class ThreadContext {
     private void pushBacktraceFrame(String name) {
         pushFrame(name);        
     }
-
+    
     private void pushFrame(String name) {
         frameStack[++frameIndex].updateFrame(name, file, line);
         expandFramesIfNecessary(frameIndex + 1);
@@ -783,31 +789,40 @@ public final class ThreadContext {
     }
     
     public void preForBlock(Binding binding, RubyModule klass) {
-        pushFrame(binding.getFrame());
+        Frame f = binding.getFrame();
+        f.setFile(file);
+        f.setLine(line);
+        pushFrame(f);
         getCurrentFrame().setVisibility(binding.getVisibility());
         pushScope(binding.getDynamicScope());
         pushRubyClass((klass != null) ? klass : binding.getKlass());
     }
     
     public void preYieldSpecificBlock(Binding binding, StaticScope scope, RubyModule klass) {
-        pushFrame(binding.getFrame());
-        getCurrentFrame().setVisibility(binding.getVisibility());
+        Frame f = pushFrameCopy(binding.getFrame());
+        f.setFile(file);
+        f.setLine(line);
+        f.setVisibility(binding.getVisibility());
         // new scope for this invocation of the block, based on parent scope
         pushScope(DynamicScope.newDynamicScope(scope, binding.getDynamicScope()));
         pushRubyClass((klass != null) ? klass : binding.getKlass());
     }
     
     public void preYieldLightBlock(Binding binding, DynamicScope emptyScope, RubyModule klass) {
-        pushFrame(binding.getFrame());
-        getCurrentFrame().setVisibility(binding.getVisibility());
+        Frame f = pushFrameCopy(binding.getFrame());
+        f.setFile(file);
+        f.setLine(line);
+        f.setVisibility(binding.getVisibility());
         // just push the same empty scope, since we won't use one
         pushScope(emptyScope);
         pushRubyClass((klass != null) ? klass : binding.getKlass());
     }
     
     public void preYieldNoScope(Binding binding, RubyModule klass) {
-        pushFrame(binding.getFrame());
-        getCurrentFrame().setVisibility(binding.getVisibility());
+        Frame f = pushFrameCopy(binding.getFrame());
+        f.setFile(file);
+        f.setLine(line);
+        f.setVisibility(binding.getVisibility());
         pushRubyClass((klass != null) ? klass : binding.getKlass());
     }
     

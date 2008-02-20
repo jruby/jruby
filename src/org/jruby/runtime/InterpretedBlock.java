@@ -60,8 +60,6 @@ public class InterpretedBlock extends BlockBody {
 
     public static Block newInterpretedClosure(ThreadContext context, IterNode iterNode, IRubyObject self) {
         Frame f = context.getCurrentFrame();
-        f.setFile(context.getFile());
-        f.setLine(context.getLine());
 
         return newInterpretedClosure(iterNode,
                          self,
@@ -74,8 +72,6 @@ public class InterpretedBlock extends BlockBody {
 
     public static Block newInterpretedClosure(ThreadContext context, InterpretedBlock body, IRubyObject self) {
         Frame f = context.getCurrentFrame();
-        f.setFile(context.getFile());
-        f.setLine(context.getLine());
 
         Binding binding = new Binding(self,
                          f,

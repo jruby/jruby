@@ -51,6 +51,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyProc extends RubyObject implements JumpTarget {
     private Block block = Block.NULL_BLOCK;
     private Block.Type type;
+    private String file;
+    private int line;
 
     public RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
         super(runtime, rubyClass);
@@ -131,6 +133,9 @@ public class RubyProc extends RubyObject implements JumpTarget {
         block.type = type;
         block.setProcObject(this);
 
+        ThreadContext context = getRuntime().getCurrentContext();
+        file = context.getFile();
+        line = context.getLine();
         return this;
     }
     
@@ -138,6 +143,8 @@ public class RubyProc extends RubyObject implements JumpTarget {
     public IRubyObject rbClone() {
     	RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), type);
     	newProc.block = getBlock();
+    	newProc.file = file;
+    	newProc.line = line;
     	// TODO: CLONE_SETUP here
     	return newProc;
     }
@@ -146,6 +153,8 @@ public class RubyProc extends RubyObject implements JumpTarget {
     public IRubyObject dup() {
         RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), type);
         newProc.block = getBlock();
+        newProc.file = file;
+        newProc.line = line;
         return newProc;
     }
     
@@ -162,12 +171,9 @@ public class RubyProc extends RubyObject implements JumpTarget {
     
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
-        Binding binding = block.getBinding();
-        Frame frame = binding.getFrame();
-        
         return RubyString.newString(getRuntime(), 
                 "#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" + 
-                frame.getFile() + ":" + (frame.getLine() + 1) + ">");
+                file + ":" + (line + 1) + ">");
     }
 
     @JRubyMethod(name = "binding")
