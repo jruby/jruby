@@ -266,6 +266,10 @@ public class RubyStruct extends RubyObject {
 
         struct.values = new IRubyObject[size];
 
+        for (int i = 0; i < size; i++) {
+            struct.values[i] = recv.getRuntime().getNil();
+        }
+
         struct.callInit(args, block);
 
         return struct;
@@ -282,10 +286,6 @@ public class RubyStruct extends RubyObject {
 
         for (int i = 0; i < args.length; i++) {
             values[i] = args[i];
-        }
-
-        for (int i = args.length; i < size; i++) {
-            values[i] = getRuntime().getNil();
         }
 
         return getRuntime().getNil();

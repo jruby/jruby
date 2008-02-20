@@ -123,3 +123,11 @@ test_no_exception { Struct.new(:icandup).new(1).dup }
 FiveElementStruct = Struct.new(:a, :b, :c, :d, :e)
 fes = FiveElementStruct.new(1, 2, 3, 4, 5)
 test_equal([2,4], fes.select {|i| (i % 2).zero?})
+
+# JRUBY-2157
+class Foo < Struct.new(:heh)
+  def initialize
+  end
+end
+
+test_equal(nil, Foo.new.heh)
