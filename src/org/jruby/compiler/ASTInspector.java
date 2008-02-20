@@ -104,6 +104,7 @@ public class ASTInspector {
         FRAME_AWARE_METHODS.add("eval");
         FRAME_AWARE_METHODS.add("module_eval");
         FRAME_AWARE_METHODS.add("class_eval");
+        FRAME_AWARE_METHODS.add("instance_eval");
         FRAME_AWARE_METHODS.add("binding");
         FRAME_AWARE_METHODS.add("public");
         FRAME_AWARE_METHODS.add("private");
@@ -115,6 +116,7 @@ public class ASTInspector {
         SCOPE_AWARE_METHODS.add("eval");
         SCOPE_AWARE_METHODS.add("module_eval");
         SCOPE_AWARE_METHODS.add("class_eval");
+        SCOPE_AWARE_METHODS.add("instance_eval");
         SCOPE_AWARE_METHODS.add("binding");
         SCOPE_AWARE_METHODS.add("local_variables");
     }
