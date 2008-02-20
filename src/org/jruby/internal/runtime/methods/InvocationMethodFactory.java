@@ -925,10 +925,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Label catchRedoJump = new Label();
         Label normalExit = new Label();
 
-        method.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
-        method.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
-        method.trycatch(tryBegin, tryEnd, doFinally, null);
-        method.trycatch(catchReturnJump, doFinally, doFinally, null);
+        if (!callConfig.isNoop() || block) {
+            method.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
+            method.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
+            method.trycatch(tryBegin, tryEnd, doFinally, null);
+            method.trycatch(catchReturnJump, doFinally, doFinally, null);
+        }
         
         method.label(tryBegin);
         {
@@ -948,33 +950,37 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
                 
         // store result in temporary variable 8
-        method.astore(8);
+        if (!callConfig.isNoop() || block) {
+            method.astore(8);
 
-        method.label(tryEnd);
-        
-        method.label(normalExit);
-        
-        if (!callConfig.isNoop()) {
-            invokeCallConfigPost(method, superClass);
-        }
-        
-        // reload and return result
-        method.aload(8);
-        method.visitInsn(ARETURN);
+            method.label(tryEnd);
+ 
+            method.label(normalExit);
 
-        handleReturn(catchReturnJump,method, doFinally, normalExit, superClass);
-        
-        handleRedo(catchRedoJump, method, doFinally);
-
-        // finally handling for abnormal exit
-        method.label(doFinally);
-        {
             if (!callConfig.isNoop()) {
                 invokeCallConfigPost(method, superClass);
             }
 
-            // rethrow exception
-            method.athrow(); // rethrow it
+            // reload and return result
+            method.aload(8);
+        }
+        method.visitInsn(ARETURN);
+
+        if (!callConfig.isNoop() || block) {
+            handleReturn(catchReturnJump,method, doFinally, normalExit, superClass);
+
+            handleRedo(catchRedoJump, method, doFinally);
+
+            // finally handling for abnormal exit
+            method.label(doFinally);
+            {
+                if (!callConfig.isNoop()) {
+                    invokeCallConfigPost(method, superClass);
+                }
+
+                // rethrow exception
+                method.athrow(); // rethrow it
+            }
         }
     }
 }
