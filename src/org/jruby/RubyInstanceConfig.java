@@ -489,6 +489,10 @@ public class RubyInstanceConfig {
     }
 
     public void setLoader(ClassLoader loader) {
+        // Setting the loader needs to reset the class cache
+        if(this.loader != loader) {
+            this.classCache = new ClassCache<Script>(loader, this.classCache.getMax());
+        }
         this.loader = loader;
     }
     

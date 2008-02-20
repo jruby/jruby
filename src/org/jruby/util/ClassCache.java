@@ -77,6 +77,10 @@ public class ClassCache<T> {
     public ClassLoader getClassLoader() {
         return classLoader;
     }
+
+    public int getMax() {
+        return max;
+    }
     
     public Class<T> cacheClassByKey(Object key, ClassGenerator classGenerator) 
         throws ClassNotFoundException {
