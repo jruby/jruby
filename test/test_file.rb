@@ -40,6 +40,14 @@ class TestFile < Test::Unit::TestCase
 
     assert_equal(File.join(Dir.pwd, "x/y/z/a/b"), File.expand_path("a/b", "x/y/z"))
     assert_equal(File.join(Dir.pwd, "bin"), File.expand_path("../../bin", "tmp/x"))
+    
+    # JRUBY-2143
+    assert_nothing_raised {
+      File.expand_path("../../bin", "/tmp/x")
+      File.expand_path("/bin", "/tmp/x")
+      File.expand_path("../../bin", "C:/tmp/x")
+      File.expand_path("../bin", "C:/tmp/x")
+    }
   end
 
   def test_expand_path_nil

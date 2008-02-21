@@ -905,11 +905,15 @@ public class RubyFile extends RubyIO {
             
             // Handle ~user paths.
             cwd = expandUserPath(recv, cwdArg);
+            
+            boolean startsWithSlashNotOnWindows = (cwd != null)
+                    && !IS_WINDOWS && cwd.length() > 0
+                    && cwd.charAt(0) == '/';
 
             // TODO: better detection when path is absolute or not.
             // If the path isn't absolute, then prepend the current working
             // directory to the path.
-            if (cwd.length() == 0 || (cwd.charAt(0) != '/' && !startsWithDriveLetterOnWindows(cwd))) {
+            if (!startsWithSlashNotOnWindows && !startsWithDriveLetterOnWindows(cwd)) {
                 cwd = new File(runtime.getCurrentDirectory(), cwd)
                     .getAbsolutePath();
             }
