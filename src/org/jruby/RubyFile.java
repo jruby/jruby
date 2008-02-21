@@ -89,6 +89,12 @@ public class RubyFile extends RubyIO {
         String osname = System.getProperty("os.name");
         IS_WINDOWS = osname != null && osname.toLowerCase().indexOf("windows") != -1;
     }
+    private static boolean startsWithDriveLetterOnWindows(String path) {
+        return (path != null)
+            && IS_WINDOWS && path.length() > 1
+            && isWindowsDriveLetter(path.charAt(0))
+            && path.charAt(1) == ':';
+    }
 
     protected String path;
     private FileLock currentLock;
@@ -785,9 +791,8 @@ public class RubyFile extends RubyIO {
         int minPathLength = 1;
         boolean trimmedSlashes = false;
 
-        boolean startsWithDriveLetterOnWindows = IS_WINDOWS && name.length() > 1
-                && isWindowsDriveLetter(name.charAt(0))
-                && name.charAt(1) == ':';
+        boolean startsWithDriveLetterOnWindows
+                = startsWithDriveLetterOnWindows(name);
 
         if (startsWithDriveLetterOnWindows) {
             minPathLength = 3;
@@ -900,14 +905,14 @@ public class RubyFile extends RubyIO {
             
             // Handle ~user paths.
             cwd = expandUserPath(recv, cwdArg);
-            
+
+            // TODO: better detection when path is absolute or not.
             // If the path isn't absolute, then prepend the current working
             // directory to the path.
-            if ( cwd.charAt(0) != '/' ) {
-                cwd = JRubyFile.create(runtime.getCurrentDirectory(), cwd)
+            if (cwd.length() == 0 || (cwd.charAt(0) != '/' && !startsWithDriveLetterOnWindows(cwd))) {
+                cwd = new File(runtime.getCurrentDirectory(), cwd)
                     .getAbsolutePath();
             }
-            
         } else {
             // If there's no second argument, simply use the working directory 
             // of the runtime.
@@ -1039,10 +1044,15 @@ public class RubyFile extends RubyIO {
     }
 
     private static String canonicalize(String canonicalPath, String remaining) {
-
         if (remaining == null) {
             if ("".equals(canonicalPath)) {
                 return "/";
+            } else {
+                // compensate for missing slash after drive letter on windows
+                if (startsWithDriveLetterOnWindows(canonicalPath)
+                        && canonicalPath.length() == 2) {
+                    canonicalPath += "/";
+                }
             }
             return canonicalPath;
         }
@@ -1064,7 +1074,11 @@ public class RubyFile extends RubyIO {
             if (canonicalPath == null) throw new IllegalArgumentException("Cannot have .. at the start of an absolute path");
             int lastDir = canonicalPath.lastIndexOf('/');
             if (lastDir == -1) {
-                canonicalPath = "";
+                if (startsWithDriveLetterOnWindows(canonicalPath)) {
+                   // do nothing, we should not delete the drive letter
+                } else {
+                    canonicalPath = "";
+                }
             } else {
                 canonicalPath = canonicalPath.substring(0, lastDir);
             }

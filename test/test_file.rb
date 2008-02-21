@@ -30,6 +30,24 @@ class TestFile < Test::Unit::TestCase
     assert_equal("/", File.basename("/"))
   end
 
+  def test_expand_path_cross_platform
+    assert_equal(Dir.pwd, File.expand_path(""))
+    assert_equal(Dir.pwd, File.expand_path("."))
+    assert_equal(Dir.pwd, File.expand_path(".", "."))
+    assert_equal(Dir.pwd, File.expand_path("", "."))
+    assert_equal(Dir.pwd, File.expand_path(".", ""))
+    assert_equal(Dir.pwd, File.expand_path("", ""))
+
+    assert_equal(File.join(Dir.pwd, "x/y/z/a/b"), File.expand_path("a/b", "x/y/z"))
+    assert_equal(File.join(Dir.pwd, "bin"), File.expand_path("../../bin", "tmp/x"))
+  end
+
+  def test_expand_path_nil
+    assert_raise(TypeError) { File.expand_path(nil) }
+    assert_raise(TypeError) { File.expand_path(nil, "/") }
+    assert_raise(TypeError) { File.expand_path(nil, nil) }
+  end
+
   # JRUBY-1116: these are currently broken on windows
   # what are these testing anyway?!?!
   if Config::CONFIG['target_os'] =~ /Windows|mswin/
@@ -52,6 +70,24 @@ class TestFile < Test::Unit::TestCase
       assert_equal "c:\\", File.dirname('c:\\temp')
       assert_equal "C:.", File.dirname("C:")
       assert_equal "C:/temp", File.dirname("C:/temp/foobar.txt")
+    end
+
+    def test_expand_path_windows
+      assert_equal("C:/", File.expand_path("C:/"))
+      assert_equal("C:/dir", File.expand_path("C:/dir"))
+      assert_equal("C:/dir", File.expand_path("C:/dir/two/../"))
+
+      assert_equal("C:/dir/two", File.expand_path("C:/dir/two/", "D:/"))
+      assert_equal("C:/", File.expand_path("C:/", nil))
+
+      # JRUBY-2161
+      assert_equal("C:/", File.expand_path("C:/dir/../"))
+      assert_equal("C:/", File.expand_path("C:/.."))
+      assert_equal("C:/", File.expand_path("C:/../../"))
+      assert_equal("C:/", File.expand_path("..", "C:/"))
+      assert_equal("C:/", File.expand_path("..", "C:"))
+      assert_equal("C:/", File.expand_path("C:/dir/two/../../"))
+      assert_equal("C:/", File.expand_path("C:/dir/two/../../../../../"))
     end
   else
     def test_expand_path
@@ -84,9 +120,12 @@ class TestFile < Test::Unit::TestCase
       assert_equal("/", File.expand_path("/.."))
       assert_equal("/hello", File.expand_path("/hello/world/three/../../"))
 
-      assert_equal(Dir.pwd, File.expand_path(""))
       assert_equal("/dir/two", File.expand_path("", "/dir/two"))
       assert_equal("/dir", File.expand_path("..", "/dir/two"))
+
+      assert_equal("/file/abs", File.expand_path("/file/abs", '/abs/dir/here'))
+
+      assert_equal("/", File.expand_path("/", nil))
     end
 
     def test_expand_path_with_file_prefix
