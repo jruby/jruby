@@ -1040,7 +1040,12 @@ public class RubyFile extends RubyIO {
 
     private static String canonicalize(String canonicalPath, String remaining) {
 
-        if (remaining == null) return canonicalPath;
+        if (remaining == null) {
+            if ("".equals(canonicalPath)) {
+                return "/";
+            }
+            return canonicalPath;
+        }
 
         String child;
         int slash = remaining.indexOf('/');
