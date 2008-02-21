@@ -1979,9 +1979,8 @@ test_ok(File.dirname("/a/b/") == "/a")
 test_ok(File.dirname("/a/b///") == "/a")
 case Dir.pwd
 when %r'\A\w:'
-# JRUBY-546:
-#  test_ok(/\A\w:\/\z/ =~ File.expand_path(".", "/"))
-#  test_ok(/\A\w:\/a\z/ =~ File.expand_path("a", "/"))
+  test_ok(/\A\w:\/\z/ =~ File.expand_path(".", "/"))
+  test_ok(/\A\w:\/a\z/ =~ File.expand_path("a", "/"))
   dosish = true
 when %r'\A//'
   test_ok(%r'\A//[^/]+/[^/]+\z' =~ File.expand_path(".", "/"))

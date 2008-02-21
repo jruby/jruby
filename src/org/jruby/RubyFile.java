@@ -95,6 +95,35 @@ public class RubyFile extends RubyIO {
             && isWindowsDriveLetter(path.charAt(0))
             && path.charAt(1) == ':';
     }
+    // adjusts paths started with '/', on windows.
+    private static String adjustRootPathOnWindows(Ruby runtime, String path, String dir) {
+        if (path == null) return path;
+        if (IS_WINDOWS) {
+            // MRI behavior on Windows: it treats '/' as a root of
+            // a current drive (but only if SINGLE slash is present!):
+            // E.g., if current work directory is
+            // 'D:/home/directory', then '/' means 'D:/'.
+            //
+            // Basically, '/path' is treated as a *RELATIVE* path,
+            // relative to the current drive. '//path' is treated
+            // as absolute one.
+            if (path.startsWith("/")) {
+                if (path.length() > 1 && path.charAt(1) == '/') {
+                    return path;
+                }
+                
+                // First try to use drive letter from supplied dir value,
+                // then try current work dir.
+                if (!startsWithDriveLetterOnWindows(dir)) {
+                    dir = runtime.getCurrentDirectory();
+                }
+                if (dir.length() >= 2) {
+                    path = dir.substring(0, 2) + path;
+                }
+            }
+        }
+        return path;
+    }
 
     protected String path;
     private FileLock currentLock;
@@ -905,7 +934,9 @@ public class RubyFile extends RubyIO {
             
             // Handle ~user paths.
             cwd = expandUserPath(recv, cwdArg);
-            
+
+            cwd = adjustRootPathOnWindows(runtime, cwd, null);
+
             boolean startsWithSlashNotOnWindows = (cwd != null)
                     && !IS_WINDOWS && cwd.length() > 0
                     && cwd.charAt(0) == '/';
@@ -935,13 +966,31 @@ public class RubyFile extends RubyIO {
          * compatibility, the number of extra slashes must be counted and 
          * prepended to the result.
          */ 
-        
+
+        // TODO: special handling on windows for some corner cases
+//        if (IS_WINDOWS) {
+//            if (relativePath.startsWith("//")) {
+//                if (relativePath.length() > 2 && relativePath.charAt(2) != '/') {
+//                    int nextSlash = relativePath.indexOf('/', 3);
+//                    if (nextSlash != -1) {
+//                        return runtime.newString(
+//                                relativePath.substring(0, nextSlash)
+//                                + canonicalize(relativePath.substring(nextSlash)));
+//                    } else {
+//                        return runtime.newString(relativePath);
+//                    }
+//                }
+//            }
+//        }
+
         // Find out which string to check.
         String padSlashes = "";
-        if (relativePath.length() > 0 && relativePath.charAt(0) == '/') {
-            padSlashes = countSlashes(relativePath);
-        } else if (cwd.length() > 0 && cwd.charAt(0) == '/') {
-            padSlashes = countSlashes(cwd);
+        if (!IS_WINDOWS) {
+            if (relativePath.length() > 0 && relativePath.charAt(0) == '/') {
+                padSlashes = countSlashes(relativePath);
+            } else if (cwd.length() > 0 && cwd.charAt(0) == '/') {
+                padSlashes = countSlashes(cwd);
+            }
         }
         
         JRubyFile path;
@@ -949,6 +998,7 @@ public class RubyFile extends RubyIO {
         if (relativePath.length() == 0) {
             path = JRubyFile.create(relativePath, cwd);
         } else {
+            relativePath = adjustRootPathOnWindows(runtime, relativePath, cwd);
             path = JRubyFile.create(cwd, relativePath);
         }
         

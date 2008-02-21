@@ -96,6 +96,49 @@ class TestFile < Test::Unit::TestCase
       assert_equal("C:/", File.expand_path("..", "C:"))
       assert_equal("C:/", File.expand_path("C:/dir/two/../../"))
       assert_equal("C:/", File.expand_path("C:/dir/two/../../../../../"))
+
+      # JRUBY-546
+      current_drive_letter = Dir.pwd[0..2]
+      assert_equal(current_drive_letter, File.expand_path(".", "/"))
+      assert_equal(current_drive_letter, File.expand_path("..", "/"))
+      assert_equal(current_drive_letter, File.expand_path("/", "/"))
+      assert_equal(current_drive_letter, File.expand_path("../..", "/"))
+      assert_equal(current_drive_letter, File.expand_path("../..", "/dir/two"))
+      assert_equal(current_drive_letter + "dir",
+        File.expand_path("../..", "/dir/two/three"))
+      assert_equal(current_drive_letter, File.expand_path("/../..", "/"))
+      assert_equal(current_drive_letter + "hello", File.expand_path("hello", "/"))
+      assert_equal(current_drive_letter, File.expand_path("hello/..", "/"))
+      assert_equal(current_drive_letter, File.expand_path("hello/../../..", "/"))
+      assert_equal(current_drive_letter + "three/four",
+        File.expand_path("/three/four", "/dir/two"))
+      assert_equal(current_drive_letter + "two", File.expand_path("/two", "/one"))
+      assert_equal(current_drive_letter + "three/four",
+        File.expand_path("/three/four", "/dir/two"))
+
+      assert_equal("C:/two", File.expand_path("/two", "C:/one"))
+      assert_equal("C:/two", File.expand_path("/two", "C:/one/.."))
+      assert_equal("C:/", File.expand_path("/two/..", "C:/one/.."))
+      assert_equal("C:/", File.expand_path("/two/..", "C:/one"))
+      
+      assert_equal("//two", File.expand_path("//two", "/one"))
+      assert_equal("//two", File.expand_path("//two", "//one"))
+      assert_equal("//two", File.expand_path("//two", "///one"))
+      assert_equal("//two", File.expand_path("//two", "////one"))
+      assert_equal("//", File.expand_path("//", "//one"))
+
+      # Corner cases that fail with JRuby on Windows (but pass with MRI 1.8.6)
+      # 
+      ### assert_equal("///two", File.expand_path("///two", "/one"))
+      ### assert_equal("///two", File.expand_path("///two/..", "/one"))
+      ### assert_equal("////two", File.expand_path("////two", "/one"))
+      ### assert_equal("////two", File.expand_path("////two", "//one"))
+      ### assert_equal("//two", File.expand_path("//two/..", "/one"))
+      ### assert_equal("////two", File.expand_path("////two/..", "/one"))
+      #
+      ### assert_equal("//bar/foo", File.expand_path("../foo", "//bar"))
+      ### assert_equal("///bar/foo", File.expand_path("../foo", "///bar"))
+      ### assert_equal("//one/two", File.expand_path("/two", "//one"))
     end
   else
     def test_expand_path
@@ -134,6 +177,15 @@ class TestFile < Test::Unit::TestCase
       assert_equal("/file/abs", File.expand_path("/file/abs", '/abs/dir/here'))
 
       assert_equal("/", File.expand_path("/", nil))
+      
+      assert_equal("//two", File.expand_path("//two", "//one"))
+      assert_equal("/", File.expand_path("/two/..", "//one"))
+
+      # Corner cases that fail with JRuby on Linux (but pass with MRI 1.8.6)
+      #
+      # assert_equal("", File.expand_path("//two/..", "//one"))
+      # assert_equal("", File.expand_path("///two/..", "//one"))
+      # assert_equal("/blah", File.expand_path("///two/../blah", "//one"))
     end
 
     def test_expand_path_with_file_prefix
