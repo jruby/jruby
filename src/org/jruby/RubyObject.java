@@ -1158,19 +1158,20 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     @JRubyMethod(name = {"send", "__send__"}, required = 1, rest = true)
     public IRubyObject send(IRubyObject[] args, Block block) {
-        if (args.length < 1) {
-            throw getRuntime().newArgumentError("no method name given");
-        }
         String name = args[0].asJavaString();
+        int newArgsLength = args.length - 1;
 
-        IRubyObject[] newArgs = new IRubyObject[args.length - 1];
-        System.arraycopy(args, 1, newArgs, 0, newArgs.length);
+        IRubyObject[] newArgs;
+        if (newArgsLength == 0) {
+            newArgs = IRubyObject.NULL_ARRAY;
+        } else {
+            newArgs = new IRubyObject[newArgsLength];
+            System.arraycopy(args, 1, newArgs, 0, newArgs.length);
+        }
 
-        ThreadContext context = getRuntime().getCurrentContext();
-        assert args != null;
-        DynamicMethod method = null;
         RubyModule rubyClass = getMetaClass();
-        method = rubyClass.searchMethod(name);
+        DynamicMethod method = rubyClass.searchMethod(name);
+        ThreadContext context = getRuntime().getCurrentContext();
 
         // send doesn't check visibility
         if (method.isUndefined()) {
