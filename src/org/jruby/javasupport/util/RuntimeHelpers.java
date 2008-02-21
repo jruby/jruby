@@ -825,10 +825,58 @@ public class RuntimeHelpers {
         return backref;
     }
     
+    public static IRubyObject preOpAsgnWithOrAnd(IRubyObject receiver, ThreadContext context, CallSite varSite) {
+        return varSite.call(context, receiver);
+    }
+    
+    public static IRubyObject postOpAsgnWithOrAnd(IRubyObject receiver, IRubyObject value, ThreadContext context, CallSite varAsgnSite) {
+        return varAsgnSite.call(context, receiver, value);
+    }
+    
     public static IRubyObject opAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg, CallSite varSite, CallSite opSite, CallSite opAsgnSite) {
         IRubyObject var = varSite.call(context, receiver);
         IRubyObject result = opSite.call(context, var, arg);
         opAsgnSite.call(context, receiver, result);
+
+        return result;
+    }
+    
+    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
+        IRubyObject var = elementSite.call(context, receiver);
+        IRubyObject result = opSite.call(context, var, value);
+        elementAsgnSite.call(context, receiver, result);
+
+        return result;
+    }
+    
+    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
+        IRubyObject var = elementSite.call(context, receiver, arg);
+        IRubyObject result = opSite.call(context, var, value);
+        elementAsgnSite.call(context, receiver, arg, result);
+
+        return result;
+    }
+    
+    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg1, IRubyObject arg2, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
+        IRubyObject var = elementSite.call(context, receiver, arg1, arg2);
+        IRubyObject result = opSite.call(context, var, value);
+        elementAsgnSite.call(context, receiver, arg1, arg2, result);
+
+        return result;
+    }
+    
+    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
+        IRubyObject var = elementSite.call(context, receiver, arg1, arg2, arg3);
+        IRubyObject result = opSite.call(context, var, value);
+        elementAsgnSite.call(context, receiver, new IRubyObject[] {arg1, arg2, arg3, result});
+
+        return result;
+    }
+    
+    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
+        IRubyObject var = elementSite.call(context, receiver);
+        IRubyObject result = opSite.call(context, var, value);
+        elementAsgnSite.call(context, receiver, appendToObjectArray(args, result));
 
         return result;
     }

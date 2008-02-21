@@ -223,6 +223,39 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             invokeDynamic("[]=", true, true, CallType.FUNCTIONAL, null, false); // assignmentResult
         }
     }
+    
+    public void opElementAsgnWithMethod(CompilerCallback receiver, ArgumentsCallback args, CompilerCallback valueCallback, String operator) {
+        methodCompiler.loadThreadContext();
+        receiver.call(methodCompiler);
+        args.call(methodCompiler);
+        valueCallback.call(methodCompiler); // receiver, args, result, value
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]", CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, operator, CallType.NORMAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]=", CallType.FUNCTIONAL);
+        
+        switch (args.getArity()) {
+        case 0:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+            break;
+        case 1:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+            break;
+        case 2:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+            break;
+        case 3:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+            break;
+        default:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+            break;
+        }
+    }
 
     public void invokeSuper(CompilerCallback argsCallback, CompilerCallback closureArg) {
         methodCompiler.loadThreadContext();
@@ -328,8 +361,70 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.invokevirtual(p(CallSite.class), "call", signature);
     }
 
+    public void invokeOpAsgnWithOr(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+        receiverCallback.call(methodCompiler);
+        method.dup();
+        methodCompiler.loadThreadContext();
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrName, CallType.FUNCTIONAL);
+        
+        methodCompiler.invokeUtilityMethod("preOpAsgnWithOrAnd", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class, CallSite.class));
+        
+        Label done = new Label();
+        Label isTrue = new Label();
+        
+        method.dup();
+        methodCompiler.invokeIRubyObject("isTrue", sig(boolean.class));
+        method.ifne(isTrue);
+        
+        method.pop(); // pop extra attr value
+        argsCallback.call(methodCompiler);
+        methodCompiler.loadThreadContext();
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrAsgnName, CallType.NORMAL);
+        
+        methodCompiler.invokeUtilityMethod("postOpAsgnWithOrAnd",
+                sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, ThreadContext.class, CallSite.class));
+        method.go_to(done);
+        
+        method.label(isTrue);
+        method.swap();
+        method.pop();
+        
+        method.label(done);
+    }
+
+    public void invokeOpAsgnWithAnd(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+        receiverCallback.call(methodCompiler);
+        method.dup();
+        methodCompiler.loadThreadContext();
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrName, CallType.FUNCTIONAL);
+        
+        methodCompiler.invokeUtilityMethod("preOpAsgnWithOrAnd", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class, CallSite.class));
+        
+        Label done = new Label();
+        Label isFalse = new Label();
+        
+        method.dup();
+        methodCompiler.invokeIRubyObject("isTrue", sig(boolean.class));
+        method.ifeq(isFalse);
+        
+        method.pop(); // pop extra attr value
+        argsCallback.call(methodCompiler);
+        methodCompiler.loadThreadContext();
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrAsgnName, CallType.NORMAL);
+        
+        methodCompiler.invokeUtilityMethod("postOpAsgnWithOrAnd",
+                sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, ThreadContext.class, CallSite.class));
+        method.go_to(done);
+        
+        method.label(isFalse);
+        method.swap();
+        method.pop();
+        
+        method.label(done);
+    }
+
     public void invokeOpAsgnWithMethod(String operatorName, String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
-        methodCompiler.loadThreadContext(); // [adapter, tc]
+        methodCompiler.loadThreadContext();
         receiverCallback.call(methodCompiler);
         argsCallback.call(methodCompiler);
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrName, CallType.FUNCTIONAL);
@@ -337,6 +432,18 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrAsgnName, CallType.NORMAL);
         
         methodCompiler.invokeUtilityMethod("opAsgnWithMethod",
+                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+    }
+
+    public void invokeOpElementAsgnWithMethod(String operatorName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+        receiverCallback.call(methodCompiler);
+        argsCallback.call(methodCompiler);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]", CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, operatorName, CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]=", CallType.NORMAL);
+        
+        methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
                 sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
     }
 

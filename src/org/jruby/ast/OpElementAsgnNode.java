@@ -52,14 +52,21 @@ public class OpElementAsgnNode extends Node {
     private final Node receiverNode;
     private final Node argsNode;
     private final Node valueNode;
-    public CallSite callAdapter;
+    public final CallSite callAdapter;
+    public final CallSite elementAdapter;
+    public final CallSite elementAsgnAdapter;
 
     public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
         super(position, NodeType.OPELEMENTASGNNODE);
         this.receiverNode = receiverNode;
         this.argsNode = argsNode;
+        if (argsNode instanceof ArrayNode) {
+            ((ArrayNode)argsNode).setLightweight(true);
+        }
         this.valueNode = valueNode;
         callAdapter = new CallSite.InlineCachingCallSite(operatorName, CallType.NORMAL);
+        elementAdapter = new CallSite.InlineCachingCallSite("[]", CallType.FUNCTIONAL);
+        elementAsgnAdapter = new CallSite.InlineCachingCallSite("[]=", CallType.FUNCTIONAL);
     }
     
     /**

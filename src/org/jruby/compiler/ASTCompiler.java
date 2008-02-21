@@ -2495,46 +2495,18 @@ public class ASTCompiler {
     }
 
     public void compileOpAsgnWithOr(Node node, MethodCompiler context) {
-        // FIXME: This is a little more complicated than it needs to be; do we see now why closures would be nice in Java?
-
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
-                    public void call(MethodCompiler context) {
-                        compile(opAsgnNode.getReceiverNode(), context); // [recv]
-                        context.duplicateCurrentValue(); // [recv, recv]
-                    }
-                };
 
-        BranchCallback doneBranch = new BranchCallback() {
-                    public void branch(MethodCompiler context) {
-                        // get rid of extra receiver, leave the variable result present
-                        context.swapValues();
-                        context.consumeCurrentValue();
-                    }
-                };
-
-        // Just evaluate the value and stuff it in an argument array
-        final ArrayCallback justEvalValue = new ArrayCallback() {
-                    public void nextValue(MethodCompiler context, Object sourceArray,
-                            int index) {
-                        compile(((Node[]) sourceArray)[index], context);
-                    }
-                };
-
-        BranchCallback assignBranch = new BranchCallback() {
-                    public void branch(MethodCompiler context) {
-                        // eliminate extra value, eval new one and assign
-                        context.consumeCurrentValue();
-                        context.createObjectArray(new Node[]{opAsgnNode.getValueNode()}, justEvalValue);
-                        context.getInvocationCompiler().invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
-                    }
-                };
-
-        // if lhs is true, don't eval rhs and assign
-        context.getInvocationCompiler().invokeDynamic(opAsgnNode.getVariableName(), receiverCallback, null, CallType.FUNCTIONAL, null);
-        context.duplicateCurrentValue();
-        context.performBooleanBranch(doneBranch, assignBranch);
+            public void call(MethodCompiler context) {
+                compile(opAsgnNode.getReceiverNode(), context); // [recv]
+            }
+        };
+        
+        ArgumentsCallback argsCallback = getArgsCallback(opAsgnNode.getValueNode());
+        
+        context.getInvocationCompiler().invokeOpAsgnWithOr(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
     }
 
     public void compileOpAsgnWithAnd(Node node, MethodCompiler context) {
@@ -2542,44 +2514,14 @@ public class ASTCompiler {
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
 
-                    public void call(MethodCompiler context) {
-                        compile(opAsgnNode.getReceiverNode(), context); // [recv]
-                        context.duplicateCurrentValue(); // [recv, recv]
-                    }
-                };
-
-        BranchCallback doneBranch = new BranchCallback() {
-
-                    public void branch(MethodCompiler context) {
-                        // get rid of extra receiver, leave the variable result present
-                        context.swapValues();
-                        context.consumeCurrentValue();
-                    }
-                };
-
-        // Just evaluate the value and stuff it in an argument array
-        final ArrayCallback justEvalValue = new ArrayCallback() {
-
-                    public void nextValue(MethodCompiler context, Object sourceArray,
-                            int index) {
-                        compile(((Node[]) sourceArray)[index], context);
-                    }
-                };
-
-        BranchCallback assignBranch = new BranchCallback() {
-
-                    public void branch(MethodCompiler context) {
-                        // eliminate extra value, eval new one and assign
-                        context.consumeCurrentValue();
-                        context.createObjectArray(new Node[]{opAsgnNode.getValueNode()}, justEvalValue);
-                        context.getInvocationCompiler().invokeAttrAssign(opAsgnNode.getVariableNameAsgn());
-                    }
-                };
-
-        // if lhs is true, eval rhs and assign
-        context.getInvocationCompiler().invokeDynamic(opAsgnNode.getVariableName(), receiverCallback, null, CallType.FUNCTIONAL, null);
-        context.duplicateCurrentValue();
-        context.performBooleanBranch(assignBranch, doneBranch);
+            public void call(MethodCompiler context) {
+                compile(opAsgnNode.getReceiverNode(), context); // [recv]
+            }
+        };
+        
+        ArgumentsCallback argsCallback = getArgsCallback(opAsgnNode.getValueNode());
+        
+        context.getInvocationCompiler().invokeOpAsgnWithAnd(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
     }
 
     public void compileOpAsgnWithMethod(Node node, MethodCompiler context) {
@@ -2607,18 +2549,55 @@ public class ASTCompiler {
 
     public void compileOpElementAsgn(Node node, MethodCompiler context) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
+        
+        if (opElementAsgnNode.getOperatorName() == "||") {
+            compile(opElementAsgnNode.getReceiverNode(), context);
+            compileArguments(opElementAsgnNode.getArgsNode(), context);
 
-        compile(opElementAsgnNode.getReceiverNode(), context);
-        compileArguments(opElementAsgnNode.getArgsNode(), context);
+            CompilerCallback valueArgsCallback = new CompilerCallback() {
 
-        CompilerCallback valueArgsCallback = new CompilerCallback() {
+                        public void call(MethodCompiler context) {
+                            compile(opElementAsgnNode.getValueNode(), context);
+                        }
+                    };
 
-                    public void call(MethodCompiler context) {
-                        compile(opElementAsgnNode.getValueNode(), context);
-                    }
-                };
+            context.getInvocationCompiler().opElementAsgn(valueArgsCallback, opElementAsgnNode.getOperatorName());
+        } else if (opElementAsgnNode.getOperatorName() == "&&") {
+            compile(opElementAsgnNode.getReceiverNode(), context);
+            compileArguments(opElementAsgnNode.getArgsNode(), context);
 
-        context.getInvocationCompiler().opElementAsgn(valueArgsCallback, opElementAsgnNode.getOperatorName());
+            CompilerCallback valueArgsCallback = new CompilerCallback() {
+
+                        public void call(MethodCompiler context) {
+                            compile(opElementAsgnNode.getValueNode(), context);
+                        }
+                    };
+
+            context.getInvocationCompiler().opElementAsgn(valueArgsCallback, opElementAsgnNode.getOperatorName());
+        } else {
+            compileOpElementAsgnWithMethod(node, context);
+        }
+    }
+
+    public void compileOpElementAsgnWithMethod(Node node, MethodCompiler context) {
+        final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
+
+        CompilerCallback receiverCallback = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(opElementAsgnNode.getReceiverNode(), context);
+            }
+        };
+
+        // eval new value, call operator on old value, and assign
+        ArgumentsCallback argsCallback = getArgsCallback(opElementAsgnNode.getArgsNode());
+
+        CompilerCallback valueCallback = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(opElementAsgnNode.getValueNode(), context);
+            }
+        };
+
+        context.getInvocationCompiler().opElementAsgnWithMethod(receiverCallback, argsCallback, valueCallback, opElementAsgnNode.getOperatorName());
     }
 
     public void compileOr(Node node, MethodCompiler context) {

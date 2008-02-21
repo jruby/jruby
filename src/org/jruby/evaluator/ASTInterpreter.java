@@ -1381,7 +1381,7 @@ public class ASTInterpreter {
     private static IRubyObject opAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         OpAsgnNode iVisited = (OpAsgnNode) node;
         IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
-        IRubyObject value = receiver.callMethod(context, iVisited.getVariableName());
+        IRubyObject value = iVisited.variableCallAdapter.call(context, receiver);
    
         if (iVisited.getOperatorName() == "||") {
             if (value.isTrue()) {
@@ -1398,7 +1398,7 @@ public class ASTInterpreter {
                     evalInternal(runtime, context, iVisited.getValueNode(), self, aBlock));
         }
    
-        receiver.callMethod(context, iVisited.getVariableNameAsgn(), value);
+        iVisited.variableAsgnCallAdapter.call(context, receiver, value);
    
         return pollAndReturn(context, value);
     }
@@ -1424,8 +1424,8 @@ public class ASTInterpreter {
    
         IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self, aBlock);
    
-        IRubyObject firstValue = RuntimeHelpers.invoke(context, receiver, MethodIndex.AREF, "[]", args);
-   
+        IRubyObject firstValue = iVisited.elementAdapter.call(context, receiver, args);
+        
         if (iVisited.getOperatorName() == "||") {
             if (firstValue.isTrue()) {
                 return firstValue;
@@ -1444,7 +1444,7 @@ public class ASTInterpreter {
         IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, expandedArgs, 0, args.length);
         expandedArgs[expandedArgs.length - 1] = firstValue;
-        RuntimeHelpers.invoke(context, receiver, MethodIndex.ASET, "[]=", expandedArgs);
+        iVisited.elementAsgnAdapter.call(context, receiver, expandedArgs);
         
         return firstValue;
     }

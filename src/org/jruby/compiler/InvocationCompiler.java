@@ -46,6 +46,8 @@ public interface InvocationCompiler {
      */
     public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg);
     
+    public void invokeOpAsgnWithOr(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback);
+    public void invokeOpAsgnWithAnd(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback);
     public void invokeOpAsgnWithMethod(String opName, String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback);
     
     public void invokeSuper(CompilerCallback argsCallback, CompilerCallback closureCallback);
@@ -57,6 +59,8 @@ public interface InvocationCompiler {
     public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback);
     
     public void opElementAsgn(CompilerCallback valueCallback, String operator);
+    
+    public void opElementAsgnWithMethod(CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CompilerCallback valueCallback, String operator);
     
     /**
      * Invoke the block passed into this method, or throw an error if no block is present.
