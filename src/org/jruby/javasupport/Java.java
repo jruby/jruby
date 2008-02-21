@@ -237,10 +237,8 @@ public class Java implements Library {
      */
     public static IRubyObject getInstance(Ruby runtime, Object rawJavaObject) {
         if (rawJavaObject != null) {
-            return runtime.getJavaSupport().getObjectProxyCache()
-                .getOrCreate(rawJavaObject,
-                        (RubyClass)getProxyClass(runtime,
-                            JavaClass.get(runtime, rawJavaObject.getClass())));
+            return runtime.getJavaSupport().getObjectProxyCache().getOrCreate(rawJavaObject,
+                    (RubyClass) getProxyClass(runtime, JavaClass.get(runtime, rawJavaObject.getClass())));
         }
         return runtime.getNil();
     }
@@ -910,6 +908,10 @@ public class Java implements Library {
 
     public static IRubyObject wrap(IRubyObject recv, IRubyObject java_object) {
         return getInstance(recv.getRuntime(), ((JavaObject)java_object).getValue());
+    }
+    
+    public static IRubyObject wrap(Ruby runtime, IRubyObject java_object) {
+        return getInstance(runtime, ((JavaObject)java_object).getValue());
     }
 
 	// Java methods

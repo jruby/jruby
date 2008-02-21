@@ -194,10 +194,8 @@ public class JRubyEngine extends BSFEngineImpl {
 
         public IRubyObject getValue() {
             IRubyObject result = JavaUtil.convertJavaToRuby(runtime, bean.bean, bean.type);
-            if (result instanceof JavaObject) {
-                return runtime.getJavaSupport().getJavaUtilitiesModule().callMethod(runtime.getCurrentContext(), "wrap", result);
-            }
-            return result;
+            
+            return result instanceof JavaObject ? Java.wrap(runtime, result) : result;
         }
 
         public IRubyObject setValue(IRubyObject value) {
@@ -217,10 +215,8 @@ public class JRubyEngine extends BSFEngineImpl {
 
         public IRubyObject getValue() {
             IRubyObject result = JavaUtil.convertJavaToRuby(runtime, functions, BSFFunctions.class);
-            if (result instanceof JavaObject) {
-                return runtime.getJavaSupport().getJavaUtilitiesModule().callMethod(runtime.getCurrentContext(), "wrap", result);
-            }
-            return result;
+
+            return result instanceof JavaObject ? Java.wrap(runtime, result) : result;
         }
 
         public IRubyObject setValue(IRubyObject value) {
