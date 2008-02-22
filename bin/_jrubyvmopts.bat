@@ -3,7 +3,7 @@ set _MEM=-Xmx378m
 set _STK=-Xss1024k
 set _VM_OPTS=
 set _RUBY_OPTS=
-set _DFLT_VM_OPTS=-Xverify:none
+set _DFLT_VM_OPTS=-Xverify:none %JAVA_OPTS%
 
 rem
 rem Can you believe I'm rewriting batch arg processing in batch files because batch
