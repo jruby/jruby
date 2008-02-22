@@ -1,6 +1,6 @@
 == Writing Tests
 
-1. There are actually *3* core test suites:
+1. There are actually *4* core test suites:
 
    a) org.jruby.test.MainTestSuite, a suite of pure-java tests;
 
@@ -12,8 +12,15 @@
    one-per-line in test/jruby_index (and other test/*_index files).
    Note: some are commented out.
 
+   d) 'Rubyspecs', fetched directly from Rubinius project. The specs
+   are written in rspec format and aim to test conformance of JRuby
+   against the Ruby specification.
+
 2. If you'd like to contribute new tests, we'd prefer you write them in
 Test::Unit and add to the test/test_unit_index file.
+
+Also, you may consider contributing conformance tests to 'rubyspecs',
+which are currently part of Rubinius project.
 
 3. Naming conventions: testCamelCased.rb files are currently for
 minirunit-based tests; test_under_scored.rb for Test::Unit tests.
@@ -32,3 +39,9 @@ Using ant, type
   ant test
 
 The three test suites should be run in order.
+
+To run rubyspecs, type
+
+  ant spec
+
+The rubyspecs will be fetched over the net, and then executed.
