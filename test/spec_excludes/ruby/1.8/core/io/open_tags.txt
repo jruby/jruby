@@ -1,0 +1,2 @@
+fails:IO.open with a block invokes close on opened IO object when exiting the block
+fails:IO.open with a block propagates non-StandardErrors produced by close

@@ -1,0 +1,1 @@
+fails:IO#close sets $? if the stream is opened by IO.popen

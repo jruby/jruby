@@ -1,1 +1,0 @@
-Dir#each returns the directory which remains open

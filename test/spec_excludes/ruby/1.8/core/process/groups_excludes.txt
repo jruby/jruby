@@ -1,2 +1,0 @@
-Process.groups gets an Array of the gids of groups in the supplemental group access list
-Process.groups sets the list of gids of groups in the supplemental group access list

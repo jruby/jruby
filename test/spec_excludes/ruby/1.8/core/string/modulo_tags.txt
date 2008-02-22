@@ -1,0 +1,2 @@
+fails:String#% supports unsigned formats using %u
+fails:String#% supports negative bignums by prefixing the value with zeros

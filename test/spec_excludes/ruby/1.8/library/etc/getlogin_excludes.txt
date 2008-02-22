@@ -1,1 +1,0 @@
-Etc.getlogin returns the name of the user who runs this process

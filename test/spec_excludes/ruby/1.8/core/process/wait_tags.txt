@@ -1,0 +1,7 @@
+fails:Process.wait returns its childs pid
+fails:Process.wait sets $? to a Process::Status
+fails:Process.wait waits for any child process if no pid is given
+fails:Process.wait waits for a specific child if a pid is given
+fails:Process.wait waits for a child whose process group ID is that of the calling process
+fails:Process.wait doesn't block if no child is available when WNOHANG is used
+fails:Process.wait always accepts flags=0

@@ -621,10 +621,10 @@
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.launch.inproc" value="false"/>
       
-      <arg value="bin/ci"/>
-      <arg value="-t"/><arg value="${basedir}/bin/jruby"/>
-      <arg value="-c"/>
-      <arg value="-E"/><arg value="${basedir}/test/spec_excludes"/>
+      <arg line="bin/mspec tag"/>
+      <arg line="-t ${basedir}/bin/jruby"/>
+      <arg line="--add fails --fail"/>
+      <arg line="-X ${basedir}/test/spec_excludes"/>
       <arg value="spec/ruby/1.8"/>
     </java>
   </target>
@@ -658,7 +658,7 @@
 	<sysproperty key="jruby.thread.pooling" value="@{thread.pooling}"/>
 	<sysproperty key="jruby.reflection" value="@{reflection}"/>
       
-	<arg value="bin/ci"/>
+	<arg line="bin/mspec ci"/>
 	<arg value="-t"/><arg value="${basedir}/bin/jruby"/>
 	<arg line="-T -J-ea"/>
 	<arg value="-f"/><arg value="m"/>
@@ -676,7 +676,7 @@
     <sequential>
       <run-specs compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}">
 	<extra-args>
-	  <arg value="-E"/><arg value="${basedir}/test/spec_excludes"/>
+	  <arg value="-X"/><arg value="${basedir}/test/spec_excludes"/>
 	</extra-args>
       </run-specs>
     </sequential>

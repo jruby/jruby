@@ -1,0 +1,5 @@
+fails:Marshal.dump dumps a Module Marshal
+fails:Marshal.dump dumps a Regexp subclass /i
+fails:Marshal.dump dumps a Float 0.0
+fails:Marshal.dump dumps a Float -0.0
+fails:Marshal.dump dumps a Float 1.0

@@ -1,2 +1,0 @@
-The next statement raises a LocalJumpError if used not within block or while/for loop
-The next statement returns the argument passed

@@ -1,0 +1,1 @@
+fails:ObjectSpace.each_object calls the block once for each living, nonimmediate object in the Ruby process

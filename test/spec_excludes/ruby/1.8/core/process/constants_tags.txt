@@ -1,0 +1,2 @@
+fails:Process::Constants should have the correct constant values on BSD-like systems
+fails:Process::Constants should have the correct constant values on Linux

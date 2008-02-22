@@ -1,2 +1,0 @@
-Process.maxgroups returns the maximum number of gids allowed in the supplemental group access list
-Process.maxgroups sets the maximum number of gids allowed in the supplemental group access list

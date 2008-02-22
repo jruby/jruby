@@ -1,2 +1,0 @@
-Etc.getpwuid returns a Passwd struct instance for the given user
-Etc.getpwuid only accepts integers as argument

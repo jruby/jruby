@@ -1,6 +1,0 @@
-Process.kill tests for the existence of a process without sending a signal
-Process.kill raises an EPERM if permission is denied
-Process.kill sends the given signal to the specified process
-Process.kill kills process groups if signal is negative
-Process.kill kills process groups if signal starts with a minus sign
-Process.kill kills process groups if signal starts with a minus sign and 'SIG'

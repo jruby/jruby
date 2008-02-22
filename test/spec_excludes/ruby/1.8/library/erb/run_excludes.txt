@@ -1,4 +1,0 @@
-ERB#run print the result of compiled ruby code
-ERB#run share local variables
-ERB#run is able to h() or u() if ERB::Util is included
-ERB#run use TOPLEVEL_BINDING if binding is not passed

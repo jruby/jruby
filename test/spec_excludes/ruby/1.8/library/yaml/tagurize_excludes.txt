@@ -1,1 +1,0 @@
-YAML.tagurize converts a type_id to a taguri

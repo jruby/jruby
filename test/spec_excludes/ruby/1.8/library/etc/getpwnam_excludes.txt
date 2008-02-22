@@ -1,2 +1,0 @@
-Etc.getpwnam returns a Passwd struct instance for the given user
-Etc.getpwnam only accepts strings as argument

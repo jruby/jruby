@@ -1,2 +1,0 @@
-Process::Constants should have the correct constant values on BSD-like systems
-Process::Constants should have the correct constant values on Linux

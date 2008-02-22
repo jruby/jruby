@@ -1,0 +1,1 @@
+fails:String#unpack with 'DdEeFfGg' directives returns an array by decoding self in big-endian order according to the format string

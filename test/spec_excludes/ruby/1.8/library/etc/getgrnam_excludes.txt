@@ -1,2 +1,0 @@
-Etc.getgrnam returns a Group struct instance for the given group
-Etc.getgrnam only accepts strings as argument

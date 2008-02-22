@@ -1,2 +1,0 @@
-Process#detach returns a thread
-Process#detach reaps the child process's status automatically

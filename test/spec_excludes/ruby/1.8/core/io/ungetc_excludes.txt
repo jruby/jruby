@@ -1,2 +1,0 @@
-IO#ungetc affects EOF state
-IO#ungetc raises IOError when invoked on stream that was not yet read

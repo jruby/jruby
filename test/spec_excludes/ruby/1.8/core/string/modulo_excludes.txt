@@ -1,1 +1,0 @@
-String#% supports unsigned formats using %u

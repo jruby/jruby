@@ -1,2 +1,0 @@
-Kernel#require does not expand/resolve qualified files against $LOAD_PATH
-Kernel#require produces __FILE__ as the given filename and __LINE__ as the source line number
