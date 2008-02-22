@@ -163,83 +163,85 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             ArrayCallback optNotGivenAssignment,
             CompilerCallback restAssignment,
             CompilerCallback blockAssignment) {
-        // load arguments array
-        method.aload(argsIndex);
-        
-        // NOTE: This assumes arity has already been confirmed, and does not re-check
-        
-        // first, iterate over all required args
-        int currentArgElement = 0;
-        for (; currentArgElement < requiredArgsCount; currentArgElement++) {
-            // extract item from array
-            method.dup(); // dup the original array
-            method.ldc(new Integer(currentArgElement)); // index for the item
-            method.arrayload();
-            requiredAssignment.nextValue(methodCompiler, requiredArgs, currentArgElement);
-            
-            // normal assignment leaves the value; pop it.
+        if (requiredArgsCount > 0 || optArgsCount > 0 || restAssignment != null) {
+            // load arguments array
+            method.aload(argsIndex);
+
+            // NOTE: This assumes arity has already been confirmed, and does not re-check
+
+            // first, iterate over all required args
+            int currentArgElement = 0;
+            for (; currentArgElement < requiredArgsCount; currentArgElement++) {
+                // extract item from array
+                method.dup(); // dup the original array
+                method.ldc(new Integer(currentArgElement)); // index for the item
+                method.arrayload();
+                requiredAssignment.nextValue(methodCompiler, requiredArgs, currentArgElement);
+
+                // normal assignment leaves the value; pop it.
+                method.pop();
+            }
+
+            // next, iterate over all optional args, until no more arguments
+            for (int optArgElement = 0; optArgElement < optArgsCount; currentArgElement++, optArgElement++) {
+                Label noMoreArrayElements = new Label();
+                Label doneWithElement = new Label();
+
+                // confirm we're not past the end of the array
+                method.dup(); // dup the original array
+                method.arraylength();
+                method.ldc(new Integer(currentArgElement));
+                method.if_icmple(noMoreArrayElements); // if length <= start, end loop
+
+                // extract item from array
+                method.dup(); // dup the original array
+                method.ldc(new Integer(currentArgElement)); // index for the item
+                method.arrayload();
+                optGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
+                method.go_to(doneWithElement);
+
+                // otherwise no items left available, use the code from nilCallback
+                method.label(noMoreArrayElements);
+                optNotGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
+
+                // end of this element
+                method.label(doneWithElement);
+                // normal assignment leaves the value; pop it.
+                method.pop();
+            }
+
+            // if there's args left and we want them, assign to rest arg
+            if (restAssignment != null) {
+                Label emptyArray = new Label();
+                Label readyForArgs = new Label();
+
+                // confirm we're not past the end of the array
+                method.dup(); // dup the original array
+                method.arraylength();
+                method.ldc(new Integer(currentArgElement));
+                method.if_icmple(emptyArray); // if length <= start, end loop
+
+                // assign remaining elements as an array for rest args
+                method.dup(); // dup the original array object
+                methodCompiler.loadRuntime();
+                method.ldc(currentArgElement);
+                methodCompiler.invokeUtilityMethod("createSubarray", sig(RubyArray.class, IRubyObject[].class, Ruby.class, int.class));
+                method.go_to(readyForArgs);
+
+                // create empty array
+                method.label(emptyArray);
+                methodCompiler.createEmptyArray();
+
+                // assign rest args
+                method.label(readyForArgs);
+                restAssignment.call(methodCompiler);
+                //consume leftover assigned value
+                method.pop();
+            }
+
+            // done with arguments array
             method.pop();
         }
-        
-        // next, iterate over all optional args, until no more arguments
-        for (int optArgElement = 0; optArgElement < optArgsCount; currentArgElement++, optArgElement++) {
-            Label noMoreArrayElements = new Label();
-            Label doneWithElement = new Label();
-
-            // confirm we're not past the end of the array
-            method.dup(); // dup the original array
-            method.arraylength();
-            method.ldc(new Integer(currentArgElement));
-            method.if_icmple(noMoreArrayElements); // if length <= start, end loop
-
-            // extract item from array
-            method.dup(); // dup the original array
-            method.ldc(new Integer(currentArgElement)); // index for the item
-            method.arrayload();
-            optGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
-            method.go_to(doneWithElement);
-
-            // otherwise no items left available, use the code from nilCallback
-            method.label(noMoreArrayElements);
-            optNotGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
-
-            // end of this element
-            method.label(doneWithElement);
-            // normal assignment leaves the value; pop it.
-            method.pop();
-        }
-
-        // if there's args left and we want them, assign to rest arg
-        if (restAssignment != null) {
-            Label emptyArray = new Label();
-            Label readyForArgs = new Label();
-
-            // confirm we're not past the end of the array
-            method.dup(); // dup the original array
-            method.arraylength();
-            method.ldc(new Integer(currentArgElement));
-            method.if_icmple(emptyArray); // if length <= start, end loop
-
-            // assign remaining elements as an array for rest args
-            method.dup(); // dup the original array object
-            methodCompiler.loadRuntime();
-            method.ldc(currentArgElement);
-            methodCompiler.invokeUtilityMethod("createSubarray", sig(RubyArray.class, IRubyObject[].class, Ruby.class, int.class));
-            method.go_to(readyForArgs);
-
-            // create empty array
-            method.label(emptyArray);
-            methodCompiler.createEmptyArray();
-
-            // assign rest args
-            method.label(readyForArgs);
-            restAssignment.call(methodCompiler);
-            //consume leftover assigned value
-            method.pop();
-        }
-        
-        // done with arguments array
-        method.pop();
         
         // block argument assignment, if there's a block arg
         if (blockAssignment != null) {
