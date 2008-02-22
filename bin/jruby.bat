@@ -11,5 +11,9 @@ call "%~dp0_jrubyvars" %*
 set E=%ERRORLEVEL%
 
 call "%~dp0_jrubycleanup"
-rem exit must be on the same line in order to see local %E% variable!
-endlocal & exit /b %E%
+
+rem 1. exit must be on the same line in order to see local %E% variable!
+rem 2. we must use cmd /c in order for the exit code properly returned!
+rem    See JRUBY-2094 for more details.
+endlocal & cmd /c exit /b %E%
+
