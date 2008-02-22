@@ -936,6 +936,8 @@ public class JavaClass extends JavaObject {
                 callbackFactory.getFastMethod("name"));
         result.defineFastMethod("class_loader", 
                 callbackFactory.getFastMethod("class_loader"));
+        result.defineFastMethod("protection_domain", 
+                callbackFactory.getFastMethod("protection_domain"));
         result.defineFastMethod("simple_name",
                 callbackFactory.getFastMethod("simple_name"));
         result.defineFastMethod("to_s", 
@@ -1062,6 +1064,10 @@ public class JavaClass extends JavaObject {
 
     public IRubyObject class_loader() {
         return Java.java_to_ruby(this, JavaObject.wrap(getRuntime(),javaClass().getClassLoader()), Block.NULL_BLOCK);
+    }
+
+    public IRubyObject protection_domain() {
+        return Java.java_to_ruby(this, JavaObject.wrap(getRuntime(),javaClass().getProtectionDomain()), Block.NULL_BLOCK);
     }
 
     private static String getSimpleName(Class class_) {

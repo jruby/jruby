@@ -1,0 +1,14 @@
+#!/usr/bin/env jruby
+# 
+# The purpose of this file is to allow JRuby users to install documentation
+# generated from class files in the distribution. In comparison to MRI
+# you can actually do this operation with a binary only JRuby
+
+require 'builtin/rdoc_jruby'
+
+begin
+  JRuby::RDoc.install_doc(%w(org jruby))
+rescue RDoc::RDocError => e
+  $stderr.puts e.message
+  exit(1)
+end

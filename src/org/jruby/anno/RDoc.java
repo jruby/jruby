@@ -9,7 +9,8 @@ import java.lang.annotation.Target;
  *
  * @author olabini
  */
-@Retention(RetentionPolicy.CLASS)
+/* Seems runtime retention is necessary, since APT can't extract annotation information from class files */
+@Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface RDoc {
     String callSeq() default "";
