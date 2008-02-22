@@ -180,7 +180,7 @@ public class JavaLibCHelper {
         return -1;  // We tried and failed for some reason. Indicate error.
     }
     
-    public int readlink(String oldpath, ByteBuffer buffer, int length) {
+    public int readlink(String oldpath, ByteBuffer buffer, int length) throws IOException {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             new ExecIt(handler).runAndWait(baos, "readlink", oldpath);
@@ -192,7 +192,8 @@ public class JavaLibCHelper {
 
             
             return buffer.position();
-        } catch (Exception e) {} 
+        } catch (InterruptedException e) {
+        } 
 
         return -1; // We tried and failed for some reason. Indicate error.
     }

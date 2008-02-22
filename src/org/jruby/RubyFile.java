@@ -1460,21 +1460,25 @@ public class RubyFile extends RubyIO {
     
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject readlink(IRubyObject recv, IRubyObject path) {
-        String realPath = recv.getRuntime().getPosix().readlink(path.toString());
+        try {
+            String realPath = recv.getRuntime().getPosix().readlink(path.toString());
         
-        if (!RubyFileTest.exist_p(recv, path).isTrue()) {
-            throw recv.getRuntime().newErrnoENOENTError("No such file or directory - " + path);
-        }
+            if (!RubyFileTest.exist_p(recv, path).isTrue()) {
+                throw recv.getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+            }
         
-        if (!RubyFileTest.symlink_p(recv, path).isTrue()) {
-            throw recv.getRuntime().newErrnoEINVALError("invalid argument - " + path);
-        }
+            if (!RubyFileTest.symlink_p(recv, path).isTrue()) {
+                throw recv.getRuntime().newErrnoEINVALError("invalid argument - " + path);
+            }
         
-        if (realPath == null) {
-            // FIXME: When we get JNA3 we need to properly write this to errno.
-        }
+            if (realPath == null) {
+                //FIXME: When we get JNA3 we need to properly write this to errno.
+            }
 
-        return recv.getRuntime().newString(realPath);
+            return recv.getRuntime().newString(realPath);
+        } catch (IOException e) {
+            throw recv.getRuntime().newIOError(e.getMessage());
+        }
     }
 
     // Can we produce IOError which bypasses a close?

@@ -1,6 +1,7 @@
 package org.jruby.ext.posix;
 
 import java.io.FileDescriptor;
+import java.io.IOException;
 
 
 public interface POSIX {
@@ -42,7 +43,7 @@ public interface POSIX {
     public int link(String oldpath,String newpath);
     public FileStat lstat(String path);
     public int mkdir(String path, int mode);
-    public String readlink(String path);
+    public String readlink(String path) throws IOException;
     public int setsid();
     public int setgid(int gid);
     public int setegid(int egid);

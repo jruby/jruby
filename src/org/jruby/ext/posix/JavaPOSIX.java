@@ -1,6 +1,7 @@
 package org.jruby.ext.posix;
 
 import java.io.FileDescriptor;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
@@ -149,7 +150,7 @@ public class JavaPOSIX implements POSIX {
         return helper.mkdir(path, mode);
     }
 
-    public String readlink(String path) {
+    public String readlink(String path) throws IOException {
         // TODO: this should not be hardcoded to 256 bytes
         ByteBuffer buffer = ByteBuffer.allocateDirect(256);
         int result = helper.readlink(path, buffer, buffer.capacity());

@@ -1,6 +1,7 @@
 package org.jruby.ext.posix;
 
 import java.io.FileDescriptor;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
@@ -182,7 +183,7 @@ public abstract class BaseNativePOSIX implements POSIX {
         return libc.symlink(oldpath, newpath);
     }
     
-    public String readlink(String oldpath) {
+    public String readlink(String oldpath) throws IOException {
         // TODO: this should not be hardcoded to 256 bytes
         ByteBuffer buffer = ByteBuffer.allocate(256);
         int result = libc.readlink(oldpath, buffer, buffer.capacity());
