@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  *
  * @author olabini
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface RDoc {
     String callSeq() default "";
