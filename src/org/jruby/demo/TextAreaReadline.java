@@ -103,7 +103,10 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
         }
     }
     
+    private Ruby runtime;
+
     public void hookIntoRuntime(final Ruby runtime) {
+        this.runtime = runtime;
         /* Hack in to replace usual readline with this */
         runtime.getLoadService().require("readline");
         RubyModule readlineM = runtime.fastGetModule("Readline");
@@ -121,7 +124,7 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
     }
     
     protected void completeAction(KeyEvent event) {
-        if (Readline.getCompletor() == null) return;
+        if (Readline.getCompletor(Readline.getHolder(runtime)) == null) return;
         
         event.consume();
         
@@ -137,7 +140,7 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
         
         int cursor = area.getCaretPosition() - startPos;
         
-        int position = Readline.getCompletor().complete(bufstr, cursor, candidates);
+        int position = Readline.getCompletor(Readline.getHolder(runtime)).complete(bufstr, cursor, candidates);
         
         // no candidates? Fail.
         if (candidates.isEmpty())
@@ -187,14 +190,14 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
             return;
         }
         
-        if (!Readline.getHistory().next()) // at end
+        if (!Readline.getHistory(Readline.getHolder(runtime)).next()) // at end
             currentLine = getLine();
         else
-            Readline.getHistory().previous(); // undo check
+            Readline.getHistory(Readline.getHolder(runtime)).previous(); // undo check
         
-        if (!Readline.getHistory().previous()) return;
+        if (!Readline.getHistory(Readline.getHolder(runtime)).previous()) return;
         
-        String oldLine = Readline.getHistory().current().trim();
+        String oldLine = Readline.getHistory(Readline.getHolder(runtime)).current().trim();
         replaceText(startPos, area.getDocument().getLength(), oldLine);
     }
     
@@ -208,14 +211,14 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
             return;
         }
         
-        if (!Readline.getHistory().next()) return;
+        if (!Readline.getHistory(Readline.getHolder(runtime)).next()) return;
         
         String oldLine;
-        if (!Readline.getHistory().next()) // at end
+        if (!Readline.getHistory(Readline.getHolder(runtime)).next()) // at end
             oldLine = currentLine;
         else {
-            Readline.getHistory().previous(); // undo check
-            oldLine = Readline.getHistory().current().trim();
+            Readline.getHistory(Readline.getHolder(runtime)).previous(); // undo check
+            oldLine = Readline.getHistory(Readline.getHolder(runtime)).current().trim();
         }
         
         replaceText(startPos, area.getDocument().getLength(), oldLine);
@@ -269,7 +272,7 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
         area.setCaretPosition(area.getDocument().getLength());
         startPos = area.getDocument().getLength();
         
-        Readline.getHistory().moveToEnd();
+        Readline.getHistory(Readline.getHolder(runtime)).moveToEnd();
         
         synchronized (amEditing) {
             if (finished) return "exit";
