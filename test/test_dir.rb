@@ -119,9 +119,207 @@ class TestDir < Test::Unit::TestCase
   end
   
   if WINDOWS
+    def test_chdir_slash_windows
+      @orig_pwd = Dir.pwd
+      def restore_cwd
+        Dir.chdir(@orig_pwd)
+      end
+      slashes = ['/', '\\']
+      slashes.each { |slash|
+        current_drive_letter = Dir.pwd[0..2]
+        Dir.chdir(slash)
+        assert_equal(current_drive_letter, Dir.pwd, "slash - #{slash}")
+        restore_cwd
+
+        letters = ['C:/', 'D:/', 'E:/', 'F:/', 'C:\\', 'D:\\', 'E:\\']
+        letters.each { |letter|
+          next unless File.exists?(letter)
+          Dir.chdir(letter)
+          pwd = Dir.pwd
+          Dir.chdir(slash)
+          slash_pwd = Dir.pwd
+          assert_equal(pwd, slash_pwd, "slash - #{slash}")
+          restore_cwd
+        }
+      }
+    ensure
+      Dir.chdir(@orig_pwd)
+    end
+
+    def test_chdir_exceptions_windows
+      orig_pwd = Dir.pwd
+      assert_raise(Errno::EINVAL) {
+        Dir.chdir('//') # '//' is not a valid thing on Windows 
+      }
+      assert_raise(Errno::ENOENT) {
+        Dir.chdir('//blah-blah-blah') # doesn't exist
+      }
+      assert_raise(Errno::EINVAL) {
+        Dir.chdir('\\\\') # '\\\\' is not a valid thing on Windows
+      }
+      assert_raise(Errno::ENOENT) {
+        Dir.chdir('\\\\blah-blah-blah') # doesn't exist
+      }
+      assert_raise(Errno::ENOENT) {
+        Dir.chdir('///') # doesn't exist
+      }
+      assert_raise(Errno::ENOENT) {
+        Dir.chdir('\\\\\\') # doesn't exist
+      }
+    ensure
+      Dir.chdir(orig_pwd)
+    end
+    
+    def test_new_windows
+      slashes = ['/', '\\']
+      slashes.each { |slash|
+        current_drive_letter = Dir.pwd[0..2]
+        slash_dir = Dir.new(slash)
+
+        slash_entries = []
+        slash_dir.each { |file|
+          slash_entries << file
+        }
+
+        drive_root_entries = Dir.entries(current_drive_letter).sort
+        slash_entries.sort!
+        assert_equal(drive_root_entries, slash_entries, "slash - #{slash}")
+      }
+    end
+    
+    def test_new_with_drive_letter
+      current_drive_letter = Dir.pwd[0..2]
+
+      # Check that 'C:' == 'C:/' == 'C:\\'
+      assert_equal(
+        Dir.new(current_drive_letter + "/").entries,
+        Dir.new(current_drive_letter).entries)
+      assert_equal(
+        Dir.new(current_drive_letter + "\\").entries,
+        Dir.new(current_drive_letter).entries)
+    end
+    
+    def test_entries_with_drive_letter
+      current_drive_letter = Dir.pwd[0..2]
+
+      # Check that 'C:' == 'C:/' == 'C:\\'
+      assert_equal(
+        Dir.entries(current_drive_letter + "/"),
+        Dir.entries(current_drive_letter))
+      assert_equal(
+        Dir.entries(current_drive_letter + "\\"),
+        Dir.entries(current_drive_letter))
+    end
+    
+    def test_open_windows
+      slashes = ['/', '\\']
+      slashes.each { |slash|
+        current_drive_letter = Dir.pwd[0..2]
+        slash_dir = Dir.open(slash)
+
+        slash_entries = []
+        slash_dir.each { |file|
+          slash_entries << file
+        }
+
+        drive_root_entries = Dir.entries(current_drive_letter).sort
+        slash_entries.sort!
+        assert_equal(drive_root_entries, slash_entries, "slash - #{slash}")
+      }
+    end
+    
+    def test_dir_new_exceptions_windows
+      assert_raise(Errno::ENOENT) {
+        Dir.new('')
+      }
+      assert_raise(Errno::EINVAL) {
+        Dir.new('//') # '//' is not a valid thing on Windows 
+      }
+      assert_raise(Errno::ENOENT) {
+        Dir.new('//blah-blah-blah') # doesn't exist
+      }
+      assert_raise(Errno::EINVAL) {
+        Dir.new('\\\\') # '\\\\' is not a valid thing on Windows
+      }
+      assert_raise(Errno::ENOENT) {
+        Dir.new('\\\\blah-blah-blah') # doesn't exist
+      }
+      assert_raise(Errno::ENOENT) {
+        Dir.new('///') # doesn't exist
+      }
+      assert_raise(Errno::ENOENT) {
+        Dir.new('\\\\\\') # doesn't exist
+      }
+    end
+    
+    def test_entries_windows
+      slashes = ['/', '\\']
+      slashes.each { |slash|
+        current_drive_letter = Dir.pwd[0..2]
+        drive_root_entries = Dir.entries(current_drive_letter).sort
+        slash_entries = Dir.entries(slash).sort
+        assert_equal(drive_root_entries, slash_entries, "slash - #{slash}")
+      }
+    end
+
+    def test_entries_exceptions_windows
+      assert_raise(Errno::ENOENT) {
+        Dir.entries('')
+      }
+      assert_raise(Errno::EINVAL) {
+        Dir.entries('//') # '//' is not a valid thing on Windows 
+      }
+      assert_raise(Errno::ENOENT) {
+        Dir.entries('//blah-blah-blah') # doesn't exist
+      }
+      assert_raise(Errno::EINVAL) {
+        Dir.entries('\\\\') # '\\\\' is not a valid thing on Windows
+      }
+      assert_raise(Errno::ENOENT) {
+        Dir.entries('\\\\blah-blah-blah') # doesn't exist
+      }
+      assert_raise(Errno::ENOENT) {
+        Dir.entries('///') # doesn't exist
+      }
+      assert_raise(Errno::ENOENT) {
+        Dir.entries('\\\\\\') # doesn't exist
+      }
+    end
+
+    def test_glob_windows
+      current_drive_letter = Dir.pwd[0..2]
+
+      slash_entries = Dir.glob( "/*").sort.map { |e|
+        # remove slash
+        e[1..-1]
+      }
+      drive_root_entries = Dir.glob(current_drive_letter + "*").sort.map { |e|
+        # remove drive letter
+        e[3..-1]
+      }
+      assert_equal(drive_root_entries, slash_entries)
+    end
+
+    def test_path_windows
+      assert_equal(Dir.new('/').path, '/')
+      assert_equal(Dir.new('\\').path, '\\')
+
+      current_drive_letter = Dir.pwd[0, 2]
+      assert_equal(Dir.new(current_drive_letter).path, current_drive_letter)
+      assert_equal(
+        Dir.new(current_drive_letter + "/").path,
+        current_drive_letter + "/")
+      assert_equal(
+        Dir.new(current_drive_letter + "\\").path,
+        current_drive_letter + "\\")
+      assert_equal(
+        Dir.new(current_drive_letter + '/blah/..').path,
+        current_drive_letter + '/blah/..')
+    end
+
     def test_drive_letter_dirname_leaves_trailing_slash
       assert_equal "C:/", File.dirname('C:/Temp')
-      assert_equal "c:\\", File.dirname('c:\temp')
+      assert_equal "c:\\", File.dirname('c:\\temp')
     end
 
     def test_pathname_realpath_works_with_drive_letters

@@ -104,7 +104,11 @@ public class RubyDir extends RubyObject {
     public IRubyObject initialize(IRubyObject _newPath, Block unusedBlock) {
         RubyString newPath = _newPath.convertToString();
         getRuntime().checkSafeString(newPath);
-        dir = JRubyFile.create(getRuntime().getCurrentDirectory(),newPath.toString());
+
+        String adjustedPath = RubyFile.adjustRootPathOnWindows(getRuntime(), newPath.toString(), null);
+        checkDirIsTwoSlashesOnWindows(getRuntime(), adjustedPath);
+
+        dir = JRubyFile.create(getRuntime().getCurrentDirectory(), adjustedPath);
         if (!dir.isDirectory()) {
             dir = null;
             throw getRuntime().newErrnoENOENTError(newPath.toString() + " is not a directory");
@@ -213,8 +217,15 @@ public class RubyDir extends RubyObject {
      */
     @JRubyMethod(name = "entries", required = 1, meta = true)
     public static RubyArray entries(IRubyObject recv, IRubyObject path) {
-        final JRubyFile directory = JRubyFile.create(recv.getRuntime().getCurrentDirectory(),path.convertToString().toString());
-        
+        Ruby runtime = recv.getRuntime();
+
+        String adjustedPath = RubyFile.adjustRootPathOnWindows(
+                runtime, path.convertToString().toString(), null);
+        checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
+
+        final JRubyFile directory = JRubyFile.create(
+                recv.getRuntime().getCurrentDirectory(), adjustedPath);
+
         if (!directory.isDirectory()) {
             throw recv.getRuntime().newErrnoENOENTError("No such directory");
         }
@@ -224,13 +235,23 @@ public class RubyDir extends RubyObject {
         Object[] files = fileList.toArray();
         return recv.getRuntime().newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
+    
+    // MRI behavior: just plain '//' or '\\\\' are considered illegal on Windows.
+    private static void checkDirIsTwoSlashesOnWindows(Ruby runtime, String path) {
+        if (RubyFile.IS_WINDOWS && ("//".equals(path) || "\\\\".equals(path))) {
+            throw runtime.newErrnoEINVALError("Invalid argument - " + path);
+        }
+    }
 
     /** Changes the current directory to <code>path</code> */
     @JRubyMethod(name = "chdir", optional = 1, frame = true, meta = true)
     public static IRubyObject chdir(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyString path = args.length == 1 ? 
-            (RubyString) args[0].convertToString() : getHomeDirectoryPath(recv); 
-        JRubyFile dir = getDir(recv.getRuntime(), path.toString(), true);
+            (RubyString) args[0].convertToString() : getHomeDirectoryPath(recv);
+        String adjustedPath = RubyFile.adjustRootPathOnWindows(
+                recv.getRuntime(), path.toString(), null);
+        checkDirIsTwoSlashesOnWindows(recv.getRuntime(), adjustedPath);
+        JRubyFile dir = getDir(recv.getRuntime(), adjustedPath, true);
         String realPath = null;
         String oldCwd = recv.getRuntime().getCurrentDirectory();
         

@@ -95,8 +95,8 @@ public class RubyFile extends RubyIO {
             && isWindowsDriveLetter(path.charAt(0))
             && path.charAt(1) == ':';
     }
-    // adjusts paths started with '/', on windows.
-    private static String adjustRootPathOnWindows(Ruby runtime, String path, String dir) {
+    // adjusts paths started with '/' or '\\', on windows.
+    static String adjustRootPathOnWindows(Ruby runtime, String path, String dir) {
         if (path == null) return path;
         if (IS_WINDOWS) {
             // MRI behavior on Windows: it treats '/' as a root of
@@ -107,8 +107,8 @@ public class RubyFile extends RubyIO {
             // Basically, '/path' is treated as a *RELATIVE* path,
             // relative to the current drive. '//path' is treated
             // as absolute one.
-            if (path.startsWith("/")) {
-                if (path.length() > 1 && path.charAt(1) == '/') {
+            if (path.startsWith("/") || path.startsWith("\\")) {
+                if (path.length() > 1 && (path.charAt(1) == '/' || path.charAt(1) == '\\')) {
                     return path;
                 }
                 
@@ -120,6 +120,9 @@ public class RubyFile extends RubyIO {
                 if (dir.length() >= 2) {
                     path = dir.substring(0, 2) + path;
                 }
+            } else if (startsWithDriveLetterOnWindows(path) && path.length() == 2) {
+               // compensate for missing slash after drive letter on windows
+                path += "/";
             }
         }
         return path;
