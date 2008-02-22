@@ -57,16 +57,18 @@ public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
         
         // fill non-captured Java local vars with nil as well
         if (scope != null) {
-            methodCompiler.loadNil();
-            for (int i = 0; i < scope.getNumberOfVariables(); i++) {
-                if (scope.isCaptured(i)) continue;
-                
-                assignLocalVariable(i);
-                
-                // move the first temp index up for each stack-based var
-                tempVariableIndex++;
+            if (scope.getNumberOfVariables() > 0) {
+                methodCompiler.loadNil();
+                for (int i = 0; i < scope.getNumberOfVariables(); i++) {
+                    if (scope.isCaptured(i)) continue;
+
+                    assignLocalVariable(i);
+
+                    // move the first temp index up for each stack-based var
+                    tempVariableIndex++;
+                }
+                method.pop();
             }
-            method.pop();
         }
         
         super.beginMethod(argsCallback, scope);

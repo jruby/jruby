@@ -57,15 +57,17 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
 
     public void beginMethod(CompilerCallback argsCallback, StaticScope scope) {
         // fill in all vars with nil so compiler is happy about future accesses
-        methodCompiler.loadNil();
-        for (int i = 0; i < scope.getNumberOfVariables(); i++) {
-            assignLocalVariable(i);
+        if (scope.getNumberOfVariables() > 0) {
+            methodCompiler.loadNil();
+            for (int i = 0; i < scope.getNumberOfVariables(); i++) {
+                assignLocalVariable(i);
+            }
+            method.pop();
+
+            // temp locals must start after last real local
+            tempVariableIndex += scope.getNumberOfVariables();
         }
-        method.pop();
-        
-        // temp locals must start after last real local
-        tempVariableIndex += scope.getNumberOfVariables();
-        
+
         if (argsCallback != null) {
             argsCallback.call(methodCompiler);
         }

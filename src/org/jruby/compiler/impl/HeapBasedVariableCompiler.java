@@ -57,19 +57,21 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
     }
 
     public void beginMethod(CompilerCallback argsCallback, StaticScope scope) {
-        // store the local vars in a local variable
-        methodCompiler.loadThreadContext();
-        methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
-        method.dup();
-        method.astore(scopeIndex);
-        method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-        method.astore(varsIndex);
+        // store the local vars in a local variable if there are any
+        if (scope.getNumberOfVariables() > 0) {
+            methodCompiler.loadThreadContext();
+            methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
+            method.dup();
+            method.astore(scopeIndex);
+            method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
+            method.astore(varsIndex);
 
-        // fill local vars with nil, to avoid checking every access.
-        method.aload(varsIndex);
-        methodCompiler.loadNil();
-        method.invokestatic(p(Arrays.class), "fill", sig(Void.TYPE, params(Object[].class, Object.class)));
-        
+            // fill local vars with nil, to avoid checking every access.
+            method.aload(varsIndex);
+            methodCompiler.loadNil();
+            method.invokestatic(p(Arrays.class), "fill", sig(Void.TYPE, params(Object[].class, Object.class)));
+        }
+
         if (argsCallback != null) {
             argsCallback.call(methodCompiler);
         }
