@@ -44,7 +44,7 @@ This will create a jruby.jar file in the projects 'lib' directory.
 
 == Testing
 
-In order to run the unit tests, copy the lib/junit.jar file to either
+In order to run the unit tests, copy the build_lib/junit.jar file to either
 $ANT_HOME/lib/junit.jar or ~/.ant/lib/junit.jar.
 
 See 'docs/README.test' for more information.
