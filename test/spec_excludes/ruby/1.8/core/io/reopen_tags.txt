@@ -1,1 +1,0 @@
-fails:IO#reopen reassociates self with the I/O stream specified as an argument, after some reads

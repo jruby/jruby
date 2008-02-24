@@ -99,7 +99,7 @@ public interface Stream {
      * @throws PipeException ESPIPE (illegal seek) when not a file 
      * 
      */
-    public long fgetpos() throws IOException, PipeException, BadDescriptorException;
+    public long fgetpos() throws IOException, PipeException, BadDescriptorException, InvalidValueException;
     
     /**
      * <p>Perform a seek based on pos().  </p> 
