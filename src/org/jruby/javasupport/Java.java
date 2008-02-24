@@ -149,7 +149,7 @@ public class Java implements Library {
             Ruby runtime = pkg.getRuntime();
             return (RubyClass)get_proxy_class(
                     runtime.getJavaSupport().getJavaUtilitiesModule(),
-                    JavaClass.forName(runtime, packageName.asJavaString() + name));
+                    JavaClass.forNameVerbose(runtime, packageName.asJavaString() + name));
         }
         
         public RubyModule defineModuleUnder(RubyModule pkg, String name) {
@@ -160,7 +160,7 @@ public class Java implements Library {
             Ruby runtime = pkg.getRuntime();
             return (RubyModule)get_interface_module(
                     runtime.getJavaSupport().getJavaUtilitiesModule(),
-                    JavaClass.forName(runtime, packageName.asJavaString() + name));
+                    JavaClass.forNameVerbose(runtime, packageName.asJavaString() + name));
         }
     };
         
@@ -560,7 +560,7 @@ public class Java implements Library {
             // fail 99.999% of the time). fortunately, we'll only do this once per
             // package name. (and seriously, folks, look into best practices...)
             try {
-                return getProxyClass(runtime, JavaClass.forName(runtime, fullName));
+                return getProxyClass(runtime, JavaClass.forNameQuiet(runtime, fullName));
             } catch (RaiseException re) { /* expected */
                 RubyException rubyEx = re.getException();
                 if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
@@ -593,7 +593,7 @@ public class Java implements Library {
             return packageModule;
         }  else {
             // upper case name, so most likely a class
-            return getProxyClass(runtime, JavaClass.forName(runtime, fullName));
+            return getProxyClass(runtime, JavaClass.forNameVerbose(runtime, fullName));
 
             // FIXME: we should also support orgs that use capitalized package
             // names (including, embarrassingly, the one I work for), but this
@@ -632,7 +632,7 @@ public class Java implements Library {
         if (Character.isLowerCase(name.charAt(0))) {
             // this covers primitives and (unlikely) lower-case class names
             try {
-                return getProxyClass(runtime, JavaClass.forName(runtime, name));
+                return getProxyClass(runtime, JavaClass.forNameVerbose(runtime, name));
             } catch (RaiseException re) { /* not primitive or lc class */
                 RubyException rubyEx = re.getException();
                 if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
@@ -669,7 +669,7 @@ public class Java implements Library {
             return packageModule;
         }  else {
             try {
-                return getProxyClass(runtime, JavaClass.forName(runtime, name));
+                return getProxyClass(runtime, JavaClass.forNameVerbose(runtime, name));
             } catch (RaiseException re) { /* not a class */
                 RubyException rubyEx = re.getException();
                 if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {

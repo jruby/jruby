@@ -998,13 +998,18 @@ public class JavaClass extends JavaObject {
         return result;
     }
     
-    public static synchronized JavaClass forName(Ruby runtime, String className) {
+    public static synchronized JavaClass forNameVerbose(Ruby runtime, String className) {
         Class klass = runtime.getJavaSupport().loadJavaClassVerbose(className);
+        return JavaClass.get(runtime, klass);
+    }
+    
+    public static synchronized JavaClass forNameQuiet(Ruby runtime, String className) {
+        Class klass = runtime.getJavaSupport().loadJavaClassQuiet(className);
         return JavaClass.get(runtime, klass);
     }
 
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
-        return forName(recv.getRuntime(), name.asJavaString());
+        return forNameVerbose(recv.getRuntime(), name.asJavaString());
     }
     
     private static final Callback __jsend_method = new Callback() {
