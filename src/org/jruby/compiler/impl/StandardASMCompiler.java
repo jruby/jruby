@@ -941,6 +941,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void createNewClosure(
+                int line,
                 StaticScope scope,
                 int arity,
                 CompilerCallback body,
@@ -948,7 +949,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 boolean hasMultipleArgsHead,
                 NodeType argsNodeId,
                 ASTInspector inspector) {
-            String closureMethodName = "closure" + ++innerIndex;
+            String closureMethodName = "closure_" + line + "_" + ++innerIndex;
             String closureFieldName = "_" + closureMethodName;
             
             ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName, inspector);
