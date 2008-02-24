@@ -466,7 +466,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         return RuntimeHelpers.invoke(context, this, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
     }
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg) {
-        return RuntimeHelpers.invoke(context, this, name, new IRubyObject[] { arg }, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+        return RuntimeHelpers.invoke(context, this, name, arg, CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args) {
         return RuntimeHelpers.invoke(context, this, name, args, CallType.FUNCTIONAL, Block.NULL_BLOCK);

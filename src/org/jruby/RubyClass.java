@@ -239,6 +239,19 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, this, name, args, block);
     }
     
+    public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
+            IRubyObject arg, CallType callType, Block block) {
+        DynamicMethod method = null;
+        method = searchMethod(name);
+        
+
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, name, new IRubyObject[] {arg}, context.getFrameSelf(), callType, block);
+        }
+
+        return method.call(context, self, this, name, arg, block);
+    }
+    
     public IRubyObject invokeInherited(ThreadContext context, IRubyObject self,
             IRubyObject subclass) {
         String name = "inherited";

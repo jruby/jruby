@@ -373,6 +373,8 @@ public class RubyStringIO extends RubyObject {
 
         return obj;
     }
+    
+    public static final ByteList NEWLINE = ByteList.create("\n");
 
     @JRubyMethod(name = "puts", rest = true)
     public IRubyObject puts(IRubyObject[] args) {
@@ -383,7 +385,7 @@ public class RubyStringIO extends RubyObject {
         ThreadContext context = getRuntime().getCurrentContext();
         
         if (args.length == 0) {
-            callMethod(context, "write", getRuntime().newString("\n"));
+            callMethod(context, "write", getRuntime().newStringShared(NEWLINE));
             return getRuntime().getNil();
         }
 
@@ -404,7 +406,7 @@ public class RubyStringIO extends RubyObject {
             callMethod(context, "write", getRuntime().newString(line));
             
             if (!line.endsWith("\n")) {
-                callMethod(context, "write", getRuntime().newString("\n"));
+                callMethod(context, "write", getRuntime().newStringShared(NEWLINE));
             }
         }
         return getRuntime().getNil();
