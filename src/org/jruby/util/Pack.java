@@ -249,7 +249,7 @@ public class Pack {
 
         tmp = new Converter(8) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
-                long l = decodeLongLittleEndian(enc);
+                long l = decodeLongBigEndian(enc);
                 return RubyBignum.bignorm(runtime,BigInteger.valueOf(l).and(
                         new BigInteger("FFFFFFFFFFFFFFFF", 16)));
             }
@@ -262,7 +262,7 @@ public class Pack {
 
         tmp = new Converter(8) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
-                return runtime.newFixnum(decodeLongLittleEndian(enc));
+                return runtime.newFixnum(decodeLongBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
                 long l = num2quad(o);
