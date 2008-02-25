@@ -255,6 +255,8 @@ public class ChannelStream implements Stream, Finalizable {
             }
 
             return fread((int) left);
+        } else if (descriptor.isNull()) {
+            return new ByteList(0);
         } else {
             checkReadable();
 
@@ -424,6 +426,8 @@ public class ChannelStream implements Stream, Finalizable {
             fseek(0, SEEK_CUR);
             FileChannel fileChannel = (FileChannel)descriptor.getChannel();
             return fileChannel.position();
+        } else if (descriptor.isNull()) {
+            return 0;
         } else {
             throw new PipeException();
         }
@@ -435,7 +439,7 @@ public class ChannelStream implements Stream, Finalizable {
      * @see org.jruby.util.IOHandler#seek(long, int)
      */
     public synchronized void fseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
-        if (descriptor.getChannel() instanceof FileChannel) {
+        if (descriptor.isSeekable()) {
             FileChannel fileChannel = (FileChannel)descriptor.getChannel();
             if (reading) {
                 if (buffer.remaining() > 0) {
@@ -461,6 +465,8 @@ public class ChannelStream implements Stream, Finalizable {
             } catch (IllegalArgumentException e) {
                 throw new InvalidValueException();
             }
+        } else if (descriptor.isNull()) {
+            return;
         } else {
             throw new PipeException();
         }

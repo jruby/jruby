@@ -222,6 +222,14 @@ public class ChannelDescriptor {
     public boolean isSeekable() {
         return channel instanceof FileChannel;
     }
+    
+    /**
+     * Whether the channel associated with this descriptor is a NullChannel,
+     * for which many operations are simply noops.
+     */
+    public boolean isNull() {
+        return channel instanceof NullChannel;
+    }
 
     /**
      * Whether the channel associated with this descriptor is writable (i.e.

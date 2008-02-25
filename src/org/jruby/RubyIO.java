@@ -486,9 +486,6 @@ public class RubyIO extends RubyObject {
                 
                 // Ruby code frequently uses a platform check to choose "NUL:" on windows
                 // but since that check doesn't work well on JRuby, we help it out
-                if ("/dev/null".equals(path) && System.getProperty("os.name").contains("Windows")) {
-                    path = "NUL:";
-                }
                 
                 openFile.setPath(path);
             

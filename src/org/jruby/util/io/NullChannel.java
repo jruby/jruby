@@ -45,8 +45,9 @@ public class NullChannel implements WritableByteChannel, ReadableByteChannel {
         if (!isOpen) {
             throw new EOFException();
         }
-        buffer.position(buffer.position() + buffer.remaining());
-        return buffer.remaining();
+        int length = buffer.remaining();
+        buffer.position(buffer.position());
+        return length;
     }
 
     public boolean isOpen() {

@@ -261,12 +261,6 @@ public class RubyFile extends RubyIO {
         this.path = newPath;
         this.openFile.setMode(newModes.getOpenFileFlags());
         
-        // Ruby code frequently uses a platform check to choose "NUL:" on windows
-        // but since that check doesn't work well on JRuby, we help it out
-        if ("/dev/null".equals(path) && SafePropertyAccessor.getProperty("os.name").contains("Windows")) {
-            path = "NUL:";
-        }
-        
         try {
             if(newPath.startsWith("file:")) {
                 String filePath = path.substring(5, path.indexOf("!"));
@@ -338,9 +332,14 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod(required = 1)
     public IRubyObject flock(IRubyObject lockingConstant) {
-        assert openFile.getMainStream().getDescriptor().isSeekable();
+        // TODO: port exact behavior from MRI, and move most locking logic into ChannelDescriptor
+        // TODO: for all LOCK_NB cases, return false if they would block
+        ChannelDescriptor descriptor = openFile.getMainStream().getDescriptor();
         
-        FileChannel fileChannel = (FileChannel)openFile.getMainStream().getDescriptor().getChannel();
+        // null channel always succeeds for all locking operations
+        if (descriptor.isNull()) return RubyFixnum.zero(getRuntime());
+        
+        FileChannel fileChannel = (FileChannel)descriptor.getChannel();
         int lockMode = RubyNumeric.num2int(lockingConstant);
 
         // Exclusive locks in Java require the channel to be writable, otherwise
@@ -361,7 +360,7 @@ public class RubyFile extends RubyIO {
                         currentLock.release();
                         currentLock = null;
 
-                        return getRuntime().newFixnum(0);
+                        return RubyFixnum.zero(getRuntime());
                     }
                     break;
                 case LOCK_EX:
@@ -371,7 +370,7 @@ public class RubyFile extends RubyIO {
                     }
                     currentLock = fileChannel.lock();
                     if (currentLock != null) {
-                        return getRuntime().newFixnum(0);
+                        return RubyFixnum.zero(getRuntime());
                     }
 
                     break;
@@ -382,7 +381,7 @@ public class RubyFile extends RubyIO {
                     }
                     currentLock = fileChannel.tryLock();
                     if (currentLock != null) {
-                        return getRuntime().newFixnum(0);
+                        return RubyFixnum.zero(getRuntime());
                     }
 
                     break;
@@ -394,7 +393,7 @@ public class RubyFile extends RubyIO {
 
                     currentLock = fileChannel.lock(0L, Long.MAX_VALUE, true);
                     if (currentLock != null) {
-                        return getRuntime().newFixnum(0);
+                        return RubyFixnum.zero(getRuntime());
                     }
 
                     break;
@@ -406,7 +405,7 @@ public class RubyFile extends RubyIO {
 
                     currentLock = fileChannel.tryLock(0L, Long.MAX_VALUE, true);
                     if (currentLock != null) {
-                        return getRuntime().newFixnum(0);
+                        return RubyFixnum.zero(getRuntime());
                     }
 
                     break;
