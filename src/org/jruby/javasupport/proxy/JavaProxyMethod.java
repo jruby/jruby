@@ -31,9 +31,10 @@ package org.jruby.javasupport.proxy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public interface JavaProxyMethod extends IRubyObject {
+public interface JavaProxyMethod extends IRubyObject, ParameterTypes {
 
     Method getSuperMethod();
 
@@ -64,11 +65,7 @@ public interface JavaProxyMethod extends IRubyObject {
 
     String getName();
 
-    Class[] getParameterTypes();
-
-    Class[] getExceptionTypes();
-
-    Class getReturnType();
+    Class<?> getReturnType();
 
     JavaProxyClass getDeclaringClass();
 

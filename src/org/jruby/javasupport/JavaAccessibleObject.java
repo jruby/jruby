@@ -29,12 +29,14 @@
 package org.jruby.javasupport;
 
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Member;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -54,6 +56,17 @@ public abstract class JavaAccessibleObject extends RubyObject {
 
         result.defineFastMethod("accessible?", callbackFactory.getFastMethod("isAccessible"));
         result.defineFastMethod("accessible=", callbackFactory.getFastMethod("setAccessible", IRubyObject.class));
+        result.defineFastMethod("annotations", callbackFactory.getFastMethod("annotations"));
+        result.defineFastMethod("annotations?", callbackFactory.getFastMethod("annotations_p"));
+        result.defineFastMethod("declared_annotations?", callbackFactory.getFastMethod("declared_annotations_p"));
+        result.defineFastMethod("annotation", callbackFactory.getFastMethod("annotation", IRubyObject.class));
+        result.defineFastMethod("annotation_present?", callbackFactory.getFastMethod("annotation_present_p", IRubyObject.class));
+        result.defineFastMethod("declaring_class", callbackFactory.getFastMethod("declaring_class"));
+        result.defineFastMethod("modifiers", callbackFactory.getFastMethod("modifiers"));
+        result.defineFastMethod("name", callbackFactory.getFastMethod("name"));
+        result.defineFastMethod("synthetic?", callbackFactory.getFastMethod("synthetic_p"));
+        result.defineFastMethod("to_string", callbackFactory.getFastMethod("to_string"));
+        result.defineFastMethod("to_s", callbackFactory.getFastMethod("to_string"));
 	}
 	protected abstract AccessibleObject accessibleObject();
 
@@ -86,5 +99,63 @@ public abstract class JavaAccessibleObject extends RubyObject {
 	    accessibleObject().setAccessible(object.isTrue());
 		return object;
 	}
+	
+    @SuppressWarnings("unchecked")
+    public IRubyObject annotation(IRubyObject annoClass) {
+        if (!(annoClass instanceof JavaClass)) {
+            throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
+        }
+        return Java.getInstance(getRuntime(), accessibleObject().getAnnotation(((JavaClass)annoClass).javaClass()));
+    }
+
+    public IRubyObject annotations() {
+        return Java.getInstance(getRuntime(), accessibleObject().getAnnotations());
+    }
+    
+    public RubyBoolean annotations_p() {
+        return getRuntime().newBoolean(accessibleObject().getAnnotations().length > 0);
+    }
+    
+    public IRubyObject declared_annotations() {
+        return Java.getInstance(getRuntime(), accessibleObject().getDeclaredAnnotations());
+    }
+    
+    public RubyBoolean declared_annotations_p() {
+        return getRuntime().newBoolean(accessibleObject().getDeclaredAnnotations().length > 0);
+    }
+    
+    public IRubyObject annotation_present_p(IRubyObject annoClass) {
+        if (!(annoClass instanceof JavaClass)) {
+            throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
+        }
+        return getRuntime().newBoolean(this.accessibleObject().isAnnotationPresent(((JavaClass)annoClass).javaClass()));
+    }
+
+    // for our purposes, Accessibles are also Members, and vice-versa,
+    // so we'll include Member methods here.
+
+    public IRubyObject declaring_class() {
+        Class<?> clazz = ((Member)accessibleObject()).getDeclaringClass();
+        if (clazz != null) {
+            return JavaClass.get(getRuntime(), clazz);
+        }
+        return getRuntime().getNil();
+    }
+
+    public IRubyObject modifiers() {
+        return getRuntime().newFixnum(((Member)accessibleObject()).getModifiers());
+    }
+
+    public IRubyObject name() {
+        return getRuntime().newString(((Member)accessibleObject()).getName());
+    }
+
+    public IRubyObject synthetic_p() {
+        return getRuntime().newBoolean(((Member)accessibleObject()).isSynthetic());
+    }
+    
+    public RubyString to_string() {
+        return getRuntime().newString(accessibleObject().toString());
+    }
 
 }

@@ -65,7 +65,7 @@ public class JavaObject extends RubyObject {
     public static JavaObject wrap(Ruby runtime, Object value) {
         if (value != null) {
             if (value instanceof Class) {
-                return JavaClass.get(runtime, (Class)value);
+                return JavaClass.get(runtime, (Class<?>)value);
             } else if (value.getClass().isArray()) {
                 return new JavaArray(runtime, value);
             }
@@ -73,7 +73,7 @@ public class JavaObject extends RubyObject {
         return new JavaObject(runtime, value);
     }
 
-    public Class getJavaClass() {
+    public Class<?> getJavaClass() {
         return value != null ? value.getClass() : Void.TYPE;
     }
 
@@ -129,9 +129,10 @@ public class JavaObject extends RubyObject {
     }
 
     public IRubyObject to_s() {
-        String s = value == null ? "" : value.toString();
-
-        return s == null ? getRuntime().getNil() : RubyString.newUnicodeString(getRuntime(), s);
+        if (value != null) {
+            return RubyString.newUnicodeString(getRuntime(), value.toString());
+        }
+        return getRuntime().newString("");
     }
 
     public IRubyObject op_equal(IRubyObject other) {

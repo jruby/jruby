@@ -245,12 +245,16 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return m.getName();
         }
 
-        public Class[] getExceptionTypes() {
+        public Class<?>[] getExceptionTypes() {
             return m.getExceptionTypes();
         }
 
-        public Class[] getParameterTypes() {
+        public Class<?>[] getParameterTypes() {
             return parameterTypes;
+        }
+        
+        public boolean isVarArgs() {
+            return m.isVarArgs();
         }
 
         public Object getState() {

@@ -43,6 +43,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.ParameterTypes;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -51,26 +52,35 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class JavaProxyConstructor extends JavaProxyReflectionObject {
+public class JavaProxyConstructor extends JavaProxyReflectionObject implements ParameterTypes {
 
-    private final Constructor proxyConstructor;
-    private final Class[] parameterTypes;
+    private final Constructor<?> proxyConstructor;
+    private final Class<?>[] apparentParameterTypes;
 
     private final JavaProxyClass declaringProxyClass;
 
     JavaProxyConstructor(Ruby runtime, JavaProxyClass pClass,
-            Constructor constructor) {
+            Constructor<?> constructor) {
         super(runtime, runtime.getJavaSupport().getJavaModule().fastGetClass(
                 "JavaProxyConstructor"));
         this.declaringProxyClass = pClass;
         this.proxyConstructor = constructor;
-        this.parameterTypes = proxyConstructor.getParameterTypes();
+        Class<?>[] parameterTypes = constructor.getParameterTypes();
+        int len = parameterTypes.length - 1;
+        this.apparentParameterTypes = new Class<?>[len];
+        System.arraycopy(parameterTypes, 0, apparentParameterTypes, 0, len);
     }
 
-    public Class[] getParameterTypes() {
-        Class[] result = new Class[parameterTypes.length - 1];
-        System.arraycopy(parameterTypes, 0, result, 0, result.length);
-        return result;
+    public Class<?>[] getParameterTypes() {
+        return apparentParameterTypes;
+    }
+
+    public Class<?>[] getExceptionTypes() {
+        return proxyConstructor.getExceptionTypes();
+    }
+    
+    public boolean isVarArgs() {
+        return proxyConstructor.isVarArgs();
     }
 
     public JavaProxyClass getDeclaringClass() {
@@ -80,7 +90,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
     public Object newInstance(Object[] args, JavaProxyInvocationHandler handler)
             throws IllegalArgumentException, InstantiationException,
             IllegalAccessException, InvocationTargetException {
-        if (args.length + 1 != parameterTypes.length) {
+        if (args.length != apparentParameterTypes.length) {
             throw new IllegalArgumentException("wrong number of parameters");
         }
 
@@ -93,8 +103,8 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
 
     public static RubyClass createJavaProxyConstructorClass(Ruby runtime,
             RubyModule javaProxyModule) {
-        RubyClass result = javaProxyModule.defineClassUnder(
-                                                            "JavaProxyConstructor", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass result = javaProxyModule.defineClassUnder("JavaProxyConstructor",
+                runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         CallbackFactory callbackFactory = runtime
                 .callbackFactory(JavaProxyConstructor.class);
@@ -138,7 +148,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
     public IRubyObject inspect() {
         StringBuffer result = new StringBuffer();
         result.append(nameOnInspection());
-        Class[] parameterTypes = getParameterTypes();
+        Class<?>[] parameterTypes = getParameterTypes();
         for (int i = 0; i < parameterTypes.length; i++) {
             result.append(parameterTypes[i].getName());
             if (i < parameterTypes.length - 1) {
@@ -160,7 +170,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
         final Ruby runtime = self.getRuntime();
         final RubyModule javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
         RubyArray constructor_args = (RubyArray) args[1];
-        Class[] parameterTypes = getParameterTypes();
+        Class<?>[] parameterTypes = getParameterTypes();
         int count = (int) constructor_args.length().getLongValue();
         Object[] converted = new Object[count];
         
@@ -216,7 +226,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
         }
 
         RubyArray constructor_args = (RubyArray) args[0];
-        Class[] parameterTypes = getParameterTypes();
+        Class<?>[] parameterTypes = getParameterTypes();
 
         int count = (int) constructor_args.length().getLongValue();
         Object[] converted = new Object[count];

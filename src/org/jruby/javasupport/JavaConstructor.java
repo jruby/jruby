@@ -34,9 +34,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -46,8 +48,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaConstructor extends JavaCallable {
-    private final Constructor constructor;
-    private final Class[] parameterTypes;
+    private final Constructor<?> constructor;
+    private final Class<?>[] parameterTypes;
 
     public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
@@ -56,16 +58,16 @@ public class JavaConstructor extends JavaCallable {
                 javaModule.defineClassUnder("JavaConstructor", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaConstructor.class);
 
-        JavaCallable.registerRubyMethods(runtime, result, JavaConstructor.class);
-        result.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
-        result.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
-        result.defineFastMethod("argument_types", callbackFactory.getFastMethod("argument_types"));
+        JavaAccessibleObject.registerRubyMethods(runtime, result);
+        JavaCallable.registerRubyMethods(runtime, result);
+
         result.defineFastMethod("new_instance", callbackFactory.getFastOptMethod("new_instance"));
+        result.defineFastMethod("type_parameters", callbackFactory.getFastMethod("type_parameters"));
         
         return result;
     }
 
-    public JavaConstructor(Ruby runtime, Constructor constructor) {
+    public JavaConstructor(Ruby runtime, Constructor<?> constructor) {
         super(runtime, runtime.getJavaSupport().getJavaModule().fastGetClass("JavaConstructor"));
         this.constructor = constructor;
         this.parameterTypes = constructor.getParameterTypes();
@@ -83,14 +85,60 @@ public class JavaConstructor extends JavaCallable {
     public int getArity() {
         return parameterTypes.length;
     }
+    
+    protected String nameOnInspection() {
+        return getType().toString();
+    }
+
+    public Class<?>[] getParameterTypes() {
+        return parameterTypes;
+    }
+
+    public Class<?>[] getExceptionTypes() {
+        return constructor.getExceptionTypes();
+    }
+
+    public Type[] getGenericParameterTypes() {
+        return constructor.getGenericParameterTypes();
+    }
+
+    public Type[] getGenericExceptionTypes() {
+        return constructor.getGenericExceptionTypes();
+    }
+
+    public Annotation[][] getParameterAnnotations() {
+        return constructor.getParameterAnnotations();
+    }
+    
+    public boolean isVarArgs() {
+        return constructor.isVarArgs();
+    }
+
+    public int getModifiers() {
+        return constructor.getModifiers();
+    }
+    
+    public String toGenericString() {
+        return constructor.toGenericString();
+    }
+
+    protected AccessibleObject accessibleObject() {
+        return constructor;
+    }
+    
+    public IRubyObject type_parameters() {
+        return Java.getInstance(getRuntime(), constructor.getTypeParameters());
+    }
+
 
     public IRubyObject new_instance(IRubyObject[] args) {
-        if (args.length != getArity()) {
-            throw getRuntime().newArgumentError(args.length, getArity());
+        int length = args.length;
+        Class<?>[] types = parameterTypes;
+        if (length != types.length) {
+            throw getRuntime().newArgumentError(length, types.length);
         }
-        Object[] constructorArguments = new Object[args.length];
-        Class[] types = parameterTypes;
-        for (int i = 0; i < args.length; i++) {
+        Object[] constructorArguments = new Object[length];
+        for (int i = length; --i >= 0; ) {
             constructorArguments[i] = JavaUtil.convertArgument(args[i], types[i]);
         }
         try {
@@ -111,21 +159,5 @@ public class JavaConstructor extends JavaCallable {
             throw getRuntime().newTypeError("can't make instance of " + constructor.getDeclaringClass().getName());
         }
     }
-
-
-    protected String nameOnInspection() {
-        return getType().toString();
-    }
-
-    protected Class[] parameterTypes() {
-        return parameterTypes;
-    }
-
-    protected int getModifiers() {
-        return constructor.getModifiers();
-    }
-
-    protected AccessibleObject accessibleObject() {
-        return constructor;
-    }
+    
 }

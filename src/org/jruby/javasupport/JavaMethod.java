@@ -36,10 +36,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
@@ -55,7 +57,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaMethod extends JavaCallable {
     private final Method method;
-    private final Class[] parameterTypes;
+    private final Class<?>[] parameterTypes;
     private final JavaUtil.JavaConverter returnConverter;
 
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
@@ -66,17 +68,16 @@ public class JavaMethod extends JavaCallable {
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaMethod.class);
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
+        JavaCallable.registerRubyMethods(runtime, result);
         
         result.defineFastMethod("name", callbackFactory.getFastMethod("name"));
-        result.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
-        result.defineFastMethod("public?", callbackFactory.getFastMethod("public_p"));
         result.defineFastMethod("final?", callbackFactory.getFastMethod("final_p"));
         result.defineFastMethod("static?", callbackFactory.getFastMethod("static_p"));
+        result.defineFastMethod("bridge?", callbackFactory.getFastMethod("bridge_p"));
         result.defineFastMethod("invoke", callbackFactory.getFastOptMethod("invoke"));
         result.defineFastMethod("invoke_static", callbackFactory.getFastOptMethod("invoke_static"));
-        result.defineFastMethod("argument_types", callbackFactory.getFastMethod("argument_types"));
-        result.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
         result.defineFastMethod("return_type", callbackFactory.getFastMethod("return_type"));
+        result.defineFastMethod("type_parameters", callbackFactory.getFastMethod("type_parameters"));
 
         return result;
     }
@@ -102,7 +103,7 @@ public class JavaMethod extends JavaCallable {
         return new JavaMethod(runtime, method);
     }
 
-    public static JavaMethod create(Ruby runtime, Class javaClass, String methodName, Class[] argumentTypes) {
+    public static JavaMethod create(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         try {
             Method method = javaClass.getMethod(methodName, argumentTypes);
             return create(runtime, method);
@@ -112,7 +113,7 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
-    public static JavaMethod createDeclared(Ruby runtime, Class javaClass, String methodName, Class[] argumentTypes) {
+    public static JavaMethod createDeclared(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         try {
             Method method = javaClass.getDeclaredMethod(methodName, argumentTypes);
             return create(runtime, method);
@@ -135,7 +136,7 @@ public class JavaMethod extends JavaCallable {
         return getRuntime().newString(method.getName());
     }
 
-    protected int getArity() {
+    public int getArity() {
         return parameterTypes.length;
     }
 
@@ -195,12 +196,16 @@ public class JavaMethod extends JavaCallable {
     }
 
     public IRubyObject return_type() {
-        Class klass = method.getReturnType();
+        Class<?> klass = method.getReturnType();
         
         if (klass.equals(void.class)) {
             return getRuntime().getNil();
         }
         return JavaClass.get(getRuntime(), klass);
+    }
+    
+    public IRubyObject type_parameters() {
+        return Java.getInstance(getRuntime(), method.getTypeParameters());
     }
 
     private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object[] arguments) {
@@ -237,14 +242,34 @@ public class JavaMethod extends JavaCallable {
     }
 
     private void convertArguments(Object[] arguments, Object[] args, int from) {
-        Class[] parameterTypes = parameterTypes();
-        for (int i = 0; i < arguments.length; i++) {
-            arguments[i] = JavaUtil.convertArgument(args[i+from], parameterTypes[i]);
+        Class<?>[] types = parameterTypes;
+        for (int i = arguments.length; --i >= 0; ) {
+            arguments[i] = JavaUtil.convertArgument(args[i+from], types[i]);
         }
     }
 
-    protected Class[] parameterTypes() {
+    public Class<?>[] getParameterTypes() {
         return parameterTypes;
+    }
+
+    public Class<?>[] getExceptionTypes() {
+        return method.getExceptionTypes();
+    }
+
+    public Type[] getGenericParameterTypes() {
+        return method.getGenericParameterTypes();
+    }
+
+    public Type[] getGenericExceptionTypes() {
+        return method.getGenericExceptionTypes();
+    }
+    
+    public Annotation[][] getParameterAnnotations() {
+        return method.getParameterAnnotations();
+    }
+
+    public boolean isVarArgs() {
+        return method.isVarArgs();
     }
 
     protected String nameOnInspection() {
@@ -254,13 +279,21 @@ public class JavaMethod extends JavaCallable {
     public RubyBoolean static_p() {
         return getRuntime().newBoolean(isStatic());
     }
+    
+    public RubyBoolean bridge_p() {
+        return getRuntime().newBoolean(method.isBridge());
+    }
 
     private boolean isStatic() {
         return Modifier.isStatic(method.getModifiers());
     }
 
-    protected int getModifiers() {
+    public int getModifiers() {
         return method.getModifiers();
+    }
+
+    public String toGenericString() {
+        return method.toGenericString();
     }
 
     protected AccessibleObject accessibleObject() {

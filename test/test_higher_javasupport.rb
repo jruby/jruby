@@ -9,6 +9,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   TestHelper = org.jruby.test.TestHelper
   JArray = ArrayList = java.util.ArrayList
   FinalMethodBaseTest = org.jruby.test.FinalMethodBaseTest
+  Annotation = java.lang.annotation.Annotation
 
   def test_java_passing_class
     assert_equal("java.util.ArrayList", TestHelper.getClassName(ArrayList))
@@ -689,5 +690,54 @@ CLASSDEF
     $! = nil
     Java::Boom
     assert_nil($!)
+  end
+  
+  # JRUBY-2169
+  def test_java_class_resource_methods
+    # FIXME? not sure why this works, didn't modify build.xml
+    # to copy this file, yet it finds it anyway
+    props_file = 'test_java_class_resource_methods.properties'
+    
+    # nothing special about this class, selected at random for testing
+    jc = org.jruby.javasupport.test.RubyTestObject.java_class
+    
+    # get resource as URL
+    url = jc.resource(props_file)
+    assert(java.net.URL === url)
+    assert(/^foo=bar/ =~ java.io.DataInputStream.new(url.content).read_line)
+
+    # get resource as stream
+    is = jc.resource_as_stream(props_file)
+    assert(java.io.InputStream === is)
+    assert(/^foo=bar/ =~ java.io.DataInputStream.new(is).read_line)
+    
+
+    # get resource as string
+    str = jc.resource_as_string(props_file)
+    assert(/^foo=bar/ =~ str)
+  end
+  
+  # JRUBY-2169
+  def test_ji_extended_methods_for_java_1_5
+    jc = java.lang.String.java_class
+    ctor = jc.constructors[0]
+    meth = jc.java_instance_methods[0]
+    field = jc.fields[0]
+    
+    # annotations
+    assert(Annotation[] === jc.annotations)
+    assert(Annotation[] === ctor.annotations)
+    assert(Annotation[] === meth.annotations)
+    assert(Annotation[] === field.annotations)
+    
+    # TODO: more extended methods to test
+    
+    
+  end
+  
+  # JRUBY-2169
+  def test_java_class_ruby_class
+    assert java.lang.Object.java_class.ruby_class == java.lang.Object
+    assert java.lang.Runnable.java_class.ruby_class == java.lang.Runnable
   end
 end

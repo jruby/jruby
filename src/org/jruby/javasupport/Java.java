@@ -36,6 +36,7 @@ package org.jruby.javasupport;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -697,12 +698,12 @@ public class Java implements Library {
     public static IRubyObject matching_method(IRubyObject recv, IRubyObject methods, IRubyObject args) {
         Map matchCache = recv.getRuntime().getJavaSupport().getMatchCache();
 
-        List arg_types = new ArrayList();
+        List<Class<?>> arg_types = new ArrayList<Class<?>>();
         int alen = ((RubyArray)args).getLength();
         IRubyObject[] aargs = ((RubyArray)args).toJavaArrayMaybeUnsafe();
         for(int i=0;i<alen;i++) {
             if (aargs[i] instanceof JavaObject) {
-                arg_types.add(((JavaClass)((JavaObject)aargs[i]).java_class()).getValue());
+                arg_types.add(((JavaClass)((JavaObject)aargs[i]).java_class()).javaClass());
             } else {
                 arg_types.add(aargs[i].getClass());
             }
@@ -724,15 +725,8 @@ public class Java implements Library {
 
         for(int i=0;i<2;i++) {
             for(int k=0;k<mlen;k++) {
-                List types = null;
                 IRubyObject method = margs[k];
-                if(method instanceof JavaCallable) {
-                    types = java.util.Arrays.asList(((JavaCallable)method).parameterTypes());
-                } else if(method instanceof JavaProxyMethod) {
-                    types = java.util.Arrays.asList(((JavaProxyMethod)method).getParameterTypes());
-                } else if(method instanceof JavaProxyConstructor) {
-                    types = java.util.Arrays.asList(((JavaProxyConstructor)method).getParameterTypes());
-                }
+                List<Class<?>> types = Arrays.asList(((ParameterTypes)method).getParameterTypes());
 
                 // Compatible (by inheritance)
                 if(arg_types.size() == types.size()) {
@@ -744,9 +738,9 @@ public class Java implements Library {
 
                     boolean match = true;
                     for(int j=0; j<types.size(); j++) {
-                        if(!(JavaClass.assignable((Class)types.get(j),(Class)arg_types.get(j)) &&
+                        if(!(JavaClass.assignable(types.get(j), arg_types.get(j)) &&
                              (i > 0 || primitive_match(types.get(j),arg_types.get(j))))
-                           && !JavaUtil.isDuckTypeConvertable((Class)arg_types.get(j), (Class)types.get(j))) {
+                           && !JavaUtil.isDuckTypeConvertable(arg_types.get(j), types.get(j))) {
                             match = false;
                             break;
                         }
@@ -771,12 +765,12 @@ public class Java implements Library {
     public static IRubyObject matching_method_internal(IRubyObject recv, IRubyObject methods, IRubyObject[] args, int start, int len) {
         Map matchCache = recv.getRuntime().getJavaSupport().getMatchCache();
 
-        List arg_types = new ArrayList();
+        List<Class<?>> arg_types = new ArrayList<Class<?>>();
         int aend = start+len;
 
         for(int i=start;i<aend;i++) {
             if (args[i] instanceof JavaObject) {
-                arg_types.add(((JavaClass)((JavaObject)args[i]).java_class()).getValue());
+                arg_types.add(((JavaClass)((JavaObject)args[i]).java_class()).javaClass());
             } else {
                 arg_types.add(args[i].getClass());
             }
@@ -797,15 +791,8 @@ public class Java implements Library {
         IRubyObject[] margs = ((RubyArray)methods).toJavaArrayMaybeUnsafe();
 
         mfor: for(int k=0;k<mlen;k++) {
-            Class[] types = null;
             IRubyObject method = margs[k];
-            if(method instanceof JavaCallable) {
-                types = ((JavaCallable)method).parameterTypes();
-            } else if(method instanceof JavaProxyMethod) {
-                types = ((JavaProxyMethod)method).getParameterTypes();
-            } else if(method instanceof JavaProxyConstructor) {
-                types = ((JavaProxyConstructor)method).getParameterTypes();
-            }
+            Class<?>[] types = ((ParameterTypes)method).getParameterTypes();
             // Compatible (by inheritance)
             if(len == types.length) {
                 // Exact match
@@ -823,7 +810,7 @@ public class Java implements Library {
                 
                 for(int j=0,m=len; j<m; j++) {
                     if(!(
-                         JavaClass.assignable(types[j],(Class)arg_types.get(j)) &&
+                         JavaClass.assignable(types[j], arg_types.get(j)) &&
                          primitive_match(types[j],arg_types.get(j))
                          )) {
                         continue mfor;
@@ -835,20 +822,13 @@ public class Java implements Library {
         }
 
         mfor: for(int k=0;k<mlen;k++) {
-            Class[] types = null;
             IRubyObject method = margs[k];
-            if(method instanceof JavaCallable) {
-                types = ((JavaCallable)method).parameterTypes();
-            } else if(method instanceof JavaProxyMethod) {
-                types = ((JavaProxyMethod)method).getParameterTypes();
-            } else if(method instanceof JavaProxyConstructor) {
-                types = ((JavaProxyConstructor)method).getParameterTypes();
-            }
+            Class<?>[] types = ((ParameterTypes)method).getParameterTypes();
             // Compatible (by inheritance)
             if(len == types.length) {
                 for(int j=0,m=len; j<m; j++) {
-                    if(!JavaClass.assignable(types[j],(Class)arg_types.get(j)) 
-                        && !JavaUtil.isDuckTypeConvertable((Class)arg_types.get(j), types[j])) {
+                    if(!JavaClass.assignable(types[j], arg_types.get(j)) 
+                        && !JavaUtil.isDuckTypeConvertable(arg_types.get(j), types[j])) {
                         continue mfor;
                     }
                 }

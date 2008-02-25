@@ -56,6 +56,7 @@ public class JavaField extends JavaAccessibleObject {
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaField.class);
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
+
         result.defineFastMethod("value_type", callbackFactory.getFastMethod("value_type"));
         result.defineFastMethod("public?", callbackFactory.getFastMethod("public_p"));
         result.defineFastMethod("static?", callbackFactory.getFastMethod("static_p"));
@@ -67,6 +68,9 @@ public class JavaField extends JavaAccessibleObject {
         result.defineFastMethod("name", callbackFactory.getFastMethod("name"));
         result.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
         result.defineAlias("===", "==");
+        result.defineFastMethod("enum_constant?", callbackFactory.getFastMethod("enum_constant_p"));
+        result.defineFastMethod("to_generic_string", callbackFactory.getFastMethod("to_generic_string"));
+        result.defineFastMethod("type", callbackFactory.getFastMethod("field_type"));
 
         return result;
     }
@@ -103,6 +107,18 @@ public class JavaField extends JavaAccessibleObject {
 
     public RubyBoolean static_p() {
         return getRuntime().newBoolean(Modifier.isStatic(field.getModifiers()));
+    }
+    
+    public RubyBoolean enum_constant_p() {
+        return getRuntime().newBoolean(field.isEnumConstant());
+    }
+
+    public RubyString to_generic_string() {
+        return getRuntime().newString(field.toGenericString());
+    }
+    
+    public IRubyObject field_type() {
+        return JavaClass.get(getRuntime(), field.getType());
     }
 
     public JavaObject value(IRubyObject object) {
