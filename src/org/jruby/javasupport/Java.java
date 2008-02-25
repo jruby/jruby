@@ -632,7 +632,7 @@ public class Java implements Library {
         if (Character.isLowerCase(name.charAt(0))) {
             // this covers primitives and (unlikely) lower-case class names
             try {
-                return getProxyClass(runtime, JavaClass.forNameVerbose(runtime, name));
+                return getProxyClass(runtime, JavaClass.forNameQuiet(runtime, name));
             } catch (RaiseException re) { /* not primitive or lc class */
                 RubyException rubyEx = re.getException();
                 if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
@@ -669,7 +669,7 @@ public class Java implements Library {
             return packageModule;
         }  else {
             try {
-                return getProxyClass(runtime, JavaClass.forNameVerbose(runtime, name));
+                return getProxyClass(runtime, JavaClass.forNameQuiet(runtime, name));
             } catch (RaiseException re) { /* not a class */
                 RubyException rubyEx = re.getException();
                 if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
