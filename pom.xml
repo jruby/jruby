@@ -172,6 +172,7 @@
               <include>test/*index</include>
               <include>test/**/*.yml</include>
               <include>test/**/*.jar</include>
+              <include>test/**/*.properties</include>
             </includes>
           </testResource>
           <testResource>
