@@ -54,12 +54,6 @@ import org.jruby.runtime.MethodIndex;
  * @author <a href="mailto:pldms@mac.com">Damian Steer</a>
  */
 public class Readline {
-    static {
-        try {
-            jline.Terminal.setupTerminal().initializeTerminal();
-        } catch(Exception e) {}
-    }
-
     public static class Service implements Library {
         public void load(final Ruby runtime, boolean wrap) throws IOException {
             createReadline(runtime);
