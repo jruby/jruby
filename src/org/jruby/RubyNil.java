@@ -42,20 +42,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public class RubyNil extends RubyObject {
-    private final Ruby runtime;
-    
     public RubyNil(Ruby runtime) {
         super(runtime, runtime.getNilClass(), false);
-        this.runtime = runtime;
         flags |= NIL_F | FALSE_F;
-    }
-    
-    public Ruby getRuntime() {
-        if (Ruby.RUNTIME_THREADLOCAL) {
-            return Ruby.getCurrentInstance();
-        } else {
-            return runtime;
-        }
     }
     
     public static ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {

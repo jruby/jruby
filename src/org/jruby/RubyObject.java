@@ -280,8 +280,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     /** Getter for property ruby.
      * @return Value of property ruby.
      */
-    public Ruby getRuntime() {
-        return getMetaClass().getRuntime();
+    public final Ruby getRuntime() {
+        return getMetaClass().getClassRuntime();
     }
 
     /**

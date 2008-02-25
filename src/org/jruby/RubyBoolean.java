@@ -43,27 +43,16 @@ import org.jruby.runtime.marshal.MarshalStream;
  * @author  jpetersen
  */
 public class RubyBoolean extends RubyObject {
-    private final Ruby runtime;
     
     public RubyBoolean(Ruby runtime, boolean value) {
         super(runtime, (value ? runtime.getTrueClass() : runtime.getFalseClass()), // Don't initialize with class
                 false); // Don't put in object space
 
         if (!value) flags = FALSE_F;
-        
-        this.runtime = runtime;
     }
     
     public int getNativeTypeIndex() {
         return (flags & FALSE_F) == 0 ? ClassIndex.TRUE : ClassIndex.FALSE;
-    }
-    
-    public Ruby getRuntime() {
-        if (Ruby.RUNTIME_THREADLOCAL) {
-            return Ruby.getCurrentInstance();
-        } else {
-            return runtime;
-        }
     }
     
     public boolean isImmediate() {

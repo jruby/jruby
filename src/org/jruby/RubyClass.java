@@ -132,10 +132,8 @@ public class RubyClass extends RubyModule {
         if (superClass == null ) {  // boot the Object class 
             obj = new RubyClass(runtime);
             obj.marshal = DEFAULT_OBJECT_MARSHAL;
-            obj.setConstant(name, obj);
         } else {                    // boot the Module and Class classes
             obj = new RubyClass(runtime, superClass);
-            runtime.getObject().setConstant(name, obj);
         }
         obj.setAllocator(allocator);
         obj.setBaseName(name);
@@ -358,9 +356,9 @@ public class RubyClass extends RubyModule {
         subclasses.add(subclass);
     }
     
-	public Ruby getRuntime() {
-		return runtime;
-	}
+    public Ruby getClassRuntime() {
+            return runtime;
+    }
 
     public RubyClass getRealClass() {
         return this;

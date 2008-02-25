@@ -827,6 +827,11 @@ public final class Ruby {
         RubyObject.createObjectClass(this, objectClass);
         RubyModule.createModuleClass(this, moduleClass);
         RubyClass.createClassClass(this, classClass);
+        
+        // set constants now that they're initialized
+        objectClass.setConstant("Object", objectClass);
+        objectClass.setConstant("Class", classClass);
+        objectClass.setConstant("Module", moduleClass);
 
         // Initialize Kernel and include into Object
         RubyKernel.createKernelModule(this);
