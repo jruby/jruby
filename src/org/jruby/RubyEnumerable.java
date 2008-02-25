@@ -257,7 +257,7 @@ public class RubyEnumerable {
         callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                 result[0] = result[0] == null ? 
-                        largs[0] : block.yield(context, runtime.newArray(result[0], largs[0]));
+                        largs[0] : block.yield(context, runtime.newArray(result[0], largs[0]), null, null, true);
 
                 return runtime.getNil();
             }
