@@ -22,17 +22,20 @@ def existing_var
 end
 
 
-puts "Empty control:"
-5.times do 
-  puts Benchmark.measure { 100_000.times { empty() } }
+def bench_op_asgn_or(bm)
+bm.report "control: empty method" do
+100_000.times { empty() }
 end
 
-puts "Existing var:"
-5.times do 
-  puts Benchmark.measure { 100_000.times { existing_var() } }
+bm.report "existing var" do
+100_000.times { existing_var() }
 end
 
-puts "Unexisting var:"
-5.times do 
-  puts Benchmark.measure { 100_000.times { unexisting_var() } }
+bm.report "nonnexisting var:" do
+100_000.times { unexisting_var() } 
+end
+end
+
+if $0 == __FILE__
+  (ARGV[0] || 10).to_i.times { Benchmark.bm(40) {|bm| bench_op_asgn_or(bm)} }
 end

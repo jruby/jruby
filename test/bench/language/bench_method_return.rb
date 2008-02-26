@@ -3,9 +3,8 @@ require 'benchmark'
 def foo1; 1; end
 def foo2; return 1; end
 
-puts "Test implicit return: 100k loops calling a method 100 times with implicit return"
-10.times {
-puts Benchmark.measure {
+def bench_method_return(bm)
+bm.report "implicit return: 100k x100 implicit return" do
   a = 5; 
   i = 0;
   while i < 100000
@@ -21,12 +20,9 @@ puts Benchmark.measure {
     foo1; foo1; foo1; foo1; foo1; foo1; foo1; foo1; foo1; foo1
     i += 1;
   end
-}
-}
+  end
 
-puts "Test explicit return: 100 k loops calling a method 100 times with explicit return"
-10.times {
-puts Benchmark.measure {
+bm.report "explicit return: 100k x100 explicit return" do
   a = []; 
   i = 0;
   while i < 100000
@@ -42,5 +38,9 @@ puts Benchmark.measure {
     foo2; foo2; foo2; foo2; foo2; foo2; foo2; foo2; foo2; foo2
     i += 1;
   end
-}
-}
+end
+end
+
+if $0 == __FILE__
+  (ARGV[0] || 10).to_i.times { Benchmark.bm(40) {|bm| bench_method_return(bm)} }
+end

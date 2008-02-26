@@ -1,157 +1,128 @@
 require 'benchmark'
 
-def foocall(arg)
-  arg
-end
-def foo
-  yield 1
-  yield 1
-  yield 1
-  yield 1
-  yield 1
-  yield 1
-  yield 1
-  yield 1
-  yield 1
-  yield 1
-end
-def foo2
-  yield 1,2
-  yield 1,2
-  yield 1,2
-  yield 1,2
-  yield 1,2
-  yield 1,2
-  yield 1,2
-  yield 1,2
-  yield 1,2
-  yield 1,2
-end
-def foo2_5
-  yield 1,2,3
-  yield 1,2,3
-  yield 1,2,3
-  yield 1,2,3
-  yield 1,2,3
-  yield 1,2,3
-  yield 1,2,3
-  yield 1,2,3
-  yield 1,2,3
-  yield 1,2,3
-end
-def foo3
-  yield
-  yield
-  yield
-  yield
-  yield
-  yield
-  yield
-  yield
-  yield
-  yield
-end
-def foo4
-  foocall(1)
-  foocall(1)
-  foocall(1)
-  foocall(1)
-  foocall(1)
-  foocall(1)
-  foocall(1)
-  foocall(1)
-  foocall(1)
-  foocall(1)
+class BenchBlockInvocation
+  def foocall(arg)
+    arg
+  end
+  def foo
+    yield 1
+    yield 1
+    yield 1
+    yield 1
+    yield 1
+    yield 1
+    yield 1
+    yield 1
+    yield 1
+    yield 1
+  end
+  def foo2
+    yield 1,2
+    yield 1,2
+    yield 1,2
+    yield 1,2
+    yield 1,2
+    yield 1,2
+    yield 1,2
+    yield 1,2
+    yield 1,2
+    yield 1,2
+  end
+  def foo2_5
+    yield 1,2,3
+    yield 1,2,3
+    yield 1,2,3
+    yield 1,2,3
+    yield 1,2,3
+    yield 1,2,3
+    yield 1,2,3
+    yield 1,2,3
+    yield 1,2,3
+    yield 1,2,3
+  end
+  def foo3
+    yield
+    yield
+    yield
+    yield
+    yield
+    yield
+    yield
+    yield
+    yield
+    yield
+  end
+  def foo4
+    foocall(1)
+    foocall(1)
+    foocall(1)
+    foocall(1)
+    foocall(1)
+    foocall(1)
+    foocall(1)
+    foocall(1)
+    foocall(1)
+    foocall(1)
+  end
 end
 
-TIMES = 5
-
-puts "1m loops yielding a fixnum 10 times to a block that just retrieves dvar"
-def test1
-TIMES.times {
-  puts Benchmark.measure {
+def bench_block_invocation(bm)
+  bbi = BenchBlockInvocation.new
+  bm.report "1m x10 yield 1 to {|j| j}" do
     a = 5; 
     i = 0;
     while i < 1000000
-      foo {|j| j}
+      bbi.foo {|j| j}
       i += 1;
     end
-  }
-}
-end
-test1
+  end
 
-puts "1m loops yielding two fixnums 10 times to block accessing one"
-def test2
-TIMES.times {
-  puts Benchmark.measure {
+  bm.report "1m x10 yield 1,2 to {|j,k| k}" do
     a = 5; 
     i = 0;
     while i < 1000000
-      foo2 {|j,k| k}
+      bbi.foo2 {|j,k| k}
       i += 1;
     end
-  }
-}
-end
-test2
+  end
 
-puts "1m loops yielding three fixnums 10 times to block accessing one"
-def test3
-TIMES.times {
-  puts Benchmark.measure {
+  bm.report "1m x10 yield 1,2,3 to {|j,k,l| k}" do
     a = 5; 
     i = 0;
     while i < 1000000
-      foo2_5 {|j,k,l| k}
+      bbi.foo2_5 {|j,k,l| k}
       i += 1;
     end
-  }
-}
-end
-test3
+  end
 
-puts "1m loops yielding three fixnums 10 times to block splatting and accessing them"
-def test4
-TIMES.times {
-  puts Benchmark.measure {
+  bm.report "1m x10 yield 1,2,3 to {|*j| j}" do
     a = 5; 
     i = 0;
     while i < 1000000
-      foo2_5 {|*j| j}
+      bbi.foo2_5 {|*j| j}
       i += 1;
     end
-  }
-}
-end
-test4
+  end
 
-puts "1m loops yielding a fixnums 10 times to block with just a fixnum (no vars)"
-def test5
-TIMES.times {
-  puts Benchmark.measure {
+  bm.report "1m x10 yield to {1}" do
     a = 5; 
     i = 0;
     while i < 1000000
-      foo3 {1}
+      bbi.foo3 {1}
       i += 1;
     end
-  }
-}
-end
-test5
+  end
 
-puts "1m loops calling a method with a fixnum that just returns it"
-def test6
-TIMES.times {
-  puts Benchmark.measure {
+  bm.report "1m x10 call(1) to def foo(a); a; end " do
     a = 5; 
     i = 0;
     while i < 1000000
-      foo4
+      bbi.foo4
       i += 1;
     end
-  }
-}
+  end
 end
-test6
+
+if $0 == __FILE__
+  (ARGV[0] || 10).to_i.times { Benchmark.bm(40) {|bm| bench_block_invocation(bm)} }
+end

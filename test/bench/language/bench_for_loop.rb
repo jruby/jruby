@@ -1,6 +1,9 @@
 require 'benchmark'
 
-def bench1
+def bench_for_loop(bm)
+  bm.report "100k x5 for loops of 10 elements" do
+    a = 1
+    while a < 100_000
   for i in 1..10
     i
   end
@@ -15,16 +18,12 @@ def bench1
   end
   for i in 1..10
     i
+  end
+      a += 1
+    end
   end
 end
 
-puts "100k calls to a method containing 5x a for loop over a 10-element range"
-5.times {
-  puts Benchmark.measure {
-    a = 1
-    while a < 100_000
-      bench1
-      a += 1
-    end
-  }
-}
+if $0 == __FILE__
+  (ARGV[0] || 10).to_i.times { Benchmark.bm(40) {|bm| bench_for_loop(bm)} }
+end

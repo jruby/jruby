@@ -150,15 +150,17 @@ class Foo
   end
 end
 
-foo = Foo.new
+def bench_op_assign(bm)
+  foo = Foo.new
 
-(ARGV[0] || 10).to_i.times {
-  Benchmark.bm(20) {|bm|
-    bm.report("control ||") { 100000.times { foo.control_or } }
-    bm.report("control &&") { 100000.times { foo.control_and } }
-    bm.report("control +") { 100000.times { foo.control_plus } }
-    bm.report("100 op || asgns") { 100000.times { foo.hundred_op_or_assigns } }
-    bm.report("100 or && asgns") { 100000.times { foo.hundred_op_and_assigns } }
-    bm.report("100 op + asgns") { 100000.times { foo.hundred_op_plus_assigns } }
-  }
-}
+  bm.report("control ||") { 100000.times { foo.control_or } }
+  bm.report("control &&") { 100000.times { foo.control_and } }
+  bm.report("control +") { 100000.times { foo.control_plus } }
+  bm.report("100 op || asgns") { 100000.times { foo.hundred_op_or_assigns } }
+  bm.report("100 or && asgns") { 100000.times { foo.hundred_op_and_assigns } }
+  bm.report("100 op + asgns") { 100000.times { foo.hundred_op_plus_assigns } }
+end
+
+if $0 == __FILE__
+  (ARGV[0] || 10).to_i.times { Benchmark.bm(40) {|bm| bench_op_assign(bm)} }
+end

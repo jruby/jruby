@@ -2,8 +2,11 @@ require 'benchmark'
 
 module Foo; module Bar; end; end
 
-(ARGV[0] || 10).to_i.times do
-  Benchmark.bm(30) do |$bm|
+
+def bench_colon(bm)
+  oldbm = $bm
+  $bm = bm
+  class << self
     module Foo
       $bm.report("control, const access directly") do
         1_000_000.times do
@@ -29,4 +32,9 @@ module Foo; module Bar; end; end
       end
     end
   end
+  $bm = oldbm
+end
+
+if $0 == __FILE__
+  (ARGV[0] || 10).to_i.times { Benchmark.bm(40) {|bm| bench_colon(bm)} }
 end
