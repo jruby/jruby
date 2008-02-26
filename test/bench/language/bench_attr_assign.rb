@@ -71,6 +71,29 @@ class Foo < Array
     self[1] = 1; self[1] = 1; self[1] = 1; self[1] = 1; self[1] = 1
     self[1] = 1; self[1] = 1; self[1] = 1; self[1] = 1; self[1] = 1
   end
+  
+  def hundred_array_assigns2
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+    self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1; self[1,2] = 1
+  end
 end
 
 foo = Foo.new
@@ -79,6 +102,7 @@ foo = Foo.new
   Benchmark.bm(20) {|bm|
     bm.report("control") { 100000.times { foo.control } }
     bm.report("100 asgns") { 100000.times { foo.hundred_assigns } }
-    bm.report("100 array asgns") { 100000.times { foo.hundred_array_assigns } }
+    bm.report("100 array[1] asgns") { 100000.times { foo.hundred_array_assigns } }
+    bm.report("100 array[1,2] asgns") { 100000.times { foo.hundred_array_assigns2 } }
   }
 }
