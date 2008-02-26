@@ -6,7 +6,11 @@ require 'benchmark'
     reg = /(cde)(fgh)/
     reg.match(str)
     
-    bm.report("1m times 100 $~ accesses") do
+    bm.report("control: 100k block with self") do
+      100_000.times { self }
+    end
+    
+    bm.report("100k times 100 $~ accesses") do
       100_000.times do
         $~; $~; $~; $~; $~; $~; $~; $~; $~; $~
         $~; $~; $~; $~; $~; $~; $~; $~; $~; $~
@@ -21,7 +25,7 @@ require 'benchmark'
       end
     end
     
-    bm.report("1m times 100 $& accesses") do
+    bm.report("100k times 100 $& accesses") do
       100_000.times do
         $&; $&; $&; $&; $&; $&; $&; $&; $&; $&
         $&; $&; $&; $&; $&; $&; $&; $&; $&; $&
@@ -36,7 +40,7 @@ require 'benchmark'
       end
     end
     
-    bm.report("1m times 100 $` accesses") do
+    bm.report("100k times 100 $` accesses") do
       100_000.times do
         $`; $`; $`; $`; $`; $`; $`; $`; $`; $`
         $`; $`; $`; $`; $`; $`; $`; $`; $`; $`
@@ -51,7 +55,7 @@ require 'benchmark'
       end
     end
     
-    bm.report("1m times 100 $' accesses") do
+    bm.report("100k times 100 $' accesses") do
       100_000.times do
         $'; $'; $'; $'; $'; $'; $'; $'; $'; $'
         $'; $'; $'; $'; $'; $'; $'; $'; $'; $'
@@ -66,7 +70,7 @@ require 'benchmark'
       end
     end
     
-    bm.report("1m times 100 $+ accesses") do
+    bm.report("100k times 100 $+ accesses") do
       100_000.times do
         $+; $+; $+; $+; $+; $+; $+; $+; $+; $+
         $+; $+; $+; $+; $+; $+; $+; $+; $+; $+
