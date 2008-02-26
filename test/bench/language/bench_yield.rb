@@ -1,6 +1,6 @@
 require 'benchmark'
 
-class BenchBlockInvocation
+class BenchYield
   def foocall(arg)
     arg
   end
@@ -66,8 +66,8 @@ class BenchBlockInvocation
   end
 end
 
-def bench_block_invocation(bm)
-  bbi = BenchBlockInvocation.new
+def bench_yield(bm)
+  bbi = BenchYield.new
   bm.report "1m x10 yield 1 to {|j| j}" do
     a = 5; 
     i = 0;
@@ -124,5 +124,5 @@ def bench_block_invocation(bm)
 end
 
 if $0 == __FILE__
-  (ARGV[0] || 10).to_i.times { Benchmark.bm(40) {|bm| bench_block_invocation(bm)} }
+  (ARGV[0] || 10).to_i.times { Benchmark.bm(40) {|bm| bench_yield(bm)} }
 end
