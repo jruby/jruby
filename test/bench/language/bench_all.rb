@@ -22,7 +22,11 @@ bench_list = %w[
   bench_dstr
   bench_dsymbol
   bench_false
+  bench_fixnum
+  bench_flip
+  bench_float
   bench_for_loop
+  bench_globals
   bench_ivar_access
   bench_literal_hash
   bench_local_vars
