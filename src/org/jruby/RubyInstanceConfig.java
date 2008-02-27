@@ -300,7 +300,7 @@ public class RubyInstanceConfig {
                 .append("  +C              force compilation of all scripts before they are run (except eval)\n")
                 .append("  -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)\n")
                 .append("  -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)\n")
-                .append("  -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)");
+                .append("  -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)\n");
 
         return sb.toString();
     }

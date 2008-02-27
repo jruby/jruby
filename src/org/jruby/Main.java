@@ -88,10 +88,9 @@ public class Main {
             return run();
         } catch (MainExitException mee) {
             if (!mee.isAborted()) {
+                config.getOutput().println(mee.getMessage());
                 if (mee.isUsageError()) {
                     printUsage();
-                } else {
-                    config.getOutput().println(mee.getMessage());
                 }
             }
             return mee.getStatus();
