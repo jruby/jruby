@@ -63,8 +63,7 @@ public class JavaLibCHelper {
         } catch (SecurityException e) {
             // ignore
         } catch (NoSuchFieldException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            field = null;
         }
     }
     
@@ -86,7 +85,7 @@ public class JavaLibCHelper {
     }
 
     public int getfd(FileDescriptor descriptor) {
-        if (descriptor == null) return -1;
+        if (descriptor == null || field == null) return -1;
         
         try {
             return field.getInt(descriptor);
