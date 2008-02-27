@@ -1,6 +1,6 @@
 require 'benchmark'
 
-class Foo
+class BenchOpAssign
   attr_accessor :op_or
   attr_accessor :op_and
   attr_accessor :op_plus
@@ -151,7 +151,7 @@ class Foo
 end
 
 def bench_op_assign(bm)
-  foo = Foo.new
+  foo = BenchOpAssign.new
 
   bm.report("control ||") { 100000.times { foo.control_or } }
   bm.report("control &&") { 100000.times { foo.control_and } }

@@ -69,15 +69,18 @@ module A
 end
 
 def bench_const_lookup(bm)
+  oldbm = $bm
+  $bm = bm
   class << self
-    E = A::B::C::D::E
+    F = A::B::C::D::E
     j = J.new
     k = E::K.new
 
-    5.times { bm.report("100k * 100 nested const get") { E::bench }}
-    5.times { bm.report("100k * 100 inherited const get") { j.bench }}
-    5.times { bm.report("100k * 100 both") { k.bench }}
+    5.times { $bm.report("100k * 100 nested const get") { F::bench }}
+    5.times { $bm.report("100k * 100 inherited const get") { j.bench }}
+    5.times { $bm.report("100k * 100 both") { k.bench }}
   end
+  $bm = oldbm
 end
 
 if $0 == __FILE__

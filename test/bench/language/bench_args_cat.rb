@@ -1,6 +1,6 @@
 require 'benchmark'
 
-def bench_args_cat
+def bench_args_cat(bm)
   bm.report("control, x = 1, 2") {
     100000.times {
       x = 1, 2; x = 1, 2; x = 1, 2; x = 1, 2; x = 1, 2

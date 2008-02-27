@@ -103,22 +103,29 @@ end
 
 def bench_case(bm)
   bc = BenchCase.new
-  a = 0
-  while a < 1_000_000
-    bc.do_case3
-    a += 1
-  end
 
   bm.report "1m x5 cases with 1 when" do
-    bc.do_bench1
+    a = 0
+    while a < 1_000_000
+      bc.do_case1
+      a += 1
+    end
   end
 
   bm.report "1m x5 cases with 1 3-arg when" do
-    bc.do_bench2
+    a = 0
+    while a < 1_000_000
+      bc.do_case2
+      a += 1
+    end
   end
 
   bm.report "1m x5 cases with 10 whens" do
-    bc.do_bench3
+    a = 0
+    while a < 1_000_000
+      bc.do_case3
+      a += 1
+    end
   end
 end
 

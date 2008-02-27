@@ -15,6 +15,7 @@ def bench_alias(bm)
       $bm.report("1m alias_method'ed calls") { 1000000.times { yyy } }
     end
   end
+  $bm = oldbm
 end
 
 if $0 == __FILE__

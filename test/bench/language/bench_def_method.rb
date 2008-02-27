@@ -1,10 +1,12 @@
 require 'benchmark'
 
-def bench_def_method
-  x = 0
-  while x < 1_000_000
-    def a; 1 + 1; end
-    x += 1
+def bench_def_method(bm)
+  bm.report("1m x def a; 1 + 1; end") do
+    x = 0
+    while x < 1_000_000
+      def a; 1 + 1; end
+      x += 1
+    end
   end
 end
 

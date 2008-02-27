@@ -1,10 +1,10 @@
 require 'benchmark'
 
 def bench_method_dispatch(bm)
-  bm.report "control: 1m x100 local var access" do
+  bm.report "control: 100x x100 local var access" do
     a = 5; 
     i = 0;
-    while i < 1000000
+    while i < 100000
       a; a; a; a; a; a; a; a; a; a;
       a; a; a; a; a; a; a; a; a; a;
       a; a; a; a; a; a; a; a; a; a;
@@ -19,10 +19,10 @@ def bench_method_dispatch(bm)
     end
   end
 
-  bm.report "core class: 1m x100 Fixnum#to_i" do
+  bm.report "core class: 100x x100 Fixnum#to_i" do
     a = 5; 
     i = 0;
-    while i < 1000000
+    while i < 100000
       a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
       a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
       a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
@@ -37,14 +37,20 @@ def bench_method_dispatch(bm)
     end
   end
 
+  oldbm = $bm
+  $bm = bm
   def foo
     self
   end
 
-  bm.report "ruby method: 1m x100 self.foo" do
+  class << self
+    define_method(:bar) { }
+  end
+  
+  $bm.report "ruby method: 100k x100 self.foo" do
     a = []; 
     i = 0;
-    while i < 1000000
+    while i < 100000
       foo; foo; foo; foo; foo; foo; foo; foo; foo; foo;
       foo; foo; foo; foo; foo; foo; foo; foo; foo; foo;
       foo; foo; foo; foo; foo; foo; foo; foo; foo; foo;
@@ -59,11 +65,7 @@ def bench_method_dispatch(bm)
     end
   end
 
-  class Object
-    define_method(:bar) { }
-  end
-
-  bm.report "define_method method: 100k x100 calls" do
+  $bm.report "define_method method: 100k x100 calls" do
     a = 0
     while a < 100000
       bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
@@ -79,6 +81,7 @@ def bench_method_dispatch(bm)
       a += 1
     end
   end
+  $bm = oldbm
 end
 
 if $0 == __FILE__

@@ -4,7 +4,7 @@ def foo1; 1; end
 def foo2; return 1; end
 
 def bench_method_return(bm)
-bm.report "implicit return: 100k x100 implicit return" do
+bm.report "100k x100 implicit return" do
   a = 5; 
   i = 0;
   while i < 100000
@@ -22,7 +22,7 @@ bm.report "implicit return: 100k x100 implicit return" do
   end
   end
 
-bm.report "explicit return: 100k x100 explicit return" do
+bm.report "100k x100 explicit return" do
   a = []; 
   i = 0;
   while i < 100000
@@ -42,5 +42,5 @@ end
 end
 
 if $0 == __FILE__
-  (ARGV[0] || 10).to_i.times { Benchmark.bm(40) {|bm| bench_method_return(bm)} }
+  (ARGV[0] || 10).to_i.times { Benchmark.bm(50) {|bm| bench_method_return(bm)} }
 end

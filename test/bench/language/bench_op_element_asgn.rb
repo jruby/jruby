@@ -1,6 +1,6 @@
 require 'benchmark'
 
-class Foo < Array
+class BenchOpElementAsgn < Array
   attr_accessor :bar
   
   def initialize
@@ -150,7 +150,7 @@ class Foo < Array
 end
 
 def bench_op_element_asgn(bm)
-  foo = Foo.new
+  foo = BenchOpElementAsgn.new
 
   bm.report("control ||") { 100000.times { foo.control_or } }
   bm.report("control &&") { 100000.times { foo.control_and } }
