@@ -56,6 +56,7 @@ test_string_sub
 test_string_to_number
 test_symbol
 test_tb_yaml
+test_timeout
 test_thread
 test_time_nil_ops
 test_variables

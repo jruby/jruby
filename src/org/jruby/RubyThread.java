@@ -356,7 +356,18 @@ public class RubyThread extends RubyObject {
         }
         try {
             if (threadService.getCritical()) {
-                threadImpl.interrupt(); // break target thread out of critical
+                // If the target thread is sleeping or stopped, wake it
+                synchronized (stopLock) {
+                    stopLock.notify();
+                }
+                
+                // interrupt the target thread in case it's blocking or waiting
+                // WARNING: We no longer interrupt the target thread, since this usually means
+                // interrupting IO and with NIO that means the channel is no longer usable.
+                // We either need a new way to handle waking a target thread that's waiting
+                // on IO, or we need to accept that we can't wake such threads and must wait
+                // for them to complete their operation.
+                //threadImpl.interrupt();
             }
             threadImpl.join(timeoutMillis);
         } catch (InterruptedException ie) {
@@ -529,7 +540,7 @@ public class RubyThread extends RubyObject {
         return this.priority;
     }
 
-    @JRubyMethod(name = "raise", optional = 1, frame = true)
+    @JRubyMethod(name = "raise", optional = 2, frame = true)
     public IRubyObject raise(IRubyObject[] args, Block block) {
         ensureNotCurrent();
         Ruby runtime = getRuntime();
@@ -544,9 +555,19 @@ public class RubyThread extends RubyObject {
             currentThread.pollThreadEvents();
             if (DEBUG) System.out.println("thread " + Thread.currentThread() + " raising");
             receivedException = prepareRaiseException(runtime, args, block);
+            
+            // If the target thread is sleeping or stopped, wake it
+            synchronized (stopLock) {
+                stopLock.notify();
+            }
 
             // interrupt the target thread in case it's blocking or waiting
-            threadImpl.interrupt();
+            // WARNING: We no longer interrupt the target thread, since this usually means
+            // interrupting IO and with NIO that means the channel is no longer usable.
+            // We either need a new way to handle waking a target thread that's waiting
+            // on IO, or we need to accept that we can't wake such threads and must wait
+            // for them to complete their operation.
+            //threadImpl.interrupt();
         } finally {
             if (currentThread.lock.isHeldByCurrentThread()) currentThread.lock.unlock();
             if (this.lock.isHeldByCurrentThread()) this.lock.unlock();
@@ -653,8 +674,19 @@ public class RubyThread extends RubyObject {
 
             if (DEBUG) System.out.println("thread " + Thread.currentThread() + " succeeded with kill");
             killed = true;
+            
+            // If the target thread is sleeping or stopped, wake it
+            synchronized (stopLock) {
+                stopLock.notify();
+            }
 
-            threadImpl.interrupt(); // break out of wait states and blocking IO
+            // interrupt the target thread in case it's blocking or waiting
+            // WARNING: We no longer interrupt the target thread, since this usually means
+            // interrupting IO and with NIO that means the channel is no longer usable.
+            // We either need a new way to handle waking a target thread that's waiting
+            // on IO, or we need to accept that we can't wake such threads and must wait
+            // for them to complete their operation.
+            //threadImpl.interrupt();
         } finally {
             if (currentThread.lock.isHeldByCurrentThread()) currentThread.lock.unlock();
             if (this.lock.isHeldByCurrentThread()) this.lock.unlock();

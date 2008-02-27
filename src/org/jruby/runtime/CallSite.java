@@ -43,6 +43,7 @@ public abstract class CallSite {
     public final int methodID;
     public final String methodName;
     protected final CallType callType;
+    private static int callCount = 0;
     
     public CallSite(int methodID, String methodName, CallType callType) {
         this.methodID = methodID;
@@ -226,9 +227,15 @@ public abstract class CallSite {
             cachedMethod = null;
         }
         
+        private void pollThreadEvents(ThreadContext context) {
+            if ((callCount++ & 0xFF) == 0) context.pollThreadEvents();
+        }
+        
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            RubyClass selfType = self.getMetaClass();
+            pollThreadEvents(context);
 
+            RubyClass selfType = self.getMetaClass();
+            
             if (cachedType == selfType && cachedMethod != null) {
                 return cachedMethod.call(context, self, selfType, methodName, args);
             }
@@ -237,6 +244,8 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+            pollThreadEvents(context);
+
             try {
                 RubyClass selfType = self.getMetaClass();
 
@@ -255,6 +264,8 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self) {
+            pollThreadEvents(context);
+
             RubyClass selfType = self.getMetaClass();
 
             if (cachedType == selfType && cachedMethod != null) {
@@ -265,6 +276,8 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, Block block) {
+            pollThreadEvents(context);
+
             try {
                 RubyClass selfType = self.getMetaClass();
 
@@ -283,6 +296,8 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1) {
+            pollThreadEvents(context);
+
             RubyClass selfType = self.getMetaClass();
 
             if (cachedType == selfType && cachedMethod != null) {
@@ -293,6 +308,8 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
+            pollThreadEvents(context);
+
             try {
                 RubyClass selfType = self.getMetaClass();
 
@@ -311,6 +328,8 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+            pollThreadEvents(context);
+
             RubyClass selfType = self.getMetaClass();
 
             if (cachedType == selfType && cachedMethod != null) {
@@ -321,6 +340,8 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
+            pollThreadEvents(context);
+
             try {
                 RubyClass selfType = self.getMetaClass();
 
@@ -339,6 +360,8 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+            pollThreadEvents(context);
+
             RubyClass selfType = self.getMetaClass();
 
             if (cachedType == selfType && cachedMethod != null) {
@@ -349,6 +372,8 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+            pollThreadEvents(context);
+
             try {
                 RubyClass selfType = self.getMetaClass();
 
