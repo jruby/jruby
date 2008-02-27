@@ -57,7 +57,7 @@ public class JavaEmbedUtils {
      * @return an instance
      */
     public static Ruby initialize(List loadPaths) {
-        return initialize(loadPaths, null);
+        return initialize(loadPaths, new RubyInstanceConfig());
     }
     
     /**
@@ -69,8 +69,19 @@ public class JavaEmbedUtils {
      */
     public static Ruby initialize(List loadPaths, ClassCache classCache) {
         RubyInstanceConfig config = new RubyInstanceConfig();
-        
-        if (classCache != null) config.setClassCache(classCache);
+        if (classCache != null) {
+            config.setClassCache(classCache);
+        }
+        return initialize(loadPaths, config);
+    }
+
+    /**
+     * Get an instance of a JRuby runtime.
+     * @param loadPaths additional load paths you wish to add
+     * @param config a runtime configuration instance
+     * @return an instance
+     */
+    public static Ruby initialize(List loadPaths, RubyInstanceConfig config) {
         Ruby runtime = Ruby.newInstance(config);
         runtime.getLoadService().init(loadPaths);
         runtime.getLoadService().require("java");

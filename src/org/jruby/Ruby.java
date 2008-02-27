@@ -2463,39 +2463,11 @@ public final class Ruby {
     }
 
     public String getJRubyHome() {
-        if (jrubyHome == null) {
-            if (isSecurityRestricted()) {
-                return "SECURITY RESTRICTED";
-            }
-            jrubyHome = verifyHome(SafePropertyAccessor.getProperty("jruby.home", SafePropertyAccessor.getProperty("user.home") + "/.jruby"));
-        }
-        
-        try {
-            // This comment also in rbConfigLibrary
-            // Our shell scripts pass in non-canonicalized paths, but even if we didn't
-            // anyone who did would become unhappy because Ruby apps expect no relative
-            // operators in the pathname (rubygems, for example).
-            return new NormalizedFile(jrubyHome).getCanonicalPath();
-        } catch (IOException e) {}
-        
-        return new NormalizedFile(jrubyHome).getAbsolutePath();
-    }
-    
-    public void setJRubyHome(String home) {
-        jrubyHome = verifyHome(home);
+        return config.getJRubyHome();
     }
 
-    // We require the home directory to be absolute
-    private String verifyHome(String home) {
-        if (home.equals(".")) {
-            home = System.getProperty("user.dir");
-        }
-        NormalizedFile f = new NormalizedFile(home);
-        if (!f.isAbsolute()) {
-            home = f.getAbsolutePath();
-        }
-        f.mkdirs();
-        return home;
+    public void setJRubyHome(String home) {
+        config.setJRubyHome(home);
     }
 
     public RubyInstanceConfig getInstanceConfig() {
@@ -2661,8 +2633,6 @@ public final class Ruby {
     private Stack<RubyProc> atExitBlocks = new Stack<RubyProc>();
 
     private Profile profile;
-
-    private String jrubyHome;
 
     private KCode kcode = KCode.NONE;
 

@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -44,13 +44,14 @@ import org.jruby.runtime.load.LoadService;
 import org.jruby.util.ClassCache;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
+import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
 
 public class RubyInstanceConfig {
-    
+
     public enum CompileMode {
         JIT, FORCE, OFF;
-        
+
         public boolean shouldPrecompileCLI() {
             switch (this) {
             case JIT: case FORCE:
@@ -58,7 +59,7 @@ public class RubyInstanceConfig {
             }
             return false;
         }
-        
+
         public boolean shouldJIT() {
             switch (this) {
             case JIT: case FORCE:
@@ -66,7 +67,7 @@ public class RubyInstanceConfig {
             }
             return false;
         }
-        
+
         public boolean shouldPrecompileAll() {
             return this == FORCE;
         }
@@ -77,7 +78,7 @@ public class RubyInstanceConfig {
     private Profile profile            = Profile.DEFAULT;
     private boolean objectSpaceEnabled
             = SafePropertyAccessor.getBoolean("jruby.objectspace.enabled", false);
-    
+
     private CompileMode compileMode = CompileMode.JIT;
     private boolean runRubyInProcess   = true;
     private String currentDirectory;
@@ -93,9 +94,9 @@ public class RubyInstanceConfig {
     private CompatVersion compatVersion;
 
     private ClassLoader loader = Thread.currentThread().getContextClassLoader();
-    
+
     private ClassCache<Script> classCache;
-    
+
     // from CommandlineParser
     private List<String> loadPaths = new ArrayList<String>();
     private StringBuffer inlineScript = new StringBuffer();
@@ -123,8 +124,10 @@ public class RubyInstanceConfig {
     private String recordSeparator = "\n";
     private boolean shouldCheckSyntax = false;
     private String inputFieldSeparator = null;
-    
+
     private int safeLevel = 0;
+
+    private String jrubyHome;
 
     public static final boolean FASTEST_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.fastest");
@@ -161,7 +164,7 @@ public class RubyInstanceConfig {
 
     private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
 
-    
+
     static {
         try {
             if (System.getProperty("jruby.native.enabled") != null) {
@@ -173,7 +176,7 @@ public class RubyInstanceConfig {
     }
 
     public int characterIndex = 0;
-    
+
     public RubyInstanceConfig() {
         if (Ruby.isSecurityRestricted())
             currentDirectory = "/";
@@ -191,7 +194,7 @@ public class RubyInstanceConfig {
             System.err.println("Compatibility version `" + compatString + "' invalid; use RUBY1_8 or RUBY1_9. Using RUBY1_8.");
             compatVersion = CompatVersion.RUBY1_8;
         }
-        
+
         if (Ruby.isSecurityRestricted()) {
             compileMode = CompileMode.OFF;
             jitLogging = false;
@@ -210,7 +213,7 @@ public class RubyInstanceConfig {
                 compileMode = SafePropertyAccessor.getBoolean("jruby.jit.enabled") ? CompileMode.JIT : CompileMode.OFF;
             } else {
                 String jitModeProperty = SafePropertyAccessor.getProperty("jruby.compile.mode", "JIT");
-                
+
                 if (jitModeProperty.equals("OFF")) {
                     compileMode = CompileMode.OFF;
                 } else if (jitModeProperty.equals("JIT")) {
@@ -226,18 +229,18 @@ public class RubyInstanceConfig {
             jitLoggingVerbose = SafePropertyAccessor.getBoolean("jruby.jit.logging.verbose");
             String logEvery = SafePropertyAccessor.getProperty("jruby.jit.logEvery");
             jitLogEvery = logEvery == null ? 0 : Integer.parseInt(logEvery);
-            jitThreshold = threshold == null ? 20 : Integer.parseInt(threshold); 
+            jitThreshold = threshold == null ? 20 : Integer.parseInt(threshold);
             jitMax = max == null ? 2048 : Integer.parseInt(max);
         }
-        
+
         // default ClassCache using jitMax as a soft upper bound
         classCache = new ClassCache<Script>(loader, jitMax);
-        
+
         if (FORK_ENABLED) {
             error.print("WARNING: fork is highly unlikely to be safe or stable on the JVM. Have fun!\n");
         }
     }
-    
+
     public LoadServiceCreator getLoadServiceCreator() {
         return creator;
     }
@@ -282,10 +285,10 @@ public class RubyInstanceConfig {
                 .append("  --copyright     print the copyright\n")
                 .append("  --properties    List all configuration Java properties (pass -J-Dproperty=value)\n")
                 .append("  --version       print the version\n");
-        
+
         return sb.toString();
     }
-    
+
     public String getExtendedHelp() {
         StringBuffer sb = new StringBuffer();
         sb
@@ -298,10 +301,10 @@ public class RubyInstanceConfig {
                 .append("  -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)\n")
                 .append("  -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)\n")
                 .append("  -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)");
-        
+
         return sb.toString();
     }
-    
+
     public String getPropertyHelp() {
         StringBuffer sb = new StringBuffer();
         sb
@@ -351,10 +354,10 @@ public class RubyInstanceConfig {
                 .append("       Enable or disable ObjectSpace.each_object (default is disabled)\n")
                 .append("    jruby.launch.inproc=true|false\n")
                 .append("       Set in-process launching of e.g. system('ruby ...'). Default is true\n");
-        
+
         return sb.toString();
     }
-    
+
     public String getVersionString() {
         StringBuffer buf = new StringBuffer("ruby ");
         switch (compatVersion) {
@@ -372,14 +375,14 @@ public class RubyInstanceConfig {
                 .append(SafePropertyAccessor.getProperty("os.arch", "unknown") + "-jruby" + Constants.VERSION)
                 .append("]")
                 .append("\n");
-        
+
         return buf.toString();
     }
-    
+
     public String getCopyrightString() {
         return "JRuby - Copyright (C) 2001-2008 The JRuby Community (and contribs)\n";
     }
-    
+
     public void processArguments(String[] arguments) {
         new ArgumentProcessor(arguments).processArguments();
     }
@@ -387,7 +390,7 @@ public class RubyInstanceConfig {
     public CompileMode getCompileMode() {
         return compileMode;
     }
-    
+
     public void setCompileMode(CompileMode compileMode) {
         this.compileMode = compileMode;
     }
@@ -407,19 +410,19 @@ public class RubyInstanceConfig {
     public boolean isSamplingEnabled() {
         return samplingEnabled;
     }
-    
+
     public int getJitThreshold() {
         return jitThreshold;
     }
-    
+
     public int getJitMax() {
         return jitMax;
     }
-    
+
     public boolean isRunRubyInProcess() {
         return runRubyInProcess;
     }
-    
+
     public void setRunRubyInProcess(boolean flag) {
         this.runRubyInProcess = flag;
     }
@@ -495,23 +498,63 @@ public class RubyInstanceConfig {
         }
         this.loader = loader;
     }
-    
+
     public String[] getArgv() {
         return argv;
     }
-    
+
     public void setArgv(String[] argv) {
         this.argv = argv;
+    }
+
+    public String getJRubyHome() {
+        if (jrubyHome == null) {
+            if (Ruby.isSecurityRestricted()) {
+                return "SECURITY RESTRICTED";
+            }
+            jrubyHome = verifyHome(SafePropertyAccessor.getProperty("jruby.home",
+                    SafePropertyAccessor.getProperty("user.home") + "/.jruby"));
+
+            try {
+                // This comment also in rbConfigLibrary
+                // Our shell scripts pass in non-canonicalized paths, but even if we didn't
+                // anyone who did would become unhappy because Ruby apps expect no relative
+                // operators in the pathname (rubygems, for example).
+                jrubyHome = new NormalizedFile(jrubyHome).getCanonicalPath();
+            } catch (IOException e) { }
+
+            jrubyHome = new NormalizedFile(jrubyHome).getAbsolutePath();
+        }
+        return jrubyHome;
+    }
+
+    public void setJRubyHome(String home) {
+        jrubyHome = verifyHome(home);
+    }
+
+    // We require the home directory to be absolute
+    private String verifyHome(String home) {
+        if (home.equals(".")) {
+            home = System.getProperty("user.dir");
+        }
+        if (!home.startsWith("file:")) {
+            NormalizedFile f = new NormalizedFile(home);
+            if (!f.isAbsolute()) {
+                home = f.getAbsolutePath();
+            }
+            f.mkdirs();
+        }
+        return home;
     }
 
     private class ArgumentProcessor {
         private String[] arguments;
         private int argumentIndex = 0;
-        
+
         public ArgumentProcessor(String[] arguments) {
             this.arguments = arguments;
         }
-        
+
         public void processArguments() {
             while (argumentIndex < arguments.length && isInterpreterArgument(arguments[argumentIndex])) {
                 processArgument();
@@ -534,11 +577,11 @@ public class RubyInstanceConfig {
         private boolean isInterpreterArgument(String argument) {
             return (argument.charAt(0) == '-' || argument.charAt(0) == '+') && !endOfArguments;
         }
-        
+
         private String getArgumentError(String argument, String additionalError) {
             return "jruby: invalid argument " + argument + "\n" + additionalError + "\n";
         }
-        
+
         private String getArgumentError(String additionalError) {
             return "jruby: invalid argument\n" + additionalError + "\n";
         }
@@ -652,7 +695,7 @@ public class RubyInstanceConfig {
                 case 'T' :{
                     String temp = grabOptionalValue();
                     int value = 1;
-                    
+
                     if(temp!=null) {
                         try {
                             value = Integer.parseInt(temp, 8);
@@ -764,7 +807,7 @@ public class RubyInstanceConfig {
                         break FOR;
                     } else {
                         if (argument.equals("--")) {
-                            // ruby interpreter compatibilty 
+                            // ruby interpreter compatibilty
                             // Usage: ruby [switches] [--] [programfile] [arguments])
                             endOfArguments = true;
                             break;
@@ -843,19 +886,19 @@ public class RubyInstanceConfig {
         }
         return isShouldRunInterpreter();
     }
-    
+
     public boolean shouldPrintUsage() {
         return shouldPrintUsage;
     }
-    
+
     public boolean shouldPrintProperties() {
         return shouldPrintProperties;
     }
-    
+
     private boolean isSourceFromStdin() {
         return getScriptFileName() == null;
     }
-    
+
     public boolean isInlineScript() {
         return hasInlineScript;
     }
@@ -974,11 +1017,11 @@ public class RubyInstanceConfig {
     public boolean isYARVCompileEnabled() {
         return yarvCompile;
     }
-    
+
     public KCode getKCode() {
         return kcode;
     }
-    
+
     public String getRecordSeparator() {
         return recordSeparator;
     }
@@ -986,15 +1029,15 @@ public class RubyInstanceConfig {
     public int getSafeLevel() {
         return safeLevel;
     }
-    
+
     public void setRecordSeparator(String recordSeparator) {
         this.recordSeparator = recordSeparator;
     }
-    
+
     public ClassCache getClassCache() {
         return classCache;
     }
-    
+
     public void setClassCache(ClassCache classCache) {
         this.classCache = classCache;
     }
