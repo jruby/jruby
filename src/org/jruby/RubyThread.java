@@ -469,6 +469,7 @@ public class RubyThread extends RubyObject {
         Object stopLock = rubyThread.stopLock;
         
         synchronized (stopLock) {
+            rubyThread.pollThreadEvents();
             try {
                 rubyThread.isStopped = true;
                 // attempt to decriticalize all if we're the critical thread
@@ -476,7 +477,7 @@ public class RubyThread extends RubyObject {
                 
                 stopLock.wait();
             } catch (InterruptedException ie) {
-                // ignore, continue;
+                rubyThread.pollThreadEvents();
             }
             rubyThread.isStopped = false;
         }
@@ -632,6 +633,7 @@ public class RubyThread extends RubyObject {
     public void sleep(long millis) throws InterruptedException {
         ensureCurrent();
         synchronized (stopLock) {
+            pollThreadEvents();
             try {
                 isStopped = true;
                 stopLock.wait(millis);
