@@ -22,4 +22,3 @@ end
 if $0 == __FILE__
   (ARGV[0] || 10).to_i.times { Benchmark.bm(40) {|bm| bench_symbol(bm)} }
 end
-

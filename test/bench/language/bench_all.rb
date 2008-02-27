@@ -18,6 +18,10 @@ bench_list = %w[
   bench_const_lookup
   bench_def_method
   bench_defined
+  bench_dregexp
+  bench_dstr
+  bench_dsymbol
+  bench_false
   bench_for_loop
   bench_ivar_access
   bench_literal_hash
@@ -29,6 +33,7 @@ bench_list = %w[
   bench_op_element_asgn
   bench_range_literal
   bench_symbol
+  bench_true
   bench_yield
 ]
 
@@ -37,7 +42,10 @@ bench_list.each do |bench_name|
 end
 
 if (ARGV[0] && ARGV[0].to_i > 1)
-  ARGV[0].to_i.times do
+  ARGV[0].to_i.times do |i|
+    puts unless i == 0
+    puts "Iteration: #{i + 1}"
+    puts "------------------------"
     Benchmark.bm(50) do |bm|
       bench_list.each do |bench_name|
         bm.report(" #{bench_name.upcase}") {}
