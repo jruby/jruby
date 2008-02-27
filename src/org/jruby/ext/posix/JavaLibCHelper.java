@@ -187,7 +187,7 @@ public class JavaLibCHelper {
             
             byte[] bytes = baos.toByteArray();
             
-            if (bytes.length > length) return -1;
+            if (bytes.length > length || bytes.length == 0) return -1;
             buffer.put(bytes, 0, bytes.length - 1); // trim off \n
 
             
