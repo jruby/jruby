@@ -175,7 +175,7 @@ public class RubyModule extends RubyObject {
     protected transient int constantTableThreshold = 
         (int)(CONSTANT_TABLE_DEFAULT_CAPACITY * CONSTANT_TABLE_LOAD_FACTOR);
 
-    private final Map<String, DynamicMethod> methods = new ConcurrentHashMap<String, DynamicMethod>(12, 2.0f, 1);
+    private final Map<String, DynamicMethod> methods = new ConcurrentHashMap<String, DynamicMethod>(12, 0.75f, 1);
     
     // ClassProviders return Java class/module (in #defineOrGetClassUnder and
     // #defineOrGetModuleUnder) when class/module is opened using colon syntax. 
@@ -708,14 +708,11 @@ public class RubyModule extends RubyObject {
      */
     public DynamicMethod searchMethod(String name) {
         for (RubyModule searchModule = this; searchModule != null; searchModule = searchModule.getSuperClass()) {
-            // included modules use delegates methods for we need to synchronize on result of getMethods
-            synchronized(searchModule.getMethods()) {
-                // See if current class has method or if it has been cached here already
-                DynamicMethod method = (DynamicMethod) searchModule.getMethods().get(name);
-                
-                if (method != null) {
-                    return method;
-                }
+            // See if current class has method or if it has been cached here already
+            DynamicMethod method = (DynamicMethod) searchModule.getMethods().get(name);
+
+            if (method != null) {
+                return method;
             }
         }
 
