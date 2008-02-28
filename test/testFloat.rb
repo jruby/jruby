@@ -124,3 +124,11 @@ test_equal(true, 2.0 <= Rational(3))
 test_equal(true, 2.0 <= Rational(2))
 test_equal(true, -2.0 >= Rational(-3))
 test_equal(true, -3.0 >= Rational(-3))
+
+class Floatable
+    def to_f
+        2.0
+    end
+end
+
+test_equal(2.0.coerce(Floatable.new), [2.0, 2.0])
