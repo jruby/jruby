@@ -740,4 +740,8 @@ CLASSDEF
     assert java.lang.Object.java_class.ruby_class == java.lang.Object
     assert java.lang.Runnable.java_class.ruby_class == java.lang.Runnable
   end
+  
+  def test_null_toString
+    assert nil == org.jruby.javasupport.test.NullToString.new.to_s
+  end
 end

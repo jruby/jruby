@@ -130,7 +130,12 @@ public class JavaObject extends RubyObject {
 
     public IRubyObject to_s() {
         if (value != null) {
-            return RubyString.newUnicodeString(getRuntime(), value.toString());
+            String stringValue = value.toString();
+            if (stringValue != null) {
+                return RubyString.newUnicodeString(getRuntime(), value.toString());
+            } 
+              
+            return getRuntime().getNil();
         }
         return getRuntime().newString("");
     }
