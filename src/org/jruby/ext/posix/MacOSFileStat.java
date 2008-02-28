@@ -1,26 +1,26 @@
 package org.jruby.ext.posix;
 
 public class MacOSFileStat extends BaseNativeFileStat {
-    public int st_dev;       // device inode resides on (dev_t)
-    public int st_ino;       // inode's number (ino_t)
-    public short st_mode;    // inode protection mode (mode_t - uint16)
-    public short st_nlink;   // number or hard links to the file (nlink_y - uint16)
-    public int st_uid;       // user-id of owner (uid_t)
-    public int st_gid;       // group-id of owner (gid_t)
-    public int st_rdev;      // device type, for special file inode (st_rdev - dev_t)
-    public int st_atime;     // Time of last access (time_t)
-    public int st_atimensec; // Time of last access (nanoseconds)
-    public int st_mtime;     // Last data modification time (time_t)
-    public int st_mtimensec; // Last data modification time (nanoseconds)
-    public int st_ctime;     // Time of last status change (time_t)
-    public int st_ctimensec; // Time of last status change (nanoseconds)
-    public long st_size;     // file size, in bytes
-    public long st_blocks;   // blocks allocated for file
-    public int st_blksize;   // optimal file system I/O ops blocksize
-    public int st_flags;     // user defined flags for file
-    public int st_gen;       // file generation number
-    public int st_lspare;    // RESERVED: DO NOT USE!
-    public long[] st_qspare; // RESERVED: DO NOT USE!
+    public volatile int st_dev;       // device inode resides on (dev_t)
+    public volatile int st_ino;       // inode's number (ino_t)
+    public volatile short st_mode;    // inode protection mode (mode_t - uint16)
+    public volatile short st_nlink;   // number or hard links to the file (nlink_y - uint16)
+    public volatile int st_uid;       // user-id of owner (uid_t)
+    public volatile int st_gid;       // group-id of owner (gid_t)
+    public volatile int st_rdev;      // device type, for special file inode (st_rdev - dev_t)
+    public volatile int st_atime;     // Time of last access (time_t)
+    public volatile int st_atimensec; // Time of last access (nanoseconds)
+    public volatile int st_mtime;     // Last data modification time (time_t)
+    public volatile int st_mtimensec; // Last data modification time (nanoseconds)
+    public volatile int st_ctime;     // Time of last status change (time_t)
+    public volatile int st_ctimensec; // Time of last status change (nanoseconds)
+    public volatile long st_size;     // file size, in bytes
+    public volatile long st_blocks;   // blocks allocated for file
+    public volatile int st_blksize;   // optimal file system I/O ops blocksize
+    public volatile int st_flags;     // user defined flags for file
+    public volatile int st_gen;       // file generation number
+    public volatile int st_lspare;    // RESERVED: DO NOT USE!
+    public volatile long[] st_qspare; // RESERVED: DO NOT USE!
 
     public MacOSFileStat(POSIX posix) {
         super(posix);
