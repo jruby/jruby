@@ -271,6 +271,7 @@ class TestFile < Test::Unit::TestCase
     assert_equal(true, File.fnmatch("foobar"[/foo(.*)/, 1], "bar"))
   end
 
+  # JRUBY-2196
   def test_fnmatch_double_star
     assert(File.fnmatch('**/foo', 'a/b/c/foo', File::FNM_PATHNAME))
     assert(File.fnmatch('**/foo', '/foo', File::FNM_PATHNAME))
@@ -297,6 +298,21 @@ class TestFile < Test::Unit::TestCase
     assert(File.fnmatch("*/**/*", "one/two/three", File::FNM_PATHNAME))
     assert(File.fnmatch("**/*", ".one/two/three/four", File::FNM_PATHNAME | File::FNM_DOTMATCH))
     assert(!File.fnmatch("**/.one/*", ".one/.two/.three/.four", File::FNM_PATHNAME | File::FNM_DOTMATCH))
+  end
+
+  # JRUBY-2199
+  def test_fnmatch_bracket_pattern
+    assert(!File.fnmatch('[a-z]', 'D'))
+    assert(File.fnmatch('[a-z]', 'D', File::FNM_CASEFOLD))
+    assert(!File.fnmatch('[a-zA-Y]', 'Z'))
+    assert(File.fnmatch('[^a-zA-Y]', 'Z'))
+    assert(File.fnmatch('[a-zA-Y]', 'Z', File::FNM_CASEFOLD))
+    assert(File.fnmatch('[a-zA-Z]', 'Z'))
+    assert(File.fnmatch('[a-zA-Z]', 'A'))
+    assert(File.fnmatch('[a-zA-Z]', 'a'))
+    assert(!File.fnmatch('[b-zA-Z]', 'a'))
+    assert(File.fnmatch('[^b-zA-Z]', 'a'))
+    assert(File.fnmatch('[b-zA-Z]', 'a', File::FNM_CASEFOLD))
   end
 
   def test_join

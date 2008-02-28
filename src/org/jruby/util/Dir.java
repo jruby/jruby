@@ -250,7 +250,7 @@ public class Dir {
     public static int range(byte[] _pat, int pat, int pend, char test, int flags) {
         boolean not;
         boolean ok = false;
-        //boolean nocase = (flags & FNM_CASEFOLD) != 0;
+        boolean nocase = (flags & FNM_CASEFOLD) != 0;
         boolean escape = (flags & FNM_NOESCAPE) == 0;
 
         not = _pat[pat] == '!' || _pat[pat] == '^';
@@ -258,10 +258,12 @@ public class Dir {
             pat++;
         }
 
-        test = Character.toLowerCase(test);
+        if (nocase) {
+            test = Character.toLowerCase(test);
+        }
 
         while(_pat[pat] != ']') {
-            int cstart, cend;
+            char cstart, cend;
             if(escape && _pat[pat] == '\\') {
                 pat++;
             }
@@ -280,9 +282,16 @@ public class Dir {
 
                 cend = (char)(_pat[pat++] & 0xFF);
             }
-            if (Character.toLowerCase((char) cstart) <= test && 
-                    test <= Character.toLowerCase((char) cend)) {
-                ok = true;
+
+            if (nocase) {
+                if (Character.toLowerCase(cstart) <= test
+                        && test <= Character.toLowerCase(cend)) {
+                    ok = true;
+                }
+            } else {
+                if (cstart <= test && test <= cend) {
+                    ok = true;
+                }
             }
         }
 
