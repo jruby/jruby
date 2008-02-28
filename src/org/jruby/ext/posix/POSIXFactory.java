@@ -24,6 +24,8 @@ public class POSIXFactory {
                     posix = new LinuxPOSIX(loadLinuxLibC(), handler);
                 } else if (os.startsWith("Windows")) {
                     posix = new WindowsPOSIX(loadWindowsLibC(), handler);
+                } else if (os.startsWith("SunOS")) {
+                    posix = new SolarisPOSIX(loadSolarisLibC(), handler);
                 }
                 
                 if (SafePropertyAccessor.getBoolean("jruby.native.verbose")) {
@@ -63,6 +65,14 @@ public class POSIXFactory {
     public static LibC loadMacOSLibC() {
         if (libc != null) return libc;
         
+        libc = (LibC) Native.loadLibrary("c", LibC.class, new HashMap<Object, Object>());
+        
+        return libc;
+    }
+    
+    public static LibC loadSolarisLibC() {
+        if (libc != null) return libc;
+
         libc = (LibC) Native.loadLibrary("c", LibC.class, new HashMap<Object, Object>());
         
         return libc;
