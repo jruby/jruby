@@ -271,6 +271,34 @@ class TestFile < Test::Unit::TestCase
     assert_equal(true, File.fnmatch("foobar"[/foo(.*)/, 1], "bar"))
   end
 
+  def test_fnmatch_double_star
+    assert(File.fnmatch('**/foo', 'a/b/c/foo', File::FNM_PATHNAME))
+    assert(File.fnmatch('**/foo', '/foo', File::FNM_PATHNAME))
+    assert(!File.fnmatch('**/foo', 'a/.b/c/foo', File::FNM_PATHNAME))
+    assert(File.fnmatch('**/foo', 'a/.b/c/foo', File::FNM_PATHNAME | File::FNM_DOTMATCH))
+    assert(File.fnmatch('**/foo', '/root/foo', File::FNM_PATHNAME))
+    assert(File.fnmatch('**/foo', 'c:/root/foo', File::FNM_PATHNAME))
+    assert(File.fnmatch("lib/**/*.rb", "lib/a.rb", File::FNM_PATHNAME | File::FNM_DOTMATCH))
+    assert(File.fnmatch("lib/**/*.rb", "lib/a/b.rb", File::FNM_PATHNAME | File::FNM_DOTMATCH))
+    assert(File.fnmatch('**/b/**/*', 'c/a/b/c/t', File::FNM_PATHNAME))
+    assert(File.fnmatch('c/**/b/**/*', 'c/a/b/c/t', File::FNM_PATHNAME))
+    assert(File.fnmatch('c**/**/b/**/*', 'c/a/b/c/t', File::FNM_PATHNAME))
+    assert(File.fnmatch('h**o/**/b/**/*', 'hello/a/b/c/t', File::FNM_PATHNAME))
+    assert(!File.fnmatch('h**o/**/b/**', 'hello/a/b/c/t', File::FNM_PATHNAME))
+    assert(File.fnmatch('**', 'hello', File::FNM_PATHNAME))
+    assert(!File.fnmatch('**/', 'hello', File::FNM_PATHNAME))
+    assert(File.fnmatch('**/*', 'hello', File::FNM_PATHNAME))
+    assert(File.fnmatch("**/*", "one/two/three/four", File::FNM_PATHNAME))
+    assert(!File.fnmatch("**", "one/two/three", File::FNM_PATHNAME))
+    assert(!File.fnmatch("**/three", ".one/two/three", File::FNM_PATHNAME))
+    assert(File.fnmatch("**/three", ".one/two/three", File::FNM_PATHNAME | File::FNM_DOTMATCH))
+    assert(!File.fnmatch("*/**", "one/two/three", File::FNM_PATHNAME))
+    assert(!File.fnmatch("*/**/", "one/two/three", File::FNM_PATHNAME))
+    assert(File.fnmatch("*/**/*", "one/two/three", File::FNM_PATHNAME))
+    assert(File.fnmatch("**/*", ".one/two/three/four", File::FNM_PATHNAME | File::FNM_DOTMATCH))
+    assert(!File.fnmatch("**/.one/*", ".one/.two/.three/.four", File::FNM_PATHNAME | File::FNM_DOTMATCH))
+  end
+
   def test_join
     [
       ["a", "b", "c", "d"],

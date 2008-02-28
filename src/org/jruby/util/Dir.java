@@ -75,7 +75,7 @@ public class Dir {
         return s;
     }
 
-    public static int fnmatch(byte[] bytes, int pstart, int pend, byte[] string, int sstart, int send, int flags) {
+    private static int fnmatch_helper(byte[] bytes, int pstart, int pend, byte[] string, int sstart, int send, int flags) {
         char test;
         int s = sstart;
         int pat = pstart;
@@ -170,6 +170,81 @@ public class Dir {
             }
         }
         return s >= send ? 0 : FNM_NOMATCH;
+    }
+
+    public static int fnmatch(
+            byte[] bytes, int pstart, int pend,
+            byte[] string, int sstart, int send, int flags) {
+        
+        // This method handles '**/' patterns and delegates to
+        // fnmatch_helper for the main work.
+
+        boolean period = (flags & FNM_DOTMATCH) == 0;
+        boolean pathname = (flags & FNM_PATHNAME) != 0;
+
+        int pat_pos = pstart;
+        int str_pos = sstart;
+        int ptmp = -1;
+        int stmp = -1;
+
+        if (pathname) {
+            while (true) {
+                if (isDoubleStarAndSlash(bytes, pat_pos)) {
+                    do { pat_pos += 3; } while (isDoubleStarAndSlash(bytes, pat_pos));
+                    ptmp = pat_pos;
+                    stmp = str_pos;
+                }
+
+                int patSlashIdx = nextSlashIndex(bytes, pat_pos, pend);
+                int strSlashIdx = nextSlashIndex(string, str_pos, send);
+
+                if (fnmatch_helper(bytes, pat_pos, patSlashIdx,
+                        string, str_pos, strSlashIdx, flags) == 0) {
+                    if (patSlashIdx < pend && strSlashIdx < send) {
+                        pat_pos = ++patSlashIdx;
+                        str_pos = ++strSlashIdx;
+                        continue;
+                    }
+                    if (patSlashIdx == pend && strSlashIdx == send) {
+                        return 0;
+                    }
+                }
+                /* failed : try next recursion */
+                if (ptmp != -1 && stmp != -1 && !(period && string[stmp] == '.')) {
+                    stmp = nextSlashIndex(string, stmp, send);
+                    if (stmp < send) {
+                        pat_pos = ptmp;
+                        stmp++;
+                        str_pos = stmp;
+                        continue;
+                    }
+                }
+                return FNM_NOMATCH;
+            }
+        } else {
+            return fnmatch_helper(bytes, pstart, pend, string, sstart, send, flags);
+        }
+
+    }
+
+    // are we at '**/'
+    private static boolean isDoubleStarAndSlash(byte[] bytes, int pos) {
+        if ((bytes.length - pos) <= 2) {
+            return false; // not enough bytes
+        }
+
+        return bytes[pos] == '*'
+            && bytes[pos + 1] == '*'
+            && bytes[pos + 2] == '/';
+    }
+
+    // Look for slash, starting from 'start' position, until 'end'.
+    private static int nextSlashIndex(byte[] bytes, int start, int end) {
+        int idx = start;
+        while (idx < end && idx < bytes.length && bytes[idx] != '/') {
+            idx++;
+        }
+        return idx;
     }
 
     public static int range(byte[] _pat, int pat, int pend, char test, int flags) {
