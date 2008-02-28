@@ -5,6 +5,7 @@
 
 package org.jruby.compiler.impl;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
@@ -27,10 +28,11 @@ import static org.jruby.util.CodegenUtils.*;
  * @author headius
  */
 public class FieldBasedCacheCompiler implements CacheCompiler {
-    private StandardASMCompiler scriptCompiler;
+    protected StandardASMCompiler scriptCompiler;
     
     Map<String, String> sourcePositions = new HashMap<String, String>();
     Map<String, String> byteLists = new HashMap<String, String>();
+    Map<BigInteger, String> bigIntegers = new HashMap<BigInteger, String>();
     Map<String, String> symbols = new HashMap<String, String>();
     
     public FieldBasedCacheCompiler(StandardASMCompiler scriptCompiler) {
@@ -88,6 +90,23 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         }
         
         method.getstatic(scriptCompiler.getClassname(), fieldName, ci(ByteList.class));
+    }
+    
+    public void cacheBigInteger(SkinnyMethodAdapter method, BigInteger bigint) {
+        String fieldName = bigIntegers.get(bigint);
+        if (fieldName == null) {
+            SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
+            fieldName = scriptCompiler.getNewStaticConstant(ci(BigInteger.class), "bigInt");
+            bigIntegers.put(bigint, fieldName);
+
+            clinitMethod.newobj(p(BigInteger.class));
+            clinitMethod.dup();
+            clinitMethod.ldc(bigint.toString());
+            clinitMethod.invokespecial(p(BigInteger.class), "<init>", sig(void.class, String.class));
+            clinitMethod.putstatic(scriptCompiler.getClassname(), fieldName, ci(BigInteger.class));
+        }
+        
+        method.getstatic(scriptCompiler.getClassname(), fieldName, ci(BigInteger.class));
     }
     
     public void cacheSymbol(SkinnyMethodAdapter method, String symbol) {

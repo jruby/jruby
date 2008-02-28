@@ -34,6 +34,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.Arrays;
 
@@ -608,9 +609,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void createNewBignum(BigInteger value) {
             loadRuntime();
-            method.ldc(value.toString());
-
-            method.invokestatic(p(RubyBignum.class), "newBignum", sig(RubyBignum.class, params(Ruby.class, String.class)));
+            getCacheCompiler().cacheBigInteger(method, value);
+            method.invokestatic(p(RubyBignum.class), "newBignum", sig(RubyBignum.class, params(Ruby.class, BigInteger.class)));
         }
 
         public void createNewString(ArrayCallback callback, int count) {
