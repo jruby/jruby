@@ -60,21 +60,15 @@ public class Readline {
         }
     }
 
-    public static class ConsoleHolder {
-        public ConsoleReader readline;
-        public Completor currentCompletor;
-        public History history;
-    }
+    private static ConsoleReader readline;
+    private static Completor currentCompletor;
+    private static History history;
 
     public static void createReadline(Ruby runtime) throws IOException {
-        ConsoleHolder holder = new ConsoleHolder();
-        holder.history = new History();
-        holder.currentCompletor = null;
+        history = new History();
+        currentCompletor = null;
         
         RubyModule mReadline = runtime.defineModule("Readline");
-
-        mReadline.dataWrapStruct(holder);
-
         CallbackFactory readlinecb = runtime.callbackFactory(Readline.class);
         mReadline.defineMethod("readline",readlinecb.getFastSingletonMethod("s_readline",IRubyObject.class,IRubyObject.class));
         mReadline.module_function(new IRubyObject[]{runtime.newSymbol("readline")});
@@ -101,55 +95,49 @@ public class Readline {
     }
     
     // We lazily initialise this in case Readline.readline has been overriden in ruby (s_readline)
-    protected static void initReadline(Ruby runtime, ConsoleHolder holder) throws IOException {
-        holder.readline = new ConsoleReader(runtime.getInputStream(), new java.io.PrintWriter(runtime.getOutputStream()));
-        holder.readline.setUseHistory(false);
-        holder.readline.setUsePagination(true);
-        holder.readline.setBellEnabled(false);
-        ((CandidateListCompletionHandler) holder.readline.getCompletionHandler()).setAlwaysIncludeNewline(false);
-        if (holder.currentCompletor == null)
-            holder.currentCompletor = new RubyFileNameCompletor();
-        holder.readline.addCompletor(holder.currentCompletor);
-        holder.readline.setHistory(holder.history);
+    protected static void initReadline() throws IOException {
+        readline = new ConsoleReader();
+        readline.setUseHistory(false);
+        readline.setUsePagination(true);
+        readline.setBellEnabled(false);
+        ((CandidateListCompletionHandler) readline.getCompletionHandler()).setAlwaysIncludeNewline(false);
+        if (currentCompletor == null)
+            currentCompletor = new RubyFileNameCompletor();
+        readline.addCompletor(currentCompletor);
+        readline.setHistory(history);
     }
     
-    public static History getHistory(ConsoleHolder holder) {
-        return holder.history;
-    }
-
-    public static ConsoleHolder getHolder(Ruby runtime) {
-        return (ConsoleHolder)(runtime.fastGetModule("Readline").dataGetStruct());
+    public static History getHistory() {
+        return history;
     }
     
-    public static void setCompletor(ConsoleHolder holder, Completor completor) {
-        if (holder.readline != null) holder.readline.removeCompletor(holder.currentCompletor);
-        holder.currentCompletor = completor;
-        if (holder.readline != null) holder.readline.addCompletor(holder.currentCompletor);
+    public static void setCompletor(Completor completor) {
+        if (readline != null) readline.removeCompletor(currentCompletor);
+        currentCompletor = completor;
+        if (readline != null) readline.addCompletor(currentCompletor);
     }
     
-    public static Completor getCompletor(ConsoleHolder holder) {
-        return holder.currentCompletor;
+    public static Completor getCompletor() {
+        return currentCompletor;
     }
     
     public static IRubyObject s_readline(IRubyObject recv, IRubyObject prompt, IRubyObject add_to_hist) throws IOException {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
-        if (holder.readline == null) initReadline(recv.getRuntime(), holder); // not overridden, let's go
+        if (readline == null) initReadline(); // not overridden, let's go
         IRubyObject line = recv.getRuntime().getNil();
-        holder.readline.getTerminal().disableEcho();
-        String v = holder.readline.readLine(prompt.toString());
-        holder.readline.getTerminal().enableEcho();
+        readline.getTerminal().disableEcho();
+        String v = readline.readLine(prompt.toString());
+        readline.getTerminal().enableEcho();
         if(null != v) {
             if (add_to_hist.isTrue())
-                holder.readline.getHistory().addToHistory(v);
+                readline.getHistory().addToHistory(v);
             line = recv.getRuntime().newString(v);
         }
         return line;
     }
 
     public static IRubyObject s_push(IRubyObject recv, IRubyObject[] lines) throws Exception {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
         for (int i = 0; i < lines.length; i++) {
-            holder.history.addToHistory(lines[i].toString());
+            history.addToHistory(lines[i].toString());
         }
         return recv.getRuntime().getNil();
     }
@@ -159,9 +147,8 @@ public class Readline {
     }
 	
 	public static IRubyObject s_hist_to_a(IRubyObject recv) throws Exception {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
 		RubyArray histList = recv.getRuntime().newArray();
-		for (Iterator i = holder.history.getHistoryList().iterator(); i.hasNext();) {
+		for (Iterator i = history.getHistoryList().iterator(); i.hasNext();) {
 			histList.append(recv.getRuntime().newString((String) i.next()));
 		}
 		return histList;
@@ -172,9 +159,8 @@ public class Readline {
 	}
 	
 	public static IRubyObject s_hist_get(IRubyObject recv, IRubyObject index) {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
 	    int i = (int) index.convertToInteger().getLongValue();
-	    return recv.getRuntime().newString((String) holder.history.getHistoryList().get(i));
+	    return recv.getRuntime().newString((String) history.getHistoryList().get(i));
 	}
 	
 	public static IRubyObject s_hist_set(IRubyObject recv, IRubyObject index, IRubyObject val) {
@@ -186,13 +172,11 @@ public class Readline {
 	}
 	
 	public static IRubyObject s_hist_length(IRubyObject recv) {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
-	    return recv.getRuntime().newFixnum(holder.history.size());
+	    return recv.getRuntime().newFixnum(history.size());
 	}
 	
 	public static IRubyObject s_hist_empty_p(IRubyObject recv) {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
-        return recv.getRuntime().newBoolean(holder.history.size() == 0);
+        return recv.getRuntime().newBoolean(history.size() == 0);
     }
 	
 	public static IRubyObject s_hist_delete_at(IRubyObject recv, IRubyObject index) {
@@ -200,8 +184,7 @@ public class Readline {
 	}
 	
 	public static IRubyObject s_hist_each(IRubyObject recv, Block block) {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
-	    for (Iterator i = holder.history.getHistoryList().iterator(); i.hasNext();) {
+	    for (Iterator i = history.getHistoryList().iterator(); i.hasNext();) {
 	        block.yield(recv.getRuntime().getCurrentContext(), recv.getRuntime().newString((String) i.next()));
 	    }
 	    return recv;
@@ -214,7 +197,7 @@ public class Readline {
     public static IRubyObject s_set_completion_proc(IRubyObject recv, IRubyObject proc) throws Exception {
     	if (!proc.respondsTo("call"))
     		throw recv.getRuntime().newArgumentError("argument must respond to call");
-		setCompletor(getHolder(recv.getRuntime()), new ProcCompletor(proc));
+		setCompletor(new ProcCompletor(proc));
         return recv.getRuntime().getNil();
     }
 	
