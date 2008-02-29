@@ -28,7 +28,6 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
-import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -61,15 +60,6 @@ public class CallBlock extends BlockBody {
         this.imClass = imClass;
         this.context = context;
     }
-    
-    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
-        // FIXME: This could be a "light" block
-        context.preYieldNoScope(binding, klass);
-    }
-    
-    protected void post(ThreadContext context, Binding binding) {
-        context.postYieldNoScope();
-    }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         return callback.call(context, args, Block.NULL_BLOCK);
@@ -97,30 +87,7 @@ public class CallBlock extends BlockBody {
             binding.getFrame().setSelf(self);
         }
         
-        pre(context, klass, binding);
-
-        try {
-            IRubyObject[] args = new IRubyObject[] {value};
-            // This while loop is for restarting the block call in case a 'redo' fires.
-            while (true) {
-                try {
-                    return callback.call(context, args, Block.NULL_BLOCK);
-                } catch (JumpException.RedoJump rj) {
-                    context.pollThreadEvents();
-                    // do nothing, allow loop to redo
-                } catch (JumpException.BreakJump bj) {
-                    if (bj.getTarget() == null) {
-                        bj.setTarget(this);                            
-                    }                        
-                    throw bj;
-                }
-            }
-        } catch (JumpException.NextJump nj) {
-            // A 'next' is like a local return from the block, ending this call or yield.
-            return (IRubyObject)nj.getValue();
-        } finally {
-            post(context, binding);
-        }
+        return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);
     }
     
     public StaticScope getStaticScope() {
