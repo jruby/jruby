@@ -559,7 +559,7 @@ public class Dir {
             }
 
             if (bytes[begin] == '/' || (DOSISH && begin+2<end && bytes[begin+1] == ':' && isdirsep(bytes[begin+2]))) {
-                if (new File(new String(bytes, begin, end - begin)).exists()) {
+                if (new File(newStringFromUTF8(bytes, begin, end - begin)).exists()) {
                     status = func.call(bytes, begin, end, arg);
                 }
             } else if (isJarFilePath(bytes, begin, end)) {
@@ -571,8 +571,8 @@ public class Dir {
                     }
                 }
 
-                st = new File(new String(bytes, begin+5, ix-5));
-                String jar = new String(bytes, begin+ix+1, end-(ix+1));
+                st = new File(newStringFromUTF8(bytes, begin+5, ix-5));
+                String jar = newStringFromUTF8(bytes, begin+ix+1, end-(ix+1));
                 try {
                     JarFile jf = new JarFile(st);
                     
@@ -583,7 +583,7 @@ public class Dir {
                     }
                 } catch(Exception e) {}
             } else if ((end - begin) > 0) { // Length check is a hack.  We should not be reeiving "" as a filename ever. 
-                if (new File(cwd, new String(bytes, begin, end - begin)).exists()) {
+                if (new File(cwd, newStringFromUTF8(bytes, begin, end - begin)).exists()) {
                     status = func.call(bytes, begin, end, arg);
                 }
             }
@@ -607,7 +607,7 @@ public class Dir {
                     JarFile jf = null;
 
                     if(dir[0] == '/'  || (DOSISH && 2<dir.length && dir[1] == ':' && isdirsep(dir[2]))) {
-                        st = new File(new String(dir));
+                        st = new File(newStringFromUTF8(dir));
                     } else if(isJarFilePath(dir, 0, dir.length)) {
                         int ix = -1;
                         for(int i = 0;i<dir.length;i++) {
@@ -617,8 +617,8 @@ public class Dir {
                             }
                         }
 
-                        st = new File(new String(dir, 5, ix-5));
-                        jar = new String(dir, ix+1, dir.length-(ix+1));
+                        st = new File(newStringFromUTF8(dir, 5, ix-5));
+                        jar = newStringFromUTF8(dir, ix+1, dir.length-(ix+1));
                         try {
                             jf = new JarFile(st);
 
@@ -629,7 +629,7 @@ public class Dir {
                             jf = null;
                         }
                     } else {
-                        st = new File(cwd, new String(dir));
+                        st = new File(cwd, newStringFromUTF8(dir));
                     }
 
                     if((jf != null && ("".equals(jar) || (jf.getJarEntry(jar) != null && jf.getJarEntry(jar).isDirectory()))) || st.isDirectory()) {
@@ -653,18 +653,18 @@ public class Dir {
 
                         for(int i=0;i<dirp.length;i++) {
                             if(recursive) {
-                                byte[] bs = dirp[i].getBytes();
+                                byte[] bs = getBytesInUTF8(dirp[i]);
                                 if (fnmatch(STAR,0,1,bs,0,bs.length,flags) != 0) {
                                     continue;
                                 }
                                 buf.length(0);
                                 buf.append(base);
                                 buf.append( BASE(base) ? SLASH : EMPTY );
-                                buf.append(dirp[i].getBytes());
+                                buf.append(getBytesInUTF8(dirp[i]));
                                 if (buf.bytes[0] == '/' || (DOSISH && 2<buf.realSize && buf.bytes[1] == ':' && isdirsep(buf.bytes[2]))) {
-                                    st = new File(new String(buf.bytes, buf.begin, buf.realSize));
+                                    st = new File(newStringFromUTF8(buf.bytes, buf.begin, buf.realSize));
                                 } else {
-                                    st = new File(cwd, new String(buf.bytes, buf.begin, buf.realSize));
+                                    st = new File(cwd, newStringFromUTF8(buf.bytes, buf.begin, buf.realSize));
                                 }
                                 if(st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
                                     int t = buf.realSize;
@@ -678,12 +678,12 @@ public class Dir {
                                 }
                                 continue;
                             }
-                            byte[] bs = dirp[i].getBytes();
+                            byte[] bs = getBytesInUTF8(dirp[i]);
                             if(fnmatch(magic,0,magic.length,bs,0, bs.length,flags) == 0) {
                                 buf.length(0);
                                 buf.append(base);
                                 buf.append( BASE(base) ? SLASH : EMPTY );
-                                buf.append(dirp[i].getBytes());
+                                buf.append(getBytesInUTF8(dirp[i]));
                                 if(m == -1) {
                                     status = func.call(buf.bytes,0,buf.realSize,arg);
                                     if(status != 0) {
@@ -709,7 +709,7 @@ public class Dir {
                                 }
                             }
                             for(JarEntry je : dirp) {
-                                byte[] bs = je.getName().getBytes();
+                                byte[] bs = getBytesInUTF8(je.getName());
                                 int len = bs.length;
 
                                 if(je.isDirectory()) {
@@ -762,9 +762,9 @@ public class Dir {
                     for (ByteList b : link) {
                         if (status == 0) {
                             if(b.bytes[0] == '/'  || (DOSISH && 2<b.realSize && b.bytes[1] == ':' && isdirsep(b.bytes[2]))) {
-                                st = new File(new String(b.bytes, 0, b.realSize));
+                                st = new File(newStringFromUTF8(b.bytes, 0, b.realSize));
                             } else {
-                                st = new File(cwd, new String(b.bytes, 0, b.realSize));
+                                st = new File(cwd, newStringFromUTF8(b.bytes, 0, b.realSize));
                             }
 
                             if(st.isDirectory()) {
@@ -782,5 +782,29 @@ public class Dir {
             p = m;
         }
         return status;
+    }
+
+    private static byte[] getBytesInUTF8(String s) {
+        try {
+            return s.getBytes("UTF-8");
+        } catch (java.io.UnsupportedEncodingException ex) {
+            return s.getBytes(); // NOT REACHED HERE
+        }
+    }
+
+    private static String newStringFromUTF8(byte[] buf, int offset, int len) {
+        try {
+            return new String(buf, offset, len, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException ex) {
+            return new String(buf, offset, len); // NOT REACHED HERE
+        }
+    }
+
+    private static String newStringFromUTF8(byte[] buf) {
+        try {
+            return new String(buf, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException ex) {
+            return new String(buf); // NOT REACHED HERE
+        }
     }
 }
