@@ -423,9 +423,16 @@ public class ChannelStream implements Stream, Finalizable {
     public synchronized long fgetpos() throws IOException, PipeException, InvalidValueException, BadDescriptorException {
         // Correct position for read / write buffering (we could invalidate, but expensive)
         if (descriptor.isSeekable()) {
+            int ungotcCopy = ungotc;
             fseek(0, SEEK_CUR);
+            ungotc = ungotcCopy;
+
             FileChannel fileChannel = (FileChannel)descriptor.getChannel();
-            return fileChannel.position();
+            if (ungotc != -1 && fileChannel.position() > 0) {
+                return fileChannel.position() - 1;
+            } else {
+                return fileChannel.position();
+            }
         } else if (descriptor.isNull()) {
             return 0;
         } else {
@@ -441,6 +448,7 @@ public class ChannelStream implements Stream, Finalizable {
     public synchronized void fseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         if (descriptor.isSeekable()) {
             FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+            ungotc = -1;
             if (reading) {
                 if (buffer.remaining() > 0) {
                     fileChannel.position(fileChannel.position() - buffer.remaining());
