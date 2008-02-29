@@ -281,14 +281,13 @@ public class Pack {
      * @param iType the type of encoding required (this is the same type as used by the pack method)
      * @return the io2Append buffer
      **/
-    private static StringBuffer encodes(Ruby runtime, StringBuffer io2Append,String stringToEncode,int charCount,char encodingType) {
-        charCount = charCount < stringToEncode.length() ? charCount
-                                          : stringToEncode.length();
+    private static StringBuffer encodes(Ruby runtime, StringBuffer io2Append,char[] charsToEncode,int startIndex,int charCount,char encodingType) {
+        charCount = charCount < (charsToEncode.length-startIndex) ? charCount
+                                          : charsToEncode.length-startIndex;
         io2Append.ensureCapacity(charCount * 4 / 3 + 6);
-        int i = 0;
+        int i = startIndex;
         byte[] lTranslationTable = encodingType == 'u' ? uu_table : b64_table;
         char lPadding;
-        char[] charsToEncode = stringToEncode.toCharArray();
         if (encodingType == 'u') {
             if (charCount >= lTranslationTable.length) {
                 throw runtime.newArgumentError(
@@ -1777,14 +1776,9 @@ public class Pack {
                         occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
                         if ("".equals(lCurElemString)) break;
 
-                        for (;;) {
-                            encodes(runtime, result, lCurElemString, occurrences, (char)type);
-
-                            if (occurrences >= lCurElemString.length()) {
-                                break;
-                            }
-
-                            lCurElemString = lCurElemString.substring(occurrences);
+                        char[] charsToEncode = lCurElemString.toCharArray();
+                        for (int i = 0; i < lCurElemString.length(); i += occurrences) {
+                            encodes(runtime, result, charsToEncode, i, occurrences, (char)type);
                         }
                     }
                     break;
