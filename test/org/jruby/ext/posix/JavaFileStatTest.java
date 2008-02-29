@@ -7,6 +7,8 @@ package org.jruby.ext.posix;
 
 import junit.framework.TestCase;
 
+import org.jruby.ext.posix.util.Platform;
+
 /**
  *
  * @author nicksieger
@@ -14,7 +16,7 @@ import junit.framework.TestCase;
 public class JavaFileStatTest extends TestCase {
     public void testSetup() {
         JavaFileStat fs = new JavaFileStat(null, null);
-        if (System.getProperty("os.name", "").startsWith("Windows")) {
+        if (Platform.IS_WINDOWS) {
             fs.setup("c:/");
         } else {
             fs.setup("/");

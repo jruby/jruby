@@ -1,6 +1,7 @@
 package org.jruby.test;
 
 import org.jruby.Ruby;
+import org.jruby.ext.posix.util.Platform;
 
 public class TestRbConfigLibrary extends TestRubyBase {
 
@@ -13,7 +14,7 @@ public class TestRbConfigLibrary extends TestRubyBase {
         String script = 
             "require 'rbconfig'\n" +
             "p Config::CONFIG['target_os']";
-        if (System.getProperty("os.name").compareTo("Mac OS X") == 0) {
+        if (Platform.IS_MAC) {
             assertTrue(eval(script).indexOf("darwin") >= 0);
         }
     }

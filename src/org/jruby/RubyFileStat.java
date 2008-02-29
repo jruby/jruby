@@ -37,6 +37,7 @@ import java.io.FileDescriptor;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.posix.FileStat;
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
@@ -95,7 +96,7 @@ public class RubyFileStat extends RubyObject {
     }
     
     private void setup(String filename, boolean lstat) {
-        if (RubyFile.IS_WINDOWS && filename.length() == 2
+        if (Platform.IS_WINDOWS && filename.length() == 2
                 && filename.charAt(1) == ':' && Character.isLetter(filename.charAt(0))) {
             filename += "/";
         }

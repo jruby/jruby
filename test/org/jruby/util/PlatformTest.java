@@ -11,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Tim Azzopardi <tim@tigerfive.com>
  * 
+ *  
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -25,44 +25,36 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+/**
+ * $Id: $
+ */
+package org.jruby.util;
 
-package org.jruby.environment;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Map;
-
-import org.jruby.Ruby;
 import org.jruby.ext.posix.util.Platform;
 
-class OSEnvironmentReaderFromRuntimeExec implements IOSEnvironmentReader {
+import junit.framework.TestCase;
 
-    private final OSEnvironment environmentReader = new OSEnvironment();
+/*
+ * Admittedly, there is a lot of cyclomatic complexity and system-dependent
+ * testing going on here.  At least it's in one place.
+ */
 
-    /* (non-Javadoc)
-     * @see org.jruby.IOSEnvironment#isAccessible()
-     */
-    public boolean isAccessible(Ruby runtime) {
-    	return true;
-    }    
+public class PlatformTest extends TestCase {
     
-    /*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.jruby.IOSEnvironment#getVariables()
-	 */
-    public Map getVariables(Ruby runtime) {
-        try {
-            Process process = Runtime.getRuntime().exec(Platform.envCommand());
-            return environmentReader.getVariablesFrom(
-                    new BufferedReader(new InputStreamReader(process.getInputStream()))
-                    );
-		} catch (IOException e) {
-            environmentReader.handleException(e);
-        }
-        
-        return null;
+    public void testBitLengths()  {
+        assertTrue("Not 32 or 64-bit platform?", Platform.IS_32_BIT ^ Platform.IS_64_BIT);
     }
-
+    
+    public void testEnvCommand()  {
+        String command =Platform.envCommand();
+        if (Platform.IS_WINDOWS_9X)  {
+            assertEquals("Fails on Windows 95/98", "command.com /c set", command);
+        }
+        if (Platform.IS_WINDOWS & !Platform.IS_WINDOWS_9X)  {
+            assertEquals("Fails on Windows other than 95/98", "cmd.exe /c set", command);            
+        }
+        if (!Platform.IS_WINDOWS)  {
+            assertEquals("Fails on Non-Windows platform", "env", command);                        
+        }
+    }
 }

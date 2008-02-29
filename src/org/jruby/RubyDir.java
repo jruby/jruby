@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ext.posix.util.Platform;
 
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
@@ -238,7 +239,7 @@ public class RubyDir extends RubyObject {
     
     // MRI behavior: just plain '//' or '\\\\' are considered illegal on Windows.
     private static void checkDirIsTwoSlashesOnWindows(Ruby runtime, String path) {
-        if (RubyFile.IS_WINDOWS && ("//".equals(path) || "\\\\".equals(path))) {
+        if (Platform.IS_WINDOWS && ("//".equals(path) || "\\\\".equals(path))) {
             throw runtime.newErrnoEINVALError("Invalid argument - " + path);
         }
     }

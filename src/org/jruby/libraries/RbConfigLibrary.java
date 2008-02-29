@@ -32,27 +32,19 @@ package org.jruby.libraries;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.NormalizedFile;
 
 public class RbConfigLibrary implements Library {
-    /** This is a map from Java's "friendly" OS names to those used by Ruby */
-    public static final Map<String, String> OS_NAMES = new HashMap();
-    
-    static {
-        OS_NAMES.put("Mac OS X", "darwin");
-        OS_NAMES.put("Darwin", "darwin");
-        OS_NAMES.put("Linux", "linux");
-    }
+
     /**
      * Just enough configuration settings (most don't make sense in Java) to run the rubytests
      * unit tests. The tests use <code>bindir</code>, <code>RUBY_INSTALL_NAME</code> and
@@ -80,23 +72,19 @@ public class RbConfigLibrary implements Library {
             normalizedHome = runtime.getJRubyHome();
         }
         setConfig(configHash, "bindir", new NormalizedFile(normalizedHome, "bin").getPath());
-        setConfig(configHash, "RUBY_INSTALL_NAME", jruby_script());
-        setConfig(configHash, "ruby_install_name", jruby_script());
-        setConfig(configHash, "SHELL", jruby_shell());
+        setConfig(configHash, "RUBY_INSTALL_NAME", jrubyScript());
+        setConfig(configHash, "ruby_install_name", jrubyScript());
+        setConfig(configHash, "SHELL", jrubyShell());
         setConfig(configHash, "prefix", normalizedHome);
         setConfig(configHash, "exec_prefix", normalizedHome);
 
-        String osName = OS_NAMES.get(System.getProperty("os.name"));
-        if (osName == null) {
-            osName = System.getProperty("os.name");
-        }
-        setConfig(configHash, "host_os", osName);
+        setConfig(configHash, "host_os", Platform.getOSName());
         setConfig(configHash, "host_vendor", System.getProperty("java.vendor"));
-        setConfig(configHash, "host_cpu", System.getProperty("os.arch"));
+        setConfig(configHash, "host_cpu", Platform.ARCH);
         
-        setConfig(configHash, "target_os", osName);
+        setConfig(configHash, "target_os", Platform.getOSName());
         
-        setConfig(configHash, "target_cpu", System.getProperty("os.arch"));
+        setConfig(configHash, "target_cpu", Platform.ARCH);
         
         String jrubyJarFile = "jruby.jar";
         URL jrubyPropertiesUrl = Ruby.class.getClassLoader().getResource("jruby.properties");
@@ -141,7 +129,7 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "localstatedir", new NormalizedFile(normalizedHome, "var").getPath());
         setConfig(configHash, "DLEXT", "jar");
 
-        if (isWindows()) {
+        if (Platform.IS_WINDOWS) {
             setConfig(configHash, "EXEEXT", ".exe");
         } else {
             setConfig(configHash, "EXEEXT", "");
@@ -153,15 +141,13 @@ public class RbConfigLibrary implements Library {
         configHash.op_aset(runtime.newString(key), runtime.newString(value));
     }
 
-    private static boolean isWindows() {
-        return System.getProperty("os.name", "").startsWith("Windows");
+    public static String jrubyScript() {
+        return System.getProperty("jruby.script", Platform.IS_WINDOWS ? "jruby.bat" : "jruby").replace('\\', '/');
     }
 
-    private String jruby_script() {
-        return System.getProperty("jruby.script", isWindows() ? "jruby.bat" : "jruby").replace('\\', '/');
+    // TODO: note lack of command.com support for Win 9x...
+    public static String jrubyShell() {
+        return System.getProperty("jruby.shell", Platform.IS_WINDOWS ? "cmd.exe" : "/bin/sh").replace('\\', '/');
     }
 
-    private String jruby_shell() {
-        return System.getProperty("jruby.shell", isWindows() ? "cmd.exe" : "/bin/sh").replace('\\', '/');
-    }
 }

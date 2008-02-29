@@ -48,6 +48,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
@@ -61,7 +62,6 @@ import org.jruby.util.io.Stream;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.FileExistsException;
@@ -84,21 +84,16 @@ public class RubyFile extends RubyIO {
     private static final int FNM_DOTMATCH = 4;
     private static final int FNM_CASEFOLD = 8;
 
-    static final boolean IS_WINDOWS;
-    static {
-        String osname = System.getProperty("os.name");
-        IS_WINDOWS = osname != null && osname.toLowerCase().indexOf("windows") != -1;
-    }
     private static boolean startsWithDriveLetterOnWindows(String path) {
         return (path != null)
-            && IS_WINDOWS && path.length() > 1
+            && Platform.IS_WINDOWS && path.length() > 1
             && isWindowsDriveLetter(path.charAt(0))
             && path.charAt(1) == ':';
     }
     // adjusts paths started with '/' or '\\', on windows.
     static String adjustRootPathOnWindows(Ruby runtime, String path, String dir) {
         if (path == null) return path;
-        if (IS_WINDOWS) {
+        if (Platform.IS_WINDOWS) {
             // MRI behavior on Windows: it treats '/' as a root of
             // a current drive (but only if SINGLE slash is present!):
             // E.g., if current work directory is
@@ -705,7 +700,7 @@ public class RubyFile extends RubyIO {
         String name = RubyString.stringValue(args[0]).toString();
 
         // MRI-compatible basename handling for windows drive letter paths
-        if (IS_WINDOWS) {
+        if (Platform.IS_WINDOWS) {
             if (name.length() > 1 && name.charAt(1) == ':' && Character.isLetter(name.charAt(0))) {
                 switch (name.length()) {
                 case 2:
@@ -940,7 +935,7 @@ public class RubyFile extends RubyIO {
             cwd = adjustRootPathOnWindows(runtime, cwd, null);
 
             boolean startsWithSlashNotOnWindows = (cwd != null)
-                    && !IS_WINDOWS && cwd.length() > 0
+                    && !Platform.IS_WINDOWS && cwd.length() > 0
                     && cwd.charAt(0) == '/';
 
             // TODO: better detection when path is absolute or not.
@@ -987,7 +982,7 @@ public class RubyFile extends RubyIO {
 
         // Find out which string to check.
         String padSlashes = "";
-        if (!IS_WINDOWS) {
+        if (!Platform.IS_WINDOWS) {
             if (relativePath.length() > 0 && relativePath.charAt(0) == '/') {
                 padSlashes = countSlashes(relativePath);
             } else if (cwd.length() > 0 && cwd.charAt(0) == '/') {

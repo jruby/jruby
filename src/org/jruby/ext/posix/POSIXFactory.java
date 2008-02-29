@@ -2,6 +2,7 @@ package org.jruby.ext.posix;
 
 import java.util.HashMap;
 
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.util.SafePropertyAccessor;
 
 import com.sun.jna.Native;
@@ -9,22 +10,19 @@ import com.sun.jna.Native;
 public class POSIXFactory {
     static LibC libc = null;
     
-    public static POSIX getPOSIX(POSIXHandler handler, boolean useNativePOSIX) {
-        boolean thirtyTwoBit = "32".equals(SafePropertyAccessor.getProperty("sun.arch.data.model", "32")) == true;
-        
+    public static POSIX getPOSIX(POSIXHandler handler, boolean useNativePOSIX) {        
         POSIX posix = null;
         
         // No 64 bit structures defined yet.
-        if (useNativePOSIX && thirtyTwoBit) {
+        if (useNativePOSIX && Platform.IS_32_BIT) {
             try {
-                String os = System.getProperty("os.name");
-                if (os.startsWith("Mac OS") || os.startsWith("Darwin")) {
+                if (Platform.IS_MAC) {
                     posix = new MacOSPOSIX(loadMacOSLibC(), handler);
-                } else if (os.startsWith("Linux")) {
+                } else if (Platform.IS_LINUX) {
                     posix = new LinuxPOSIX(loadLinuxLibC(), handler);
-                } else if (os.startsWith("Windows")) {
+                } else if (Platform.IS_WINDOWS) {
                     posix = new WindowsPOSIX(loadWindowsLibC(), handler);
-                } else if (os.startsWith("SunOS")) {
+                } else if (Platform.IS_SOLARIS) {
                     posix = new SolarisPOSIX(loadSolarisLibC(), handler);
                 }
                 
