@@ -108,15 +108,6 @@ public class RubyBigDecimal extends RubyNumeric {
     public static RubyBigDecimal newBigDecimal(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return newInstance(recv.getRuntime().fastGetClass("BigDecimal"), args);
     }
-  
-    public static RubyBigDecimal newBigDecimal(Ruby runtime, BigDecimal value) {
-        return new RubyBigDecimal(runtime, value);
-    }
-
-    @Override
-    public Class getJavaClass() {
-        return BigDecimal.class;
-    }
 
     @JRubyMethod(name = "ver", meta = true)
     public static IRubyObject ver(IRubyObject recv) {

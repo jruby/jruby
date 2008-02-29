@@ -40,7 +40,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jruby.Ruby;
-import org.jruby.RubyBigDecimal;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
@@ -217,19 +216,19 @@ public class JavaUtil {
         } else if (javaClass == ByteList.class) {
             return rubyObject.convertToString().getByteList();
         } else if (javaClass == BigInteger.class) {
-            if (rubyObject instanceof RubyBignum) {
-                return ((RubyBignum) rubyObject).getValue();
-            } else if (rubyObject instanceof RubyNumeric) {
-                return BigInteger.valueOf(((RubyNumeric) rubyObject).getLongValue());
-            } else if (rubyObject.respondsTo("to_i")) {
-                RubyNumeric rubyNumeric = (RubyNumeric) rubyObject.callMethod(context,MethodIndex.TO_F, "to_f");
-                return BigInteger.valueOf(rubyNumeric.getLongValue());
-            }
+         	if (rubyObject instanceof RubyBignum) {
+         		return ((RubyBignum)rubyObject).getValue();
+         	} else if (rubyObject instanceof RubyNumeric) {
+ 				return  BigInteger.valueOf (((RubyNumeric)rubyObject).getLongValue());
+         	} else if (rubyObject.respondsTo("to_i")) {
+         		RubyNumeric rubyNumeric = ((RubyNumeric)rubyObject.callMethod(context,MethodIndex.TO_F, "to_f"));
+ 				return  BigInteger.valueOf (rubyNumeric.getLongValue());
+         	}
         } else if (javaClass == BigDecimal.class && !(rubyObject instanceof JavaObject)) {
-            if (rubyObject.respondsTo("to_f")) {
-                double double_value = ((RubyNumeric) rubyObject.callMethod(context,MethodIndex.TO_F, "to_f")).getDoubleValue();
-                return new BigDecimal(double_value);
-            }
+         	if (rubyObject.respondsTo("to_f")) {
+             	double double_value = ((RubyNumeric)rubyObject.callMethod(context,MethodIndex.TO_F, "to_f")).getDoubleValue();
+             	return new BigDecimal(double_value);
+         	}
         }
         try {
             return ((JavaObject) rubyObject).getValue();
@@ -345,13 +344,6 @@ public class JavaUtil {
         }
     };
     
-    public static final JavaConverter JAVA_BIGDECIMAL_CONVERTER = new JavaConverter() {
-        public IRubyObject convert(Ruby runtime, Object object) {
-            if (object == null) return runtime.getNil();
-            return RubyBigDecimal.newBigDecimal(runtime, (BigDecimal)object);
-        }
-    };
-    
     private static final Map<Class,JavaConverter> JAVA_CONVERTERS =
         new HashMap<Class,JavaConverter>();
     
@@ -378,7 +370,6 @@ public class JavaUtil {
         JAVA_CONVERTERS.put(ByteList.class, BYTELIST_CONVERTER);
         
         JAVA_CONVERTERS.put(BigInteger.class, JAVA_BIGINTEGER_CONVERTER);
-        JAVA_CONVERTERS.put(BigDecimal.class, JAVA_BIGDECIMAL_CONVERTER);
 
     }
     
@@ -481,16 +472,8 @@ public class JavaUtil {
                 return new Double(number.doubleValue());
             } else if (type == Float.class) {
                 return new Float(number.floatValue());
-            } 
+            }
         }
-        
-        if(argument instanceof RubyBigDecimal && parameterType == BigDecimal.class ) {
-            return new BigDecimal(argument.toString());
-        }
-        if(argument instanceof RubyBignum && parameterType == BigInteger.class ) {
-            return new BigInteger(argument.toString());
-        }
-
         if (isDuckTypeConvertable(argument.getClass(), parameterType)) {
             RubyObject rubyObject = (RubyObject) argument;
             if (!rubyObject.respondsTo("java_object")) {

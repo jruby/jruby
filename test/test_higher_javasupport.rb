@@ -290,6 +290,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
     jstring_methods.each { |method| assert(JString.public_instance_methods.include?(method), "#{method} is missing from JString") }
   end
 
+  include_class 'java.math.BigDecimal'
+  def test_big_decimal_interaction
+    assert_equal(BigDecimal, BigDecimal.new("1.23").add(BigDecimal.new("2.34")).class)
+  end
+
   def test_direct_package_access
     a = java.util.ArrayList.new
     assert_equal(0, a.size)

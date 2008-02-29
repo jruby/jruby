@@ -33,7 +33,6 @@ test_io
 test_load
 test_nkf
 test_java_accessible_object
-test_java_big_decimal
 test_java_extension
 test_jruby_internals
 compiler/test_jrubyc
