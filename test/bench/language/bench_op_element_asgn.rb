@@ -79,6 +79,29 @@ class BenchOpElementAsgn < Array
     self[2] + 1; self[2] + 1; self[2] + 1; self[2] + 1; self[2] + 1
   end
   
+  def hundred_element_or_assigns
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
+  end
+  
   def hundred_element_and_assigns
     self[1] &&= true; self[1] &&= true; self[1] &&= true; self[1] &&= true; self[1] &&= true
     self[1] &&= true; self[1] &&= true; self[1] &&= true; self[1] &&= true; self[1] &&= true
