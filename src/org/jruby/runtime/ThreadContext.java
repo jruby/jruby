@@ -842,18 +842,18 @@ public final class ThreadContext {
     
     public void postYield(Binding binding) {
         popScope();
-        popFrameReal();
+        popFrame();
         popRubyClass();
     }
     
     public void postYieldLight(Binding binding) {
         popScope();
-        popFrameReal();
+        popFrame();
         popRubyClass();
     }
     
     public void postYieldNoScope() {
-        popFrameReal();
+        popFrame();
         popRubyClass();
     }
     
