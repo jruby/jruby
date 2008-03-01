@@ -31,6 +31,7 @@ import org.jruby.RubyModule;
 import org.jruby.compiler.ArgumentsCallback;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -222,6 +223,146 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             methodCompiler.appendToObjectArray(); // receiver, newargs
             invokeDynamic("[]=", true, true, CallType.FUNCTIONAL, null, false); // assignmentResult
         }
+    }
+    
+    public void opElementAsgnWithOr(CompilerCallback receiver, ArgumentsCallback args, CompilerCallback valueCallback) {
+        // get call site and thread context
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]", CallType.FUNCTIONAL);
+        methodCompiler.loadThreadContext();
+        
+        // evaluate and save receiver and args
+        receiver.call(methodCompiler);
+        args.call(methodCompiler);
+        method.dup2();
+        int argsLocal = methodCompiler.getVariableCompiler().grabTempLocal();
+        methodCompiler.getVariableCompiler().setTempLocal(argsLocal);
+        int receiverLocal = methodCompiler.getVariableCompiler().grabTempLocal();
+        methodCompiler.getVariableCompiler().setTempLocal(receiverLocal);
+        
+        // invoke
+        switch (args.getArity()) {
+        case 1:
+            method.invokevirtual(p(CallSite.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+            break;
+        default:
+            method.invokevirtual(p(CallSite.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class));
+        }
+        
+        // check if it's true, ending if so
+        method.dup();
+        methodCompiler.invokeIRubyObject("isTrue", sig(boolean.class));
+        Label done = new Label();
+        method.ifne(done);
+        
+        // not true, eval value and assign
+        method.pop();
+        // thread context, receiver and original args
+        methodCompiler.loadThreadContext();
+        methodCompiler.getVariableCompiler().getTempLocal(receiverLocal);
+        methodCompiler.getVariableCompiler().getTempLocal(argsLocal);
+        
+        // eval value and save it
+        valueCallback.call(methodCompiler);
+        
+        // call site
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]=", CallType.FUNCTIONAL);
+        
+        // depending on size of original args, call appropriate utility method
+        switch (args.getArity()) {
+        case 0:
+            throw new NotCompilableException("Op Element Asgn with zero-arity args");
+        case 1:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoOneArg", 
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class));
+            break;
+        case 2:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoTwoArgs", 
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
+            break;
+        case 3:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoThreeArgs", 
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
+            break;
+        default:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoNArgs", 
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
+            break;
+        }
+        
+        method.label(done);
+        
+        methodCompiler.getVariableCompiler().releaseTempLocal();
+        methodCompiler.getVariableCompiler().releaseTempLocal();
+    }
+    
+    public void opElementAsgnWithAnd(CompilerCallback receiver, ArgumentsCallback args, CompilerCallback valueCallback) {
+        // get call site and thread context
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]", CallType.FUNCTIONAL);
+        methodCompiler.loadThreadContext();
+        
+        // evaluate and save receiver and args
+        receiver.call(methodCompiler);
+        args.call(methodCompiler);
+        method.dup2();
+        int argsLocal = methodCompiler.getVariableCompiler().grabTempLocal();
+        methodCompiler.getVariableCompiler().setTempLocal(argsLocal);
+        int receiverLocal = methodCompiler.getVariableCompiler().grabTempLocal();
+        methodCompiler.getVariableCompiler().setTempLocal(receiverLocal);
+        
+        // invoke
+        switch (args.getArity()) {
+        case 1:
+            method.invokevirtual(p(CallSite.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+            break;
+        default:
+            method.invokevirtual(p(CallSite.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class));
+        }
+        
+        // check if it's true, ending if not
+        method.dup();
+        methodCompiler.invokeIRubyObject("isTrue", sig(boolean.class));
+        Label done = new Label();
+        method.ifeq(done);
+        
+        // not true, eval value and assign
+        method.pop();
+        // thread context, receiver and original args
+        methodCompiler.loadThreadContext();
+        methodCompiler.getVariableCompiler().getTempLocal(receiverLocal);
+        methodCompiler.getVariableCompiler().getTempLocal(argsLocal);
+        
+        // eval value and save it
+        valueCallback.call(methodCompiler);
+        
+        // call site
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]=", CallType.FUNCTIONAL);
+        
+        // depending on size of original args, call appropriate utility method
+        switch (args.getArity()) {
+        case 0:
+            throw new NotCompilableException("Op Element Asgn with zero-arity args");
+        case 1:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoOneArg", 
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class));
+            break;
+        case 2:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoTwoArgs", 
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
+            break;
+        case 3:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoThreeArgs", 
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
+            break;
+        default:
+            methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoNArgs", 
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
+            break;
+        }
+        
+        method.label(done);
+        
+        methodCompiler.getVariableCompiler().releaseTempLocal();
+        methodCompiler.getVariableCompiler().releaseTempLocal();
     }
     
     public void opElementAsgnWithMethod(CompilerCallback receiver, ArgumentsCallback args, CompilerCallback valueCallback, String operator) {

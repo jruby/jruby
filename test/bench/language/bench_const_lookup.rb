@@ -74,7 +74,7 @@ def bench_const_lookup(bm)
   class << self
     F = A::B::C::D::E
     j = J.new
-    k = E::K.new
+    k = F::K.new
 
     5.times { $bm.report("100k * 100 nested const get") { F::bench }}
     5.times { $bm.report("100k * 100 inherited const get") { j.bench }}

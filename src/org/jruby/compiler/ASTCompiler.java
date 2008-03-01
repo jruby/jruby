@@ -2551,32 +2551,114 @@ public class ASTCompiler {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
         
         if (opElementAsgnNode.getOperatorName() == "||") {
-            compile(opElementAsgnNode.getReceiverNode(), context);
-            compileArguments(opElementAsgnNode.getArgsNode(), context);
-
-            CompilerCallback valueArgsCallback = new CompilerCallback() {
-
-                        public void call(MethodCompiler context) {
-                            compile(opElementAsgnNode.getValueNode(), context);
-                        }
-                    };
-
-            context.getInvocationCompiler().opElementAsgn(valueArgsCallback, opElementAsgnNode.getOperatorName());
+            compileOpElementAsgnWithOr(node, context);
         } else if (opElementAsgnNode.getOperatorName() == "&&") {
-            compile(opElementAsgnNode.getReceiverNode(), context);
-            compileArguments(opElementAsgnNode.getArgsNode(), context);
-
-            CompilerCallback valueArgsCallback = new CompilerCallback() {
-
-                        public void call(MethodCompiler context) {
-                            compile(opElementAsgnNode.getValueNode(), context);
-                        }
-                    };
-
-            context.getInvocationCompiler().opElementAsgn(valueArgsCallback, opElementAsgnNode.getOperatorName());
+            compileOpElementAsgnWithAnd(node, context);
         } else {
             compileOpElementAsgnWithMethod(node, context);
         }
+    }
+
+    public void compileOpElementAsgnWithOr(Node node, MethodCompiler context) {
+        final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
+
+        CompilerCallback receiverCallback = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(opElementAsgnNode.getReceiverNode(), context);
+            }
+        };
+
+        ArgumentsCallback argsCallback = new ArgumentsCallback() {
+            public int getArity() {
+                Node node = opElementAsgnNode.getArgsNode();
+                switch (node.nodeId) {
+                case ARGSCATNODE:
+                case ARGSPUSHNODE:
+                case SPLATNODE:
+                    return -1;
+                case ARRAYNODE:
+                    ArrayNode arrayNode = (ArrayNode)node;
+                    if (arrayNode.size() == 0) {
+                        return 0;
+                    } else if (arrayNode.size() > 3) {
+                        return -1;
+                    } else {
+                        return ((ArrayNode)node).size();
+                    }
+                default:
+                    return 1;
+                }
+            }
+
+            public void call(MethodCompiler context) {
+                if (getArity() == 1) {
+                    // if arity 1, just compile the one element to save us the array cost
+                    compile(((ArrayNode)opElementAsgnNode.getArgsNode()).get(0), context);
+                } else {
+                    // compile into array
+                    compileArguments(opElementAsgnNode.getArgsNode(), context);
+                }
+            }
+        };
+
+        CompilerCallback valueCallback = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(opElementAsgnNode.getValueNode(), context);
+            }
+        };
+
+        context.getInvocationCompiler().opElementAsgnWithOr(receiverCallback, argsCallback, valueCallback);
+    }
+
+    public void compileOpElementAsgnWithAnd(Node node, MethodCompiler context) {
+        final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
+
+        CompilerCallback receiverCallback = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(opElementAsgnNode.getReceiverNode(), context);
+            }
+        };
+
+        ArgumentsCallback argsCallback = new ArgumentsCallback() {
+            public int getArity() {
+                Node node = opElementAsgnNode.getArgsNode();
+                switch (node.nodeId) {
+                case ARGSCATNODE:
+                case ARGSPUSHNODE:
+                case SPLATNODE:
+                    return -1;
+                case ARRAYNODE:
+                    ArrayNode arrayNode = (ArrayNode)node;
+                    if (arrayNode.size() == 0) {
+                        return 0;
+                    } else if (arrayNode.size() > 3) {
+                        return -1;
+                    } else {
+                        return ((ArrayNode)node).size();
+                    }
+                default:
+                    return 1;
+                }
+            }
+
+            public void call(MethodCompiler context) {
+                if (getArity() == 1) {
+                    // if arity 1, just compile the one element to save us the array cost
+                    compile(((ArrayNode)opElementAsgnNode.getArgsNode()).get(0), context);
+                } else {
+                    // compile into array
+                    compileArguments(opElementAsgnNode.getArgsNode(), context);
+                }
+            }
+        };
+
+        CompilerCallback valueCallback = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(opElementAsgnNode.getValueNode(), context);
+            }
+        };
+
+        context.getInvocationCompiler().opElementAsgnWithAnd(receiverCallback, argsCallback, valueCallback);
     }
 
     public void compileOpElementAsgnWithMethod(Node node, MethodCompiler context) {
@@ -2588,7 +2670,6 @@ public class ASTCompiler {
             }
         };
 
-        // eval new value, call operator on old value, and assign
         ArgumentsCallback argsCallback = getArgsCallback(opElementAsgnNode.getArgsNode());
 
         CompilerCallback valueCallback = new CompilerCallback() {

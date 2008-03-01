@@ -118,7 +118,8 @@ public class JITCompiler {
         
         public JITClassGenerator(String name, DefaultMethod method, ThreadContext context) {
             this.method = method;
-            String cleanName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
+            String packageName = "ruby/jit/" + JavaNameMangler.mangleFilenameForClasspath(method.getPosition().getFile());
+            String cleanName = packageName + "/" + JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
             this.bodyNode = method.getBodyNode();
             this.argsNode = method.getArgsNode();
             final String filename = calculateFilename(argsNode, bodyNode);

@@ -9,7 +9,7 @@ class BenchOpElementAsgn < Array
     self[1] = true
     self[2] = 1
   end
-
+  
   def control_or
     self[0] || false; self[0] || false; self[0] || false; self[0] || false; self[0] || false
     self[0] || false; self[0] || false; self[0] || false; self[0] || false; self[0] || false
@@ -79,29 +79,6 @@ class BenchOpElementAsgn < Array
     self[2] + 1; self[2] + 1; self[2] + 1; self[2] + 1; self[2] + 1
   end
   
-  def hundred_element_or_assigns
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-    self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false; self[0] ||= false
-  end
-  
   def hundred_element_and_assigns
     self[1] &&= true; self[1] &&= true; self[1] &&= true; self[1] &&= true; self[1] &&= true
     self[1] &&= true; self[1] &&= true; self[1] &&= true; self[1] &&= true; self[1] &&= true
@@ -152,12 +129,12 @@ end
 def bench_op_element_asgn(bm)
   foo = BenchOpElementAsgn.new
 
-  bm.report("control ||") { 100000.times { foo.control_or } }
-  bm.report("control &&") { 100000.times { foo.control_and } }
-  bm.report("control +") { 100000.times { foo.control_plus } }
-  bm.report("100 element || asgns") { 100000.times { foo.hundred_element_or_assigns } }
-  bm.report("100 element && asgns") { 100000.times { foo.hundred_element_and_assigns } }
-  bm.report("100 element + asgns") { 100000.times { foo.hundred_element_plus_assigns } }
+  bm.report("control a[b] || c") { 100000.times { foo.control_or } }
+  bm.report("control a[b] && c") { 100000.times { foo.control_and } }
+  bm.report("control a[b] + c") { 100000.times { foo.control_plus } }
+  bm.report("100 a[b] ||= c") { 100000.times { foo.hundred_element_or_assigns } }
+  bm.report("100 a[b] &&= c") { 100000.times { foo.hundred_element_and_assigns } }
+  bm.report("100 a[b] += c") { 100000.times { foo.hundred_element_plus_assigns } }
 end
 
 if $0 == __FILE__

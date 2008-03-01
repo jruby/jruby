@@ -126,7 +126,94 @@ public class ShellLauncher {
         }
 
         public int waitFor() throws InterruptedException {
+            processThread.join();
+            return result;
+        }
+
+        public int exitValue() {
+            return result;
+        }
+
+        public void destroy() {
             closeStreams();
+            processThread.interrupt();
+        }
+
+        private void closeStreams() {
+            try { processInput.close(); } catch (IOException io) {}
+            try { processOutput.close(); } catch (IOException io) {}
+            try { processError.close(); } catch (IOException io) {}
+        }
+    }
+    
+    private static class ScriptExecProcess extends Process implements Runnable {
+        private String[] argArray;
+        private int result;
+        private RubyInstanceConfig config;
+        private Thread processThread;
+        private PipedInputStream processOutput = new PipedInputStream();
+        private PipedInputStream processError = new PipedInputStream();
+        private PipedOutputStream processInput = new PipedOutputStream();
+        private final String[] env;
+        private final File pwd;
+
+        public ScriptExecProcess(final String[] argArray, final String[] env, final File dir) {
+            this.argArray = argArray;
+            this.env = env;
+            this.pwd = dir;
+        }
+        
+        public void run() {
+            try {
+                this.result = new Main(config).run(argArray);
+            } catch (Throwable throwable) {
+                throwable.printStackTrace(this.config.getError());
+                this.result = -1;
+            } finally {
+                this.config.getOutput().close();
+                this.config.getError().close();
+            }
+        }
+
+        private Map<String, String> environmentMap(String[] env) {
+            Map<String, String> m = new HashMap<String, String>();
+            for (int i = 0; i < env.length; i++) {
+                String[] kv = env[i].split("=", 2);
+                m.put(kv[0], kv[1]);
+            }
+            return m;
+        }
+
+        public void start() throws IOException {
+            this.config = new RubyInstanceConfig() {{
+                setInput(new PipedInputStream(processInput));
+                setOutput(new PrintStream(new PipedOutputStream(processOutput)));
+                setError(new PrintStream(new PipedOutputStream(processError)));
+                setEnvironment(environmentMap(env));
+                setCurrentDirectory(pwd.toString());
+            }};
+            String procName = "piped";
+            if (argArray.length > 0) {
+                procName = argArray[0];
+            }
+            processThread = new Thread(this, "ScriptThreadProcess: " + procName);
+            processThread.setDaemon(true);
+            processThread.start();
+        }
+
+        public OutputStream getOutputStream() {
+            return processInput;
+        }
+
+        public InputStream getInputStream() {
+            return processOutput;
+        }
+
+        public InputStream getErrorStream() {
+            return processError;
+        }
+
+        public int waitFor() throws InterruptedException {
             processThread.join();
             return result;
         }

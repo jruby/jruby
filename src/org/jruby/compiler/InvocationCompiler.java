@@ -60,6 +60,10 @@ public interface InvocationCompiler {
     
     public void opElementAsgn(CompilerCallback valueCallback, String operator);
     
+    public void opElementAsgnWithOr(CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CompilerCallback valueCallback);
+    
+    public void opElementAsgnWithAnd(CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CompilerCallback valueCallback);
+    
     public void opElementAsgnWithMethod(CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CompilerCallback valueCallback, String operator);
     
     /**

@@ -879,4 +879,27 @@ public class RuntimeHelpers {
 
         return result;
     }
+    
+    public static IRubyObject opElementAsgnWithOrPartTwoOneArg(ThreadContext context, IRubyObject receiver, IRubyObject arg, IRubyObject value, CallSite asetSite) {
+        asetSite.call(context, receiver, arg, value);
+        return value;
+    }
+    
+    public static IRubyObject opElementAsgnWithOrPartTwoTwoArgs(ThreadContext context, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
+        asetSite.call(context, receiver, args[0], args[1], value);
+        return value;
+    }
+    
+    public static IRubyObject opElementAsgnWithOrPartTwoThreeArgs(ThreadContext context, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
+        asetSite.call(context, receiver, new IRubyObject[] {args[0], args[1], args[2], value});
+        return value;
+    }
+    
+    public static IRubyObject opElementAsgnWithOrPartTwoNArgs(ThreadContext context, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 0, args.length);
+        newArgs[args.length] = value;
+        asetSite.call(context, receiver, newArgs);
+        return value;
+    }
 }
