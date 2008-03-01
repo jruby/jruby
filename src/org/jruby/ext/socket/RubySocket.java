@@ -67,7 +67,7 @@ public class RubySocket extends RubyBasicSocket {
             RubyBasicSocket.createBasicSocket(runtime);
             RubySocket.createSocket(runtime);
 
-            if(RubyUNIXSocket.tryUnixDomainSocket()) {
+            if(RubyUNIXSocket.tryUnixDomainSocket() && runtime.getInstanceConfig().nativeEnabled) {
                 RubyUNIXSocket.createUNIXSocket(runtime);
                 RubyUNIXServer.createUNIXServer(runtime);
             }
