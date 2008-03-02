@@ -300,13 +300,16 @@ public class RubyModule extends RubyObject {
         this.parent = parent;
     }
 
-    public Map getMethods() {
+    public Map<String, DynamicMethod> getMethods() {
         return methods;
     }
     
-    public void putMethod(Object name, DynamicMethod method) {
+
+    // note that addMethod now does its own put, so any change made to
+    // functionality here should be made there as well 
+    private void putMethod(String name, DynamicMethod method) {
         // FIXME: kinda hacky...flush STI here
-        dispatcher.clearIndex(MethodIndex.getIndex((String)name));
+        dispatcher.clearIndex(MethodIndex.getIndex(name));
         getMethods().put(name, method);
     }
 
@@ -664,11 +667,13 @@ public class RubyModule extends RubyObject {
         synchronized(getMethods()) {
             // If we add a method which already is cached in this class, then we should update the 
             // cachemap so it stays up to date.
-            DynamicMethod existingMethod = (DynamicMethod) getMethods().remove(name);
+            DynamicMethod existingMethod = getMethods().put(name, method);
             if (existingMethod != null) {
                 getRuntime().getCacheMap().remove(name, existingMethod);
             }
-            putMethod(name, method);
+            // note: duplicating functionality from putMethod, since we
+            // remove/put atomically here
+            dispatcher.clearIndex(MethodIndex.getIndex(name));
         }
     }
 
@@ -1099,9 +1104,8 @@ public class RubyModule extends RubyObject {
 
     protected IRubyObject cloneMethods(RubyModule clone) {
         RubyModule realType = this.getNonIncludedClass();
-        for (Iterator iter = getMethods().entrySet().iterator(); iter.hasNext(); ) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            DynamicMethod method = (DynamicMethod) entry.getValue();
+        for (Map.Entry<String, DynamicMethod> entry : getMethods().entrySet()) {
+            DynamicMethod method = entry.getValue();
             // Do not clone cached methods
             // FIXME: MRI copies all methods here
             if (method.getImplementationClass() == realType || method instanceof UndefinedMethod) {

@@ -35,6 +35,7 @@ package org.jruby;
 import java.util.List;
 import java.util.Map;
 
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 
@@ -100,8 +101,14 @@ public final class IncludedModuleWrapper extends RubyClass {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
-    public Map getMethods() {
+    @Override
+    public Map<String, DynamicMethod> getMethods() {
         return delegate.getMethods();
+    }
+
+    @Override
+    public void addMethod(String name, DynamicMethod method) {
+        throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
     public void setMethods(Map newMethods) {
