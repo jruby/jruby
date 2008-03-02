@@ -35,11 +35,22 @@ public class JavaNameMangler {
                 String before = filename.substring(6, filename.indexOf("!"));
                 classPath = new JRubyFile(before + filename.substring(filename.indexOf("!")+1)).getCanonicalPath().toString();
             } else {
-                classPath = new JRubyFile(filename).getCanonicalPath().toString();
+                try {
+                    classPath = new JRubyFile(filename).getCanonicalPath().toString();
+                } catch (IOException ioe) {
+                    // could not get canonical path, just use given path
+                    classPath = filename;
+                }
             }
 
             if (parent != null && parent.length() > 0) {
-                String parentPath = new JRubyFile(parent).getCanonicalPath().toString();
+                String parentPath;
+                try {
+                    parentPath = new JRubyFile(parent).getCanonicalPath().toString();
+                } catch (IOException ioe) {
+                    // could not get canonical path, just use given path
+                    parentPath = parent;
+                }
                 if (!classPath.startsWith(parentPath)) {
                     throw new FileNotFoundException("File path " + classPath +
                             " does not start with parent path " + parentPath);
