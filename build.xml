@@ -629,6 +629,27 @@
     </java>
   </target>
 
+  <target name="spec-show-excludes" depends="prepare"
+    description="Prints out all currently excluded rubyspecs.">
+
+    <available property="mspec-available"
+      file="${build.dir}/rubyspec/code/bin/mspec"/>
+    <fail unless="mspec-available"
+      message="No rubyspecs found. Download them via 'ant spec'."/>
+
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${build.dir}/rubyspec/code">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      <sysproperty key="jruby.launch.inproc" value="false"/>
+      <arg line="bin/mspec"/>
+      <arg line="-t ${basedir}/bin/jruby"/>
+      <arg line="-f s -g fails --dry-run"/>
+      <arg line="-X ${basedir}/test/spec_excludes"/>
+      <arg value="spec/ruby/1.8"/>
+    </java>
+  </target>
+
   <macrodef name="run-specs">
     <attribute name="compile.mode" default="OFF"/>
     <attribute name="jit.threshold" default="20"/>
