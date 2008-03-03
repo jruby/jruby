@@ -145,7 +145,8 @@ public class TestUnitTestSuite extends TestSuite {
             return prettyOut.toString();
         }
 
-        private String getTestClassNameFromReadingTestScript(String filename) {
+        private List<String> getTestClassNamesFromReadingTestScript(String filename) {
+            List<String> testClassNames = new ArrayList<String>();
             File f = new File(TEST_DIR + "/" + filename + ".rb");
             BufferedReader reader = null;
             try {
@@ -156,10 +157,12 @@ public class TestUnitTestSuite extends TestSuite {
                     Matcher m = PATTERN_TEST_CASE_SUBCLASS.matcher(line);
                     if (m.find())
                     {
-                        return m.group(1);
+                        testClassNames.add(m.group(1));
                     }
                 }
-
+                if (!testClassNames.isEmpty()) {
+                    return testClassNames;
+                }
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             } catch (IOException e) {
@@ -181,27 +184,32 @@ public class TestUnitTestSuite extends TestSuite {
         public void runTest() throws Throwable {
             StringBuffer script = new StringBuffer();
 
-            try {
-                script.append("require 'test/junit_testrunner.rb'\n");
-                script.append("require '" + scriptName() + "'\n");
-                script.append("runner = Test::Unit::UI::JUnit::TestRunner.new(" + getTestClassNameFromReadingTestScript(filename) + ")\n");
-                script.append("runner.start\n");
-                script.append("runner.faults\n");
+            List<String> testClassNames = getTestClassNamesFromReadingTestScript(filename);
 
-                RubyArray faults = (RubyArray)runtime.executeScript(script.toString(), scriptName() + "_generated_test.rb");
-
-                if (!faults.isEmpty()) {
-                    StringBuffer faultString = new StringBuffer("Faults encountered running " + scriptName() + ", complete output follows:\n");
-                    for (Iterator iter = faults.iterator(); iter.hasNext();) {
-                        String fault = iter.next().toString();
-
-                        faultString.append(fault).append("\n");
+            // there might be more test classes in a single file, so we iterate over them
+            for (String testClass : testClassNames) {
+                try {
+                    script.append("require 'test/junit_testrunner.rb'\n");
+                    script.append("require '" + scriptName() + "'\n");
+                    script.append("runner = Test::Unit::UI::JUnit::TestRunner.new(" + testClass + ")\n");
+                    script.append("runner.start\n");
+                    script.append("runner.faults\n");
+    
+                    RubyArray faults = (RubyArray)runtime.executeScript(script.toString(), scriptName() + "_generated_test.rb");
+    
+                    if (!faults.isEmpty()) {
+                        StringBuffer faultString = new StringBuffer("Faults encountered running " + scriptName() + ", complete output follows:\n");
+                        for (Iterator iter = faults.iterator(); iter.hasNext();) {
+                            String fault = iter.next().toString();
+    
+                            faultString.append(fault).append("\n");
+                        }
+    
+                        fail(faultString.toString());
                     }
-
-                    fail(faultString.toString());
+                } catch (RaiseException re) {
+                    fail("Faults encountered running " + scriptName() + ", complete output follows:\n" + re.getException().message + "\n" + pretty(((RubyArray)re.getException().backtrace()).getList()));
                 }
-            } catch (RaiseException re) {
-                fail("Faults encountered running " + scriptName() + ", complete output follows:\n" + re.getException().message + "\n" + pretty(((RubyArray)re.getException().backtrace()).getList()));
             }
         }
     }

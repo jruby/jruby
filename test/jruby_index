@@ -48,7 +48,8 @@ test_proc_visibility
 test_parsing
 test_random
 test_rbconfig
-test_socket
+# Excluded due to JRUBY-2213: Unix Sockets broken on Linux.
+# test_socket
 test_string_java_bytes
 test_string_printf
 test_string_sub
